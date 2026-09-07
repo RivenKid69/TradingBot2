@@ -291,9 +291,7 @@ class TestUnifiedReportingManager:
         )
         manager.mark_ready(report.report_id)
 
-        ready_reports = manager.get_reports_for_client(
-            "CLIENT-001", status=ReportStatus.READY
-        )
+        ready_reports = manager.get_reports_for_client("CLIENT-001", status=ReportStatus.READY)
 
         assert len(ready_reports) == 1
         assert ready_reports[0].status == ReportStatus.READY
@@ -335,9 +333,7 @@ class TestUnifiedReportingManager:
             due_at=datetime.now(timezone.utc) + timedelta(days=7),
         )
 
-        pending = manager.get_pending_reports(
-            report_type=ReportType.DORA_MAJOR_INCIDENT
-        )
+        pending = manager.get_pending_reports(report_type=ReportType.DORA_MAJOR_INCIDENT)
 
         assert len(pending) == 1
         assert pending[0].report_type == ReportType.DORA_MAJOR_INCIDENT
@@ -606,7 +602,7 @@ class TestUnifiedReportingHelpers:
 
     def test_escape_xml(self):
         """Test XML escaping."""
-        text = '<test attr="value">&\'data\''
+        text = "<test attr=\"value\">&'data'"
 
         escaped = _escape_xml(text)
 
@@ -891,7 +887,11 @@ class TestDORAReportingTemplates:
             "classified_at": "2025-01-15T10:30:00Z",
             "description": "Test",
             "timeline": [
-                {"timestamp": "2025-01-15T10:00:00Z", "type": "detection", "description": "Detected"},
+                {
+                    "timestamp": "2025-01-15T10:00:00Z",
+                    "type": "detection",
+                    "description": "Detected",
+                },
             ],
         }
 
@@ -1375,9 +1375,7 @@ class TestDORARegisterOfInformation:
             country="BE",
         )
 
-        subcontractors = generator.get_subcontractors_for_contract(
-            contract.contract_reference
-        )
+        subcontractors = generator.get_subcontractors_for_contract(contract.contract_reference)
 
         assert len(subcontractors) == 2
 
@@ -1488,10 +1486,7 @@ class TestDORARegisterOfInformation:
 
         package = generator.generate_roi_data_package()
 
-        assert any(
-            "service types" in w.lower()
-            for w in package.validation_warnings
-        )
+        assert any("service types" in w.lower() for w in package.validation_warnings)
 
     def test_export_package_to_json(self, generator):
         """Test JSON export."""
@@ -1713,6 +1708,7 @@ class TestROIDataGeneratorHelpers:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestReportingModuleIntegration:
     """Integration tests for the reporting module."""

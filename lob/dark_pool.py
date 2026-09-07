@@ -156,13 +156,9 @@ class DarkPoolConfig:
                 f"info_leakage_probability must be in [0, 1], got {self.info_leakage_probability}"
             )
         if self.min_order_size < 0:
-            raise ValueError(
-                f"min_order_size must be non-negative, got {self.min_order_size}"
-            )
+            raise ValueError(f"min_order_size must be non-negative, got {self.min_order_size}")
         if self.max_history_size <= 0:
-            raise ValueError(
-                f"max_history_size must be positive, got {self.max_history_size}"
-            )
+            raise ValueError(f"max_history_size must be positive, got {self.max_history_size}")
 
 
 @dataclass
@@ -447,7 +443,9 @@ class DarkPoolVenue:
             size_ratio = order_qty / adv
             size_penalty = 1.0 - min(
                 1.0,
-                size_ratio * self._config.size_penalty_factor * self._config.size_penalty_multiplier,
+                size_ratio
+                * self._config.size_penalty_factor
+                * self._config.size_penalty_multiplier,
             )
         else:
             size_penalty = 0.8  # Default penalty if no ADV
@@ -607,7 +605,9 @@ class DarkPoolVenue:
             "total_volume": self._total_volume,
             "total_attempts": float(self._total_attempts),
             "total_fills": float(self._total_fills),
-            "fill_rate": self._total_fills / self._total_attempts if self._total_attempts > 0 else 0.0,
+            "fill_rate": (
+                self._total_fills / self._total_attempts if self._total_attempts > 0 else 0.0
+            ),
             "daily_volume": self._daily_volume,
         }
 
@@ -715,8 +715,7 @@ class DarkPoolSimulator:
             self._venues = {v.venue_id: v for v in venues}
         else:
             self._venues = {
-                cfg.venue_id: DarkPoolVenue(cfg, self._rng)
-                for cfg in self.DEFAULT_VENUES
+                cfg.venue_id: DarkPoolVenue(cfg, self._rng) for cfg in self.DEFAULT_VENUES
             }
 
         self._enable_smart_routing = enable_smart_routing
@@ -952,10 +951,7 @@ class DarkPoolSimulator:
 
         # Convert deque to list for slicing (deque doesn't support slice indexing)
         leakage_list = list(self._leakage_history)
-        recent_leakage = [
-            l for l in leakage_list[-10:]
-            if l.timestamp_ns > cutoff
-        ]
+        recent_leakage = [l for l in leakage_list[-10:] if l.timestamp_ns > cutoff]
 
         if not recent_leakage:
             return False

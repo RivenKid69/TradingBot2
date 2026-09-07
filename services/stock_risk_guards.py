@@ -56,8 +56,10 @@ SHORT_SALE_CIRCUIT_BREAKER_THRESHOLD = -0.10  # 10% drop triggers Rule 201
 # Enumerations
 # =========================
 
+
 class MarginCallType(str, Enum):
     """Types of margin calls."""
+
     NONE = "NONE"
     MAINTENANCE = "MAINTENANCE"  # Below maintenance margin
     FEDERAL = "FEDERAL"  # Below Reg T initial margin (on new positions)
@@ -66,6 +68,7 @@ class MarginCallType(str, Enum):
 
 class ShortSaleRestriction(str, Enum):
     """Short sale restriction status."""
+
     NONE = "NONE"
     UPTICK_RULE = "UPTICK_RULE"  # Rule 201 - must short on uptick
     HTB = "HTB"  # Hard to borrow - may not be available
@@ -75,6 +78,7 @@ class ShortSaleRestriction(str, Enum):
 
 class CorporateActionType(str, Enum):
     """Types of corporate actions."""
+
     DIVIDEND = "DIVIDEND"
     STOCK_SPLIT = "STOCK_SPLIT"
     REVERSE_SPLIT = "REVERSE_SPLIT"
@@ -87,9 +91,11 @@ class CorporateActionType(str, Enum):
 # Data Classes
 # =========================
 
+
 @dataclass
 class MarginRequirement:
     """Margin requirement for a position."""
+
     symbol: str
     initial_margin: float = REG_T_INITIAL_MARGIN  # For new positions
     maintenance_margin: float = REG_T_MAINTENANCE_MARGIN  # For existing positions
@@ -126,6 +132,7 @@ class MarginRequirement:
 @dataclass
 class MarginStatus:
     """Current margin account status."""
+
     equity: float = 0.0  # Account equity
     buying_power: float = 0.0  # Available buying power
     margin_used: float = 0.0  # Margin currently used
@@ -138,6 +145,7 @@ class MarginStatus:
 @dataclass
 class ShortSaleStatus:
     """Short sale status for a symbol."""
+
     symbol: str
     restriction: ShortSaleRestriction = ShortSaleRestriction.NONE
     is_shortable: bool = True
@@ -153,6 +161,7 @@ class ShortSaleStatus:
 @dataclass
 class CorporateAction:
     """Corporate action event."""
+
     symbol: str
     action_type: CorporateActionType
     ex_date: date  # Ex-dividend/effective date
@@ -174,6 +183,7 @@ class CorporateAction:
 @dataclass
 class PositionSnapshot:
     """Snapshot of a position for margin calculations."""
+
     symbol: str
     quantity: float  # Positive for long, negative for short
     market_value: float
@@ -187,8 +197,10 @@ class PositionSnapshot:
 # Protocols
 # =========================
 
+
 class PriceProvider(Protocol):
     """Protocol for getting current prices."""
+
     def get_price(self, symbol: str) -> Optional[float]:
         """Get current price for symbol."""
         ...
@@ -200,23 +212,23 @@ class PriceProvider(Protocol):
 
 class HTBListProvider(Protocol):
     """Protocol for Hard-to-Borrow list."""
-    def is_hard_to_borrow(self, symbol: str) -> bool:
-        ...
 
-    def get_borrow_rate(self, symbol: str) -> float:
-        ...
+    def is_hard_to_borrow(self, symbol: str) -> bool: ...
 
-    def get_shares_available(self, symbol: str) -> Optional[int]:
-        ...
+    def get_borrow_rate(self, symbol: str) -> float: ...
+
+    def get_shares_available(self, symbol: str) -> Optional[int]: ...
 
 
 # =========================
 # Margin Guard
 # =========================
 
+
 @dataclass
 class MarginGuardConfig:
     """Configuration for MarginGuard."""
+
     initial_margin: float = REG_T_INITIAL_MARGIN
     maintenance_margin: float = REG_T_MAINTENANCE_MARGIN
     house_margin_buffer: float = 0.05  # Extra buffer above maintenance
@@ -367,17 +379,11 @@ class MarginGuard:
 
     def _total_long_market_value(self) -> float:
         """Calculate total market value of long positions."""
-        return sum(
-            pos.market_value for pos in self._positions.values()
-            if pos.quantity > 0
-        )
+        return sum(pos.market_value for pos in self._positions.values() if pos.quantity > 0)
 
     def _total_short_market_value(self) -> float:
         """Calculate total absolute market value of short positions."""
-        return sum(
-            abs(pos.market_value) for pos in self._positions.values()
-            if pos.quantity < 0
-        )
+        return sum(abs(pos.market_value) for pos in self._positions.values() if pos.quantity < 0)
 
     def _total_margin_required(self) -> float:
         """Calculate total margin required for all positions."""
@@ -385,17 +391,14 @@ class MarginGuard:
         for pos in self._positions.values():
             price = pos.market_value / abs(pos.quantity) if pos.quantity != 0 else 0
             total += self._calculate_position_margin(
-                pos.symbol,
-                pos.quantity,
-                price,
-                is_new=False  # Existing positions use maintenance
+                pos.symbol, pos.quantity, price, is_new=False  # Existing positions use maintenance
             )
         return total
 
     def _available_buying_power(self) -> float:
         """Calculate available buying power."""
         if not self._config.enabled:
-            return float('inf')
+            return float("inf")
 
         # Simple calculation: equity - margin_used
         margin_used = self._total_margin_required()
@@ -446,9 +449,7 @@ class MarginGuard:
                 return False, f"{symbol} is not marginable - requires full cash payment"
 
             # Calculate margin needed for new position
-            margin_needed = self._calculate_position_margin(
-                symbol, quantity, price, is_new=True
-            )
+            margin_needed = self._calculate_position_margin(symbol, quantity, price, is_new=True)
 
             # Check buying power
             buying_power = self._available_buying_power()
@@ -469,7 +470,10 @@ class MarginGuard:
                             f"({concentration:.1%} of portfolio)"
                         )
 
-            return True, f"Margin OK: ${margin_needed:,.2f} required, ${buying_power:,.2f} available"
+            return (
+                True,
+                f"Margin OK: ${margin_needed:,.2f} required, ${buying_power:,.2f} available",
+            )
 
     def can_increase_position(
         self,
@@ -504,7 +508,7 @@ class MarginGuard:
         """
         with self._lock:
             if not self._config.enabled:
-                return MarginStatus(equity=self._equity, buying_power=float('inf'))
+                return MarginStatus(equity=self._equity, buying_power=float("inf"))
 
             margin_used = self._total_margin_required()
             total_mv = self._total_long_market_value() + self._total_short_market_value()
@@ -522,7 +526,9 @@ class MarginGuard:
                 margin_call_amount = abs(maintenance_excess)
 
             # House call (stricter than maintenance)
-            house_req = total_mv * (self._config.maintenance_margin + self._config.house_margin_buffer)
+            house_req = total_mv * (
+                self._config.maintenance_margin + self._config.house_margin_buffer
+            )
             if self._equity < house_req:
                 margin_call_type = MarginCallType.HOUSE
                 margin_call_amount = max(margin_call_amount, house_req - self._equity)
@@ -574,7 +580,7 @@ class MarginGuard:
 
             if not use_all_buying_power:
                 # Leave some buffer
-                buying_power *= (1.0 - self._config.house_margin_buffer)
+                buying_power *= 1.0 - self._config.house_margin_buffer
 
             if price <= 0:
                 return 0.0
@@ -609,9 +615,11 @@ class MarginGuard:
 # Short Sale Guard
 # =========================
 
+
 @dataclass
 class ShortSaleGuardConfig:
     """Configuration for ShortSaleGuard."""
+
     enforce_uptick_rule: bool = True  # SEC Rule 201
     check_htb_list: bool = True
     check_locate: bool = True  # Require locate before shorting
@@ -968,9 +976,11 @@ class ShortSaleGuard:
 # Corporate Actions Handler
 # =========================
 
+
 @dataclass
 class CorporateActionsConfig:
     """Configuration for CorporateActionsHandler."""
+
     adjust_positions_on_split: bool = True
     warn_on_ex_dividend: bool = True
     days_to_warn_before_ex: int = 3
@@ -1059,10 +1069,7 @@ class CorporateActionsHandler:
                 return False
 
             original_len = len(self._actions[symbol])
-            self._actions[symbol] = [
-                a for a in self._actions[symbol]
-                if a.ex_date != ex_date
-            ]
+            self._actions[symbol] = [a for a in self._actions[symbol] if a.ex_date != ex_date]
             return len(self._actions[symbol]) < original_len
 
     def get_actions(
@@ -1094,10 +1101,7 @@ class CorporateActionsHandler:
 
         cutoff = as_of + timedelta(days=days)
 
-        return [
-            action for action in self.get_actions()
-            if as_of <= action.ex_date <= cutoff
-        ]
+        return [action for action in self.get_actions() if as_of <= action.ex_date <= cutoff]
 
     def has_upcoming_action(
         self,
@@ -1179,8 +1183,7 @@ class CorporateActionsHandler:
         actions = self._actions.get(symbol, [])
 
         for action in actions:
-            if (action.action_type == CorporateActionType.DIVIDEND and
-                action.ex_date == ex_date):
+            if action.action_type == CorporateActionType.DIVIDEND and action.ex_date == ex_date:
                 return action.dividend_amount * quantity
 
         return 0.0
@@ -1239,16 +1242,18 @@ class CorporateActionsHandler:
             f"price ${price:.4f} -> ${new_price:.4f}"
         )
 
-        self._processed.append({
-            "symbol": symbol,
-            "action": "SPLIT",
-            "ratio": (new_shares, old_shares),
-            "old_qty": quantity,
-            "new_qty": new_quantity,
-            "old_price": price,
-            "new_price": new_price,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        self._processed.append(
+            {
+                "symbol": symbol,
+                "action": "SPLIT",
+                "ratio": (new_shares, old_shares),
+                "old_qty": quantity,
+                "new_qty": new_quantity,
+                "old_price": price,
+                "new_price": new_price,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
         return new_quantity, new_price
 
@@ -1307,12 +1312,14 @@ class CorporateActionsHandler:
 
                     if action.action_type == CorporateActionType.DIVIDEND:
                         div_amount = action.dividend_amount * pos.quantity
-                        adjustments.append({
-                            "symbol": symbol,
-                            "type": "DIVIDEND",
-                            "amount": div_amount,
-                            "ex_date": action.ex_date.isoformat(),
-                        })
+                        adjustments.append(
+                            {
+                                "symbol": symbol,
+                                "type": "DIVIDEND",
+                                "amount": div_amount,
+                                "ex_date": action.ex_date.isoformat(),
+                            }
+                        )
 
                     elif action.action_type in (
                         CorporateActionType.STOCK_SPLIT,
@@ -1322,14 +1329,16 @@ class CorporateActionsHandler:
                         new_qty, new_price = self.apply_split(
                             symbol, pos.quantity, price, action.split_ratio
                         )
-                        adjustments.append({
-                            "symbol": symbol,
-                            "type": action.action_type.value,
-                            "old_qty": pos.quantity,
-                            "new_qty": new_qty,
-                            "old_price": price,
-                            "new_price": new_price,
-                        })
+                        adjustments.append(
+                            {
+                                "symbol": symbol,
+                                "type": action.action_type.value,
+                                "old_qty": pos.quantity,
+                                "new_qty": new_qty,
+                                "old_price": price,
+                                "new_price": new_price,
+                            }
+                        )
 
                     # Remove processed action
                     actions.remove(action)
@@ -1363,6 +1372,7 @@ class CorporateActionsHandler:
 # =========================
 # Factory Functions
 # =========================
+
 
 def create_margin_guard(
     initial_margin: float = REG_T_INITIAL_MARGIN,

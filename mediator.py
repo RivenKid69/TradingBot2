@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Import obs_builder for observation vector construction
 try:
     from obs_builder import build_observation_vector
+
     _HAVE_OBS_BUILDER = True
 except ImportError:
     _HAVE_OBS_BUILDER = False
@@ -41,6 +42,7 @@ from impl_latency import LatencyImpl
 from core_constants import PRICE_SCALE
 from utils import SignalRateLimiter
 from clock import now_ms
+
 try:
     from quantizer import Quantizer, load_filters
 except Exception:  # pragma: no cover - soft dependency
@@ -48,6 +50,7 @@ except Exception:  # pragma: no cover - soft dependency
 
     def load_filters(path: str):  # type: ignore
         return {}
+
 
 try:
     from impl_quantizer import QuantizerImpl  # type: ignore
@@ -59,11 +62,21 @@ try:
 except Exception:
     # мягкая деградация при отсутствии event_bus
     class _Stub:
-        def configure(self, *a, **k): return ""
-        def log_trade(self, *a, **k): pass
-        def log_risk(self, *a, **k): pass
-        def flush(self): pass
-        def run_dir(self): return ""
+        def configure(self, *a, **k):
+            return ""
+
+        def log_trade(self, *a, **k):
+            pass
+
+        def log_risk(self, *a, **k):
+            pass
+
+        def flush(self):
+            pass
+
+        def run_dir(self):
+            return ""
+
     event_bus = _Stub()  # type: ignore
 
 from action_proto import ActionProto, ActionType
@@ -82,6 +95,7 @@ try:
         SlippageProvider,
         FeeProvider,
     )
+
     _HAVE_EXEC_PROVIDERS = True
 except ImportError:
     _HAVE_EXEC_PROVIDERS = False
@@ -95,6 +109,7 @@ except ImportError:
 # Phase 4.1: Trading hours adapters
 try:
     from adapters.alpaca.trading_hours import AlpacaTradingHoursAdapter
+
     _HAVE_TRADING_HOURS = True
 except ImportError:
     _HAVE_TRADING_HOURS = False
@@ -104,6 +119,7 @@ except ImportError:
 # опциональны; при отсутствии работаем напрямую с LOB
 try:
     from execution_sim import SimStepReport as ExecReport, ExecutionSimulator  # type: ignore
+
     _HAVE_EXEC_SIM = True
 except Exception:
     ExecReport = None  # type: ignore
@@ -113,15 +129,23 @@ except Exception:
 
 # ------------------------------ Вспомогательная заглушка LOB ------------------------------
 
+
 class _DummyLOB:
     """Минималистичная заглушка для разработки без Cython."""
+
     _next_id: int
 
     def __init__(self):
         self._next_id = 1
 
-    def add_limit_order(self, is_buy_side: bool, price_ticks: int, volume: float, timestamp: int,
-                        taker_is_agent: bool = True) -> Tuple[int, int]:
+    def add_limit_order(
+        self,
+        is_buy_side: bool,
+        price_ticks: int,
+        volume: float,
+        timestamp: int,
+        taker_is_agent: bool = True,
+    ) -> Tuple[int, int]:
         oid = self._next_id
         self._next_id += 1
         # (order_id, fake_queue_position)
@@ -130,14 +154,25 @@ class _DummyLOB:
     def remove_order(self, is_buy_side: bool, price_ticks: int, order_id: int) -> bool:
         return True
 
-    def match_market_order(self, is_buy_side: bool, volume: float, timestamp: int,
-                           taker_is_agent: bool, out_prices=None, out_volumes=None,
-                           out_is_buy=None, out_is_self=None, out_ids=None, max_len: int = 0):
+    def match_market_order(
+        self,
+        is_buy_side: bool,
+        volume: float,
+        timestamp: int,
+        taker_is_agent: bool,
+        out_prices=None,
+        out_volumes=None,
+        out_is_buy=None,
+        out_is_self=None,
+        out_ids=None,
+        max_len: int = 0,
+    ):
         # Заглушка: не исполняем, возвращаем ноль сделок и нулевую комиссию
         return 0, 0.0
 
 
 # ------------------------------ Mediator ------------------------------
+
 
 @dataclass
 class _EnvStateView:
@@ -263,9 +298,7 @@ class Mediator:
             if hasattr(obj, "__dict__"):
                 try:
                     return {
-                        str(k): getattr(obj, k)
-                        for k in vars(obj)
-                        if not str(k).startswith("_")
+                        str(k): getattr(obj, k) for k in vars(obj) if not str(k).startswith("_")
                     }
                 except Exception:
                     return {}
@@ -275,10 +308,7 @@ class Mediator:
         qcfg: Dict[str, Any] = _plain_mapping(qcfg_raw) if qcfg_raw is not None else {}
 
         filters_path = str(
-            qcfg.get("filters_path")
-            or qcfg.get("filtersPath")
-            or qcfg.get("path")
-            or ""
+            qcfg.get("filters_path") or qcfg.get("filtersPath") or qcfg.get("path") or ""
         ).strip()
 
         strict_raw = qcfg.get("strict_filters")
@@ -392,7 +422,7 @@ class Mediator:
             # Equity: tighter spreads, lower impact, commission-free + regulatory fees
             self.slippage_provider = StatisticalSlippageProvider(
                 impact_coef=0.05,  # Lower impact for deeper equity markets
-                spread_bps=2.0,    # Tighter spreads for liquid US equities
+                spread_bps=2.0,  # Tighter spreads for liquid US equities
                 volatility_scale=1.0,
                 min_slippage_bps=0.0,
                 max_slippage_bps=200.0,  # 2% max for equities
@@ -410,9 +440,7 @@ class Mediator:
                         }
                     )
                 except Exception as e:
-                    logger.warning(
-                        "Failed to initialize AlpacaTradingHoursAdapter: %s", e
-                    )
+                    logger.warning("Failed to initialize AlpacaTradingHoursAdapter: %s", e)
                     self.trading_hours_adapter = None
 
             logger.info(
@@ -425,15 +453,15 @@ class Mediator:
         else:
             # Crypto (default): wider spreads, higher impact, percentage fees
             self.slippage_provider = StatisticalSlippageProvider(
-                impact_coef=0.1,   # Higher impact for crypto
-                spread_bps=5.0,    # Wider spreads
+                impact_coef=0.1,  # Higher impact for crypto
+                spread_bps=5.0,  # Wider spreads
                 volatility_scale=1.0,
                 min_slippage_bps=0.0,
                 max_slippage_bps=500.0,  # 5% max for crypto
             )
             self.fee_provider = CryptoFeeProvider(
-                maker_bps=2.0,   # 0.02% maker
-                taker_bps=4.0,   # 0.04% taker
+                maker_bps=2.0,  # 0.02% maker
+                taker_bps=4.0,  # 0.04% taker
             )
 
             # No trading hours adapter for 24/7 crypto markets
@@ -511,7 +539,9 @@ class Mediator:
         self._last_signal_position = 0.0
         self._latest_log_ret_prev = 0.0
 
-    def set_market_context(self, *, row: Any | None = None, row_idx: int | None = None, timestamp: int | None = None) -> None:
+    def set_market_context(
+        self, *, row: Any | None = None, row_idx: int | None = None, timestamp: int | None = None
+    ) -> None:
         """Store per-step market context passed from the environment."""
         self._context_row = row
         self._context_row_idx = int(row_idx) if row_idx is not None else None
@@ -635,15 +665,25 @@ class Mediator:
 
     # ------------------------------ Публичный API ------------------------------
 
-    def add_limit_order(self, *, is_buy_side: bool, price_ticks: int, volume: float,
-                        timestamp: int, ttl_steps: int = 0, taker_is_agent: bool = True) -> Tuple[int, int]:
+    def add_limit_order(
+        self,
+        *,
+        is_buy_side: bool,
+        price_ticks: int,
+        volume: float,
+        timestamp: int,
+        ttl_steps: int = 0,
+        taker_is_agent: bool = True,
+    ) -> Tuple[int, int]:
         """
         Разместить лимитный ордер напрямую в LOB.
         Возвращает (order_id, queue_position). При ttl_steps>0 — ордер будет отменён после истечения.
         """
         # pre-trade риск по ожидаемой позиции
         st = self._state_view()
-        proto = ActionProto(action_type=ActionType.LIMIT, volume_frac=float(volume) / max(1.0, st.max_position))
+        proto = ActionProto(
+            action_type=ActionType.LIMIT, volume_frac=float(volume) / max(1.0, st.max_position)
+        )
         evt = self.risk.on_action_proposed(self.env.state, proto)  # type: ignore[attr-defined]
         if evt.name != "NONE":
             return 0, 0
@@ -656,13 +696,21 @@ class Mediator:
                 price_abs = float(price_ticks_q) / PRICE_SCALE
                 p_abs = self.quantizer.quantize_price(symbol, price_abs)
                 q = self.quantizer.quantize_qty(symbol, volume_q)
-                q_clamped = self.quantizer.clamp_notional(symbol, p_abs if p_abs > 0 else (ref_price or 0.0), q)
+                q_clamped = self.quantizer.clamp_notional(
+                    symbol, p_abs if p_abs > 0 else (ref_price or 0.0), q
+                )
                 p_ticks = int(round(p_abs * PRICE_SCALE))
-                if p_ticks != price_ticks_q or abs(q - volume_q) > 1e-12 or abs(q_clamped - q) > 1e-12:
+                if (
+                    p_ticks != price_ticks_q
+                    or abs(q - volume_q) > 1e-12
+                    or abs(q_clamped - q) > 1e-12
+                ):
                     return 0, 0
                 if self.enforce_ppbs and ref_price is not None:
                     side = "BUY" if is_buy_side else "SELL"
-                    if not self.quantizer.check_percent_price_by_side(symbol, side, p_abs, ref_price):
+                    if not self.quantizer.check_percent_price_by_side(
+                        symbol, side, p_abs, ref_price
+                    ):
                         return 0, 0
                 price_ticks_q = p_ticks
                 volume_q = q_clamped
@@ -705,15 +753,18 @@ class Mediator:
             self._ttl_queue = [(oid, ts) for (oid, ts) in self._ttl_queue if oid != int(order_id)]
         return ok
 
-    def match_market_order(self, *, is_buy_side: bool, volume: float, timestamp: int,
-                           taker_is_agent: bool = True) -> List[Tuple[float, float, bool, bool]]:
+    def match_market_order(
+        self, *, is_buy_side: bool, volume: float, timestamp: int, taker_is_agent: bool = True
+    ) -> List[Tuple[float, float, bool, bool]]:
         """
         Исполнить маркет-заявку через LOB.
         Возвращает список сделок [(price, volume, is_buy, maker_is_agent)].
         """
         # pre-trade риск по ожидаемой позиции
         st = self._state_view()
-        proto = ActionProto(action_type=ActionType.MARKET, volume_frac=float(volume) / max(1.0, st.max_position))
+        proto = ActionProto(
+            action_type=ActionType.MARKET, volume_frac=float(volume) / max(1.0, st.max_position)
+        )
         evt = self.risk.on_action_proposed(self.env.state, proto)  # type: ignore[attr-defined]
         if evt.name != "NONE":
             return []
@@ -756,11 +807,17 @@ class Mediator:
         # применяем сделки к состоянию и логируем
         if trades:
             self._apply_trades_to_state(trades)
-            for (px, vol, is_buy, is_self) in trades:
+            for px, vol, is_buy, is_self in trades:
                 try:
                     # формируем ExecReport и логируем единообразно
-                    _rid = str(getattr(event_bus, "_STATE").run_id if hasattr(event_bus, "_STATE") else "")
-                    _sym = str(getattr(event_bus, "_STATE").default_symbol if hasattr(event_bus, "_STATE") else "UNKNOWN")
+                    _rid = str(
+                        getattr(event_bus, "_STATE").run_id if hasattr(event_bus, "_STATE") else ""
+                    )
+                    _sym = str(
+                        getattr(event_bus, "_STATE").default_symbol
+                        if hasattr(event_bus, "_STATE")
+                        else "UNKNOWN"
+                    )
                     _er = ExecReport(
                         ts=int(timestamp),
                         run_id=_rid,
@@ -784,8 +841,10 @@ class Mediator:
                     pass
 
         # post-trade проверки
-        mid_for_risk = trades[-1][0] if trades else float(
-            getattr(self.env, "last_mtm_price", getattr(self.env, "last_mid", 0.0))
+        mid_for_risk = (
+            trades[-1][0]
+            if trades
+            else float(getattr(self.env, "last_mtm_price", getattr(self.env, "last_mid", 0.0)))
         )
         try:
             self.risk.on_post_trade(self.env.state, float(mid_for_risk))  # type: ignore[attr-defined]
@@ -820,12 +879,16 @@ class Mediator:
         ctx = OrderContext(
             ts_ms=int(timestamp),
             symbol=str(getattr(self.env, "symbol", "UNKNOWN")),
-            ref_price=float(
-                getattr(self.env, "last_mtm_price", getattr(self.env, "last_mid", 0.0))
-            )
-            if hasattr(self.env, "last_mtm_price") or hasattr(self.env, "last_mid")
-            else None,
-            max_position_abs_base=float(getattr(getattr(self.env, "state", None), "max_position", 0.0) or getattr(self.env, "max_abs_position", 0.0) or 0.0),
+            ref_price=(
+                float(getattr(self.env, "last_mtm_price", getattr(self.env, "last_mid", 0.0)))
+                if hasattr(self.env, "last_mtm_price") or hasattr(self.env, "last_mid")
+                else None
+            ),
+            max_position_abs_base=float(
+                getattr(getattr(self.env, "state", None), "max_position", 0.0)
+                or getattr(self.env, "max_abs_position", 0.0)
+                or 0.0
+            ),
             tick_size=None,  # квантование делается ниже по контуру
             price_offset_ticks=int(getattr(proto, "price_offset_ticks", 0)),
             tif=str(getattr(proto, "tif", "GTC")),
@@ -847,7 +910,11 @@ class Mediator:
                 etype=EventType.ORDER_SUBMITTED,
                 ts=int(timestamp),
                 order=(order_obj.to_dict() if hasattr(order_obj, "to_dict") else None),
-                meta={"action": getattr(proto, "to_dict", lambda: {"type": int(getattr(proto, "action_type", 0))})()}
+                meta={
+                    "action": getattr(
+                        proto, "to_dict", lambda: {"type": int(getattr(proto, "action_type", 0))}
+                    )()
+                },
             ).to_dict()
             events.append(submitted_event)
         except Exception:
@@ -858,15 +925,29 @@ class Mediator:
         info: dict = {}
         if evt.name != "NONE":
             info["risk_event"] = evt.name
-            return {"trades": [], "cancelled_ids": [], "new_order_ids": [], "fee_total": 0.0,
-                    "new_order_pos": [], "info": info, "events": events}
+            return {
+                "trades": [],
+                "cancelled_ids": [],
+                "new_order_ids": [],
+                "fee_total": 0.0,
+                "new_order_pos": [],
+                "info": info,
+                "events": events,
+            }
 
         # если есть ExecutionSimulator — используем его
         if self._use_exec and self.exec is not None:
             if proto.action_type != ActionType.HOLD and not self._check_rate_limit():
                 info["rate_limited"] = True
-                return {"trades": [], "cancelled_ids": [], "new_order_ids": [], "fee_total": 0.0,
-                        "new_order_pos": [], "info": info, "events": events}
+                return {
+                    "trades": [],
+                    "cancelled_ids": [],
+                    "new_order_ids": [],
+                    "fee_total": 0.0,
+                    "new_order_pos": [],
+                    "info": info,
+                    "events": events,
+                }
             try:
                 bid = getattr(self.env, "last_bid", None)
                 ask = getattr(self.env, "last_ask", None)
@@ -878,9 +959,7 @@ class Mediator:
                 if bid is not None and ask is not None:
                     mid = (float(bid) + float(ask)) / 2.0
                 else:
-                    mid = getattr(
-                        self.env, "last_mtm_price", getattr(self.env, "last_mid", None)
-                    )
+                    mid = getattr(self.env, "last_mtm_price", getattr(self.env, "last_mid", None))
                 try:
                     if mid is not None:
                         self.exec.set_ref_price(float(mid))  # type: ignore[union-attr]
@@ -935,8 +1014,10 @@ class Mediator:
                 try:
                     exec_reports = sim_report_dict_to_core_exec_reports(
                         d,
-                        symbol=str(getattr(self.env, "symbol", getattr(self.env, "base_symbol", "UNKNOWN"))),
-                        client_order_id=None
+                        symbol=str(
+                            getattr(self.env, "symbol", getattr(self.env, "base_symbol", "UNKNOWN"))
+                        ),
+                        client_order_id=None,
                     )
                     d["core_exec_reports"] = [as_dict(er) for er in exec_reports]
 
@@ -948,13 +1029,23 @@ class Mediator:
                     for _er in exec_reports:
                         if lvl >= 2:
                             try:
-                                events.append(FillEvent(etype=EventType.EXEC_FILLED, ts=_er.ts, exec_report=_er).to_dict())
+                                events.append(
+                                    FillEvent(
+                                        etype=EventType.EXEC_FILLED, ts=_er.ts, exec_report=_er
+                                    ).to_dict()
+                                )
                             except Exception:
                                 pass
                         # лог в unified-CSV
                         try:
-                            run_id_val = getattr(event_bus, "_STATE").run_id if hasattr(event_bus, "_STATE") else ""
-                            symbol_val = getattr(self.env, "symbol", getattr(self.env, "base_symbol", "UNKNOWN"))
+                            run_id_val = (
+                                getattr(event_bus, "_STATE").run_id
+                                if hasattr(event_bus, "_STATE")
+                                else ""
+                            )
+                            symbol_val = getattr(
+                                self.env, "symbol", getattr(self.env, "base_symbol", "UNKNOWN")
+                            )
                             event_bus.log_trade(_er)
                         except Exception:
                             pass
@@ -980,42 +1071,60 @@ class Mediator:
         if proto.action_type == ActionType.HOLD:
             pass
         elif proto.action_type == ActionType.MARKET:
-            trades = self.match_market_order(is_buy_side=(proto.volume_frac > 0.0),
-                                             volume=abs(proto.volume_frac) * max(1.0, self._state_view().max_position),
-                                             timestamp=int(timestamp), taker_is_agent=True)
+            trades = self.match_market_order(
+                is_buy_side=(proto.volume_frac > 0.0),
+                volume=abs(proto.volume_frac) * max(1.0, self._state_view().max_position),
+                timestamp=int(timestamp),
+                taker_is_agent=True,
+            )
         elif proto.action_type == ActionType.LIMIT:
             ttl_steps = int(getattr(proto, "ttl_steps", 0))
             vol = abs(proto.volume_frac) * max(1.0, self._state_view().max_position)
             price_ticks = int(getattr(proto, "price_offset_ticks", 0))
             abs_price = getattr(proto, "abs_price", None)
             if abs_price is not None:
-                symbol = str(getattr(self.env, "symbol", getattr(self.env, "base_symbol", ""))).upper()
+                symbol = str(
+                    getattr(self.env, "symbol", getattr(self.env, "base_symbol", ""))
+                ).upper()
                 if self.quantizer is not None:
                     p_abs = self.quantizer.quantize_price(symbol, float(abs_price))
                 else:
                     p_abs = float(abs_price)
                 price_ticks = int(round(p_abs * PRICE_SCALE))
-            oid, qpos = self.add_limit_order(is_buy_side=(proto.volume_frac > 0.0),
-                                             price_ticks=price_ticks, volume=vol,
-                                             timestamp=int(timestamp), ttl_steps=ttl_steps, taker_is_agent=True)
+            oid, qpos = self.add_limit_order(
+                is_buy_side=(proto.volume_frac > 0.0),
+                price_ticks=price_ticks,
+                volume=vol,
+                timestamp=int(timestamp),
+                ttl_steps=ttl_steps,
+                taker_is_agent=True,
+            )
             if oid:
                 new_order_ids.append(int(oid))
                 new_order_pos.append(int(qpos))
 
         # пост-проверки и отчёт
-        mid_for_risk = trades[-1][0] if trades else float(
-            getattr(self.env, "last_mtm_price", getattr(self.env, "last_mid", 0.0))
+        mid_for_risk = (
+            trades[-1][0]
+            if trades
+            else float(getattr(self.env, "last_mtm_price", getattr(self.env, "last_mid", 0.0)))
         )
         try:
             self.risk.on_post_trade(self.env.state, float(mid_for_risk))  # type: ignore[attr-defined]
         except Exception:
             pass
 
-        for (px, vol, is_buy, is_self) in trades:
+        for px, vol, is_buy, is_self in trades:
             try:
                 # формируем ExecReport и логируем единообразно
-                _rid = str(getattr(event_bus, "_STATE").run_id if hasattr(event_bus, "_STATE") else "")
-                _sym = str(getattr(event_bus, "_STATE").default_symbol if hasattr(event_bus, "_STATE") else "UNKNOWN")
+                _rid = str(
+                    getattr(event_bus, "_STATE").run_id if hasattr(event_bus, "_STATE") else ""
+                )
+                _sym = str(
+                    getattr(event_bus, "_STATE").default_symbol
+                    if hasattr(event_bus, "_STATE")
+                    else "UNKNOWN"
+                )
                 _er = ExecReport(
                     ts=int(timestamp),
                     run_id=_rid,
@@ -1143,7 +1252,7 @@ class Mediator:
         default: float = 0.0,
         min_value: float = None,
         max_value: float = None,
-        log_nan: bool = False
+        log_nan: bool = False,
     ) -> float:
         """
         Safely extract float value from row with fallback and range validation.
@@ -1224,11 +1333,7 @@ class Mediator:
 
     @staticmethod
     def _get_safe_float_with_validity(
-        row: Any,
-        col: str,
-        default: float = 0.0,
-        min_value: float = None,
-        max_value: float = None
+        row: Any, col: str, default: float = 0.0, min_value: float = None, max_value: float = None
     ) -> tuple[float, bool]:
         """
         Safely extract float value with explicit validity flag.
@@ -1295,7 +1400,9 @@ class Mediator:
         except (TypeError, ValueError, KeyError, AttributeError):
             return (default, False)
 
-    def _extract_market_data(self, row: Any, state: Any, mark_price: float, prev_price: float) -> Dict[str, float]:
+    def _extract_market_data(
+        self, row: Any, state: Any, mark_price: float, prev_price: float
+    ) -> Dict[str, float]:
         """
         Extract basic market data from row.
 
@@ -1341,12 +1448,12 @@ class Mediator:
         # Try to get from row first (from prepare_and_run.py features)
         # For 4h timeframe: transformers.py creates SMA names in MINUTES (not bars)
         # sma_1200 = 5 bars × 240 min/bar = 1200 minutes = 20 hours (short-term MA)
-        ma5 = self._get_safe_float(row, "sma_1200", float('nan'))
+        ma5 = self._get_safe_float(row, "sma_1200", float("nan"))
         # NOTE: For 4h timeframe using sma_5040 (21 bars = 84h ≈ 3.5 days, weekly trend)
         # config_4h_timeframe.py specifies SMA_LOOKBACKS = [5, 21, 50] bars → [1200, 5040, 12000] minutes
         # HISTORICAL NAMING: Variable named "ma20" for feature schema compatibility (see feature_config.py).
         # Actual value is 21-bar SMA. Renaming would break feature parity and trained models.
-        ma20 = self._get_safe_float(row, "sma_5040", float('nan'))
+        ma20 = self._get_safe_float(row, "sma_5040", float("nan"))
         rsi14 = self._get_safe_float(row, "rsi", 50.0)
 
         # For MACD and other indicators, try from simulator if available
@@ -1356,8 +1463,8 @@ class Mediator:
         atr = 0.0
         cci = 0.0
         obv = 0.0
-        bb_lower = float('nan')
-        bb_upper = float('nan')
+        bb_lower = float("nan")
+        bb_upper = float("nan")
 
         # Try to get from MarketSimulator if available
         if sim is not None and hasattr(sim, "get_macd"):
@@ -1436,31 +1543,73 @@ class Mediator:
 
         # Map technical indicators from prepare_and_run.py to norm_cols
         # Original 8 features (adapted for 4h)
-        norm_cols_values[0], norm_cols_validity[0] = self._get_safe_float_with_validity(row, "cvd_24h", 0.0)
-        norm_cols_values[1], norm_cols_validity[1] = self._get_safe_float_with_validity(row, "cvd_7d", 0.0)  # 10080 минут = 7 дней
-        norm_cols_values[2], norm_cols_validity[2] = self._get_safe_float_with_validity(row, "yang_zhang_48h", 0.0)  # 12 bars = 48h
-        norm_cols_values[3], norm_cols_validity[3] = self._get_safe_float_with_validity(row, "yang_zhang_7d", 0.0)  # 10080 минут = 7 дней
-        norm_cols_values[4], norm_cols_validity[4] = self._get_safe_float_with_validity(row, "garch_200h", 0.0)  # 50 bars = 12000 min = 200h (минимум для GARCH на 4h)
-        norm_cols_values[5], norm_cols_validity[5] = self._get_safe_float_with_validity(row, "garch_14d", 0.0)  # 84 bars = 14 days
-        norm_cols_values[6], norm_cols_validity[6] = self._get_safe_float_with_validity(row, "ret_12h", 0.0)  # 3 bars
-        norm_cols_values[7], norm_cols_validity[7] = self._get_safe_float_with_validity(row, "ret_24h", 0.0)  # 6 bars
+        norm_cols_values[0], norm_cols_validity[0] = self._get_safe_float_with_validity(
+            row, "cvd_24h", 0.0
+        )
+        norm_cols_values[1], norm_cols_validity[1] = self._get_safe_float_with_validity(
+            row, "cvd_7d", 0.0
+        )  # 10080 минут = 7 дней
+        norm_cols_values[2], norm_cols_validity[2] = self._get_safe_float_with_validity(
+            row, "yang_zhang_48h", 0.0
+        )  # 12 bars = 48h
+        norm_cols_values[3], norm_cols_validity[3] = self._get_safe_float_with_validity(
+            row, "yang_zhang_7d", 0.0
+        )  # 10080 минут = 7 дней
+        norm_cols_values[4], norm_cols_validity[4] = self._get_safe_float_with_validity(
+            row, "garch_200h", 0.0
+        )  # 50 bars = 12000 min = 200h (минимум для GARCH на 4h)
+        norm_cols_values[5], norm_cols_validity[5] = self._get_safe_float_with_validity(
+            row, "garch_14d", 0.0
+        )  # 84 bars = 14 days
+        norm_cols_values[6], norm_cols_validity[6] = self._get_safe_float_with_validity(
+            row, "ret_12h", 0.0
+        )  # 3 bars
+        norm_cols_values[7], norm_cols_validity[7] = self._get_safe_float_with_validity(
+            row, "ret_24h", 0.0
+        )  # 6 bars
 
         # Additional 8 features for complete coverage (43 -> 51) - adapted for 4h
-        norm_cols_values[8], norm_cols_validity[8] = self._get_safe_float_with_validity(row, "ret_4h", 0.0)  # 1 bar
-        norm_cols_values[9], norm_cols_validity[9] = self._get_safe_float_with_validity(row, "sma_12000", 0.0)  # 50 bars = 12000 минут = 200h
-        norm_cols_values[10], norm_cols_validity[10] = self._get_safe_float_with_validity(row, "yang_zhang_30d", 0.0)  # 43200 минут = 30 дней
-        norm_cols_values[11], norm_cols_validity[11] = self._get_safe_float_with_validity(row, "parkinson_48h", 0.0)  # 12 bars = 48h
-        norm_cols_values[12], norm_cols_validity[12] = self._get_safe_float_with_validity(row, "parkinson_7d", 0.0)  # 10080 минут = 7 дней
-        norm_cols_values[13], norm_cols_validity[13] = self._get_safe_float_with_validity(row, "garch_30d", 0.0)  # 180 bars = 30 days
-        norm_cols_values[14], norm_cols_validity[14] = self._get_safe_float_with_validity(row, "taker_buy_ratio", 0.0)
-        norm_cols_values[15], norm_cols_validity[15] = self._get_safe_float_with_validity(row, "taker_buy_ratio_sma_24h", 0.0)  # 6 bars
+        norm_cols_values[8], norm_cols_validity[8] = self._get_safe_float_with_validity(
+            row, "ret_4h", 0.0
+        )  # 1 bar
+        norm_cols_values[9], norm_cols_validity[9] = self._get_safe_float_with_validity(
+            row, "sma_12000", 0.0
+        )  # 50 bars = 12000 минут = 200h
+        norm_cols_values[10], norm_cols_validity[10] = self._get_safe_float_with_validity(
+            row, "yang_zhang_30d", 0.0
+        )  # 43200 минут = 30 дней
+        norm_cols_values[11], norm_cols_validity[11] = self._get_safe_float_with_validity(
+            row, "parkinson_48h", 0.0
+        )  # 12 bars = 48h
+        norm_cols_values[12], norm_cols_validity[12] = self._get_safe_float_with_validity(
+            row, "parkinson_7d", 0.0
+        )  # 10080 минут = 7 дней
+        norm_cols_values[13], norm_cols_validity[13] = self._get_safe_float_with_validity(
+            row, "garch_30d", 0.0
+        )  # 180 bars = 30 days
+        norm_cols_values[14], norm_cols_validity[14] = self._get_safe_float_with_validity(
+            row, "taker_buy_ratio", 0.0
+        )
+        norm_cols_values[15], norm_cols_validity[15] = self._get_safe_float_with_validity(
+            row, "taker_buy_ratio_sma_24h", 0.0
+        )  # 6 bars
 
         # Additional 5 features for complete taker_buy_ratio coverage
-        norm_cols_values[16], norm_cols_validity[16] = self._get_safe_float_with_validity(row, "taker_buy_ratio_sma_8h", 0.0)  # 2 bars
-        norm_cols_values[17], norm_cols_validity[17] = self._get_safe_float_with_validity(row, "taker_buy_ratio_sma_16h", 0.0)  # 4 bars
-        norm_cols_values[18], norm_cols_validity[18] = self._get_safe_float_with_validity(row, "taker_buy_ratio_momentum_4h", 0.0)  # 1 bar
-        norm_cols_values[19], norm_cols_validity[19] = self._get_safe_float_with_validity(row, "taker_buy_ratio_momentum_8h", 0.0)  # 2 bars
-        norm_cols_values[20], norm_cols_validity[20] = self._get_safe_float_with_validity(row, "taker_buy_ratio_momentum_12h", 0.0)  # 3 bars
+        norm_cols_values[16], norm_cols_validity[16] = self._get_safe_float_with_validity(
+            row, "taker_buy_ratio_sma_8h", 0.0
+        )  # 2 bars
+        norm_cols_values[17], norm_cols_validity[17] = self._get_safe_float_with_validity(
+            row, "taker_buy_ratio_sma_16h", 0.0
+        )  # 4 bars
+        norm_cols_values[18], norm_cols_validity[18] = self._get_safe_float_with_validity(
+            row, "taker_buy_ratio_momentum_4h", 0.0
+        )  # 1 bar
+        norm_cols_values[19], norm_cols_validity[19] = self._get_safe_float_with_validity(
+            row, "taker_buy_ratio_momentum_8h", 0.0
+        )  # 2 bars
+        norm_cols_values[20], norm_cols_validity[20] = self._get_safe_float_with_validity(
+            row, "taker_buy_ratio_momentum_12h", 0.0
+        )  # 3 bars
 
         # =======================================================================
         # INDICES 21-27: STOCK-SPECIFIC FEATURES (Phase 5 - 2025-11-27)
@@ -1526,7 +1675,9 @@ class Mediator:
 
         # [29] 10-Year Treasury Yield (normalized)
         # Typical range 2-5%, normalize to [-1, 1] range
-        treasury_raw, treasury_valid = self._get_safe_float_with_validity(row, "treasury_10y_yield", 3.0)
+        treasury_raw, treasury_valid = self._get_safe_float_with_validity(
+            row, "treasury_10y_yield", 3.0
+        )
         if treasury_valid:
             # Normalize: (yield - 3.5) / 2.0, then tanh
             norm_cols_values[29] = float(np.tanh((treasury_raw - 3.5) / 2.0))
@@ -1537,7 +1688,9 @@ class Mediator:
         # [30] Real Yield Proxy
         # Approximate real yield = nominal yield - inflation proxy
         # Use VIX as inflation/uncertainty proxy (crude but useful)
-        real_yield_raw, real_yield_valid = self._get_safe_float_with_validity(row, "real_yield_proxy", 0.0)
+        real_yield_raw, real_yield_valid = self._get_safe_float_with_validity(
+            row, "real_yield_proxy", 0.0
+        )
         if real_yield_valid:
             norm_cols_values[30] = float(np.tanh(real_yield_raw / 2.0))
         else:
@@ -1682,10 +1835,18 @@ class Mediator:
         cash = self._coerce_finite(getattr(state, "cash", 0.0), default=0.0)
 
         # Get microstructure metrics from state if available
-        last_vol_imbalance = self._coerce_finite(getattr(state, "last_vol_imbalance", 0.0), default=0.0)
-        last_trade_intensity = self._coerce_finite(getattr(state, "last_trade_intensity", 0.0), default=0.0)
-        last_realized_spread = self._coerce_finite(getattr(state, "last_realized_spread", 0.0), default=0.0)
-        last_agent_fill_ratio = self._coerce_finite(getattr(state, "last_agent_fill_ratio", 0.0), default=0.0)
+        last_vol_imbalance = self._coerce_finite(
+            getattr(state, "last_vol_imbalance", 0.0), default=0.0
+        )
+        last_trade_intensity = self._coerce_finite(
+            getattr(state, "last_trade_intensity", 0.0), default=0.0
+        )
+        last_realized_spread = self._coerce_finite(
+            getattr(state, "last_realized_spread", 0.0), default=0.0
+        )
+        last_agent_fill_ratio = self._coerce_finite(
+            getattr(state, "last_agent_fill_ratio", 0.0), default=0.0
+        )
 
         # Fear & Greed
         # FIX (2025-11-26): Use _get_safe_float_with_validity to properly detect missing data.
@@ -1763,11 +1924,13 @@ class Mediator:
             # Control artifacts: docs/reports/TECH_DEBT_REGISTRY.md#mediator-legacy-fallback
             # Metrics: obs_builder_fallback_count, obs_builder_error_type
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(
                 "obs_builder failed: %s, falling back to legacy. "
                 "METRIC: obs_builder_fallback_count=1, error_type=%s",
-                e, type(e).__name__
+                e,
+                type(e).__name__,
             )
             # Track fallback frequency for monitoring
             self._legacy_fallback_count = getattr(self, "_legacy_fallback_count", 0) + 1
@@ -1776,13 +1939,15 @@ class Mediator:
                 logger.warning(
                     "Legacy fallback summary: total_count=%d. "
                     "High fallback rates may indicate observation distribution mismatch.",
-                    self._legacy_fallback_count
+                    self._legacy_fallback_count,
                 )
             return self._build_observation_legacy(row=row, state=state, mark_price=mark_price)
 
         return obs
 
-    def _build_observation_legacy(self, *, row: Any | None, state: Any, mark_price: float) -> np.ndarray:
+    def _build_observation_legacy(
+        self, *, row: Any | None, state: Any, mark_price: float
+    ) -> np.ndarray:
         """Legacy observation builder (fallback when obs_builder is not available)."""
         obs_shape = getattr(getattr(self.env, "observation_space", None), "shape", None)
         if not obs_shape:
@@ -1806,7 +1971,9 @@ class Mediator:
             ]
             pos = 0
             tail_slots = 4
-            tail_reserve = tail_slots if obs.shape[0] >= tail_slots else min(obs.shape[0], tail_slots)
+            tail_reserve = (
+                tail_slots if obs.shape[0] >= tail_slots else min(obs.shape[0], tail_slots)
+            )
             for name in col_order:
                 if pos >= max(0, obs.shape[0] - tail_reserve):
                     break
@@ -1880,9 +2047,18 @@ class Mediator:
                     prev_price_candidate = float(resolve_reward_price(prev_idx, prev_row))
                 except Exception:
                     prev_price_candidate = None
-                if prev_price_candidate is not None and math.isfinite(prev_price_candidate) and prev_price_candidate > 0.0:
+                if (
+                    prev_price_candidate is not None
+                    and math.isfinite(prev_price_candidate)
+                    and prev_price_candidate > 0.0
+                ):
                     prev_price = float(prev_price_candidate)
-            if curr_price is not None and math.isfinite(curr_price) and curr_price > 0.0 and prev_price > 0.0:
+            if (
+                curr_price is not None
+                and math.isfinite(curr_price)
+                and curr_price > 0.0
+                and prev_price > 0.0
+            ):
                 log_ret_prev = math.log(curr_price / prev_price)
                 mark_value = float(curr_price)
                 if obs.size:

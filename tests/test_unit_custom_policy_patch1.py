@@ -13,6 +13,7 @@ Created: 2025-12-02
 
 import pytest
 import numpy as np
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from gymnasium import spaces
@@ -24,6 +25,7 @@ import math
 # ============================================================================
 # Test Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def device():
@@ -77,6 +79,7 @@ def sample_latent(batch_size, hidden_dim, device):
 # QuantileValueHead Tests
 # ============================================================================
 
+
 class TestQuantileValueHeadInit:
     """Tests for QuantileValueHead initialization."""
 
@@ -98,10 +101,7 @@ class TestQuantileValueHeadInit:
         from custom_policy_patch1 import QuantileValueHead
 
         head = QuantileValueHead(
-            input_dim=64,
-            num_quantiles=21,
-            huber_kappa=1.0,
-            enforce_monotonicity=True
+            input_dim=64, num_quantiles=21, huber_kappa=1.0, enforce_monotonicity=True
         )
 
         assert head.enforce_monotonicity is True
@@ -127,10 +127,10 @@ class TestQuantileValueHeadInit:
             QuantileValueHead(input_dim=64, num_quantiles=21, huber_kappa=-1.0)
 
         with pytest.raises(ValueError, match="positive finite"):
-            QuantileValueHead(input_dim=64, num_quantiles=21, huber_kappa=float('inf'))
+            QuantileValueHead(input_dim=64, num_quantiles=21, huber_kappa=float("inf"))
 
         with pytest.raises(ValueError, match="positive finite"):
-            QuantileValueHead(input_dim=64, num_quantiles=21, huber_kappa=float('nan'))
+            QuantileValueHead(input_dim=64, num_quantiles=21, huber_kappa=float("nan"))
 
     def test_taus_buffer_correct_formula(self):
         """Test that taus are computed using midpoint formula."""
@@ -175,7 +175,7 @@ class TestQuantileValueHeadForward:
             input_dim=hidden_dim,
             num_quantiles=num_quantiles,
             huber_kappa=1.0,
-            enforce_monotonicity=False
+            enforce_monotonicity=False,
         )
 
         # Forward pass
@@ -192,7 +192,7 @@ class TestQuantileValueHeadForward:
             input_dim=hidden_dim,
             num_quantiles=num_quantiles,
             huber_kappa=1.0,
-            enforce_monotonicity=True
+            enforce_monotonicity=True,
         )
 
         # Create input that would produce unsorted output
@@ -212,7 +212,7 @@ class TestQuantileValueHeadForward:
             input_dim=hidden_dim,
             num_quantiles=num_quantiles,
             huber_kappa=1.0,
-            enforce_monotonicity=True
+            enforce_monotonicity=True,
         )
 
         sample_latent.requires_grad_(True)
@@ -228,6 +228,7 @@ class TestQuantileValueHeadForward:
 # CustomMlpExtractor Tests
 # ============================================================================
 
+
 class TestCustomMlpExtractorInit:
     """Tests for CustomMlpExtractor initialization."""
 
@@ -237,9 +238,7 @@ class TestCustomMlpExtractorInit:
 
         rnn_latent_dim = 128
         extractor = CustomMlpExtractor(
-            rnn_latent_dim=rnn_latent_dim,
-            hidden_dim=hidden_dim,
-            activation=nn.ReLU
+            rnn_latent_dim=rnn_latent_dim, hidden_dim=hidden_dim, activation=nn.ReLU
         )
 
         assert extractor.latent_dim_pi == hidden_dim
@@ -258,9 +257,7 @@ class TestCustomMlpExtractorInit:
 
         for activation in activations:
             extractor = CustomMlpExtractor(
-                rnn_latent_dim=128,
-                hidden_dim=hidden_dim,
-                activation=activation
+                rnn_latent_dim=128, hidden_dim=hidden_dim, activation=activation
             )
             assert isinstance(extractor.input_activation, activation)
             assert isinstance(extractor.hidden_activation, activation)
@@ -270,9 +267,7 @@ class TestCustomMlpExtractorInit:
         from custom_policy_patch1 import CustomMlpExtractor
 
         extractor = CustomMlpExtractor(
-            rnn_latent_dim=128,
-            hidden_dim=hidden_dim,
-            activation=nn.ReLU
+            rnn_latent_dim=128, hidden_dim=hidden_dim, activation=nn.ReLU
         )
 
         assert extractor.skip_linear.bias is None
@@ -287,9 +282,7 @@ class TestCustomMlpExtractorForward:
 
         rnn_latent_dim = 128
         extractor = CustomMlpExtractor(
-            rnn_latent_dim=rnn_latent_dim,
-            hidden_dim=hidden_dim,
-            activation=nn.ReLU
+            rnn_latent_dim=rnn_latent_dim, hidden_dim=hidden_dim, activation=nn.ReLU
         )
 
         features = torch.randn(batch_size, rnn_latent_dim)
@@ -303,9 +296,7 @@ class TestCustomMlpExtractorForward:
 
         rnn_latent_dim = 128
         extractor = CustomMlpExtractor(
-            rnn_latent_dim=rnn_latent_dim,
-            hidden_dim=hidden_dim,
-            activation=nn.ReLU
+            rnn_latent_dim=rnn_latent_dim, hidden_dim=hidden_dim, activation=nn.ReLU
         )
 
         features = torch.randn(batch_size, rnn_latent_dim)
@@ -321,9 +312,7 @@ class TestCustomMlpExtractorForward:
 
         rnn_latent_dim = 128
         extractor = CustomMlpExtractor(
-            rnn_latent_dim=rnn_latent_dim,
-            hidden_dim=hidden_dim,
-            activation=nn.ReLU
+            rnn_latent_dim=rnn_latent_dim, hidden_dim=hidden_dim, activation=nn.ReLU
         )
 
         features = torch.randn(batch_size, rnn_latent_dim)
@@ -339,9 +328,7 @@ class TestCustomMlpExtractorForward:
 
         rnn_latent_dim = hidden_dim  # Same dim to see residual effect
         extractor = CustomMlpExtractor(
-            rnn_latent_dim=rnn_latent_dim,
-            hidden_dim=hidden_dim,
-            activation=nn.ReLU
+            rnn_latent_dim=rnn_latent_dim, hidden_dim=hidden_dim, activation=nn.ReLU
         )
 
         features = torch.randn(batch_size, rnn_latent_dim)
@@ -363,6 +350,7 @@ class TestCustomMlpExtractorForward:
 # ============================================================================
 # _CategoricalAdapter Tests
 # ============================================================================
+
 
 class TestCategoricalAdapter:
     """Tests for _CategoricalAdapter class."""
@@ -432,12 +420,14 @@ class TestCategoricalAdapter:
         from custom_policy_patch1 import _CategoricalAdapter
 
         # Create logits where max is clear
-        logits = torch.tensor([
-            [1.0, 0.0, 0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0, 0.0],
-        ])
+        logits = torch.tensor(
+            [
+                [1.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0, 0.0],
+            ]
+        )
         adapter = _CategoricalAdapter(logits)
 
         actions = adapter.get_actions(deterministic=True)
@@ -473,6 +463,7 @@ class TestCategoricalAdapter:
 # ============================================================================
 # CustomActorCriticPolicy - Coercion Helper Tests
 # ============================================================================
+
 
 class TestCoerceArchFloat:
     """Tests for _coerce_arch_float helper."""
@@ -611,6 +602,7 @@ def _coerce_arch_bool_helper(value, fallback, key):
 # ============================================================================
 # CustomActorCriticPolicy - Initialization Tests
 # ============================================================================
+
 
 class TestCustomActorCriticPolicyInit:
     """Tests for CustomActorCriticPolicy initialization."""
@@ -831,6 +823,7 @@ class TestCustomActorCriticPolicyInit:
 # CustomActorCriticPolicy - Activation Tests
 # ============================================================================
 
+
 class TestApplyActionActivation:
     """Tests for _apply_action_activation method."""
 
@@ -921,6 +914,7 @@ class TestScoreToRaw:
 # CustomActorCriticPolicy - Value Head Tests
 # ============================================================================
 
+
 class TestValueHeadMethods:
     """Tests for value head related methods."""
 
@@ -1008,6 +1002,7 @@ class TestValueHeadMethods:
 # ============================================================================
 # CustomActorCriticPolicy - Twin Critics Tests
 # ============================================================================
+
 
 class TestTwinCritics:
     """Tests for Twin Critics functionality."""
@@ -1122,16 +1117,14 @@ class TestTwinCritics:
         assert min_quantiles.shape == (batch_size, policy_twin.num_quantiles)
 
         # Should be element-wise minimum
-        expected = torch.min(
-            policy_twin._last_value_quantiles,
-            policy_twin._last_value_quantiles_2
-        )
+        expected = torch.min(policy_twin._last_value_quantiles, policy_twin._last_value_quantiles_2)
         assert torch.equal(min_quantiles, expected)
 
 
 # ============================================================================
 # CustomActorCriticPolicy - Forward Methods Tests
 # ============================================================================
+
 
 class TestForwardMethods:
     """Tests for forward pass methods."""
@@ -1185,9 +1178,7 @@ class TestForwardMethods:
         obs = torch.randn(batch_size, policy.observation_space.shape[0])
         episode_starts = torch.zeros(batch_size)
 
-        actions, _, _, _ = policy.forward(
-            obs, lstm_states=None, episode_starts=episode_starts
-        )
+        actions, _, _, _ = policy.forward(obs, lstm_states=None, episode_starts=episode_starts)
 
         low = policy.action_space.low[0]
         high = policy.action_space.high[0]
@@ -1275,9 +1266,7 @@ class TestPredictValues:
         obs = torch.randn(batch_size, policy.observation_space.shape[0])
         episode_starts = torch.zeros(batch_size)
 
-        values = policy.predict_values(
-            obs, policy.recurrent_initial_state, episode_starts
-        )
+        values = policy.predict_values(obs, policy.recurrent_initial_state, episode_starts)
 
         assert values.shape == (batch_size, 1)
 
@@ -1285,6 +1274,7 @@ class TestPredictValues:
 # ============================================================================
 # CustomActorCriticPolicy - Gradient Modulation Tests
 # ============================================================================
+
 
 class TestGradientModulation:
     """Tests for critic gradient modulation."""
@@ -1351,6 +1341,7 @@ class TestGradientModulation:
 # CustomActorCriticPolicy - State Handling Tests
 # ============================================================================
 
+
 class TestStateHandling:
     """Tests for RNN state handling."""
 
@@ -1404,6 +1395,7 @@ class TestStateHandling:
 # CustomActorCriticPolicy - Properties Tests
 # ============================================================================
 
+
 class TestProperties:
     """Tests for policy properties."""
 
@@ -1422,7 +1414,7 @@ class TestProperties:
                     "categorical": False,
                     "num_quantiles": 21,
                 }
-            }
+            },
         )
 
     def test_squash_output_property(self, policy):
@@ -1473,6 +1465,7 @@ class TestProperties:
 # CustomActorCriticPolicy - Update Atoms Tests
 # ============================================================================
 
+
 class TestUpdateAtoms:
     """Tests for update_atoms method."""
 
@@ -1489,7 +1482,7 @@ class TestUpdateAtoms:
                 "num_atoms": 51,
                 "v_min": -10.0,
                 "v_max": 10.0,
-            }
+            },
         )
 
     @pytest.fixture
@@ -1507,7 +1500,7 @@ class TestUpdateAtoms:
                     "categorical": False,
                     "num_quantiles": 21,
                 }
-            }
+            },
         )
 
     def test_update_atoms_categorical(self, policy_categorical):
@@ -1540,6 +1533,7 @@ class TestUpdateAtoms:
 # ============================================================================
 # CustomActorCriticPolicy - Entropy Tests
 # ============================================================================
+
 
 class TestWeightedEntropy:
     """Tests for weighted_entropy method."""
@@ -1594,6 +1588,7 @@ class TestWeightedEntropy:
 # CustomActorCriticPolicy - Load State Dict Tests
 # ============================================================================
 
+
 class TestLoadStateDict:
     """Tests for load_state_dict method."""
 
@@ -1634,6 +1629,7 @@ class TestLoadStateDict:
 # ============================================================================
 # Jacobian Tests
 # ============================================================================
+
 
 class TestJacobianMethods:
     """Tests for Jacobian computation methods."""
@@ -1694,6 +1690,7 @@ class TestJacobianMethods:
 # ============================================================================
 # Edge Cases and Error Handling Tests
 # ============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
@@ -1760,6 +1757,7 @@ class TestEdgeCases:
 # Integration Tests
 # ============================================================================
 
+
 class TestIntegration:
     """Integration tests for full policy workflow."""
 
@@ -1780,7 +1778,7 @@ class TestIntegration:
                     "use_twin_critics": True,
                     "enforce_monotonicity": True,
                 }
-            }
+            },
         )
 
     def test_full_forward_backward(self, policy_twin_quantile, batch_size):

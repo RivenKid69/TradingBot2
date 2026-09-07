@@ -1,5 +1,88 @@
 # Changelog
 
+## [1.0.0] - 2026-09-06
+
+First public release, under Apache-2.0.
+
+The pre-1.0 numbering in this file (up to 6.1.1) and in `pyproject.toml` (2.6.0) tracked
+two different internal schemes and never agreed with each other. 1.0.0 restarts from the
+first version that is actually published; the entries below it are kept as the internal
+history they were.
+
+### Licence
+
+- `LICENSE` is now the verbatim Apache License 2.0. It was a "PROPRIETARY AND
+  CONFIDENTIAL / All rights reserved" notice, which GitHub reported as NOASSERTION.
+- Added `NOTICE` listing the vendored third-party components (Monaco Editor, Chart.js,
+  Tailwind CSS, Font Awesome Free, Inter, JetBrains Mono) and their licences.
+- Added `SECURITY.md` and `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1); rewrote
+  `CONTRIBUTING.md` around the process that actually exists.
+- Removed `LICENSING.md` and `tools/repo_split/`: the open-core split they described is
+  not being pursued.
+
+### Fixed
+
+- **Windows/MSVC native build.** `info_builder`, `environment` and `risk_manager` declare
+  `# distutils: language = c++` but were compiled with C flags lacking `/std:c++17`, so
+  MSVC fell back to C++14 and `std::optional` in `AgentOrderTracker.h` did not exist.
+  Linux was unaffected because GCC defaults to `gnu++17`. All 17 extensions build.
+- **The dependency locks could not be installed.** `shimmy==2.0.0` requires
+  `gymnasium>=1.0` against a pinned `gymnasium==0.29.1`; `statsmodels` was pinned nowhere
+  and 0.15.0 breaks `arch==7.1.0`; the dev lock pinned `fastapi` without `pydantic`,
+  leaving `pydantic` and `pydantic_core` mismatched; and `cryptography` disagreed between
+  the CPU and dev locks. This was the root cause of every red CI run: `pip install`
+  failed and the tests then reported missing modules.
+- **CI.** `pip-audit` was called with `--disable-pip` on non-hashed requirements, which it
+  rejects. The `safety` step exited 64 because the tool now requires an account; dropped,
+  since `pip-audit` covers the same files. Deprecated action versions bumped.
+- **Test isolation.** Three test modules replaced `sys.modules["lob_state_cython"]` with a
+  stub at import time and never restored it, so everything collected afterwards saw the
+  stub instead of the compiled extension.
+- Registered the `documentation` pytest marker, which `--strict-markers` rejected,
+  aborting collection of the whole suite.
+- Added `.gitattributes` with `eol=lf`. The mixed CRLF tree made
+  `ccea.guardrails.design_doc_check` fail on Windows, a failure previously written off as
+  an environment artefact.
+- Six latent `NameError` sites fixed: a missing `logging` import used seven times in
+  `scripts/fetch_binance_filters.py`, `split_time_range` in
+  `scripts/extract_liquidity_seasonality.py`, `load_config` in `service_signal_runner.py`,
+  a non-existent `SecurityWarning` in `infer_signals.py`, and an undefined `logger` in
+  `app.py`. Two further ones in `execution_sim.py` and `train_model_multi_patch.py` are
+  annotated in place rather than guessed at — see `docs/AUDIT_2026-09.md`.
+- An always-true tuple assertion in `tests/test_web3_custody.py`, a loop variable
+  shadowing an import in `services/backtest/disclaimer_injection.py`, and a leftover
+  `=======` merge-conflict marker in `ARCHITECTURE.md`.
+
+### Removed
+
+- 175 `scratch_*` step dumps from the repository root, `archive/` (481 files),
+  `essential_docs_collection/` (31 duplicated documents), `reports/`, `audits/`,
+  `issues/`, `coverage.json`, three diff patches, and reports that lived under `tests/`.
+- `experiments/`, `model_registry/`, `models/*.json` and four `state/*.json` files — run
+  output written by the pipeline itself, now gitignored. They also embedded absolute
+  paths from the machine that produced them.
+- 12 root modules nothing imported, and `tests/test_bug3_fix.py`, which skipped at module
+  level and whose remaining code was unreachable.
+- `data/raw_stocks/` and everything derived from it — roughly 17 MB of Yahoo Finance data
+  whose terms do not allow redistribution. `scripts/download_stock_data.py` fetches it
+  again; `prepare_demo_data.py` generates synthetic bars so the pipeline runs without it.
+
+### Changed
+
+- Rewrote `README.md` around what the code does and which test proves it.
+- Reorganised the documentation: reference material to `docs/reference/`, closed reports
+  to `docs/history/`, go-to-market material to `docs/history/business/`. Regenerated
+  `DOCS_INDEX.md`.
+- Repaired every broken relative link — 1 129 of 1 963 were dead. Added
+  `tools/check_markdown_links.py` and a CI job so they stay that way.
+- Formatted the tree with `black`, and narrowed the ruff configuration to the rules the
+  codebase actually satisfies. `ruff check .` and `black --check .` both pass.
+- Removed tool attribution from 41 file headers, the leaked local paths in
+  `PRO_MODE_DESIGN_DOCUMENT.md`, and the assistant branding on the Developer Suite
+  terminal panel, which is now "Interactive CLI & Job Router".
+
+---
+
 ## [6.1.1] - 2025-12-21
 
 ### Due Diligence Documentation Corrections
@@ -289,7 +372,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests added: `tests/test_lstm_episode_boundary_reset.py` (8 comprehensive tests)
   - Impact: **CRITICAL** - Expected 5-15% improvement in value loss and policy performance
   - Models trained before 2025-11-21: **STRONGLY RECOMMENDED** to retrain for best performance
-  - Reference: [CRITICAL_LSTM_RESET_FIX_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_LSTM_RESET_FIX_REPORT.md)
+  - Reference: CRITICAL_LSTM_RESET_FIX_REPORT.md
   - Academic reference: Hausknecht & Stone (2015) "Deep Recurrent Q-Learning for POMDPs"
 
 - **IMPROVEMENT #2: External Features NaN → 0.0 Silent Conversion** (2025-11-21)
@@ -301,7 +384,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests added: `tests/test_nan_handling_external_features.py` (10 tests, 9 passing, 1 skipped)
   - Impact: MEDIUM - Semantic ambiguity remains (missing data = 0.0), but now debuggable
   - Future work: Add validity flags for external features (v2.2+)
-  - Reference: [NUMERICAL_ISSUES_FIX_SUMMARY.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/NUMERICAL_ISSUES_FIX_SUMMARY.md)
+  - Reference: NUMERICAL_ISSUES_FIX_SUMMARY.md
 
 - **CRITICAL BUG #1: Sign Convention Mismatch in LongOnlyWrapper** (2025-11-21)
   - Fixed sign convention where negative actions (reduction signals) were clipped to zero
@@ -310,7 +393,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Files modified: `wrappers/action_space.py`
   - Tests: Covered in `tests/test_critical_action_space_fixes.py` (21 tests, all passing)
   - Impact: HIGH - Policy can now properly reduce positions
-  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_COMPLETE_REPORT.md#problem-1)
+  - Reference: CRITICAL_FIXES_COMPLETE_REPORT.md
 
 - **CRITICAL BUG #2: Position Semantics DELTA→TARGET** (2025-11-21)
   - Fixed critical position doubling bug where DELTA semantics caused 2x leverage violation
@@ -320,7 +403,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests: Covered in `tests/test_critical_action_space_fixes.py`
   - Impact: **CRITICAL** - Prevents position doubling in production (2x leverage violation)
   - Models with old DELTA semantics: **MUST** retrain
-  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_COMPLETE_REPORT.md#problem-2)
+  - Reference: CRITICAL_FIXES_COMPLETE_REPORT.md
 
 - **CRITICAL BUG #3: Action Space Range [0,1] vs [-1,1]** (2025-11-21)
   - Fixed action space mismatch where different components used different bounds
@@ -329,20 +412,20 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Files modified: Various action space components
   - Tests: Covered in `tests/test_critical_action_space_fixes.py`
   - Impact: HIGH - Prevents action clipping errors and improves training stability
-  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_COMPLETE_REPORT.md#problem-3)
+  - Reference: CRITICAL_FIXES_COMPLETE_REPORT.md
 
 ### Documentation
 
 - **Documentation Modernization** (2025-11-21)
   - Modernized all core documentation to Version 2.1
-  - Updated [claude.md](claude.md) - Main project documentation (v2.0 → v2.1)
+  - Updated [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) - Main project documentation (v2.0 → v2.1)
   - Completely rewrote [README.md](README.md) - Comprehensive project overview
   - Updated [DOCS_INDEX.md](DOCS_INDEX.md) - Navigation hub with critical fixes
   - Enhanced [distributional_ppo.py](distributional_ppo.py) - Expanded class docstring (1 line → 58 lines)
-  - Created [DOCUMENTATION_STATUS.md](archive/2025_11/reports_2025_11/integration/DOCUMENTATION_STATUS.md) - Centralized status tracking (historical)
-  - Created [DOCUMENTATION_MODERNIZATION_REPORT.md](archive/2025_11/reports_2025_11/integration/DOCUMENTATION_MODERNIZATION_REPORT.md) - Full modernization report (historical)
+  - Created DOCUMENTATION_STATUS.md - Centralized status tracking (historical)
+  - Created DOCUMENTATION_MODERNIZATION_REPORT.md - Full modernization report (historical)
   - Impact: +15% average improvement in audience coverage
-  - Reference: [DOCUMENTATION_MODERNIZATION_REPORT.md](archive/2025_11/reports_2025_11/integration/DOCUMENTATION_MODERNIZATION_REPORT.md)
+  - Reference: DOCUMENTATION_MODERNIZATION_REPORT.md
 
 ### Test Coverage
 
@@ -359,7 +442,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 ### Regression Prevention
 
 - **Added Comprehensive Checklist** (2025-11-21)
-  - Created [REGRESSION_PREVENTION_CHECKLIST.md](archive/2025_11/reports_2025_11/verification/REGRESSION_PREVENTION_CHECKLIST.md)
+  - Created REGRESSION_PREVENTION_CHECKLIST.md
   - Mandatory checklist for developers before modifying critical components
   - Covers: LSTM state management, action space semantics, data integrity
   - Enforces: Running tests, reading fix reports, understanding semantics
@@ -367,6 +450,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 ## [Unreleased]
 
 ### Added
+
 - **Seasonality Support**: Introduced hour-of-week seasonality multipliers to improve simulation fidelity.
   - **Required actions**:
     - Regenerate multipliers with the quick-start script.
@@ -392,12 +476,14 @@ from services.core.risk_controls import EnhancedKillSwitch
   ensuring partial/deferred execution when caps bind.
 
 ### Deprecated
+
 - `LatencyImpl.dump_latency_multipliers` and
   `LatencyImpl.load_latency_multipliers` have been replaced by
   `dump_multipliers` and `load_multipliers`. The old names continue to work but
   emit `DeprecationWarning`. See the migration guide for details.
 
 ### Fixed
+
 - **CRITICAL BUG #10: Temporal causality violation in stale data** (2025-11-20)
   - Fixed critical issue where stale bars were returned with PREVIOUS timestamp instead
     of CURRENT timestamp, violating temporal causality and corrupting model training
@@ -407,7 +493,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests added: `tests/test_stale_bar_temporal_causality.py` (3 tests)
   - Impact: **CRITICAL** - Models trained with data degradation may have learned incorrect
     temporal patterns. Consider retraining if `stale_prob > 0` was used.
-  - Reference: [CRITICAL_FIXES_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_REPORT.md#problem-1-temporal-causality-violation)
+  - Reference: CRITICAL_FIXES_REPORT.md
 
 - **CRITICAL BUG #11: Cross-symbol contamination in feature normalization** (2025-11-20)
   - Fixed critical issue where `shift()` applied after concatenating all symbols caused
@@ -418,7 +504,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests added: `tests/test_normalization_cross_symbol_contamination.py` (4 tests)
   - Impact: **CRITICAL** - Multi-symbol models may have contaminated features. Consider
     retraining if multiple symbols were used with normalization.
-  - Reference: [CRITICAL_FIXES_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_REPORT.md#problem-2-cross-symbol-contamination)
+  - Reference: CRITICAL_FIXES_REPORT.md
 
 - **CRITICAL BUG #12: Inverted quantile loss formula** (2025-11-20)
   - Fixed critical mathematical error where quantile loss used `Q - T` instead of correct
@@ -430,7 +516,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests updated: `tests/test_quantile_loss_with_flag.py` (8 tests, all passing)
   - Impact: **CRITICAL** - Quantile critic models have suboptimal convergence and biased
     CVaR estimates. **STRONGLY RECOMMENDED** to retrain all quantile-based models.
-  - Reference: [CRITICAL_FIXES_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_REPORT.md#problem-3-inverted-quantile-loss)
+  - Reference: CRITICAL_FIXES_REPORT.md
   - Academic reference: Dabney et al. (2018) "Distributional RL with Quantile Regression"
 
 - **Bug #9: VGS parameter tracking after model load** - Fixed critical issue where VGS

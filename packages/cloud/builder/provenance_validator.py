@@ -24,13 +24,15 @@ from packages.shared.contracts.manifest import ArtifactManifest, Provenance
 
 class ProvenanceValidationLevel(str, Enum):
     """Validation strictness levels."""
-    STRICT = "strict"       # All mandatory fields required
-    STANDARD = "standard"   # Core fields required
-    RELAXED = "relaxed"     # Minimum fields required (dev only)
+
+    STRICT = "strict"  # All mandatory fields required
+    STANDARD = "standard"  # Core fields required
+    RELAXED = "relaxed"  # Minimum fields required (dev only)
 
 
 class ArtifactType(str, Enum):
     """Artifact types with different provenance requirements."""
+
     STRATEGY = "strategy"
     MODEL = "model"
     FEATURE_PIPELINE = "feature_pipeline"
@@ -39,45 +41,56 @@ class ArtifactType(str, Enum):
 
 
 # Core mandatory provenance fields for all artifacts
-CORE_MANDATORY_FIELDS: Final[FrozenSet[str]] = frozenset([
-    "builder_id",
-    "build_timestamp",
-])
+CORE_MANDATORY_FIELDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "builder_id",
+        "build_timestamp",
+    ]
+)
 
 # Standard mandatory fields (for production builds)
-STANDARD_MANDATORY_FIELDS: Final[FrozenSet[str]] = frozenset([
-    "builder_id",
-    "build_timestamp",
-    "deps_lock_digest",
-])
+STANDARD_MANDATORY_FIELDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "builder_id",
+        "build_timestamp",
+        "deps_lock_digest",
+    ]
+)
 
 # Strict mandatory fields (for CI/CD builds)
-STRICT_MANDATORY_FIELDS: Final[FrozenSet[str]] = frozenset([
-    "builder_id",
-    "build_timestamp",
-    "deps_lock_digest",
-    "git_sha",
-])
+STRICT_MANDATORY_FIELDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "builder_id",
+        "build_timestamp",
+        "deps_lock_digest",
+        "git_sha",
+    ]
+)
 
 # Additional mandatory fields for ML model artifacts
-MODEL_MANDATORY_FIELDS: Final[FrozenSet[str]] = frozenset([
-    "training_run_id",
-    "params_hash",
-])
+MODEL_MANDATORY_FIELDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "training_run_id",
+        "params_hash",
+    ]
+)
 
 # Recommended (but not mandatory) fields
-RECOMMENDED_FIELDS: Final[FrozenSet[str]] = frozenset([
-    "git_repo",
-    "git_branch",
-    "git_tag",
-    "ci_job_id",
-    "ci_pipeline_url",
-])
+RECOMMENDED_FIELDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "git_repo",
+        "git_branch",
+        "git_tag",
+        "ci_job_id",
+        "ci_pipeline_url",
+    ]
+)
 
 
 @dataclass
 class ProvenanceValidationResult:
     """Result of provenance validation."""
+
     valid: bool = False
     missing_mandatory: List[str] = field(default_factory=list)
     missing_recommended: List[str] = field(default_factory=list)
@@ -102,6 +115,7 @@ class ProvenanceValidationResult:
 @dataclass
 class SBOMValidationResult:
     """Result of SBOM validation."""
+
     valid: bool = False
     sbom_present: bool = False
     sbom_format: Optional[str] = None
@@ -224,7 +238,7 @@ class ProvenanceValidator:
         if provenance.build_timestamp:
             try:
                 if isinstance(provenance.build_timestamp, str):
-                    datetime.fromisoformat(provenance.build_timestamp.replace('Z', '+00:00'))
+                    datetime.fromisoformat(provenance.build_timestamp.replace("Z", "+00:00"))
             except ValueError as e:
                 result.errors.append(f"Invalid build_timestamp format: {e}")
 
@@ -356,9 +370,7 @@ class SBOMValidator:
             result.sbom_format = "SPDX"
             self._validate_spdx(sbom_data, result)
         else:
-            result.errors.append(
-                "Unknown SBOM format. Supported: CycloneDX, SPDX"
-            )
+            result.errors.append("Unknown SBOM format. Supported: CycloneDX, SPDX")
             return result
 
         result.valid = len(result.errors) == 0

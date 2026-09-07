@@ -20,4 +20,3 @@ def load_schema_json(filename: str) -> Dict[str, Any]:
     """
     text = resources.files(__package__).joinpath(filename).read_text(encoding="utf-8")
     return json.loads(text)
-

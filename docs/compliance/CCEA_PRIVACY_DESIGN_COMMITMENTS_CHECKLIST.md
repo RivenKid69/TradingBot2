@@ -34,6 +34,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 | S-06 | Redaction cannot be disabled | No feature flag | CI test + code review | [ ] |
 
 **Evidence Required:**
+
 - [ ] CI test results showing rejection of secrets
 - [ ] Redaction middleware configuration (shows no disable option)
 - [ ] Schema definition prohibiting secret fields
@@ -52,6 +53,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 | O-08 | Forbidden command types blocked | Schema allowlist | CI + runtime | [ ] |
 
 **Forbidden Command Types:**
+
 - `PLACE_ORDER`
 - `SUBMIT_ORDER`
 - `EXECUTE_SIGNAL`
@@ -59,6 +61,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 - Any command with trading payload
 
 **Evidence Required:**
+
 - [ ] JSON Schema showing prohibited fields
 - [ ] CI test showing rejection of order-like payloads
 - [ ] Allowed command type allowlist
@@ -90,6 +93,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 | Account IDs | **Forbidden** | **Forbidden** | Masked only |
 
 **Evidence Required:**
+
 - [ ] Telemetry schema per level
 - [ ] Default configuration showing AGGREGATED
 - [ ] CI tests for field rejection
@@ -108,10 +112,12 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 | R-06 | Drift check runs hourly | Scheduled job | Cron config | [ ] |
 
 **Approved EU Regions:**
+
 - `eu-central-1` (Frankfurt, Germany)
 - `eu-west-1` (Dublin, Ireland)
 
 **Evidence Required:**
+
 - [ ] Infrastructure configuration
 - [ ] Drift check report (last run)
 - [ ] Sub-processor register with EU evidence
@@ -127,6 +133,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 | D-04 | Export package excludes Agent data | Export generator | QA review | [ ] |
 
 **IN SCOPE for DSAR (Cloud-controlled):**
+
 - User account data
 - Organization membership
 - Workspace membership
@@ -138,6 +145,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 - Support records
 
 **OUT OF SCOPE for DSAR (Agent-controlled):**
+
 - Broker credentials
 - Local execution logs
 - Order/fill data (unless RAW enabled)
@@ -145,6 +153,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 - Position data (unless transmitted)
 
 **Evidence Required:**
+
 - [ ] DSAR SOP with boundary clarification
 - [ ] Export package contents list
 - [ ] Response templates with boundary text
@@ -162,6 +171,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 | C-07 | Data export blocked without consent | Export gate | Integration test | [ ] |
 
 **Consent Record Required Fields:**
+
 - consent_id
 - user_id
 - workspace_id
@@ -173,6 +183,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 - revoked_at (if revoked)
 
 **Evidence Required:**
+
 - [ ] Support consent policy
 - [ ] Consent record schema
 - [ ] Access control implementation
@@ -206,16 +217,19 @@ pytest tests/compliance/test_support_consent.py -v
 ### 3.2 Manual Verification Checklist
 
 **Weekly:**
+
 - [ ] Review drift check reports
 - [ ] Verify no failed consent requests due to missing controls
 - [ ] Review audit log for anomalies
 
 **Monthly:**
+
 - [ ] Review DSAR response samples for boundary compliance
 - [ ] Verify telemetry level configurations
 - [ ] Review support consent metrics
 
 **Quarterly:**
+
 - [ ] Full sub-processor audit
 - [ ] DPA review status check
 - [ ] Security review of schema changes
@@ -268,6 +282,7 @@ Level 4: Executive (external comms)
 ### 5.3 Incident Response
 
 For Critical/High severity:
+
 1. Isolate affected systems
 2. Assess scope and impact
 3. Notify DPO immediately

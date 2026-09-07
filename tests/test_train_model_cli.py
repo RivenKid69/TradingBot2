@@ -4,6 +4,7 @@ import types
 import numpy as np
 import pandas as pd
 import pytest
+
 pytest.importorskip("torch")
 
 
@@ -14,14 +15,13 @@ def _install_sb3_stub():
         sb3_contrib.__path__ = []  # mark as package
         sys.modules["sb3_contrib"] = sb3_contrib
     if not hasattr(sb3_contrib, "RecurrentPPO"):
+
         class _RecurrentPPO:  # pragma: no cover - placeholder
             pass
 
         sb3_contrib.RecurrentPPO = _RecurrentPPO
 
-    common = sys.modules.setdefault(
-        "sb3_contrib.common", types.ModuleType("sb3_contrib.common")
-    )
+    common = sys.modules.setdefault("sb3_contrib.common", types.ModuleType("sb3_contrib.common"))
     common.__path__ = []
     sb3_contrib.common = common  # type: ignore[attr-defined]
 
@@ -52,9 +52,7 @@ def _install_sb3_stub():
     class _DummyBuffer:  # pragma: no cover - simple placeholder
         pass
 
-    buffers.RecurrentRolloutBuffer = getattr(
-        buffers, "RecurrentRolloutBuffer", _DummyBuffer
-    )
+    buffers.RecurrentRolloutBuffer = getattr(buffers, "RecurrentRolloutBuffer", _DummyBuffer)
     recurrent.buffers = buffers  # type: ignore[attr-defined]
 
     type_aliases = sys.modules.setdefault(
@@ -63,7 +61,6 @@ def _install_sb3_stub():
     )
     type_aliases.RNNStates = getattr(type_aliases, "RNNStates", object)
     recurrent.type_aliases = type_aliases  # type: ignore[attr-defined]
-
 
     sb3 = sys.modules.setdefault("stable_baselines3", types.ModuleType("stable_baselines3"))
     sb3.__path__ = []
@@ -224,6 +221,7 @@ def _install_sb3_stub():
 
     monitor_mod.Monitor = _Monitor
     sys.modules["stable_baselines3.common.monitor"] = monitor_mod
+
 
 _install_sb3_stub()
 
@@ -540,9 +538,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
 
     assert constructed_vecnorm, "VecNormalize should have been constructed"
     assert constructed_vecnorm[0].norm_reward is False
-    assert captured_algo_kwargs.get("cvar_limit") == pytest.approx(
-        cfg.risk.cvar.limit
-    )
+    assert captured_algo_kwargs.get("cvar_limit") == pytest.approx(cfg.risk.cvar.limit)
     assert captured_algo_kwargs.get("cvar_winsor_pct") == pytest.approx(0.1)
     assert captured_algo_kwargs.get("gae_lambda") == pytest.approx(0.97)
 
@@ -554,9 +550,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
     assert "optimizer_scheduler_fn" not in captured_policy_kwargs
 
 
-def test_vf_bad_explained_defaults_propagated(
-    monkeypatch: pytest.MonkeyPatch, tmp_path
-):
+def test_vf_bad_explained_defaults_propagated(monkeypatch: pytest.MonkeyPatch, tmp_path):
     cfg = types.SimpleNamespace(
         model=types.SimpleNamespace(
             params={
@@ -635,9 +629,7 @@ def test_vf_bad_explained_defaults_propagated(
             raise RuntimeError("halt before training")
 
     monkeypatch.setattr(train_script, "TradingEnv", _StubTradingEnv)
-    monkeypatch.setattr(
-        train_script, "_wrap_action_space_if_needed", lambda env, **_: env
-    )
+    monkeypatch.setattr(train_script, "_wrap_action_space_if_needed", lambda env, **_: env)
     monkeypatch.setattr(train_script, "WatchdogVecEnv", _StubWatchdogVecEnv)
     monkeypatch.setattr(train_script, "VecMonitor", _StubVecMonitor)
     monkeypatch.setattr(train_script, "DummyVecEnv", _StubDummyVecEnv)

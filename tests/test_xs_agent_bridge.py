@@ -28,11 +28,17 @@ def _engine(submit):
     """Engine with an ISOLATED on-disk journal (default journal persists to ~/.ccea
     and would make idempotency tests non-hermetic across runs)."""
     jpath = Path(tempfile.mkdtemp(prefix="oms_test_")) / "journal.db"
-    return LiveExecutionEngine(broker_submit=submit, broker_name="paper",
-                               order_journal=OrderJournal(db_path=jpath))
+    return LiveExecutionEngine(
+        broker_submit=submit, broker_name="paper", order_journal=OrderJournal(db_path=jpath)
+    )
+
+
 from packages.agent.execution.agent_client import AgentClient
 from packages.agent.execution.fill_handler import (
-    FillHandler, FillEvent, InMemoryFillSource, PollingFillSource,
+    FillHandler,
+    FillEvent,
+    InMemoryFillSource,
+    PollingFillSource,
 )
 from packages.agent.execution.child_executor import ClockDrivenChildExecutor, ChildState
 from service_xs_live import Intent, IntentBatch, CrossSectionalLiveRunner
@@ -41,6 +47,7 @@ from service_xs_live import Intent, IntentBatch, CrossSectionalLiveRunner
 class _Prices:
     def __init__(self, px):
         self._px = px
+
     def get_prices(self):
         return dict(self._px)
 
@@ -48,15 +55,18 @@ class _Prices:
 class _Positions:
     def __init__(self, pos):
         self._pos = pos
+
     def get_positions(self):
         return dict(self._pos)
 
 
 def _recording_broker():
     sent = []
+
     def submit(order):
         sent.append(order)
         return True, f"BRK-{len(sent)}", None
+
     return submit, sent
 
 
@@ -75,12 +85,15 @@ def test_immediate_rebalance_creates_orders_and_liquidates_dropped():
     eng = _engine(submit)
     w = _diversified_weights()
     ac = AgentClient(
-        eng, prices_provider=_prices_for(w),
+        eng,
+        prices_provider=_prices_for(w),
         position_provider=_Positions({"OLD": 5000.0}),  # held but not in target -> liquidate
         min_trade_notional=1.0,
     )
     batch = IntentBatch(
-        ts_ms=1, equity=100_000.0, idempotency_key="b1",
+        ts_ms=1,
+        equity=100_000.0,
+        idempotency_key="b1",
         intents=[Intent(s, float(v), float(v) * 100_000.0) for s, v in w.items()],
     )
     res = ac.send_intents(batch)
@@ -102,18 +115,30 @@ def test_fill_lifecycle_partial_then_full_with_avg_and_leaves():
     w = _diversified_weights()
     src = InMemoryFillSource()
     fh = FillHandler(eng)
-    ac = AgentClient(eng, prices_provider=_prices_for(w),
-                     position_provider=_Positions({}), fill_handler=fh, fill_source=src)
-    batch = IntentBatch(ts_ms=1, equity=100_000.0, idempotency_key="b2",
-                        intents=[Intent("AAA", 0.15, 15_000.0)])
+    ac = AgentClient(
+        eng,
+        prices_provider=_prices_for(w),
+        position_provider=_Positions({}),
+        fill_handler=fh,
+        fill_source=src,
+    )
+    batch = IntentBatch(
+        ts_ms=1, equity=100_000.0, idempotency_key="b2", intents=[Intent("AAA", 0.15, 15_000.0)]
+    )
     ac.send_intents(batch)
     order = eng.get_order_by_client_id(next(iter(eng._orders_by_client_id)))
     coid = order.client_order_id
     assert order.quantity == Decimal("150")
 
     # partial fill 60 @ 100.0
-    src.push(FillEvent(client_order_id=coid, event_type="partial_fill",
-                       filled_qty=Decimal("60"), avg_fill_price=Decimal("100.0")))
+    src.push(
+        FillEvent(
+            client_order_id=coid,
+            event_type="partial_fill",
+            filled_qty=Decimal("60"),
+            avg_fill_price=Decimal("100.0"),
+        )
+    )
     ac.pump()
     o = eng.get_order_by_client_id(coid)
     assert o.status == OrderStatus.PARTIALLY_FILLED
@@ -121,8 +146,14 @@ def test_fill_lifecycle_partial_then_full_with_avg_and_leaves():
     assert fh.leaves(coid) == Decimal("90")
 
     # final fill to 150 @ avg 100.5
-    src.push(FillEvent(client_order_id=coid, event_type="fill",
-                       filled_qty=Decimal("150"), avg_fill_price=Decimal("100.5")))
+    src.push(
+        FillEvent(
+            client_order_id=coid,
+            event_type="fill",
+            filled_qty=Decimal("150"),
+            avg_fill_price=Decimal("100.5"),
+        )
+    )
     ac.pump()
     o = eng.get_order_by_client_id(coid)
     assert o.status == OrderStatus.FILLED
@@ -137,16 +168,38 @@ def test_incremental_fills_accumulate_vwap():
     w = pd.Series({"AAA": 0.10})
     src = InMemoryFillSource()
     fh = FillHandler(eng)
-    ac = AgentClient(eng, prices_provider=_Prices({"AAA": 100.0}),
-                     position_provider=_Positions({}), fill_handler=fh, fill_source=src)
-    ac.send_intents(IntentBatch(ts_ms=1, equity=100_000.0, idempotency_key="b3",
-                                intents=[Intent("AAA", 0.10, 10_000.0)]))  # qty=100
+    ac = AgentClient(
+        eng,
+        prices_provider=_Prices({"AAA": 100.0}),
+        position_provider=_Positions({}),
+        fill_handler=fh,
+        fill_source=src,
+    )
+    ac.send_intents(
+        IntentBatch(
+            ts_ms=1, equity=100_000.0, idempotency_key="b3", intents=[Intent("AAA", 0.10, 10_000.0)]
+        )
+    )  # qty=100
     coid = next(iter(eng._orders_by_client_id))
     # two incremental fills (cumulative=False): 40 @ 100, 60 @ 110 -> vwap 106
-    src.push(FillEvent(client_order_id=coid, event_type="partial_fill",
-                       last_fill_qty=Decimal("40"), last_fill_price=Decimal("100"), cumulative=False))
-    src.push(FillEvent(client_order_id=coid, event_type="fill",
-                       last_fill_qty=Decimal("60"), last_fill_price=Decimal("110"), cumulative=False))
+    src.push(
+        FillEvent(
+            client_order_id=coid,
+            event_type="partial_fill",
+            last_fill_qty=Decimal("40"),
+            last_fill_price=Decimal("100"),
+            cumulative=False,
+        )
+    )
+    src.push(
+        FillEvent(
+            client_order_id=coid,
+            event_type="fill",
+            last_fill_qty=Decimal("60"),
+            last_fill_price=Decimal("110"),
+            cumulative=False,
+        )
+    )
     ac.pump()
     o = eng.get_order_by_client_id(coid)
     assert o.status == OrderStatus.FILLED
@@ -159,8 +212,12 @@ def test_idempotent_resend_dedups():
     eng = _engine(submit)
     w = _diversified_weights()
     ac = AgentClient(eng, prices_provider=_prices_for(w), position_provider=_Positions({}))
-    batch = IntentBatch(ts_ms=1, equity=100_000.0, idempotency_key="same-key",
-                        intents=[Intent(s, float(v), float(v) * 100_000.0) for s, v in w.items()])
+    batch = IntentBatch(
+        ts_ms=1,
+        equity=100_000.0,
+        idempotency_key="same-key",
+        intents=[Intent(s, float(v), float(v) * 100_000.0) for s, v in w.items()],
+    )
     ac.send_intents(batch)
     n = len(sent)
     assert n == 5
@@ -187,15 +244,25 @@ def test_sliced_release_over_clock():
     submit, sent = _recording_broker()
     eng = _engine(submit)
     child_exec = ClockDrivenChildExecutor(
-        eng, prices_provider=_Prices({"AAA": 100.0}),
-        slice_interval_s=10.0, straggler_timeout_s=999.0,
+        eng,
+        prices_provider=_Prices({"AAA": 100.0}),
+        slice_interval_s=10.0,
+        straggler_timeout_s=999.0,
     )
-    ac = AgentClient(eng, prices_provider=_Prices({"AAA": 100.0}),
-                     position_provider=_Positions({}),
-                     child_executor=child_exec, n_slices=4, clock=lambda: 1000.0)
+    ac = AgentClient(
+        eng,
+        prices_provider=_Prices({"AAA": 100.0}),
+        position_provider=_Positions({}),
+        child_executor=child_exec,
+        n_slices=4,
+        clock=lambda: 1000.0,
+    )
     # AAA target 0.10 of 100k = 10k -> qty 100, sliced into 4 of 25 each
-    res = ac.send_intents(IntentBatch(ts_ms=1, equity=100_000.0, idempotency_key="s1",
-                                      intents=[Intent("AAA", 0.10, 10_000.0)]))
+    res = ac.send_intents(
+        IntentBatch(
+            ts_ms=1, equity=100_000.0, idempotency_key="s1", intents=[Intent("AAA", 0.10, 10_000.0)]
+        )
+    )
     assert res.sliced and len(res.parents) == 1
     parent = child_exec.get_parent(res.parents[0])
     assert len(parent.children) == 4
@@ -217,28 +284,42 @@ def test_sliced_release_over_clock():
 def test_cancel_replace_straggler_rolls_leaves():
     submit, sent = _recording_broker()
     cancels = []
+
     def broker_cancel(coid, broker_id):
         cancels.append(coid)
         return True
+
     eng = _engine(submit)
     child_exec = ClockDrivenChildExecutor(
-        eng, prices_provider=_Prices({"AAA": 100.0}), broker_cancel=broker_cancel,
-        slice_interval_s=10.0, straggler_timeout_s=30.0, max_replaces=2,
+        eng,
+        prices_provider=_Prices({"AAA": 100.0}),
+        broker_cancel=broker_cancel,
+        slice_interval_s=10.0,
+        straggler_timeout_s=30.0,
+        max_replaces=2,
     )
-    ac = AgentClient(eng, prices_provider=_Prices({"AAA": 100.0}),
-                     position_provider=_Positions({}),
-                     child_executor=child_exec, n_slices=2, clock=lambda: 0.0)
-    res = ac.send_intents(IntentBatch(ts_ms=1, equity=100_000.0, idempotency_key="s2",
-                                      intents=[Intent("AAA", 0.10, 10_000.0)]))  # qty 100 -> 2x50
+    ac = AgentClient(
+        eng,
+        prices_provider=_Prices({"AAA": 100.0}),
+        position_provider=_Positions({}),
+        child_executor=child_exec,
+        n_slices=2,
+        clock=lambda: 0.0,
+    )
+    res = ac.send_intents(
+        IntentBatch(
+            ts_ms=1, equity=100_000.0, idempotency_key="s2", intents=[Intent("AAA", 0.10, 10_000.0)]
+        )
+    )  # qty 100 -> 2x50
     parent = child_exec.get_parent(res.parents[0])
 
-    ac.pump(now_ts=0.0)     # release child 0 (50)
+    ac.pump(now_ts=0.0)  # release child 0 (50)
     assert len(sent) == 1
     c0 = parent.children[0]
     assert c0.status == ChildState.WORKING
 
     # child 0 never fills; advance past straggler_timeout -> cancel-replace
-    ac.pump(now_ts=40.0)    # also releases child 1 (release_at=10)
+    ac.pump(now_ts=40.0)  # also releases child 1 (release_at=10)
     assert c0.client_order_id in cancels
     assert c0.status == ChildState.REPLACED
     # a replacement child with the 50 leaves exists and gets released
@@ -254,8 +335,11 @@ def test_polling_fill_source_diffs_broker_state():
     submit, _ = _recording_broker()
     eng = _engine(submit)
     ac = AgentClient(eng, prices_provider=_Prices({"AAA": 100.0}), position_provider=_Positions({}))
-    ac.send_intents(IntentBatch(ts_ms=1, equity=100_000.0, idempotency_key="p1",
-                                intents=[Intent("AAA", 0.10, 10_000.0)]))
+    ac.send_intents(
+        IntentBatch(
+            ts_ms=1, equity=100_000.0, idempotency_key="p1", intents=[Intent("AAA", 0.10, 10_000.0)]
+        )
+    )
     coid = next(iter(eng._orders_by_client_id))
 
     broker_state = {"status": "accepted", "filled_qty": "0"}
@@ -273,4 +357,5 @@ def test_polling_fill_source_diffs_broker_state():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(pytest.main([__file__, "-v"]))

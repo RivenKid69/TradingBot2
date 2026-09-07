@@ -30,22 +30,26 @@ class TestFacadeBasics:
     def test_facade_version(self) -> None:
         """Test facade version is correct."""
         from services import dora
+
         assert dora.__version__ == "2.1.0"
 
     def test_facade_compliance_phase(self) -> None:
         """Test facade compliance phase."""
         from services import dora
+
         assert dora.__dora_compliance_phase__ == 8
 
     def test_facade_has_all_list(self) -> None:
         """Test facade has __all__ list."""
         from services import dora
+
         assert hasattr(dora, "__all__")
         assert len(dora.__all__) > 100  # Should have many exports
 
     def test_facade_has_getattr(self) -> None:
         """Test facade has __getattr__ for deprecation."""
         from services import dora
+
         assert hasattr(dora, "__getattr__")
 
 
@@ -443,14 +447,18 @@ class TestFacadeCompatibilityWithIntegrationLayer:
     def test_same_constants_different_paths(self) -> None:
         """Test same constants accessible from both paths."""
         from services.dora import AUDIT_SLA_ACKNOWLEDGMENT_DAYS as FacadeConst
-        from services.dora_integration.due_diligence import AUDIT_SLA_ACKNOWLEDGMENT_DAYS as IntegrationConst
+        from services.dora_integration.due_diligence import (
+            AUDIT_SLA_ACKNOWLEDGMENT_DAYS as IntegrationConst,
+        )
 
         assert FacadeConst == IntegrationConst
 
     def test_same_factories_different_paths(self) -> None:
         """Test same factory functions accessible from both paths."""
         from services.dora import create_audit_readiness as facade_factory
-        from services.dora_integration.due_diligence import create_audit_readiness as integration_factory
+        from services.dora_integration.due_diligence import (
+            create_audit_readiness as integration_factory,
+        )
 
         assert facade_factory is integration_factory
 
@@ -513,9 +521,9 @@ class TestFacadeNoDirectModules:
         py_file_names = [f.name for f in py_files]
 
         # Should only have __init__.py
-        assert py_file_names == ["__init__.py"], (
-            f"Expected only __init__.py, found: {py_file_names}"
-        )
+        assert py_file_names == [
+            "__init__.py"
+        ], f"Expected only __init__.py, found: {py_file_names}"
 
 
 if __name__ == "__main__":

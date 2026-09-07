@@ -40,9 +40,7 @@ class TestDegradedModeEvent:
 
     def test_duration_calculation(self):
         """Test duration calculation."""
-        event = DegradedModeEvent(
-            entered_at=datetime.utcnow() - timedelta(minutes=5)
-        )
+        event = DegradedModeEvent(entered_at=datetime.utcnow() - timedelta(minutes=5))
 
         # Duration should be approximately 5 minutes
         assert event.duration_seconds >= 299

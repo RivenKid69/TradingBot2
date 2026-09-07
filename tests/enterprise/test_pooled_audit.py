@@ -233,9 +233,15 @@ class TestAuditCoordinationPlan:
             estimated_cost=100000.0,
         )
 
-        p1 = AuditParticipant("p1", "c1", "C1", ParticipantRole.PARTICIPANT, "N", "e@e.com", datetime.utcnow())
-        p2 = AuditParticipant("p2", "c2", "C2", ParticipantRole.PARTICIPANT, "N", "e@e.com", datetime.utcnow())
-        p3 = AuditParticipant("p3", "c3", "C3", ParticipantRole.PARTICIPANT, "N", "e@e.com", datetime.utcnow())
+        p1 = AuditParticipant(
+            "p1", "c1", "C1", ParticipantRole.PARTICIPANT, "N", "e@e.com", datetime.utcnow()
+        )
+        p2 = AuditParticipant(
+            "p2", "c2", "C2", ParticipantRole.PARTICIPANT, "N", "e@e.com", datetime.utcnow()
+        )
+        p3 = AuditParticipant(
+            "p3", "c3", "C3", ParticipantRole.PARTICIPANT, "N", "e@e.com", datetime.utcnow()
+        )
 
         assert plan.add_participant(p1) is True
         assert plan.add_participant(p2) is True
@@ -282,9 +288,7 @@ class TestPooledAuditCoordinationService:
     def test_get_plan(self) -> None:
         """Test getting plan by ID."""
         service = PooledAuditCoordinationService()
-        plan = service.create_plan(
-            "Test", "Test", "SOC2", "user", 100000.0, ["Security"]
-        )
+        plan = service.create_plan("Test", "Test", "SOC2", "user", 100000.0, ["Security"])
 
         retrieved = service.get_plan(plan.plan_id)
         assert retrieved is not None
@@ -383,7 +387,12 @@ class TestPooledAuditCoordinationService:
         """Test adding participant when max reached."""
         service = PooledAuditCoordinationService()
         plan = service.create_plan(
-            "Test", "Desc", "SOC2", "user", 100000.0, [],
+            "Test",
+            "Desc",
+            "SOC2",
+            "user",
+            100000.0,
+            [],
             maximum_participants=1,
         )
 
@@ -483,8 +492,12 @@ class TestPooledAuditCoordinationService:
         service = PooledAuditCoordinationService()
         plan = service.create_plan("Test", "Desc", "SOC2", "user", 100000.0, [])
 
-        service.add_schedule(plan.plan_id, "planning", datetime.utcnow(), datetime.utcnow() + timedelta(weeks=1), [])
-        service.add_schedule(plan.plan_id, "fieldwork", datetime.utcnow(), datetime.utcnow() + timedelta(weeks=2), [])
+        service.add_schedule(
+            plan.plan_id, "planning", datetime.utcnow(), datetime.utcnow() + timedelta(weeks=1), []
+        )
+        service.add_schedule(
+            plan.plan_id, "fieldwork", datetime.utcnow(), datetime.utcnow() + timedelta(weeks=2), []
+        )
 
         schedules = service.get_schedules(plan.plan_id)
         assert len(schedules) == 2
@@ -542,7 +555,12 @@ class TestPooledAuditCoordinationService:
         """Test getting coordination summary."""
         service = PooledAuditCoordinationService()
         plan = service.create_plan(
-            "Test Audit", "Desc", "SOC2", "user", 100000.0, [],
+            "Test Audit",
+            "Desc",
+            "SOC2",
+            "user",
+            100000.0,
+            [],
             minimum_participants=3,
         )
 

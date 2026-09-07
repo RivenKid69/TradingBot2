@@ -89,7 +89,7 @@ class TestAIDisclosure:
             disclosure_type=DisclosureType.AI_INTERACTION,
             context=DisclosureContext.REGISTRATION,
             timestamp=datetime.utcnow(),
-            user_id="user1"
+            user_id="user1",
         )
 
     def test_disclosure_creation(self, sample_disclosure):
@@ -115,7 +115,10 @@ class TestAIDisclosure:
         assert "Artificial Intelligence" in text["body"]
         assert "machine learning" in text["body"]
         assert "Reinforcement Learning" in text["body"]
-        assert "understand" in text["acknowledge"].lower() or "acknowledge" in text["acknowledge"].lower()
+        assert (
+            "understand" in text["acknowledge"].lower()
+            or "acknowledge" in text["acknowledge"].lower()
+        )
 
     def test_disclosure_text_russian(self, sample_disclosure):
         """Test Russian disclosure text generation."""
@@ -175,7 +178,7 @@ class TestDisclosureRequirement:
             context=DisclosureContext.REGISTRATION,
             required=True,
             reason="User begins interaction",
-            article_reference="Article 50(1)"
+            article_reference="Article 50(1)",
         )
         assert req.context == DisclosureContext.REGISTRATION
         assert req.required is True
@@ -187,7 +190,7 @@ class TestDisclosureRequirement:
             context=DisclosureContext.REGISTRATION,
             required=True,
             reason="Test",
-            article_reference="Article 50"
+            article_reference="Article 50",
         )
         assert req.blocking is True
 
@@ -198,9 +201,8 @@ class TestDisclosureRequirements:
     def test_registration_requires_disclosure(self):
         """Test registration requires AI disclosure."""
         reg_req = next(
-            (r for r in DISCLOSURE_REQUIREMENTS
-             if r.context == DisclosureContext.REGISTRATION),
-            None
+            (r for r in DISCLOSURE_REQUIREMENTS if r.context == DisclosureContext.REGISTRATION),
+            None,
         )
         assert reg_req is not None
         assert reg_req.required is True
@@ -209,9 +211,12 @@ class TestDisclosureRequirements:
     def test_live_trading_requires_disclosure(self):
         """Test live trading requires disclosure."""
         lt_req = next(
-            (r for r in DISCLOSURE_REQUIREMENTS
-             if r.context == DisclosureContext.LIVE_TRADING_ACTIVATION),
-            None
+            (
+                r
+                for r in DISCLOSURE_REQUIREMENTS
+                if r.context == DisclosureContext.LIVE_TRADING_ACTIVATION
+            ),
+            None,
         )
         assert lt_req is not None
         assert lt_req.required is True
@@ -220,9 +225,8 @@ class TestDisclosureRequirements:
     def test_api_response_requires_disclosure(self):
         """Test API response requires disclosure."""
         api_req = next(
-            (r for r in DISCLOSURE_REQUIREMENTS
-             if r.context == DisclosureContext.API_RESPONSE),
-            None
+            (r for r in DISCLOSURE_REQUIREMENTS if r.context == DisclosureContext.API_RESPONSE),
+            None,
         )
         assert api_req is not None
         assert api_req.required is True
@@ -249,8 +253,7 @@ class TestTransparencyDisclosureManager:
     def test_create_disclosure(self, manager):
         """Test disclosure creation."""
         disclosure = manager.create_disclosure(
-            user_id="user1",
-            context=DisclosureContext.REGISTRATION
+            user_id="user1", context=DisclosureContext.REGISTRATION
         )
         assert disclosure is not None
         assert disclosure.user_id == "user1"
@@ -263,7 +266,7 @@ class TestTransparencyDisclosureManager:
             user_id="user1",
             context=DisclosureContext.REGISTRATION,
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
         assert disclosure.ip_address == "192.168.1.1"
         assert disclosure.user_agent == "Mozilla/5.0"
@@ -271,13 +274,9 @@ class TestTransparencyDisclosureManager:
     def test_record_acknowledgment(self, manager):
         """Test acknowledgment recording."""
         disclosure = manager.create_disclosure(
-            user_id="user1",
-            context=DisclosureContext.REGISTRATION
+            user_id="user1", context=DisclosureContext.REGISTRATION
         )
-        result = manager.record_acknowledgment(
-            disclosure.disclosure_id,
-            "user1"
-        )
+        result = manager.record_acknowledgment(disclosure.disclosure_id, "user1")
         assert result is True
         assert disclosure.acknowledged is True
         assert disclosure.acknowledgment_timestamp is not None
@@ -285,55 +284,35 @@ class TestTransparencyDisclosureManager:
     def test_acknowledgment_wrong_user(self, manager):
         """Test acknowledgment by wrong user fails."""
         disclosure = manager.create_disclosure(
-            user_id="user1",
-            context=DisclosureContext.REGISTRATION
+            user_id="user1", context=DisclosureContext.REGISTRATION
         )
-        result = manager.record_acknowledgment(
-            disclosure.disclosure_id,
-            "user2"
-        )
+        result = manager.record_acknowledgment(disclosure.disclosure_id, "user2")
         assert result is False
         assert disclosure.acknowledged is False
 
     def test_acknowledgment_invalid_disclosure(self, manager):
         """Test acknowledgment with invalid disclosure ID."""
-        result = manager.record_acknowledgment(
-            "invalid_id",
-            "user1"
-        )
+        result = manager.record_acknowledgment("invalid_id", "user1")
         assert result is False
 
     def test_check_disclosure_required_new_user(self, manager):
         """Test disclosure required for new user."""
-        required = manager.check_disclosure_required(
-            "new_user",
-            DisclosureContext.REGISTRATION
-        )
+        required = manager.check_disclosure_required("new_user", DisclosureContext.REGISTRATION)
         assert required is True
 
     def test_check_disclosure_required_after_creation(self, manager):
         """Test disclosure required after creation but before ack."""
-        manager.create_disclosure(
-            "user1",
-            DisclosureContext.REGISTRATION
-        )
-        required = manager.check_disclosure_required(
-            "user1",
-            DisclosureContext.REGISTRATION
-        )
+        manager.create_disclosure("user1", DisclosureContext.REGISTRATION)
+        required = manager.check_disclosure_required("user1", DisclosureContext.REGISTRATION)
         assert required is True
 
     def test_check_disclosure_not_required_after_ack(self, manager):
         """Test disclosure not required after acknowledgment."""
         disclosure = manager.create_disclosure(
-            user_id="user1",
-            context=DisclosureContext.REGISTRATION
+            user_id="user1", context=DisclosureContext.REGISTRATION
         )
         manager.record_acknowledgment(disclosure.disclosure_id, "user1")
-        required = manager.check_disclosure_required(
-            "user1",
-            DisclosureContext.REGISTRATION
-        )
+        required = manager.check_disclosure_required("user1", DisclosureContext.REGISTRATION)
         assert required is False
 
     def test_get_user_disclosures(self, manager):
@@ -349,10 +328,7 @@ class TestTransparencyDisclosureManager:
         manager.create_disclosure("user1", DisclosureContext.REGISTRATION)
         manager.create_disclosure("user1", DisclosureContext.LIVE_TRADING_ACTIVATION)
 
-        disclosures = manager.get_user_disclosures(
-            "user1",
-            context=DisclosureContext.REGISTRATION
-        )
+        disclosures = manager.get_user_disclosures("user1", context=DisclosureContext.REGISTRATION)
         assert len(disclosures) == 1
         assert disclosures[0].context == DisclosureContext.REGISTRATION
 
@@ -380,10 +356,7 @@ class TestTransparencyDisclosureManager:
         """Test compliance after all acknowledgments."""
         for req in DISCLOSURE_REQUIREMENTS:
             if req.required:
-                disclosure = manager.create_disclosure(
-                    "user1",
-                    req.context
-                )
+                disclosure = manager.create_disclosure("user1", req.context)
                 manager.record_acknowledgment(disclosure.disclosure_id, "user1")
 
         result = manager.verify_compliance("user1")
@@ -479,7 +452,7 @@ class TestValidateDisclosureText:
             disclosure_type=DisclosureType.AI_INTERACTION,
             context=DisclosureContext.REGISTRATION,
             timestamp=datetime.utcnow(),
-            user_id="user1"
+            user_id="user1",
         )
 
     def test_validate_english_text(self, disclosure):
@@ -520,14 +493,10 @@ class TestArticle50Compliance:
     def test_full_disclosure_flow(self, manager):
         """Test complete disclosure flow: create -> show -> acknowledge."""
         # Step 1: Check disclosure required
-        assert manager.check_disclosure_required(
-            "user1", DisclosureContext.REGISTRATION
-        )
+        assert manager.check_disclosure_required("user1", DisclosureContext.REGISTRATION)
 
         # Step 2: Create disclosure
-        disclosure = manager.create_disclosure(
-            "user1", DisclosureContext.REGISTRATION
-        )
+        disclosure = manager.create_disclosure("user1", DisclosureContext.REGISTRATION)
 
         # Step 3: Get text to show user
         text = disclosure.generate_disclosure_text("en")
@@ -537,22 +506,16 @@ class TestArticle50Compliance:
         manager.record_acknowledgment(disclosure.disclosure_id, "user1")
 
         # Step 5: Disclosure no longer required
-        assert not manager.check_disclosure_required(
-            "user1", DisclosureContext.REGISTRATION
-        )
+        assert not manager.check_disclosure_required("user1", DisclosureContext.REGISTRATION)
 
     def test_multiple_contexts_independent(self, manager):
         """Test disclosures for different contexts are independent."""
         # Acknowledge registration
-        d1 = manager.create_disclosure(
-            "user1", DisclosureContext.REGISTRATION
-        )
+        d1 = manager.create_disclosure("user1", DisclosureContext.REGISTRATION)
         manager.record_acknowledgment(d1.disclosure_id, "user1")
 
         # Live trading still requires disclosure
-        assert manager.check_disclosure_required(
-            "user1", DisclosureContext.LIVE_TRADING_ACTIVATION
-        )
+        assert manager.check_disclosure_required("user1", DisclosureContext.LIVE_TRADING_ACTIVATION)
 
     def test_live_trading_requires_all_prior_disclosures(self, manager):
         """Test live trading flow requires prior disclosures."""
@@ -566,7 +529,9 @@ class TestArticle50Compliance:
 
         # Both should be acknowledged
         assert not manager.check_disclosure_required("user1", DisclosureContext.REGISTRATION)
-        assert not manager.check_disclosure_required("user1", DisclosureContext.LIVE_TRADING_ACTIVATION)
+        assert not manager.check_disclosure_required(
+            "user1", DisclosureContext.LIVE_TRADING_ACTIVATION
+        )
 
     def test_api_integration_headers(self, manager):
         """Test API headers for Article 50 compliance."""

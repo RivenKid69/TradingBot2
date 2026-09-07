@@ -174,6 +174,7 @@ class CircuitBreakerOpenError(Exception):
 
 class RunawayStrategyError(Exception):
     """Raised when a strategy is detected as runaway."""
+
     pass
 
 
@@ -243,10 +244,7 @@ class BrokerRateLimiter:
         return f"{user_id}:{broker}"
 
     def check_and_consume(
-        self,
-        user_id: str,
-        broker: str,
-        request_type: str = "order"
+        self, user_id: str, broker: str, request_type: str = "order"
     ) -> RateLimitCheck:
         """
         Check rate limit and consume a token if allowed.
@@ -363,11 +361,7 @@ class BrokerRateLimiter:
             )
 
     def trigger_circuit_breaker(
-        self,
-        user_id: str,
-        broker: str,
-        reason: str,
-        duration_seconds: int = 60
+        self, user_id: str, broker: str, reason: str, duration_seconds: int = 60
     ) -> None:
         """
         Open circuit breaker to stop all requests.
@@ -418,17 +412,11 @@ class BrokerRateLimiter:
         with self._lock:
             if key in self._circuit_breakers and self._circuit_breakers[key].is_open:
                 self._circuit_breakers[key] = CircuitBreakerState(is_open=False)
-                logger.info(
-                    f"CIRCUIT_BREAKER_CLOSED | user={user_id} | broker={broker}"
-                )
+                logger.info(f"CIRCUIT_BREAKER_CLOSED | user={user_id} | broker={broker}")
                 return True
             return False
 
-    def get_circuit_breaker_state(
-        self,
-        user_id: str,
-        broker: str
-    ) -> CircuitBreakerState:
+    def get_circuit_breaker_state(self, user_id: str, broker: str) -> CircuitBreakerState:
         """
         Get current circuit breaker state.
 
@@ -442,10 +430,7 @@ class BrokerRateLimiter:
         key = self._get_key(user_id, broker)
 
         with self._lock:
-            return self._circuit_breakers.get(
-                key,
-                CircuitBreakerState(is_open=False)
-            )
+            return self._circuit_breakers.get(key, CircuitBreakerState(is_open=False))
 
     def get_user_status(self, user_id: str, broker: str) -> Dict[str, Any]:
         """
@@ -476,7 +461,9 @@ class BrokerRateLimiter:
                 "utilization_percent": (recent / limits.orders_per_second * 100) if limits else 0,
                 "circuit_breaker_active": cb_state.is_open,
                 "circuit_breaker_reason": cb_state.reason if cb_state.is_open else None,
-                "circuit_breaker_closes_at": cb_state.closes_at.isoformat() if cb_state.closes_at else None,
+                "circuit_breaker_closes_at": (
+                    cb_state.closes_at.isoformat() if cb_state.closes_at else None
+                ),
             }
 
     def reset_user(self, user_id: str, broker: str) -> None:
@@ -511,13 +498,15 @@ class BrokerRateLimiter:
             for key, state in self._circuit_breakers.items():
                 if state.is_open and state.closes_at and state.closes_at > now:
                     user_id, broker = key.split(":", 1)
-                    active.append({
-                        "user_id": user_id,
-                        "broker": broker,
-                        "opened_at": state.opened_at.isoformat() if state.opened_at else None,
-                        "closes_at": state.closes_at.isoformat(),
-                        "reason": state.reason,
-                    })
+                    active.append(
+                        {
+                            "user_id": user_id,
+                            "broker": broker,
+                            "opened_at": state.opened_at.isoformat() if state.opened_at else None,
+                            "closes_at": state.closes_at.isoformat(),
+                            "reason": state.reason,
+                        }
+                    )
 
         return active
 
@@ -576,12 +565,7 @@ class RunawayDetector:
         """Generate key for user:strategy pair."""
         return f"{user_id}:{strategy_id}"
 
-    def check_strategy(
-        self,
-        user_id: str,
-        strategy_id: str,
-        broker: str
-    ) -> None:
+    def check_strategy(self, user_id: str, strategy_id: str, broker: str) -> None:
         """
         Check if a strategy is placing orders too rapidly.
 
@@ -636,11 +620,7 @@ class RunawayDetector:
                     f"(>{self._threshold} orders in {self._window}s)"
                 )
 
-    def get_strategy_order_count(
-        self,
-        user_id: str,
-        strategy_id: str
-    ) -> int:
+    def get_strategy_order_count(self, user_id: str, strategy_id: str) -> int:
         """
         Get current order count for a strategy.
 

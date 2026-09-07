@@ -59,6 +59,7 @@ class TestJobScheduler:
     async def test_start_stop(self, scheduler):
         """Test starting and stopping scheduler."""
         import asyncio
+
         # Start scheduler in background task
         task = asyncio.create_task(scheduler.start())
         await asyncio.sleep(0.1)  # Give it time to start
@@ -143,9 +144,15 @@ class TestJobScheduler:
         ws2 = uuid4()
         user = uuid4()
 
-        await scheduler.submit_job(JobConfig(workspace_id=ws1, user_id=user, task_type=TaskType.RESEARCH, task_config={}))
-        await scheduler.submit_job(JobConfig(workspace_id=ws1, user_id=user, task_type=TaskType.TRAINING, task_config={}))
-        await scheduler.submit_job(JobConfig(workspace_id=ws2, user_id=user, task_type=TaskType.BACKTEST, task_config={}))
+        await scheduler.submit_job(
+            JobConfig(workspace_id=ws1, user_id=user, task_type=TaskType.RESEARCH, task_config={})
+        )
+        await scheduler.submit_job(
+            JobConfig(workspace_id=ws1, user_id=user, task_type=TaskType.TRAINING, task_config={})
+        )
+        await scheduler.submit_job(
+            JobConfig(workspace_id=ws2, user_id=user, task_type=TaskType.BACKTEST, task_config={})
+        )
 
         jobs_ws1 = await scheduler.list_jobs(workspace_id=ws1)
 
@@ -269,6 +276,7 @@ class TestTasks:
     def test_training_task_creation(self):
         """Test TrainingTask creation."""
         from packages.cloud.jobs.tasks import TrainingConfig
+
         config = TrainingConfig(
             workspace_id=uuid4(),
             user_id=uuid4(),
@@ -282,6 +290,7 @@ class TestTasks:
     def test_backtest_task_creation(self):
         """Test BacktestTask creation."""
         from packages.cloud.jobs.tasks import BacktestConfig
+
         config = BacktestConfig(
             workspace_id=uuid4(),
             user_id=uuid4(),
@@ -295,6 +304,7 @@ class TestTasks:
     def test_research_task_creation(self):
         """Test ResearchTask creation."""
         from packages.cloud.jobs.tasks import ResearchConfig
+
         config = ResearchConfig(
             workspace_id=uuid4(),
             user_id=uuid4(),
@@ -307,6 +317,7 @@ class TestTasks:
     def test_artifact_build_task_creation(self):
         """Test ArtifactBuildTask creation."""
         from packages.cloud.jobs.tasks import ArtifactBuildConfig
+
         config = ArtifactBuildConfig(
             workspace_id=uuid4(),
             user_id=uuid4(),

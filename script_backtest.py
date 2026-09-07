@@ -18,9 +18,7 @@ from scripts.offline_utils import resolve_split_bundle
 logger = logging.getLogger(__name__)
 
 
-def _apply_runtime_overrides(
-    cfg_dict: Dict[str, Any], args: argparse.Namespace
-) -> Dict[str, Any]:
+def _apply_runtime_overrides(cfg_dict: Dict[str, Any], args: argparse.Namespace) -> Dict[str, Any]:
     """Apply CLI-provided runtime overrides to a config mapping."""
 
     def _require_non_negative(value: float, label: str) -> float:
@@ -115,9 +113,7 @@ def _apply_runtime_overrides(
             exec_impact["sqrt_coeff"] = sqrt_coeff
 
         if args.costs_impact_linear is not None:
-            linear_coeff = _require_non_negative(
-                args.costs_impact_linear, "costs-impact-linear"
-            )
+            linear_coeff = _require_non_negative(args.costs_impact_linear, "costs-impact-linear")
             impact_block["linear_coeff"] = linear_coeff
             exec_impact["linear_coeff"] = linear_coeff
 
@@ -437,6 +433,9 @@ def main() -> None:
             "--kpi-thresholds",
             args.rc_thresholds,
         ]
+        # cmd is an argument list run without a shell, so the paths cannot be
+        # interpreted as shell syntax.
+        # nosemgrep: dangerous-subprocess-use-tainted-env-args
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.stdout:
             print(proc.stdout)

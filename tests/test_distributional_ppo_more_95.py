@@ -1,6 +1,7 @@
 """
 More coverage tests for distributional_ppo.py.
 """
+
 from __future__ import annotations
 
 import math
@@ -34,9 +35,7 @@ def _make_env(max_steps: int = 8) -> DummyVecEnv:
     def _env_fn():
         class _Env(gymnasium.Env):
             def __init__(self):
-                self.action_space = spaces.Box(
-                    low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-                )
+                self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
                 self.observation_space = spaces.Box(
                     low=-10.0, high=10.0, shape=(4,), dtype=np.float32
                 )

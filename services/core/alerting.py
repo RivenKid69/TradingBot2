@@ -40,17 +40,20 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class AlertSeverity(Enum):
     """Alert severity levels."""
-    CRITICAL = "critical"      # P1 - Immediate action required
-    HIGH = "high"              # P2 - Urgent attention needed
-    MEDIUM = "medium"          # P3 - Should be addressed soon
-    LOW = "low"                # P4 - Informational
-    INFO = "info"              # P5 - For awareness
+
+    CRITICAL = "critical"  # P1 - Immediate action required
+    HIGH = "high"  # P2 - Urgent attention needed
+    MEDIUM = "medium"  # P3 - Should be addressed soon
+    LOW = "low"  # P4 - Informational
+    INFO = "info"  # P5 - For awareness
 
 
 class AlertChannel(Enum):
     """Alert notification channels."""
+
     EMAIL = "email"
     SLACK = "slack"
     PAGERDUTY = "pagerduty"
@@ -63,6 +66,7 @@ class AlertChannel(Enum):
 
 class AlertStatus(Enum):
     """Alert lifecycle status."""
+
     TRIGGERED = "triggered"
     ACKNOWLEDGED = "acknowledged"
     ESCALATED = "escalated"
@@ -73,6 +77,7 @@ class AlertStatus(Enum):
 
 class EscalationLevel(Enum):
     """Escalation levels."""
+
     L1 = "L1"  # First responder
     L2 = "L2"  # Senior engineer
     L3 = "L3"  # Team lead / Manager
@@ -84,9 +89,11 @@ class EscalationLevel(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class AlertRule:
     """Alert rule definition."""
+
     rule_id: str = ""
     name: str = ""
     description: str = ""
@@ -129,6 +136,7 @@ class AlertRule:
 @dataclass
 class Alert:
     """Alert instance."""
+
     alert_id: str = ""
     rule_id: str = ""
     name: str = ""
@@ -185,6 +193,7 @@ class Alert:
 @dataclass
 class EscalationPolicy:
     """Escalation policy definition."""
+
     policy_id: str = ""
     name: str = ""
     description: str = ""
@@ -212,6 +221,7 @@ class EscalationPolicy:
 @dataclass
 class NotificationResult:
     """Result of sending a notification."""
+
     notification_id: str = ""
     alert_id: str = ""
     channel: AlertChannel = AlertChannel.LOG
@@ -237,6 +247,7 @@ class NotificationResult:
 @dataclass
 class AlertingConfig:
     """Configuration for AlertingService."""
+
     # Deduplication
     dedup_window_seconds: int = 3600  # 1 hour
     dedup_enabled: bool = True
@@ -246,13 +257,15 @@ class AlertingConfig:
     rate_limit_per_channel: Dict[str, int] = field(default_factory=dict)
 
     # Default channels by severity
-    default_channels: Dict[str, List[str]] = field(default_factory=lambda: {
-        "critical": ["pagerduty", "slack", "email"],
-        "high": ["slack", "email"],
-        "medium": ["slack"],
-        "low": ["log"],
-        "info": ["log"],
-    })
+    default_channels: Dict[str, List[str]] = field(
+        default_factory=lambda: {
+            "critical": ["pagerduty", "slack", "email"],
+            "high": ["slack", "email"],
+            "medium": ["slack"],
+            "low": ["log"],
+            "info": ["log"],
+        }
+    )
 
     # Silence periods
     maintenance_windows: List[Dict[str, Any]] = field(default_factory=list)
@@ -274,6 +287,7 @@ class AlertingConfig:
 # =============================================================================
 # Default Notification Handlers
 # =============================================================================
+
 
 class NotificationHandler:
     """Base notification handler."""
@@ -380,7 +394,11 @@ class SlackNotificationHandler(NotificationHandler):
             )
 
             success = response.status_code == 200
-            error_msg = None if success else f"Slack API returned {response.status_code}: {response.text[:200]}"
+            error_msg = (
+                None
+                if success
+                else f"Slack API returned {response.status_code}: {response.text[:200]}"
+            )
 
             if success:
                 logger.info(f"Slack notification sent successfully: {alert.alert_id}")
@@ -503,7 +521,9 @@ Triggered at: {alert.triggered_at}
             msg["Subject"] = subject
             msg.attach(MIMEText(body, "plain"))
 
-            with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=self.timeout_seconds) as server:
+            with smtplib.SMTP(
+                self.smtp_host, self.smtp_port, timeout=self.timeout_seconds
+            ) as server:
                 if self.use_tls:
                     server.starttls()
                 if self.username and self.password:
@@ -611,7 +631,11 @@ class PagerDutyNotificationHandler(NotificationHandler):
 
             # PagerDuty returns 202 Accepted for successful events
             success = response.status_code in (200, 202)
-            error_msg = None if success else f"PagerDuty API returned {response.status_code}: {response.text[:200]}"
+            error_msg = (
+                None
+                if success
+                else f"PagerDuty API returned {response.status_code}: {response.text[:200]}"
+            )
 
             if success:
                 logger.info(f"PagerDuty notification sent successfully: {alert.alert_id}")
@@ -660,6 +684,7 @@ class PagerDutyNotificationHandler(NotificationHandler):
 # =============================================================================
 # Main Class
 # =============================================================================
+
 
 class AlertingService:
     """
@@ -728,6 +753,7 @@ class AlertingService:
         self._durable = None
         try:
             from services.core.durable_store import DurableAlertStore
+
             self._durable = DurableAlertStore(str(self._log_path / "alerts.db"))
             self._rehydrate_alerts()
         except Exception as e:  # pragma: no cover - persistence must not block startup
@@ -755,14 +781,18 @@ class AlertingService:
     @staticmethod
     def _alert_from_dict(d: Dict[str, Any]) -> "Alert":
         d = dict(d)
+
         def _enum(cls, val, default):
             try:
                 return cls(val)
             except Exception:
                 return default
+
         d["severity"] = _enum(AlertSeverity, d.get("severity"), AlertSeverity.MEDIUM)
         d["status"] = _enum(AlertStatus, d.get("status"), AlertStatus.TRIGGERED)
-        d["escalation_level"] = _enum(EscalationLevel, d.get("escalation_level"), EscalationLevel.L1)
+        d["escalation_level"] = _enum(
+            EscalationLevel, d.get("escalation_level"), EscalationLevel.L1
+        )
         known = {f.name for f in dataclasses.fields(Alert)}
         return Alert(**{k: v for k, v in d.items() if k in known})
 
@@ -945,17 +975,20 @@ class AlertingService:
         with self._lock:
             self._alerts[alert.alert_id] = alert
             self._active_fingerprints[alert.fingerprint] = alert.alert_id
-            self._persist_alert(alert)   # P2 #21: durable
+            self._persist_alert(alert)  # P2 #21: durable
 
         # Send notifications
         self._send_notifications(alert, rule.channels)
 
-        self._log_event("alert_triggered", {
-            "alert_id": alert.alert_id,
-            "rule_id": rule_id,
-            "severity": alert.severity.value,
-            "source": source,
-        })
+        self._log_event(
+            "alert_triggered",
+            {
+                "alert_id": alert.alert_id,
+                "rule_id": rule_id,
+                "severity": alert.severity.value,
+                "source": source,
+            },
+        )
 
         return alert
 
@@ -976,12 +1009,15 @@ class AlertingService:
             alert.acknowledged_by = acknowledged_by
             if notes:
                 alert.resolution_notes = notes
-            self._persist_alert(alert)   # P2 #21: durable
+            self._persist_alert(alert)  # P2 #21: durable
 
-        self._log_event("alert_acknowledged", {
-            "alert_id": alert_id,
-            "by": acknowledged_by,
-        })
+        self._log_event(
+            "alert_acknowledged",
+            {
+                "alert_id": alert_id,
+                "by": acknowledged_by,
+            },
+        )
 
         return alert
 
@@ -1005,12 +1041,15 @@ class AlertingService:
             # Remove from active fingerprints
             if alert.fingerprint in self._active_fingerprints:
                 del self._active_fingerprints[alert.fingerprint]
-            self._persist_alert(alert)   # P2 #21: durable
+            self._persist_alert(alert)  # P2 #21: durable
 
-        self._log_event("alert_resolved", {
-            "alert_id": alert_id,
-            "by": resolved_by,
-        })
+        self._log_event(
+            "alert_resolved",
+            {
+                "alert_id": alert_id,
+                "by": resolved_by,
+            },
+        )
 
         return alert
 
@@ -1049,11 +1088,14 @@ class AlertingService:
                 channels = [AlertChannel(c) for c in step.get("channels", ["slack"])]
                 self._send_notifications(alert, channels, escalation=True)
 
-        self._log_event("alert_escalated", {
-            "alert_id": alert_id,
-            "level": alert.escalation_level.value,
-            "count": alert.escalation_count,
-        })
+        self._log_event(
+            "alert_escalated",
+            {
+                "alert_id": alert_id,
+                "level": alert.escalation_level.value,
+                "count": alert.escalation_count,
+            },
+        )
 
         return alert
 
@@ -1083,21 +1125,25 @@ class AlertingService:
                 # Record notification
                 with self._lock:
                     if alert.alert_id in self._alerts:
-                        self._alerts[alert.alert_id].notifications_sent.append({
-                            "channel": channel.value,
-                            "success": result.success,
-                            "sent_at": result.sent_at,
-                            "escalation": escalation,
-                        })
+                        self._alerts[alert.alert_id].notifications_sent.append(
+                            {
+                                "channel": channel.value,
+                                "success": result.success,
+                                "sent_at": result.sent_at,
+                                "escalation": escalation,
+                            }
+                        )
 
             except Exception as e:
                 logger.error(f"Failed to send {channel.value} notification: {e}")
-                results.append(NotificationResult(
-                    alert_id=alert.alert_id,
-                    channel=channel,
-                    success=False,
-                    error=str(e),
-                ))
+                results.append(
+                    NotificationResult(
+                        alert_id=alert.alert_id,
+                        channel=channel,
+                        success=False,
+                        error=str(e),
+                    )
+                )
 
         return results
 
@@ -1118,7 +1164,8 @@ class AlertingService:
         """Get active (non-resolved) alerts."""
         with self._lock:
             alerts = [
-                a for a in self._alerts.values()
+                a
+                for a in self._alerts.values()
                 if a.status not in (AlertStatus.RESOLVED, AlertStatus.EXPIRED)
             ]
 
@@ -1163,8 +1210,7 @@ class AlertingService:
                 self._rate_limit_counters["global"] = []
 
             self._rate_limit_counters["global"] = [
-                t for t in self._rate_limit_counters["global"]
-                if t > window_start
+                t for t in self._rate_limit_counters["global"] if t > window_start
             ]
 
             # Check limit
@@ -1204,28 +1250,27 @@ class AlertingService:
             "total_rules": len(self._rules),
             "active_rules": sum(1 for r in self._rules.values() if r.is_enabled),
             "total_alerts": len(all_alerts),
-            "active_alerts": len([a for a in all_alerts if a.status not in (
-                AlertStatus.RESOLVED, AlertStatus.EXPIRED
-            )]),
+            "active_alerts": len(
+                [
+                    a
+                    for a in all_alerts
+                    if a.status not in (AlertStatus.RESOLVED, AlertStatus.EXPIRED)
+                ]
+            ),
             "alerts_24h": len(alerts_24h),
             "alerts_7d": len(alerts_7d),
             "by_severity_24h": {
-                s.value: sum(1 for a in alerts_24h if a.severity == s)
-                for s in AlertSeverity
+                s.value: sum(1 for a in alerts_24h if a.severity == s) for s in AlertSeverity
             },
             "by_status": {
-                s.value: sum(1 for a in all_alerts if a.status == s)
-                for s in AlertStatus
+                s.value: sum(1 for a in all_alerts if a.status == s) for s in AlertStatus
             },
             "mttr_minutes": self._calculate_mttr(alerts_7d),
         }
 
     def _calculate_mttr(self, alerts: List[Alert]) -> float:
         """Calculate Mean Time to Resolve."""
-        resolved = [
-            a for a in alerts
-            if a.status == AlertStatus.RESOLVED and a.resolved_at
-        ]
+        resolved = [a for a in alerts if a.status == AlertStatus.RESOLVED and a.resolved_at]
 
         if not resolved:
             return 0.0
@@ -1260,6 +1305,7 @@ class AlertingService:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_alerting_service(
     config: Optional[AlertingConfig] = None,

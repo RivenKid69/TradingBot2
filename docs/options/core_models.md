@@ -287,6 +287,7 @@ price = leisen_reimer_price(
 ```
 
 **Advantages over CRR**:
+
 - O(1/n²) convergence vs O(1/n) for CRR
 - Odd steps guarantee strike node alignment
 - More accurate for deep ITM/OTM options
@@ -328,11 +329,13 @@ price = jump_diffusion_price(
 ```
 
 **Jump-Diffusion Dynamics**:
+
 ```
 dS/S = (μ - λκ)dt + σdW + (J-1)dN
 ```
 
 Where:
+
 - `λ` = jump intensity (Poisson rate)
 - `J` = jump size, `log(J) ~ N(μ_J, σ_J²)`
 - `κ = E[J-1] = exp(μ_J + σ_J²/2) - 1`
@@ -443,6 +446,7 @@ print(f"σ_J = {result.jump_params.jump_std:.4f}")
 ```
 
 **Estimators**:
+
 - Skewness → jump mean sign
 - Excess kurtosis → jump frequency
 - Variance decomposition → diffusion vs jump
@@ -705,6 +709,7 @@ print(f"Early exercise premium: {early_ex_premium:.4f}")
 ## Performance Benchmarks
 
 Run benchmarks:
+
 ```bash
 python benchmarks/bench_options_greeks.py
 ```
@@ -757,6 +762,7 @@ python benchmarks/bench_options_greeks.py
 ## Testing
 
 Run the test suite:
+
 ```bash
 # All options tests
 pytest tests/test_options_core.py -v

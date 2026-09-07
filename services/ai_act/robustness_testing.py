@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 class RobustnessTestType(Enum):
     """Types of robustness tests per Article 15."""
+
     # Adversarial Testing
     ADVERSARIAL_INPUT = auto()
     ADVERSARIAL_PERTURBATION = auto()
@@ -72,6 +73,7 @@ class RobustnessTestType(Enum):
 
 class TestSeverity(Enum):
     """Severity level of test findings."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -81,6 +83,7 @@ class TestSeverity(Enum):
 
 class TestStatus(Enum):
     """Status of a robustness test."""
+
     PENDING = "pending"
     RUNNING = "running"
     PASSED = "passed"
@@ -108,6 +111,7 @@ class RobustnessTestResult:
         recommendations: Recommendations if issues found
         metadata: Additional test metadata
     """
+
     test_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     test_type: RobustnessTestType = RobustnessTestType.ADVERSARIAL_INPUT
     test_name: str = ""
@@ -268,9 +272,7 @@ class AdversarialTester(RobustnessTester):
                         perturbed_outputs.append(perturbed_output)
 
                         # Check if small perturbation caused large output change
-                        if self._is_adversarial_success(
-                            original_output, perturbed_output
-                        ):
+                        if self._is_adversarial_success(original_output, perturbed_output):
                             failures_detected += 1
                     except Exception as e:
                         # Model should handle perturbed inputs gracefully
@@ -315,16 +317,10 @@ class AdversarialTester(RobustnessTester):
 
         recommendations = []
         if score < 0.95:
-            recommendations.append(
-                "Consider implementing input validation and sanitization"
-            )
-            recommendations.append(
-                "Review model's sensitivity to small input variations"
-            )
+            recommendations.append("Consider implementing input validation and sanitization")
+            recommendations.append("Review model's sensitivity to small input variations")
         if score < 0.80:
-            recommendations.append(
-                "Implement adversarial training or robust optimization"
-            )
+            recommendations.append("Implement adversarial training or robust optimization")
 
         return RobustnessTestResult(
             test_type=RobustnessTestType.ADVERSARIAL_PERTURBATION,
@@ -359,9 +355,7 @@ class AdversarialTester(RobustnessTester):
             Perturbed input
         """
         if isinstance(input_data, (list, tuple)):
-            return type(input_data)(
-                self._perturb_value(v) for v in input_data
-            )
+            return type(input_data)(self._perturb_value(v) for v in input_data)
         elif isinstance(input_data, dict):
             return {k: self._perturb_value(v) for k, v in input_data.items()}
         else:
@@ -481,18 +475,19 @@ class DistributionShiftTester(RobustnessTester):
                             failures_detected += 1
                     except Exception as e:
                         logger.warning(
-                            "Model error on shifted input (mult=%.1f): %s",
-                            multiplier, e
+                            "Model error on shifted input (mult=%.1f): %s", multiplier, e
                         )
                         scenario_failures += 1
                         failures_detected += 1
 
-                shift_results.append({
-                    "multiplier": multiplier,
-                    "failures": scenario_failures,
-                    "total": len(shifted_inputs),
-                    "success_rate": 1.0 - (scenario_failures / max(1, len(shifted_inputs))),
-                })
+                shift_results.append(
+                    {
+                        "multiplier": multiplier,
+                        "failures": scenario_failures,
+                        "total": len(shifted_inputs),
+                        "success_rate": 1.0 - (scenario_failures / max(1, len(shifted_inputs))),
+                    }
+                )
 
         except Exception as e:
             logger.error("Distribution shift test error: %s", e)
@@ -510,10 +505,7 @@ class DistributionShiftTester(RobustnessTester):
 
         # Calculate overall score (weighted by shift magnitude)
         if shift_results:
-            total_weighted = sum(
-                r["success_rate"] * (1.0 / r["multiplier"])
-                for r in shift_results
-            )
+            total_weighted = sum(r["success_rate"] * (1.0 / r["multiplier"]) for r in shift_results)
             weight_sum = sum(1.0 / r["multiplier"] for r in shift_results)
             score = total_weighted / weight_sum if weight_sum > 0 else 0.0
         else:
@@ -535,19 +527,11 @@ class DistributionShiftTester(RobustnessTester):
 
         recommendations = []
         if score < 0.90:
-            recommendations.append(
-                "Implement distribution drift detection and alerting"
-            )
-            recommendations.append(
-                "Consider periodic model recalibration procedures"
-            )
+            recommendations.append("Implement distribution drift detection and alerting")
+            recommendations.append("Consider periodic model recalibration procedures")
         if score < 0.70:
-            recommendations.append(
-                "Review model's assumptions about data stationarity"
-            )
-            recommendations.append(
-                "Implement regime-aware model switching or adaptation"
-            )
+            recommendations.append("Review model's assumptions about data stationarity")
+            recommendations.append("Implement regime-aware model switching or adaptation")
 
         return RobustnessTestResult(
             test_type=RobustnessTestType.DATA_DRIFT,
@@ -588,14 +572,9 @@ class DistributionShiftTester(RobustnessTester):
         shifted = []
         for inp in inputs:
             if isinstance(inp, (list, tuple)):
-                shifted.append(type(inp)(
-                    self._shift_value(v, multiplier) for v in inp
-                ))
+                shifted.append(type(inp)(self._shift_value(v, multiplier) for v in inp))
             elif isinstance(inp, dict):
-                shifted.append({
-                    k: self._shift_value(v, multiplier)
-                    for k, v in inp.items()
-                })
+                shifted.append({k: self._shift_value(v, multiplier) for k, v in inp.items()})
             else:
                 shifted.append(self._shift_value(inp, multiplier))
         return shifted
@@ -700,26 +679,32 @@ class FailsafeTester(RobustnessTester):
                     # Check if failsafe was triggered (output might indicate this)
                     if self._is_failsafe_output(output):
                         failsafe_triggered += 1
-                        edge_case_results.append({
-                            "case": case_name,
-                            "status": "failsafe_triggered",
-                            "output": str(output)[:100],
-                        })
+                        edge_case_results.append(
+                            {
+                                "case": case_name,
+                                "status": "failsafe_triggered",
+                                "output": str(output)[:100],
+                            }
+                        )
                     else:
-                        edge_case_results.append({
-                            "case": case_name,
-                            "status": "handled",
-                            "output": str(output)[:100],
-                        })
+                        edge_case_results.append(
+                            {
+                                "case": case_name,
+                                "status": "handled",
+                                "output": str(output)[:100],
+                            }
+                        )
 
                 except Exception as e:
                     # Model should handle gracefully or trigger failsafe
                     failures_detected += 1
-                    edge_case_results.append({
-                        "case": case_name,
-                        "status": "exception",
-                        "error": str(e)[:100],
-                    })
+                    edge_case_results.append(
+                        {
+                            "case": case_name,
+                            "status": "exception",
+                            "error": str(e)[:100],
+                        }
+                    )
 
                     # Test recovery if failsafe_fn provided
                     if failsafe_fn:
@@ -728,8 +713,7 @@ class FailsafeTester(RobustnessTester):
                             recovery_successful += 1
                         except Exception as recovery_error:
                             logger.warning(
-                                "Recovery failed for case %s: %s",
-                                case_name, recovery_error
+                                "Recovery failed for case %s: %s", case_name, recovery_error
                             )
 
         except Exception as e:
@@ -774,17 +758,11 @@ class FailsafeTester(RobustnessTester):
 
         recommendations = []
         if failures_detected > 0:
-            recommendations.append(
-                "Implement comprehensive exception handling"
-            )
+            recommendations.append("Implement comprehensive exception handling")
         if failsafe_triggered == 0 and failures_detected > 0:
-            recommendations.append(
-                "Add failsafe triggers for edge case inputs"
-            )
+            recommendations.append("Add failsafe triggers for edge case inputs")
         if recovery_successful < failures_detected:
-            recommendations.append(
-                "Improve recovery mechanisms for failure states"
-            )
+            recommendations.append("Improve recovery mechanisms for failure states")
 
         return RobustnessTestResult(
             test_type=RobustnessTestType.FAILSAFE_TRIGGER,
@@ -842,22 +820,28 @@ class FailsafeTester(RobustnessTester):
         for i, base in enumerate(base_inputs[:5]):  # Sample first 5
             if isinstance(base, (list, tuple)):
                 # Create corrupted version
-                edge_cases.append({
-                    "name": f"corrupted_list_{i}",
-                    "input": [float("nan")] * len(base) if base else [float("nan")],
-                })
+                edge_cases.append(
+                    {
+                        "name": f"corrupted_list_{i}",
+                        "input": [float("nan")] * len(base) if base else [float("nan")],
+                    }
+                )
             elif isinstance(base, dict):
                 # Create partial version
-                edge_cases.append({
-                    "name": f"partial_dict_{i}",
-                    "input": {k: None for k in list(base.keys())[:1]} if base else {},
-                })
+                edge_cases.append(
+                    {
+                        "name": f"partial_dict_{i}",
+                        "input": {k: None for k in list(base.keys())[:1]} if base else {},
+                    }
+                )
             elif isinstance(base, (int, float)):
                 # Create extreme versions
-                edge_cases.append({
-                    "name": f"extreme_negative_{i}",
-                    "input": -abs(base) * 1000 if base != 0 else -1000,
-                })
+                edge_cases.append(
+                    {
+                        "name": f"extreme_negative_{i}",
+                        "input": -abs(base) * 1000 if base != 0 else -1000,
+                    }
+                )
 
         return edge_cases
 
@@ -896,6 +880,7 @@ class RobustnessTestSuite:
         results: Test results from last run
         created_at: When suite was created
     """
+
     suite_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     suite_name: str = "EU AI Act Article 15 Robustness Test Suite"
     adversarial_tester: AdversarialTester = field(default_factory=AdversarialTester)
@@ -931,9 +916,7 @@ class RobustnessTestSuite:
         self.results.append(result)
 
         logger.info("Running distribution shift tests...")
-        result = self.distribution_shift_tester.run_test(
-            model_fn, test_inputs, **kwargs
-        )
+        result = self.distribution_shift_tester.run_test(model_fn, test_inputs, **kwargs)
         self.results.append(result)
 
         logger.info("Running failsafe tests...")
@@ -1015,16 +998,18 @@ class RobustnessTestSuite:
         failed = sum(1 for r in self.results if r.status == TestStatus.FAILED)
         errors = sum(1 for r in self.results if r.status == TestStatus.ERROR)
 
-        lines.extend([
-            "-" * 70,
-            "SUMMARY",
-            "-" * 70,
-            "",
-            f"Tests Passed: {passed}/{len(self.results)}",
-            f"Tests Failed: {failed}/{len(self.results)}",
-            f"Test Errors: {errors}/{len(self.results)}",
-            "",
-        ])
+        lines.extend(
+            [
+                "-" * 70,
+                "SUMMARY",
+                "-" * 70,
+                "",
+                f"Tests Passed: {passed}/{len(self.results)}",
+                f"Tests Failed: {failed}/{len(self.results)}",
+                f"Test Errors: {errors}/{len(self.results)}",
+                "",
+            ]
+        )
 
         # Aggregate recommendations
         all_recommendations = []
@@ -1032,21 +1017,25 @@ class RobustnessTestSuite:
             all_recommendations.extend(result.recommendations)
 
         if all_recommendations:
-            lines.extend([
-                "-" * 70,
-                "RECOMMENDATIONS",
-                "-" * 70,
-                "",
-            ])
+            lines.extend(
+                [
+                    "-" * 70,
+                    "RECOMMENDATIONS",
+                    "-" * 70,
+                    "",
+                ]
+            )
             for i, rec in enumerate(set(all_recommendations), 1):
                 lines.append(f"  {i}. {rec}")
 
-        lines.extend([
-            "",
-            "=" * 70,
-            "END OF REPORT",
-            "=" * 70,
-        ])
+        lines.extend(
+            [
+                "",
+                "=" * 70,
+                "END OF REPORT",
+                "=" * 70,
+            ]
+        )
 
         return "\n".join(lines)
 

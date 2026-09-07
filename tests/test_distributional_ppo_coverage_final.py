@@ -10,6 +10,7 @@ Focus areas:
 6. Import fallback paths
 7. Various helper functions and edge cases
 """
+
 from __future__ import annotations
 
 import math
@@ -47,9 +48,7 @@ def _make_simple_env(max_steps: int = 10) -> DummyVecEnv:
     def _env_fn():
         class _Env(gymnasium.Env):
             def __init__(self):
-                self.action_space = spaces.Box(
-                    low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-                )
+                self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
                 self.observation_space = spaces.Box(
                     low=-10.0, high=10.0, shape=(4,), dtype=np.float32
                 )
@@ -612,9 +611,7 @@ class _DummyCallback(BaseCallback):
 class TestTrainBranches:
     """Test train() method branches."""
 
-    def _make_model_and_collect(
-        self, seed: int = 42, max_steps: int = 8, **model_kwargs
-    ):
+    def _make_model_and_collect(self, seed: int = 42, max_steps: int = 8, **model_kwargs):
         """Create model, setup and collect rollouts."""
         env = _make_simple_env(max_steps=max_steps)
         defaults = {
@@ -824,6 +821,7 @@ class TestHelperFunctions:
 
 class TestSafeExplainedVarianceEdgeCases:
     """Test safe_explained_variance edge cases - covered elsewhere."""
+
     pass
 
 
@@ -891,6 +889,7 @@ class TestLoadSave:
 
 class TestCollectRolloutsBranches:
     """Test collect_rollouts edge cases - covered by other tests."""
+
     pass
 
 

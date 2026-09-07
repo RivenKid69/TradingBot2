@@ -48,129 +48,143 @@ REDACTED_PLACEHOLDER: Final[str] = "[REDACTED]"
 MASKED_PLACEHOLDER: Final[str] = "***"
 
 # High-sensitivity field patterns (always redact)
-SECRET_FIELD_PATTERNS: Final[FrozenSet[str]] = frozenset({
-    "api_key",
-    "api_secret",
-    "apikey",
-    "apisecret",
-    "secret",
-    "secret_key",
-    "secretkey",
-    "private_key",
-    "privatekey",
-    "password",
-    "passwd",
-    "pwd",
-    "token",
-    "access_token",
-    "refresh_token",
-    "bearer",
-    "auth_token",
-    "authtoken",
-    "credential",
-    "credentials",
-    "auth",
-    "authorization",
-    "broker_key",
-    "broker_secret",
-    "exchange_key",
-    "exchange_secret",
-    "wallet_key",
-    "seed_phrase",
-    "mnemonic",
-    "passphrase",
-})
+SECRET_FIELD_PATTERNS: Final[FrozenSet[str]] = frozenset(
+    {
+        "api_key",
+        "api_secret",
+        "apikey",
+        "apisecret",
+        "secret",
+        "secret_key",
+        "secretkey",
+        "private_key",
+        "privatekey",
+        "password",
+        "passwd",
+        "pwd",
+        "token",
+        "access_token",
+        "refresh_token",
+        "bearer",
+        "auth_token",
+        "authtoken",
+        "credential",
+        "credentials",
+        "auth",
+        "authorization",
+        "broker_key",
+        "broker_secret",
+        "exchange_key",
+        "exchange_secret",
+        "wallet_key",
+        "seed_phrase",
+        "mnemonic",
+        "passphrase",
+    }
+)
 
 # Account identifier patterns (mask, don't fully redact)
-ACCOUNT_FIELD_PATTERNS: Final[FrozenSet[str]] = frozenset({
-    "account_number",
-    "account_id",
-    "accountnumber",
-    "accountid",
-    "account",
-    "ssn",
-    "social_security",
-    "tax_id",
-    "taxid",
-    "ein",
-    "routing_number",
-    "bank_account",
-    "card_number",
-    "cardnumber",
-    "credit_card",
-    "debit_card",
-    "iban",
-    "swift",
-    "bic",
-})
+ACCOUNT_FIELD_PATTERNS: Final[FrozenSet[str]] = frozenset(
+    {
+        "account_number",
+        "account_id",
+        "accountnumber",
+        "accountid",
+        "account",
+        "ssn",
+        "social_security",
+        "tax_id",
+        "taxid",
+        "ein",
+        "routing_number",
+        "bank_account",
+        "card_number",
+        "cardnumber",
+        "credit_card",
+        "debit_card",
+        "iban",
+        "swift",
+        "bic",
+    }
+)
 
 # PII patterns (mask for privacy)
-PII_FIELD_PATTERNS: Final[FrozenSet[str]] = frozenset({
-    "email",
-    "phone",
-    "phone_number",
-    "phonenumber",
-    "address",
-    "street_address",
-    "city",
-    "state",
-    "zip",
-    "zipcode",
-    "postal_code",
-    "country",
-    "first_name",
-    "firstname",
-    "last_name",
-    "lastname",
-    "full_name",
-    "fullname",
-    "name",
-    "dob",
-    "date_of_birth",
-    "birthdate",
-    "birth_date",
-    "ip_address",
-    "ipaddress",
-    "user_agent",
-    "useragent",
-})
+PII_FIELD_PATTERNS: Final[FrozenSet[str]] = frozenset(
+    {
+        "email",
+        "phone",
+        "phone_number",
+        "phonenumber",
+        "address",
+        "street_address",
+        "city",
+        "state",
+        "zip",
+        "zipcode",
+        "postal_code",
+        "country",
+        "first_name",
+        "firstname",
+        "last_name",
+        "lastname",
+        "full_name",
+        "fullname",
+        "name",
+        "dob",
+        "date_of_birth",
+        "birthdate",
+        "birth_date",
+        "ip_address",
+        "ipaddress",
+        "user_agent",
+        "useragent",
+    }
+)
 
 # Environment variable names that should never be logged
-PROHIBITED_ENV_VARS: Final[FrozenSet[str]] = frozenset({
-    "AWS_ACCESS_KEY_ID",
-    "AWS_SECRET_ACCESS_KEY",
-    "AWS_SESSION_TOKEN",
-    "AZURE_CLIENT_SECRET",
-    "AZURE_SUBSCRIPTION_ID",
-    "GCP_SERVICE_ACCOUNT_KEY",
-    "GOOGLE_APPLICATION_CREDENTIALS",
-    "DATABASE_URL",
-    "DATABASE_PASSWORD",
-    "DB_PASSWORD",
-    "REDIS_PASSWORD",
-    "BROKER_API_KEY",
-    "BROKER_API_SECRET",
-    "EXCHANGE_API_KEY",
-    "EXCHANGE_API_SECRET",
-    "PRIVATE_KEY",
-    "SECRET_KEY",
-    "JWT_SECRET",
-    "SESSION_SECRET",
-    "ENCRYPTION_KEY",
-    "MASTER_KEY",
-    "SSH_KEY",
-    "GPG_KEY",
-    "GITHUB_TOKEN",
-    "GITLAB_TOKEN",
-    "NPM_TOKEN",
-    "PYPI_TOKEN",
-    "DOCKER_PASSWORD",
-})
+PROHIBITED_ENV_VARS: Final[FrozenSet[str]] = frozenset(
+    {
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_SESSION_TOKEN",
+        "AZURE_CLIENT_SECRET",
+        "AZURE_SUBSCRIPTION_ID",
+        "GCP_SERVICE_ACCOUNT_KEY",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "DATABASE_URL",
+        "DATABASE_PASSWORD",
+        "DB_PASSWORD",
+        "REDIS_PASSWORD",
+        "BROKER_API_KEY",
+        "BROKER_API_SECRET",
+        "EXCHANGE_API_KEY",
+        "EXCHANGE_API_SECRET",
+        "PRIVATE_KEY",
+        "SECRET_KEY",
+        "JWT_SECRET",
+        "SESSION_SECRET",
+        "ENCRYPTION_KEY",
+        "MASTER_KEY",
+        "SSH_KEY",
+        "GPG_KEY",
+        "GITHUB_TOKEN",
+        "GITLAB_TOKEN",
+        "NPM_TOKEN",
+        "PYPI_TOKEN",
+        "DOCKER_PASSWORD",
+    }
+)
 
 # Regex patterns for value-based detection
 VALUE_REDACTION_PATTERNS: Final[List[Tuple[str, Pattern[str]]]] = [
     # API Keys (generic patterns)
-    ("api_key", re.compile(r"(?:api[_-]?key|apikey)[\"']?\s*[:=]\s*[\"']?([A-Za-z0-9_\-]{20,})[\"']?", re.IGNORECASE)),
+    (
+        "api_key",
+        re.compile(
+            r"(?:api[_-]?key|apikey)[\"']?\s*[:=]\s*[\"']?([A-Za-z0-9_\-]{20,})[\"']?",
+            re.IGNORECASE,
+        ),
+    ),
     # AWS Access Keys
     ("aws_key", re.compile(r"(?:AKIA|ABIA|ACCA|ASIA)[A-Z0-9]{16}")),
     # AWS Secret Keys
@@ -192,16 +206,20 @@ VALUE_REDACTION_PATTERNS: Final[List[Tuple[str, Pattern[str]]]] = [
     # Phone numbers (US format)
     ("phone", re.compile(r"\b(?:\+1)?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b")),
     # UUID (for tracking but not full redaction)
-    ("uuid", re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE)),
+    (
+        "uuid",
+        re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE),
+    ),
 ]
 
 
 class RedactionLevel(Enum):
     """Level of redaction to apply."""
-    FULL = auto()      # Replace entirely with [REDACTED]
-    PARTIAL = auto()   # Mask middle portion
-    HASH = auto()      # Replace with hash for correlation
-    NONE = auto()      # No redaction (use with caution)
+
+    FULL = auto()  # Replace entirely with [REDACTED]
+    PARTIAL = auto()  # Mask middle portion
+    HASH = auto()  # Replace with hash for correlation
+    NONE = auto()  # No redaction (use with caution)
 
 
 @dataclass
@@ -216,6 +234,7 @@ class RedactionPattern:
         level: How to redact matched content
         is_mandatory: Cannot be disabled
     """
+
     name: str
     field_patterns: FrozenSet[str] = field(default_factory=frozenset)
     value_pattern: Optional[Pattern[str]] = None
@@ -244,6 +263,7 @@ class RedactionStats:
 
     Used for audit and monitoring purposes.
     """
+
     total_fields_processed: int = 0
     fields_redacted: int = 0
     values_redacted: int = 0
@@ -274,6 +294,7 @@ class RedactionResult:
         redaction_applied: Always True (cannot be False)
         redaction_hash: Hash of redaction config for verification
     """
+
     data: Dict[str, Any]
     stats: RedactionStats
     redaction_applied: bool = True  # Always True, cannot be disabled
@@ -293,6 +314,7 @@ class RedactionConfig:
     Note: Redaction itself cannot be disabled. This config only
     controls additional patterns and behavior.
     """
+
     # Additional custom patterns (built-in patterns always active)
     custom_patterns: List[RedactionPattern] = field(default_factory=list)
 
@@ -380,39 +402,52 @@ class TelemetryRedactionMiddleware:
         patterns = []
 
         # Mandatory secret patterns (cannot be disabled)
-        patterns.append(RedactionPattern(
-            name="secrets",
-            field_patterns=SECRET_FIELD_PATTERNS,
-            level=RedactionLevel.FULL,
-            is_mandatory=True,
-        ))
+        patterns.append(
+            RedactionPattern(
+                name="secrets",
+                field_patterns=SECRET_FIELD_PATTERNS,
+                level=RedactionLevel.FULL,
+                is_mandatory=True,
+            )
+        )
 
         # Mandatory account patterns
-        patterns.append(RedactionPattern(
-            name="accounts",
-            field_patterns=ACCOUNT_FIELD_PATTERNS,
-            level=RedactionLevel.PARTIAL,
-            is_mandatory=True,
-        ))
+        patterns.append(
+            RedactionPattern(
+                name="accounts",
+                field_patterns=ACCOUNT_FIELD_PATTERNS,
+                level=RedactionLevel.PARTIAL,
+                is_mandatory=True,
+            )
+        )
 
         # Mandatory PII patterns
-        patterns.append(RedactionPattern(
-            name="pii",
-            field_patterns=PII_FIELD_PATTERNS,
-            level=RedactionLevel.PARTIAL,
-            is_mandatory=True,
-        ))
+        patterns.append(
+            RedactionPattern(
+                name="pii",
+                field_patterns=PII_FIELD_PATTERNS,
+                level=RedactionLevel.PARTIAL,
+                is_mandatory=True,
+            )
+        )
 
         # Value-based patterns
         for name, regex in VALUE_REDACTION_PATTERNS:
             if name == "uuid" and not self.config.redact_uuids:
                 continue
-            patterns.append(RedactionPattern(
-                name=f"value_{name}",
-                value_pattern=regex,
-                level=RedactionLevel.FULL if name in ("api_key", "aws_key", "aws_secret", "jwt", "bearer", "private_key") else RedactionLevel.PARTIAL,
-                is_mandatory=True,
-            ))
+            patterns.append(
+                RedactionPattern(
+                    name=f"value_{name}",
+                    value_pattern=regex,
+                    level=(
+                        RedactionLevel.FULL
+                        if name
+                        in ("api_key", "aws_key", "aws_secret", "jwt", "bearer", "private_key")
+                        else RedactionLevel.PARTIAL
+                    ),
+                    is_mandatory=True,
+                )
+            )
 
         # Add custom patterns
         patterns.extend(self.config.custom_patterns)
@@ -472,16 +507,11 @@ class TelemetryRedactionMiddleware:
                     stats.fields_redacted += 1
                 else:
                     # Recurse into nested structures
-                    result[key] = self._redact_recursive(
-                        value, stats, depth + 1, key
-                    )
+                    result[key] = self._redact_recursive(value, stats, depth + 1, key)
             return result
 
         elif isinstance(obj, list):
-            return [
-                self._redact_recursive(item, stats, depth + 1, parent_key)
-                for item in obj
-            ]
+            return [self._redact_recursive(item, stats, depth + 1, parent_key) for item in obj]
 
         elif isinstance(obj, str):
             # Check string values for sensitive patterns
@@ -513,11 +543,12 @@ class TelemetryRedactionMiddleware:
                     result = pattern.value_pattern.sub(REDACTED_PLACEHOLDER, result)
                 elif pattern.level == RedactionLevel.PARTIAL:
                     result = pattern.value_pattern.sub(
-                        lambda m: self._partial_mask(m.group()),
-                        result
+                        lambda m: self._partial_mask(m.group()), result
                     )
                 stats.values_redacted += 1
-                stats.patterns_matched[pattern.name] = stats.patterns_matched.get(pattern.name, 0) + 1
+                stats.patterns_matched[pattern.name] = (
+                    stats.patterns_matched.get(pattern.name, 0) + 1
+                )
 
         return result
 
@@ -573,7 +604,11 @@ class TelemetryRedactionMiddleware:
         def remove_env_refs(obj: Any) -> Any:
             if isinstance(obj, dict):
                 return {
-                    k: remove_env_refs(v) if k.upper() not in PROHIBITED_ENV_VARS else REDACTED_PLACEHOLDER
+                    k: (
+                        remove_env_refs(v)
+                        if k.upper() not in PROHIBITED_ENV_VARS
+                        else REDACTED_PLACEHOLDER
+                    )
                     for k, v in obj.items()
                 }
             elif isinstance(obj, list):
@@ -649,6 +684,7 @@ class TelemetryRedactionMiddleware:
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def create_default_middleware() -> TelemetryRedactionMiddleware:
     """Create middleware with default configuration."""

@@ -90,16 +90,18 @@ logger = logging.getLogger(__name__)
 # Enums and Constants
 # =============================================================================
 
+
 class MarginCallLevel(str, Enum):
     """
     CME margin call severity levels.
 
     Based on equity/maintenance margin ratio.
     """
-    NONE = "none"              # No margin concern
-    WARNING = "warning"        # Approaching maintenance
-    MARGIN_CALL = "margin_call"    # Below maintenance
-    LIQUIDATION = "liquidation"    # Forced liquidation imminent
+
+    NONE = "none"  # No margin concern
+    WARNING = "warning"  # Approaching maintenance
+    MARGIN_CALL = "margin_call"  # Below maintenance
+    LIQUIDATION = "liquidation"  # Forced liquidation imminent
 
 
 class MarginStatus(str, Enum):
@@ -108,10 +110,11 @@ class MarginStatus(str, Enum):
 
     SPAN margin is portfolio-based with spread credits.
     """
-    HEALTHY = "healthy"        # Equity > 1.5 × maintenance
-    WARNING = "warning"        # Equity 1.2-1.5 × maintenance
-    DANGER = "danger"          # Equity 1.05-1.2 × maintenance
-    CRITICAL = "critical"      # Equity 1.0-1.05 × maintenance
+
+    HEALTHY = "healthy"  # Equity > 1.5 × maintenance
+    WARNING = "warning"  # Equity 1.2-1.5 × maintenance
+    DANGER = "danger"  # Equity 1.05-1.2 × maintenance
+    CRITICAL = "critical"  # Equity 1.0-1.05 × maintenance
     LIQUIDATION = "liquidation"  # Equity ≤ maintenance
 
 
@@ -121,37 +124,41 @@ class PositionLimitType(str, Enum):
 
     Different limits apply based on trader classification.
     """
-    SPECULATIVE = "speculative"      # Standard speculative limits
+
+    SPECULATIVE = "speculative"  # Standard speculative limits
     ACCOUNTABILITY = "accountability"  # Accountability level (reporting)
     BONA_FIDE_HEDGE = "bona_fide_hedge"  # Hedge exemption
-    SPREAD = "spread"                # Calendar spread limits
+    SPREAD = "spread"  # Calendar spread limits
 
 
 class SettlementRiskLevel(str, Enum):
     """
     Risk level relative to daily settlement time.
     """
-    NORMAL = "normal"            # > 60 min from settlement
+
+    NORMAL = "normal"  # > 60 min from settlement
     APPROACHING = "approaching"  # 30-60 min from settlement
-    IMMINENT = "imminent"        # 15-30 min from settlement
-    SETTLEMENT = "settlement"    # < 15 min from settlement
+    IMMINENT = "imminent"  # 15-30 min from settlement
+    SETTLEMENT = "settlement"  # < 15 min from settlement
 
 
 class RolloverRiskLevel(str, Enum):
     """
     Risk level relative to contract expiration/rollover.
     """
-    NORMAL = "normal"          # > 10 days to roll
+
+    NORMAL = "normal"  # > 10 days to roll
     MONITORING = "monitoring"  # 5-10 days to roll
     APPROACHING = "approaching"  # 2-5 days to roll
-    IMMINENT = "imminent"      # < 2 days to roll
-    EXPIRED = "expired"        # Past roll date
+    IMMINENT = "imminent"  # < 2 days to roll
+    EXPIRED = "expired"  # Past roll date
 
 
 class RiskEvent(str, Enum):
     """
     Risk events that can be triggered by guards.
     """
+
     NONE = "none"
     MARGIN_WARNING = "margin_warning"
     MARGIN_CALL = "margin_call"
@@ -176,38 +183,38 @@ class RiskEvent(str, Enum):
 # Source: CME Group Position Limits
 SPECULATIVE_LIMITS: Dict[str, int] = {
     # Equity Index (spot month)
-    "ES": 50000,    # E-mini S&P 500
-    "NQ": 50000,    # E-mini NASDAQ 100
-    "YM": 50000,    # E-mini Dow
-    "RTY": 10000,   # E-mini Russell 2000
+    "ES": 50000,  # E-mini S&P 500
+    "NQ": 50000,  # E-mini NASDAQ 100
+    "YM": 50000,  # E-mini Dow
+    "RTY": 10000,  # E-mini Russell 2000
     "MES": 200000,  # Micro E-mini S&P (10x ES)
     "MNQ": 200000,  # Micro E-mini NASDAQ
     # Metals
-    "GC": 6000,     # Gold (COMEX)
-    "SI": 6000,     # Silver (COMEX)
-    "HG": 1000,     # Copper
-    "MGC": 60000,   # Micro Gold
+    "GC": 6000,  # Gold (COMEX)
+    "SI": 6000,  # Silver (COMEX)
+    "HG": 1000,  # Copper
+    "MGC": 60000,  # Micro Gold
     # Energy
-    "CL": 10000,    # Crude Oil (NYMEX)
-    "NG": 12000,    # Natural Gas
+    "CL": 10000,  # Crude Oil (NYMEX)
+    "NG": 12000,  # Natural Gas
     "MCL": 100000,  # Micro Crude
-    "RB": 5000,     # RBOB Gasoline
-    "HO": 5000,     # Heating Oil
+    "RB": 5000,  # RBOB Gasoline
+    "HO": 5000,  # Heating Oil
     # Currencies
-    "6E": 25000,    # Euro FX
-    "6J": 25000,    # Japanese Yen
-    "6B": 25000,    # British Pound
-    "6A": 25000,    # Australian Dollar
-    "6C": 25000,    # Canadian Dollar
+    "6E": 25000,  # Euro FX
+    "6J": 25000,  # Japanese Yen
+    "6B": 25000,  # British Pound
+    "6A": 25000,  # Australian Dollar
+    "6C": 25000,  # Canadian Dollar
     # Bonds
-    "ZB": 25000,    # 30-Year Treasury
-    "ZN": 50000,    # 10-Year Treasury
-    "ZT": 50000,    # 2-Year Treasury
-    "ZF": 50000,    # 5-Year Treasury
+    "ZB": 25000,  # 30-Year Treasury
+    "ZN": 50000,  # 10-Year Treasury
+    "ZT": 50000,  # 2-Year Treasury
+    "ZF": 50000,  # 5-Year Treasury
     # Agricultural
-    "ZC": 57800,    # Corn
-    "ZS": 15000,    # Soybeans
-    "ZW": 12000,    # Wheat
+    "ZC": 57800,  # Corn
+    "ZS": 15000,  # Soybeans
+    "ZW": 12000,  # Wheat
 }
 
 # Accountability levels (reportable position size)
@@ -243,6 +250,7 @@ DEFAULT_ACCOUNTABILITY_LEVEL = 500
 # Configuration Classes
 # =============================================================================
 
+
 @dataclass
 class SPANMarginGuardConfig:
     """
@@ -255,6 +263,7 @@ class SPANMarginGuardConfig:
         auto_reduce_on_critical: Auto-suggest position reduction
         margin_call_callback: Callback for margin call events
     """
+
     warning_ratio: Decimal = Decimal("1.50")
     danger_ratio: Decimal = Decimal("1.20")
     critical_ratio: Decimal = Decimal("1.05")
@@ -282,6 +291,7 @@ class PositionLimitGuardConfig:
         trader_type: Trader classification (speculative, hedge)
         check_accountability: Also check accountability levels
     """
+
     warn_at_pct: Decimal = Decimal("0.80")
     block_at_pct: Decimal = Decimal("1.00")
     trader_type: PositionLimitType = PositionLimitType.SPECULATIVE
@@ -299,6 +309,7 @@ class CircuitBreakerGuardConfig:
         adjust_on_velocity_pause: Adjust behavior during velocity pause
         pre_cb_warning_pct: Warn when decline approaches this % (default -5%)
     """
+
     prevent_trades_on_halt: bool = True
     warn_on_level_1: bool = True
     adjust_on_velocity_pause: bool = True
@@ -316,6 +327,7 @@ class SettlementRiskGuardConfig:
         block_new_positions_minutes: Block new positions this close
         auto_flatten_on_settlement: Auto-suggest flatten
     """
+
     warn_minutes_before: int = 60
     critical_minutes_before: int = 30
     block_new_positions_minutes: int = 15
@@ -333,6 +345,7 @@ class RolloverGuardConfig:
         block_new_positions_days: Block new positions this close
         auto_roll_enabled: Enable automatic roll execution
     """
+
     warn_days_before: int = 10
     critical_days_before: int = 5
     block_new_positions_days: int = 2
@@ -342,6 +355,7 @@ class RolloverGuardConfig:
 # =============================================================================
 # Result Classes
 # =============================================================================
+
 
 @dataclass
 class MarginCheckResult:
@@ -360,6 +374,7 @@ class MarginCheckResult:
         suggested_reduction_pct: Suggested reduction percentage
         message: Human-readable status message
     """
+
     status: MarginStatus
     level: MarginCallLevel
     margin_ratio: Decimal
@@ -388,6 +403,7 @@ class PositionLimitCheckResult:
         limit_type: Which limit applies
         message: Human-readable status message
     """
+
     is_within_limit: bool
     current_position: int
     speculative_limit: int
@@ -413,6 +429,7 @@ class CircuitBreakerCheckResult:
         halt_end_time_ms: When halt ends (None = day halt)
         message: Human-readable status message
     """
+
     can_trade: bool
     trading_state: TradingState
     circuit_breaker_level: CircuitBreakerLevel
@@ -435,6 +452,7 @@ class SettlementRiskCheckResult:
         pending_variation_margin: Expected variation margin
         message: Human-readable status message
     """
+
     risk_level: SettlementRiskLevel
     minutes_to_settlement: Optional[int]
     settlement_time: Optional[time]
@@ -459,6 +477,7 @@ class RolloverCheckResult:
         back_month: Next contract to roll into
         message: Human-readable status message
     """
+
     risk_level: RolloverRiskLevel
     days_to_roll: int
     roll_date: Optional[date]
@@ -484,6 +503,7 @@ class MarginCallEvent:
         recommended_action: Suggested action
         urgency_seconds: Seconds to respond (None = immediate)
     """
+
     timestamp_ms: int
     level: MarginCallLevel
     account_equity: Decimal
@@ -496,6 +516,7 @@ class MarginCallEvent:
 # =============================================================================
 # Guard Implementations
 # =============================================================================
+
 
 class SPANMarginGuard:
     """
@@ -586,10 +607,7 @@ class SPANMarginGuard:
                 # Need to reduce positions to bring equity above maintenance
                 # Simplified: suggest reducing by shortfall / (current margin ratio)
                 if maint_margin > 0:
-                    suggested_reduction = min(
-                        Decimal("1.0"),
-                        abs(excess_margin) / maint_margin
-                    )
+                    suggested_reduction = min(Decimal("1.0"), abs(excess_margin) / maint_margin)
 
             # Build message
             message = self._build_message(status, margin_ratio, excess_margin)
@@ -689,7 +707,9 @@ class SPANMarginGuard:
         if status == MarginStatus.HEALTHY:
             return f"Margin healthy: {margin_ratio:.1%} of maintenance"
         elif status == MarginStatus.WARNING:
-            return f"Margin warning: {margin_ratio:.1%} of maintenance, excess ${excess_margin:,.2f}"
+            return (
+                f"Margin warning: {margin_ratio:.1%} of maintenance, excess ${excess_margin:,.2f}"
+            )
         elif status == MarginStatus.DANGER:
             return f"Margin danger: {margin_ratio:.1%} of maintenance, reduce positions recommended"
         elif status == MarginStatus.CRITICAL:
@@ -795,7 +815,11 @@ class CMEPositionLimitGuard:
             limit_type = self._config.trader_type
 
         # Calculate utilization
-        utilization = Decimal(abs_position) / Decimal(effective_limit) if effective_limit > 0 else Decimal("inf")
+        utilization = (
+            Decimal(abs_position) / Decimal(effective_limit)
+            if effective_limit > 0
+            else Decimal("inf")
+        )
 
         # Check limits
         block_threshold = effective_limit * self._config.block_at_pct
@@ -809,7 +833,9 @@ class CMEPositionLimitGuard:
         if abs_position > block_threshold:
             message = f"LIMIT BREACH: {abs_position:,} contracts exceeds {effective_limit:,} limit"
         elif abs_position > warn_threshold:
-            message = f"Near limit: {abs_position:,} contracts ({utilization:.1%} of {effective_limit:,})"
+            message = (
+                f"Near limit: {abs_position:,} contracts ({utilization:.1%} of {effective_limit:,})"
+            )
         elif at_accountability:
             message = f"At accountability level: {abs_position:,} contracts (reportable)"
         else:
@@ -1143,7 +1169,9 @@ class SettlementRiskGuard:
         elif risk_level == SettlementRiskLevel.APPROACHING:
             message = f"Settlement approaching: {minutes_to_settlement} minutes"
         elif risk_level == SettlementRiskLevel.IMMINENT:
-            message = f"Settlement imminent: {minutes_to_settlement} minutes - new positions blocked"
+            message = (
+                f"Settlement imminent: {minutes_to_settlement} minutes - new positions blocked"
+            )
         else:
             message = f"Settlement period - no new positions"
 
@@ -1338,6 +1366,7 @@ class RolloverGuard:
 # Unified CME Risk Guard
 # =============================================================================
 
+
 class CMEFuturesRiskGuard:
     """
     Unified CME futures risk guard combining all risk checks.
@@ -1486,7 +1515,10 @@ class CMEFuturesRiskGuard:
             if not settlement_result.can_open_new_positions:
                 self._last_event_reason = settlement_result.message
                 return RiskEvent.SETTLEMENT_IMMINENT
-            if settlement_result.risk_level == SettlementRiskLevel.APPROACHING and self._strict_mode:
+            if (
+                settlement_result.risk_level == SettlementRiskLevel.APPROACHING
+                and self._strict_mode
+            ):
                 self._last_event_reason = settlement_result.message
                 return RiskEvent.SETTLEMENT_APPROACHING
 
@@ -1589,12 +1621,16 @@ class CMEFuturesRiskGuard:
                 "utilization": float(limit_result.utilization_pct),
                 "message": limit_result.message,
             },
-            "circuit_breaker": {
-                "can_trade": cb_result.can_trade if cb_result else True,
-                "state": cb_result.trading_state.value if cb_result else "NORMAL",
-                "level": cb_result.circuit_breaker_level.value if cb_result else 0,
-                "message": cb_result.message if cb_result else "",
-            } if cb_result else None,
+            "circuit_breaker": (
+                {
+                    "can_trade": cb_result.can_trade if cb_result else True,
+                    "state": cb_result.trading_state.value if cb_result else "NORMAL",
+                    "level": cb_result.circuit_breaker_level.value if cb_result else 0,
+                    "message": cb_result.message if cb_result else "",
+                }
+                if cb_result
+                else None
+            ),
             "settlement": {
                 "risk_level": settlement_result.risk_level.value,
                 "minutes_to_settlement": settlement_result.minutes_to_settlement,
@@ -1660,6 +1696,7 @@ class CMEFuturesRiskGuard:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_cme_risk_guard(
     strict_mode: bool = True,

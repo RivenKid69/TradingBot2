@@ -13,6 +13,7 @@ import pandas as pd
 
 # ----------------------------- utils -----------------------------
 
+
 def _sigmoid(z: np.ndarray) -> np.ndarray:
     z = np.asarray(z, dtype=float)
     # численно стабильный сигмоид
@@ -76,25 +77,30 @@ def calibration_table(p: np.ndarray, y: np.ndarray, bins: int = 10) -> pd.DataFr
     for b in range(bins):
         sel = idx == b
         if np.any(sel):
-            rows.append({
-                "bin_low": float(edges[b]),
-                "bin_high": float(edges[b + 1]),
-                "n": int(np.sum(sel)),
-                "mean_score": float(np.mean(p[sel])),
-                "empirical_rate": float(np.mean(y[sel])),
-            })
+            rows.append(
+                {
+                    "bin_low": float(edges[b]),
+                    "bin_high": float(edges[b + 1]),
+                    "n": int(np.sum(sel)),
+                    "mean_score": float(np.mean(p[sel])),
+                    "empirical_rate": float(np.mean(y[sel])),
+                }
+            )
         else:
-            rows.append({
-                "bin_low": float(edges[b]),
-                "bin_high": float(edges[b + 1]),
-                "n": 0,
-                "mean_score": float("nan"),
-                "empirical_rate": float("nan"),
-            })
+            rows.append(
+                {
+                    "bin_low": float(edges[b]),
+                    "bin_high": float(edges[b + 1]),
+                    "n": 0,
+                    "mean_score": float("nan"),
+                    "empirical_rate": float("nan"),
+                }
+            )
     return pd.DataFrame(rows)
 
 
 # ----------------------------- base class -----------------------------
+
 
 class BaseCalibrator:
     def fit(self, scores: np.ndarray, labels: np.ndarray) -> "BaseCalibrator":
@@ -130,16 +136,20 @@ class BaseCalibrator:
 
 # ----------------------------- Platt scaling -----------------------------
 
+
 @dataclass
 class PlattCalibrator(BaseCalibrator):
     """
     p = sigmoid(w * x + b)
     Обучение: Ньютона-Рафсона для логистической регрессии в одномерном признаке (score).
     """
+
     w: float = 0.0
     b: float = 0.0
 
-    def fit(self, scores: np.ndarray, labels: np.ndarray, max_iter: int = 50, tol: float = 1e-6) -> "PlattCalibrator":
+    def fit(
+        self, scores: np.ndarray, labels: np.ndarray, max_iter: int = 50, tol: float = 1e-6
+    ) -> "PlattCalibrator":
         x = np.asarray(scores, dtype=float).reshape(-1)
         y = np.asarray(labels, dtype=float).reshape(-1)
         mask = np.isfinite(x) & np.isfinite(y)
@@ -172,7 +182,7 @@ class PlattCalibrator(BaseCalibrator):
             det = H_ww * H_bb - H_wb * H_wb
             if abs(det) < 1e-12:
                 break
-            dw = -( H_bb * g_w - H_wb * g_b) / det
+            dw = -(H_bb * g_w - H_wb * g_b) / det
             db = -(-H_wb * g_w + H_ww * g_b) / det
             w_new = w + dw
             b_new = b + db
@@ -201,12 +211,14 @@ class PlattCalibrator(BaseCalibrator):
 
 # ----------------------------- Isotonic regression -----------------------------
 
+
 @dataclass
 class IsotonicCalibrator(BaseCalibrator):
     """
     Монотонная калибровка (PAV).
     Сохраняем ступенчатую функцию как пары (x_thresholds, y_values).
     """
+
     x_thresholds: List[float] = None
     y_values: List[float] = None
 
@@ -218,7 +230,10 @@ class IsotonicCalibrator(BaseCalibrator):
         y = y[mask]
         if x.size == 0:
             self.x_thresholds = [0.0, 1.0]
-            self.y_values = [float(np.mean(y) if y.size else 0.5), float(np.mean(y) if y.size else 0.5)]
+            self.y_values = [
+                float(np.mean(y) if y.size else 0.5),
+                float(np.mean(y) if y.size else 0.5),
+            ]
             return self
 
         # агрегируем по уникальным x: среднее y и вес (частота)
@@ -283,7 +298,9 @@ class IsotonicCalibrator(BaseCalibrator):
     def predict_proba(self, scores: np.ndarray) -> np.ndarray:
         if not self.x_thresholds or not self.y_values:
             # не обучен — вернём 0.5
-            return np.full(shape=(len(np.asarray(scores).reshape(-1)),), fill_value=0.5, dtype=float)
+            return np.full(
+                shape=(len(np.asarray(scores).reshape(-1)),), fill_value=0.5, dtype=float
+            )
         x = np.asarray(scores, dtype=float).reshape(-1)
         out = np.empty_like(x, dtype=float)
         # для каждого x найдём первую границу >= x
@@ -299,7 +316,11 @@ class IsotonicCalibrator(BaseCalibrator):
         return out
 
     def to_dict(self) -> Dict:
-        return {"type": "isotonic", "x_thresholds": list(self.x_thresholds or []), "y_values": list(self.y_values or [])}
+        return {
+            "type": "isotonic",
+            "x_thresholds": list(self.x_thresholds or []),
+            "y_values": list(self.y_values or []),
+        }
 
     @classmethod
     def from_dict(cls, d: Dict) -> "IsotonicCalibrator":
@@ -310,6 +331,7 @@ class IsotonicCalibrator(BaseCalibrator):
 
 
 # ----------------------------- high-level API -----------------------------
+
 
 def fit_calibrator(
     scores: np.ndarray,
@@ -343,13 +365,28 @@ def evaluate_before_after(
     s = scores[mask]
     y = labels[mask]
     if s.size == 0:
-        return {"brier_before": float("nan"), "brier_after": float("nan"), "ece_before": float("nan"), "ece_after": float("nan")}
+        return {
+            "brier_before": float("nan"),
+            "brier_after": float("nan"),
+            "ece_before": float("nan"),
+            "ece_after": float("nan"),
+        }
     p_before = np.clip(s, 0.0, 1.0)
     b_before = brier_score(p_before, y)
     e_before = ece_score(p_before, y, bins=bins)
     if calibrator is None:
-        return {"brier_before": b_before, "brier_after": float("nan"), "ece_before": e_before, "ece_after": float("nan")}
+        return {
+            "brier_before": b_before,
+            "brier_after": float("nan"),
+            "ece_before": e_before,
+            "ece_after": float("nan"),
+        }
     p_after = np.clip(calibrator.predict_proba(s), 0.0, 1.0)
     b_after = brier_score(p_after, y)
     e_after = ece_score(p_after, y, bins=bins)
-    return {"brier_before": b_before, "brier_after": b_after, "ece_before": e_before, "ece_after": e_after}
+    return {
+        "brier_before": b_before,
+        "brier_after": b_after,
+        "ece_before": e_before,
+        "ece_after": e_after,
+    }

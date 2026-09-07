@@ -45,26 +45,31 @@ This document describes the integration of Deribit (crypto options) into the Cus
 In **inverse settlement**, option payoffs are denominated in the underlying cryptocurrency, not USD. This creates unique risk/reward characteristics:
 
 **Call Option Payoff (in crypto)**:
+
 ```
 payoff_crypto = max(0, S - K) / S
 ```
 
 **Put Option Payoff (in crypto)**:
+
 ```
 payoff_crypto = max(0, K - S) / S
 ```
 
 Where:
+
 - `S` = Spot price at expiration
 - `K` = Strike price
 
 ### Example: BTC Call Option
 
 **Scenario**: BTC-28MAR25-100000-C (BTC $100,000 Call)
+
 - Strike: $100,000
 - Spot at expiration: $120,000
 
 **Inverse Payoff**:
+
 ```python
 payoff_crypto = max(0, 120000 - 100000) / 120000
 payoff_crypto = 20000 / 120000
@@ -76,10 +81,12 @@ payoff_crypto = 0.1667 BTC  # ~$20,000 at current spot
 ### Example: BTC Put Option
 
 **Scenario**: BTC-28MAR25-50000-P (BTC $50,000 Put)
+
 - Strike: $50,000
 - Spot at expiration: $40,000
 
 **Inverse Payoff**:
+
 ```python
 payoff_crypto = max(0, 50000 - 40000) / 40000
 payoff_crypto = 10000 / 40000
@@ -97,6 +104,7 @@ For **short positions**, inverse margining creates amplified risk:
 2. This creates a **double exposure** to adverse price moves
 
 **Risk Mitigation**:
+
 - Use portfolio margin for hedged positions
 - Monitor margin ratios closely during high volatility
 - Consider delta-neutral strategies
@@ -199,6 +207,7 @@ Deribit uses a specific format for option instruments:
 ```
 
 Examples:
+
 - `BTC-28MAR25-100000-C` = BTC March 28, 2025 $100,000 Call
 - `ETH-28MAR25-5000-P` = ETH March 28, 2025 $5,000 Put
 
@@ -536,6 +545,7 @@ The **Deribit Volatility Index (DVOL)** is a 30-day constant maturity implied vo
 ### Methodology
 
 DVOL is calculated using:
+
 1. Weighted average of near-term and next-term option IVs
 2. Interpolation to achieve constant 30-day maturity
 3. Only OTM options within specific delta range

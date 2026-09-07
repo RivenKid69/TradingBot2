@@ -74,6 +74,7 @@ PENDING → UNDER_REVIEW → APPROVED → [DEPRECATED]
 #### 2.1.3 Auto-Detection
 
 The registry automatically detects:
+
 - **Credential patterns**: api_key, secret, token, password
 - **PII patterns**: email, phone, address, IP address, SSN
 - **Order field patterns**: side, quantity, price, fill, position
@@ -205,6 +206,7 @@ SCHEDULED → DUE_SOON (14 days) → IN_PROGRESS → PENDING_APPROVAL → COMPLE
 #### 2.4.3 Subprocessor Management
 
 Per GDPR Article 28, track:
+
 - Name and description
 - Data categories processed
 - Processing location (EU/non-EU)
@@ -215,6 +217,7 @@ Per GDPR Article 28, track:
 #### 2.4.4 Incident Learnings
 
 Track for each incident:
+
 - Root cause analysis
 - Impact assessment
 - Remediation taken

@@ -15,9 +15,9 @@ from variance_gradient_scaler import VarianceGradientScaler
 
 def test_upgd_utility_normalization():
     """Test UPGD utility normalization for correctness."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 1: UPGD Utility Normalization")
-    print("="*80)
+    print("=" * 80)
 
     # Create simple model
     model = nn.Linear(10, 5, bias=False)
@@ -57,7 +57,7 @@ def test_upgd_utility_normalization():
         print(f"  Utility std: {avg_utility.std().item():.6f}")
 
     # Check for extreme values that indicate normalization bug
-    print("\n" + "-"*80)
+    print("\n" + "-" * 80)
     print("ANALYSIS:")
     final_utility = utilities_history[-1]
 
@@ -73,7 +73,7 @@ def test_upgd_utility_normalization():
     # Check if parameters are updating (not frozen)
     param_changes = []
     for i in range(1, len(utilities_history)):
-        change = (utilities_history[i] - utilities_history[i-1]).abs().mean().item()
+        change = (utilities_history[i] - utilities_history[i - 1]).abs().mean().item()
         param_changes.append(change)
 
     avg_change = np.mean(param_changes)
@@ -96,9 +96,9 @@ def test_vgs_spatial_vs_stochastic():
     - Spatial variance: variance across parameter elements at ONE timestep
     - Stochastic variance: variance of gradient estimates OVER TIME for same parameter
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 2: VGS - Spatial vs Stochastic Variance")
-    print("="*80)
+    print("=" * 80)
 
     # Create parameter with known properties
     param = nn.Parameter(torch.randn(100))
@@ -145,7 +145,7 @@ def test_vgs_spatial_vs_stochastic():
     var_scenario2 = vgs.get_normalized_variance()
     print(f"Normalized variance: {var_scenario2:.6f}")
 
-    print("\n" + "-"*80)
+    print("\n" + "-" * 80)
     print("ANALYSIS:")
 
     # CRITICAL TEST:
@@ -223,9 +223,9 @@ def test_vgs_spatial_vs_stochastic():
     # - Var_spatial = 0 (all elements same at each timestep)
     # - Result should be ~0
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("FINAL DIAGNOSIS:")
-    print("="*80)
+    print("=" * 80)
 
     if var_uniform_noisy < 0.01:
         print("[FAIL] VGS computes SPATIAL variance (torch.var at each timestep)")
@@ -247,30 +247,30 @@ def test_vgs_spatial_vs_stochastic():
 
 def main():
     """Run all analysis tests."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEEP ANALYSIS: UPGD and VGS Implementation Correctness")
-    print("="*80)
+    print("=" * 80)
 
     results = {}
 
     # Test 1: UPGD normalization
     try:
-        results['upgd_normalization'] = test_upgd_utility_normalization()
+        results["upgd_normalization"] = test_upgd_utility_normalization()
     except Exception as e:
         print(f"\n[FAIL] UPGD test CRASHED: {e}")
-        results['upgd_normalization'] = False
+        results["upgd_normalization"] = False
 
     # Test 2: VGS spatial vs stochastic
     try:
-        results['vgs_variance_type'] = test_vgs_spatial_vs_stochastic()
+        results["vgs_variance_type"] = test_vgs_spatial_vs_stochastic()
     except Exception as e:
         print(f"\n[FAIL] VGS test CRASHED: {e}")
-        results['vgs_variance_type'] = False
+        results["vgs_variance_type"] = False
 
     # Summary
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SUMMARY")
-    print("="*80)
+    print("=" * 80)
 
     for test_name, passed in results.items():
         status = "[PASS] PASS" if passed else "[FAIL] FAIL"

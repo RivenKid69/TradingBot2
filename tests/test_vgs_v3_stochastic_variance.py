@@ -14,6 +14,7 @@ Tests verify:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import warnings
@@ -23,6 +24,7 @@ try:
 except ImportError:
     import sys
     import os
+
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from variance_gradient_scaler import VarianceGradientScaler
 
@@ -89,7 +91,9 @@ class TestStochasticVarianceCorrectness:
             f"got {variance:.6f}. This suggests spatial variance computation (BUG)!"
         )
 
-        print(f"[PASS] Heterogeneous constant gradients correctly show variance = {variance:.6f} ~= 0")
+        print(
+            f"[PASS] Heterogeneous constant gradients correctly show variance = {variance:.6f} ~= 0"
+        )
 
     def test_variance_formula_applied_correctly(self):
         """Test that variance is computed as Var[g] = E[g²] - E[g]², not torch.var()."""
@@ -103,12 +107,12 @@ class TestStochasticVarianceCorrectness:
             vgs.step()
 
         # Extract internal EMA stats (after bias correction)
-        bias_correction = 1.0 - vgs.beta ** vgs._step_count
+        bias_correction = 1.0 - vgs.beta**vgs._step_count
         mean_ema = vgs._param_grad_mean_ema[0] / bias_correction  # E[g]
-        sq_ema = vgs._param_grad_sq_ema[0] / bias_correction      # E[g²]
+        sq_ema = vgs._param_grad_sq_ema[0] / bias_correction  # E[g²]
 
         # Compute variance manually
-        variance_expected = sq_ema - mean_ema ** 2
+        variance_expected = sq_ema - mean_ema**2
 
         # VGS should compute same variance
         variance_vgs = vgs.get_normalized_variance()
@@ -122,7 +126,9 @@ class TestStochasticVarianceCorrectness:
         assert abs(mean_ema - 1.0) < 0.2, f"Expected E[g] ~= 1.0, got {mean_ema:.6f}"
 
         # E[g²] should be > E[g]² (variance > 0)
-        assert sq_ema > mean_ema ** 2, f"Expected E[g²] > E[g]², got {sq_ema:.6f} vs {mean_ema**2:.6f}"
+        assert (
+            sq_ema > mean_ema**2
+        ), f"Expected E[g²] > E[g]², got {sq_ema:.6f} vs {mean_ema**2:.6f}"
 
         # Variance should be positive
         assert variance_expected > 0, f"Expected positive variance, got {variance_expected:.6f}"
@@ -144,7 +150,9 @@ class TestStochasticVarianceCorrectness:
         # Reset and test with HIGH noise
         vgs_high = VarianceGradientScaler([param], warmup_steps=5, alpha=0.1)
         for step in range(30):
-            param.grad = torch.ones(100) * (1.0 + torch.randn(1).item() * 2.0)  # High noise: std=2.0
+            param.grad = torch.ones(100) * (
+                1.0 + torch.randn(1).item() * 2.0
+            )  # High noise: std=2.0
             vgs_high.step()
 
         var_high = vgs_high.get_normalized_variance()
@@ -177,7 +185,7 @@ class TestEMATracking:
             vgs.step()
 
         # Extract EMA mean
-        bias_correction = 1.0 - vgs.beta ** vgs._step_count
+        bias_correction = 1.0 - vgs.beta**vgs._step_count
         ema_mean = vgs._param_grad_mean_ema[0] / bias_correction
 
         print(f"True mean: {true_mean:.6f}")
@@ -185,9 +193,9 @@ class TestEMATracking:
         print(f"Error: {abs(ema_mean - true_mean):.6f}")
 
         # EMA should converge to true mean
-        assert abs(ema_mean - true_mean) < 0.1, (
-            f"Expected EMA mean to converge to {true_mean:.6f}, got {ema_mean:.6f}"
-        )
+        assert (
+            abs(ema_mean - true_mean) < 0.1
+        ), f"Expected EMA mean to converge to {true_mean:.6f}, got {ema_mean:.6f}"
 
         print(f"[PASS] E[g] EMA converges to true mean")
 
@@ -204,7 +212,7 @@ class TestEMATracking:
             vgs.step()
 
         # Extract EMA
-        bias_correction = 1.0 - vgs.beta ** vgs._step_count
+        bias_correction = 1.0 - vgs.beta**vgs._step_count
         ema_mean = vgs._param_grad_mean_ema[0] / bias_correction
         ema_sq = vgs._param_grad_sq_ema[0] / bias_correction
 
@@ -215,7 +223,9 @@ class TestEMATracking:
 
         # Allow generous tolerance due to sampling variation
         assert abs(ema_mean - 1.0) < 0.2, f"Expected E[g] ~= 1.0, got {ema_mean:.6f}"
-        assert abs(ema_sq - expected_sq) < 0.3, f"Expected E[g²] ~= {expected_sq:.6f}, got {ema_sq:.6f}"
+        assert (
+            abs(ema_sq - expected_sq) < 0.3
+        ), f"Expected E[g²] ~= {expected_sq:.6f}, got {ema_sq:.6f}"
 
         print(f"[PASS] E[g²] EMA computed correctly")
 
@@ -239,8 +249,8 @@ class TestCheckpointMigration:
             "warmup_steps": 20,
             "step_count": 100,
             # OLD v2.0 format: stored E[|g|] and spatial Var[g]
-            "param_grad_mean_ema": torch.tensor([1.0]),    # Was E[|g|]
-            "param_grad_sq_ema": torch.tensor([0.5]),      # Was spatial Var[g]
+            "param_grad_mean_ema": torch.tensor([1.0]),  # Was E[|g|]
+            "param_grad_sq_ema": torch.tensor([0.5]),  # Was spatial Var[g]
             "param_numel": torch.tensor([100]),
             "grad_mean_ema": 1.0,
             "grad_var_ema": 0.5,
@@ -364,13 +374,15 @@ class TestNumericalStability:
         assert variance >= 0.0, f"Variance should be >= 0, got {variance:.6f}"
 
         # Check internal variance (before normalization)
-        bias_correction = 1.0 - vgs.beta ** vgs._step_count
+        bias_correction = 1.0 - vgs.beta**vgs._step_count
         mean_ema = vgs._param_grad_mean_ema / bias_correction
         sq_ema = vgs._param_grad_sq_ema / bias_correction
         raw_variance = sq_ema - mean_ema.pow(2)
 
         # All raw variances should be >= 0 (after clamping)
-        assert torch.all(raw_variance >= 0.0), "Raw variance contains negative values after clamping"
+        assert torch.all(
+            raw_variance >= 0.0
+        ), "Raw variance contains negative values after clamping"
 
         print(f"[PASS] Variance is non-negative (numerically stable)")
 

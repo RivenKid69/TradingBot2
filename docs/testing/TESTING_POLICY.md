@@ -17,18 +17,21 @@ It serves as a control artifact for the tech debt item `testing-mock-density`.
 ## Test Categories
 
 ### Unit Tests
+
 - **Purpose**: Test individual functions/classes in isolation
 - **Mock Usage**: Allowed for external dependencies (APIs, databases, file systems)
 - **Location**: `tests/test_*.py` (flat structure)
 - **Coverage Target**: Critical paths should have unit test coverage
 
 ### Integration Tests
+
 - **Purpose**: Test component interactions
 - **Mock Usage**: Minimal; prefer real components where feasible
 - **Location**: `tests/integration/` or `tests/*_integration*.py`
 - **Coverage Target**: Key workflows should have integration coverage
 
 ### End-to-End Tests
+
 - **Purpose**: Test complete user workflows
 - **Mock Usage**: None; use real or sandbox environments
 - **Location**: `tests/e2e/` or `tests/*_e2e*.py`
@@ -43,6 +46,7 @@ It serves as a control artifact for the tech debt item `testing-mock-density`.
 **Current State**: ~5,580 mock/patch usages across 344 test files (~16 per file average)
 
 **Rationale for High Mock Density**:
+
 1. External API dependencies (Binance, Alpaca, IB, OANDA) require mocking
 2. Hardware dependencies (GPU, network) require mocking
 3. Time-sensitive tests require deterministic behavior
@@ -69,12 +73,14 @@ It serves as a control artifact for the tech debt item `testing-mock-density`.
 ### Mock Density Monitoring
 
 CI tracks mock usage via code analysis:
+
 ```bash
 # Count mock usages in tests
 grep -r "mock\|patch\|MagicMock" tests/ | wc -l
 ```
 
 **Threshold Policy**:
+
 - Current: ~5,580 (acceptable for external dependency mocking)
 - Alert if growth exceeds 20% per quarter without justification
 - New test files should document mock rationale if > 20 mocks

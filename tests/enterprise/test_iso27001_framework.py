@@ -207,7 +207,9 @@ class TestISO27001FrameworkService:
         service = ISO27001FrameworkService(config)
 
         not_implemented = service.list_controls(status=ImplementationStatus.NOT_IMPLEMENTED)
-        assert all(c.implementation_status == ImplementationStatus.NOT_IMPLEMENTED for c in not_implemented)
+        assert all(
+            c.implementation_status == ImplementationStatus.NOT_IMPLEMENTED for c in not_implemented
+        )
 
     def test_update_control_status(self) -> None:
         """Test updating control status."""
@@ -237,7 +239,9 @@ class TestISO27001FrameworkService:
         )
         service = ISO27001FrameworkService(config)
 
-        result = service.update_control_status("nonexistent", ImplementationStatus.FULLY_IMPLEMENTED)
+        result = service.update_control_status(
+            "nonexistent", ImplementationStatus.FULLY_IMPLEMENTED
+        )
         assert result is None
 
     def test_assign_control_owner(self) -> None:
@@ -357,8 +361,12 @@ class TestISO27001FrameworkService:
         )
         service = ISO27001FrameworkService(config)
 
-        service.create_risk_assessment("High Risk", "Desc", "Asset", "Threat", "Vuln", 5, 5, "user")  # 25
-        service.create_risk_assessment("Low Risk", "Desc", "Asset", "Threat", "Vuln", 2, 2, "user")  # 4
+        service.create_risk_assessment(
+            "High Risk", "Desc", "Asset", "Threat", "Vuln", 5, 5, "user"
+        )  # 25
+        service.create_risk_assessment(
+            "Low Risk", "Desc", "Asset", "Threat", "Vuln", 2, 2, "user"
+        )  # 4
 
         high_risks = service.list_risk_assessments(min_risk=15)
         assert len(high_risks) == 1
@@ -465,7 +473,9 @@ class TestISO27001FrameworkService:
         # Update some controls to implemented
         controls = service.list_controls()
         for i in range(5):
-            service.update_control_status(controls[i].control_id, ImplementationStatus.FULLY_IMPLEMENTED)
+            service.update_control_status(
+                controls[i].control_id, ImplementationStatus.FULLY_IMPLEMENTED
+            )
 
         status = service.get_compliance_status()
 
@@ -515,10 +525,7 @@ class TestControlLibrary:
         """Test library has DORA mappings."""
         library = get_iso27001_control_library()
 
-        controls_with_dora = [
-            ctrl for ctrl in library
-            if ctrl.get("dora_mapping")
-        ]
+        controls_with_dora = [ctrl for ctrl in library if ctrl.get("dora_mapping")]
         assert len(controls_with_dora) > 0
 
 

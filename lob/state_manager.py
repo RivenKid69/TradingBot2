@@ -235,22 +235,26 @@ class LOBSnapshot:
         ask_orders = []
 
         for order in book.get_mbo_snapshot(Side.BUY, n_orders=1000):
-            bid_orders.append({
-                "order_id": order.order_id,
-                "price": order.price,
-                "qty": order.remaining_qty,
-                "timestamp_ns": order.timestamp_ns,
-                "hidden_qty": order.hidden_qty,
-            })
+            bid_orders.append(
+                {
+                    "order_id": order.order_id,
+                    "price": order.price,
+                    "qty": order.remaining_qty,
+                    "timestamp_ns": order.timestamp_ns,
+                    "hidden_qty": order.hidden_qty,
+                }
+            )
 
         for order in book.get_mbo_snapshot(Side.SELL, n_orders=1000):
-            ask_orders.append({
-                "order_id": order.order_id,
-                "price": order.price,
-                "qty": order.remaining_qty,
-                "timestamp_ns": order.timestamp_ns,
-                "hidden_qty": order.hidden_qty,
-            })
+            ask_orders.append(
+                {
+                    "order_id": order.order_id,
+                    "price": order.price,
+                    "qty": order.remaining_qty,
+                    "timestamp_ns": order.timestamp_ns,
+                    "hidden_qty": order.hidden_qty,
+                }
+            )
 
         return cls(
             timestamp_ns=timestamp_ns or time.time_ns(),

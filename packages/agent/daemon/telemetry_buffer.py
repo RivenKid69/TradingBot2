@@ -39,6 +39,7 @@ FLUSH_INTERVAL_SECONDS: Final[int] = 30
 
 class TelemetryEventType(Enum):
     """Types of telemetry events."""
+
     HEARTBEAT = auto()
     ORDER_SUBMITTED = auto()
     ORDER_FILLED = auto()
@@ -58,6 +59,7 @@ class TelemetryEventType(Enum):
 
 class TelemetryLevel(Enum):
     """Telemetry detail level."""
+
     AGGREGATED = "aggregated"  # Default for retail
     DETAILED_NON_SENSITIVE = "detailed"  # Opt-in
     RAW_ORDER_EVENTS = "raw"  # Enterprise-only, opt-in
@@ -68,6 +70,7 @@ class TelemetryEvent:
     """
     Single telemetry event.
     """
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     event_type: TelemetryEventType = TelemetryEventType.METRIC
     timestamp: datetime = field(default_factory=datetime.utcnow)
@@ -117,9 +120,18 @@ class TelemetryEvent:
         Mandatory redaction per Design Doc.
         """
         sensitive_patterns = [
-            "key", "secret", "password", "token", "credential",
-            "api_key", "api_secret", "access_token", "refresh_token",
-            "bearer", "authorization", "auth",
+            "key",
+            "secret",
+            "password",
+            "token",
+            "credential",
+            "api_key",
+            "api_secret",
+            "access_token",
+            "refresh_token",
+            "bearer",
+            "authorization",
+            "auth",
         ]
 
         redacted = {}
@@ -153,6 +165,7 @@ class TelemetryBufferConfig:
     """
     Telemetry buffer configuration.
     """
+
     # Storage
     db_path: Path = field(default_factory=lambda: Path.home() / ".ccea" / "telemetry.db")
     max_buffer_size: int = MAX_BUFFER_SIZE
@@ -252,7 +265,8 @@ class TelemetryBuffer:
         # Use contextlib.closing to ensure connection is properly closed
         # sqlite3.connect context manager only handles commit/rollback, NOT close()
         with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS telemetry_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     event_id TEXT UNIQUE NOT NULL,
@@ -267,15 +281,20 @@ class TelemetryBuffer:
                     retry_count INTEGER DEFAULT 0,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_telemetry_sent
                 ON telemetry_events (sent, timestamp)
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_telemetry_event_id
                 ON telemetry_events (event_id)
-            """)
+            """
+            )
             conn.commit()
 
     def set_run_id(self, run_id: str) -> None:
@@ -411,19 +430,22 @@ class TelemetryBuffer:
                 data = event.get_redacted_data() if self.config.redaction_enabled else event.data
 
                 try:
-                    conn.execute("""
+                    conn.execute(
+                        """
                         INSERT OR REPLACE INTO telemetry_events
                         (event_id, event_type, timestamp, level, data, run_id, agent_id, sent, retry_count)
                         VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
-                    """, (
-                        event.event_id,
-                        event.event_type.name,
-                        event.timestamp.isoformat(),
-                        event.level.value,
-                        json.dumps(data),
-                        event.run_id,
-                        event.agent_id,
-                    ))
+                    """,
+                        (
+                            event.event_id,
+                            event.event_type.name,
+                            event.timestamp.isoformat(),
+                            event.level.value,
+                            json.dumps(data),
+                            event.run_id,
+                            event.agent_id,
+                        ),
+                    )
                 except sqlite3.IntegrityError:
                     pass  # Duplicate, skip
 
@@ -455,13 +477,16 @@ class TelemetryBuffer:
 
         with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             # Get pending events
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT id, event_id, event_type, timestamp, level, data, run_id, agent_id, retry_count
                 FROM telemetry_events
                 WHERE sent = 0 AND retry_count < ?
                 ORDER BY timestamp ASC
                 LIMIT ?
-            """, (self.config.max_retries, self.config.batch_size))
+            """,
+                (self.config.max_retries, self.config.batch_size),
+            )
 
             rows = cursor.fetchall()
             if not rows:
@@ -491,31 +516,40 @@ class TelemetryBuffer:
                 if success:
                     # Mark as sent
                     placeholders = ",".join("?" * len(event_ids))
-                    conn.execute(f"""
+                    conn.execute(
+                        f"""
                         UPDATE telemetry_events
                         SET sent = 1, sent_at = ?
                         WHERE id IN ({placeholders})
-                    """, [datetime.utcnow().isoformat()] + event_ids)
+                    """,
+                        [datetime.utcnow().isoformat()] + event_ids,
+                    )
                     conn.commit()
                     total_sent = len(event_ids)
                 else:
                     # Increment retry count
                     placeholders = ",".join("?" * len(event_ids))
-                    conn.execute(f"""
+                    conn.execute(
+                        f"""
                         UPDATE telemetry_events
                         SET retry_count = retry_count + 1
                         WHERE id IN ({placeholders})
-                    """, event_ids)
+                    """,
+                        event_ids,
+                    )
                     conn.commit()
 
             except Exception:
                 # Increment retry count
                 placeholders = ",".join("?" * len(event_ids))
-                conn.execute(f"""
+                conn.execute(
+                    f"""
                     UPDATE telemetry_events
                     SET retry_count = retry_count + 1
                     WHERE id IN ({placeholders})
-                """, event_ids)
+                """,
+                    event_ids,
+                )
                 conn.commit()
 
         return total_sent
@@ -526,9 +560,11 @@ class TelemetryBuffer:
             self._persist_batch()
 
         with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT COUNT(*) FROM telemetry_events WHERE sent = 0
-            """)
+            """
+            )
             return cursor.fetchone()[0]
 
     def get_pending_events(self, limit: int = 100) -> List[TelemetryEvent]:
@@ -546,13 +582,16 @@ class TelemetryBuffer:
 
         events = []
         with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT event_id, event_type, timestamp, level, data, run_id, agent_id, retry_count
                 FROM telemetry_events
                 WHERE sent = 0
                 ORDER BY timestamp ASC
                 LIMIT ?
-            """, (limit,))
+            """,
+                (limit,),
+            )
 
             for row in cursor:
                 event = TelemetryEvent(
@@ -579,10 +618,13 @@ class TelemetryBuffer:
         cutoff = datetime.utcnow() - timedelta(days=self.config.max_age_days)
 
         with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 DELETE FROM telemetry_events
                 WHERE sent = 1 AND timestamp < ?
-            """, (cutoff.isoformat(),))
+            """,
+                (cutoff.isoformat(),),
+            )
             conn.commit()
             return cursor.rowcount
 
@@ -684,14 +726,17 @@ class TelemetryBuffer:
             Statistics dictionary
         """
         with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN sent = 0 THEN 1 ELSE 0 END) as pending,
                     SUM(CASE WHEN sent = 1 THEN 1 ELSE 0 END) as sent,
                     SUM(CASE WHEN retry_count >= ? THEN 1 ELSE 0 END) as failed
                 FROM telemetry_events
-            """, (self.config.max_retries,))
+            """,
+                (self.config.max_retries,),
+            )
             row = cursor.fetchone()
 
             return {

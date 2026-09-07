@@ -24,8 +24,8 @@ import pandas as pd
 import pytest
 
 # Mock missing modules before importing service_backtest
-sys.modules['exchange'] = mock.MagicMock()
-sys.modules['exchange.specs'] = mock.MagicMock()
+sys.modules["exchange"] = mock.MagicMock()
+sys.modules["exchange.specs"] = mock.MagicMock()
 
 from service_backtest import (
     BacktestConfig,
@@ -99,10 +99,12 @@ def mock_execution_simulator():
     sim.set_bar_capacity_base_config = mock.Mock()
 
     # Mock fees
-    sim._fees_get_expected_info = mock.Mock(return_value={
-        "expected": {"maker_share": 0.5, "expected_fee_bps": 10.0},
-        "metadata": {"table": {"path": "/fake/path"}},
-    })
+    sim._fees_get_expected_info = mock.Mock(
+        return_value={
+            "expected": {"maker_share": 0.5, "expected_fee_bps": 10.0},
+            "metadata": {"table": {"path": "/fake/path"}},
+        }
+    )
     sim.fees_expected_payload = {"maker_share": 0.5}
     sim.fees_metadata = {"table": {"path": "/fake/path"}}
 
@@ -127,15 +129,17 @@ def mock_policy():
 @pytest.fixture
 def sample_df():
     """Sample DataFrame for backtesting."""
-    return pd.DataFrame({
-        "ts_ms": [1000, 2000, 3000, 4000, 5000],
-        "symbol": ["BTCUSDT"] * 5,
-        "ref_price": [100.0, 101.0, 102.0, 103.0, 104.0],
-        "open": [99.5, 100.5, 101.5, 102.5, 103.5],
-        "high": [100.5, 101.5, 102.5, 103.5, 104.5],
-        "low": [99.0, 100.0, 101.0, 102.0, 103.0],
-        "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1000, 2000, 3000, 4000, 5000],
+            "symbol": ["BTCUSDT"] * 5,
+            "ref_price": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "open": [99.5, 100.5, 101.5, 102.5, 103.5],
+            "high": [100.5, 101.5, 102.5, 103.5, 104.5],
+            "low": [99.0, 100.0, 101.0, 102.0, 103.0],
+            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+        }
+    )
 
 
 # ============================================================================
@@ -405,21 +409,13 @@ def test_yield_bar_capacity_meta():
     assert _yield_bar_capacity_meta({}) == []
 
     # Test with core_exec_reports
-    report = {
-        "core_exec_reports": [
-            {"meta": {"bar_capacity_base": {"fill_ratio": 0.8}}}
-        ]
-    }
+    report = {"core_exec_reports": [{"meta": {"bar_capacity_base": {"fill_ratio": 0.8}}}]}
     result = _yield_bar_capacity_meta(report)
     assert len(result) == 1
     assert result[0]["fill_ratio"] == 0.8
 
     # Test with trades
-    report = {
-        "trades": [
-            {"capacity_reason": "BAR_CAPACITY_BASE", "fill_ratio": 0.9}
-        ]
-    }
+    report = {"trades": [{"capacity_reason": "BAR_CAPACITY_BASE", "fill_ratio": 0.9}]}
     result = _yield_bar_capacity_meta(report)
     assert len(result) == 1
 
@@ -432,11 +428,7 @@ def test_collect_filter_rejection_counts():
     assert not _collect_filter_rejection_counts(target, None)
 
     # Test with rejection entries
-    reason = {
-        "rejections": [
-            {"primary": "MIN_NOTIONAL", "which": "MIN_NOTIONAL"}
-        ]
-    }
+    reason = {"rejections": [{"primary": "MIN_NOTIONAL", "which": "MIN_NOTIONAL"}]}
     assert _collect_filter_rejection_counts(target, reason)
     assert target["MIN_NOTIONAL"] == 1
 
@@ -485,7 +477,9 @@ def test_service_backtest_run_bar_mode(mock_bar_executor, mock_policy, sample_df
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Complex initialization test requires extensive mocking of internal dependencies")
+@pytest.mark.skip(
+    reason="Complex initialization test requires extensive mocking of internal dependencies"
+)
 def test_service_backtest_order_mode_init(mock_execution_simulator, mock_policy):
     """Test ServiceBacktest initialization in order mode."""
     cfg = BacktestConfig(
@@ -548,17 +542,19 @@ def test_service_backtest_fee_metadata_warnings(mock_execution_simulator, mock_p
     cfg = BacktestConfig(symbol="BTCUSDT", timeframe="1m")
 
     # Mock stale fees metadata
-    mock_execution_simulator._fees_get_expected_info = mock.Mock(return_value={
-        "expected": {"maker_share": 0.5},
-        "metadata": {
-            "table": {
-                "path": "/fake/path",
-                "stale": True,
-                "refresh_days": 7,
-                "built_at": "2024-01-01T00:00:00Z",
-            }
-        },
-    })
+    mock_execution_simulator._fees_get_expected_info = mock.Mock(
+        return_value={
+            "expected": {"maker_share": 0.5},
+            "metadata": {
+                "table": {
+                    "path": "/fake/path",
+                    "stale": True,
+                    "refresh_days": 7,
+                    "built_at": "2024-01-01T00:00:00Z",
+                }
+            },
+        }
+    )
 
     run_config = mock.Mock()
     run_config.execution = mock.Mock()
@@ -631,9 +627,9 @@ def test_from_config_bar_mode(sample_df):
                     }
                     mock_read.return_value = sample_df
                     mock_adapter_inst = mock.Mock()
-                    mock_adapter_inst.run = mock.Mock(return_value=[
-                        {"ts_ms": 1000, "symbol": "BTCUSDT", "equity": 10000.0}
-                    ])
+                    mock_adapter_inst.run = mock.Mock(
+                        return_value=[{"ts_ms": 1000, "symbol": "BTCUSDT", "equity": 10000.0}]
+                    )
                     mock_adapter.return_value = mock_adapter_inst
 
                     # Run from_config
@@ -718,6 +714,7 @@ def test_metadata_age_days():
 
     # Test with built_at timestamp
     import time
+
     recent_ts = time.time() - 86400  # 1 day ago
     meta = {"built_at": recent_ts}
     result = ServiceBacktest._metadata_age_days(ServiceBacktest, meta)
@@ -751,7 +748,9 @@ def test_parse_metadata_timestamp():
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Complex initialization requiring extensive mocking of SimExecutorCls.configure_simulator_execution")
+@pytest.mark.skip(
+    reason="Complex initialization requiring extensive mocking of SimExecutorCls.configure_simulator_execution"
+)
 def test_write_bar_reports(mock_execution_simulator, mock_policy):
     """Test _write_bar_reports method."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -770,7 +769,9 @@ def test_write_bar_reports(mock_execution_simulator, mock_policy):
         with mock.patch("service_backtest._require_sim_executor"):
             with mock.patch("service_backtest._require_sim_adapter"):
                 with mock.patch("service_backtest.BacktestAdapter"):
-                    service = ServiceBacktest(mock_policy, mock_execution_simulator, cfg, run_config=run_config)
+                    service = ServiceBacktest(
+                        mock_policy, mock_execution_simulator, cfg, run_config=run_config
+                    )
 
                     # Write test report
                     records = [

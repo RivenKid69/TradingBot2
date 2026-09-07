@@ -7,12 +7,23 @@ rules:
   # =============================================================================
   - id: hardcoded-api-key
     patterns:
-      - pattern-either:
-          - pattern: $VAR = "...$KEY..."
-          - pattern: "$VAR": "...$KEY..."
-    pattern-regex: (api[_-]?key|apikey|secret[_-]?key|api[_-]?secret)\s*[:=]\s*["'][a-zA-Z0-9]{16,}["']
+      - pattern: $VAR = "$VALUE"
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: (?i).*(api[_-]?key|apikey|secret[_-]?key|api[_-]?secret).*
+      # only a value that actually looks like a key: at least 16 key-ish characters
+      # and not a plain snake_case word, so that enum members such as
+      # `API_KEY = "api_key"` or `BROKER_API_SECRET = "broker_api_secret"` do not trip it
+      - metavariable-regex:
+          metavariable: $VALUE
+          regex: ^(?![a-z0-9]+(?:_[a-z0-9]+)*$)[A-Za-z0-9+/=_\-]{16,}$
+      - pattern-not: $VAR = ""
+      - pattern-not: $VAR = None
+      - pattern-not: $VAR = os.getenv(...)
+      - pattern-not: $VAR = os.environ.get(...)
+      - pattern-not: $VAR = os.environ[...]
     message: "Potential hardcoded API key detected. Use environment variables instead."
-    languages: [python, yaml]
+    languages: [python]
     severity: ERROR
     metadata:
       category: security
@@ -24,10 +35,11 @@ rules:
           - pattern: password = "..."
           - pattern: passwd = "..."
           - pattern: secret = "..."
-    pattern-not: password = ""
-    pattern-not: password = None
-    pattern-not: password = os.getenv(...)
-    pattern-not: password = os.environ.get(...)
+      - pattern-not: password = ""
+      - pattern-not: password = None
+      - pattern-not: password = os.getenv(...)
+      - pattern-not: password = os.environ.get(...)
+      - pattern-not: password = os.environ[...]
     message: "Potential hardcoded password detected. Use environment variables instead."
     languages: [python]
     severity: ERROR
@@ -44,6 +56,10 @@ rules:
           - pattern: $CURSOR.execute(f"..." % ...)
           - pattern: $CURSOR.execute("..." % ...)
           - pattern: $CURSOR.execute(f"...{$VAR}...")
+      # DDL names its objects inline: a table or index identifier cannot be bound
+      # as a parameter, so interpolation there is the only option and is not an
+      # injection finding. Data statements stay covered.
+      - pattern-not-regex: (?i)execute\(\s*f?["']{1,3}\s*(CREATE|ALTER|DROP|TRUNCATE|PRAGMA)\s
     message: "Potential SQL injection via string formatting. Use parameterized queries."
     languages: [python]
     severity: ERROR
@@ -124,7 +140,6 @@ rules:
           - pattern: logger.$LEVEL(..., secret=..., ...)
           - pattern: logger.$LEVEL(..., password=..., ...)
           - pattern: logger.$LEVEL(f"...{$SECRET}...")
-    pattern-regex: (api[_-]?key|secret|password|credential)
     message: "Potentially logging sensitive data. Use secure_logging module to mask secrets."
     languages: [python]
     severity: WARNING

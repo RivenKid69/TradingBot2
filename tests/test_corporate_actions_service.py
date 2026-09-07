@@ -55,12 +55,14 @@ class TestCorporateActionsServiceGapFeatures:
         """Test basic gap feature computation."""
         from services.corporate_actions import compute_gap_features
 
-        df = pd.DataFrame({
-            "open": [100.0, 105.0, 98.0],
-            "close": [100.0, 106.0, 99.0],
-            "high": [101.0, 107.0, 100.0],
-            "low": [99.0, 104.0, 97.0],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 105.0, 98.0],
+                "close": [100.0, 106.0, 99.0],
+                "high": [101.0, 107.0, 100.0],
+                "low": [99.0, 104.0, 97.0],
+            }
+        )
 
         result = compute_gap_features(df)
 
@@ -72,13 +74,15 @@ class TestCorporateActionsServiceGapFeatures:
         """Test that original columns are preserved."""
         from services.corporate_actions import compute_gap_features
 
-        df = pd.DataFrame({
-            "open": [100.0, 105.0],
-            "close": [100.0, 106.0],
-            "high": [101.0, 107.0],
-            "low": [99.0, 104.0],
-            "volume": [1000, 1100],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 105.0],
+                "close": [100.0, 106.0],
+                "high": [101.0, 107.0],
+                "low": [99.0, 104.0],
+                "volume": [1000, 1100],
+            }
+        )
 
         result = compute_gap_features(df)
 
@@ -102,12 +106,14 @@ class TestModuleLevelFunctions:
         """Test module-level compute_gap_features."""
         from services.corporate_actions import compute_gap_features
 
-        df = pd.DataFrame({
-            "open": [100.0, 105.0],
-            "close": [100.0, 106.0],
-            "high": [101.0, 107.0],
-            "low": [99.0, 104.0],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 105.0],
+                "close": [100.0, 106.0],
+                "high": [101.0, 107.0],
+                "low": [99.0, 104.0],
+            }
+        )
 
         result = compute_gap_features(df)
 
@@ -143,12 +149,14 @@ class TestBackwardCompatibility:
         """Test gap features work with minimal OHLC data."""
         from services.corporate_actions import compute_gap_features
 
-        df = pd.DataFrame({
-            "open": [100.0, 105.0],
-            "high": [101.0, 106.0],
-            "low": [99.0, 104.0],
-            "close": [100.0, 105.0],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 105.0],
+                "high": [101.0, 106.0],
+                "low": [99.0, 104.0],
+                "close": [100.0, 105.0],
+            }
+        )
 
         # Should not raise
         result = compute_gap_features(df)

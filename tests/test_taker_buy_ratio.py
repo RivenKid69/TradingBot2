@@ -53,10 +53,14 @@ def test_taker_buy_ratio_online():
     assert "taker_buy_ratio_momentum_6h" in feats, "taker_buy_ratio_momentum_6h не найден"
 
     # Проверяем, что значения находятся в разумных пределах
-    assert 0 <= feats["taker_buy_ratio"] <= 1, f"taker_buy_ratio должен быть в диапазоне [0, 1], получено: {feats['taker_buy_ratio']}"
+    assert (
+        0 <= feats["taker_buy_ratio"] <= 1
+    ), f"taker_buy_ratio должен быть в диапазоне [0, 1], получено: {feats['taker_buy_ratio']}"
 
     # Проверяем, что taker_buy_ratio примерно равен 0.6 (60% покупки)
-    assert abs(feats["taker_buy_ratio"] - 0.6) < 0.01, f"taker_buy_ratio должен быть ~0.6, получено: {feats['taker_buy_ratio']}"
+    assert (
+        abs(feats["taker_buy_ratio"] - 0.6) < 0.01
+    ), f"taker_buy_ratio должен быть ~0.6, получено: {feats['taker_buy_ratio']}"
 
     print(f"  ✓ taker_buy_ratio: {feats['taker_buy_ratio']:.4f}")
     print(f"  ✓ taker_buy_ratio_sma_6h: {feats['taker_buy_ratio_sma_6h']:.4f}")
@@ -115,22 +119,34 @@ def test_taker_buy_ratio_offline():
     assert "taker_buy_ratio_sma_24h" in result.columns, "taker_buy_ratio_sma_24h не найден"
     assert "taker_buy_ratio_momentum_1h" in result.columns, "taker_buy_ratio_momentum_1h не найден"
     assert "taker_buy_ratio_momentum_6h" in result.columns, "taker_buy_ratio_momentum_6h не найден"
-    assert "taker_buy_ratio_momentum_12h" in result.columns, "taker_buy_ratio_momentum_12h не найден"
+    assert (
+        "taker_buy_ratio_momentum_12h" in result.columns
+    ), "taker_buy_ratio_momentum_12h не найден"
 
     # Проверяем последние значения (где уже накоплена история)
     last_row = result.iloc[-1]
 
     # Проверяем диапазон значений
-    assert 0 <= last_row["taker_buy_ratio"] <= 1, f"taker_buy_ratio вне диапазона: {last_row['taker_buy_ratio']}"
+    assert (
+        0 <= last_row["taker_buy_ratio"] <= 1
+    ), f"taker_buy_ratio вне диапазона: {last_row['taker_buy_ratio']}"
 
     # Проверяем, что ratio примерно равен 0.55
-    assert abs(last_row["taker_buy_ratio"] - 0.55) < 0.01, f"taker_buy_ratio должен быть ~0.55, получено: {last_row['taker_buy_ratio']}"
+    assert (
+        abs(last_row["taker_buy_ratio"] - 0.55) < 0.01
+    ), f"taker_buy_ratio должен быть ~0.55, получено: {last_row['taker_buy_ratio']}"
 
     # Проверяем, что скользящие средние не NaN там, где должны быть значения
     row_1440 = result.iloc[1440]  # Строка, где должны быть все значения
-    assert not pd.isna(row_1440["taker_buy_ratio_sma_6h"]), "taker_buy_ratio_sma_6h не должен быть NaN"
-    assert not pd.isna(row_1440["taker_buy_ratio_sma_12h"]), "taker_buy_ratio_sma_12h не должен быть NaN"
-    assert not pd.isna(row_1440["taker_buy_ratio_sma_24h"]), "taker_buy_ratio_sma_24h не должен быть NaN"
+    assert not pd.isna(
+        row_1440["taker_buy_ratio_sma_6h"]
+    ), "taker_buy_ratio_sma_6h не должен быть NaN"
+    assert not pd.isna(
+        row_1440["taker_buy_ratio_sma_12h"]
+    ), "taker_buy_ratio_sma_12h не должен быть NaN"
+    assert not pd.isna(
+        row_1440["taker_buy_ratio_sma_24h"]
+    ), "taker_buy_ratio_sma_24h не должен быть NaN"
 
     print(f"  ✓ Обработано {len(result)} строк")
     print(f"  ✓ taker_buy_ratio (последняя): {last_row['taker_buy_ratio']:.4f}")
@@ -171,7 +187,9 @@ def test_taker_buy_ratio_edge_cases():
         taker_buy_base=0.0,
     )
     assert "taker_buy_ratio" in feats2
-    assert feats2["taker_buy_ratio"] == 0.0, "taker_buy_ratio должен быть 0 когда taker_buy_base = 0"
+    assert (
+        feats2["taker_buy_ratio"] == 0.0
+    ), "taker_buy_ratio должен быть 0 когда taker_buy_base = 0"
 
     # Случай 3: taker_buy_base = volume (100% покупки)
     feats3 = transformer.update(
@@ -181,7 +199,9 @@ def test_taker_buy_ratio_edge_cases():
         volume=100.0,
         taker_buy_base=100.0,
     )
-    assert feats3["taker_buy_ratio"] == 1.0, "taker_buy_ratio должен быть 1.0 когда taker_buy_base = volume"
+    assert (
+        feats3["taker_buy_ratio"] == 1.0
+    ), "taker_buy_ratio должен быть 1.0 когда taker_buy_base = volume"
 
     print("  ✓ Граничные случаи обработаны корректно")
     print("  ✓ Тест пройден!\n")

@@ -2,9 +2,12 @@ import types
 from typing import Any
 
 import pytest
+
 torch = pytest.importorskip("torch")
 
-from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import (
+    test_distributional_ppo_raw_outliers,
+)  # noqa: F401  # ensure RL stubs are installed
 
 import distributional_ppo as distributional_ppo_module
 from distributional_ppo import DistributionalPPO
@@ -102,9 +105,13 @@ class _PolicyStub(torch.nn.Module):
         del lstm_states, episode_starts
         logits = self.value_head(obs.to(dtype=torch.float32))
         probs = torch.softmax(logits, dim=1)
-        return (probs * self.atoms.to(device=probs.device, dtype=probs.dtype)).sum(dim=1, keepdim=True)
+        return (probs * self.atoms.to(device=probs.device, dtype=probs.dtype)).sum(
+            dim=1, keepdim=True
+        )
 
-    def _log_prob_raw_only(self, dist: _GaussianDistribution, actions: torch.Tensor) -> torch.Tensor:
+    def _log_prob_raw_only(
+        self, dist: _GaussianDistribution, actions: torch.Tensor
+    ) -> torch.Tensor:
         raw = dist.distribution.log_prob(actions)
         if raw.ndim > 1:
             raw = raw.sum(dim=-1, keepdim=True)
@@ -156,7 +163,9 @@ def test_vf_clip_warmup_allows_ev_growth(monkeypatch: pytest.MonkeyPatch) -> Non
     logger = _CaptureLogger()
     policy = _PolicyStub()
 
-    def _fake_super_init(self, policy: object, env: object, *args: object, **kwargs: object) -> None:
+    def _fake_super_init(
+        self, policy: object, env: object, *args: object, **kwargs: object
+    ) -> None:
         del env, args, kwargs
         self._logger = logger
         self.policy = policy  # type: ignore[assignment]
@@ -196,8 +205,12 @@ def test_vf_clip_warmup_allows_ev_growth(monkeypatch: pytest.MonkeyPatch) -> Non
     )
     monkeypatch.setattr(DistributionalPPO, "_rebuild_scheduler_if_needed", lambda self: None)
     monkeypatch.setattr(DistributionalPPO, "_ensure_score_action_space", lambda self: None)
-    monkeypatch.setattr(DistributionalPPO, "_configure_loss_head_weights", lambda self, *a, **k: None)
-    monkeypatch.setattr(DistributionalPPO, "_configure_gradient_accumulation", lambda self, **_: None)
+    monkeypatch.setattr(
+        DistributionalPPO, "_configure_loss_head_weights", lambda self, *a, **k: None
+    )
+    monkeypatch.setattr(
+        DistributionalPPO, "_configure_gradient_accumulation", lambda self, **_: None
+    )
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
     algo._logger = logger

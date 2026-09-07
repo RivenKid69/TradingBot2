@@ -80,9 +80,7 @@ class TestAutoApproveRule:
 
     def test_matches_change_class(self):
         """Test change class matching."""
-        rule = AutoApproveRule(
-            allowed_change_classes={ChangeClass.OPERATIONAL}
-        )
+        rule = AutoApproveRule(allowed_change_classes={ChangeClass.OPERATIONAL})
 
         assert rule.matches_change_class(ChangeClass.OPERATIONAL) is True
         assert rule.matches_change_class(ChangeClass.TRADING_IMPACTING) is False

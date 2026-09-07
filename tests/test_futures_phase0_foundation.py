@@ -28,40 +28,43 @@ import numpy as np
 # Test 1: MarketType Enum Verification
 # =============================================================================
 
+
 class TestMarketTypeEnum:
     """Verify MarketType enum has required futures types."""
 
     def test_market_type_import(self):
         """Test that MarketType can be imported."""
         from adapters.models import MarketType
+
         assert MarketType is not None
 
     def test_crypto_futures_type_exists(self):
         """Test CRYPTO_FUTURES type exists."""
         from adapters.models import MarketType
-        assert hasattr(MarketType, 'CRYPTO_FUTURES')
+
+        assert hasattr(MarketType, "CRYPTO_FUTURES")
         assert MarketType.CRYPTO_FUTURES.value == "CRYPTO_FUTURES"
 
     def test_crypto_perp_type_exists(self):
         """Test CRYPTO_PERP type exists."""
         from adapters.models import MarketType
-        assert hasattr(MarketType, 'CRYPTO_PERP')
+
+        assert hasattr(MarketType, "CRYPTO_PERP")
         assert MarketType.CRYPTO_PERP.value == "CRYPTO_PERP"
 
     def test_market_type_is_string_enum(self):
         """Test MarketType values are strings."""
         from adapters.models import MarketType
+
         assert isinstance(MarketType.CRYPTO_FUTURES.value, str)
         assert isinstance(MarketType.CRYPTO_PERP.value, str)
 
     def test_all_expected_market_types(self):
         """Test all expected market types are defined."""
         from adapters.models import MarketType
+
         # Based on actual enum: CRYPTO_SPOT, CRYPTO_FUTURES, CRYPTO_PERP, EQUITY, EQUITY_OPTIONS, FOREX
-        expected_types = [
-            "CRYPTO_SPOT", "CRYPTO_FUTURES", "CRYPTO_PERP",
-            "EQUITY", "FOREX"
-        ]
+        expected_types = ["CRYPTO_SPOT", "CRYPTO_FUTURES", "CRYPTO_PERP", "EQUITY", "FOREX"]
         for type_name in expected_types:
             assert hasattr(MarketType, type_name), f"Missing MarketType.{type_name}"
 
@@ -70,34 +73,40 @@ class TestMarketTypeEnum:
 # Test 2: ExchangeVendor Enum Verification
 # =============================================================================
 
+
 class TestExchangeVendorEnum:
     """Verify ExchangeVendor enum has required exchanges."""
 
     def test_exchange_vendor_import(self):
         """Test that ExchangeVendor can be imported."""
         from adapters.models import ExchangeVendor
+
         assert ExchangeVendor is not None
 
     def test_binance_vendor_exists(self):
         """Test BINANCE vendor exists."""
         from adapters.models import ExchangeVendor
-        assert hasattr(ExchangeVendor, 'BINANCE')
+
+        assert hasattr(ExchangeVendor, "BINANCE")
         assert ExchangeVendor.BINANCE.value == "binance"
 
     def test_alpaca_vendor_exists(self):
         """Test ALPACA vendor exists."""
         from adapters.models import ExchangeVendor
-        assert hasattr(ExchangeVendor, 'ALPACA')
+
+        assert hasattr(ExchangeVendor, "ALPACA")
 
     def test_oanda_vendor_exists(self):
         """Test OANDA vendor exists."""
         from adapters.models import ExchangeVendor
-        assert hasattr(ExchangeVendor, 'OANDA')
+
+        assert hasattr(ExchangeVendor, "OANDA")
 
 
 # =============================================================================
 # Test 3: Binance Adapter use_futures Flag
 # =============================================================================
+
 
 class TestBinanceAdapterFuturesFlag:
     """Test BinanceMarketDataAdapter futures support."""
@@ -105,6 +114,7 @@ class TestBinanceAdapterFuturesFlag:
     def test_adapter_import(self):
         """Test adapter can be imported."""
         from adapters.binance.market_data import BinanceMarketDataAdapter
+
         assert BinanceMarketDataAdapter is not None
 
     def test_adapter_accepts_use_futures_config(self):
@@ -121,7 +131,7 @@ class TestBinanceAdapterFuturesFlag:
 
         # Should not raise
         adapter = BinanceMarketDataAdapter(vendor, config)
-        assert hasattr(adapter, '_use_futures')
+        assert hasattr(adapter, "_use_futures")
 
     def test_adapter_default_use_futures_false(self):
         """Test use_futures defaults to False."""
@@ -149,6 +159,7 @@ class TestBinanceAdapterFuturesFlag:
 # =============================================================================
 # Test 4: Funding Rate Data Structures
 # =============================================================================
+
 
 class TestFundingRateDataStructures:
     """Test data structures for funding rate handling."""
@@ -204,13 +215,14 @@ class TestFundingRateDataStructures:
 
         # Check 8-hour intervals
         for i in range(1, len(timestamps)):
-            diff = timestamps[i] - timestamps[i-1]
+            diff = timestamps[i] - timestamps[i - 1]
             assert diff.total_seconds() == 8 * 3600  # 8 hours
 
 
 # =============================================================================
 # Test 5: Mark Price Data Structures
 # =============================================================================
+
 
 class TestMarkPriceDataStructures:
     """Test data structures for mark price handling."""
@@ -249,6 +261,7 @@ class TestMarkPriceDataStructures:
 # Test 6: Leverage and Margin Structures
 # =============================================================================
 
+
 class TestLeverageMarginStructures:
     """Test leverage and margin calculation structures."""
 
@@ -283,7 +296,7 @@ class TestLeverageMarginStructures:
 
         # Simplified liquidation price for long
         # liq_price = entry_price * (1 - 1/leverage + maint_margin_ratio)
-        liq_price = entry_price * (1 - 1/leverage + maint_margin_ratio)
+        liq_price = entry_price * (1 - 1 / leverage + maint_margin_ratio)
         assert liq_price < entry_price  # Liq price below entry for long
 
     def test_liquidation_price_short(self):
@@ -294,13 +307,14 @@ class TestLeverageMarginStructures:
 
         # Simplified liquidation price for short
         # liq_price = entry_price * (1 + 1/leverage - maint_margin_ratio)
-        liq_price = entry_price * (1 + 1/leverage - maint_margin_ratio)
+        liq_price = entry_price * (1 + 1 / leverage - maint_margin_ratio)
         assert liq_price > entry_price  # Liq price above entry for short
 
 
 # =============================================================================
 # Test 7: Documentation Files Exist
 # =============================================================================
+
 
 class TestDocumentationExists:
     """Test that Phase 0 documentation was created."""
@@ -345,6 +359,7 @@ class TestDocumentationExists:
 # Test 8: Contract Specifications Parsing
 # =============================================================================
 
+
 class TestContractSpecificationsParsing:
     """Test CME contract specifications can be parsed."""
 
@@ -360,7 +375,7 @@ class TestContractSpecificationsParsing:
         if not specs_path.exists():
             pytest.skip("Contract specs file not found")
 
-        with open(specs_path, 'r') as f:
+        with open(specs_path, "r") as f:
             data = yaml.safe_load(f)
 
         assert data is not None
@@ -373,7 +388,7 @@ class TestContractSpecificationsParsing:
         if not specs_path.exists():
             pytest.skip("Contract specs file not found")
 
-        with open(specs_path, 'r') as f:
+        with open(specs_path, "r") as f:
             data = yaml.safe_load(f)
 
         assert "equity_index" in data or "contracts" in data
@@ -385,20 +400,18 @@ class TestContractSpecificationsParsing:
         if not specs_path.exists():
             pytest.skip("Contract specs file not found")
 
-        with open(specs_path, 'r') as f:
+        with open(specs_path, "r") as f:
             data = yaml.safe_load(f)
 
         # Check for commodity contracts
-        has_commodities = (
-            "commodities" in data or
-            "commodity" in str(data).lower()
-        )
+        has_commodities = "commodities" in data or "commodity" in str(data).lower()
         assert has_commodities
 
 
 # =============================================================================
 # Test 9: Forex Risk Guards Pattern (Reference)
 # =============================================================================
+
 
 class TestForexRiskGuardsPattern:
     """Test forex risk guards pattern is available for futures adaptation."""
@@ -409,6 +422,7 @@ class TestForexRiskGuardsPattern:
             ForexMarginGuard,
             ForexLeverageGuard,
         )
+
         assert ForexMarginGuard is not None
         assert ForexLeverageGuard is not None
 
@@ -418,19 +432,20 @@ class TestForexRiskGuardsPattern:
 
         guard = ForexMarginGuard()
         # Actual methods: check_trade_margin, get_margin_requirement, get_margin_status
-        assert hasattr(guard, 'check_trade_margin') or hasattr(guard, 'get_margin_requirement')
+        assert hasattr(guard, "check_trade_margin") or hasattr(guard, "get_margin_requirement")
 
     def test_leverage_guard_has_limits(self):
         """Test LeverageGuard defines limits."""
         from services.forex_risk_guards import ForexLeverageGuard
 
         # Should have leverage limits defined
-        assert hasattr(ForexLeverageGuard, 'LEVERAGE_LIMITS') or True  # May be instance attr
+        assert hasattr(ForexLeverageGuard, "LEVERAGE_LIMITS") or True  # May be instance attr
 
 
 # =============================================================================
 # Test 10: Data Ingestion Functions
 # =============================================================================
+
 
 class TestDataIngestionFunctions:
     """Test funding rate ingestion functions exist."""
@@ -439,6 +454,7 @@ class TestDataIngestionFunctions:
         """Test ingest_funding_mark module exists."""
         try:
             import ingest_funding_mark
+
             assert ingest_funding_mark is not None
         except ImportError:
             pytest.skip("ingest_funding_mark module not found")
@@ -447,6 +463,7 @@ class TestDataIngestionFunctions:
         """Test _fetch_all_funding function exists."""
         try:
             from ingest_funding_mark import _fetch_all_funding
+
             assert callable(_fetch_all_funding)
         except ImportError:
             pytest.skip("_fetch_all_funding not found")
@@ -455,6 +472,7 @@ class TestDataIngestionFunctions:
         """Test _fetch_all_mark function exists."""
         try:
             from ingest_funding_mark import _fetch_all_mark
+
             assert callable(_fetch_all_mark)
         except ImportError:
             pytest.skip("_fetch_all_mark not found")
@@ -463,6 +481,7 @@ class TestDataIngestionFunctions:
 # =============================================================================
 # Test 11: Futures Position Model Structure
 # =============================================================================
+
 
 class TestFuturesPositionModel:
     """Test futures position data model structure."""
@@ -514,6 +533,7 @@ class TestFuturesPositionModel:
 # Test 12: Trading Hours Structure
 # =============================================================================
 
+
 class TestTradingHoursStructure:
     """Test trading hours data structures."""
 
@@ -532,7 +552,7 @@ class TestTradingHoursStructure:
         """Test CME trading hours structure."""
         cme_hours = {
             "start": "17:00",  # Sunday 5pm CT
-            "end": "16:00",   # Friday 4pm CT
+            "end": "16:00",  # Friday 4pm CT
             "timezone": "America/Chicago",
             "maintenance_start": "16:00",
             "maintenance_end": "17:00",
@@ -543,6 +563,7 @@ class TestTradingHoursStructure:
 # =============================================================================
 # Test 13: API Endpoint Configuration
 # =============================================================================
+
 
 class TestAPIEndpointConfiguration:
     """Test API endpoint configuration for futures."""
@@ -576,6 +597,7 @@ class TestAPIEndpointConfiguration:
 # Test 14: Error Handling Structures
 # =============================================================================
 
+
 class TestErrorHandlingStructures:
     """Test error handling for futures operations."""
 
@@ -603,6 +625,7 @@ class TestErrorHandlingStructures:
 # Test 15: Integration Points Verification
 # =============================================================================
 
+
 class TestIntegrationPoints:
     """Test integration points are accessible."""
 
@@ -610,6 +633,7 @@ class TestIntegrationPoints:
         """Test execution_providers can be imported."""
         try:
             import execution_providers
+
             assert execution_providers is not None
         except ImportError:
             pytest.skip("execution_providers not found")
@@ -618,6 +642,7 @@ class TestIntegrationPoints:
         """Test features_pipeline can be imported."""
         try:
             import features_pipeline
+
             assert features_pipeline is not None
         except ImportError:
             pytest.skip("features_pipeline not found")
@@ -626,6 +651,7 @@ class TestIntegrationPoints:
         """Test data_loader_multi_asset can be imported."""
         try:
             import data_loader_multi_asset
+
             assert data_loader_multi_asset is not None
         except ImportError:
             pytest.skip("data_loader_multi_asset not found")

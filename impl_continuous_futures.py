@@ -53,14 +53,17 @@ class ContinuousMeta:
 
     symbol: str
     method: str = "ratio"
-    pit_quality: str = "approx"   # back-adjusted прокси непрозрачен; BYO → 'true'
+    pit_quality: str = "approx"  # back-adjusted прокси непрозрачен; BYO → 'true'
     n_rolls: int = 0
     source: str = "byo"
 
     def to_dict(self) -> Dict[str, object]:
         return {
-            "symbol": self.symbol, "method": self.method,
-            "pit_quality": self.pit_quality, "n_rolls": self.n_rolls, "source": self.source,
+            "symbol": self.symbol,
+            "method": self.method,
+            "pit_quality": self.pit_quality,
+            "n_rolls": self.n_rolls,
+            "source": self.source,
         }
 
 
@@ -112,7 +115,8 @@ def roll_events_from_overlap(
     if len(common) == 0:
         return (int(roll_ts), 1.0 if method == "ratio" else 0.0)
     at = common.max()
-    old_p = float(old_close.loc[at]); new_p = float(new_close.loc[at])
+    old_p = float(old_close.loc[at])
+    new_p = float(new_close.loc[at])
     if method == "ratio":
         gap = (new_p / old_p) if old_p not in (0.0,) and np.isfinite(old_p) and old_p != 0 else 1.0
     else:
@@ -144,7 +148,9 @@ def stitch_contracts(
         seg = seg[seg.index >= int(rts)]
         if nxt is not None:
             seg = seg[seg.index < int(nxt)]
-            ev = roll_events_from_overlap(contracts[i][1], contracts[i + 1][1], int(nxt), method=method)
+            ev = roll_events_from_overlap(
+                contracts[i][1], contracts[i + 1][1], int(nxt), method=method
+            )
             rolls.append(ev)
         segments.append(seg)
     raw = pd.concat(segments).sort_index()
@@ -167,11 +173,16 @@ def build_continuous_panel(
     metas: Dict[str, ContinuousMeta] = {}
     for sym, contracts in contract_map.items():
         cont, rolls = stitch_contracts(contracts, method=method)
-        frames[sym] = pd.DataFrame({
-            "timestamp": cont.index.to_numpy(), "symbol": sym, "close": cont.to_numpy(),
-        })
-        metas[sym] = ContinuousMeta(symbol=sym, method=method, pit_quality=pit_quality,
-                                    n_rolls=len(rolls), source="byo")
+        frames[sym] = pd.DataFrame(
+            {
+                "timestamp": cont.index.to_numpy(),
+                "symbol": sym,
+                "close": cont.to_numpy(),
+            }
+        )
+        metas[sym] = ContinuousMeta(
+            symbol=sym, method=method, pit_quality=pit_quality, n_rolls=len(rolls), source="byo"
+        )
     panel = PanelBuilder.from_frames(frames)
     return panel, metas
 
@@ -196,7 +207,7 @@ def synthetic_continuous_frames(
     ts = [t0 + i * step for i in range(n_bars)]
     frames: Dict[str, pd.DataFrame] = {}
     for k, s in enumerate(symbols):
-        drift = 0.0004 * ((k % 5) - 2)   # разнознаковые тренды
+        drift = 0.0004 * ((k % 5) - 2)  # разнознаковые тренды
         vol = 0.008 + 0.004 * (k % 3)
         r = rng.normal(drift, vol, n_bars)
         close = 100.0 * np.cumprod(1.0 + r)
@@ -205,7 +216,12 @@ def synthetic_continuous_frames(
 
 
 __all__ = [
-    "VALID_METHODS", "RollEvent", "ContinuousMeta",
-    "back_adjust", "roll_events_from_overlap", "stitch_contracts",
-    "build_continuous_panel", "synthetic_continuous_frames",
+    "VALID_METHODS",
+    "RollEvent",
+    "ContinuousMeta",
+    "back_adjust",
+    "roll_events_from_overlap",
+    "stitch_contracts",
+    "build_continuous_panel",
+    "synthetic_continuous_frames",
 ]

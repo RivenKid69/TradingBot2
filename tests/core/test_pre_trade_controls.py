@@ -37,6 +37,7 @@ from services.core.risk_controls.pre_trade_controls import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def config():
     """Default configuration for testing."""
@@ -74,6 +75,7 @@ def authorized_trader():
 # =============================================================================
 # Test PreTradeCheckResult
 # =============================================================================
+
 
 class TestPreTradeCheckResult:
     """Tests for PreTradeCheckResult data class."""
@@ -121,6 +123,7 @@ class TestPreTradeCheckResult:
 # =============================================================================
 # Test MessageRateWindow
 # =============================================================================
+
 
 class TestMessageRateWindow:
     """Tests for message rate limiting window."""
@@ -173,6 +176,7 @@ class TestMessageRateWindow:
 # =============================================================================
 # Test Price Collar
 # =============================================================================
+
 
 class TestPriceCollar:
     """Tests for price collar controls (Article 15(1))."""
@@ -247,6 +251,7 @@ class TestPriceCollar:
 # Test Fat Finger Protection
 # =============================================================================
 
+
 class TestFatFingerProtection:
     """Tests for fat finger protection."""
 
@@ -284,6 +289,7 @@ class TestFatFingerProtection:
 # =============================================================================
 # Test Maximum Order Value
 # =============================================================================
+
 
 class TestMaxOrderValue:
     """Tests for maximum order value controls (Article 15(2))."""
@@ -340,6 +346,7 @@ class TestMaxOrderValue:
 # Test Maximum Order Volume
 # =============================================================================
 
+
 class TestMaxOrderVolume:
     """Tests for maximum order volume controls (Article 15(3))."""
 
@@ -389,6 +396,7 @@ class TestMaxOrderVolume:
 # Test Message Rate Limits
 # =============================================================================
 
+
 class TestMessageRateLimits:
     """Tests for message rate limits (Article 15(4))."""
 
@@ -435,6 +443,7 @@ class TestMessageRateLimits:
 # =============================================================================
 # Test Trader Authorization
 # =============================================================================
+
 
 class TestTraderAuthorization:
     """Tests for trader authorization (Article 15(5))."""
@@ -560,6 +569,7 @@ class TestTraderAuthorization:
 # Test Daily Loss Limit
 # =============================================================================
 
+
 class TestDailyLossLimit:
     """Tests for daily loss limit checks."""
 
@@ -599,6 +609,7 @@ class TestDailyLossLimit:
 # Test Concentration Limits
 # =============================================================================
 
+
 class TestConcentrationLimits:
     """Tests for position concentration limits."""
 
@@ -635,6 +646,7 @@ class TestConcentrationLimits:
 # =============================================================================
 # Test Statistics and Reporting
 # =============================================================================
+
 
 class TestStatisticsAndReporting:
     """Tests for statistics and compliance reporting."""
@@ -678,6 +690,7 @@ class TestStatisticsAndReporting:
 # Test Factory Function
 # =============================================================================
 
+
 class TestFactoryFunction:
     """Tests for factory function."""
 
@@ -704,6 +717,7 @@ class TestFactoryFunction:
 # Test Audit Callback
 # =============================================================================
 
+
 class TestAuditCallback:
     """Tests for audit callback on rejections."""
 
@@ -729,6 +743,7 @@ class TestAuditCallback:
 # =============================================================================
 # Test Disabled Controls
 # =============================================================================
+
 
 class TestDisabledControls:
     """Tests for disabled controls."""
@@ -771,6 +786,7 @@ class TestDisabledControls:
 # =============================================================================
 # Test Thread Safety
 # =============================================================================
+
 
 class TestThreadSafety:
     """Tests for thread safety."""

@@ -257,6 +257,7 @@ class TestTelemetryBuffer:
 
     def test_flush_marks_sent(self, buffer):
         """Test flush marks events as sent."""
+
         def mock_send(events: List[Dict[str, Any]]) -> bool:
             return True
 
@@ -272,6 +273,7 @@ class TestTelemetryBuffer:
 
     def test_flush_retry_on_failure(self, buffer):
         """Test retry count incremented on failure."""
+
         def failing_send(events: List[Dict[str, Any]]) -> bool:
             return False
 
@@ -521,7 +523,7 @@ class TestMandatoryRedaction:
                 "setting_name": "some_value",  # Non-sensitive key
                 "api_key": "should_be_redacted",
                 "amount": 100,  # Numeric value preserved
-            }
+            },
         )
         buffer.add(event)
 

@@ -59,8 +59,8 @@ router = APIRouter()
 COMMAND_STATE_TRANSITIONS: Dict[CommandStatus, List[CommandStatus]] = {
     CommandStatus.PENDING: [
         CommandStatus.PENDING_APPROVAL,  # If requires approval
-        CommandStatus.SENT,              # Direct send
-        CommandStatus.EXPIRED,           # Timeout
+        CommandStatus.SENT,  # Direct send
+        CommandStatus.EXPIRED,  # Timeout
     ],
     CommandStatus.PENDING_APPROVAL: [
         CommandStatus.APPROVED,
@@ -92,6 +92,7 @@ COMMAND_STATE_TRANSITIONS: Dict[CommandStatus, List[CommandStatus]] = {
 # ============================================================================
 # Request/Response Models
 # ============================================================================
+
 
 class ApprovalCreate(BaseModel):
     """
@@ -220,9 +221,11 @@ class CommandListResponse(BaseModel):
 # Helper Functions
 # ============================================================================
 
+
 def _generate_idempotency_key() -> str:
     """Generate a unique idempotency key."""
     import secrets
+
     return secrets.token_urlsafe(24)
 
 
@@ -279,9 +282,9 @@ def _command_to_response(command: Command) -> CommandResponse:
         error_message=command.error_message,
         created_at=command.created_at,
         updated_at=command.updated_at,
-        approvals=[
-            _approval_to_response(a) for a in command.approvals
-        ] if command.approvals else [],
+        approvals=(
+            [_approval_to_response(a) for a in command.approvals] if command.approvals else []
+        ),
         is_expired=_is_expired(command),
     )
 
@@ -320,6 +323,7 @@ async def _verify_workspace_access(
 # ============================================================================
 # Command Endpoints
 # ============================================================================
+
 
 @router.get(
     "",
@@ -503,7 +507,7 @@ async def create_command(
             select(Agent).where(
                 Agent.id == request.agent_id,
                 Agent.workspace_id == workspace_id,
-                Agent.deleted_at == None,
+                Agent.deleted_at.is_(None),
             )
         )
         agent = agent_result.scalar_one_or_none()
@@ -526,7 +530,7 @@ async def create_command(
                 select(Deployment).where(
                     Deployment.id == request.deployment_id,
                     Deployment.workspace_id == workspace_id,
-                    Deployment.deleted_at == None,
+                    Deployment.deleted_at.is_(None),
                 )
             )
             if deploy_result.scalar_one_or_none() is None:
@@ -565,18 +569,25 @@ async def create_command(
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid payload_ref: no ConfigBlob with digest '{request.payload_ref}' "
-                           f"exists in this workspace. Create the payload blob first via "
-                           f"POST /config-blobs with config_type='command_payload'.",
+                    f"exists in this workspace. Create the payload blob first via "
+                    f"POST /config-blobs with config_type='command_payload'.",
                 )
 
             # Optionally verify config_type is appropriate for commands
             # Allow 'command_payload', 'strategy', 'execution', 'risk' as valid types for commands
-            valid_command_payload_types = {"command_payload", "strategy", "execution", "risk", "environment", "custom"}
+            valid_command_payload_types = {
+                "command_payload",
+                "strategy",
+                "execution",
+                "risk",
+                "environment",
+                "custom",
+            }
             if config_blob.config_type not in valid_command_payload_types:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid payload_ref: ConfigBlob type '{config_blob.config_type}' "
-                           f"is not valid for commands. Expected one of: {sorted(valid_command_payload_types)}",
+                    f"is not valid for commands. Expected one of: {sorted(valid_command_payload_types)}",
                 )
 
         # Generate or use provided idempotency key
@@ -638,9 +649,7 @@ async def create_command(
 
         # Reload with approvals
         result = await session.execute(
-            select(Command)
-            .options(selectinload(Command.approvals))
-            .where(Command.id == command.id)
+            select(Command).options(selectinload(Command.approvals)).where(Command.id == command.id)
         )
         command = result.scalar_one()
 
@@ -660,9 +669,7 @@ async def get_command(
     """Get command by ID."""
     async with get_session() as session:
         result = await session.execute(
-            select(Command)
-            .options(selectinload(Command.approvals))
-            .where(Command.id == command_id)
+            select(Command).options(selectinload(Command.approvals)).where(Command.id == command_id)
         )
         command = result.scalar_one_or_none()
 
@@ -696,9 +703,7 @@ async def update_command(
     """
     async with get_session() as session:
         result = await session.execute(
-            select(Command)
-            .options(selectinload(Command.approvals))
-            .where(Command.id == command_id)
+            select(Command).options(selectinload(Command.approvals)).where(Command.id == command_id)
         )
         command = result.scalar_one_or_none()
 
@@ -747,9 +752,7 @@ async def update_command(
 
         # Reload with approvals
         result = await session.execute(
-            select(Command)
-            .options(selectinload(Command.approvals))
-            .where(Command.id == command.id)
+            select(Command).options(selectinload(Command.approvals)).where(Command.id == command.id)
         )
         command = result.scalar_one()
 
@@ -774,9 +777,7 @@ async def transition_command(
     """
     async with get_session() as session:
         result = await session.execute(
-            select(Command)
-            .options(selectinload(Command.approvals))
-            .where(Command.id == command_id)
+            select(Command).options(selectinload(Command.approvals)).where(Command.id == command_id)
         )
         command = result.scalar_one_or_none()
 
@@ -811,7 +812,7 @@ async def transition_command(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid transition from {current_status.value} to {request.new_status.value}. "
-                       f"Allowed: {[s.value for s in allowed_transitions]}",
+                f"Allowed: {[s.value for s in allowed_transitions]}",
             )
 
         # Special validation for PENDING_APPROVAL
@@ -861,9 +862,7 @@ async def transition_command(
 
         # Reload with approvals
         result = await session.execute(
-            select(Command)
-            .options(selectinload(Command.approvals))
-            .where(Command.id == command.id)
+            select(Command).options(selectinload(Command.approvals)).where(Command.id == command.id)
         )
         command = result.scalar_one()
 
@@ -873,6 +872,7 @@ async def transition_command(
 # ============================================================================
 # Approval Endpoints
 # ============================================================================
+
 
 @router.get(
     "/{command_id}/approvals",
@@ -887,9 +887,7 @@ async def list_approvals(
     """List all approvals for a command."""
     async with get_session() as session:
         # Get command first
-        cmd_result = await session.execute(
-            select(Command).where(Command.id == command_id)
-        )
+        cmd_result = await session.execute(select(Command).where(Command.id == command_id))
         command = cmd_result.scalar_one_or_none()
 
         if command is None:
@@ -932,9 +930,7 @@ async def create_approval(
     async with get_session() as session:
         # Get command with lock for update
         result = await session.execute(
-            select(Command)
-            .options(selectinload(Command.approvals))
-            .where(Command.id == command_id)
+            select(Command).options(selectinload(Command.approvals)).where(Command.id == command_id)
         )
         command = result.scalar_one_or_none()
 
@@ -1017,9 +1013,7 @@ async def get_approval(
     """Get a specific approval record."""
     async with get_session() as session:
         # Get command first
-        cmd_result = await session.execute(
-            select(Command).where(Command.id == command_id)
-        )
+        cmd_result = await session.execute(select(Command).where(Command.id == command_id))
         command = cmd_result.scalar_one_or_none()
 
         if command is None:
@@ -1052,6 +1046,7 @@ async def get_approval(
 # ============================================================================
 # Batch Operations
 # ============================================================================
+
 
 @router.post(
     "/expire-stale",
@@ -1092,7 +1087,7 @@ async def expire_stale_commands(
             select(Command).where(
                 Command.workspace_id == workspace_id,
                 Command.status.in_(non_terminal_states),
-                Command.expires_at != None,
+                Command.expires_at.is_not(None),
                 Command.expires_at < now,
             )
         )
@@ -1112,6 +1107,7 @@ async def expire_stale_commands(
 # ============================================================================
 # Schema/Validation Endpoints (WI-CLOUD-01)
 # ============================================================================
+
 
 @router.get(
     "/types/list",

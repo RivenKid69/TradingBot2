@@ -40,6 +40,7 @@ python script_backtest.py --config configs/my_backtest.yaml
 ### 3. Live Execution
 
 **IMPORTANT**: Before running live, always:
+
 1. Run `python scripts/doctor.py` to verify environment
 2. Test with `--dry-run` flag first
 3. Start with small position limits
@@ -95,6 +96,7 @@ data_vendor: binance  # or "alpaca", "polygon"
 ```
 
 This auto-configures:
+
 - FeeProvider (maker/taker for crypto, regulatory fees for equity)
 - SlippageProvider (appropriate profiles)
 - TradingHoursAdapter (24/7 for crypto, NYSE hours for equity)
@@ -124,18 +126,21 @@ model:
 ## Troubleshooting
 
 ### "Filters file stale" error
+
 Run `python scripts/fetch_binance_filters.py --out data/binance_filters.json`
 
 ### "API key not found" error
+
 Ensure environment variables are set (not in config file!)
 
 ### Training loss not decreasing
+
 - Check `gamma` matches between `model.params` and `reward`
 - Try reducing `learning_rate`
 - Ensure data has sufficient variance
 
 ## See Also
 
-- [claude.md](../../claude.md) - Full documentation
+- [../../docs/PLATFORM_REFERENCE.md](../../docs/PLATFORM_REFERENCE.md) - Full documentation
 - [docs/pipeline.md](../../docs/pipeline.md) - Signal pipeline
 - [docs/twin_critics.md](../../docs/twin_critics.md) - Twin critics architecture

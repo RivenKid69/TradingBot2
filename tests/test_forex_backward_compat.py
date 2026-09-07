@@ -15,7 +15,7 @@ Scenarios:
 Test Count Target: 30 tests
 
 References:
-    - CLAUDE.md: API contract preservation
+    - docs/PLATFORM_REFERENCE.md: API contract preservation
     - docs/FOREX_INTEGRATION_PLAN.md: Phase 10 requirements
 """
 
@@ -30,6 +30,7 @@ from pathlib import Path
 # =============================================================================
 # API Contract Preservation Tests
 # =============================================================================
+
 
 class TestAPIContractPreservation:
     """Verify public API contracts are preserved."""
@@ -175,21 +176,25 @@ class TestAPIContractPreservation:
 # Existing Config Loading Tests
 # =============================================================================
 
+
 class TestExistingConfigsLoad:
     """Verify existing config files still load correctly."""
 
-    @pytest.mark.parametrize("config_path", [
-        "configs/config_train.yaml",
-        "configs/config_sim.yaml",
-        "configs/config_live.yaml",
-        "configs/config_eval.yaml",
-        "configs/config_train_stocks.yaml",
-        "configs/config_backtest_stocks.yaml",
-        "configs/config_live_alpaca.yaml",
-        "configs/risk.yaml",
-        "configs/fees.yaml",
-        "configs/slippage.yaml",
-    ])
+    @pytest.mark.parametrize(
+        "config_path",
+        [
+            "configs/config_train.yaml",
+            "configs/config_sim.yaml",
+            "configs/config_live.yaml",
+            "configs/config_eval.yaml",
+            "configs/config_train_stocks.yaml",
+            "configs/config_backtest_stocks.yaml",
+            "configs/config_live_alpaca.yaml",
+            "configs/risk.yaml",
+            "configs/fees.yaml",
+            "configs/slippage.yaml",
+        ],
+    )
     def test_existing_config_loads(self, config_path: str):
         """Existing config must load without errors."""
         if not os.path.exists(config_path):
@@ -220,6 +225,7 @@ class TestExistingConfigsLoad:
 # =============================================================================
 # Asset Class Detection Tests
 # =============================================================================
+
 
 class TestAssetClassDetection:
     """Test backward-compatible asset class detection."""
@@ -270,15 +276,19 @@ class TestAssetClassDetection:
 # Existing Scripts Syntax Tests
 # =============================================================================
 
+
 class TestExistingScriptsSyntax:
     """Verify existing scripts are syntactically valid."""
 
-    @pytest.mark.parametrize("script_path", [
-        "script_backtest.py",
-        "script_live.py",
-        "script_eval.py",
-        "train_model_multi_patch.py",
-    ])
+    @pytest.mark.parametrize(
+        "script_path",
+        [
+            "script_backtest.py",
+            "script_live.py",
+            "script_eval.py",
+            "train_model_multi_patch.py",
+        ],
+    )
     def test_script_syntax_valid(self, script_path: str):
         """Script must be syntactically valid Python."""
         if not os.path.exists(script_path):
@@ -291,6 +301,7 @@ class TestExistingScriptsSyntax:
 # =============================================================================
 # Model Compatibility Tests
 # =============================================================================
+
 
 class TestModelCompatibility:
     """Verify trained model compatibility."""
@@ -320,9 +331,9 @@ class TestModelCompatibility:
         from services.forex_config import ForexConfig
 
         # ForexConfig.asset_class ensures forex features are isolated
-        assert hasattr(ForexConfig, "asset_class"), (
-            "ForexConfig must have asset_class for feature isolation"
-        )
+        assert hasattr(
+            ForexConfig, "asset_class"
+        ), "ForexConfig must have asset_class for feature isolation"
 
     def test_action_space_unchanged(self):
         """Action space must be unchanged for all asset classes."""
@@ -338,6 +349,7 @@ class TestModelCompatibility:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestFactoryFunctionBackwardCompat:
     """Test factory functions maintain backward compatibility."""
@@ -401,6 +413,7 @@ class TestFactoryFunctionBackwardCompat:
 # Import Structure Tests
 # =============================================================================
 
+
 class TestImportStructureBackwardCompat:
     """Test import structure backward compatibility."""
 
@@ -439,6 +452,7 @@ class TestImportStructureBackwardCompat:
 # Enum Backward Compatibility Tests
 # =============================================================================
 
+
 class TestEnumBackwardCompat:
     """Test enum backward compatibility."""
 
@@ -470,6 +484,7 @@ class TestEnumBackwardCompat:
 # =============================================================================
 # Service Layer Tests
 # =============================================================================
+
 
 class TestServiceLayerBackwardCompat:
     """Test service layer backward compatibility."""

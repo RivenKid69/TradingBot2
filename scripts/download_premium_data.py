@@ -42,7 +42,9 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_bars = sub.add_parser("bars", help="минутные бары → data/minute/")
-    p_bars.add_argument("--vendor", required=True, choices=["binance", "dukascopy", "polygon", "alpaca", "oanda"])
+    p_bars.add_argument(
+        "--vendor", required=True, choices=["binance", "dukascopy", "polygon", "alpaca", "oanda"]
+    )
     p_bars.add_argument("--symbols", nargs="+", required=True)
     p_bars.add_argument("--timeframe", default="1m")
     p_bars.add_argument("--start", required=True, help="ISO-дата, напр. 2026-07-01")
@@ -60,8 +62,11 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     from services.premium_data import (
-        DEFAULT_OUT_DIR, DEFAULT_TICKS_DIR,
-        download_binance_agg_trades, download_minute_bars, vendor_status,
+        DEFAULT_OUT_DIR,
+        DEFAULT_TICKS_DIR,
+        download_binance_agg_trades,
+        download_minute_bars,
+        vendor_status,
     )
 
     if args.cmd == "vendors":
@@ -70,13 +75,18 @@ def main(argv=None) -> int:
 
     if args.cmd == "bars":
         results = download_minute_bars(
-            args.vendor, args.symbols, timeframe=args.timeframe,
-            start_ts_ms=_to_ms(args.start), end_ts_ms=_to_ms(args.end),
+            args.vendor,
+            args.symbols,
+            timeframe=args.timeframe,
+            start_ts_ms=_to_ms(args.start),
+            end_ts_ms=_to_ms(args.end),
             out_dir=args.out or DEFAULT_OUT_DIR,
         )
     else:  # ticks
         results = download_binance_agg_trades(
-            args.symbols, start_ts_ms=_to_ms(args.start), end_ts_ms=_to_ms(args.end),
+            args.symbols,
+            start_ts_ms=_to_ms(args.start),
+            end_ts_ms=_to_ms(args.end),
             out_dir=args.out or DEFAULT_TICKS_DIR,
         )
 

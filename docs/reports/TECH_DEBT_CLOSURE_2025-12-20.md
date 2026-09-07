@@ -9,6 +9,7 @@
 ## Executive Summary
 
 All 14 tech debt items identified have been verified and closed with appropriate control artifacts. Each item is either:
+
 - **Closed**: Risk eliminated through code fix, documentation, or process change
 - **Controlled**: Risk acknowledged with explicit artifacts, monitoring, and mitigations
 
@@ -25,6 +26,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: `arch-train-monolith`
 - Control Artifact: `.github/workflows/build-and-test.yml` (lines 173-222) - cyclomatic complexity tracking
 - Metrics: radon cc report uploaded as CI artifact, ~85% critical path coverage
@@ -43,6 +45,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: `arch-binance-spot-stub`
 - Control Artifact: `tests/integration/BINANCE_CONFORMANCE.md`
 - Design Rationale: CCEA Design Doc Section 0.2 - Cloud MUST NOT execute live orders
@@ -61,6 +64,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: `L1-slippage`
 - Control Artifact: `docs/SIMULATION_LIMITATIONS.md#L1`
 - Mitigation: StatisticalSlippageProvider with calibration, conservative multipliers
@@ -78,6 +82,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: `L2-fill`
 - Control Artifact: `docs/SIMULATION_LIMITATIONS.md#L2`
 - Mitigation: OHLCVFillProvider provides conservative baseline
@@ -95,6 +100,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: `mediator-legacy-fallback`
 - Control Artifact: Fallback counter with periodic logging in `mediator.py:1760-1781`
 - Metrics: Fallback frequency monitored; high rates indicate distribution mismatch
@@ -112,6 +118,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entries: `L4-tif`, `testing-tif-conformance`
 - Control Artifact: `tests/cpp/test_orderbook_tif_conformance.cpp`, `docs/SIMULATION_LIMITATIONS.md#L4`
 - Status: GTC/POST_ONLY implemented; IOC pending T2b milestone
@@ -130,6 +137,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: `docs-ci-coverage-gate`
 - Control Artifact: Document accurately states "TARGET" vs implemented per Documentation Canon
 - CI tracking: pytest-cov runs in CI, results in `tests/COMPREHENSIVE_TEST_REPORT.md`
@@ -147,6 +155,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: `ops-dr-testing`
 - Control Artifact: `docs/runbooks/DR_DRILL.md` (comprehensive drill procedures)
 - Status: Design targets documented; validation requires infrastructure deployment
@@ -164,6 +173,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: `ops-incident-response`
 - Control Artifact: `docs/operations/ON_CALL_CAPACITY_VALIDATION.md`
 - Status: Capacity honestly disclosed; expansion requires funding
@@ -181,6 +191,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: CLOSED
 
 **Evidence**:
+
 - Registry Entry: `security-model-loading`
 - Control Artifact: `docs/security/THREAT_MODEL_MODEL_LOADING.md`
 - Implementation: Fail-closed default (weights_only=True), explicit env var opt-in, conversion utility
@@ -199,6 +210,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: Controlled
 
 **Evidence**:
+
 - Registry Entry: Documented in `docs/security/ENCRYPTION_VERIFICATION.md` gaps table
 - Control Artifact: Gap analysis in verification report
 - Status: Low priority roadmap item
@@ -216,6 +228,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: CLOSED
 
 **Evidence**:
+
 - Registry Entry: `build-reproducibility`
 - Control Artifact: `requirements-cpu.lock.txt`, `requirements-gpu.lock.txt`
 - Implementation: Lockfiles with exact versions, CI uses lockfiles for reproducible builds
@@ -234,6 +247,7 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 **Closure Type**: CLOSED
 
 **Evidence**:
+
 - Registry Entry: `docs-ci-workflow-existence`
 - Control Artifact: `.github/workflows/build-and-test.yml` (231 lines)
 - Verification: Workflow exists and runs on Linux/Windows matrix with Python 3.12
@@ -279,12 +293,14 @@ No items remain open. All closures comply with Documentation Canon (no absolute 
 ## Test Results
 
 No new tests executed as part of this verification. All items were verified through:
+
 1. Source code inspection at specified lines
 2. Control artifact existence verification
 3. TECH_DEBT_REGISTRY.md entry confirmation
 4. Documentation Canon compliance review
 
 The CI pipeline (`.github/workflows/build-and-test.yml`) runs automatically on every PR/push and includes:
+
 - pytest test suite
 - Cyclomatic complexity analysis
 - CCEA guardrail checks

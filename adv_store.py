@@ -63,9 +63,7 @@ class ADVStore:
         self._refresh_days = _safe_positive_int(_cfg_attr(cfg, "refresh_days"))
         self._default_quote = _safe_float(_cfg_attr(cfg, "default_quote"))
         self._floor_quote = _safe_float(_cfg_attr(cfg, "floor_quote"))
-        self._missing_policy = _normalise_policy(
-            _cfg_attr(cfg, "missing_symbol_policy", "warn")
-        )
+        self._missing_policy = _normalise_policy(_cfg_attr(cfg, "missing_symbol_policy", "warn"))
         self._cache: Dict[str, float] = {}
         self._meta: Dict[str, Any] = {}
         self._mtime: float | None = None
@@ -405,9 +403,7 @@ class ADVStore:
             return {}, {"path": path, "symbol_count": 0}
         return self._extract_bar_meta(payload, path)
 
-    def _load_bar_dataset_locked(
-        self, path: str
-    ) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+    def _load_bar_dataset_locked(self, path: str) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
         if not path:
             return {}, {}
         cache_key = os.path.abspath(path)

@@ -17,11 +17,12 @@ Test Coverage Target: 100%
 
 
 import pytest
+
 pytest.skip(
     "Legacy DORA test - uses deprecated imports from services.dora.* "
     "These modules have been migrated to services.dora_integration.*. "
     "See tests/dora/ and tests/dora_integration/ for current tests.",
-    allow_module_level=True
+    allow_module_level=True,
 )
 
 
@@ -68,6 +69,7 @@ from services.dora.proportionality import (
 # =============================================================================
 # SCOPE VERIFICATION TESTS (Article 2)
 # =============================================================================
+
 
 class TestDORAScopeVerification:
     """Tests for DORA Article 2 scope verification."""
@@ -182,6 +184,7 @@ class TestDORAScopeVerification:
 # =============================================================================
 # FUNCTION CLASSIFICATION TESTS (Article 3(22))
 # =============================================================================
+
 
 class TestFunctionClassification:
     """Tests for DORA Article 3(22) function classification."""
@@ -360,6 +363,7 @@ class TestFunctionClassification:
 # PROPORTIONALITY ASSESSMENT TESTS (Articles 4, 16)
 # =============================================================================
 
+
 class TestProportionalityAssessment:
     """Tests for DORA Articles 4, 16 proportionality assessment."""
 
@@ -508,18 +512,24 @@ class TestProportionalityAssessment:
         assessor = ProportionalityAssessor()
 
         # Should be microenterprise
-        assert assessor.check_microenterprise_status(
-            employee_count=8,
-            annual_turnover_eur=1_500_000,
-            balance_sheet_eur=1_000_000,
-        ) is True
+        assert (
+            assessor.check_microenterprise_status(
+                employee_count=8,
+                annual_turnover_eur=1_500_000,
+                balance_sheet_eur=1_000_000,
+            )
+            is True
+        )
 
         # Should NOT be microenterprise
-        assert assessor.check_microenterprise_status(
-            employee_count=15,
-            annual_turnover_eur=1_000_000,
-            balance_sheet_eur=1_000_000,
-        ) is False
+        assert (
+            assessor.check_microenterprise_status(
+                employee_count=15,
+                annual_turnover_eur=1_000_000,
+                balance_sheet_eur=1_000_000,
+            )
+            is False
+        )
 
     def test_assessment_has_unique_id(self):
         """Test assessment generates unique ID."""
@@ -588,6 +598,7 @@ class TestProportionalityAssessment:
 # =============================================================================
 # INTEGRATION TESTS
 # =============================================================================
+
 
 class TestDORAPhase0Integration:
     """Integration tests for DORA Phase 0 modules."""
@@ -673,6 +684,7 @@ class TestDORAPhase0Integration:
 # =============================================================================
 # EDGE CASES AND ERROR HANDLING
 # =============================================================================
+
 
 class TestEdgeCasesAndErrorHandling:
     """Tests for edge cases and error handling."""

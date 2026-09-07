@@ -221,7 +221,9 @@ class QuantizerImpl:
                     filters_map = {str(sym): dict(f or {}) for sym, f in filters_raw.items()}
                 except Exception:
                     filters_map = {str(sym): f for sym, f in filters_raw.items()}  # type: ignore[assignment]
-            metadata_map: Dict[str, Any] = dict(metadata_raw) if isinstance(metadata_raw, Mapping) else {}
+            metadata_map: Dict[str, Any] = (
+                dict(metadata_raw) if isinstance(metadata_raw, Mapping) else {}
+            )
             return filters_map, metadata_map
 
         if Quantizer is not None:
@@ -279,7 +281,9 @@ class QuantizerImpl:
         self._quantizer = None
         self._filters_raw: Dict[str, Dict[str, Any]] = {}
         self._symbol_filters_map: Dict[str, SymbolFilters] = {}
-        self._symbol_filters_view: Mapping[str, SymbolFilters] = MappingProxyType(self._symbol_filters_map)
+        self._symbol_filters_view: Mapping[str, SymbolFilters] = MappingProxyType(
+            self._symbol_filters_map
+        )
         self._filters_metadata: Dict[str, Any] = {}
         self._filters_metadata_view: Mapping[str, Any] = MappingProxyType(self._filters_metadata)
         self._validation_fallback_warned = False
@@ -340,8 +344,8 @@ class QuantizerImpl:
                         stale,
                         auto_refresh_days,
                     )
-                    executed, refresh_succeeded, refresh_returncode, refresh_msg = self._refresh_filters(
-                        filters_path
+                    executed, refresh_succeeded, refresh_returncode, refresh_msg = (
+                        self._refresh_filters(filters_path)
                     )
                     refresh_executed = executed
                     if refresh_msg:
@@ -356,7 +360,11 @@ class QuantizerImpl:
                 if missing:
                     status = "missing"
                     reason_parts = [
-                        f"Filters unavailable at {filters_path}" if filters_path else "Filters unavailable"
+                        (
+                            f"Filters unavailable at {filters_path}"
+                            if filters_path
+                            else "Filters unavailable"
+                        )
                     ]
                     if refresh_message and not refresh_succeeded:
                         reason_parts.append(str(refresh_message))
@@ -365,9 +373,7 @@ class QuantizerImpl:
                     status = "stale"
                     if auto_refresh_days > 0:
                         if age_days is not None:
-                            status_reason = (
-                                f"Filters age {age_days:.2f}d exceeds {auto_refresh_days}d threshold"
-                            )
+                            status_reason = f"Filters age {age_days:.2f}d exceeds {auto_refresh_days}d threshold"
                         else:
                             status_reason = (
                                 f"Filters staleness exceeds {auto_refresh_days}d threshold"
@@ -438,18 +444,12 @@ class QuantizerImpl:
         self._filters_metadata.clear()
         self._filters_metadata.update(metadata_payload)
         strict_active = bool(self.cfg.strict_filters and symbol_count > 0)
-        enforce_active = bool(
-            self.cfg.enforce_percent_price_by_side and symbol_count > 0
-        )
+        enforce_active = bool(self.cfg.enforce_percent_price_by_side and symbol_count > 0)
         enriched_metadata = self._refresh_runtime_metadata(
             strict_active=strict_active,
             enforce_active=enforce_active,
         )
-        mtime_repr = (
-            enriched_metadata.get("mtime_iso")
-            or enriched_metadata.get("mtime")
-            or "n/a"
-        )
+        mtime_repr = enriched_metadata.get("mtime_iso") or enriched_metadata.get("mtime") or "n/a"
         logger.info(
             "Quantizer filters metadata: path=%s mtime=%s symbols=%s strict_filters_active=%s",
             filters_path or "<unset>",
@@ -530,7 +530,9 @@ class QuantizerImpl:
         """
 
         quantizer = self._quantizer
-        enforce = self.cfg.enforce_percent_price_by_side if enforce_ppbs is None else bool(enforce_ppbs)
+        enforce = (
+            self.cfg.enforce_percent_price_by_side if enforce_ppbs is None else bool(enforce_ppbs)
+        )
         ref_value = price if ref_price is None else ref_price
 
         if quantizer is None or not self._filters_raw:
@@ -654,13 +656,9 @@ class QuantizerImpl:
                         f"Failed to attach quantizer filters to {type(sim).__name__}: {exc}"
                     )
             else:
-                warn_message = (
-                    f"Simulator {type(sim).__name__} has no 'filters' attribute; strict filter enforcement disabled"
-                )
+                warn_message = f"Simulator {type(sim).__name__} has no 'filters' attribute; strict filter enforcement disabled"
         else:
-            warn_message = (
-                f"Quantizer filters are unavailable; permissive mode enabled for {type(sim).__name__}"
-            )
+            warn_message = f"Quantizer filters are unavailable; permissive mode enabled for {type(sim).__name__}"
 
         if warn_message:
             logger.warning(warn_message)
@@ -700,9 +698,7 @@ class QuantizerImpl:
     ) -> Dict[str, Any]:
         metadata = dict(self._filters_metadata)
         if enforce_active is None:
-            enforce_active = bool(
-                self.cfg.enforce_percent_price_by_side and strict_active
-            )
+            enforce_active = bool(self.cfg.enforce_percent_price_by_side and strict_active)
         status = metadata.get("status")
         if strict_active:
             metadata["permissive_mode"] = False
@@ -720,9 +716,7 @@ class QuantizerImpl:
             {
                 "strict_filters": bool(self.cfg.strict_filters),
                 "strict_filters_active": bool(strict_active),
-                "enforce_percent_price_by_side": bool(
-                    self.cfg.enforce_percent_price_by_side
-                ),
+                "enforce_percent_price_by_side": bool(self.cfg.enforce_percent_price_by_side),
                 "enforce_percent_price_by_side_active": bool(enforce_active),
                 "quantize_mode": str(self.cfg.quantize_mode),
             }
@@ -807,9 +801,7 @@ class QuantizerImpl:
         return QuantizerImpl(QuantizerConfig(**cfg_kwargs))
 
     @classmethod
-    def _refresh_filters(
-        cls, out_path: str
-    ) -> Tuple[bool, bool, Optional[int], Optional[str]]:
+    def _refresh_filters(cls, out_path: str) -> Tuple[bool, bool, Optional[int], Optional[str]]:
         resolved_out = os.path.abspath(out_path)
         refresh_key = resolved_out
         current_mtime = _file_mtime(resolved_out)

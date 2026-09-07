@@ -12,6 +12,7 @@
 >
 > **Test Coverage Targets**: The "100% Test Coverage Target" labels throughout this document are **aspirational design goals**, not CI-enforced gates. Actual test coverage varies by module maturity and is reported in CI artifacts. These targets indicate implementation intent, not current state.
 > Compliance modules have been reorganized to a three-tier architecture. See [MIFID_II_COMPLIANCE_ROADMAP.md](compliance/MIFID_II_COMPLIANCE_ROADMAP.md#31-module-location-mapping) for current paths:
+>
 > - `services/core/risk_controls/` (audit_trail, retention_policy, etc.)
 > - `services/algo_integration/` (B2B compliance toolkit)
 > - `services/archive/mifid_financial_entity/` (archived Investment Firm modules)
@@ -30,6 +31,7 @@
 | **Article 72 ENHANCED** | Full EDPB procedure tracking with voting rules, meeting records, written procedures, and decision tracking | EDPB procedure not fully addressed |
 
 **Coverage Update**: ~97 of 99 GDPR articles now addressed in code scaffolding (illustrative; not audited compliance validation)
+
 - Previous v2.2: 95 articles (96%)
 - Added v2.3: Complete Art. 19, Art. 63, Art. 37(1) assessment + enhanced Art. 12(3), 64, 72
 
@@ -78,12 +80,14 @@
 | **Performance Benchmarks** | API/concurrency/throughput tests | Missing performance validation |
 
 **Coverage Update (v2.2)**: ~95 of 99 GDPR articles addressed in code scaffolding (illustrative)
+
 - Previous v2.1: 87 articles (88%)
 - Previous v2.0: 72 articles (73%)
 - Previous v1.x: 62 articles (63%)
 - Added v2.2: Articles 52-54, 67, 69, 71, 73-76, 91-99 + enhanced Art. 12(3), 33(1), 34(3), 78
 
 **Remaining Articles** (not directly applicable to trading platforms):
+
 - Article 4 (Definitions) - Covered implicitly throughout
 - Article 27 (EU Representative) - Platform is EU-based, not applicable
 
@@ -96,6 +100,7 @@ This document provides a phased implementation plan for GDPR controls aligned to
 ### Scope of Application
 
 CustodiaCloud processes (deployment-dependent):
+
 - **Financial Market Data**: OHLCV, order books, trades (non-personal)
 - **User Credentials**: stored only in the customer-controlled Agent (not in Cloud by design)
 - **Audit Logs**: governance/audit events and (optional) redacted telemetry (may contain personal data)
@@ -490,6 +495,7 @@ adapters/                    → Data flow tracking
 ### 0.1 Objectives
 
 Establish foundational GDPR infrastructure including:
+
 - **Article 3 territorial scope assessment** - NEW v1.6
 - Article 4 definitions and role classification
 - Article 28 processor management
@@ -1176,6 +1182,7 @@ class SecureAccessMiddleware:
 Per [GDPR Article 87](https://gdpr-info.eu/art-87-gdpr/), Member States may determine specific conditions for processing of national identification numbers. This is **CRITICAL** for KYC/AML data handling.
 
 > **⚠️ Platform Criticality**: Trading platforms process national ID numbers for:
+>
 > - KYC verification (passport, national ID cards)
 > - AML compliance (tax ID numbers)
 > - Regulatory reporting (SSN-equivalents)
@@ -1430,6 +1437,7 @@ KYC Onboarding with National ID:
 Per [GDPR Article 8](https://gdpr-info.eu/art-8-gdpr/), special consent rules apply to children. While the platform is 18+, robust age verification is required.
 
 > **Platform Context**: Trading platforms typically require 18+ users due to:
+>
 > - Financial regulations (MiFID II)
 > - Contractual capacity requirements
 > - Risk exposure appropriateness
@@ -1794,6 +1802,7 @@ test_gdpr_phase0_core_processor.py:
 ### 1.1 Objectives
 
 Establish the core GDPR framework including:
+
 - Processing principles enforcement (Article 5)
 - Lawful basis management (Article 6)
 - Special categories handling (Article 9)
@@ -1835,6 +1844,7 @@ Article 5 principles to enforce:
 | **Accountability** | Audit trail integration |
 
 Key classes:
+
 - `ProcessingPurpose`: Purpose definition with legal basis
 - `PrincipleChecker`: Validates processing against principles
 - `PrincipleViolation`: Violation record structure
@@ -1855,6 +1865,7 @@ Enum LawfulBasis:
 ```
 
 Key classes:
+
 - `LegalBasisRecord`: Documents legal basis for processing
 - `LegitimateInterestAssessment`: LIA documentation
 - `LegalBasisManager`: Manages and validates legal bases
@@ -2076,6 +2087,7 @@ Per [GDPR Article 10](https://gdpr-info.eu/art-10-gdpr/), processing of personal
 > **⚠️ CRITICAL FOR TRADING PLATFORMS**
 >
 > Article 10 IS applicable to trading platforms through:
+>
 > 1. **AML/KYC Checks**: AMLD6 requires PEP (Politically Exposed Persons) screening
 > 2. **Sanctions Screening**: OFAC, EU sanctions lists may indicate criminal history
 > 3. **Fitness & Probity Checks**: MiFID II may require background checks
@@ -2753,6 +2765,7 @@ test_gdpr_phase1_foundation.py:
 ### 2a.1 Objectives
 
 Implement consent management and transparency requirements:
+
 - Consent management (Article 7)
 - Privacy notices and information provision (Articles 12-14)
 - Layered transparency approach
@@ -2883,6 +2896,7 @@ Dataclass ConsentRecord:
 ```
 
 Key requirements:
+
 - Double opt-in support
 - Granular consent per purpose
 - Easy withdrawal (same effort as granting)
@@ -2929,11 +2943,13 @@ test_gdpr_phase2a_consent_transparency.py:
 **🚨 CRITICAL ARCHITECTURE COMPONENT**: Single source of truth for all consent states across regulations.
 
 Per audit findings, the plan describes multiple consent managers:
+
 - `ConsentManager` (GDPR Article 7)
 - `ePrivacyComplianceManager` (ePrivacy cookies/tracking)
 - `AMLGDPRResolver` (AMLD-GDPR coordination)
 
 Without a unified orchestrator, this creates risk of:
+
 - Inconsistent consent states across systems
 - Race conditions during consent withdrawal
 - Audit trail gaps
@@ -3120,6 +3136,7 @@ Query consent      ──►     get_effective_consent() ──►    Single tru
 #### 2b.1.1 Objectives
 
 Implement foundational data subject rights:
+
 - Right of access / DSAR (Article 15)
 - Right to rectification (Article 16)
 - Right to erasure (Article 17)
@@ -3137,6 +3154,7 @@ Implement foundational data subject rights:
 #### 2b.2.1 Objectives
 
 Implement additional data subject rights:
+
 - Right to data portability (Article 20)
 - Right to object (Article 21)
 - Integration with notification obligations
@@ -3154,6 +3172,7 @@ Implement additional data subject rights:
 **CRITICAL FOR ALGORITHMIC TRADING PLATFORM**
 
 Implement automated decision-making rights:
+
 - **Automated decision-making rights (Article 22)** - with full trading platform classification
 - Human intervention mechanisms
 - Decision explainability
@@ -3193,6 +3212,7 @@ Dataclass DSARRequest:
 ```
 
 Key features:
+
 - Identity verification workflow
 - Deadline tracking (30 days + 60 extension)
 - Data collection across systems
@@ -3481,6 +3501,7 @@ Enum ErasureException:
 ```
 
 Key features:
+
 - Exception handling (e.g., MiFID II 5-7 year retention)
 - Cascading deletion across systems
 - Third-party notification (Article 17(2))
@@ -3992,6 +4013,7 @@ Response:
 > ⚠️ **IMPORTANT LEGAL CLARIFICATION**: Article 22 does NOT apply to ALL automated trading decisions.
 > Per [EDPB Guidelines on Automated Decision-Making](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/automated-decision-making-and-profiling_en),
 > Article 22(1) only applies when a decision is:
+>
 > 1. **Solely based on automated processing** (no meaningful human involvement), AND
 > 2. **Produces legal effects** concerning the data subject OR **similarly significantly affects** them
 
@@ -4345,6 +4367,7 @@ Transaction Flagged by AML System
 **⚠️ CRITICAL: CJEU Judgment C-634/21 (SCHUFA, December 2023)**
 
 Per the [CJEU SCHUFA ruling](https://curia.europa.eu/juris/document/document.jsf?docid=280426&mode=lst&pageIndex=0&dir=&occ=first&part=1&text=&doclang=EN&cid=1234567), Article 22 GDPR can apply to **scoring** operations even when:
+
 1. The score provider (e.g., this platform) does not make the final decision
 2. A third party (e.g., broker, lender) makes the actual decision
 
@@ -4791,6 +4814,7 @@ test_gdpr_phase2b_data_subject_rights.py:
 ### 3.1 Objectives
 
 Implement Article 30-aligned Records of Processing Activities:
+
 - Complete processing inventory
 - Data mapping across systems
 - Processing purpose documentation
@@ -4976,6 +5000,7 @@ test_gdpr_phase3_ropa.py:
 ### 4.1 Objectives
 
 Implement Privacy by Design and Default (Article 25):
+
 - Data minimization enforcement
 - Pseudonymization capabilities
 - Retention policy automation
@@ -5060,6 +5085,7 @@ Class Pseudonymizer:
 ```
 
 Integration with existing:
+
 - Leverage `services/secure_logging.py` patterns
 - Use existing `tests/test_pii_detection.py` detection
 
@@ -5279,6 +5305,7 @@ Class GDPRRetentionManager:
 ```
 
 Integration with:
+
 - `services/compliance/retention_policy.py` (MiFID II)
 - Storage limitation principle enforcement
 
@@ -5314,6 +5341,7 @@ Class AutoErasureScheduler:
 ```
 
 **MiFID II → GDPR Transition Logic:**
+
 ```
 T+0         Data collected (trading record created)
 T+5y        MiFID II minimum retention reached
@@ -5326,6 +5354,7 @@ T+5y+31d    AUTO-ERASURE TRIGGERED (if no holds)
 ```
 
 Integration with:
+
 - `RestrictionsFramework` for Article 23 legal holds
 - `AccountabilityFramework` for erasure evidence logging
 - `services/compliance/retention_policy.py` for retention period tracking
@@ -5918,6 +5947,7 @@ test_gdpr_phase4_privacy_engineering.py:
 ### 5.1 Objectives
 
 Implement Articles 33-34 breach notification:
+
 - Breach detection integration
 - Risk assessment for breaches
 - 72-hour supervisory authority notification
@@ -5960,6 +5990,7 @@ Class BreachDetector:
 ```
 
 Integration points:
+
 - `services/dora/incident_management.py`
 - `services/dora/detection.py`
 - Security monitoring systems
@@ -6696,6 +6727,7 @@ test_gdpr_phase5_breach_management.py:
 ### 6.1 Objectives
 
 Complete GDPR governance framework:
+
 - Data Protection Impact Assessment (Article 35)
 - DPO tools and interface (Articles 37-39)
 - International data transfers (Articles 44-49)
@@ -7889,7 +7921,9 @@ DPO Role Change or Appointment:
 | DPO + Head of Trading | PROHIBITED | — | Not acceptable |
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Article 39 - Tasks of the DPO
+
 # ═══════════════════════════════════════════════════════════════════
 
 Enum DPOTaskType:
@@ -7994,7 +8028,9 @@ Dataclass AwarenessTraining:
     pass_rate: Optional[float]
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Enhanced Dashboard and Toolkit
+
 # ═══════════════════════════════════════════════════════════════════
 
 Dataclass DPODashboard:
@@ -8093,6 +8129,7 @@ Class DPOToolkit:
     - generate_dpo_annual_report() -> AnnualReport
     - prepare_for_sa_audit() -> AuditPackage
     - generate_training_report() -> TrainingReport
+
 ```
 
 **DPO Independence Checklist (Article 38):**
@@ -8122,8 +8159,11 @@ Per [GDPR Article 41](https://gdpr-info.eu/art-41-gdpr/), monitoring of approved
 > - EDPB-approved codes provide legal certainty
 
 ```
+
 # ═══════════════════════════════════════════════════════════════════
+
 # Articles 40-41 - Codes of Conduct
+
 # ═══════════════════════════════════════════════════════════════════
 
 Enum CodeOfConductStatus:
@@ -8226,6 +8266,7 @@ Dataclass MonitoringBody:
     complaint_mechanism: str
 
 # Known Codes of Conduct for Financial Services
+
 FINANCIAL_SERVICES_CODES = {
     "CLOUD_INFRASTRUCTURE": {
         "name": "EU Cloud Code of Conduct",
@@ -8298,11 +8339,13 @@ Class CodesOfConductManager:
     - generate_code_compliance_report(adherence_id: str) -> Report
     - get_adherence_dashboard() -> AdherenceDashboard
     - evidence_for_accountability(adherence_id: str) -> AccountabilityEvidence
+
 ```
 
 **Code of Conduct Adoption Flow:**
 
 ```
+
 Identify Relevant Codes:
 ──────────────────────────────────────────────────────────────────
 
@@ -8335,6 +8378,7 @@ Identify Relevant Codes:
    ├─ Request monitoring body verification
    ├─ Address any findings
    └─ Schedule periodic re-verification
+
 ```
 
 #### 6.2.2c CertificationManager (certification_manager.py) - NEW v2.1
@@ -8352,8 +8396,11 @@ Per [GDPR Article 43](https://gdpr-info.eu/art-43-gdpr/), certification bodies m
 > - Required for some procurement processes
 
 ```
+
 # ═══════════════════════════════════════════════════════════════════
+
 # Articles 42-43 - Certification
+
 # ═══════════════════════════════════════════════════════════════════
 
 Enum CertificationStatus:
@@ -8463,6 +8510,7 @@ Dataclass CertificationBody:
     certification_process_url: str
 
 # Known GDPR Certification Schemes
+
 GDPR_CERTIFICATION_SCHEMES = {
     "EUROPRIVACY": {
         "name": "Europrivacy/®",
@@ -8550,11 +8598,13 @@ Class CertificationManager:
     - generate_certification_report() -> Report
     - evidence_for_accountability() -> AccountabilityEvidence
     - evidence_for_fine_mitigation() -> FineMitigationEvidence
+
 ```
 
 **Certification Process Flow:**
 
 ```
+
 GDPR Certification Journey:
 ──────────────────────────────────────────────────────────────────
 
@@ -8601,6 +8651,7 @@ GDPR Certification Journey:
    ├─ Continuous compliance monitoring
    ├─ Address changes in processing
    └─ Renewal before expiry (max 3 years)
+
 ```
 
 **Certification vs. Code of Conduct Comparison:**
@@ -8620,6 +8671,7 @@ GDPR Certification Journey:
 Articles 44-49 transfer mechanisms:
 
 ```
+
 Enum TransferMechanism:
     ADEQUACY_DECISION = "adequacy"  # Article 45
     SCCs = "standard_contractual_clauses"  # Article 46(2)(c)
@@ -8670,6 +8722,7 @@ Class InternationalTransferManager:
     - recommend_supplementary_measures(transfer_id: str) -> List[str]
     - suspend_transfer(transfer_id: str, reason: str)
     - generate_transfer_map() -> TransferMap
+
 ```
 
 #### 6.2.3b Article 50 - International Cooperation (international_cooperation.py) - NEW v1.9
@@ -8679,6 +8732,7 @@ Class InternationalTransferManager:
 Per [GDPR Article 50](https://gdpr-info.eu/art-50-gdpr/), the Commission and supervisory authorities shall take appropriate steps to develop international cooperation mechanisms. This module implements **organization-level** cooperation requirements.
 
 ```
+
 Enum ThirdCountryAuthorityType:
     DATA_PROTECTION = "data_protection"     # DPA equivalent
     FINANCIAL_REGULATOR = "financial"       # SEC, FCA, FINMA, etc.
@@ -8763,6 +8817,7 @@ Dataclass InternationalCooperationRecord:
     documentation_reference: str
 
 # Common Third Country Authority Requests (Trading Platform Context)
+
 COMMON_THIRD_COUNTRY_REQUESTS = {
     "US_SEC": {
         "authority_type": "financial",
@@ -8853,11 +8908,13 @@ Class InternationalCooperationManager:
     # Reporting
     - generate_international_cooperation_report() -> Report
     - get_art_48_compliance_summary() -> ComplianceSummary
+
 ```
 
 **Article 48 Decision Tree:**
 
 ```
+
 Third Country Data Request Received
         │
         ├─► Is it a court judgment or administrative decision?
@@ -8884,6 +8941,7 @@ Third Country Data Request Received
             │
             └─ YES ──► Use IOSCO cooperation framework
                        └─ Ensure Art. 49(1)(d) or other legal basis
+
 ```
 
 #### 6.2.4 UKAdequacyContingency (uk_adequacy_contingency.py) - UPDATED v1.6
@@ -8901,6 +8959,7 @@ Per [European Commission](https://commission.europa.eu/law/law-topic/data-protec
 - **CONTINGENCY ACTIVATION MAY BE REQUIRED BY 28 DEC 2025**
 
 ```
+
 Dataclass UKContingencyStatus:
     adequacy_expiry_date: datetime = datetime(2025, 12, 27)
     preparation_start_date: datetime = datetime(2025, 9, 1)  # Q3 2025
@@ -8976,6 +9035,7 @@ Class UKAdequacyContingency:
     # Reporting
     - get_uk_transfer_summary() -> UKTransferSummary
     - generate_dpo_briefing() -> DPOBriefing
+
 ```
 
 **Automated Alerts (Updated v1.6):**
@@ -8992,11 +9052,13 @@ Class UKAdequacyContingency:
 
 **Emergency Fallback Procedure (if adequacy expires):**
 ```
+
 1. IMMEDIATELY activate SCCs for all UK processors
 2. Notify affected data subjects within 72 hours (if significant change)
 3. Update ROPA to reflect new transfer mechanism
 4. Log activation in compliance dashboard
 5. Schedule 30-day post-activation audit
+
 ```
 
 Adequacy decisions list (as of December 2025 - UPDATED v1.6):
@@ -9022,6 +9084,7 @@ Adequacy decisions list (as of December 2025 - UPDATED v1.6):
 > **Per Schrems II (C-311/18)**: Even with adequacy, TIA is recommended for US transfers.
 
 ```
+
 Enum USTransferRiskLevel:
     """US transfer risk assessment levels"""
     LOW = "low"                # DPF participant, minimal sensitive data
@@ -9086,6 +9149,7 @@ Dataclass DPFContingencyPlan:
     notification_plan: str
 
 # US Surveillance Laws Risk Matrix (per Schrems II analysis)
+
 US_SURVEILLANCE_RISK_MATRIX = {
     "cloud_providers": {
         "fisa_702_scope": True,
@@ -9172,6 +9236,7 @@ Class USTransferRiskManager:
     - generate_us_transfer_risk_report() -> Report
     - get_dpf_dependent_transfers() -> List[str]
     - calculate_dpf_invalidation_impact() -> ImpactAssessment
+
 ```
 
 **US Transfer Decision Matrix:**
@@ -9188,6 +9253,7 @@ Class USTransferRiskManager:
 **DPF Invalidation Contingency Timeline:**
 
 ```
+
 DPF Invalidation Event Detected:
 ──────────────────────────────────────────────────────────────────
 
@@ -9216,6 +9282,7 @@ T+30d       STABILIZATION
             ├─ Review all US data flows
             ├─ Consider EU alternatives for high-risk transfers
             └─ Long-term strategy determination
+
 ```
 
 > **IMPORTANT**: For trading platforms, **TIA is MANDATORY** for all US transfers regardless of DPF status due to FISA 702 and financial regulation exposure.
@@ -9227,6 +9294,7 @@ T+30d       STABILIZATION
 Unified GDPR compliance view:
 
 ```
+
 Dataclass GDPRComplianceStatus:
     # Article compliance
     article_5_principles: ComplianceLevel
@@ -9254,6 +9322,7 @@ Class GDPRComplianceDashboard:
     - compare_with_previous(date: datetime) -> ComplianceTrend
     - integrate_with_dora_dashboard() -> UnifiedView
     - integrate_with_mifid_dashboard() -> UnifiedView
+
 ```
 
 #### 6.2.6 LiabilityFramework (liability_framework.py) - NEW
@@ -9263,8 +9332,11 @@ Class GDPRComplianceDashboard:
 Per [GDPR Chapter VIII](https://gdpr-info.eu/chapter-8/), this module implements comprehensive remedies, liability management, and penalty assessment for GDPR compliance.
 
 ```
+
 # ═══════════════════════════════════════════════════════════════════
+
 # Article 77 - Right to lodge a complaint with a supervisory authority
+
 # ═══════════════════════════════════════════════════════════════════
 
 Enum ComplaintStatus:
@@ -9303,14 +9375,20 @@ Dataclass SAComplaint:
     appeal_deadline: Optional[datetime]
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Article 78 - Right to effective judicial remedy against SA (ENHANCED v2.1)
+
 # ═══════════════════════════════════════════════════════════════════
 
 # Per [Article 78](https://gdpr-info.eu/art-78-gdpr/), every natural or legal
+
 # person has the right to an effective judicial remedy against a legally binding
+
 # decision of an SA concerning them, or where the SA does not handle a complaint
+
 # or does not inform the data subject within three months on the progress or
-# outcome of a complaint.
+
+# outcome of a complaint
 
 Enum Article78Ground:
     """Grounds for judicial remedy against SA under Article 78"""
@@ -9463,6 +9541,7 @@ Class Article78RemedyTracker:
     - assess_litigation_risk() -> RiskAssessment
 
 # Article 78 Jurisdiction Rules
+
 ARTICLE_78_JURISDICTION = {
     "general_rule": "Courts of the Member State where the SA is established (Art. 78(3))",
 
@@ -9488,6 +9567,7 @@ ARTICLE_78_JURISDICTION = {
 }
 
 # Article 78(2) Three-Month Tracking
+
 ARTICLE_78_2_MONITORING = {
     "trigger": "Complaint lodged with SA under Article 77",
     "deadline": "3 months from complaint date",
@@ -9501,7 +9581,9 @@ ARTICLE_78_2_MONITORING = {
 }
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Article 80 - Representation of data subjects (NEW v1.9)
+
 # ═══════════════════════════════════════════════════════════════════
 
 Enum RepresentationType:
@@ -9635,6 +9717,7 @@ Dataclass Article80CollectiveAction:
     status: str
 
 # Member State Article 80(2) Implementation Status
+
 ARTICLE_80_2_MEMBER_STATE_STATUS = {
     # States allowing independent NGO action (no mandate required)
     "BE": {"independent_action": True, "law_reference": "Law of 30 July 2018"},
@@ -9703,15 +9786,22 @@ Class Article80Manager:
     - alert_on_high_risk_ngo_action(action_id: str) -> Alert
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Article 81 - Suspension of Proceedings (NEW v2.0)
+
 # ═══════════════════════════════════════════════════════════════════
 
 # Per [GDPR Article 81](https://gdpr-info.eu/art-81-gdpr/), courts may suspend
+
 # proceedings when cases involving the same subject matter are pending in
-# another Member State court or when a supervisory authority has the matter.
+
+# another Member State court or when a supervisory authority has the matter
+
 #
+
 # CRITICAL FOR TRADING PLATFORMS: Multi-jurisdiction operations may face
-# parallel proceedings in multiple Member States.
+
+# parallel proceedings in multiple Member States
 
 Enum ProceedingSuspensionGround:
     """Grounds for suspension under Article 81"""
@@ -9900,7 +9990,9 @@ Parallel Proceeding Detected:
 | Class action in one MS, individual in another | DEPENDS | Subject matter overlap | Assess if truly same matter |
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Article 82 - Right to compensation and liability
+
 # ═══════════════════════════════════════════════════════════════════
 
 Enum DamageType:
@@ -9994,7 +10086,9 @@ Dataclass CompensationSettlement:
     signed_by: List[str]
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Article 83 - Administrative fines
+
 # ═══════════════════════════════════════════════════════════════════
 
 Enum FineCategory:
@@ -10057,7 +10151,9 @@ Dataclass AdministrativeFine:
     appeal_outcome: Optional[str]
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Article 84 - Penalties
+
 # ═══════════════════════════════════════════════════════════════════
 
 Dataclass MemberStatePenalty:
@@ -10076,7 +10172,9 @@ Dataclass MemberStatePenalty:
     risk_level: str
 
 # ═══════════════════════════════════════════════════════════════════
+
 # Combined Liability Framework Manager
+
 # ═══════════════════════════════════════════════════════════════════
 
 Class LiabilityFramework:
@@ -10147,6 +10245,7 @@ Class LiabilityFramework:
     - get_outstanding_claims() -> List[CompensationClaim]
     - get_fine_risk_dashboard() -> FineRiskDashboard
     - calculate_total_exposure() -> ExposureSummary
+
 ```
 
 **Article 83 Fine Categories Reference:**
@@ -10186,6 +10285,7 @@ Per [GDPR Article 83](https://gdpr-info.eu/art-83-gdpr/), supervisory authoritie
 > **⚠️ CRITICAL FOR RISK MANAGEMENT**
 >
 > Understanding fine calculation factors (Art. 83(2)) is essential for:
+>
 > 1. **Risk assessment** - Prioritizing compliance efforts
 > 2. **Mitigation planning** - Reducing potential penalties
 > 3. **Budget allocation** - Insurance and reserves
@@ -10554,6 +10654,7 @@ Fine Risk Assessment Workflow:
 Per [GDPR Articles 40-43](https://gdpr-info.eu/art-40-gdpr/), this module manages codes of conduct adherence and certification mechanisms for demonstrating GDPR compliance.
 
 > **Platform Relevance**: For financial services platforms, certification (e.g., ISO 27701, EUROPRIVACY) provides evidence of compliance useful for:
+>
 > - Client due diligence
 > - Regulatory audits
 > - Processor selection (Art. 28(5))
@@ -10678,6 +10779,7 @@ Per [GDPR Chapter VI](https://gdpr-info.eu/chapter-6/), each Member State must e
 > **⚠️ CRITICAL FOR COMPLIANCE OPERATIONS**
 >
 > Understanding SA powers is essential for:
+>
 > 1. **Responding to investigations** (Art. 58 investigative powers)
 > 2. **Handling corrective measures** (Art. 58 corrective powers)
 > 3. **Cooperating with audits** (Art. 58(1)(e-f))
@@ -10989,6 +11091,7 @@ Per [GDPR Articles 52-54](https://gdpr-info.eu/art-52-gdpr/), supervisory author
 > **⚠️ WHY THIS MATTERS FOR PLATFORMS**
 >
 > Understanding SA independence is critical because:
+>
 > 1. **Cannot influence SA**: Any attempt to influence SA decisions is unlawful
 > 2. **Budget independence**: SA cannot be defunded for decisions
 > 3. **Staff qualifications**: SA members have specific expertise requirements
@@ -11203,6 +11306,7 @@ Per [GDPR Chapter VII](https://gdpr-info.eu/chapter-7/), supervisory authorities
 > **⚠️ CRITICAL FOR MULTI-JURISDICTION PLATFORMS**
 >
 > Trading platforms operating across multiple EU Member States must understand:
+>
 > 1. **One-Stop-Shop (Art. 56)**: Lead SA handles cross-border processing
 > 2. **Cooperation Obligation (Art. 60)**: SAs must cooperate on cross-border cases
 > 3. **Mutual Assistance (Art. 61)**: SAs can request assistance from each other
@@ -11704,6 +11808,7 @@ Platform Cross-Border Analysis:
 Per [GDPR Article 47](https://gdpr-info.eu/art-47-gdpr/), Binding Corporate Rules (BCRs) are internal data protection policies for multinational groups to enable international transfers within the group.
 
 > **Relevance for Trading Platforms**:
+>
 > - Groups with entities outside EEA
 > - Intra-group data flows (parent/subsidiary)
 > - Alternative to SCCs for group transfers
@@ -11907,6 +12012,7 @@ Class BCRManager:
 Per [GDPR Chapter VII, Section 3](https://gdpr-info.eu/chapter-7/), the European Data Protection Board (EDPB) is established as an independent body of the Union. Understanding EDPB structure is essential for cross-border compliance.
 
 > **Relevance for Trading Platforms**:
+>
 > - EDPB opinions affect enforcement consistency
 > - EDPB binding decisions resolve SA disputes
 > - EDPB guidelines shape compliance requirements
@@ -12470,6 +12576,7 @@ EDPB Involvement in Cross-Border Cases:
 Per [GDPR Article 88](https://gdpr-info.eu/art-88-gdpr/), Member States may provide more specific rules for processing employee data. This is **CRITICAL** for any trading platform that has employees.
 
 > **⚠️ Platform Relevance**: Trading platforms process significant employee data:
+>
 > - Access logs and audit trails
 > - Performance monitoring
 > - Trading activity surveillance (MAR compliance)
@@ -12588,6 +12695,7 @@ Class EmploymentDataHandler:
 Per [GDPR Article 89](https://gdpr-info.eu/art-89-gdpr/), processing for archiving, research, or statistics requires appropriate safeguards.
 
 > **⚠️ Platform Relevance**: Trading platforms use data for:
+>
 > - ML model training and validation
 > - Backtesting strategies
 > - Market research
@@ -13029,6 +13137,7 @@ Per [GDPR Chapter X](https://gdpr-info.eu/chapter-10/) and [Chapter XI](https://
 > **⚠️ CRITICAL FOR COMPLIANCE MONITORING**
 >
 > Articles 92-97 are essential for:
+>
 > - Understanding when new rules may be adopted
 > - Monitoring Commission reports that may lead to changes
 > - Preparing for regulatory evolution
@@ -13939,6 +14048,7 @@ test_gdpr_v21_additions.py:
 | Audit trail | Transaction records | Shared infrastructure, but GDPR audit must log access to personal data specifically. |
 
 **Implementation Pattern:**
+
 ```python
 class MiFIDGDPRRetentionResolver:
     def resolve_erasure_request(self, request: ErasureRequest) -> ErasureDecision:
@@ -14007,6 +14117,7 @@ T+30d       Final Reports
 ```
 
 **Critical Distinction:**
+
 - **GDPR 72h** starts from **becoming aware** of breach (detection)
 - **DORA 4h** starts from **classification** as major incident (or 24h from detection)
 - For incidents involving personal data: BOTH timelines run concurrently
@@ -14023,6 +14134,7 @@ T+30d       Final Reports
 | Lawful basis | Art. 10(6) personal data | AI Act explicitly references GDPR for personal data. No conflict, layered compliance. |
 
 **High-Risk AI Systems and GDPR:**
+
 ```
 Algorithmic Trading Platform Assessment:
 ─────────────────────────────────────────
@@ -14785,6 +14897,7 @@ As of December 2024, the European Commission recognizes the following countries/
 The European Commission is reviewing UK data protection law (Data Use and Access Act) and will decide whether to adopt a new adequacy decision. If no new decision is adopted:
 
 **Required Contingency Plan:**
+
 1. Prepare Standard Contractual Clauses (SCCs) for UK transfers
 2. Conduct Transfer Impact Assessments (TIAs) for UK data flows
 3. Identify UK processors and prepare alternative transfer mechanisms
@@ -14796,6 +14909,7 @@ The European Commission is reviewing UK data protection law (Data Use and Access
 
 > **v1.9 Update (Critical)**: On 22 July 2025, the European Commission launched the renewal process for UK adequacy decisions.
 > Per [EDPB Opinion 06/2025](https://www.edpb.europa.eu/system/files/2025-05/edpb-opinion-202506-uk-adequacyextension-gdpr-led_en.pdf):
+>
 > - **Proposed extension**: 6 years (until **27 December 2031**)
 > - **EDPB assessment**: Welcomes continuing alignment, with monitoring recommendations
 > - **Current status**: Awaiting final adoption (expected before 27 Dec 2025)
@@ -15126,6 +15240,7 @@ def check_and_activate_uk_emergency():
 **If UK Adequacy is Renewed:**
 
 If the European Commission adopts a new adequacy decision before 27 December 2025:
+
 1. Stand down emergency protocol
 2. Retain signed SCCs as backup mechanism
 3. Document the contingency planning for accountability
@@ -15242,6 +15357,7 @@ Class RecitalIntegrator:
 ## References
 
 ### Official Sources
+
 - [GDPR Full Text](https://gdpr-info.eu/)
 - [EDPB Guidelines & Best Practices](https://www.edpb.europa.eu/our-work-tools/general-guidance/guidelines-recommendations-best-practices_en)
 - [EU Adequacy Decisions](https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en)
@@ -15764,18 +15880,21 @@ Class CEF2025ComplianceManager:
 | Algorithmic trading logs | CONDITIONAL | Art. 17(3)(b) MAR | Retain per MAR requirements |
 
 **Financial Services Specific Focus (2025):**
+
 - Algorithmic trading DPIA requirements
 - Cross-regulation reporting (DORA-GDPR-MiFID II)
 - High-frequency trading data minimization
 - Client profiling transparency obligations
 
 ### Implementation Guides
+
 - [GDPR Compliance Checklist - Bitsight](https://www.bitsight.com/learn/gdpr-compliance-checklist)
 - [DSAR Implementation - Securiti](https://securiti.ai/blog/dsar-rights-and-compliance/)
 - [Breach Notification Guidelines - EDPB](https://www.edpb.europa.eu/system/files/2023-04/edpb_guidelines_202209_personal_data_breach_notification_v2.0_en.pdf)
 - [SCCs Implementation Guide - European Commission](https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/standard-contractual-clauses-scc_en)
 
 ### Related Regulations
+
 - [DORA Integration Plan](./compliance/DORA_INTEGRATION_PLAN.md)
 - [NIS2 Integration Plan](./compliance/NIS2_INTEGRATION_PLAN.md)
 - [EU AI Act Integration](../services/ai_act/)
@@ -15905,6 +16024,7 @@ Class CEF2025ComplianceManager:
 | ***99*** | ***Entry into Force*** | 6 | `final_provisions.py` **NEW v2.1** |
 
 > **Legend**:
+>
 > - **Bold** = added in v1.4 audit
 > - ***Italic Bold*** = added in v1.5/v1.7 audit
 > - ~~Strikethrough~~ = previously missing, now covered
@@ -15932,6 +16052,7 @@ Class CEF2025ComplianceManager:
 > **Design coverage estimate**: internal article→implementation mapping (methodology documented in compliance/technical_documentation/). **This is NOT a compliance certification.** Actual GDPR compliance requires independent legal review and is the responsibility of the data controller. Coverage percentages are internal development metrics, not audit results.
 >
 > **v2.2 Additions:**
+>
 > - Chapter 6: Articles 51-54, 57-59 (SA structure and powers)
 > - Chapter 7: Articles 60-76 (SA Cooperation, EDPB structure)
 > - Chapter 8: Article 81 (Proceeding suspension)
@@ -15939,6 +16060,7 @@ Class CEF2025ComplianceManager:
 > - Chapters 10-11: Articles 92-99 (Final provisions complete)
 >
 > **Coverage Notes:**
+>
 > - Member State derogations tracked in `member_state_derogations.py`
 > - Recitals integration via `RecitalIntegrator` class
 > - EDPB structure monitoring via `EDPBStructureHandler`
@@ -16043,6 +16165,7 @@ Class CSRDGDPRResolver:
 *This plan provides a comprehensive roadmap for GDPR compliance integration. Each phase (including sub-phases) is designed to be implementable in a single focused development session with complete test coverage. Regular review against EDPB guidelines is recommended.*
 
 **Version 1.6 addresses all findings from comprehensive internal review including:**
+
 - Article 3 territorial scope with One-Stop-Shop mechanism
 - UK adequacy contingency with emergency fallback procedure
 - DPA blacklists for mandatory DPIA triggers
@@ -16053,6 +16176,7 @@ Class CSRDGDPRResolver:
 - Sub-processor audit cascade verification
 
 **Version 1.8 addresses critical internal review findings (December 2025):**
+
 - **Article 87 National ID Handler**: KYC/AML national ID number processing with Member State rules (DE, FR, IT, ES, NL, BE, AT, PL, IE)
 - **UK Emergency Protocol Update**: Activation date moved to 1 December 2025 (26-day buffer), added IPA supplementary measures
 - **CJEU C-634/21 SCHUFA Enhancement**: Light touch detection for third-party score reliance, human intervention quality assessment
@@ -16066,6 +16190,7 @@ Class CSRDGDPRResolver:
 - **ePrivacy Enhanced**: DNT signal handling, fingerprinting disclosure, UK PECR compliance
 
 **Version 1.9 addresses critical internal review findings (December 2025 - Final Internal Review):**
+
 - **🚨 UK Adequacy Status Update**: 6-year extension proposed by EC (until Dec 2031), EDPB Opinion 06/2025 endorses with monitoring
 - **Article 80 (NGO Representation)**: Full implementation of mandated and independent actions, Member State rules, NOYB-style complaint handling
 - **Article 50 (International Cooperation)**: Third-country authority request handling, Art. 48 compliance, US SEC/CFTC/subpoena scenarios, IOSCO MMoU

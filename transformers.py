@@ -69,9 +69,9 @@ def _format_window_name(window_minutes: int) -> str:
     # Для длинных окон >= 7 дней (10080 минут) используем дни (для GARCH)
     if window_minutes >= 10080 and window_minutes % 1440 == 0:  # >= 7 дней и кратно дню
         return f"{window_minutes // 1440}d"
-    elif window_minutes >= 60 and window_minutes % 60 == 0:     # часы
+    elif window_minutes >= 60 and window_minutes % 60 == 0:  # часы
         return f"{window_minutes // 60}h"
-    else:                                                        # минуты
+    else:  # минуты
         return f"{window_minutes}m"
 
 
@@ -104,8 +104,8 @@ def calculate_close_to_close_volatility(close_prices: List[float], n: int) -> Op
         # Рассчитываем log returns
         log_returns = []
         for i in range(1, len(prices)):
-            if prices[i-1] > 0 and prices[i] > 0:
-                log_returns.append(math.log(prices[i] / prices[i-1]))
+            if prices[i - 1] > 0 and prices[i] > 0:
+                log_returns.append(math.log(prices[i] / prices[i - 1]))
 
         if len(log_returns) < 2:
             return None
@@ -124,9 +124,7 @@ def calculate_close_to_close_volatility(close_prices: List[float], n: int) -> Op
 
 
 def calculate_yang_zhang_volatility(
-    ohlc_bars: List[Dict[str, float]],
-    n: int,
-    close_prices: Optional[List[float]] = None
+    ohlc_bars: List[Dict[str, float]], n: int, close_prices: Optional[List[float]] = None
 ) -> Optional[float]:
     """
     Рассчитывает волатильность Yang-Zhang для последних n баров.
@@ -193,7 +191,9 @@ def _try_calculate_yang_zhang(ohlc_bars: List[Dict[str, float]], n: int) -> Opti
             return None
 
         mean_overnight = sum(overnight_returns) / len(overnight_returns)
-        sigma_o_sq = sum((r - mean_overnight) ** 2 for r in overnight_returns) / (len(overnight_returns) - 1)
+        sigma_o_sq = sum((r - mean_overnight) ** 2 for r in overnight_returns) / (
+            len(overnight_returns) - 1
+        )
 
         # Расчет open-close волатильности σ²_c
         oc_returns = []
@@ -318,7 +318,7 @@ def calculate_parkinson_volatility(ohlc_bars: List[Dict[str, float]], n: int) ->
             if high > 0 and low > 0 and high >= low:
                 # log(H_i/L_i)²
                 log_hl = math.log(high / low)
-                sum_sq += log_hl ** 2
+                sum_sq += log_hl**2
                 valid_bars += 1
 
         # Требуем минимум 2 валидных бара и минимум 80% от запрошенного окна
@@ -387,15 +387,15 @@ def _calculate_ewma_volatility(prices: List[float], lambda_decay: float = 0.94) 
         elif len(log_returns) >= 3:
             # Limited data: use median of squared returns (robust estimator)
             # Median is less sensitive to first-return spikes than mean
-            variance = float(np.median(log_returns ** 2))
+            variance = float(np.median(log_returns**2))
         else:
             # Very limited data (<3 returns): fall back to mean of squared returns
             # This is more stable than using only first return
-            variance = float(np.mean(log_returns ** 2))
+            variance = float(np.mean(log_returns**2))
 
         # Рекурсивно вычисляем EWMA
         for ret in log_returns:
-            variance = lambda_decay * variance + (1 - lambda_decay) * (ret ** 2)
+            variance = lambda_decay * variance + (1 - lambda_decay) * (ret**2)
 
         # Возвращаем стандартное отклонение (волатильность)
         volatility = np.sqrt(variance)
@@ -530,19 +530,16 @@ def calculate_garch_volatility(prices: List[float], n: int) -> Optional[float]:
                         # Создаем и подгоняем модель GARCH(1,1)
                         model = arch_model(
                             returns_pct,
-                            vol='Garch',
+                            vol="Garch",
                             p=1,  # GARCH порядок
                             q=1,  # ARCH порядок
-                            dist='normal',  # нормальное распределение
-                            rescale=False
+                            dist="normal",  # нормальное распределение
+                            rescale=False,
                         )
 
                         # Подгоняем модель с максимальной итерацией
                         result = model.fit(
-                            update_freq=0,
-                            disp='off',
-                            show_warning=False,
-                            options={'maxiter': 1000}
+                            update_freq=0, disp="off", show_warning=False, options={"maxiter": 1000}
                         )
 
                         # Получаем прогноз условной волатильности на 1 шаг вперед
@@ -578,9 +575,7 @@ def calculate_garch_volatility(prices: List[float], n: int) -> Optional[float]:
 
 
 def _convert_minutes_to_bars_with_validation(
-    window_minutes: int,
-    bar_duration_minutes: int,
-    window_name: str = "window"
+    window_minutes: int, bar_duration_minutes: int, window_name: str = "window"
 ) -> int:
     """
     Конвертирует окно из минут в бары с валидацией кратности.
@@ -611,7 +606,7 @@ def _convert_minutes_to_bars_with_validation(
             f"Consider using windows that are multiples of {bar_duration_minutes} "
             f"for exact alignment.",
             UserWarning,
-            stacklevel=3
+            stacklevel=3,
         )
 
     return bars
@@ -661,18 +656,12 @@ class FeatureSpec:
     _taker_buy_ratio_momentum_minutes: Optional[List[int]] = None
     _cvd_windows_minutes: Optional[List[int]] = None
 
-    
-    
     def __post_init__(self) -> None:
         legacy_lookbacks: list[int] = []
         if self.sma_windows is not None:
-            legacy_lookbacks.extend(
-                [int(abs(x)) for x in self.sma_windows if int(abs(x)) > 0]
-            )
+            legacy_lookbacks.extend([int(abs(x)) for x in self.sma_windows if int(abs(x)) > 0])
         if self.ret_windows is not None:
-            legacy_lookbacks.extend(
-                [int(abs(x)) for x in self.ret_windows if int(abs(x)) > 0]
-            )
+            legacy_lookbacks.extend([int(abs(x)) for x in self.ret_windows if int(abs(x)) > 0])
 
         user_supplied_any = (
             bool(self.lookbacks_prices)
@@ -691,9 +680,7 @@ class FeatureSpec:
             # Default 4h windows for SMA/returns when nothing provided (minutes)
             self.lookbacks_prices = [240, 720, 1200, 1440, 5040, 10080, 12000]
 
-        self.lookbacks_prices = [
-            int(abs(x)) for x in self.lookbacks_prices if int(abs(x)) > 0
-        ]
+        self.lookbacks_prices = [int(abs(x)) for x in self.lookbacks_prices if int(abs(x)) > 0]
 
         # Preserve original minute windows for naming
         self._lookbacks_prices_minutes = list(self.lookbacks_prices)
@@ -713,7 +700,11 @@ class FeatureSpec:
         # 7d = 42 бара = 10080 минут
         # 30d = 180 баров = 43200 минут
         if self.yang_zhang_windows is None:
-            self.yang_zhang_windows = [48 * 60, 7 * 24 * 60, 30 * 24 * 60]  # 2880, 10080, 43200 минут
+            self.yang_zhang_windows = [
+                48 * 60,
+                7 * 24 * 60,
+                30 * 24 * 60,
+            ]  # 2880, 10080, 43200 минут
         elif isinstance(self.yang_zhang_windows, list):
             self.yang_zhang_windows = [
                 int(abs(x)) for x in self.yang_zhang_windows if int(abs(x)) > 0
@@ -791,7 +782,12 @@ class FeatureSpec:
         # - observation vector = 62 признаков (21 external из них) [updated in v62]
         # - Это стандартная практика (аналогично sklearn, XGBoost: fit на всех, predict на подмножестве)
         if self.taker_buy_ratio_momentum is None:
-            self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60, 24 * 60]  # 240, 480, 720, 1440 минут
+            self.taker_buy_ratio_momentum = [
+                4 * 60,
+                8 * 60,
+                12 * 60,
+                24 * 60,
+            ]  # 240, 480, 720, 1440 минут
         elif isinstance(self.taker_buy_ratio_momentum, list):
             self.taker_buy_ratio_momentum = [
                 int(abs(x)) for x in self.taker_buy_ratio_momentum if int(abs(x)) > 0
@@ -814,9 +810,7 @@ class FeatureSpec:
         if self.cvd_windows is None:
             self.cvd_windows = [24 * 60, 7 * 24 * 60]  # 1440, 10080 минут
         elif isinstance(self.cvd_windows, list):
-            self.cvd_windows = [
-                int(abs(x)) for x in self.cvd_windows if int(abs(x)) > 0
-            ]
+            self.cvd_windows = [int(abs(x)) for x in self.cvd_windows if int(abs(x)) > 0]
         else:
             self.cvd_windows = []
 
@@ -825,9 +819,7 @@ class FeatureSpec:
 
         # CRITICAL FIX #1 (ENHANCED): Конвертируем окна из минут в бары с валидацией
         self.cvd_windows = [
-            _convert_minutes_to_bars_with_validation(
-                w, self.bar_duration_minutes, "cvd_windows"
-            )
+            _convert_minutes_to_bars_with_validation(w, self.bar_duration_minutes, "cvd_windows")
             for w in self.cvd_windows
         ]
 
@@ -842,9 +834,7 @@ class FeatureSpec:
         if self.garch_windows is None:
             self.garch_windows = [50 * 240, 14 * 24 * 60, 30 * 24 * 60]  # 12000, 20160, 43200 минут
         elif isinstance(self.garch_windows, list):
-            self.garch_windows = [
-                int(abs(x)) for x in self.garch_windows if int(abs(x)) > 0
-            ]
+            self.garch_windows = [int(abs(x)) for x in self.garch_windows if int(abs(x)) > 0]
         else:
             self.garch_windows = []
 
@@ -853,9 +843,7 @@ class FeatureSpec:
 
         # CRITICAL FIX #1 (ENHANCED): Конвертируем окна из минут в бары с валидацией
         self.garch_windows = [
-            _convert_minutes_to_bars_with_validation(
-                w, self.bar_duration_minutes, "garch_windows"
-            )
+            _convert_minutes_to_bars_with_validation(w, self.bar_duration_minutes, "garch_windows")
             for w in self.garch_windows
         ]
 
@@ -1068,14 +1056,14 @@ class OnlineFeatureTransformer:
                     f"Data quality issue: taker_buy_base ({taker_buy_base}) > volume ({volume}) "
                     f"for {sym} at {ts_ms}. Ratio clamped from {raw_ratio:.4f} to 1.0",
                     UserWarning,
-                    stacklevel=2
+                    stacklevel=2,
                 )
             elif raw_ratio < 0.0:
                 warnings.warn(
                     f"Data quality issue: negative taker_buy_base ({taker_buy_base}) "
                     f"for {sym} at {ts_ms}. Ratio clamped from {raw_ratio:.4f} to 0.0",
                     UserWarning,
-                    stacklevel=2
+                    stacklevel=2,
                 )
 
             st["taker_buy_ratios"].append(taker_buy_ratio)
@@ -1152,7 +1140,7 @@ class OnlineFeatureTransformer:
         # ---------------------------------------------------------
         # NEW HIGH-QUALITY INDICATORS CALCULATIONS
         # ---------------------------------------------------------
-        
+
         # 1. Bollinger Bands & Volatility Indicators
         for i, lb in enumerate(self.spec.lookbacks_prices):
             lb_minutes = self.spec._lookbacks_prices_minutes[i]
@@ -1161,11 +1149,15 @@ class OnlineFeatureTransformer:
                 sma = sum(window) / float(lb)
                 variance = sum((x - sma) ** 2 for x in window) / float(lb)
                 std = math.sqrt(variance)
-                
+
                 feats[f"bollinger_upper_{lb_minutes}"] = float(sma + 2.0 * std)
                 feats[f"bollinger_lower_{lb_minutes}"] = float(sma - 2.0 * std)
-                feats[f"bollinger_bandwidth_{lb_minutes}"] = float((4.0 * std) / sma) if sma > 1e-8 else 0.0
-                feats[f"bollinger_percent_b_{lb_minutes}"] = float((price - (sma - 2.0 * std)) / (4.0 * std)) if std > 1e-8 else 0.5
+                feats[f"bollinger_bandwidth_{lb_minutes}"] = (
+                    float((4.0 * std) / sma) if sma > 1e-8 else 0.0
+                )
+                feats[f"bollinger_percent_b_{lb_minutes}"] = (
+                    float((price - (sma - 2.0 * std)) / (4.0 * std)) if std > 1e-8 else 0.5
+                )
             else:
                 feats[f"bollinger_upper_{lb_minutes}"] = float("nan")
                 feats[f"bollinger_lower_{lb_minutes}"] = float("nan")
@@ -1190,7 +1182,7 @@ class OnlineFeatureTransformer:
             e26 = _calc_ema(sub_seq, 26)
             if e12 is not None and e26 is not None:
                 macd_list.append(e12 - e26)
-        
+
         if len(macd_list) >= 9:
             macd_sig = _calc_ema(macd_list, 9)
             if macd_sig is not None:
@@ -1208,7 +1200,7 @@ class OnlineFeatureTransformer:
 
         # 3. OHLC-dependent indicators (Stochastic, ATR, CCI)
         ohlc_list = list(st["ohlc_bars"]) if st["ohlc_bars"] else []
-        
+
         # Calculate True Range (TR) list for ATR
         tr_list = []
         for i in range(len(ohlc_list)):
@@ -1217,7 +1209,7 @@ class OnlineFeatureTransformer:
             if i == 0:
                 tr = high_val - low_val
             else:
-                close_prev = ohlc_list[i-1]["close"]
+                close_prev = ohlc_list[i - 1]["close"]
                 tr = max(high_val - low_val, abs(high_val - close_prev), abs(low_val - close_prev))
             tr_list.append(tr)
 
@@ -1226,7 +1218,7 @@ class OnlineFeatureTransformer:
 
         for i, lb in enumerate(self.spec.lookbacks_prices):
             lb_minutes = self.spec._lookbacks_prices_minutes[i]
-            
+
             # Stochastic Oscillator (%K, %D)
             k_history = []
             for shift in [2, 1, 0]:
@@ -1267,7 +1259,7 @@ class OnlineFeatureTransformer:
         gains = []
         losses = []
         for idx in range(1, len(seq)):
-            diff = seq[idx] - seq[idx-1]
+            diff = seq[idx] - seq[idx - 1]
             gains.append(max(diff, 0.0))
             losses.append(max(-diff, 0.0))
 
@@ -1327,7 +1319,12 @@ class OnlineFeatureTransformer:
             lb_minutes = self.spec._lookbacks_prices_minutes[i]
             sma_val = feats.get(f"sma_{lb_minutes}")
             atr_val = feats.get(f"atr_{lb_minutes}")
-            if sma_val is not None and atr_val is not None and not math.isnan(sma_val) and not math.isnan(atr_val):
+            if (
+                sma_val is not None
+                and atr_val is not None
+                and not math.isnan(sma_val)
+                and not math.isnan(atr_val)
+            ):
                 feats[f"keltner_middle_{lb_minutes}"] = float(sma_val)
                 feats[f"keltner_upper_{lb_minutes}"] = float(sma_val + 2.0 * atr_val)
                 feats[f"keltner_lower_{lb_minutes}"] = float(sma_val - 2.0 * atr_val)
@@ -1364,7 +1361,7 @@ class OnlineFeatureTransformer:
                     nmf_sum = 0.0
                     for idx in range(len(ohlc_list) - lb, len(ohlc_list)):
                         tp_curr = tps[idx]
-                        tp_prev = tps[idx-1]
+                        tp_prev = tps[idx - 1]
                         rmf = rmfs[idx]
                         if tp_curr > tp_prev:
                             pmf_sum += rmf
@@ -1409,39 +1406,39 @@ class OnlineFeatureTransformer:
                     tr_w = []
                     plus_dm_w = []
                     minus_dm_w = []
-                    window_bars = ohlc_list[-(lb + 1):]
+                    window_bars = ohlc_list[-(lb + 1) :]
                     for idx in range(1, len(window_bars)):
                         h_curr = window_bars[idx]["high"]
                         l_curr = window_bars[idx]["low"]
-                        c_prev = window_bars[idx-1]["close"]
-                        h_prev = window_bars[idx-1]["high"]
-                        l_prev = window_bars[idx-1]["low"]
-                        
+                        c_prev = window_bars[idx - 1]["close"]
+                        h_prev = window_bars[idx - 1]["high"]
+                        l_prev = window_bars[idx - 1]["low"]
+
                         tr = max(h_curr - l_curr, abs(h_curr - c_prev), abs(l_curr - c_prev))
                         tr_w.append(tr)
-                        
+
                         up_move = h_curr - h_prev
                         down_move = l_prev - l_curr
-                        
+
                         if up_move > down_move and up_move > 0:
                             plus_dm = up_move
                         else:
                             plus_dm = 0.0
                         plus_dm_w.append(plus_dm)
-                        
+
                         if down_move > up_move and down_move > 0:
                             minus_dm = down_move
                         else:
                             minus_dm = 0.0
                         minus_dm_w.append(minus_dm)
-                    
+
                     def _smooth_wilder(vals, period):
                         return sum(vals) / float(period) if period > 0 else 0.0
-                    
+
                     smooth_tr = _smooth_wilder(tr_w, lb)
                     smooth_plus_dm = _smooth_wilder(plus_dm_w, lb)
                     smooth_minus_dm = _smooth_wilder(minus_dm_w, lb)
-                    
+
                     if smooth_tr > 1e-8:
                         plus_di = 100.0 * (smooth_plus_dm / smooth_tr)
                         minus_di = 100.0 * (smooth_minus_dm / smooth_tr)
@@ -1451,7 +1448,7 @@ class OnlineFeatureTransformer:
                         plus_di = 0.0
                         minus_di = 0.0
                         dx = 0.0
-                    
+
                     if len(ohlc_list) >= 2 * lb:
                         tr_all = []
                         plus_dm_all = []
@@ -1459,22 +1456,22 @@ class OnlineFeatureTransformer:
                         for idx in range(len(ohlc_list) - 2 * lb + 1, len(ohlc_list)):
                             h_curr = ohlc_list[idx]["high"]
                             l_curr = ohlc_list[idx]["low"]
-                            c_prev = ohlc_list[idx-1]["close"]
-                            h_prev = ohlc_list[idx-1]["high"]
-                            l_prev = ohlc_list[idx-1]["low"]
-                            
+                            c_prev = ohlc_list[idx - 1]["close"]
+                            h_prev = ohlc_list[idx - 1]["high"]
+                            l_prev = ohlc_list[idx - 1]["low"]
+
                             tr = max(h_curr - l_curr, abs(h_curr - c_prev), abs(l_curr - c_prev))
                             tr_all.append(tr)
-                            
+
                             up_move = h_curr - h_prev
                             down_move = l_prev - l_curr
-                            
+
                             plus_dm = up_move if (up_move > down_move and up_move > 0) else 0.0
                             plus_dm_all.append(plus_dm)
-                            
+
                             minus_dm = down_move if (down_move > up_move and down_move > 0) else 0.0
                             minus_dm_all.append(minus_dm)
-                        
+
                         def _get_wilder_smoothed_list(vals, period):
                             smoothed = []
                             curr = sum(vals[:period]) / float(period)
@@ -1483,11 +1480,11 @@ class OnlineFeatureTransformer:
                                 curr = curr - (curr / float(period)) + v
                                 smoothed.append(curr)
                             return smoothed
-                        
+
                         tr_smooth = _get_wilder_smoothed_list(tr_all, lb)
                         plus_smooth = _get_wilder_smoothed_list(plus_dm_all, lb)
                         minus_smooth = _get_wilder_smoothed_list(minus_dm_all, lb)
-                        
+
                         dx_history = []
                         for idx in range(len(tr_smooth)):
                             t_s = tr_smooth[idx]
@@ -1501,11 +1498,19 @@ class OnlineFeatureTransformer:
                             else:
                                 dx_val = 0.0
                             dx_history.append(dx_val)
-                        
+
                         adx_smooth = _get_wilder_smoothed_list(dx_history, lb)
                         feats[f"adx_{lb_minutes}"] = float(adx_smooth[-1])
-                        feats[f"plus_di_{lb_minutes}"] = float(100.0 * (plus_smooth[-1] / tr_smooth[-1]) if tr_smooth[-1] > 1e-8 else 0.0)
-                        feats[f"minus_di_{lb_minutes}"] = float(100.0 * (minus_smooth[-1] / tr_smooth[-1]) if tr_smooth[-1] > 1e-8 else 0.0)
+                        feats[f"plus_di_{lb_minutes}"] = float(
+                            100.0 * (plus_smooth[-1] / tr_smooth[-1])
+                            if tr_smooth[-1] > 1e-8
+                            else 0.0
+                        )
+                        feats[f"minus_di_{lb_minutes}"] = float(
+                            100.0 * (minus_smooth[-1] / tr_smooth[-1])
+                            if tr_smooth[-1] > 1e-8
+                            else 0.0
+                        )
                     else:
                         feats[f"adx_{lb_minutes}"] = float(dx)
                         feats[f"plus_di_{lb_minutes}"] = float(plus_di)
@@ -1547,7 +1552,7 @@ class OnlineFeatureTransformer:
         log_rets_1bar = []
         for idx in range(1, len(seq)):
             p_curr = seq[idx]
-            p_prev = seq[idx-1]
+            p_prev = seq[idx - 1]
             if p_prev > 1e-8 and p_curr > 1e-8:
                 log_rets_1bar.append(math.log(p_curr / p_prev))
             else:
@@ -1620,11 +1625,7 @@ class OnlineFeatureTransformer:
                 feature_name = f"yang_zhang_{window_name}"
 
                 # Передаем как OHLC, так и close цены для hybrid подхода
-                yz_vol = calculate_yang_zhang_volatility(
-                    ohlc_list,
-                    window,
-                    close_prices=close_list
-                )
+                yz_vol = calculate_yang_zhang_volatility(ohlc_list, window, close_prices=close_list)
                 if yz_vol is not None:
                     feats[feature_name] = float(yz_vol)
                 else:
@@ -1791,7 +1792,18 @@ def apply_offline_features(
         taker_buy_base_col: имя колонки taker_buy_base (опционально для Taker Buy Ratio)
     """
     if df is None or df.empty:
-        base_cols = [ts_col, symbol_col, "ref_price", "rsi", "macd", "macd_signal", "macd_histogram", "obv", "ao", "pvt"]
+        base_cols = [
+            ts_col,
+            symbol_col,
+            "ref_price",
+            "rsi",
+            "macd",
+            "macd_signal",
+            "macd_histogram",
+            "obv",
+            "ao",
+            "pvt",
+        ]
         # КРИТИЧНО: используем МИНУТЫ для имен SMA (согласованность с mediator.py и update())
         # Онлайн (update) генерирует: sma_240, sma_720, sma_1200, sma_1440, sma_5040, sma_12000
         # Оффлайн (apply_offline_features) должен генерировать ТЕ ЖЕ имена
@@ -1799,32 +1811,62 @@ def apply_offline_features(
         # Используем минуты для имен returns (форматирование через _format_window_name)
         base_cols += [f"ret_{_format_window_name(x)}" for x in spec._lookbacks_prices_minutes]
         if spec.yang_zhang_windows:
-            base_cols += [f"yang_zhang_{_format_window_name(w)}" for w in spec._yang_zhang_windows_minutes]
+            base_cols += [
+                f"yang_zhang_{_format_window_name(w)}" for w in spec._yang_zhang_windows_minutes
+            ]
         if spec.parkinson_windows:
-            base_cols += [f"parkinson_{_format_window_name(w)}" for w in spec._parkinson_windows_minutes]
+            base_cols += [
+                f"parkinson_{_format_window_name(w)}" for w in spec._parkinson_windows_minutes
+            ]
         if spec.garch_windows:
             base_cols += [f"garch_{_format_window_name(w)}" for w in spec._garch_windows_minutes]
         if spec.taker_buy_ratio_windows or spec.taker_buy_ratio_momentum:
             base_cols.append("taker_buy_ratio")
         if spec.taker_buy_ratio_windows:
-            base_cols += [f"taker_buy_ratio_sma_{_format_window_name(w)}" for w in spec._taker_buy_ratio_windows_minutes]
+            base_cols += [
+                f"taker_buy_ratio_sma_{_format_window_name(w)}"
+                for w in spec._taker_buy_ratio_windows_minutes
+            ]
         if spec.taker_buy_ratio_momentum:
-            base_cols += [f"taker_buy_ratio_momentum_{_format_window_name(w)}" for w in spec._taker_buy_ratio_momentum_minutes]
+            base_cols += [
+                f"taker_buy_ratio_momentum_{_format_window_name(w)}"
+                for w in spec._taker_buy_ratio_momentum_minutes
+            ]
         if spec.cvd_windows:
             base_cols += [f"cvd_{_format_window_name(w)}" for w in spec._cvd_windows_minutes]
-        
+
         # High quality indicators from previous/current updates
         for x in spec._lookbacks_prices_minutes:
-            base_cols.extend([
-                f"bollinger_upper_{x}", f"bollinger_lower_{x}",
-                f"bollinger_bandwidth_{x}", f"bollinger_percent_b_{x}",
-                f"stoch_k_{x}", f"stoch_d_{x}", f"atr_{x}", f"cci_{x}",
-                f"cmo_{x}", f"roc_{x}", f"ema_{x}", f"williams_r_{x}",
-                f"keltner_middle_{x}", f"keltner_upper_{x}", f"keltner_lower_{x}",
-                f"mfi_{x}", f"slope_{x}", f"adx_{x}", f"plus_di_{x}", f"minus_di_{x}",
-                f"std_returns_{x}", f"mom_{x}", f"donchian_upper_{x}",
-                f"donchian_lower_{x}", f"donchian_middle_{x}", f"cmf_{x}"
-            ])
+            base_cols.extend(
+                [
+                    f"bollinger_upper_{x}",
+                    f"bollinger_lower_{x}",
+                    f"bollinger_bandwidth_{x}",
+                    f"bollinger_percent_b_{x}",
+                    f"stoch_k_{x}",
+                    f"stoch_d_{x}",
+                    f"atr_{x}",
+                    f"cci_{x}",
+                    f"cmo_{x}",
+                    f"roc_{x}",
+                    f"ema_{x}",
+                    f"williams_r_{x}",
+                    f"keltner_middle_{x}",
+                    f"keltner_upper_{x}",
+                    f"keltner_lower_{x}",
+                    f"mfi_{x}",
+                    f"slope_{x}",
+                    f"adx_{x}",
+                    f"plus_di_{x}",
+                    f"minus_di_{x}",
+                    f"std_returns_{x}",
+                    f"mom_{x}",
+                    f"donchian_upper_{x}",
+                    f"donchian_lower_{x}",
+                    f"donchian_middle_{x}",
+                    f"cmf_{x}",
+                ]
+            )
         return pd.DataFrame(columns=base_cols)
 
     d = df.copy()

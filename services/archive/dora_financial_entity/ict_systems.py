@@ -40,8 +40,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class SystemCriticality(Enum):
     """System criticality levels per DORA."""
+
     CRITICAL = "critical"  # Supports critical/important functions
     IMPORTANT = "important"  # Supports important functions
     STANDARD = "standard"  # Normal business operations
@@ -50,6 +52,7 @@ class SystemCriticality(Enum):
 
 class SystemType(Enum):
     """ICT system types."""
+
     APPLICATION = "application"
     DATABASE = "database"
     NETWORK = "network"
@@ -63,6 +66,7 @@ class SystemType(Enum):
 
 class SystemStatus(Enum):
     """System operational status."""
+
     OPERATIONAL = "operational"
     DEGRADED = "degraded"
     MAINTENANCE = "maintenance"
@@ -72,6 +76,7 @@ class SystemStatus(Enum):
 
 class CapacityStatus(Enum):
     """Capacity status levels."""
+
     OPTIMAL = "optimal"  # Under normal thresholds
     WARNING = "warning"  # Approaching limits
     CRITICAL = "critical"  # Near capacity limits
@@ -80,6 +85,7 @@ class CapacityStatus(Enum):
 
 class AutomationLevel(Enum):
     """Automation maturity levels."""
+
     MANUAL = "manual"  # Fully manual processes
     PARTIALLY_AUTOMATED = "partially_automated"  # Some automation
     MOSTLY_AUTOMATED = "mostly_automated"  # High automation
@@ -88,6 +94,7 @@ class AutomationLevel(Enum):
 
 class SupportLevel(Enum):
     """Vendor support levels."""
+
     ACTIVE_SUPPORT = "active_support"  # Full vendor support
     EXTENDED_SUPPORT = "extended_support"  # Limited support
     END_OF_LIFE = "end_of_life"  # No support
@@ -98,6 +105,7 @@ class SupportLevel(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ICTSystem:
     """
@@ -105,6 +113,7 @@ class ICTSystem:
 
     Documents systems that support financial entity operations.
     """
+
     system_id: str = ""
     name: str = ""
     description: str = ""
@@ -160,10 +169,7 @@ class ICTSystem:
     @property
     def is_critical(self) -> bool:
         """Check if system is critical."""
-        return (
-            self.criticality == SystemCriticality.CRITICAL or
-            self.supports_critical_function
-        )
+        return self.criticality == SystemCriticality.CRITICAL or self.supports_critical_function
 
 
 @dataclass
@@ -171,6 +177,7 @@ class CapacityMetric:
     """
     Capacity metric measurement.
     """
+
     metric_id: str = ""
     system_id: str = ""
     metric_name: str = ""  # "cpu", "memory", "storage", "network", "connections"
@@ -198,7 +205,9 @@ class CapacityMetric:
 
     def evaluate_status(self) -> CapacityStatus:
         """Evaluate capacity status based on current value."""
-        utilization = (self.current_value / self.maximum_capacity) * 100 if self.maximum_capacity > 0 else 0
+        utilization = (
+            (self.current_value / self.maximum_capacity) * 100 if self.maximum_capacity > 0 else 0
+        )
 
         if utilization >= 100:
             return CapacityStatus.EXCEEDED
@@ -215,6 +224,7 @@ class ReliabilityMetric:
     """
     System reliability metric.
     """
+
     metric_id: str = ""
     system_id: str = ""
     period_start: str = ""
@@ -260,6 +270,7 @@ class AutomationCapability:
     """
     Automation capability assessment.
     """
+
     capability_id: str = ""
     system_id: str = ""
     process_name: str = ""
@@ -289,6 +300,7 @@ class SystemUpgrade:
     """
     System upgrade/update record.
     """
+
     upgrade_id: str = ""
     system_id: str = ""
     upgrade_type: str = ""  # "version_upgrade", "patch", "security_update", "migration"
@@ -303,7 +315,9 @@ class SystemUpgrade:
     rollback_date: Optional[str] = None
 
     # Status
-    status: str = ""  # "planned", "approved", "in_progress", "completed", "rolled_back", "cancelled"
+    status: str = (
+        ""  # "planned", "approved", "in_progress", "completed", "rolled_back", "cancelled"
+    )
 
     # Details
     change_description: str = ""
@@ -324,9 +338,11 @@ class SystemUpgrade:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ICTSystemsConfig:
     """Configuration for ICT Systems Management."""
+
     # Capacity management
     default_warning_threshold_pct: float = 70.0
     default_critical_threshold_pct: float = 85.0
@@ -356,6 +372,7 @@ class ICTSystemsConfig:
 # =============================================================================
 # Main ICT Systems Manager
 # =============================================================================
+
 
 class DORAICTSystemsManager:
     """
@@ -469,7 +486,8 @@ class DORAICTSystemsManager:
             critical_function_ids=critical_function_ids or [],
             deployment_model=deployment_model,
             system_owner=system_owner,
-            target_availability_pct=target_availability_pct or self.config.default_target_availability_pct,
+            target_availability_pct=target_availability_pct
+            or self.config.default_target_availability_pct,
             rto_hours=rto_hours or self.config.default_rto_hours,
             rpo_hours=rpo_hours or self.config.default_rpo_hours,
         )
@@ -480,11 +498,14 @@ class DORAICTSystemsManager:
             self._reliability_metrics[system.system_id] = []
             self._automation_capabilities[system.system_id] = []
 
-        self._log_event("system_registered", {
-            "system_id": system.system_id,
-            "name": name,
-            "criticality": criticality.value,
-        })
+        self._log_event(
+            "system_registered",
+            {
+                "system_id": system.system_id,
+                "name": name,
+                "criticality": criticality.value,
+            },
+        )
 
         logger.info(f"System registered: {name} ({criticality.value})")
         return system
@@ -524,11 +545,14 @@ class DORAICTSystemsManager:
             system.status = status
             system.last_updated = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("system_status_updated", {
-            "system_id": system_id,
-            "status": status.value,
-            "reason": reason,
-        })
+        self._log_event(
+            "system_status_updated",
+            {
+                "system_id": system_id,
+                "status": status.value,
+                "reason": reason,
+            },
+        )
 
         return system
 
@@ -669,8 +693,10 @@ class DORAICTSystemsManager:
                     latest_metrics[metric.metric_name] = metric
 
                 problem_metrics = [
-                    m for m in latest_metrics.values()
-                    if m.status in (CapacityStatus.WARNING, CapacityStatus.CRITICAL, CapacityStatus.EXCEEDED)
+                    m
+                    for m in latest_metrics.values()
+                    if m.status
+                    in (CapacityStatus.WARNING, CapacityStatus.CRITICAL, CapacityStatus.EXCEEDED)
                 ]
 
                 if problem_metrics:
@@ -687,14 +713,17 @@ class DORAICTSystemsManager:
         if self.config.alert_callback:
             try:
                 system = self._systems.get(system_id)
-                self.config.alert_callback("capacity_issue", {
-                    "system_id": system_id,
-                    "system_name": system.name if system else "Unknown",
-                    "metric_name": metric.metric_name,
-                    "status": metric.status.value,
-                    "current_value": metric.current_value,
-                    "maximum_capacity": metric.maximum_capacity,
-                })
+                self.config.alert_callback(
+                    "capacity_issue",
+                    {
+                        "system_id": system_id,
+                        "system_name": system.name if system else "Unknown",
+                        "metric_name": metric.metric_name,
+                        "status": metric.status.value,
+                        "current_value": metric.current_value,
+                        "maximum_capacity": metric.maximum_capacity,
+                    },
+                )
             except Exception as e:
                 logger.error(f"Capacity alert callback failed: {e}")
 
@@ -770,11 +799,14 @@ class DORAICTSystemsManager:
         with self._lock:
             self._reliability_metrics[system_id].append(metric)
 
-        self._log_event("reliability_metric_recorded", {
-            "system_id": system_id,
-            "availability_pct": metric.availability_pct,
-            "meets_target": metric.meets_target,
-        })
+        self._log_event(
+            "reliability_metric_recorded",
+            {
+                "system_id": system_id,
+                "availability_pct": metric.availability_pct,
+                "meets_target": metric.meets_target,
+            },
+        )
 
         return metric
 
@@ -942,11 +974,14 @@ class DORAICTSystemsManager:
         with self._lock:
             self._upgrades[upgrade.upgrade_id] = upgrade
 
-        self._log_event("upgrade_planned", {
-            "upgrade_id": upgrade.upgrade_id,
-            "system_id": system_id,
-            "target_version": target_version,
-        })
+        self._log_event(
+            "upgrade_planned",
+            {
+                "upgrade_id": upgrade.upgrade_id,
+                "system_id": system_id,
+                "target_version": target_version,
+            },
+        )
 
         return upgrade
 
@@ -971,11 +1006,14 @@ class DORAICTSystemsManager:
                 system.version = upgrade.target_version
                 system.last_updated = upgrade.executed_date
 
-        self._log_event("upgrade_executed", {
-            "upgrade_id": upgrade_id,
-            "system_id": upgrade.system_id,
-            "new_version": upgrade.target_version,
-        })
+        self._log_event(
+            "upgrade_executed",
+            {
+                "upgrade_id": upgrade_id,
+                "system_id": upgrade.system_id,
+                "new_version": upgrade.target_version,
+            },
+        )
 
         return upgrade
 
@@ -1007,9 +1045,7 @@ class DORAICTSystemsManager:
                 if not system.support_end_date:
                     continue
 
-                eol_date = datetime.fromisoformat(
-                    system.support_end_date.replace("Z", "+00:00")
-                )
+                eol_date = datetime.fromisoformat(system.support_end_date.replace("Z", "+00:00"))
                 days_until_eol = (eol_date - now).days
 
                 if days_until_eol <= self.config.warn_days_before_eol:
@@ -1131,6 +1167,7 @@ class DORAICTSystemsManager:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_ict_systems_manager(
     config: Optional[ICTSystemsConfig] = None,

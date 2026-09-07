@@ -249,7 +249,9 @@ def test_taker_buy_ratio_calculation():
     assert ratio is not None, "taker_buy_ratio не должен быть None"
 
     expected_ratio = 600.0 / 1000.0  # = 0.6
-    assert abs(ratio - expected_ratio) < 1e-6, f"Taker Buy Ratio некорректен: {ratio} != {expected_ratio}"
+    assert (
+        abs(ratio - expected_ratio) < 1e-6
+    ), f"Taker Buy Ratio некорректен: {ratio} != {expected_ratio}"
 
     # Проверяем clamping [0, 1]
     feats2 = transformer.update(
@@ -307,7 +309,9 @@ def test_taker_buy_ratio_momentum():
     assert momentum_4h is not None, "taker_buy_ratio_momentum_4h не должен быть None"
 
     # Momentum должен быть положительным (ratio увеличился с 0.5 до 0.7)
-    assert momentum_4h > 0, f"Momentum должен быть положительным при росте ratio, получено: {momentum_4h}"
+    assert (
+        momentum_4h > 0
+    ), f"Momentum должен быть положительным при росте ratio, получено: {momentum_4h}"
 
     # Проверяем разумный диапазон (momentum не должен превышать 1.0 для ratio в [0, 1])
     assert abs(momentum_4h) <= 1.0, f"Momentum вне разумного диапазона: {momentum_4h}"
@@ -334,30 +338,42 @@ def test_feature_name_consistency():
     expected_garch_names = ["garch_200h", "garch_14d", "garch_30d"]
     for i, window_minutes in enumerate(spec._garch_windows_minutes):
         name = f"garch_{_format_window_name(window_minutes)}"
-        assert name == expected_garch_names[i], \
-            f"Имя GARCH признака некорректно: {name} != {expected_garch_names[i]}"
+        assert (
+            name == expected_garch_names[i]
+        ), f"Имя GARCH признака некорректно: {name} != {expected_garch_names[i]}"
 
     # Проверяем имена для Yang-Zhang
     expected_yz_names = ["yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d"]
     for i, window_minutes in enumerate(spec._yang_zhang_windows_minutes):
         name = f"yang_zhang_{_format_window_name(window_minutes)}"
-        assert name == expected_yz_names[i], \
-            f"Имя Yang-Zhang признака некорректно: {name} != {expected_yz_names[i]}"
+        assert (
+            name == expected_yz_names[i]
+        ), f"Имя Yang-Zhang признака некорректно: {name} != {expected_yz_names[i]}"
 
     # Проверяем имена для Parkinson
     expected_park_names = ["parkinson_48h", "parkinson_7d"]
     for i, window_minutes in enumerate(spec._parkinson_windows_minutes):
         name = f"parkinson_{_format_window_name(window_minutes)}"
-        assert name == expected_park_names[i], \
-            f"Имя Parkinson признака некорректно: {name} != {expected_park_names[i]}"
+        assert (
+            name == expected_park_names[i]
+        ), f"Имя Parkinson признака некорректно: {name} != {expected_park_names[i]}"
 
     # Проверяем имена для returns (дефолтные lookbacks)
     # Дефолты: [240, 720, 1200, 1440, 5040, 10080, 12000] минут
-    expected_ret_names = ["ret_4h", "ret_12h", "ret_20h", "ret_24h", "ret_84h", "ret_7d", "ret_200h"]
+    expected_ret_names = [
+        "ret_4h",
+        "ret_12h",
+        "ret_20h",
+        "ret_24h",
+        "ret_84h",
+        "ret_7d",
+        "ret_200h",
+    ]
     for i, window_minutes in enumerate(spec._lookbacks_prices_minutes):
         name = f"ret_{_format_window_name(window_minutes)}"
-        assert name == expected_ret_names[i], \
-            f"Имя return признака некорректно: {name} != {expected_ret_names[i]}"
+        assert (
+            name == expected_ret_names[i]
+        ), f"Имя return признака некорректно: {name} != {expected_ret_names[i]}"
 
     print("✓ Имена признаков согласованы между transformers.py и mediator.py")
 

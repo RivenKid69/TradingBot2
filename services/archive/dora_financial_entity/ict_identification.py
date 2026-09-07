@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class AssetType(Enum):
     """ICT asset types per DORA Article 8."""
+
     HARDWARE = "hardware"
     SOFTWARE = "software"
     DATA = "data"
@@ -56,6 +58,7 @@ class AssetType(Enum):
 
 class AssetClassification(Enum):
     """Asset classification levels."""
+
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
@@ -64,6 +67,7 @@ class AssetClassification(Enum):
 
 class RiskSourceCategory(Enum):
     """ICT risk source categories."""
+
     EXTERNAL_THREAT = "external_threat"
     INTERNAL_THREAT = "internal_threat"
     ENVIRONMENTAL = "environmental"
@@ -75,6 +79,7 @@ class RiskSourceCategory(Enum):
 
 class ThreatCategory(Enum):
     """Cyber threat categories."""
+
     MALWARE = "malware"
     RANSOMWARE = "ransomware"
     PHISHING = "phishing"
@@ -90,6 +95,7 @@ class ThreatCategory(Enum):
 
 class VulnerabilitySeverity(Enum):
     """Vulnerability severity levels (CVSS aligned)."""
+
     NONE = "none"
     LOW = "low"
     MEDIUM = "medium"
@@ -99,6 +105,7 @@ class VulnerabilitySeverity(Enum):
 
 class DependencyType(Enum):
     """Types of ICT dependencies."""
+
     INFRASTRUCTURE = "infrastructure"
     APPLICATION = "application"
     DATA = "data"
@@ -111,6 +118,7 @@ class DependencyType(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ICTAsset:
     """
@@ -119,6 +127,7 @@ class ICTAsset:
     Documents ICT assets including information assets supporting
     business functions.
     """
+
     asset_id: str = ""
     name: str = ""
     description: str = ""
@@ -179,6 +188,7 @@ class RiskSource:
 
     Documents sources of ICT risk that could affect operations.
     """
+
     source_id: str = ""
     name: str = ""
     description: str = ""
@@ -227,6 +237,7 @@ class CyberThreat:
 
     Documents cyber threats relevant to the entity.
     """
+
     threat_id: str = ""
     name: str = ""
     description: str = ""
@@ -272,6 +283,7 @@ class ICTVulnerability:
 
     Documents vulnerabilities in ICT systems.
     """
+
     vulnerability_id: str = ""
     name: str = ""
     description: str = ""
@@ -326,6 +338,7 @@ class ICTDependency:
 
     Documents dependencies between ICT assets, functions, and providers.
     """
+
     dependency_id: str = ""
     source_id: str = ""  # The asset/function that depends
     source_type: str = ""  # "asset", "function", "system"
@@ -363,6 +376,7 @@ class BusinessFunction:
 
     Documents the mapping between business functions and ICT assets.
     """
+
     function_id: str = ""
     name: str = ""
     description: str = ""
@@ -402,9 +416,11 @@ class BusinessFunction:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ICTIdentificationConfig:
     """Configuration for ICT Identification."""
+
     # Assessment frequencies
     asset_review_frequency_months: int = 12
     risk_source_review_frequency_months: int = 6
@@ -436,6 +452,7 @@ class ICTIdentificationConfig:
 # =============================================================================
 # Main ICT Identification Class
 # =============================================================================
+
 
 class DORAICTIdentification:
     """
@@ -550,12 +567,15 @@ class DORAICTIdentification:
         with self._lock:
             self._assets[asset.asset_id] = asset
 
-        self._log_event("asset_registered", {
-            "asset_id": asset.asset_id,
-            "name": name,
-            "type": asset_type.value,
-            "classification": asset.classification.value,
-        })
+        self._log_event(
+            "asset_registered",
+            {
+                "asset_id": asset.asset_id,
+                "name": name,
+                "type": asset_type.value,
+                "classification": asset.classification.value,
+            },
+        )
 
         logger.info(f"Asset registered: {name} ({asset_type.value})")
         return asset
@@ -577,7 +597,8 @@ class DORAICTIdentification:
         """Get all assets with a specific classification."""
         with self._lock:
             return [
-                a for a in self._assets.values()
+                a
+                for a in self._assets.values()
                 if a.classification == classification and a.is_active
             ]
 
@@ -585,8 +606,10 @@ class DORAICTIdentification:
         """Get all critical assets."""
         with self._lock:
             return [
-                a for a in self._assets.values()
-                if (a.criticality_level == "critical" or a.supports_critical_function) and a.is_active
+                a
+                for a in self._assets.values()
+                if (a.criticality_level == "critical" or a.supports_critical_function)
+                and a.is_active
             ]
 
     def get_third_party_assets(self) -> List[ICTAsset]:
@@ -677,12 +700,15 @@ class DORAICTIdentification:
         with self._lock:
             self._risk_sources[risk_source.source_id] = risk_source
 
-        self._log_event("risk_source_identified", {
-            "source_id": risk_source.source_id,
-            "name": name,
-            "category": category.value,
-            "risk_level": risk_source.risk_level,
-        })
+        self._log_event(
+            "risk_source_identified",
+            {
+                "source_id": risk_source.source_id,
+                "name": name,
+                "category": category.value,
+                "risk_level": risk_source.risk_level,
+            },
+        )
 
         logger.info(f"Risk source identified: {name} ({risk_source.risk_level})")
         return risk_source
@@ -699,15 +725,15 @@ class DORAICTIdentification:
         """Get risk sources by category."""
         with self._lock:
             return [
-                r for r in self._risk_sources.values()
-                if r.category == category and r.is_active
+                r for r in self._risk_sources.values() if r.category == category and r.is_active
             ]
 
     def get_high_risk_sources(self) -> List[RiskSource]:
         """Get high and critical risk sources."""
         with self._lock:
             return [
-                r for r in self._risk_sources.values()
+                r
+                for r in self._risk_sources.values()
                 if r.risk_level in ("high", "critical") and r.is_active
             ]
 
@@ -773,12 +799,15 @@ class DORAICTIdentification:
         with self._lock:
             self._threats[threat.threat_id] = threat
 
-        self._log_event("threat_recorded", {
-            "threat_id": threat.threat_id,
-            "name": name,
-            "category": category.value,
-            "relevance": relevance_to_entity,
-        })
+        self._log_event(
+            "threat_recorded",
+            {
+                "threat_id": threat.threat_id,
+                "name": name,
+                "category": category.value,
+                "relevance": relevance_to_entity,
+            },
+        )
 
         logger.info(f"Threat recorded: {name}")
         return threat
@@ -791,17 +820,13 @@ class DORAICTIdentification:
     def get_threats_by_category(self, category: ThreatCategory) -> List[CyberThreat]:
         """Get threats by category."""
         with self._lock:
-            return [
-                t for t in self._threats.values()
-                if t.category == category and t.is_active
-            ]
+            return [t for t in self._threats.values() if t.category == category and t.is_active]
 
     def get_high_relevance_threats(self) -> List[CyberThreat]:
         """Get threats with high relevance to the entity."""
         with self._lock:
             return [
-                t for t in self._threats.values()
-                if t.relevance_to_entity == "high" and t.is_active
+                t for t in self._threats.values() if t.relevance_to_entity == "high" and t.is_active
             ]
 
     # =========================================================================
@@ -876,12 +901,15 @@ class DORAICTIdentification:
         ):
             self._alert_critical_vulnerability(vulnerability)
 
-        self._log_event("vulnerability_recorded", {
-            "vulnerability_id": vulnerability.vulnerability_id,
-            "name": name,
-            "severity": severity.value,
-            "cve_id": cve_id,
-        })
+        self._log_event(
+            "vulnerability_recorded",
+            {
+                "vulnerability_id": vulnerability.vulnerability_id,
+                "name": name,
+                "severity": severity.value,
+                "cve_id": cve_id,
+            },
+        )
 
         logger.info(f"Vulnerability recorded: {name} ({severity.value})")
         return vulnerability
@@ -929,11 +957,14 @@ class DORAICTIdentification:
             ).isoformat()
             vuln.status = "accepted"
 
-        self._log_event("vulnerability_risk_accepted", {
-            "vulnerability_id": vulnerability_id,
-            "accepted_by": accepted_by,
-            "expiry_days": expiry_days,
-        })
+        self._log_event(
+            "vulnerability_risk_accepted",
+            {
+                "vulnerability_id": vulnerability_id,
+                "accepted_by": accepted_by,
+                "expiry_days": expiry_days,
+            },
+        )
 
         return vuln
 
@@ -945,10 +976,7 @@ class DORAICTIdentification:
     def get_open_vulnerabilities(self) -> List[ICTVulnerability]:
         """Get all open vulnerabilities."""
         with self._lock:
-            return [
-                v for v in self._vulnerabilities.values()
-                if v.status == "open"
-            ]
+            return [v for v in self._vulnerabilities.values() if v.status == "open"]
 
     def get_overdue_vulnerabilities(self) -> List[ICTVulnerability]:
         """Get vulnerabilities past their remediation deadline."""
@@ -972,7 +1000,8 @@ class DORAICTIdentification:
         """Get critical and high severity open vulnerabilities."""
         with self._lock:
             return [
-                v for v in self._vulnerabilities.values()
+                v
+                for v in self._vulnerabilities.values()
                 if v.severity in (VulnerabilitySeverity.CRITICAL, VulnerabilitySeverity.HIGH)
                 and v.status == "open"
             ]
@@ -1058,12 +1087,15 @@ class DORAICTIdentification:
                 if source_id not in asset.depended_by:
                     asset.depended_by.append(source_id)
 
-        self._log_event("dependency_mapped", {
-            "dependency_id": dependency.dependency_id,
-            "source_id": source_id,
-            "target_id": target_id,
-            "type": dependency_type.value,
-        })
+        self._log_event(
+            "dependency_mapped",
+            {
+                "dependency_id": dependency.dependency_id,
+                "source_id": source_id,
+                "target_id": target_id,
+                "type": dependency_type.value,
+            },
+        )
 
         return dependency
 
@@ -1197,11 +1229,14 @@ class DORAICTIdentification:
         with self._lock:
             self._functions[function.function_id] = function
 
-        self._log_event("function_registered", {
-            "function_id": function.function_id,
-            "name": name,
-            "is_critical": is_critical,
-        })
+        self._log_event(
+            "function_registered",
+            {
+                "function_id": function.function_id,
+                "name": name,
+                "is_critical": is_critical,
+            },
+        )
 
         return function
 
@@ -1224,7 +1259,8 @@ class DORAICTIdentification:
         """Get functions that depend on a specific asset."""
         with self._lock:
             return [
-                f for f in self._functions.values()
+                f
+                for f in self._functions.values()
                 if asset_id in f.supporting_asset_ids and f.is_active
             ]
 
@@ -1322,7 +1358,9 @@ class DORAICTIdentification:
             "data": data,
         }
 
-        log_file = self._log_path / f"ict_identification_events_{datetime.now().strftime('%Y%m%d')}.jsonl"
+        log_file = (
+            self._log_path / f"ict_identification_events_{datetime.now().strftime('%Y%m%d')}.jsonl"
+        )
         try:
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(event, default=str) + "\n")
@@ -1333,6 +1371,7 @@ class DORAICTIdentification:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_ict_identification(
     config: Optional[ICTIdentificationConfig] = None,

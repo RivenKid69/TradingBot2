@@ -493,6 +493,7 @@ class TestCreateQuotaManager:
 
     def test_create_with_warning_callback(self):
         """Test creating manager with warning callback."""
+
         def on_warning(tenant_id, resource, pct):
             pass
 

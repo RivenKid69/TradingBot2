@@ -16,6 +16,11 @@ Stage 7 of L3 LOB Simulation (v7.0)
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lob.market_impact import ImpactParameters
+
 import os
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum
@@ -32,17 +37,20 @@ from typing import (
 
 try:
     from pydantic import BaseModel, Field, field_validator, model_validator
+
     HAS_PYDANTIC = True
 except ImportError:
     HAS_PYDANTIC = False
     # Fallback to dataclass-based configs if Pydantic not available
     from dataclasses import dataclass as BaseModel
+
     Field = lambda default=None, **kw: default  # type: ignore
     field_validator = lambda *a, **kw: lambda f: f  # type: ignore
     model_validator = lambda *a, **kw: lambda f: f  # type: ignore
 
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     HAS_YAML = False
@@ -52,8 +60,10 @@ except ImportError:
 # Enums
 # =============================================================================
 
+
 class LatencyDistributionType(str, Enum):
     """Latency distribution types."""
+
     CONSTANT = "constant"
     UNIFORM = "uniform"
     LOGNORMAL = "lognormal"
@@ -64,15 +74,17 @@ class LatencyDistributionType(str, Enum):
 
 class LatencyProfileType(str, Enum):
     """Pre-configured latency profiles."""
-    COLOCATED = "colocated"       # HFT co-location: ~10-50μs
-    PROXIMITY = "proximity"       # Proximity hosting: ~100-500μs
-    RETAIL = "retail"             # Retail broker: ~1-10ms
+
+    COLOCATED = "colocated"  # HFT co-location: ~10-50μs
+    PROXIMITY = "proximity"  # Proximity hosting: ~100-500μs
+    RETAIL = "retail"  # Retail broker: ~1-10ms
     INSTITUTIONAL = "institutional"  # Institutional: ~200μs-2ms
-    CUSTOM = "custom"             # Custom configuration
+    CUSTOM = "custom"  # Custom configuration
 
 
 class FillProbabilityModelType(str, Enum):
     """Fill probability model types."""
+
     POISSON = "poisson"
     QUEUE_REACTIVE = "queue_reactive"
     HISTORICAL = "historical"
@@ -81,6 +93,7 @@ class FillProbabilityModelType(str, Enum):
 
 class ImpactModelType(str, Enum):
     """Market impact model types."""
+
     KYLE = "kyle"
     ALMGREN_CHRISS = "almgren_chriss"
     GATHERAL = "gatheral"
@@ -89,6 +102,7 @@ class ImpactModelType(str, Enum):
 
 class DecayFunctionType(str, Enum):
     """Impact decay function types."""
+
     EXPONENTIAL = "exponential"
     POWER_LAW = "power_law"
     LINEAR = "linear"
@@ -97,6 +111,7 @@ class DecayFunctionType(str, Enum):
 
 class QueueEstimationMethod(str, Enum):
     """Queue position estimation methods."""
+
     PESSIMISTIC = "pessimistic"  # Assume worst case
     PROBABILISTIC = "probabilistic"  # Monte Carlo
     MBO = "mbo"  # Market-by-Order (exact)
@@ -104,6 +119,7 @@ class QueueEstimationMethod(str, Enum):
 
 class LOBDataSourceType(str, Enum):
     """LOB data source types."""
+
     LOBSTER = "lobster"
     ITCH = "itch"
     INTERNAL = "internal"  # Internal simulation
@@ -113,6 +129,7 @@ class LOBDataSourceType(str, Enum):
 # =============================================================================
 # Latency Configuration
 # =============================================================================
+
 
 class LatencyComponentConfig(BaseModel):
     """Configuration for a single latency component.
@@ -129,6 +146,7 @@ class LatencyComponentConfig(BaseModel):
         pareto_alpha: Shape parameter for Pareto distribution
         pareto_xmin_us: Minimum value for Pareto distribution
     """
+
     enabled: bool = True
     distribution: LatencyDistributionType = LatencyDistributionType.LOGNORMAL
     mean_us: float = Field(default=100.0, ge=0)
@@ -141,6 +159,7 @@ class LatencyComponentConfig(BaseModel):
     pareto_xmin_us: float = Field(default=10.0, gt=0)
 
     if HAS_PYDANTIC:
+
         @model_validator(mode="after")
         def validate_bounds(self) -> "LatencyComponentConfig":
             """Validate max >= min."""
@@ -162,20 +181,21 @@ class LatencyConfig(BaseModel):
         time_of_day_adjustment: Enable time-of-day latency scaling
         volatility_adjustment: Enable volatility-based latency scaling
     """
+
     enabled: bool = False
     profile: LatencyProfileType = LatencyProfileType.INSTITUTIONAL
-    feed_latency: LatencyComponentConfig = Field(default_factory=lambda: LatencyComponentConfig(
-        mean_us=200.0, std_us=50.0
-    ))
-    order_latency: LatencyComponentConfig = Field(default_factory=lambda: LatencyComponentConfig(
-        mean_us=300.0, std_us=80.0
-    ))
-    exchange_latency: LatencyComponentConfig = Field(default_factory=lambda: LatencyComponentConfig(
-        mean_us=100.0, std_us=30.0
-    ))
-    fill_latency: LatencyComponentConfig = Field(default_factory=lambda: LatencyComponentConfig(
-        mean_us=150.0, std_us=40.0
-    ))
+    feed_latency: LatencyComponentConfig = Field(
+        default_factory=lambda: LatencyComponentConfig(mean_us=200.0, std_us=50.0)
+    )
+    order_latency: LatencyComponentConfig = Field(
+        default_factory=lambda: LatencyComponentConfig(mean_us=300.0, std_us=80.0)
+    )
+    exchange_latency: LatencyComponentConfig = Field(
+        default_factory=lambda: LatencyComponentConfig(mean_us=100.0, std_us=30.0)
+    )
+    fill_latency: LatencyComponentConfig = Field(
+        default_factory=lambda: LatencyComponentConfig(mean_us=150.0, std_us=40.0)
+    )
     time_of_day_adjustment: bool = True
     volatility_adjustment: bool = True
 
@@ -220,6 +240,7 @@ class LatencyConfig(BaseModel):
 # Fill Probability Configuration
 # =============================================================================
 
+
 class FillProbabilityConfig(BaseModel):
     """Fill probability model configuration.
 
@@ -233,6 +254,7 @@ class FillProbabilityConfig(BaseModel):
         volatility_factor: Volatility sensitivity
         confidence_threshold: Minimum confidence for estimates
     """
+
     enabled: bool = True
     model: FillProbabilityModelType = FillProbabilityModelType.QUEUE_REACTIVE
     base_rate: float = Field(default=100.0, gt=0)
@@ -247,6 +269,7 @@ class FillProbabilityConfig(BaseModel):
 # Queue Value Configuration
 # =============================================================================
 
+
 class QueueValueConfig(BaseModel):
     """Queue value computation configuration (Moallemi & Yuan).
 
@@ -258,6 +281,7 @@ class QueueValueConfig(BaseModel):
         time_horizon_sec: Default time horizon for value computation
         discount_rate: Discount rate for future fills
     """
+
     enabled: bool = True
     hold_threshold: float = Field(default=0.001)
     cancel_threshold: float = Field(default=-0.002)
@@ -269,6 +293,7 @@ class QueueValueConfig(BaseModel):
 # =============================================================================
 # Market Impact Configuration
 # =============================================================================
+
 
 class MarketImpactConfig(BaseModel):
     """Market impact model configuration.
@@ -285,6 +310,7 @@ class MarketImpactConfig(BaseModel):
         apply_to_lob: Apply impact effects to LOB state
         momentum_detection: Enable momentum/trend detection
     """
+
     enabled: bool = True
     model: ImpactModelType = ImpactModelType.ALMGREN_CHRISS
     eta: float = Field(default=0.05, ge=0)  # Temporary
@@ -327,6 +353,7 @@ class MarketImpactConfig(BaseModel):
 # Hidden Liquidity Configuration
 # =============================================================================
 
+
 class IcebergConfig(BaseModel):
     """Iceberg order detection configuration.
 
@@ -337,6 +364,7 @@ class IcebergConfig(BaseModel):
         min_display_size: Minimum display size to track
         hidden_ratio_estimate: Default hidden:display ratio estimate
     """
+
     enabled: bool = True
     min_refills_to_confirm: int = Field(default=2, ge=1)
     lookback_window_sec: float = Field(default=60.0, gt=0)
@@ -353,6 +381,7 @@ class HiddenLiquidityConfig(BaseModel):
         default_hidden_ratio: Default hidden liquidity ratio
         use_historical_estimates: Use historical data for estimates
     """
+
     enabled: bool = True
     iceberg: IcebergConfig = Field(default_factory=IcebergConfig)
     default_hidden_ratio: float = Field(default=0.15, ge=0, le=1)
@@ -362,6 +391,7 @@ class HiddenLiquidityConfig(BaseModel):
 # =============================================================================
 # Dark Pool Configuration
 # =============================================================================
+
 
 class DarkPoolVenueConfig(BaseModel):
     """Configuration for a single dark pool venue.
@@ -377,6 +407,7 @@ class DarkPoolVenueConfig(BaseModel):
         info_leakage_probability: Probability of information leakage
         latency_ms: Venue latency in milliseconds
     """
+
     venue_id: str
     venue_type: str = "midpoint_cross"
     enabled: bool = True
@@ -397,20 +428,23 @@ class DarkPoolsConfig(BaseModel):
         max_dark_fill_pct: Maximum % of order to fill in dark pools
         routing_strategy: Smart order routing strategy
     """
+
     enabled: bool = False
-    venues: List[DarkPoolVenueConfig] = Field(default_factory=lambda: [
-        DarkPoolVenueConfig(
-            venue_id="sigma_x",
-            venue_type="midpoint_cross",
-            base_fill_probability=0.30,
-        ),
-        DarkPoolVenueConfig(
-            venue_id="iex_dark",
-            venue_type="midpoint_cross",
-            min_order_size=50.0,
-            base_fill_probability=0.25,
-        ),
-    ])
+    venues: List[DarkPoolVenueConfig] = Field(
+        default_factory=lambda: [
+            DarkPoolVenueConfig(
+                venue_id="sigma_x",
+                venue_type="midpoint_cross",
+                base_fill_probability=0.30,
+            ),
+            DarkPoolVenueConfig(
+                venue_id="iex_dark",
+                venue_type="midpoint_cross",
+                min_order_size=50.0,
+                base_fill_probability=0.25,
+            ),
+        ]
+    )
     max_dark_fill_pct: float = Field(default=0.5, ge=0, le=1)
     routing_strategy: str = "sequential"  # sequential, parallel, smart
 
@@ -418,6 +452,7 @@ class DarkPoolsConfig(BaseModel):
 # =============================================================================
 # Queue Tracking Configuration
 # =============================================================================
+
 
 class QueueTrackingConfig(BaseModel):
     """Queue position tracking configuration.
@@ -429,6 +464,7 @@ class QueueTrackingConfig(BaseModel):
         max_tracked_orders: Maximum orders to track
         cleanup_interval_sec: Interval for cleaning up stale orders
     """
+
     enabled: bool = True
     estimation_method: QueueEstimationMethod = QueueEstimationMethod.PESSIMISTIC
     use_mbo_when_available: bool = True
@@ -440,6 +476,7 @@ class QueueTrackingConfig(BaseModel):
 # Event Scheduling Configuration
 # =============================================================================
 
+
 class EventSchedulingConfig(BaseModel):
     """Event scheduler configuration.
 
@@ -449,6 +486,7 @@ class EventSchedulingConfig(BaseModel):
         max_events_per_step: Maximum events to process per step
         deterministic_ordering: Use deterministic tie-breaking
     """
+
     enabled: bool = True
     race_condition_buffer_us: float = Field(default=100.0, ge=0)
     max_events_per_step: int = Field(default=1000, ge=1)
@@ -458,6 +496,7 @@ class EventSchedulingConfig(BaseModel):
 # =============================================================================
 # LOB Data Source Configuration
 # =============================================================================
+
 
 class LOBDataConfig(BaseModel):
     """LOB data source configuration.
@@ -469,6 +508,7 @@ class LOBDataConfig(BaseModel):
         snapshot_interval_ms: Interval between snapshots
         message_path: Path to LOBSTER/ITCH message files
     """
+
     source: LOBDataSourceType = LOBDataSourceType.INTERNAL
     reconstruction_mode: str = "full"  # full or incremental
     max_depth: int = Field(default=20, ge=1)
@@ -479,6 +519,7 @@ class LOBDataConfig(BaseModel):
 # =============================================================================
 # Main L3 Configuration
 # =============================================================================
+
 
 class L3ExecutionConfig(BaseModel):
     """
@@ -498,6 +539,7 @@ class L3ExecutionConfig(BaseModel):
         queue_tracking: Queue position tracking configuration
         event_scheduling: Event scheduler configuration
     """
+
     enabled: bool = False
     lob_data: LOBDataConfig = Field(default_factory=LOBDataConfig)
     latency: LatencyConfig = Field(default_factory=LatencyConfig)
@@ -570,7 +612,9 @@ class L3ExecutionConfig(BaseModel):
             ImportError: If PyYAML is not installed
         """
         if not HAS_YAML:
-            raise ImportError("PyYAML is required for YAML loading. Install with: pip install pyyaml")
+            raise ImportError(
+                "PyYAML is required for YAML loading. Install with: pip install pyyaml"
+            )
 
         # Validate path exists before opening
         config_path = Path(path)
@@ -612,10 +656,11 @@ class L3ExecutionConfig(BaseModel):
         if HAS_PYDANTIC:
             # Use mode='json' to serialize enum values as strings
             # This ensures YAML roundtrip compatibility with safe_load()
-            return self.model_dump(mode='json')
+            return self.model_dump(mode="json")
         else:
             # Fallback for dataclass
             import dataclasses
+
             return dataclasses.asdict(self)  # type: ignore
 
     def to_yaml(self, path: Union[str, Path]) -> None:
@@ -625,7 +670,9 @@ class L3ExecutionConfig(BaseModel):
             path: Path to save YAML file
         """
         if not HAS_YAML:
-            raise ImportError("PyYAML is required for YAML saving. Install with: pip install pyyaml")
+            raise ImportError(
+                "PyYAML is required for YAML saving. Install with: pip install pyyaml"
+            )
 
         with open(path, "w") as f:
             yaml.dump(self.to_dict(), f, default_flow_style=False, sort_keys=False)
@@ -633,19 +680,22 @@ class L3ExecutionConfig(BaseModel):
     @property
     def is_enabled(self) -> bool:
         """Check if any L3 feature is enabled."""
-        return self.enabled and any([
-            self.latency.enabled,
-            self.fill_probability.enabled,
-            self.queue_value.enabled,
-            self.market_impact.enabled,
-            self.hidden_liquidity.enabled,
-            self.dark_pools.enabled,
-        ])
+        return self.enabled and any(
+            [
+                self.latency.enabled,
+                self.fill_probability.enabled,
+                self.queue_value.enabled,
+                self.market_impact.enabled,
+                self.hidden_liquidity.enabled,
+                self.dark_pools.enabled,
+            ]
+        )
 
 
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_l3_config(
     preset: str = "equity",
@@ -694,6 +744,7 @@ def _deep_update(base: Dict, updates: Dict) -> Dict:
 # =============================================================================
 # Backward Compatibility Helpers
 # =============================================================================
+
 
 def latency_config_to_dataclass(config: LatencyComponentConfig) -> "LatencyConfig":
     """Convert Pydantic LatencyComponentConfig to lob.latency_model.LatencyConfig dataclass."""

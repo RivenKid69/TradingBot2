@@ -25,37 +25,39 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence
 @dataclass
 class VenueQuote:
     """Live top-of-book snapshot from a venue (P2 #14)."""
+
     bid: float = 0.0
     ask: float = 0.0
-    bid_size: float = 0.0      # size in units (not notional)
+    bid_size: float = 0.0  # size in units (not notional)
     ask_size: float = 0.0
 
 
 class LiquidityProvider(Protocol):
     """Live liquidity feed: per (venue, symbol) top-of-book."""
+
     def get_quote(self, venue: str, symbol: str) -> Optional[VenueQuote]: ...
 
 
 @dataclass
 class Venue:
     name: str
-    fee_bps: float = 1.0                 # комиссия (bps от notional)
-    latency_ms: float = 50.0             # латентность (информативно + штраф)
-    liquidity: float = 1e7               # доступная ликвидность (notional)
-    impact_coef: float = 0.1             # k в impact = k·sqrt(participation)·1e4
+    fee_bps: float = 1.0  # комиссия (bps от notional)
+    latency_ms: float = 50.0  # латентность (информативно + штраф)
+    liquidity: float = 1e7  # доступная ликвидность (notional)
+    impact_coef: float = 0.1  # k в impact = k·sqrt(participation)·1e4
     latency_penalty_bps_per_100ms: float = 0.2
-    min_notional: float = 0.0            # мин. размер заявки на venue
+    min_notional: float = 0.0  # мин. размер заявки на venue
     enabled: bool = True
     # live quote (P2 #14) — refreshed from a LiquidityProvider; drives spread + cap
     quote: Optional[VenueQuote] = None
-    spread_bps: float = 0.0              # half-spread cost added when live quote present
+    spread_bps: float = 0.0  # half-spread cost added when live quote present
 
     def update_from_quote(self, q: VenueQuote, side: str) -> None:
         """Refresh available liquidity + spread from a live top-of-book snapshot."""
         self.quote = q
         mid = (q.bid + q.ask) / 2.0 if (q.bid > 0 and q.ask > 0) else max(q.bid, q.ask)
         if mid > 0 and q.ask > q.bid > 0:
-            self.spread_bps = (q.ask - q.bid) / mid * 1e4 / 2.0   # half-spread
+            self.spread_bps = (q.ask - q.bid) / mid * 1e4 / 2.0  # half-spread
         # displayed size on the relevant side → notional capacity at the touch
         if side.upper() == "BUY" and q.ask > 0:
             self.liquidity = max(q.ask_size * q.ask, 1e-9)
@@ -68,7 +70,9 @@ class Venue:
         part0 = filled / liq
         part1 = (filled + add) / liq
         # средний импакт на добавляемом куске (разница интегралов ~ sqrt)
-        impact = self.impact_coef * ((math.sqrt(max(part1, 0)) + math.sqrt(max(part0, 0))) / 2.0) * 1e4
+        impact = (
+            self.impact_coef * ((math.sqrt(max(part1, 0)) + math.sqrt(max(part0, 0))) / 2.0) * 1e4
+        )
         latency = self.latency_penalty_bps_per_100ms * (self.latency_ms / 100.0)
         return self.fee_bps + self.spread_bps + impact + latency
 
@@ -92,8 +96,11 @@ class RouteResult:
 
     def to_dict(self) -> Dict:
         return {
-            "symbol": self.symbol, "side": self.side, "total_notional": self.total_notional,
-            "total_est_cost": self.total_est_cost, "total_est_cost_bps": self.total_est_cost_bps,
+            "symbol": self.symbol,
+            "side": self.side,
+            "total_notional": self.total_notional,
+            "total_est_cost": self.total_est_cost,
+            "total_est_cost_bps": self.total_est_cost_bps,
             "allocations": [a.__dict__ for a in self.allocations],
         }
 
@@ -124,7 +131,9 @@ class SmartOrderRouter:
         if not split or len(usable) == 1:
             v = min(usable, key=lambda v: v.marginal_cost_bps(0.0, notional))
             bps = v.marginal_cost_bps(0.0, notional)
-            return self._result(symbol, side, notional, [Allocation(v.name, notional, bps, notional * bps / 1e4)])
+            return self._result(
+                symbol, side, notional, [Allocation(v.name, notional, bps, notional * bps / 1e4)]
+            )
 
         # water-filling по маржинальной стоимости
         filled: Dict[str, float] = {v.name: 0.0 for v in usable}
@@ -142,7 +151,7 @@ class SmartOrderRouter:
             if notl <= 1e-9:
                 continue
             v = vmap[name]
-            bps = v.marginal_cost_bps(0.0, notl)   # средняя стоимость аллокации
+            bps = v.marginal_cost_bps(0.0, notl)  # средняя стоимость аллокации
             allocs.append(Allocation(name, notl, bps, notl * bps / 1e4))
         allocs.sort(key=lambda a: -a.notional)
         return self._result(symbol, side, notional, allocs)
@@ -151,9 +160,14 @@ class SmartOrderRouter:
     def _result(symbol, side, notional, allocs: List[Allocation]) -> RouteResult:
         total_cost = sum(a.est_cost for a in allocs)
         total_bps = (total_cost / notional * 1e4) if notional > 0 else 0.0
-        return RouteResult(symbol=symbol, side=side, total_notional=notional,
-                           allocations=allocs, total_est_cost=total_cost,
-                           total_est_cost_bps=total_bps)
+        return RouteResult(
+            symbol=symbol,
+            side=side,
+            total_notional=notional,
+            allocations=allocs,
+            total_est_cost=total_cost,
+            total_est_cost_bps=total_bps,
+        )
 
     # -- live liquidity (P2 #14) -------------------------------------------
     def refresh_liquidity(self, symbol: str, side: str, provider: "LiquidityProvider") -> int:
@@ -177,14 +191,23 @@ class SmartOrderRouter:
                 usable += 1
         return usable
 
-    def route_live(self, symbol: str, side: str, notional: float,
-                   provider: "LiquidityProvider", *, split: bool = True) -> RouteResult:
+    def route_live(
+        self,
+        symbol: str,
+        side: str,
+        notional: float,
+        provider: "LiquidityProvider",
+        *,
+        split: bool = True,
+    ) -> RouteResult:
         """Route using LIVE top-of-book liquidity (refresh then route)."""
         self.refresh_liquidity(symbol, side, provider)
         return self.route(symbol, side, notional, split=split)
 
     # -- dispatch (P2 #14): actually send child orders to venues -----------
-    def dispatch(self, route: RouteResult, submit_fn: Callable[[str, str, str, float], Dict[str, Any]]) -> Dict[str, Any]:
+    def dispatch(
+        self, route: RouteResult, submit_fn: Callable[[str, str, str, float], Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Send each venue allocation as a child order via ``submit_fn``.
 
         ``submit_fn(venue, symbol, side, notional) -> result dict`` is the venue/broker
@@ -201,13 +224,24 @@ class SmartOrderRouter:
                 res, success = {"error": str(exc)}, False
             if success:
                 ok += 1
-            results.append({"venue": a.venue, "notional": a.notional,
-                            "success": success, "result": res})
-        return {"symbol": route.symbol, "side": route.side,
-                "venues_dispatched": len(results), "venues_ok": ok,
-                "all_ok": ok == len(results) and len(results) > 0,
-                "dispatches": results}
+            results.append(
+                {"venue": a.venue, "notional": a.notional, "success": success, "result": res}
+            )
+        return {
+            "symbol": route.symbol,
+            "side": route.side,
+            "venues_dispatched": len(results),
+            "venues_ok": ok,
+            "all_ok": ok == len(results) and len(results) > 0,
+            "dispatches": results,
+        }
 
 
-__all__ = ["Venue", "VenueQuote", "LiquidityProvider", "Allocation", "RouteResult",
-           "SmartOrderRouter"]
+__all__ = [
+    "Venue",
+    "VenueQuote",
+    "LiquidityProvider",
+    "Allocation",
+    "RouteResult",
+    "SmartOrderRouter",
+]

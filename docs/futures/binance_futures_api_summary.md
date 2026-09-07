@@ -11,6 +11,7 @@
 ## 1. API Overview
 
 Binance offers two types of futures:
+
 - **USDT-M Futures** (USDT-margined perpetual/delivery) - Primary target
 - **COIN-M Futures** (coin-margined delivery) - Secondary target
 
@@ -34,12 +35,15 @@ Binance offers two types of futures:
 ## 2. Market Data Endpoints (Public)
 
 ### 2.1 Exchange Information
+
 ```
 GET /fapi/v1/exchangeInfo
 ```
+
 Returns trading rules and symbol information.
 
 **Key Fields per Symbol:**
+
 - `symbol` - Trading pair (e.g., "BTCUSDT")
 - `pair` - Underlying pair
 - `contractType` - "PERPETUAL" | "CURRENT_QUARTER" | "NEXT_QUARTER"
@@ -55,6 +59,7 @@ Returns trading rules and symbol information.
 **Existing Code**: `binance_public.py:get_exchange_info()`
 
 ### 2.2 Klines (Candlesticks)
+
 ```
 GET /fapi/v1/klines
 GET /fapi/v1/markPriceKlines  # Mark price candles
@@ -63,6 +68,7 @@ GET /fapi/v1/continuousKlines # Continuous contract klines
 ```
 
 **Parameters:**
+
 - `symbol` (required) - e.g., "BTCUSDT"
 - `interval` - 1m, 5m, 15m, 1h, 4h, 1d, 1w, 1M
 - `startTime`, `endTime` - Timestamp in ms
@@ -71,17 +77,21 @@ GET /fapi/v1/continuousKlines # Continuous contract klines
 **Existing Code**: `ingest_funding_mark.py:_fetch_all_mark()`
 
 ### 2.3 Funding Rate
+
 ```
 GET /fapi/v1/fundingRate
 ```
+
 Historical funding rate data.
 
 **Parameters:**
+
 - `symbol` (required)
 - `startTime`, `endTime` - Filter range
 - `limit` - Max 1000
 
 **Response:**
+
 ```json
 [
   {
@@ -96,12 +106,15 @@ Historical funding rate data.
 **Existing Code**: `ingest_funding_mark.py:_fetch_all_funding()`
 
 ### 2.4 Premium Index (Mark Price + Funding)
+
 ```
 GET /fapi/v1/premiumIndex
 ```
+
 Real-time mark price and funding rate.
 
 **Response per Symbol:**
+
 ```json
 {
   "symbol": "BTCUSDT",
@@ -116,22 +129,28 @@ Real-time mark price and funding rate.
 ```
 
 ### 2.5 Order Book Depth
+
 ```
 GET /fapi/v1/depth
 ```
+
 L2 order book snapshot.
 
 **Parameters:**
+
 - `symbol` (required)
 - `limit` - 5, 10, 20, 50, 100, 500, 1000
 
 ### 2.6 24hr Ticker
+
 ```
 GET /fapi/v1/ticker/24hr
 ```
+
 Rolling 24h statistics.
 
 **Key Fields:**
+
 - `openPrice`, `highPrice`, `lowPrice`, `lastPrice`
 - `volume`, `quoteVolume`
 - `openInterest` - Current open interest
@@ -139,6 +158,7 @@ Rolling 24h statistics.
 - `weightedAvgPrice` - VWAP
 
 ### 2.7 Open Interest
+
 ```
 GET /fapi/v1/openInterest
 GET /futures/data/openInterestHist  # Historical OI
@@ -149,10 +169,13 @@ GET /futures/data/openInterestHist  # Historical OI
 ## 3. Account & Trade Endpoints (Authenticated)
 
 ### 3.1 Account Information
+
 ```
 GET /fapi/v2/account
 ```
+
 **Key Fields:**
+
 ```json
 {
   "totalWalletBalance": "10000.00",
@@ -166,10 +189,13 @@ GET /fapi/v2/account
 ```
 
 ### 3.2 Position Information
+
 ```
 GET /fapi/v2/positionRisk
 ```
+
 **Response per Position:**
+
 ```json
 {
   "symbol": "BTCUSDT",
@@ -190,10 +216,13 @@ GET /fapi/v2/positionRisk
 ```
 
 ### 3.3 Order Submission
+
 ```
 POST /fapi/v1/order
 ```
+
 **Parameters:**
+
 - `symbol` (required)
 - `side` - BUY | SELL
 - `type` - LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET
@@ -210,14 +239,18 @@ POST /fapi/v1/order
 - `workingType` - MARK_PRICE | CONTRACT_PRICE
 
 ### 3.4 Leverage Settings
+
 ```
 POST /fapi/v1/leverage
 ```
+
 **Parameters:**
+
 - `symbol` (required)
 - `leverage` - 1 to 125
 
 **Response:**
+
 ```json
 {
   "leverage": 20,
@@ -227,18 +260,24 @@ POST /fapi/v1/leverage
 ```
 
 ### 3.5 Margin Type
+
 ```
 POST /fapi/v1/marginType
 ```
+
 **Parameters:**
+
 - `symbol` (required)
 - `marginType` - ISOLATED | CROSSED
 
 ### 3.6 Position Mode
+
 ```
 POST /fapi/v1/positionSide/dual
 ```
+
 **Parameters:**
+
 - `dualSidePosition` - true (hedge mode) | false (one-way mode)
 
 ---
@@ -246,12 +285,15 @@ POST /fapi/v1/positionSide/dual
 ## 4. Risk Management Endpoints
 
 ### 4.1 Leverage Brackets
+
 ```
 GET /fapi/v1/leverageBracket
 ```
+
 Tiered leverage limits by notional.
 
 **Response:**
+
 ```json
 {
   "symbol": "BTCUSDT",
@@ -278,24 +320,31 @@ Tiered leverage limits by notional.
 ```
 
 ### 4.2 ADL Quantile
+
 ```
 GET /fapi/v1/adlQuantile
 ```
+
 Auto-deleveraging indicator (1-5, higher = more risk).
 
 ### 4.3 Force Orders (Liquidations)
+
 ```
 GET /fapi/v1/forceOrders
 ```
+
 User's liquidation history.
 
 ### 4.4 Income History
+
 ```
 GET /fapi/v1/income
 ```
+
 Funding payments, commissions, realized PnL.
 
 **Income Types:**
+
 - TRANSFER
 - WELCOME_BONUS
 - REALIZED_PNL
@@ -311,12 +360,14 @@ Funding payments, commissions, realized PnL.
 ## 5. WebSocket Streams
 
 ### 5.1 Market Data Streams
+
 ```
 wss://fstream.binance.com/ws/<streamName>
 wss://fstream.binance.com/stream?streams=<streamName1>/<streamName2>
 ```
 
 **Available Streams:**
+
 | Stream | Description |
 |--------|-------------|
 | `<symbol>@aggTrade` | Aggregated trades |
@@ -329,6 +380,7 @@ wss://fstream.binance.com/stream?streams=<streamName1>/<streamName2>
 | `!forceOrder@arr` | All liquidations |
 
 ### 5.2 User Data Stream
+
 ```
 POST /fapi/v1/listenKey  # Create listen key
 PUT /fapi/v1/listenKey   # Keepalive (every 60min)
@@ -336,6 +388,7 @@ DELETE /fapi/v1/listenKey # Close
 ```
 
 **Events:**
+
 - `MARGIN_CALL` - Margin call warning
 - `ACCOUNT_UPDATE` - Balance/position changes
 - `ORDER_TRADE_UPDATE` - Order/trade updates
@@ -347,6 +400,7 @@ DELETE /fapi/v1/listenKey # Close
 ## 6. Key Concepts for Implementation
 
 ### 6.1 Mark Price Calculation
+
 ```
 Mark Price = Index Price × (1 + Funding Basis)
 
@@ -355,6 +409,7 @@ Funding Basis = Average((Futures Price - Index Price) / Index Price)
 ```
 
 ### 6.2 Liquidation Price (Isolated)
+
 ```
 Long:
   Liq Price = Entry × (1 - Initial Margin% + Maintenance Margin%)
@@ -364,13 +419,16 @@ Short:
 ```
 
 ### 6.3 Funding Rate
+
 - Paid every 8 hours (00:00, 08:00, 16:00 UTC)
 - Positive rate: Longs pay shorts
 - Negative rate: Shorts pay longs
 - Formula: `Payment = Position Size × Mark Price × Funding Rate`
 
 ### 6.4 ADL (Auto-Deleveraging)
+
 Triggered when insurance fund depleted during extreme volatility:
+
 1. Profitable positions ranked by profit and leverage
 2. Highest ranked liquidated first against bankrupt positions
 3. ADL indicator (1-5) shows queue position

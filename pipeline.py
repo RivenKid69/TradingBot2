@@ -85,8 +85,7 @@ class PipelineConfig:
 
         enabled = other.enabled if other is not None else self.enabled
         stages: Dict[str, PipelineStageConfig] = {
-            k: PipelineStageConfig(v.enabled, dict(v.params))
-            for k, v in self.stages.items()
+            k: PipelineStageConfig(v.enabled, dict(v.params)) for k, v in self.stages.items()
         }
         if other is not None:
             for name, cfg in other.stages.items():
@@ -99,7 +98,12 @@ class PipelineConfig:
 
 
 def closed_bar_guard(
-    bar: Bar, now_ms: int, enforce: bool, lag_ms: int, *, stage_cfg: PipelineStageConfig | None = None
+    bar: Bar,
+    now_ms: int,
+    enforce: bool,
+    lag_ms: int,
+    *,
+    stage_cfg: PipelineStageConfig | None = None,
 ) -> PipelineResult:
     """Ensure that incoming bars are fully closed before processing.
 
@@ -139,9 +143,7 @@ def closed_bar_guard(
 
     if not is_bar_closed(int(bar.ts), now_ms, lag_ms):
         inc_reason(Reason.INCOMPLETE_BAR)
-        return PipelineResult(
-            action="drop", stage=Stage.CLOSED_BAR, reason=Reason.INCOMPLETE_BAR
-        )
+        return PipelineResult(action="drop", stage=Stage.CLOSED_BAR, reason=Reason.INCOMPLETE_BAR)
 
     return PipelineResult(action="pass", stage=Stage.CLOSED_BAR)
 
@@ -184,31 +186,23 @@ def open_bar_guard(
     ts = getattr(bar, "ts", None)
     if ts is None:
         inc_reason(Reason.INCOMPLETE_BAR)
-        return PipelineResult(
-            action="drop", stage=Stage.OPEN_BAR, reason=Reason.INCOMPLETE_BAR
-        )
+        return PipelineResult(action="drop", stage=Stage.OPEN_BAR, reason=Reason.INCOMPLETE_BAR)
 
     if lag_ms <= 0:
         if not getattr(bar, "is_final", True):
             inc_reason(Reason.INCOMPLETE_BAR)
-            return PipelineResult(
-                action="drop", stage=Stage.OPEN_BAR, reason=Reason.INCOMPLETE_BAR
-            )
+            return PipelineResult(action="drop", stage=Stage.OPEN_BAR, reason=Reason.INCOMPLETE_BAR)
         return PipelineResult(action="pass", stage=Stage.OPEN_BAR)
 
     try:
         ts_ms = int(ts)
     except (TypeError, ValueError):
         inc_reason(Reason.INCOMPLETE_BAR)
-        return PipelineResult(
-            action="drop", stage=Stage.OPEN_BAR, reason=Reason.INCOMPLETE_BAR
-        )
+        return PipelineResult(action="drop", stage=Stage.OPEN_BAR, reason=Reason.INCOMPLETE_BAR)
 
     if now_ms < ts_ms + lag_ms:
         inc_reason(Reason.INCOMPLETE_BAR)
-        return PipelineResult(
-            action="drop", stage=Stage.OPEN_BAR, reason=Reason.INCOMPLETE_BAR
-        )
+        return PipelineResult(action="drop", stage=Stage.OPEN_BAR, reason=Reason.INCOMPLETE_BAR)
 
     return PipelineResult(action="pass", stage=Stage.OPEN_BAR)
 
@@ -367,9 +361,7 @@ class AnomalyDetector:
             self._cooldown_left -= 1
             if self._last_reason is not None:
                 inc_reason(self._last_reason)
-            return PipelineResult(
-                action="drop", stage=Stage.ANOMALY, reason=self._last_reason
-            )
+            return PipelineResult(action="drop", stage=Stage.ANOMALY, reason=self._last_reason)
 
         rets_arr = np.asarray(self._rets, dtype=np.float64)
         cur_ret = rets_arr[-1]
@@ -378,9 +370,7 @@ class AnomalyDetector:
             self._cooldown_left = int(self.cooldown_bars)
             self._last_reason = Reason.ANOMALY_RET
             inc_reason(Reason.ANOMALY_RET)
-            return PipelineResult(
-                action="drop", stage=Stage.ANOMALY, reason=Reason.ANOMALY_RET
-            )
+            return PipelineResult(action="drop", stage=Stage.ANOMALY, reason=Reason.ANOMALY_RET)
 
         sp_arr = np.asarray(self._spreads, dtype=np.float64)
         cur_spread = sp_arr[-1]
@@ -389,9 +379,7 @@ class AnomalyDetector:
             self._cooldown_left = int(self.cooldown_bars)
             self._last_reason = Reason.ANOMALY_SPREAD
             inc_reason(Reason.ANOMALY_SPREAD)
-            return PipelineResult(
-                action="drop", stage=Stage.ANOMALY, reason=Reason.ANOMALY_SPREAD
-            )
+            return PipelineResult(action="drop", stage=Stage.ANOMALY, reason=Reason.ANOMALY_SPREAD)
 
         return PipelineResult(action="pass", stage=Stage.ANOMALY)
 
@@ -455,17 +443,13 @@ class MetricKillSwitch:
                 st.active = False
                 return PipelineResult(action="pass", stage=Stage.POLICY)
             inc_reason(Reason.MAINTENANCE)
-            return PipelineResult(
-                action="drop", stage=Stage.POLICY, reason=Reason.MAINTENANCE
-            )
+            return PipelineResult(action="drop", stage=Stage.POLICY, reason=Reason.MAINTENANCE)
 
         if st.last_metric >= self.upper:
             st.active = True
             st.cooldown_left = int(self.cooldown_bars)
             inc_reason(Reason.MAINTENANCE)
-            return PipelineResult(
-                action="drop", stage=Stage.POLICY, reason=Reason.MAINTENANCE
-            )
+            return PipelineResult(action="drop", stage=Stage.POLICY, reason=Reason.MAINTENANCE)
 
         return PipelineResult(action="pass", stage=Stage.POLICY)
 
@@ -517,9 +501,7 @@ def compute_expires_at(bar_close_ms: int, timeframe_ms: int) -> int:
     return close_ms + tf_ms
 
 
-def check_ttl(
-    bar_close_ms: int, now_ms: int, timeframe_ms: int
-) -> Tuple[bool, int, str]:
+def check_ttl(bar_close_ms: int, now_ms: int, timeframe_ms: int) -> Tuple[bool, int, str]:
     """Validate that a bar has not exceeded its time-to-live.
 
     The TTL for a bar is one full timeframe after its close. This function

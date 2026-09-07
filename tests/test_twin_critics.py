@@ -11,6 +11,7 @@ Tests cover:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -28,13 +29,13 @@ class TestTwinCriticsArchitecture:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'huber_kappa': 1.0,
-                'use_twin_critics': True,  # Enable twin critics
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "huber_kappa": 1.0,
+                "use_twin_critics": True,  # Enable twin critics
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -58,7 +59,10 @@ class TestTwinCriticsArchitecture:
         assert policy.quantile_head.huber_kappa == policy.quantile_head_2.huber_kappa
 
         # Check that heads have independent parameters
-        assert policy.quantile_head.linear.weight.data_ptr() != policy.quantile_head_2.linear.weight.data_ptr()
+        assert (
+            policy.quantile_head.linear.weight.data_ptr()
+            != policy.quantile_head_2.linear.weight.data_ptr()
+        )
 
     def test_twin_critics_categorical_creation(self):
         """Test that both categorical critics are created when twin critics enabled."""
@@ -66,12 +70,12 @@ class TestTwinCriticsArchitecture:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'num_atoms': 51,
-            'critic': {
-                'distributional': False,
-                'use_twin_critics': True,  # Enable twin critics
-            }
+            "hidden_dim": 32,
+            "num_atoms": 51,
+            "critic": {
+                "distributional": False,
+                "use_twin_critics": True,  # Enable twin critics
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -102,12 +106,12 @@ class TestTwinCriticsArchitecture:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
                 # use_twin_critics NOT set - should default to True
-            }
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -128,12 +132,12 @@ class TestTwinCriticsArchitecture:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'use_twin_critics': False,  # Explicitly disable
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "use_twin_critics": False,  # Explicitly disable
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -160,13 +164,13 @@ class TestTwinCriticsForward:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'huber_kappa': 1.0,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "huber_kappa": 1.0,
+                "use_twin_critics": True,
+            },
         }
 
         return CustomActorCriticPolicy(
@@ -221,12 +225,12 @@ class TestTwinCriticsForward:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'use_twin_critics': False,  # Disabled
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "use_twin_critics": False,  # Disabled
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -340,13 +344,13 @@ class TestTwinCriticsGradients:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'huber_kappa': 1.0,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "huber_kappa": 1.0,
+                "use_twin_critics": True,
+            },
         }
 
         policy = CustomActorCriticPolicy(

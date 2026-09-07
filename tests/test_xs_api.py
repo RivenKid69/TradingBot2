@@ -27,12 +27,24 @@ def client():
 
 
 _SMALL_CFG = {
-    "data": {"source": "synthetic", "symbols": list("ABCDEF"), "synthetic_bars": 60, "synthetic_seed": 1},
+    "data": {
+        "source": "synthetic",
+        "symbols": list("ABCDEF"),
+        "synthetic_bars": 60,
+        "synthetic_seed": 1,
+    },
     "universe": {"symbols": list("ABCDEF")},
-    "signals": [{"name": "mom", "kind": "momentum", "lookback": 5, "skip": 0, "transforms": ["zscore"]}],
+    "signals": [
+        {"name": "mom", "kind": "momentum", "lookback": 5, "skip": 0, "transforms": ["zscore"]}
+    ],
     "alpha": {"method": "equal_weight"},
     "risk": {"type": "stat", "method": "ledoit_wolf"},
-    "optimizer": {"objective": "mean_variance", "gross_max": 1.0, "net_target": 0.0, "max_position": 0.4},
+    "optimizer": {
+        "objective": "mean_variance",
+        "gross_max": 1.0,
+        "net_target": 0.0,
+        "max_position": 0.4,
+    },
     "backtest": {"cov_lookback": 10, "min_cov_obs": 5, "cost_bps": 5.0, "periods_per_year": 365},
     "n_trials": 2,
 }
@@ -49,6 +61,7 @@ def test_config_validates():
 
 def test_template_config_parses_and_runs():
     import yaml
+
     with open(TEMPLATE, "r", encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
     cfg = XSConfig.model_validate(data)
@@ -68,10 +81,14 @@ def test_endpoint_config(client):
 
 
 def test_endpoint_optimize(client):
-    r = client.post("/api/xs/optimize", json={
-        "mu": {"A": 1, "B": 2, "C": 3}, "objective": "max_sharpe",
-        "constraints": {"net_target": 1.0},
-    })
+    r = client.post(
+        "/api/xs/optimize",
+        json={
+            "mu": {"A": 1, "B": 2, "C": 3},
+            "objective": "max_sharpe",
+            "constraints": {"net_target": 1.0},
+        },
+    )
     assert r.status_code == 200
     body = r.json()
     assert set(body["weights"]) == {"A", "B", "C"}
@@ -80,6 +97,7 @@ def test_endpoint_optimize(client):
 
 def test_endpoint_trust_report(client):
     import numpy as np
+
     rng = np.random.default_rng(0)
     rets = rng.normal(0.001, 0.01, 200).tolist()
     r = client.post("/api/xs/trust_report", json={"returns": rets, "n_trials": 100})
@@ -104,10 +122,15 @@ def test_endpoint_backtest(client):
 
 
 def test_endpoint_live_rebalance(client):
-    r = client.post("/api/xs/live/rebalance", json={
-        "target_weights": {"A": 0.5, "B": -0.5}, "equity": 100.0,
-        "limits": {"gross_max": 1.0}, "ts_ms": 1,
-    })
+    r = client.post(
+        "/api/xs/live/rebalance",
+        json={
+            "target_weights": {"A": 0.5, "B": -0.5},
+            "equity": 100.0,
+            "limits": {"gross_max": 1.0},
+            "ts_ms": 1,
+        },
+    )
     assert r.status_code == 200
     body = r.json()
     assert body["approved"] is True
@@ -129,11 +152,21 @@ def test_pro_integration_in_index_html():
     with open("index.html", "r", encoding="utf-8") as fh:
         html = fh.read()
     # native под-вкладки в нужных Pro-модулях
-    for panel in ("pro-model-panel-xsec", "pro-research-panel-xsec",
-                  "pro-backtest-panel-xsec", "pro-risk-panel-xsec", "pro-oms-panel-xsec"):
+    for panel in (
+        "pro-model-panel-xsec",
+        "pro-research-panel-xsec",
+        "pro-backtest-panel-xsec",
+        "pro-risk-panel-xsec",
+        "pro-oms-panel-xsec",
+    ):
         assert f'id="{panel}"' in html
-    for tab in ("tab-pro-model-xsec", "tab-pro-research-xsec", "tab-pro-backtest-xsec",
-                "tab-pro-risk-xsec", "tab-pro-oms-xsec"):
+    for tab in (
+        "tab-pro-model-xsec",
+        "tab-pro-research-xsec",
+        "tab-pro-backtest-xsec",
+        "tab-pro-risk-xsec",
+        "tab-pro-oms-xsec",
+    ):
         assert f'id="{tab}"' in html
     # каждый switcher знает про новую вкладку 'xsec'
     assert html.count("'xsec'") >= 10  # 5 массивов + 5 onclick
@@ -150,5 +183,6 @@ def test_pro_integration_in_index_html():
 # ---------------------------------------------------------------------------
 def test_cli_backtest_smoke():
     import script_xs_backtest as cli
+
     rc = cli.main(["--config", TEMPLATE])
     assert rc == 0

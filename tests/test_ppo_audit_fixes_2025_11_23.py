@@ -8,7 +8,7 @@ Tests cover two confirmed issues:
 All other issues (1,2,3,5,6) were false positives.
 
 Created: 2025-11-23
-Author: Claude Code (Anthropic)
+Author: Sultan Suyunbayev
 """
 
 import math
@@ -16,6 +16,7 @@ from typing import Any, Dict
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 
@@ -85,6 +86,7 @@ class TestPBTLearningRateApplication:
 
         # Apply exploited parameters
         from training_pbt_adversarial_integration import PBTTrainingCoordinator
+
         coordinator_instance = PBTTrainingCoordinator.__new__(PBTTrainingCoordinator)
         coordinator_instance.config = coordinator.config
 
@@ -93,8 +95,7 @@ class TestPBTLearningRateApplication:
         # Verify NEW learning rate was applied
         actual_lr = model.optimizer.param_groups[0]["lr"]
         assert abs(actual_lr - new_lr) < 1e-10, (
-            f"Expected LR={new_lr:.2e}, got LR={actual_lr:.2e}. "
-            "PBT learning rate NOT applied!"
+            f"Expected LR={new_lr:.2e}, got LR={actual_lr:.2e}. " "PBT learning rate NOT applied!"
         )
 
     def test_pbt_lr_applied_with_copy_strategy(self):
@@ -145,11 +146,12 @@ class TestPBTLearningRateApplication:
         old_optimizer_state = model.optimizer.state_dict()
         new_parameters = {
             "policy_state": {},
-            "optimizer_state": old_optimizer_state  # Include optimizer state
+            "optimizer_state": old_optimizer_state,  # Include optimizer state
         }
 
         # Apply exploited parameters
         from training_pbt_adversarial_integration import PBTTrainingCoordinator
+
         coordinator_instance = PBTTrainingCoordinator.__new__(PBTTrainingCoordinator)
         coordinator_instance.config = coordinator.config
 
@@ -204,9 +206,9 @@ class TestPBTLearningRateApplication:
 
         # Should fallback to current LR
         actual_lr = model.optimizer.param_groups[0]["lr"]
-        assert abs(actual_lr - current_lr) < 1e-10, (
-            f"Expected fallback LR={current_lr:.2e}, got LR={actual_lr:.2e}"
-        )
+        assert (
+            abs(actual_lr - current_lr) < 1e-10
+        ), f"Expected fallback LR={current_lr:.2e}, got LR={actual_lr:.2e}"
 
 
 # ==============================================================================
@@ -232,10 +234,12 @@ class TestTwinCriticsGradientMonitoring:
         # Create mock policy with Twin Critics
         policy = Mock()
         policy._use_twin_critics = True
-        policy.named_modules = Mock(return_value=[
-            ("value_head_critic1", Mock()),
-            ("value_head_critic2", Mock()),
-        ])
+        policy.named_modules = Mock(
+            return_value=[
+                ("value_head_critic1", Mock()),
+                ("value_head_critic2", Mock()),
+            ]
+        )
 
         # Create mock parameters with gradients
         param1 = torch.nn.Parameter(torch.randn(10, 10))
@@ -264,13 +268,13 @@ class TestTwinCriticsGradientMonitoring:
         logger = Mock()
 
         # Simulate gradient monitoring code (from distributional_ppo.py:11615-11658)
-        if getattr(policy, '_use_twin_critics', False):
+        if getattr(policy, "_use_twin_critics", False):
             critic1_grad_norm = 0.0
             critic2_grad_norm = 0.0
 
             for name, module in policy.named_modules():
-                is_critic1 = any(x in name for x in ['value_head_critic1', 'critic1'])
-                is_critic2 = any(x in name for x in ['value_head_critic2', 'critic2'])
+                is_critic1 = any(x in name for x in ["value_head_critic1", "critic1"])
+                is_critic2 = any(x in name for x in ["value_head_critic2", "critic2"])
 
                 if is_critic1 or is_critic2:
                     for param in module.parameters():
@@ -293,7 +297,9 @@ class TestTwinCriticsGradientMonitoring:
                 logger.record("train/critics_grad_ratio", float(ratio))
 
         # Verify logging calls
-        assert logger.record.call_count >= 3, "Should log critic1_grad_norm, critic2_grad_norm, critics_grad_ratio"
+        assert (
+            logger.record.call_count >= 3
+        ), "Should log critic1_grad_norm, critic2_grad_norm, critics_grad_ratio"
 
         # Extract logged values
         logged_values = {call[0][0]: call[0][1] for call in logger.record.call_args_list}
@@ -323,7 +329,9 @@ class TestTwinCriticsGradientMonitoring:
                 logger.record("warn/critics_grad_imbalance_ratio", float(ratio))
 
         # Verify warning was logged
-        logged_warnings = [call[0][0] for call in logger.record.call_args_list if "warn/" in call[0][0]]
+        logged_warnings = [
+            call[0][0] for call in logger.record.call_args_list if "warn/" in call[0][0]
+        ]
         assert "warn/twin_critics_gradient_imbalance" in logged_warnings
         assert "warn/critics_grad_imbalance_ratio" in logged_warnings
 
@@ -343,7 +351,9 @@ class TestTwinCriticsGradientMonitoring:
             logger.record("warn/critic2_vanishing_gradients", 1.0)
 
         # Verify warning
-        logged_warnings = [call[0][0] for call in logger.record.call_args_list if "warn/" in call[0][0]]
+        logged_warnings = [
+            call[0][0] for call in logger.record.call_args_list if "warn/" in call[0][0]
+        ]
         assert "warn/critic2_vanishing_gradients" in logged_warnings
 
 

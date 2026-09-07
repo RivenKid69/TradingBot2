@@ -51,8 +51,10 @@ logger = logging.getLogger(__name__)
 # Enums
 # =============================================================================
 
+
 class ThreatType(Enum):
     """Types of AI-specific security threats per Article 15(5)."""
+
     DATA_POISONING = "data_poisoning"
     MODEL_POISONING = "model_poisoning"
     ADVERSARIAL_EXAMPLE = "adversarial_example"
@@ -68,6 +70,7 @@ class ThreatType(Enum):
 
 class ThreatSeverity(Enum):
     """Severity levels for security threats."""
+
     LOW = 1
     MEDIUM = 2
     HIGH = 3
@@ -76,6 +79,7 @@ class ThreatSeverity(Enum):
 
 class ValidationStatus(Enum):
     """Status of input validation."""
+
     VALID = "valid"
     SUSPICIOUS = "suspicious"
     INVALID = "invalid"
@@ -84,6 +88,7 @@ class ValidationStatus(Enum):
 
 class AccessLevel(Enum):
     """Access control levels (higher value = more privileges)."""
+
     READ_ONLY = 1
     OPERATOR = 2
     DEVELOPER = 3
@@ -92,6 +97,7 @@ class AccessLevel(Enum):
 
 class SecurityEventType(Enum):
     """Types of security events."""
+
     AUTHENTICATION = "authentication"
     AUTHORIZATION = "authorization"
     INPUT_VALIDATION = "input_validation"
@@ -107,6 +113,7 @@ class SecurityEventType(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class SecurityThreat:
     """
@@ -114,6 +121,7 @@ class SecurityThreat:
 
     Documents detected or potential security threats.
     """
+
     threat_id: str
     threat_type: ThreatType
     severity: ThreatSeverity
@@ -165,6 +173,7 @@ class ValidationResult:
 
     Documents the result of input validation.
     """
+
     validation_id: str
     status: ValidationStatus
     input_type: str
@@ -202,6 +211,7 @@ class IntegrityRecord:
 
     Documents integrity verification of models and data.
     """
+
     record_id: str
     resource_type: str  # model, weights, data, config
     resource_path: str
@@ -244,6 +254,7 @@ class AccessRecord:
 
     Documents access to protected resources.
     """
+
     access_id: str
     user_id: str
     resource_type: str
@@ -282,6 +293,7 @@ class SecurityPolicy:
 
     Defines security rules and constraints.
     """
+
     policy_id: str
     name: str
     description: str
@@ -322,6 +334,7 @@ class SecurityEvent:
 
     Documents security-related events for audit.
     """
+
     event_id: str
     event_type: SecurityEventType
     severity: ThreatSeverity
@@ -359,15 +372,19 @@ class SecurityEvent:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class CybersecurityConfig:
     """
     Configuration for AI Act Cybersecurity module.
     """
+
     # Input validation
     enable_input_validation: bool = True
     max_input_size_mb: float = 100.0
-    allowed_input_types: List[str] = field(default_factory=lambda: ["float32", "float64", "int32", "int64"])
+    allowed_input_types: List[str] = field(
+        default_factory=lambda: ["float32", "float64", "int32", "int64"]
+    )
     input_range_min: float = -1e10
     input_range_max: float = 1e10
 
@@ -407,6 +424,7 @@ class CybersecurityConfig:
 # =============================================================================
 # Input Validator
 # =============================================================================
+
 
 class InputValidator:
     """
@@ -465,7 +483,9 @@ class InputValidator:
 
         # Check 3: Range
         result.checks_performed.append("range")
-        if np.all(data >= self.config.input_range_min) and np.all(data <= self.config.input_range_max):
+        if np.all(data >= self.config.input_range_min) and np.all(
+            data <= self.config.input_range_max
+        ):
             checks_passed.append("range")
         else:
             checks_failed.append("range")
@@ -586,6 +606,7 @@ class InputValidator:
 # Model Integrity Verifier
 # =============================================================================
 
+
 class ModelIntegrityVerifier:
     """
     Model integrity verification.
@@ -672,7 +693,9 @@ class ModelIntegrityVerifier:
             record.is_verified = False
             record.verification_result = "Hash mismatch"
             record.tampering_detected = True
-            record.tampering_details = f"Expected: {record.expected_hash[:16]}..., Got: {current_hash[:16]}..."
+            record.tampering_details = (
+                f"Expected: {record.expected_hash[:16]}..., Got: {current_hash[:16]}..."
+            )
             return False, "Model integrity check failed - possible tampering"
 
     def sign_model(
@@ -772,6 +795,7 @@ class ModelIntegrityVerifier:
 # Adversarial Detector
 # =============================================================================
 
+
 class AdversarialDetector:
     """
     Adversarial input detection.
@@ -841,12 +865,14 @@ class AdversarialDetector:
 
         # Store detection
         with self._lock:
-            self._detection_history.append({
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "is_adversarial": is_adversarial,
-                "confidence": max_score,
-                "details": details,
-            })
+            self._detection_history.append(
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "is_adversarial": is_adversarial,
+                    "confidence": max_score,
+                    "details": details,
+                }
+            )
             if len(self._detection_history) > 1000:
                 self._detection_history.pop(0)
 
@@ -909,6 +935,7 @@ class AdversarialDetector:
 # =============================================================================
 # Data Poisoning Detector
 # =============================================================================
+
 
 class DataPoisoningDetector:
     """
@@ -1011,16 +1038,21 @@ class DataPoisoningDetector:
         is_poisoned = max_deviation > threshold or avg_deviation > threshold * 0.5
         confidence = min(1.0, max_deviation)
 
-        return is_poisoned, confidence, {
-            "deviations": deviations,
-            "baseline_stats": baseline,
-            "new_stats": new_stats,
-        }
+        return (
+            is_poisoned,
+            confidence,
+            {
+                "deviations": deviations,
+                "baseline_stats": baseline,
+                "new_stats": new_stats,
+            },
+        )
 
 
 # =============================================================================
 # Access Control Manager
 # =============================================================================
+
 
 class AccessControlManager:
     """
@@ -1172,15 +1204,14 @@ class AccessControlManager:
             # Clean old attempts
             cutoff = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
             self._failed_attempts[user_id] = [
-                t for t in self._failed_attempts[user_id]
-                if t > cutoff
+                t for t in self._failed_attempts[user_id] if t > cutoff
             ]
 
             # Check if lockout needed
             if len(self._failed_attempts[user_id]) >= self.config.max_failed_attempts:
                 lockout_end = (
-                    datetime.now(timezone.utc) +
-                    timedelta(minutes=self.config.lockout_duration_minutes)
+                    datetime.now(timezone.utc)
+                    + timedelta(minutes=self.config.lockout_duration_minutes)
                 ).isoformat()
                 self._locked_users[user_id] = lockout_end
                 return True
@@ -1193,9 +1224,7 @@ class AccessControlManager:
             if user_id not in self._locked_users:
                 return False
 
-            lockout_end = datetime.fromisoformat(
-                self._locked_users[user_id].replace("Z", "+00:00")
-            )
+            lockout_end = datetime.fromisoformat(self._locked_users[user_id].replace("Z", "+00:00"))
             if datetime.now(timezone.utc) > lockout_end:
                 del self._locked_users[user_id]
                 return False
@@ -1259,6 +1288,7 @@ class AccessControlManager:
 # =============================================================================
 # Main Cybersecurity Class
 # =============================================================================
+
 
 class AIActCybersecurity:
     """
@@ -1346,7 +1376,11 @@ class AIActCybersecurity:
         # Log event
         self._log_security_event(
             event_type=SecurityEventType.INPUT_VALIDATION,
-            severity=ThreatSeverity.LOW if result.status == ValidationStatus.VALID else ThreatSeverity.MEDIUM,
+            severity=(
+                ThreatSeverity.LOW
+                if result.status == ValidationStatus.VALID
+                else ThreatSeverity.MEDIUM
+            ),
             description=f"Input validation: {result.status.value}",
             success=result.status == ValidationStatus.VALID,
             additional_data={
@@ -1570,10 +1604,13 @@ class AIActCybersecurity:
             threat.response_actions = actions_taken or []
             threat.investigation_status = "resolved"
 
-        self._log_event("threat_mitigated", {
-            "threat_id": threat_id,
-            "mitigation_details": mitigation_details,
-        })
+        self._log_event(
+            "threat_mitigated",
+            {
+                "threat_id": threat_id,
+                "mitigation_details": mitigation_details,
+            },
+        )
         return threat
 
     # =========================================================================
@@ -1653,9 +1690,7 @@ class AIActCybersecurity:
                 "access_control": self.config.enable_access_control,
                 "rate_limiting": self.config.enable_rate_limiting,
             },
-            "compliance_status": (
-                "compliant" if not critical_threats else "non-compliant"
-            ),
+            "compliance_status": ("compliant" if not critical_threats else "non-compliant"),
         }
 
     def generate_security_report(self) -> Dict[str, Any]:
@@ -1740,6 +1775,7 @@ class AIActCybersecurity:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_cybersecurity(
     config: Optional[Union[Dict[str, Any], CybersecurityConfig]] = None,

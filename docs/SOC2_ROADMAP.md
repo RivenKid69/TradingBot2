@@ -17,6 +17,7 @@
 This document outlines an **illustrative roadmap** toward SOC 2 Type II readiness, demonstrating our design intent for security, availability, processing integrity, and confidentiality controls for our B2B SaaS platform. Actual certification requires funding, auditor engagement, and successful completion of all phases.
 
 **Why SOC 2?**
+
 - Industry standard for B2B SaaS trust
 - Required by many enterprise clients
 - Demonstrates security maturity
@@ -60,6 +61,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 **Budget**: €15,000-25,000 (estimated, subject to vendor quotes)
 
 ### Objectives
+
 1. Identify current control environment
 2. Map existing controls to SOC 2 criteria
 3. Document gaps requiring remediation
@@ -67,6 +69,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 5. Create detailed project plan
 
 ### Deliverables
+
 - [ ] Gap assessment report
 - [ ] Control matrix with mapping
 - [ ] Remediation roadmap
@@ -86,6 +89,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 ### Control Areas to Assess
 
 **Security**
+
 - [ ] Access management (authentication, authorization)
 - [ ] Network security (firewalls, segmentation)
 - [ ] Data encryption (at rest, in transit)
@@ -94,6 +98,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 - [ ] Incident response procedures
 
 **Availability**
+
 - [ ] System monitoring
 - [ ] Capacity planning
 - [ ] Disaster recovery
@@ -101,6 +106,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 - [ ] SLA documentation
 
 **Processing Integrity**
+
 - [ ] Input validation
 - [ ] Processing controls
 - [ ] Output verification
@@ -108,6 +114,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 - [ ] Change management
 
 **Confidentiality**
+
 - [ ] Data classification
 - [ ] Access restrictions
 - [ ] Data handling procedures
@@ -191,6 +198,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 **Budget**: €25,000-40,000 (estimated, subject to auditor quotes)
 
 ### Objectives
+
 1. Verify control design adequacy
 2. Identify any remaining gaps
 3. Prepare for Type II observation
@@ -198,6 +206,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 ### Audit Preparation Checklist
 
 **Documentation Required**:
+
 - [ ] System description document
 - [ ] Control descriptions
 - [ ] Policies and procedures
@@ -206,6 +215,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 - [ ] Data flow diagrams
 
 **Evidence to Prepare**:
+
 - [ ] Access control lists
 - [ ] Change management records
 - [ ] Incident response documentation
@@ -216,6 +226,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 ### Auditor Selection
 
 **Criteria**:
+
 - AICPA licensed CPA firm
 - SOC 2 experience with fintech/SaaS
 - AWS cloud expertise
@@ -223,6 +234,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 - Reasonable pricing
 
 **Shortlist**:
+
 1. BDO
 2. Grant Thornton
 3. RSM
@@ -230,6 +242,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 5. A-LIGN
 
 ### Type I Report Contents
+
 - Independent auditor's opinion
 - Management assertion
 - Description of system
@@ -243,6 +256,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 **Duration**: Minimum 6 months (illustrative: October 2025 - March 2026, subject to Phase 3 completion)
 
 ### Objectives
+
 1. Demonstrate control operating effectiveness
 2. Collect continuous evidence
 3. Address any control exceptions
@@ -263,16 +277,19 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 ### Monthly Activities
 
 **Month 1-2 (Oct-Nov 2025)**
+
 - Establish evidence collection procedures
 - Begin continuous control monitoring
 - Address any immediate gaps
 
 **Month 3-4 (Dec 2025 - Jan 2026)**
+
 - Mid-period control testing
 - Remediate any exceptions
 - Prepare audit documentation
 
 **Month 5-6 (Feb-Mar 2026)**
+
 - Complete observation period
 - Final evidence compilation
 - Pre-audit review with auditor
@@ -304,6 +321,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 | 6 | Report drafting and review |
 
 ### Type II Report Contents
+
 - Independent auditor's opinion
 - Management assertion
 - Description of system
@@ -347,6 +365,7 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 ### Bridge Letters
 
 Between annual audits, provide bridge letters to clients confirming:
+
 - No material changes to controls
 - Continued compliance
 - Any significant incidents (if applicable)
@@ -397,15 +416,18 @@ Between annual audits, provide bridge letters to clients confirming:
 ## Appendix: SOC 2 Resources
 
 **AICPA Resources**
+
 - SOC 2 Reporting on an Examination of Controls
 - Trust Services Criteria (2017)
 
 **Tools for Compliance**
+
 - Vanta (compliance automation)
 - Drata (compliance automation)
 - Secureframe (compliance automation)
 
 **Auditor Directories**
+
 - AICPA Find a CPA
 - SOC Reports Directory
 

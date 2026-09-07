@@ -3,6 +3,7 @@
 The default implementation returns the current wall-clock time while also
 providing a simple testing hook for deterministic time sources.
 """
+
 from __future__ import annotations
 
 import time

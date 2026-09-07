@@ -6,6 +6,7 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 
 import pytest
@@ -16,7 +17,9 @@ if "stable_baselines3.common.save_util" not in sys.modules:
     # Ensure parent modules exist first
     sb3 = sys.modules.setdefault("stable_baselines3", types.ModuleType("stable_baselines3"))
     sb3.__path__ = []  # type: ignore[attr-defined]
-    common = sys.modules.setdefault("stable_baselines3.common", types.ModuleType("stable_baselines3.common"))
+    common = sys.modules.setdefault(
+        "stable_baselines3.common", types.ModuleType("stable_baselines3.common")
+    )
     common.__path__ = []  # type: ignore[attr-defined]
     sb3.common = common  # type: ignore[attr-defined]
 
@@ -69,6 +72,7 @@ if "stable_baselines3.common.save_util" not in sys.modules:
     class _RunningMeanStd:  # pragma: no cover - stub for import
         def __init__(self, shape=()):
             import numpy as np
+
             self.mean = np.zeros(shape, dtype=float)
             self.var = np.ones(shape, dtype=float)
             self.count = 0.0
@@ -90,6 +94,7 @@ if "stable_baselines3.common.save_util" not in sys.modules:
 import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are registered
 
 import distributional_ppo as distributional_ppo_module
+
 if "stable_baselines3.common.vec_env.base_vec_env" not in sys.modules:
     base_vec_env = types.ModuleType("stable_baselines3.common.vec_env.base_vec_env")
 
@@ -102,6 +107,7 @@ if "stable_baselines3.common.vec_env.base_vec_env" not in sys.modules:
 
     base_vec_env.VecEnv = _VecEnvStub
     base_vec_env.CloudpickleWrapper = _CloudpickleWrapperStub
+
     class _VecEnvWrapperStub(_VecEnvStub):  # pragma: no cover - placeholder wrapper
         def __init__(self, env: object) -> None:
             self.env = env
@@ -128,12 +134,14 @@ if "gymnasium.spaces.utils" not in sys.modules:
 
 gymnasium_module = sys.modules.get("gymnasium")
 if gymnasium_module is not None and not hasattr(gymnasium_module, "Env"):
+
     class _EnvBase:  # pragma: no cover - placeholder base env
         pass
 
     gymnasium_module.Env = _EnvBase
     spaces_module = getattr(gymnasium_module, "spaces", None)
     if spaces_module is not None and not hasattr(spaces_module, "Space"):
+
         class _SpaceBase:  # pragma: no cover - placeholder space
             pass
 
@@ -141,6 +149,7 @@ if gymnasium_module is not None and not hasattr(gymnasium_module, "Env"):
 
 # Ensure gymnasium.Wrapper exists (for wrappers.forex_env imports)
 if gymnasium_module is not None and not hasattr(gymnasium_module, "Wrapper"):
+
     class _WrapperBase:  # pragma: no cover - placeholder wrapper
         def __init__(self, env):
             self.env = env
@@ -177,21 +186,25 @@ if vec_env_module is None:
     vec_env_module = types.ModuleType("stable_baselines3.common.vec_env")
     sys.modules["stable_baselines3.common.vec_env"] = vec_env_module
 if not hasattr(vec_env_module, "VecEnv"):
+
     class _VecEnvBase:  # pragma: no cover - placeholder vec env
         pass
 
     vec_env_module.VecEnv = _VecEnvBase
 if not hasattr(vec_env_module, "DummyVecEnv"):
+
     class _DummyVecEnvStub(vec_env_module.VecEnv):  # type: ignore[attr-defined]
         pass
 
     vec_env_module.DummyVecEnv = _DummyVecEnvStub
 if not hasattr(vec_env_module, "SubprocVecEnv"):
+
     class _SubprocVecEnvStub(vec_env_module.VecEnv):  # type: ignore[attr-defined]
         pass
 
     vec_env_module.SubprocVecEnv = _SubprocVecEnvStub
 if not hasattr(vec_env_module, "VecMonitor"):
+
     class _VecMonitorStub(vec_env_module.VecEnv):  # type: ignore[attr-defined]
         def __init__(self, env):
             self.env = env
@@ -242,11 +255,15 @@ class _CaptureLogger:
     def __init__(self) -> None:
         self.records: dict[str, float] = {}
 
-    def record(self, key: str, value, **_: object) -> None:  # pragma: no cover - float cast in tests
+    def record(
+        self, key: str, value, **_: object
+    ) -> None:  # pragma: no cover - float cast in tests
         self.records[key] = value
 
 
-def test_popart_holdout_loader_returns_none_even_when_enabled(caplog: pytest.LogCaptureFixture) -> None:
+def test_popart_holdout_loader_returns_none_even_when_enabled(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     caplog.set_level("WARNING")
     cfg = {"enabled": True, "replay_path": "artifacts/popart_holdout.npz"}
 
@@ -264,7 +281,9 @@ def test_ensure_model_popart_holdout_loader_is_noop(caplog: pytest.LogCaptureFix
             self.calls: list[Any] = []
             self.logger = types.SimpleNamespace()
 
-        def _initialise_popart_controller(self, cfg: Any) -> None:  # pragma: no cover - should not run
+        def _initialise_popart_controller(
+            self, cfg: Any
+        ) -> None:  # pragma: no cover - should not run
             self.calls.append(cfg)
 
     algo = _AlgoStub()
@@ -277,7 +296,9 @@ def test_ensure_model_popart_holdout_loader_is_noop(caplog: pytest.LogCaptureFix
     assert any("PopArt controller configuration" in rec.message for rec in caplog.records)
 
 
-def test_distributionalppo_initialises_with_popart_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_distributionalppo_initialises_with_popart_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class _PolicyStub:
         uses_quantile_value_head = False
         quantile_huber_kappa = 1.0

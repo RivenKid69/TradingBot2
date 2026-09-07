@@ -35,8 +35,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class FunctionCriticality(Enum):
     """Criticality level of a business function."""
+
     CRITICAL = "critical"
     IMPORTANT = "important"
     STANDARD = "standard"  # Neither critical nor important
@@ -48,6 +50,7 @@ class ImpairmentType(Enum):
 
     Function is critical/important if disruption causes ANY of these.
     """
+
     FINANCIAL_PERFORMANCE = "financial_performance"  # Article 3(22)(a)
     SERVICE_SOUNDNESS = "service_soundness"  # Article 3(22)(b)
     REGULATORY_COMPLIANCE = "regulatory_compliance"  # Article 3(22)(c)
@@ -57,6 +60,7 @@ class ImpairmentType(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ThirdPartyProvider:
     """
@@ -64,6 +68,7 @@ class ThirdPartyProvider:
 
     Per Article 28 and Register of Information requirements.
     """
+
     provider_id: str = ""
     provider_name: str = ""
     provider_type: str = ""  # "exchange", "broker", "data_provider", "cloud", etc.
@@ -102,6 +107,7 @@ class ICTService:
 
     Maps ICT services to business functions per Article 8.
     """
+
     service_id: str = ""
     service_name: str = ""
     service_description: str = ""
@@ -128,6 +134,7 @@ class FunctionClassification:
 
     MUST be done BEFORE third-party risk assessment.
     """
+
     classification_id: str = ""
     classification_date: str = ""
 
@@ -178,18 +185,22 @@ class FunctionClassification:
     def _determine_criticality(self) -> None:
         """Determine function criticality based on impairment assessment."""
         # Function is critical/important if ANY criterion is True
-        if any([
-            self.impairs_financial_performance,
-            self.impairs_service_soundness,
-            self.impairs_regulatory_compliance,
-        ]):
-            # Distinguish between critical and important
-            # Critical: multiple criteria OR high financial impact
-            critical_count = sum([
+        if any(
+            [
                 self.impairs_financial_performance,
                 self.impairs_service_soundness,
                 self.impairs_regulatory_compliance,
-            ])
+            ]
+        ):
+            # Distinguish between critical and important
+            # Critical: multiple criteria OR high financial impact
+            critical_count = sum(
+                [
+                    self.impairs_financial_performance,
+                    self.impairs_service_soundness,
+                    self.impairs_regulatory_compliance,
+                ]
+            )
 
             if critical_count >= 2:
                 self.criticality = FunctionCriticality.CRITICAL
@@ -229,6 +240,7 @@ class FunctionClassification:
 # Default Platform Functions
 # =============================================================================
 
+
 def get_platform_functions() -> Dict[str, FunctionClassification]:
     """
     Get default function classifications for an algorithmic trading platform.
@@ -254,7 +266,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=["binance", "alpaca", "oanda", "ib"],
             classification_rationale="Core business function; disruption directly impacts revenue and compliance",
         ),
-
         "market_data": FunctionClassification(
             function_name="Market Data",
             function_description="Receiving real-time and historical market prices",
@@ -268,7 +279,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=["binance", "polygon", "alpaca", "yahoo"],
             classification_rationale="Essential input for all trading decisions",
         ),
-
         "risk_monitoring": FunctionClassification(
             function_name="Risk Monitoring",
             function_description="Monitoring positions, exposure, and risk limits in real-time",
@@ -283,7 +293,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=[],  # Internal function
             classification_rationale="Safety-critical function required by regulation",
         ),
-
         "kill_switch": FunctionClassification(
             function_name="Kill Switch",
             function_description="Emergency system to halt all trading activities",
@@ -297,7 +306,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=[],  # Internal function
             classification_rationale="Regulatory mandatory safety mechanism",
         ),
-
         "regulatory_reporting": FunctionClassification(
             function_name="Regulatory Reporting",
             function_description="Submitting transaction reports to regulators (RTS 22)",
@@ -310,7 +318,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=[],  # Typically internal or ARM
             classification_rationale="Direct regulatory obligation with penalty for non-compliance",
         ),
-
         "backtesting": FunctionClassification(
             function_name="Strategy Backtesting",
             function_description="Testing strategies on historical data",
@@ -322,7 +329,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=["polygon"],  # Historical data
             classification_rationale="Development/research function; not operationally critical",
         ),
-
         "model_training": FunctionClassification(
             function_name="AI Model Training",
             function_description="Training and updating machine learning models",
@@ -334,7 +340,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=[],  # Internal
             classification_rationale="Development function; can be delayed without operational impact",
         ),
-
         "user_authentication": FunctionClassification(
             function_name="User Authentication",
             function_description="User login and access control",
@@ -348,7 +353,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=[],  # Internal or IdP
             classification_rationale="Security-critical but can have fallback procedures",
         ),
-
         "audit_trail": FunctionClassification(
             function_name="Audit Trail Recording",
             function_description="Recording all trading decisions and actions",
@@ -361,7 +365,6 @@ def get_platform_functions() -> Dict[str, FunctionClassification]:
             third_party_providers=[],  # Internal
             classification_rationale="Regulatory requirement; short disruption acceptable with recovery",
         ),
-
         "position_reconciliation": FunctionClassification(
             function_name="Position Reconciliation",
             function_description="Reconciling positions with exchanges/brokers",
@@ -403,7 +406,6 @@ def get_ict_providers() -> Dict[str, ThirdPartyProvider]:
             risk_level="high",
             contract_type="standard_terms",
         ),
-
         "alpaca": ThirdPartyProvider(
             provider_name="Alpaca Securities LLC",
             provider_type="broker",
@@ -418,7 +420,6 @@ def get_ict_providers() -> Dict[str, ThirdPartyProvider]:
             risk_level="medium",
             contract_type="standard_terms",
         ),
-
         "polygon": ThirdPartyProvider(
             provider_name="Polygon.io Inc",
             provider_type="data_provider",
@@ -433,7 +434,6 @@ def get_ict_providers() -> Dict[str, ThirdPartyProvider]:
             risk_level="medium",
             contract_type="standard_terms",
         ),
-
         "oanda": ThirdPartyProvider(
             provider_name="OANDA Corporation",
             provider_type="forex_broker",
@@ -448,7 +448,6 @@ def get_ict_providers() -> Dict[str, ThirdPartyProvider]:
             risk_level="medium",
             contract_type="standard_terms",
         ),
-
         "ib": ThirdPartyProvider(
             provider_name="Interactive Brokers LLC",
             provider_type="broker",
@@ -463,7 +462,6 @@ def get_ict_providers() -> Dict[str, ThirdPartyProvider]:
             risk_level="medium",
             contract_type="standard_terms",
         ),
-
         "deribit": ThirdPartyProvider(
             provider_name="Deribit",
             provider_type="crypto_derivatives_exchange",
@@ -478,7 +476,6 @@ def get_ict_providers() -> Dict[str, ThirdPartyProvider]:
             risk_level="high",
             contract_type="standard_terms",
         ),
-
         "yahoo": ThirdPartyProvider(
             provider_name="Yahoo Finance",
             provider_type="data_provider",
@@ -499,6 +496,7 @@ def get_ict_providers() -> Dict[str, ThirdPartyProvider]:
 # =============================================================================
 # Function Classifier
 # =============================================================================
+
 
 class FunctionClassifier:
     """
@@ -585,9 +583,7 @@ class FunctionClassifier:
 
         self._functions[function_name.lower().replace(" ", "_")] = classification
 
-        logger.info(
-            f"Function classified: {function_name} -> {classification.criticality.value}"
-        )
+        logger.info(f"Function classified: {function_name} -> {classification.criticality.value}")
 
         return classification
 
@@ -612,11 +608,15 @@ class FunctionClassifier:
 
     def get_critical_functions(self) -> List[FunctionClassification]:
         """Get only critical functions."""
-        return [f for f in self._functions.values() if f.criticality == FunctionCriticality.CRITICAL]
+        return [
+            f for f in self._functions.values() if f.criticality == FunctionCriticality.CRITICAL
+        ]
 
     def get_important_functions(self) -> List[FunctionClassification]:
         """Get only important functions."""
-        return [f for f in self._functions.values() if f.criticality == FunctionCriticality.IMPORTANT]
+        return [
+            f for f in self._functions.values() if f.criticality == FunctionCriticality.IMPORTANT
+        ]
 
     def get_critical_or_important_functions(self) -> List[FunctionClassification]:
         """Get all critical or important functions."""
@@ -637,9 +637,7 @@ class FunctionClassifier:
         for name, provider in get_ict_providers().items():
             self._providers[name] = provider
 
-        logger.info(
-            f"Loaded {len(self._functions)} functions and {len(self._providers)} providers"
-        )
+        logger.info(f"Loaded {len(self._functions)} functions and {len(self._providers)} providers")
 
     def get_classification_summary(self) -> Dict[str, Any]:
         """
@@ -651,7 +649,9 @@ class FunctionClassifier:
         functions = list(self._functions.values())
 
         critical_count = sum(1 for f in functions if f.criticality == FunctionCriticality.CRITICAL)
-        important_count = sum(1 for f in functions if f.criticality == FunctionCriticality.IMPORTANT)
+        important_count = sum(
+            1 for f in functions if f.criticality == FunctionCriticality.IMPORTANT
+        )
         standard_count = sum(1 for f in functions if f.criticality == FunctionCriticality.STANDARD)
 
         critical_providers = self.get_providers_for_critical_functions()
@@ -661,7 +661,9 @@ class FunctionClassifier:
             "critical_count": critical_count,
             "important_count": important_count,
             "standard_count": standard_count,
-            "critical_or_important_ratio": (critical_count + important_count) / len(functions) if functions else 0,
+            "critical_or_important_ratio": (
+                (critical_count + important_count) / len(functions) if functions else 0
+            ),
             "critical_providers": critical_providers,
             "total_providers": len(self._providers),
         }
@@ -670,6 +672,7 @@ class FunctionClassifier:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_function_classifier() -> FunctionClassifier:
     """

@@ -20,6 +20,7 @@ import math
 import sys
 
 import pytest
+
 pytest.importorskip("torch")
 
 import test_distributional_ppo_raw_outliers  # noqa: F401
@@ -80,9 +81,9 @@ def test_quantile_huber_loss_extreme_kappa_values() -> None:
 
         # In quadratic region: loss = 0.5 * |tau - I| * error²
         expected_small = 0.5 * 0.5 * error_small**2
-        assert math.isclose(loss_small.item(), expected_small, rel_tol=1e-4), (
-            f"{description} (quadratic): Expected {expected_small:.8f}, got {loss_small.item():.8f}"
-        )
+        assert math.isclose(
+            loss_small.item(), expected_small, rel_tol=1e-4
+        ), f"{description} (quadratic): Expected {expected_small:.8f}, got {loss_small.item():.8f}"
 
         # Large error (linear region)
         error_large = kappa * 3.0
@@ -95,9 +96,9 @@ def test_quantile_huber_loss_extreme_kappa_values() -> None:
 
         # In linear region: loss = |tau - I| * kappa * (|error| - 0.5 * kappa)
         expected_large = 0.5 * kappa * (abs(error_large) - 0.5 * kappa)
-        assert math.isclose(loss_large.item(), expected_large, rel_tol=1e-4), (
-            f"{description} (linear): Expected {expected_large:.8f}, got {loss_large.item():.8f}"
-        )
+        assert math.isclose(
+            loss_large.item(), expected_large, rel_tol=1e-4
+        ), f"{description} (linear): Expected {expected_large:.8f}, got {loss_large.item():.8f}"
 
 
 def test_quantile_huber_loss_extreme_errors() -> None:
@@ -192,9 +193,9 @@ def test_quantile_huber_loss_negative_targets() -> None:
     # loss = 0.5 * 4.5 = 2.25
     expected = 0.5 * 1.0 * (5.0 - 0.5 * 1.0)
 
-    assert math.isclose(loss.item(), expected, rel_tol=1e-5), (
-        f"Expected {expected:.6f}, got {loss.item():.6f}"
-    )
+    assert math.isclose(
+        loss.item(), expected, rel_tol=1e-5
+    ), f"Expected {expected:.6f}, got {loss.item():.6f}"
 
 
 # ==============================================================================
@@ -221,6 +222,7 @@ def test_quantile_huber_loss_various_quantile_configurations() -> None:
     ]
 
     for levels, description in quantile_configs:
+
         class PolicyStub:
             device = torch.device("cpu")
 
@@ -263,6 +265,7 @@ def test_quantile_huber_loss_extreme_quantile_levels() -> None:
     ]
 
     for levels, description in extreme_configs:
+
         class PolicyStub:
             device = torch.device("cpu")
 
@@ -598,9 +601,9 @@ def test_quantile_huber_loss_with_various_target_shapes() -> None:
 
     # All losses should be identical
     for i, loss_val in enumerate(losses[1:], 1):
-        assert math.isclose(losses[0], loss_val, rel_tol=1e-6), (
-            f"Loss {i} differs: {losses[0]:.8f} vs {loss_val:.8f}"
-        )
+        assert math.isclose(
+            losses[0], loss_val, rel_tol=1e-6
+        ), f"Loss {i} differs: {losses[0]:.8f} vs {loss_val:.8f}"
 
 
 def test_quantile_huber_loss_indicator_correctness() -> None:
@@ -688,9 +691,9 @@ def test_quantile_huber_loss_symmetry_check() -> None:
     loss_neg = DistributionalPPO._quantile_huber_loss(algo, predicted_neg, targets_neg)
 
     # For median, should be symmetric
-    assert math.isclose(loss_pos.item(), loss_neg.item(), rel_tol=1e-5), (
-        f"Median should be symmetric: {loss_pos.item():.6f} vs {loss_neg.item():.6f}"
-    )
+    assert math.isclose(
+        loss_pos.item(), loss_neg.item(), rel_tol=1e-5
+    ), f"Median should be symmetric: {loss_pos.item():.6f} vs {loss_neg.item():.6f}"
 
     # Test 2: tau = 0.1 - should be asymmetric
     class PolicyStubAsym:
@@ -706,9 +709,9 @@ def test_quantile_huber_loss_symmetry_check() -> None:
     loss_neg_asym = DistributionalPPO._quantile_huber_loss(algo, predicted_neg, targets_neg)
 
     # For tau=0.1, should be asymmetric
-    assert not math.isclose(loss_pos_asym.item(), loss_neg_asym.item(), rel_tol=0.1), (
-        f"Should be asymmetric for tau=0.1: {loss_pos_asym.item():.6f} vs {loss_neg_asym.item():.6f}"
-    )
+    assert not math.isclose(
+        loss_pos_asym.item(), loss_neg_asym.item(), rel_tol=0.1
+    ), f"Should be asymmetric for tau=0.1: {loss_pos_asym.item():.6f} vs {loss_neg_asym.item():.6f}"
 
 
 # ==============================================================================
@@ -764,9 +767,9 @@ def test_quantile_huber_loss_manual_calculation_verification() -> None:
 
     loss = DistributionalPPO._quantile_huber_loss(algo, predicted, targets)
 
-    assert math.isclose(loss.item(), expected_loss, rel_tol=1e-5), (
-        f"Expected {expected_loss:.8f}, got {loss.item():.8f}"
-    )
+    assert math.isclose(
+        loss.item(), expected_loss, rel_tol=1e-5
+    ), f"Expected {expected_loss:.8f}, got {loss.item():.8f}"
 
 
 def test_quantile_huber_loss_no_kappa_division_comprehensive() -> None:
@@ -865,9 +868,7 @@ def test_quantile_huber_loss_matches_dopamine_implementation() -> None:
     algo.policy = PolicyStub()
 
     # Test with various inputs
-    predicted = torch.tensor(
-        [[0.5, 1.0, 1.5], [-0.5, 0.0, 0.5]], dtype=torch.float32
-    )
+    predicted = torch.tensor([[0.5, 1.0, 1.5], [-0.5, 0.0, 0.5]], dtype=torch.float32)
     targets = torch.tensor([[1.0], [0.0]], dtype=torch.float32)
 
     loss = DistributionalPPO._quantile_huber_loss(algo, predicted, targets)
@@ -906,9 +907,9 @@ def test_quantile_huber_loss_matches_dopamine_implementation() -> None:
 
     expected_loss = total_loss / num_samples
 
-    assert math.isclose(loss.item(), expected_loss, rel_tol=1e-5), (
-        f"Expected {expected_loss:.8f}, got {loss.item():.8f}"
-    )
+    assert math.isclose(
+        loss.item(), expected_loss, rel_tol=1e-5
+    ), f"Expected {expected_loss:.8f}, got {loss.item():.8f}"
 
 
 if __name__ == "__main__":

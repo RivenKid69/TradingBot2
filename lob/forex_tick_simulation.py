@@ -34,7 +34,7 @@ References:
 - Chaboud et al. (2014): "Rise of the Machines: Algorithmic Trading in FX"
 - BIS (2022): Triennial Central Bank Survey
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 
@@ -123,25 +123,29 @@ JUMP_PARAMS = {
 # Enums
 # =============================================================================
 
+
 class TickType(str, Enum):
     """Type of tick."""
-    QUOTE = "quote"          # Dealer quote update
-    TRADE = "trade"          # Executed trade
+
+    QUOTE = "quote"  # Dealer quote update
+    TRADE = "trade"  # Executed trade
     SPREAD_CHANGE = "spread_change"  # Spread adjustment
-    GAP = "gap"              # Price gap (news, weekend)
+    GAP = "gap"  # Price gap (news, weekend)
 
 
 class ExecutionQuality(str, Enum):
     """Execution quality indicator."""
+
     EXCELLENT = "excellent"  # Better than expected
-    GOOD = "good"           # At or near quote
-    FAIR = "fair"           # Minor slippage
-    POOR = "poor"           # Significant slippage
-    REJECTED = "rejected"   # Order rejected
+    GOOD = "good"  # At or near quote
+    FAIR = "fair"  # Minor slippage
+    POOR = "poor"  # Significant slippage
+    REJECTED = "rejected"  # Order rejected
 
 
 class MarketCondition(str, Enum):
     """Current market condition."""
+
     NORMAL = "normal"
     VOLATILE = "volatile"
     NEWS_EVENT = "news_event"
@@ -152,6 +156,7 @@ class MarketCondition(str, Enum):
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass
 class Tick:
@@ -171,6 +176,7 @@ class Tick:
         dealer_id: Source dealer (if applicable)
         sequence_num: Tick sequence number
     """
+
     timestamp_ns: int
     bid: float
     ask: float
@@ -229,6 +235,7 @@ class TickExecutionResult:
         market_moved_pips: Market movement during execution
         rejection_reason: Reason if rejected
     """
+
     filled: bool
     fill_price: float = 0.0
     fill_timestamp_ns: int = 0
@@ -266,6 +273,7 @@ class SpreadState:
 
     Tracks spread evolution and factors affecting it.
     """
+
     base_spread_pips: float
     current_spread_pips: float
     volatility_component: float = 0.0
@@ -283,7 +291,7 @@ class SpreadState:
             self.base_spread_pips
             + self.volatility_component
             + self.inventory_component
-            + self.news_component
+            + self.news_component,
         )
 
 
@@ -303,6 +311,7 @@ class TickSimulationConfig:
         latency_model: Latency distribution type
         seed: Random seed for reproducibility
     """
+
     pair_type: str = "major"
     session: str = "london"
     base_tick_rate: float = 3.0
@@ -321,6 +330,7 @@ class TickSimulationConfig:
 # =============================================================================
 # Tick Generator
 # =============================================================================
+
 
 class TickGenerator:
     """
@@ -433,7 +443,7 @@ class TickGenerator:
                 self._jump_start_ns = timestamp_ns
 
         # Update mid price
-        self._current_mid *= (1 + price_return)
+        self._current_mid *= 1 + price_return
 
         # Update spread
         self._update_spread(timestamp_ns, market_condition)
@@ -484,10 +494,7 @@ class TickGenerator:
         end_ns = start_timestamp_ns + int(duration_sec * 1e9)
 
         # Get tick rate for session
-        tick_rate = TICK_ARRIVAL_RATES.get(
-            self.config.session,
-            self.config.base_tick_rate
-        )
+        tick_rate = TICK_ARRIVAL_RATES.get(self.config.session, self.config.base_tick_rate)
 
         while current_ns < end_ns:
             # Inter-arrival time (exponential distribution)
@@ -517,13 +524,11 @@ class TickGenerator:
 
         # News component
         if market_condition == MarketCondition.NEWS_EVENT:
-            self._spread_state.news_component = (
-                params["base"] * (params["news_multiplier"] - 1.0)
-            )
+            self._spread_state.news_component = params["base"] * (params["news_multiplier"] - 1.0)
         elif self._spread_state.news_component > 0:
             # Decay news component
             decay = 0.1  # 10% per update
-            self._spread_state.news_component *= (1 - decay)
+            self._spread_state.news_component *= 1 - decay
             if self._spread_state.news_component < 0.01:
                 self._spread_state.news_component = 0.0
 
@@ -557,6 +562,7 @@ class TickGenerator:
 # =============================================================================
 # Tick-Level Execution Simulator
 # =============================================================================
+
 
 class TickLevelExecutor:
     """
@@ -723,10 +729,9 @@ class TickLevelExecutor:
         self._stats["total_slippage_pips"] += slippage_pips
 
         n = self._stats["filled_orders"]
-        self._stats["avg_latency_ms"] = (
-            (n - 1) / n * self._stats["avg_latency_ms"]
-            + latency_ns / 1_000_000.0 / n
-        )
+        self._stats["avg_latency_ms"] = (n - 1) / n * self._stats[
+            "avg_latency_ms"
+        ] + latency_ns / 1_000_000.0 / n
 
         return TickExecutionResult(
             filled=True,
@@ -871,9 +876,7 @@ class TickLevelExecutor:
         return {
             **self._stats,
             "fill_rate": filled / max(1, self._stats["total_orders"]) * 100,
-            "avg_slippage_pips": (
-                self._stats["total_slippage_pips"] / max(1, filled)
-            ),
+            "avg_slippage_pips": (self._stats["total_slippage_pips"] / max(1, filled)),
         }
 
     def reset_stats(self) -> None:
@@ -890,6 +893,7 @@ class TickLevelExecutor:
 # =============================================================================
 # Price Impact Model at Tick Level
 # =============================================================================
+
 
 class TickPriceImpact:
     """
@@ -1009,6 +1013,7 @@ class TickPriceImpact:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_tick_simulator(
     pair: str = "EUR_USD",

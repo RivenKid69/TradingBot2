@@ -8,6 +8,7 @@ This test suite provides complete coverage of the monitoring module including:
 - Alert management
 - Metrics snapshotting
 """
+
 import json
 import math
 import os
@@ -63,24 +64,14 @@ class TestClockSync:
 
     def test_report_clock_sync_success(self):
         """Test recording successful clock sync."""
-        report_clock_sync(
-            drift_ms=5.2,
-            rtt_ms=10.5,
-            success=True,
-            sync_ts=time.time() * 1000
-        )
+        report_clock_sync(drift_ms=5.2, rtt_ms=10.5, success=True, sync_ts=time.time() * 1000)
         age = clock_sync_age_seconds()
         assert age < 1.0  # Should be very recent
 
     def test_report_clock_sync_failure(self):
         """Test recording failed clock sync."""
         old_age = clock_sync_age_seconds()
-        report_clock_sync(
-            drift_ms=0.0,
-            rtt_ms=0.0,
-            success=False,
-            sync_ts=0
-        )
+        report_clock_sync(drift_ms=0.0, rtt_ms=0.0, success=False, sync_ts=0)
         # Age should not change after failed sync
         assert clock_sync_age_seconds() >= old_age
 
@@ -126,11 +117,7 @@ class TestKillSwitch:
 
     def test_configure_kill_switch_enabled(self):
         """Test enabling kill switch with thresholds."""
-        cfg = KillSwitchConfig(
-            feed_lag_ms=1000,
-            ws_failures=5,
-            error_rate=0.5
-        )
+        cfg = KillSwitchConfig(feed_lag_ms=1000, ws_failures=5, error_rate=0.5)
         configure_kill_switch(cfg)
         assert not kill_switch_triggered()
 
@@ -266,10 +253,7 @@ class TestMonitoringAggregator:
     @pytest.fixture
     def config(self):
         """Create monitoring config."""
-        return MonitoringConfig(
-            enabled=True,
-            snapshot_metrics_sec=60
-        )
+        return MonitoringConfig(enabled=True, snapshot_metrics_sec=60)
 
     @pytest.fixture
     def aggregator(self, config, alerts):
@@ -360,11 +344,7 @@ class TestMonitoringAggregator:
 
     def test_update_cooldowns(self, aggregator):
         """Test updating cooldowns."""
-        payload = {
-            "global": True,
-            "symbols": ["BTCUSDT", "ETHUSDT"],
-            "count": 2
-        }
+        payload = {"global": True, "symbols": ["BTCUSDT", "ETHUSDT"], "count": 2}
         aggregator.update_cooldowns(payload)
         assert aggregator.cooldowns_active["global"] is True
         assert len(aggregator.cooldowns_active["symbols"]) == 2
@@ -387,7 +367,7 @@ class TestMonitoringAggregator:
             modeled_cost_bps=2.0,
             realized_slippage_bps=2.5,
             cost_bias_bps=0.5,
-            bar_ts=int(time.time() * 1000)
+            bar_ts=int(time.time() * 1000),
         )
 
     def test_tick_and_flush(self, aggregator):
@@ -474,7 +454,9 @@ class TestEdgeCases:
         agg = MonitoringAggregator(cfg, alerts)
         assert agg.enabled is True
 
-    def test_record_with_none_values(self, ):
+    def test_record_with_none_values(
+        self,
+    ):
         """Test recording with None values."""
         cfg = MonitoringConfig(enabled=True)
         alerts = AlertManager()
@@ -501,27 +483,17 @@ class TestEdgeCases:
         agg = MonitoringAggregator(cfg, alerts)
 
         # Zero decisions
-        agg.record_bar_execution(
-            symbol="BTCUSDT",
-            decisions=0,
-            act_now=0,
-            turnover_usd=0.0
-        )
+        agg.record_bar_execution(symbol="BTCUSDT", decisions=0, act_now=0, turnover_usd=0.0)
 
         # Negative values
-        agg.record_bar_execution(
-            symbol="BTCUSDT",
-            decisions=10,
-            act_now=-5,
-            turnover_usd=-100.0
-        )
+        agg.record_bar_execution(symbol="BTCUSDT", decisions=10, act_now=-5, turnover_usd=-100.0)
 
         # Invalid values
         agg.record_bar_execution(
             symbol="BTCUSDT",
             decisions=10,
             act_now=20,  # More than decisions
-            turnover_usd=float('inf')
+            turnover_usd=float("inf"),
         )
 
 
@@ -546,7 +518,7 @@ class TestMetricsIO:
 
             # Check file exists
             if os.path.exists(agg._metrics_path):
-                with open(agg._metrics_path, 'r') as f:
+                with open(agg._metrics_path, "r") as f:
                     lines = f.readlines()
                     assert len(lines) > 0
 

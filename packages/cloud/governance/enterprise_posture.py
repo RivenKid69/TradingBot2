@@ -40,24 +40,28 @@ from uuid import uuid4
 # Enums and Constants
 # =============================================================================
 
+
 class EnterpriseDeploymentMode(str, Enum):
     """Supported enterprise deployment modes."""
-    SAAS = "saas"                      # Standard cloud-hosted
+
+    SAAS = "saas"  # Standard cloud-hosted
     ENTERPRISE_CLOUD = "enterprise_cloud"  # Cloud with enterprise features
-    ON_PREM_FULL = "on_prem_full"     # Complete on-premises
-    VPC_MANAGED = "vpc_managed"        # Customer VPC
-    AIR_GAPPED = "air_gapped"          # No external connectivity
+    ON_PREM_FULL = "on_prem_full"  # Complete on-premises
+    VPC_MANAGED = "vpc_managed"  # Customer VPC
+    AIR_GAPPED = "air_gapped"  # No external connectivity
 
 
 class TelemetryDestination(str, Enum):
     """Where telemetry data is sent."""
-    CLOUD = "cloud"                    # Vendor cloud (SaaS/Enterprise Cloud)
-    LOCAL = "local"                    # Local storage only
-    HYBRID = "hybrid"                  # Local + Cloud (VPC)
+
+    CLOUD = "cloud"  # Vendor cloud (SaaS/Enterprise Cloud)
+    LOCAL = "local"  # Local storage only
+    HYBRID = "hybrid"  # Local + Cloud (VPC)
 
 
 class KeyManagementType(str, Enum):
     """Key management options."""
+
     PLATFORM_MANAGED = "platform_managed"
     CUSTOMER_MANAGED = "customer_managed"
     HSM_BACKED = "hsm_backed"
@@ -66,13 +70,15 @@ class KeyManagementType(str, Enum):
 
 class UpdateSource(str, Enum):
     """Source for software updates."""
-    CLOUD = "cloud"                    # Direct from vendor cloud
+
+    CLOUD = "cloud"  # Direct from vendor cloud
     LOCAL_REGISTRY = "local_registry"  # Local registry mirror
-    OFFLINE = "offline"                # Manual offline updates
+    OFFLINE = "offline"  # Manual offline updates
 
 
 class PostureCheckResult(str, Enum):
     """Result of posture validation."""
+
     PASS = "pass"
     FAIL = "fail"
     WARNING = "warning"
@@ -81,6 +87,7 @@ class PostureCheckResult(str, Enum):
 
 class AuditAction(str, Enum):
     """Audit actions for posture changes."""
+
     MODE_CONFIGURED = "mode_configured"
     TELEMETRY_MODE_CHANGED = "telemetry_mode_changed"
     RAW_TELEMETRY_ENABLED = "raw_telemetry_enabled"
@@ -95,27 +102,48 @@ class AuditAction(str, Enum):
 # EU Regions
 EU_REGIONS: Set[str] = {
     # AWS
-    "eu-west-1", "eu-west-2", "eu-west-3",
-    "eu-central-1", "eu-central-2",
-    "eu-north-1", "eu-south-1", "eu-south-2",
+    "eu-west-1",
+    "eu-west-2",
+    "eu-west-3",
+    "eu-central-1",
+    "eu-central-2",
+    "eu-north-1",
+    "eu-south-1",
+    "eu-south-2",
     # GCP
-    "europe-west1", "europe-west2", "europe-west3",
-    "europe-west4", "europe-west6", "europe-west8", "europe-west9",
-    "europe-north1", "europe-central2",
+    "europe-west1",
+    "europe-west2",
+    "europe-west3",
+    "europe-west4",
+    "europe-west6",
+    "europe-west8",
+    "europe-west9",
+    "europe-north1",
+    "europe-central2",
     # Azure
-    "westeurope", "northeurope",
-    "germanywestcentral", "germanynorth",
-    "francecentral", "francesouth",
-    "swedencentral", "switzerlandnorth", "switzerlandwest",
-    "uksouth", "ukwest",
+    "westeurope",
+    "northeurope",
+    "germanywestcentral",
+    "germanynorth",
+    "francecentral",
+    "francesouth",
+    "swedencentral",
+    "switzerlandnorth",
+    "switzerlandwest",
+    "uksouth",
+    "ukwest",
     # Generic
-    "eu", "europe", "on-prem", "local",
+    "eu",
+    "europe",
+    "on-prem",
+    "local",
 }
 
 
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass
 class EnterprisePostureConfig:
@@ -124,6 +152,7 @@ class EnterprisePostureConfig:
 
     Defines the boundaries and constraints for the deployment.
     """
+
     config_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     organization_id: str = ""
@@ -179,7 +208,8 @@ class EnterprisePostureConfig:
             "raw_telemetry_enabled": self.raw_telemetry_enabled,
             "raw_telemetry_opt_in_date": (
                 self.raw_telemetry_opt_in_date.isoformat()
-                if self.raw_telemetry_opt_in_date else None
+                if self.raw_telemetry_opt_in_date
+                else None
             ),
             "raw_telemetry_opt_in_by": self.raw_telemetry_opt_in_by,
             "key_management": self.key_management.value,
@@ -203,6 +233,7 @@ class EnterprisePostureConfig:
 @dataclass
 class PostureCheck:
     """Result of a single posture check."""
+
     check_id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
     category: str = ""
@@ -228,6 +259,7 @@ class PostureCheck:
 @dataclass
 class PostureValidationReport:
     """Complete posture validation report."""
+
     report_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     config: Optional[EnterprisePostureConfig] = None
@@ -244,14 +276,17 @@ class PostureValidationReport:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "report_id": self.report_id,
-            "workspace_id": self.workspace_id,
-            "overall_result": self.overall_result.value,
-            "passed_count": self.passed_count,
-            "failed_count": self.failed_count,
-            "validated_at": self.validated_at.isoformat(),
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "report_id": self.report_id,
+                "workspace_id": self.workspace_id,
+                "overall_result": self.overall_result.value,
+                "passed_count": self.passed_count,
+                "failed_count": self.failed_count,
+                "validated_at": self.validated_at.isoformat(),
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     @property
@@ -278,6 +313,7 @@ class PostureValidationReport:
 @dataclass
 class TelemetryLocalModeConfig:
     """Configuration for telemetry local mode."""
+
     enabled: bool = True
     storage_path: str = "/data/telemetry"
     retention_days: int = 90
@@ -303,6 +339,7 @@ class TelemetryLocalModeConfig:
 @dataclass
 class EnterpriseEvidencePack:
     """Evidence pack for enterprise/air-gapped export."""
+
     pack_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     export_mode: str = "offline"  # offline, local, hybrid
@@ -321,13 +358,16 @@ class EnterpriseEvidencePack:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "pack_id": self.pack_id,
-            "workspace_id": self.workspace_id,
-            "export_mode": self.export_mode,
-            "exported_at": self.exported_at.isoformat(),
-            "artifacts_count": len(self.artifacts),
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "pack_id": self.pack_id,
+                "workspace_id": self.workspace_id,
+                "export_mode": self.export_mode,
+                "exported_at": self.exported_at.isoformat(),
+                "artifacts_count": len(self.artifacts),
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -350,6 +390,7 @@ class EnterpriseEvidencePack:
 @dataclass
 class PostureAuditEvent:
     """Audit event for posture changes."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     action: AuditAction = AuditAction.MODE_CONFIGURED
@@ -364,14 +405,17 @@ class PostureAuditEvent:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "workspace_id": self.workspace_id,
-            "action": self.action.value,
-            "actor_id": self.actor_id,
-            "timestamp": self.timestamp.isoformat(),
-            "result": self.result,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "workspace_id": self.workspace_id,
+                "action": self.action.value,
+                "actor_id": self.actor_id,
+                "timestamp": self.timestamp.isoformat(),
+                "result": self.result,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -390,6 +434,7 @@ class PostureAuditEvent:
 # =============================================================================
 # Telemetry Local Mode Service
 # =============================================================================
+
 
 class TelemetryLocalModeService:
     """
@@ -421,16 +466,18 @@ class TelemetryLocalModeService:
             self._configs[workspace_id] = config
 
         # Audit event
-        self._log_event(PostureAuditEvent(
-            workspace_id=workspace_id,
-            action=AuditAction.TELEMETRY_MODE_CHANGED,
-            actor_id=enabled_by,
-            details={
-                "mode": "local",
-                "cloud_export_blocked": True,
-                "storage_path": config.storage_path,
-            },
-        ))
+        self._log_event(
+            PostureAuditEvent(
+                workspace_id=workspace_id,
+                action=AuditAction.TELEMETRY_MODE_CHANGED,
+                actor_id=enabled_by,
+                details={
+                    "mode": "local",
+                    "cloud_export_blocked": True,
+                    "storage_path": config.storage_path,
+                },
+            )
+        )
 
         return config
 
@@ -448,16 +495,18 @@ class TelemetryLocalModeService:
                 config.cloud_export_blocked = False
 
         if config:
-            self._log_event(PostureAuditEvent(
-                workspace_id=workspace_id,
-                action=AuditAction.TELEMETRY_MODE_CHANGED,
-                actor_id=disabled_by,
-                details={
-                    "mode": "cloud",
-                    "cloud_export_blocked": False,
-                    "reason": reason,
-                },
-            ))
+            self._log_event(
+                PostureAuditEvent(
+                    workspace_id=workspace_id,
+                    action=AuditAction.TELEMETRY_MODE_CHANGED,
+                    actor_id=disabled_by,
+                    details={
+                        "mode": "cloud",
+                        "cloud_export_blocked": False,
+                        "reason": reason,
+                    },
+                )
+            )
 
         return config
 
@@ -513,6 +562,7 @@ class TelemetryLocalModeService:
 # =============================================================================
 # Enterprise Evidence Pack Exporter
 # =============================================================================
+
 
 class EnterpriseEvidencePackExporter:
     """
@@ -594,44 +644,50 @@ class EnterpriseEvidencePackExporter:
         if self._posture_service:
             posture_config = self._posture_service.get_config(workspace_id)
             if posture_config:
-                artifacts.append({
-                    "category": "posture_config",
-                    "filename": "posture_config.json",
-                    "content": posture_config.to_dict(),
-                    "content_hash": self._hash_content(posture_config.to_dict()),
-                })
+                artifacts.append(
+                    {
+                        "category": "posture_config",
+                        "filename": "posture_config.json",
+                        "content": posture_config.to_dict(),
+                        "content_hash": self._hash_content(posture_config.to_dict()),
+                    }
+                )
 
         # Residency evidence
         if self._residency_service:
             try:
-                if hasattr(self._residency_service, 'run_drift_check'):
+                if hasattr(self._residency_service, "run_drift_check"):
                     residency_report = self._residency_service.run_drift_check()
-                    artifacts.append({
-                        "category": "residency_evidence",
-                        "filename": "residency_drift_check.json",
-                        "content": (
-                            residency_report.to_dict()
-                            if hasattr(residency_report, 'to_dict')
-                            else residency_report
-                        ),
-                        "content_hash": self._hash_content(residency_report),
-                    })
+                    artifacts.append(
+                        {
+                            "category": "residency_evidence",
+                            "filename": "residency_drift_check.json",
+                            "content": (
+                                residency_report.to_dict()
+                                if hasattr(residency_report, "to_dict")
+                                else residency_report
+                            ),
+                            "content_hash": self._hash_content(residency_report),
+                        }
+                    )
             except Exception:
                 pass
 
         # Telemetry contracts
         if self._telemetry_contract_service:
             try:
-                if hasattr(self._telemetry_contract_service, 'export_contracts'):
+                if hasattr(self._telemetry_contract_service, "export_contracts"):
                     contracts = self._telemetry_contract_service.export_contracts(
                         workspace_id=workspace_id
                     )
-                    artifacts.append({
-                        "category": "telemetry_contracts",
-                        "filename": "telemetry_contracts.json",
-                        "content": contracts,
-                        "content_hash": self._hash_content(contracts),
-                    })
+                    artifacts.append(
+                        {
+                            "category": "telemetry_contracts",
+                            "filename": "telemetry_contracts.json",
+                            "content": contracts,
+                            "content_hash": self._hash_content(contracts),
+                        }
+                    )
             except Exception:
                 pass
 
@@ -644,16 +700,16 @@ class EnterpriseEvidencePackExporter:
                         continue  # Already handled
 
                     try:
-                        evidence = self._get_evidence_for_category(
-                            workspace_id, category
-                        )
+                        evidence = self._get_evidence_for_category(workspace_id, category)
                         if evidence:
-                            artifacts.append({
-                                "category": category,
-                                "filename": f"{category}.json",
-                                "content": evidence,
-                                "content_hash": self._hash_content(evidence),
-                            })
+                            artifacts.append(
+                                {
+                                    "category": category,
+                                    "filename": f"{category}.json",
+                                    "content": evidence,
+                                    "content_hash": self._hash_content(evidence),
+                                }
+                            )
                     except Exception:
                         pass
             except Exception:
@@ -672,14 +728,13 @@ class EnterpriseEvidencePackExporter:
             "categories": list(categories),
             "artifact_count": len(artifacts),
             "artifacts": [
-                {"filename": a["filename"], "hash": a["content_hash"]}
-                for a in artifacts
+                {"filename": a["filename"], "hash": a["content_hash"]} for a in artifacts
             ],
         }
 
         # Write to ZIP file
         zip_buffer = BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
             # Add manifest
             manifest_json = json.dumps(pack.manifest, indent=2, sort_keys=True)
             zf.writestr("manifest.json", manifest_json)
@@ -713,18 +768,20 @@ class EnterpriseEvidencePackExporter:
             self._packs[pack.pack_id] = pack
 
         # Audit event
-        self._log_event(PostureAuditEvent(
-            workspace_id=workspace_id,
-            action=AuditAction.EVIDENCE_EXPORTED,
-            actor_id=exported_by,
-            details={
-                "pack_id": pack.pack_id,
-                "export_mode": "offline",
-                "file_path": pack.file_path,
-                "file_size_bytes": pack.file_size_bytes,
-                "signed": sign,
-            },
-        ))
+        self._log_event(
+            PostureAuditEvent(
+                workspace_id=workspace_id,
+                action=AuditAction.EVIDENCE_EXPORTED,
+                actor_id=exported_by,
+                details={
+                    "pack_id": pack.pack_id,
+                    "export_mode": "offline",
+                    "file_path": pack.file_path,
+                    "file_size_bytes": pack.file_size_bytes,
+                    "signed": sign,
+                },
+            )
+        )
 
         return pack
 
@@ -755,23 +812,27 @@ class EnterpriseEvidencePackExporter:
             verification["content_hash"] = content_hash
 
             # Open and verify structure
-            with zipfile.ZipFile(BytesIO(zip_content), 'r') as zf:
+            with zipfile.ZipFile(BytesIO(zip_content), "r") as zf:
                 # Check manifest
                 if "manifest.json" not in zf.namelist():
-                    verification["checks"].append({
-                        "name": "manifest_present",
-                        "passed": False,
-                        "message": "Manifest not found",
-                    })
+                    verification["checks"].append(
+                        {
+                            "name": "manifest_present",
+                            "passed": False,
+                            "message": "Manifest not found",
+                        }
+                    )
                     return False, verification
 
-                verification["checks"].append({
-                    "name": "manifest_present",
-                    "passed": True,
-                })
+                verification["checks"].append(
+                    {
+                        "name": "manifest_present",
+                        "passed": True,
+                    }
+                )
 
                 # Read manifest
-                manifest_content = zf.read("manifest.json").decode('utf-8')
+                manifest_content = zf.read("manifest.json").decode("utf-8")
                 manifest = json.loads(manifest_content)
                 verification["manifest"] = manifest
 
@@ -783,11 +844,13 @@ class EnterpriseEvidencePackExporter:
 
                     artifact_path = f"artifacts/{filename}"
                     if artifact_path not in zf.namelist():
-                        verification["checks"].append({
-                            "name": f"artifact_{filename}",
-                            "passed": False,
-                            "message": f"Artifact not found: {filename}",
-                        })
+                        verification["checks"].append(
+                            {
+                                "name": f"artifact_{filename}",
+                                "passed": False,
+                                "message": f"Artifact not found: {filename}",
+                            }
+                        )
                         all_valid = False
                         continue
 
@@ -795,16 +858,20 @@ class EnterpriseEvidencePackExporter:
                     actual_hash = f"sha256:{hashlib.sha256(artifact_content).hexdigest()}"
 
                     if actual_hash == expected_hash:
-                        verification["checks"].append({
-                            "name": f"artifact_{filename}",
-                            "passed": True,
-                        })
+                        verification["checks"].append(
+                            {
+                                "name": f"artifact_{filename}",
+                                "passed": True,
+                            }
+                        )
                     else:
-                        verification["checks"].append({
-                            "name": f"artifact_{filename}",
-                            "passed": False,
-                            "message": f"Hash mismatch: expected {expected_hash}, got {actual_hash}",
-                        })
+                        verification["checks"].append(
+                            {
+                                "name": f"artifact_{filename}",
+                                "passed": False,
+                                "message": f"Hash mismatch: expected {expected_hash}, got {actual_hash}",
+                            }
+                        )
                         all_valid = False
 
                 verification["all_artifacts_valid"] = all_valid
@@ -822,14 +889,10 @@ class EnterpriseEvidencePackExporter:
                             manifest_content = zf.read("manifest.json")
 
                             # Load public key
-                            public_key = load_public_key(
-                                Path(public_key_path).read_text()
-                            )
+                            public_key = load_public_key(Path(public_key_path).read_text())
 
                             # Verify signature over manifest
-                            sig_valid = verify_signature(
-                                manifest_content, signature, public_key
-                            )
+                            sig_valid = verify_signature(manifest_content, signature, public_key)
 
                             verification["signature_verification"] = {
                                 "verified": sig_valid,
@@ -839,26 +902,32 @@ class EnterpriseEvidencePackExporter:
 
                             if not sig_valid:
                                 all_valid = False
-                                verification["checks"].append({
-                                    "name": "signature_verification",
-                                    "passed": False,
-                                    "message": "Evidence pack signature invalid",
-                                })
+                                verification["checks"].append(
+                                    {
+                                        "name": "signature_verification",
+                                        "passed": False,
+                                        "message": "Evidence pack signature invalid",
+                                    }
+                                )
                             else:
-                                verification["checks"].append({
-                                    "name": "signature_verification",
-                                    "passed": True,
-                                })
+                                verification["checks"].append(
+                                    {
+                                        "name": "signature_verification",
+                                        "passed": True,
+                                    }
+                                )
                         else:
                             verification["signature_verification"] = {
                                 "verified": False,
                                 "error": "No signature file in evidence pack",
                             }
-                            verification["checks"].append({
-                                "name": "signature_verification",
-                                "passed": False,
-                                "message": "Evidence pack not signed",
-                            })
+                            verification["checks"].append(
+                                {
+                                    "name": "signature_verification",
+                                    "passed": False,
+                                    "message": "Evidence pack not signed",
+                                }
+                            )
                     except ImportError:
                         verification["signature_verification"] = {
                             "verified": False,
@@ -954,6 +1023,7 @@ class EnterpriseEvidencePackExporter:
 # Enterprise Posture Validator
 # =============================================================================
 
+
 class EnterprisePostureValidator:
     """
     Validates enterprise deployment posture against requirements.
@@ -1031,18 +1101,20 @@ class EnterprisePostureValidator:
             self._reports[report.report_id] = report
 
         # Audit event
-        self._log_event(PostureAuditEvent(
-            workspace_id=config.workspace_id,
-            action=AuditAction.POSTURE_VALIDATED,
-            actor_id=validated_by,
-            details={
-                "report_id": report.report_id,
-                "overall_result": report.overall_result.value,
-                "passed_count": report.passed_count,
-                "failed_count": report.failed_count,
-                "is_compliant": report.is_compliant,
-            },
-        ))
+        self._log_event(
+            PostureAuditEvent(
+                workspace_id=config.workspace_id,
+                action=AuditAction.POSTURE_VALIDATED,
+                actor_id=validated_by,
+                details={
+                    "report_id": report.report_id,
+                    "overall_result": report.overall_result.value,
+                    "passed_count": report.passed_count,
+                    "failed_count": report.failed_count,
+                    "is_compliant": report.is_compliant,
+                },
+            )
+        )
 
         return report
 
@@ -1054,44 +1126,44 @@ class EnterprisePostureValidator:
         checks = []
 
         # Check data residency setting
-        checks.append(PostureCheck(
-            name="data_residency_eu",
-            category="residency",
-            result=(
-                PostureCheckResult.PASS
-                if config.data_residency in ["eu", "on-prem", "local"]
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                f"Data residency set to: {config.data_residency}"
-                if config.data_residency in ["eu", "on-prem", "local"]
-                else f"Non-EU data residency detected: {config.data_residency}"
-            ),
-            details={"data_residency": config.data_residency},
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="data_residency_eu",
+                category="residency",
+                result=(
+                    PostureCheckResult.PASS
+                    if config.data_residency in ["eu", "on-prem", "local"]
+                    else PostureCheckResult.FAIL
+                ),
+                message=(
+                    f"Data residency set to: {config.data_residency}"
+                    if config.data_residency in ["eu", "on-prem", "local"]
+                    else f"Non-EU data residency detected: {config.data_residency}"
+                ),
+                details={"data_residency": config.data_residency},
+                required=True,
+            )
+        )
 
         # Check infrastructure regions
         non_eu_regions = config.infrastructure_regions - EU_REGIONS
-        checks.append(PostureCheck(
-            name="infrastructure_regions_eu",
-            category="residency",
-            result=(
-                PostureCheckResult.PASS
-                if not non_eu_regions
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                f"All infrastructure regions are EU: {config.infrastructure_regions}"
-                if not non_eu_regions
-                else f"Non-EU regions detected: {non_eu_regions}"
-            ),
-            details={
-                "regions": list(config.infrastructure_regions),
-                "non_eu_regions": list(non_eu_regions),
-            },
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="infrastructure_regions_eu",
+                category="residency",
+                result=(PostureCheckResult.PASS if not non_eu_regions else PostureCheckResult.FAIL),
+                message=(
+                    f"All infrastructure regions are EU: {config.infrastructure_regions}"
+                    if not non_eu_regions
+                    else f"Non-EU regions detected: {non_eu_regions}"
+                ),
+                details={
+                    "regions": list(config.infrastructure_regions),
+                    "non_eu_regions": list(non_eu_regions),
+                },
+                required=True,
+            )
+        )
 
         return checks
 
@@ -1106,11 +1178,13 @@ class EnterprisePostureValidator:
         valid_destinations = {
             EnterpriseDeploymentMode.SAAS: {TelemetryDestination.CLOUD},
             EnterpriseDeploymentMode.ENTERPRISE_CLOUD: {
-                TelemetryDestination.CLOUD, TelemetryDestination.HYBRID
+                TelemetryDestination.CLOUD,
+                TelemetryDestination.HYBRID,
             },
             EnterpriseDeploymentMode.ON_PREM_FULL: {TelemetryDestination.LOCAL},
             EnterpriseDeploymentMode.VPC_MANAGED: {
-                TelemetryDestination.LOCAL, TelemetryDestination.HYBRID
+                TelemetryDestination.LOCAL,
+                TelemetryDestination.HYBRID,
             },
             EnterpriseDeploymentMode.AIR_GAPPED: {TelemetryDestination.LOCAL},
         }
@@ -1118,24 +1192,26 @@ class EnterprisePostureValidator:
         expected = valid_destinations.get(config.deployment_mode, set())
         is_valid = config.telemetry_destination in expected
 
-        checks.append(PostureCheck(
-            name="telemetry_destination_valid",
-            category="telemetry",
-            result=PostureCheckResult.PASS if is_valid else PostureCheckResult.FAIL,
-            message=(
-                f"Telemetry destination {config.telemetry_destination.value} "
-                f"valid for {config.deployment_mode.value}"
-                if is_valid
-                else f"Telemetry destination {config.telemetry_destination.value} "
-                     f"not valid for {config.deployment_mode.value}. Expected: {expected}"
-            ),
-            details={
-                "destination": config.telemetry_destination.value,
-                "mode": config.deployment_mode.value,
-                "expected": [d.value for d in expected],
-            },
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="telemetry_destination_valid",
+                category="telemetry",
+                result=PostureCheckResult.PASS if is_valid else PostureCheckResult.FAIL,
+                message=(
+                    f"Telemetry destination {config.telemetry_destination.value} "
+                    f"valid for {config.deployment_mode.value}"
+                    if is_valid
+                    else f"Telemetry destination {config.telemetry_destination.value} "
+                    f"not valid for {config.deployment_mode.value}. Expected: {expected}"
+                ),
+                details={
+                    "destination": config.telemetry_destination.value,
+                    "mode": config.deployment_mode.value,
+                    "expected": [d.value for d in expected],
+                },
+                required=True,
+            )
+        )
 
         return checks
 
@@ -1158,25 +1234,27 @@ class EnterprisePostureValidator:
             KeyManagementType.PKCS11,
         ]
 
-        checks.append(PostureCheck(
-            name="key_management_appropriate",
-            category="security",
-            result=(
-                PostureCheckResult.PASS
-                if not cmk_required or has_cmk
-                else PostureCheckResult.WARNING
-            ),
-            message=(
-                f"Key management: {config.key_management.value}"
-                if not cmk_required or has_cmk
-                else "Customer-managed keys recommended for on-prem/air-gapped"
-            ),
-            details={
-                "key_management": config.key_management.value,
-                "cmk_provider": config.cmk_provider,
-            },
-            required=False,  # Warning only
-        ))
+        checks.append(
+            PostureCheck(
+                name="key_management_appropriate",
+                category="security",
+                result=(
+                    PostureCheckResult.PASS
+                    if not cmk_required or has_cmk
+                    else PostureCheckResult.WARNING
+                ),
+                message=(
+                    f"Key management: {config.key_management.value}"
+                    if not cmk_required or has_cmk
+                    else "Customer-managed keys recommended for on-prem/air-gapped"
+                ),
+                details={
+                    "key_management": config.key_management.value,
+                    "cmk_provider": config.cmk_provider,
+                },
+                required=False,  # Warning only
+            )
+        )
 
         return checks
 
@@ -1188,42 +1266,44 @@ class EnterprisePostureValidator:
         checks = []
 
         # Telemetry should be local only
-        checks.append(PostureCheck(
-            name="telemetry_local_only",
-            category="telemetry",
-            result=(
-                PostureCheckResult.PASS
-                if config.telemetry_local_only
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                "Telemetry local mode enabled"
-                if config.telemetry_local_only
-                else "Telemetry local mode must be enabled for on-prem/air-gapped"
-            ),
-            details={"telemetry_local_only": config.telemetry_local_only},
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="telemetry_local_only",
+                category="telemetry",
+                result=(
+                    PostureCheckResult.PASS
+                    if config.telemetry_local_only
+                    else PostureCheckResult.FAIL
+                ),
+                message=(
+                    "Telemetry local mode enabled"
+                    if config.telemetry_local_only
+                    else "Telemetry local mode must be enabled for on-prem/air-gapped"
+                ),
+                details={"telemetry_local_only": config.telemetry_local_only},
+                required=True,
+            )
+        )
 
         # Cloud export should be disabled
-        checks.append(PostureCheck(
-            name="cloud_export_disabled",
-            category="telemetry",
-            result=(
-                PostureCheckResult.PASS
-                if not config.telemetry_cloud_export_enabled
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                "Cloud telemetry export disabled"
-                if not config.telemetry_cloud_export_enabled
-                else "Cloud telemetry export must be disabled for on-prem/air-gapped"
-            ),
-            details={
-                "telemetry_cloud_export_enabled": config.telemetry_cloud_export_enabled
-            },
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="cloud_export_disabled",
+                category="telemetry",
+                result=(
+                    PostureCheckResult.PASS
+                    if not config.telemetry_cloud_export_enabled
+                    else PostureCheckResult.FAIL
+                ),
+                message=(
+                    "Cloud telemetry export disabled"
+                    if not config.telemetry_cloud_export_enabled
+                    else "Cloud telemetry export must be disabled for on-prem/air-gapped"
+                ),
+                details={"telemetry_cloud_export_enabled": config.telemetry_cloud_export_enabled},
+                required=True,
+            )
+        )
 
         return checks
 
@@ -1234,43 +1314,47 @@ class EnterprisePostureValidator:
         """Check local evidence export configuration."""
         checks = []
 
-        checks.append(PostureCheck(
-            name="evidence_export_local",
-            category="evidence",
-            result=(
-                PostureCheckResult.PASS
-                if config.evidence_export_local_only
-                else PostureCheckResult.WARNING
-            ),
-            message=(
-                "Evidence export configured for local only"
-                if config.evidence_export_local_only
-                else "Evidence export should be local for on-prem"
-            ),
-            details={
-                "evidence_export_local_only": config.evidence_export_local_only,
-                "evidence_export_path": config.evidence_export_path,
-            },
-            required=False,
-        ))
-
-        # Check export path is set
-        if config.evidence_export_local_only:
-            checks.append(PostureCheck(
-                name="evidence_export_path_set",
+        checks.append(
+            PostureCheck(
+                name="evidence_export_local",
                 category="evidence",
                 result=(
                     PostureCheckResult.PASS
-                    if config.evidence_export_path
-                    else PostureCheckResult.FAIL
+                    if config.evidence_export_local_only
+                    else PostureCheckResult.WARNING
                 ),
                 message=(
-                    f"Evidence export path: {config.evidence_export_path}"
-                    if config.evidence_export_path
-                    else "Evidence export path must be set for local export"
+                    "Evidence export configured for local only"
+                    if config.evidence_export_local_only
+                    else "Evidence export should be local for on-prem"
                 ),
-                required=True,
-            ))
+                details={
+                    "evidence_export_local_only": config.evidence_export_local_only,
+                    "evidence_export_path": config.evidence_export_path,
+                },
+                required=False,
+            )
+        )
+
+        # Check export path is set
+        if config.evidence_export_local_only:
+            checks.append(
+                PostureCheck(
+                    name="evidence_export_path_set",
+                    category="evidence",
+                    result=(
+                        PostureCheckResult.PASS
+                        if config.evidence_export_path
+                        else PostureCheckResult.FAIL
+                    ),
+                    message=(
+                        f"Evidence export path: {config.evidence_export_path}"
+                        if config.evidence_export_path
+                        else "Evidence export path must be set for local export"
+                    ),
+                    required=True,
+                )
+            )
 
         return checks
 
@@ -1282,59 +1366,57 @@ class EnterprisePostureValidator:
         checks = []
 
         # Air-gapped flag
-        checks.append(PostureCheck(
-            name="air_gapped_enabled",
-            category="air_gapped",
-            result=(
-                PostureCheckResult.PASS
-                if config.air_gapped
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                "Air-gapped mode enabled"
-                if config.air_gapped
-                else "Air-gapped mode must be enabled"
-            ),
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="air_gapped_enabled",
+                category="air_gapped",
+                result=(PostureCheckResult.PASS if config.air_gapped else PostureCheckResult.FAIL),
+                message=(
+                    "Air-gapped mode enabled"
+                    if config.air_gapped
+                    else "Air-gapped mode must be enabled"
+                ),
+                required=True,
+            )
+        )
 
         # Offline verification
-        checks.append(PostureCheck(
-            name="offline_verification",
-            category="air_gapped",
-            result=(
-                PostureCheckResult.PASS
-                if config.offline_verification_enabled
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                "Offline verification enabled"
-                if config.offline_verification_enabled
-                else "Offline verification must be enabled for air-gapped"
-            ),
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="offline_verification",
+                category="air_gapped",
+                result=(
+                    PostureCheckResult.PASS
+                    if config.offline_verification_enabled
+                    else PostureCheckResult.FAIL
+                ),
+                message=(
+                    "Offline verification enabled"
+                    if config.offline_verification_enabled
+                    else "Offline verification must be enabled for air-gapped"
+                ),
+                required=True,
+            )
+        )
 
         # Update source must be offline
-        checks.append(PostureCheck(
-            name="update_source_offline",
-            category="air_gapped",
-            result=(
-                PostureCheckResult.PASS
-                if config.update_source in [
-                    UpdateSource.LOCAL_REGISTRY, UpdateSource.OFFLINE
-                ]
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                f"Update source: {config.update_source.value}"
-                if config.update_source in [
-                    UpdateSource.LOCAL_REGISTRY, UpdateSource.OFFLINE
-                ]
-                else "Update source must be local/offline for air-gapped"
-            ),
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="update_source_offline",
+                category="air_gapped",
+                result=(
+                    PostureCheckResult.PASS
+                    if config.update_source in [UpdateSource.LOCAL_REGISTRY, UpdateSource.OFFLINE]
+                    else PostureCheckResult.FAIL
+                ),
+                message=(
+                    f"Update source: {config.update_source.value}"
+                    if config.update_source in [UpdateSource.LOCAL_REGISTRY, UpdateSource.OFFLINE]
+                    else "Update source must be local/offline for air-gapped"
+                ),
+                required=True,
+            )
+        )
 
         return checks
 
@@ -1352,45 +1434,46 @@ class EnterprisePostureValidator:
             EnterpriseDeploymentMode.VPC_MANAGED,
         ]
 
-        checks.append(PostureCheck(
-            name="raw_telemetry_enterprise_only",
-            category="telemetry",
-            result=(
-                PostureCheckResult.PASS
-                if is_enterprise
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                "RAW telemetry enabled for enterprise deployment"
-                if is_enterprise
-                else "RAW telemetry only available for enterprise deployments"
-            ),
-            required=True,
-        ))
+        checks.append(
+            PostureCheck(
+                name="raw_telemetry_enterprise_only",
+                category="telemetry",
+                result=(PostureCheckResult.PASS if is_enterprise else PostureCheckResult.FAIL),
+                message=(
+                    "RAW telemetry enabled for enterprise deployment"
+                    if is_enterprise
+                    else "RAW telemetry only available for enterprise deployments"
+                ),
+                required=True,
+            )
+        )
 
         # Opt-in must be recorded
-        checks.append(PostureCheck(
-            name="raw_telemetry_opt_in_recorded",
-            category="telemetry",
-            result=(
-                PostureCheckResult.PASS
-                if config.raw_telemetry_opt_in_date and config.raw_telemetry_opt_in_by
-                else PostureCheckResult.FAIL
-            ),
-            message=(
-                f"RAW telemetry opt-in recorded: {config.raw_telemetry_opt_in_date}"
-                if config.raw_telemetry_opt_in_date
-                else "RAW telemetry requires explicit opt-in record"
-            ),
-            details={
-                "opt_in_date": (
-                    config.raw_telemetry_opt_in_date.isoformat()
-                    if config.raw_telemetry_opt_in_date else None
+        checks.append(
+            PostureCheck(
+                name="raw_telemetry_opt_in_recorded",
+                category="telemetry",
+                result=(
+                    PostureCheckResult.PASS
+                    if config.raw_telemetry_opt_in_date and config.raw_telemetry_opt_in_by
+                    else PostureCheckResult.FAIL
                 ),
-                "opt_in_by": config.raw_telemetry_opt_in_by,
-            },
-            required=True,
-        ))
+                message=(
+                    f"RAW telemetry opt-in recorded: {config.raw_telemetry_opt_in_date}"
+                    if config.raw_telemetry_opt_in_date
+                    else "RAW telemetry requires explicit opt-in record"
+                ),
+                details={
+                    "opt_in_date": (
+                        config.raw_telemetry_opt_in_date.isoformat()
+                        if config.raw_telemetry_opt_in_date
+                        else None
+                    ),
+                    "opt_in_by": config.raw_telemetry_opt_in_by,
+                },
+                required=True,
+            )
+        )
 
         return checks
 
@@ -1427,6 +1510,7 @@ class EnterprisePostureValidator:
 # Enterprise Posture Service
 # =============================================================================
 
+
 class EnterprisePostureService:
     """
     Main service for enterprise deployment posture management.
@@ -1459,9 +1543,7 @@ class EnterprisePostureService:
         self._events: List[PostureAuditEvent] = []
 
         # Sub-services
-        self._telemetry_local_mode = TelemetryLocalModeService(
-            on_event=self._handle_event
-        )
+        self._telemetry_local_mode = TelemetryLocalModeService(on_event=self._handle_event)
         self._evidence_exporter = EnterpriseEvidencePackExporter(
             evidence_pack_service=evidence_pack_service,
             posture_service=self,
@@ -1470,9 +1552,7 @@ class EnterprisePostureService:
             signing_key_path=signing_key_path,
             on_event=self._handle_event,
         )
-        self._validator = EnterprisePostureValidator(
-            on_event=self._handle_event
-        )
+        self._validator = EnterprisePostureValidator(on_event=self._handle_event)
 
         # External services
         self._raw_gate = raw_gate
@@ -1562,17 +1642,19 @@ class EnterprisePostureService:
             )
 
         # Audit event
-        self._log_event(PostureAuditEvent(
-            workspace_id=workspace_id,
-            action=AuditAction.MODE_CONFIGURED,
-            actor_id=configured_by,
-            details={
-                "deployment_mode": deployment_mode.value,
-                "telemetry_destination": config.telemetry_destination.value,
-                "telemetry_local_only": config.telemetry_local_only,
-                "air_gapped": config.air_gapped,
-            },
-        ))
+        self._log_event(
+            PostureAuditEvent(
+                workspace_id=workspace_id,
+                action=AuditAction.MODE_CONFIGURED,
+                actor_id=configured_by,
+                details={
+                    "deployment_mode": deployment_mode.value,
+                    "telemetry_destination": config.telemetry_destination.value,
+                    "telemetry_local_only": config.telemetry_local_only,
+                    "air_gapped": config.air_gapped,
+                },
+            )
+        )
 
         return config
 
@@ -1635,9 +1717,7 @@ class EnterprisePostureService:
 
         # If external RAW gate provided, use it
         if self._raw_gate:
-            gate_ok, gate_errors = self._raw_gate.validate_gate(
-                workspace_id, organization_id
-            )
+            gate_ok, gate_errors = self._raw_gate.validate_gate(workspace_id, organization_id)
             if not gate_ok:
                 return False, "; ".join(gate_errors)
 
@@ -1658,17 +1738,17 @@ class EnterprisePostureService:
             config.updated_by = enabled_by
 
         # Audit event
-        self._log_event(PostureAuditEvent(
-            workspace_id=workspace_id,
-            action=AuditAction.RAW_TELEMETRY_ENABLED,
-            actor_id=enabled_by,
-            details={
-                "organization_id": organization_id,
-                "acknowledgment_hash": hashlib.sha256(
-                    acknowledgment_text.encode()
-                ).hexdigest(),
-            },
-        ))
+        self._log_event(
+            PostureAuditEvent(
+                workspace_id=workspace_id,
+                action=AuditAction.RAW_TELEMETRY_ENABLED,
+                actor_id=enabled_by,
+                details={
+                    "organization_id": organization_id,
+                    "acknowledgment_hash": hashlib.sha256(acknowledgment_text.encode()).hexdigest(),
+                },
+            )
+        )
 
         return True, None
 
@@ -1693,12 +1773,14 @@ class EnterprisePostureService:
             self._raw_gate.revoke_opt_in(workspace_id, disabled_by, reason)
 
         # Audit event
-        self._log_event(PostureAuditEvent(
-            workspace_id=workspace_id,
-            action=AuditAction.RAW_TELEMETRY_DISABLED,
-            actor_id=disabled_by,
-            details={"reason": reason},
-        ))
+        self._log_event(
+            PostureAuditEvent(
+                workspace_id=workspace_id,
+                action=AuditAction.RAW_TELEMETRY_DISABLED,
+                actor_id=disabled_by,
+                details={"reason": reason},
+            )
+        )
 
         return True
 
@@ -1716,9 +1798,7 @@ class EnterprisePostureService:
         destination: str,
     ) -> Tuple[bool, Optional[str]]:
         """Validate telemetry destination is allowed."""
-        return self._telemetry_local_mode.validate_telemetry_destination(
-            workspace_id, destination
-        )
+        return self._telemetry_local_mode.validate_telemetry_destination(workspace_id, destination)
 
     # =========================================================================
     # Evidence Export
@@ -1765,13 +1845,15 @@ class EnterprisePostureService:
             report = PostureValidationReport(
                 workspace_id=workspace_id,
                 overall_result=PostureCheckResult.FAIL,
-                checks=[PostureCheck(
-                    name="config_exists",
-                    category="configuration",
-                    result=PostureCheckResult.FAIL,
-                    message="No posture configuration found for workspace",
-                    required=True,
-                )],
+                checks=[
+                    PostureCheck(
+                        name="config_exists",
+                        category="configuration",
+                        result=PostureCheckResult.FAIL,
+                        message="No posture configuration found for workspace",
+                        required=True,
+                    )
+                ],
                 failed_count=1,
             )
             return report
@@ -1828,12 +1910,8 @@ class EnterprisePostureService:
             "workspace_id": workspace_id,
             "exported_at": datetime.now(timezone.utc).isoformat(),
             "posture_config": config.to_dict() if config else None,
-            "telemetry_local_config": (
-                telemetry_config.to_dict() if telemetry_config else None
-            ),
-            "latest_validation": (
-                latest_report.to_dict() if latest_report else None
-            ),
+            "telemetry_local_config": (telemetry_config.to_dict() if telemetry_config else None),
+            "latest_validation": (latest_report.to_dict() if latest_report else None),
             "is_compliant": latest_report.is_compliant if latest_report else False,
         }
 
@@ -1856,6 +1934,7 @@ class EnterprisePostureService:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_on_prem_posture(
     workspace_id: str,

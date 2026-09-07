@@ -29,6 +29,7 @@ import uuid
 
 class EntitySize(Enum):
     """Entity size classification for proportionality."""
+
     MICRO = "micro"
     SMALL = "small"
     MEDIUM = "medium"
@@ -36,6 +37,7 @@ class EntitySize(Enum):
 
 class SimplifiedControlCategory(Enum):
     """Simplified control categories."""
+
     ACCESS_CONTROL = "access_control"
     DATA_PROTECTION = "data_protection"
     NETWORK_SECURITY = "network_security"
@@ -47,6 +49,7 @@ class SimplifiedControlCategory(Enum):
 
 class ControlStatus(Enum):
     """Status of simplified controls."""
+
     NOT_IMPLEMENTED = "not_implemented"
     PARTIALLY_IMPLEMENTED = "partially_implemented"
     FULLY_IMPLEMENTED = "fully_implemented"
@@ -55,6 +58,7 @@ class ControlStatus(Enum):
 
 class RiskLevel(Enum):
     """Simplified risk levels."""
+
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -62,6 +66,7 @@ class RiskLevel(Enum):
 
 class IncidentPriority(Enum):
     """Simplified incident priorities."""
+
     CRITICAL = "critical"
     HIGH = "high"
     NORMAL = "normal"
@@ -69,6 +74,7 @@ class IncidentPriority(Enum):
 
 class IncidentStatus(Enum):
     """Incident status."""
+
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
@@ -77,6 +83,7 @@ class IncidentStatus(Enum):
 
 class TestType(Enum):
     """Simplified testing types."""
+
     BACKUP_RESTORATION = "backup_restoration"
     INCIDENT_RESPONSE = "incident_response"
     ACCESS_REVIEW = "access_review"
@@ -90,6 +97,7 @@ class EligibilityCriteria:
 
     Defines criteria for entities to qualify for the simplified framework.
     """
+
     criteria_id: str
     entity_name: str
     entity_type: str
@@ -122,6 +130,7 @@ class SimplifiedControl:
 
     Essential controls for simplified framework compliance.
     """
+
     control_id: str
     name: str
     description: str
@@ -146,6 +155,7 @@ class SimplifiedRiskAssessment:
 
     Basic risk assessment for simplified framework entities.
     """
+
     assessment_id: str
     assessment_date: datetime
     assessor: str
@@ -175,6 +185,7 @@ class SimplifiedIncident:
 
     Basic incident management for simplified framework entities.
     """
+
     incident_id: str
     title: str
     description: str
@@ -205,6 +216,7 @@ class SimplifiedBackup:
 
     Basic backup management for simplified framework entities.
     """
+
     backup_id: str
     system_name: str
     backup_type: str  # full, incremental
@@ -227,6 +239,7 @@ class SimplifiedThirdParty:
 
     Basic third-party management for simplified framework entities.
     """
+
     provider_id: str
     name: str
     service_description: str
@@ -255,6 +268,7 @@ class SimplifiedTest:
 
     Basic testing for simplified framework entities.
     """
+
     test_id: str
     test_type: TestType
     test_name: str
@@ -281,6 +295,7 @@ class SimplifiedAwarenessTraining:
 
     Basic security awareness for simplified framework entities.
     """
+
     training_id: str
     title: str
     description: str
@@ -304,6 +319,7 @@ class AnnualReview:
 
     Documents annual review of the simplified framework.
     """
+
     review_id: str
     review_year: int
     review_date: datetime
@@ -333,7 +349,11 @@ ESSENTIAL_CONTROLS = [
         "description": "Manage user accounts and access rights",
         "requirement_reference": "Article 16(2)(a)",
         "implementation_guidance": "Implement unique user IDs, password policies, and regular access reviews",
-        "evidence_required": ["User account list", "Access review records", "Password policy document"]
+        "evidence_required": [
+            "User account list",
+            "Access review records",
+            "Password policy document",
+        ],
     },
     {
         "category": SimplifiedControlCategory.ACCESS_CONTROL,
@@ -341,7 +361,7 @@ ESSENTIAL_CONTROLS = [
         "description": "Control and monitor privileged access",
         "requirement_reference": "Article 16(2)(a)",
         "implementation_guidance": "Restrict admin access, use separate admin accounts, log privileged activities",
-        "evidence_required": ["Privileged account list", "Activity logs", "Approval records"]
+        "evidence_required": ["Privileged account list", "Activity logs", "Approval records"],
     },
     {
         "category": SimplifiedControlCategory.DATA_PROTECTION,
@@ -349,7 +369,7 @@ ESSENTIAL_CONTROLS = [
         "description": "Encrypt sensitive data at rest and in transit",
         "requirement_reference": "Article 16(2)(b)",
         "implementation_guidance": "Use TLS for data in transit, encrypt sensitive data at rest",
-        "evidence_required": ["Encryption configuration", "Certificate records"]
+        "evidence_required": ["Encryption configuration", "Certificate records"],
     },
     {
         "category": SimplifiedControlCategory.DATA_PROTECTION,
@@ -357,7 +377,7 @@ ESSENTIAL_CONTROLS = [
         "description": "Regular backup of critical data",
         "requirement_reference": "Article 16(2)(b)",
         "implementation_guidance": "Daily backups of critical data, monthly restoration tests",
-        "evidence_required": ["Backup logs", "Restoration test records"]
+        "evidence_required": ["Backup logs", "Restoration test records"],
     },
     {
         "category": SimplifiedControlCategory.NETWORK_SECURITY,
@@ -365,7 +385,7 @@ ESSENTIAL_CONTROLS = [
         "description": "Network perimeter protection",
         "requirement_reference": "Article 16(2)(c)",
         "implementation_guidance": "Configure firewalls to restrict unauthorized access",
-        "evidence_required": ["Firewall configuration", "Rule review records"]
+        "evidence_required": ["Firewall configuration", "Rule review records"],
     },
     {
         "category": SimplifiedControlCategory.NETWORK_SECURITY,
@@ -373,7 +393,7 @@ ESSENTIAL_CONTROLS = [
         "description": "Protection against malicious software",
         "requirement_reference": "Article 16(2)(c)",
         "implementation_guidance": "Deploy and maintain anti-malware on all systems",
-        "evidence_required": ["Anti-malware deployment records", "Update logs"]
+        "evidence_required": ["Anti-malware deployment records", "Update logs"],
     },
     {
         "category": SimplifiedControlCategory.SYSTEM_SECURITY,
@@ -381,7 +401,7 @@ ESSENTIAL_CONTROLS = [
         "description": "Timely application of security patches",
         "requirement_reference": "Article 16(2)(d)",
         "implementation_guidance": "Apply critical patches within 30 days, regular patching schedule",
-        "evidence_required": ["Patch logs", "Vulnerability reports"]
+        "evidence_required": ["Patch logs", "Vulnerability reports"],
     },
     {
         "category": SimplifiedControlCategory.SYSTEM_SECURITY,
@@ -389,7 +409,7 @@ ESSENTIAL_CONTROLS = [
         "description": "Secure system configurations",
         "requirement_reference": "Article 16(2)(d)",
         "implementation_guidance": "Remove unnecessary services, change default credentials",
-        "evidence_required": ["Configuration standards", "Configuration review records"]
+        "evidence_required": ["Configuration standards", "Configuration review records"],
     },
     {
         "category": SimplifiedControlCategory.INCIDENT_RESPONSE,
@@ -397,7 +417,7 @@ ESSENTIAL_CONTROLS = [
         "description": "Basic incident response capability",
         "requirement_reference": "Article 16(2)(e)",
         "implementation_guidance": "Document and test basic incident response procedures",
-        "evidence_required": ["Incident response procedure", "Incident logs"]
+        "evidence_required": ["Incident response procedure", "Incident logs"],
     },
     {
         "category": SimplifiedControlCategory.AWARENESS,
@@ -405,8 +425,8 @@ ESSENTIAL_CONTROLS = [
         "description": "Annual security awareness for all staff",
         "requirement_reference": "Article 16(2)(f)",
         "implementation_guidance": "Annual training covering phishing, passwords, data protection",
-        "evidence_required": ["Training records", "Attendance lists"]
-    }
+        "evidence_required": ["Training records", "Attendance lists"],
+    },
 ]
 
 
@@ -476,7 +496,7 @@ class DORASimplifiedFramework:
         event = {
             "timestamp": datetime.now().isoformat(),
             "event_type": event_type,
-            "details": details
+            "details": details,
         }
         self._event_log.append(event)
 
@@ -492,7 +512,7 @@ class DORASimplifiedFramework:
                 requirement_reference=control_def["requirement_reference"],
                 implementation_guidance=control_def["implementation_guidance"],
                 evidence_required=control_def["evidence_required"],
-                status=ControlStatus.NOT_IMPLEMENTED
+                status=ControlStatus.NOT_IMPLEMENTED,
             )
             self._controls[control_id] = control
 
@@ -516,7 +536,7 @@ class DORASimplifiedFramework:
         part_of_group: bool,
         group_uses_simplified: bool,
         assessed_by: str,
-        next_review_date: datetime
+        next_review_date: datetime,
     ) -> EligibilityCriteria:
         """
         Assess eligibility for simplified framework per Article 16(1).
@@ -553,14 +573,14 @@ class DORASimplifiedFramework:
                 cross_border_operations=cross_border_operations,
                 significant_cyber_risk=significant_cyber_risk,
                 part_of_group=part_of_group,
-                group_uses_simplified=group_uses_simplified
+                group_uses_simplified=group_uses_simplified,
             )
 
             eligibility_notes = self._generate_eligibility_notes(
                 eligible=eligible,
                 entity_size=entity_size,
                 significant_cyber_risk=significant_cyber_risk,
-                cross_border_operations=cross_border_operations
+                cross_border_operations=cross_border_operations,
             )
 
             eligibility = EligibilityCriteria(
@@ -582,16 +602,15 @@ class DORASimplifiedFramework:
                 eligible=eligible,
                 eligibility_notes=eligibility_notes,
                 next_review_date=next_review_date,
-                assessed_by=assessed_by
+                assessed_by=assessed_by,
             )
 
             self._eligibility = eligibility
 
-            self._log_event("eligibility_assessed", {
-                "criteria_id": criteria_id,
-                "entity_name": entity_name,
-                "eligible": eligible
-            })
+            self._log_event(
+                "eligibility_assessed",
+                {"criteria_id": criteria_id, "entity_name": entity_name, "eligible": eligible},
+            )
 
             return eligibility
 
@@ -604,7 +623,7 @@ class DORASimplifiedFramework:
         cross_border_operations: bool,
         significant_cyber_risk: bool,
         part_of_group: bool,
-        group_uses_simplified: bool
+        group_uses_simplified: bool,
     ) -> bool:
         """Evaluate eligibility based on Article 16 criteria."""
         # Basic size criteria
@@ -639,13 +658,15 @@ class DORASimplifiedFramework:
         eligible: bool,
         entity_size: EntitySize,
         significant_cyber_risk: bool,
-        cross_border_operations: bool
+        cross_border_operations: bool,
     ) -> str:
         """Generate eligibility assessment notes."""
         notes = []
 
         if eligible:
-            notes.append(f"Entity qualifies as {entity_size.value} enterprise for simplified framework.")
+            notes.append(
+                f"Entity qualifies as {entity_size.value} enterprise for simplified framework."
+            )
             notes.append("All eligibility criteria met per Article 16(1).")
         else:
             notes.append("Entity does not qualify for simplified framework.")
@@ -671,10 +692,10 @@ class DORASimplifiedFramework:
             self._eligibility.approval_date = datetime.now()
             self._eligibility.updated_at = datetime.now()
 
-            self._log_event("eligibility_approved", {
-                "criteria_id": self._eligibility.criteria_id,
-                "approved_by": approved_by
-            })
+            self._log_event(
+                "eligibility_approved",
+                {"criteria_id": self._eligibility.criteria_id, "approved_by": approved_by},
+            )
 
             return True
 
@@ -698,15 +719,11 @@ class DORASimplifiedFramework:
             return self._controls.get(control_id)
 
     def get_controls_by_category(
-        self,
-        category: SimplifiedControlCategory
+        self, category: SimplifiedControlCategory
     ) -> list[SimplifiedControl]:
         """Get controls by category."""
         with self._lock:
-            return [
-                c for c in self._controls.values()
-                if c.category == category
-            ]
+            return [c for c in self._controls.values() if c.category == category]
 
     def update_control_status(
         self,
@@ -714,7 +731,7 @@ class DORASimplifiedFramework:
         status: ControlStatus,
         implementation_notes: str | None = None,
         evidence_location: str | None = None,
-        reviewer: str | None = None
+        reviewer: str | None = None,
     ) -> bool:
         """Update control implementation status."""
         with self._lock:
@@ -733,10 +750,9 @@ class DORASimplifiedFramework:
             if reviewer:
                 control.reviewer = reviewer
 
-            self._log_event("control_status_updated", {
-                "control_id": control_id,
-                "status": status.value
-            })
+            self._log_event(
+                "control_status_updated", {"control_id": control_id, "status": status.value}
+            )
 
             return True
 
@@ -757,9 +773,10 @@ class DORASimplifiedFramework:
                 "compliance_rate": implemented / total if total > 0 else 0,
                 "partial_rate": partial / total if total > 0 else 0,
                 "controls_needing_attention": [
-                    c.control_id for c in self._controls.values()
+                    c.control_id
+                    for c in self._controls.values()
                     if c.status == ControlStatus.NOT_IMPLEMENTED
-                ]
+                ],
             }
 
     # =========================================================================
@@ -783,7 +800,7 @@ class DORASimplifiedFramework:
         residual_risk: RiskLevel,
         risk_owner: str,
         review_date: datetime,
-        **kwargs
+        **kwargs,
     ) -> SimplifiedRiskAssessment:
         """
         Create simplified risk assessment per Article 16(3).
@@ -830,16 +847,19 @@ class DORASimplifiedFramework:
                 residual_risk=residual_risk,
                 risk_owner=risk_owner,
                 review_date=review_date,
-                **kwargs
+                **kwargs,
             )
 
             self._risk_assessments[assessment_id] = assessment
 
-            self._log_event("risk_assessment_created", {
-                "assessment_id": assessment_id,
-                "asset_name": asset_name,
-                "risk_level": risk_level.value
-            })
+            self._log_event(
+                "risk_assessment_created",
+                {
+                    "assessment_id": assessment_id,
+                    "asset_name": asset_name,
+                    "risk_level": risk_level.value,
+                },
+            )
 
             return assessment
 
@@ -852,7 +872,8 @@ class DORASimplifiedFramework:
         """Get risk assessments by level."""
         with self._lock:
             return [
-                r for r in self._risk_assessments.values()
+                r
+                for r in self._risk_assessments.values()
                 if r.risk_level == risk_level and r.status == "active"
             ]
 
@@ -874,7 +895,7 @@ class DORASimplifiedFramework:
         affected_services: list[str],
         impact_description: str,
         initial_response: str,
-        **kwargs
+        **kwargs,
     ) -> SimplifiedIncident:
         """
         Report incident per Article 16(4).
@@ -912,16 +933,15 @@ class DORASimplifiedFramework:
                 impact_description=impact_description,
                 initial_response=initial_response,
                 regulatory_notification_required=regulatory_required,
-                **kwargs
+                **kwargs,
             )
 
             self._incidents[incident_id] = incident
 
-            self._log_event("incident_reported", {
-                "incident_id": incident_id,
-                "title": title,
-                "priority": priority.value
-            })
+            self._log_event(
+                "incident_reported",
+                {"incident_id": incident_id, "title": title, "priority": priority.value},
+            )
 
             return incident
 
@@ -935,7 +955,7 @@ class DORASimplifiedFramework:
         incident_id: str,
         status: IncidentStatus,
         resolution_actions: list[str] | None = None,
-        resolved_by: str | None = None
+        resolved_by: str | None = None,
     ) -> bool:
         """Update incident status."""
         with self._lock:
@@ -954,19 +974,13 @@ class DORASimplifiedFramework:
                 if resolved_by:
                     incident.resolved_by = resolved_by
 
-            self._log_event("incident_status_updated", {
-                "incident_id": incident_id,
-                "status": status.value
-            })
+            self._log_event(
+                "incident_status_updated", {"incident_id": incident_id, "status": status.value}
+            )
 
             return True
 
-    def close_incident(
-        self,
-        incident_id: str,
-        root_cause: str,
-        lessons_learned: str
-    ) -> bool:
+    def close_incident(self, incident_id: str, root_cause: str, lessons_learned: str) -> bool:
         """Close incident with root cause and lessons."""
         with self._lock:
             if incident_id not in self._incidents:
@@ -978,9 +992,7 @@ class DORASimplifiedFramework:
             incident.lessons_learned = lessons_learned
             incident.updated_at = datetime.now()
 
-            self._log_event("incident_closed", {
-                "incident_id": incident_id
-            })
+            self._log_event("incident_closed", {"incident_id": incident_id})
 
             return True
 
@@ -988,7 +1000,8 @@ class DORASimplifiedFramework:
         """Get open incidents."""
         with self._lock:
             return [
-                i for i in self._incidents.values()
+                i
+                for i in self._incidents.values()
                 if i.status in {IncidentStatus.OPEN, IncidentStatus.IN_PROGRESS}
             ]
 
@@ -1005,7 +1018,7 @@ class DORASimplifiedFramework:
         encryption_enabled: bool,
         size_gb: float,
         performed_by: str,
-        notes: str | None = None
+        notes: str | None = None,
     ) -> SimplifiedBackup:
         """
         Record backup per Article 16(5).
@@ -1036,16 +1049,15 @@ class DORASimplifiedFramework:
                 encryption_enabled=encryption_enabled,
                 size_gb=size_gb,
                 performed_by=performed_by,
-                notes=notes
+                notes=notes,
             )
 
             self._backups[backup_id] = backup
 
-            self._log_event("backup_recorded", {
-                "backup_id": backup_id,
-                "system_name": system_name,
-                "backup_type": backup_type
-            })
+            self._log_event(
+                "backup_recorded",
+                {"backup_id": backup_id, "system_name": system_name, "backup_type": backup_type},
+            )
 
             return backup
 
@@ -1054,11 +1066,7 @@ class DORASimplifiedFramework:
         with self._lock:
             return self._backups.get(backup_id)
 
-    def verify_backup(
-        self,
-        backup_id: str,
-        verification_result: str
-    ) -> bool:
+    def verify_backup(self, backup_id: str, verification_result: str) -> bool:
         """Record backup verification."""
         with self._lock:
             if backup_id not in self._backups:
@@ -1068,23 +1076,21 @@ class DORASimplifiedFramework:
             backup.verification_date = datetime.now()
             backup.verification_result = verification_result
 
-            self._log_event("backup_verified", {
-                "backup_id": backup_id,
-                "result": verification_result
-            })
+            self._log_event(
+                "backup_verified", {"backup_id": backup_id, "result": verification_result}
+            )
 
             return True
 
     def get_recent_backups(self, system_name: str, days: int = 30) -> list[SimplifiedBackup]:
         """Get recent backups for system."""
         with self._lock:
-            cutoff = datetime.now().replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
+            cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             cutoff = cutoff.replace(day=cutoff.day - days) if cutoff.day > days else cutoff
 
             return [
-                b for b in self._backups.values()
+                b
+                for b in self._backups.values()
                 if b.system_name == system_name and b.backup_date >= cutoff
             ]
 
@@ -1105,7 +1111,7 @@ class DORASimplifiedFramework:
         contract_end_date: datetime | None = None,
         data_location: str | None = None,
         exit_strategy: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> SimplifiedThirdParty:
         """
         Register third-party provider per Article 16(6).
@@ -1143,16 +1149,15 @@ class DORASimplifiedFramework:
                 data_processing=data_processing,
                 data_location=data_location,
                 exit_strategy=exit_strategy,
-                **kwargs
+                **kwargs,
             )
 
             self._third_parties[provider_id] = provider
 
-            self._log_event("third_party_registered", {
-                "provider_id": provider_id,
-                "name": name,
-                "criticality": service_criticality
-            })
+            self._log_event(
+                "third_party_registered",
+                {"provider_id": provider_id, "name": name, "criticality": service_criticality},
+            )
 
             return provider
 
@@ -1165,7 +1170,7 @@ class DORASimplifiedFramework:
         self,
         provider_id: str,
         security_assessment_result: str | None = None,
-        next_review_date: datetime | None = None
+        next_review_date: datetime | None = None,
     ) -> bool:
         """Update third-party review status."""
         with self._lock:
@@ -1189,7 +1194,8 @@ class DORASimplifiedFramework:
         """Get critical third-party providers."""
         with self._lock:
             return [
-                p for p in self._third_parties.values()
+                p
+                for p in self._third_parties.values()
                 if p.service_criticality == "critical" and p.status == "active"
             ]
 
@@ -1204,7 +1210,7 @@ class DORASimplifiedFramework:
         description: str,
         scheduled_date: datetime,
         scope: list[str],
-        **kwargs
+        **kwargs,
     ) -> SimplifiedTest:
         """
         Schedule simplified test per Article 16(7).
@@ -1230,16 +1236,19 @@ class DORASimplifiedFramework:
                 description=description,
                 scheduled_date=scheduled_date,
                 scope=scope,
-                **kwargs
+                **kwargs,
             )
 
             self._tests[test_id] = test
 
-            self._log_event("test_scheduled", {
-                "test_id": test_id,
-                "test_type": test_type.value,
-                "scheduled_date": scheduled_date.isoformat()
-            })
+            self._log_event(
+                "test_scheduled",
+                {
+                    "test_id": test_id,
+                    "test_type": test_type.value,
+                    "scheduled_date": scheduled_date.isoformat(),
+                },
+            )
 
             return test
 
@@ -1256,7 +1265,7 @@ class DORASimplifiedFramework:
         recommendations: list[str],
         passed: bool,
         notes: str | None = None,
-        follow_up_actions: list[str] | None = None
+        follow_up_actions: list[str] | None = None,
     ) -> bool:
         """Complete test with results."""
         with self._lock:
@@ -1277,20 +1286,14 @@ class DORASimplifiedFramework:
                 test.follow_up_required = True
                 test.follow_up_actions = follow_up_actions
 
-            self._log_event("test_completed", {
-                "test_id": test_id,
-                "passed": passed
-            })
+            self._log_event("test_completed", {"test_id": test_id, "passed": passed})
 
             return True
 
     def get_scheduled_tests(self) -> list[SimplifiedTest]:
         """Get scheduled tests."""
         with self._lock:
-            return [
-                t for t in self._tests.values()
-                if t.status == "scheduled"
-            ]
+            return [t for t in self._tests.values() if t.status == "scheduled"]
 
     # =========================================================================
     # Simplified Awareness Training (Article 16(8))
@@ -1309,7 +1312,7 @@ class DORASimplifiedFramework:
         completion_rate: float,
         assessment_passed: bool | None = None,
         materials_location: str | None = None,
-        next_training_date: datetime | None = None
+        next_training_date: datetime | None = None,
     ) -> SimplifiedAwarenessTraining:
         """
         Record awareness training per Article 16(8).
@@ -1347,16 +1350,15 @@ class DORASimplifiedFramework:
                 completion_rate=completion_rate,
                 assessment_passed=assessment_passed,
                 materials_location=materials_location,
-                next_training_date=next_training_date
+                next_training_date=next_training_date,
             )
 
             self._training_sessions[training_id] = training
 
-            self._log_event("training_recorded", {
-                "training_id": training_id,
-                "title": title,
-                "attendees_count": len(attendees)
-            })
+            self._log_event(
+                "training_recorded",
+                {"training_id": training_id, "title": title, "attendees_count": len(attendees)},
+            )
 
             return training
 
@@ -1369,10 +1371,7 @@ class DORASimplifiedFramework:
         """Get training history."""
         with self._lock:
             if year:
-                return [
-                    t for t in self._training_sessions.values()
-                    if t.training_date.year == year
-                ]
+                return [t for t in self._training_sessions.values() if t.training_date.year == year]
             return list(self._training_sessions.values())
 
     # =========================================================================
@@ -1386,7 +1385,7 @@ class DORASimplifiedFramework:
         eligibility_confirmed: bool,
         key_findings: list[str],
         improvement_actions: list[str],
-        next_review_date: datetime
+        next_review_date: datetime,
     ) -> AnnualReview:
         """
         Create annual review per Article 16(9).
@@ -1406,32 +1405,27 @@ class DORASimplifiedFramework:
             review_id = f"AR-{uuid.uuid4().hex[:8].upper()}"
 
             # Gather metrics
-            controls_status = {
-                c.control_id: c.status.value
-                for c in self._controls.values()
-            }
+            controls_status = {c.control_id: c.status.value for c in self._controls.values()}
 
-            incidents_count = len([
-                i for i in self._incidents.values()
-                if i.detected_date.year == review_year
-            ])
+            incidents_count = len(
+                [i for i in self._incidents.values() if i.detected_date.year == review_year]
+            )
 
-            tests = [
-                t for t in self._tests.values()
-                if t.scheduled_date.year == review_year
-            ]
+            tests = [t for t in self._tests.values() if t.scheduled_date.year == review_year]
             tests_performed = len([t for t in tests if t.status == "completed"])
             tests_passed = len([t for t in tests if t.passed])
 
-            third_parties_reviewed = len([
-                p for p in self._third_parties.values()
-                if p.last_review_date and p.last_review_date.year == review_year
-            ])
+            third_parties_reviewed = len(
+                [
+                    p
+                    for p in self._third_parties.values()
+                    if p.last_review_date and p.last_review_date.year == review_year
+                ]
+            )
 
-            training_sessions = len([
-                t for t in self._training_sessions.values()
-                if t.training_date.year == review_year
-            ])
+            training_sessions = len(
+                [t for t in self._training_sessions.values() if t.training_date.year == review_year]
+            )
 
             review = AnnualReview(
                 review_id=review_id,
@@ -1449,15 +1443,14 @@ class DORASimplifiedFramework:
                 key_findings=key_findings,
                 improvement_actions=improvement_actions,
                 management_approval=False,
-                next_review_date=next_review_date
+                next_review_date=next_review_date,
             )
 
             self._annual_reviews[review_id] = review
 
-            self._log_event("annual_review_created", {
-                "review_id": review_id,
-                "review_year": review_year
-            })
+            self._log_event(
+                "annual_review_created", {"review_id": review_id, "review_year": review_year}
+            )
 
             return review
 
@@ -1477,10 +1470,9 @@ class DORASimplifiedFramework:
             review.approved_by = approved_by
             review.approval_date = datetime.now()
 
-            self._log_event("annual_review_approved", {
-                "review_id": review_id,
-                "approved_by": approved_by
-            })
+            self._log_event(
+                "annual_review_approved", {"review_id": review_id, "approved_by": approved_by}
+            )
 
             return True
 
@@ -1497,61 +1489,53 @@ class DORASimplifiedFramework:
                 "eligibility": {
                     "assessed": self._eligibility is not None,
                     "eligible": self.is_eligible(),
-                    "approved": self._eligibility.approved_by is not None
-                    if self._eligibility else False
+                    "approved": (
+                        self._eligibility.approved_by is not None if self._eligibility else False
+                    ),
                 },
                 "controls": control_compliance,
                 "risks": {
                     "total": len(self._risk_assessments),
                     "high": len(self.get_high_risks()),
-                    "by_level": self._count_by_enum(
-                        self._risk_assessments.values(), "risk_level"
-                    )
+                    "by_level": self._count_by_enum(self._risk_assessments.values(), "risk_level"),
                 },
                 "incidents": {
                     "total": len(self._incidents),
                     "open": len(self.get_open_incidents()),
-                    "by_priority": self._count_by_enum(
-                        self._incidents.values(), "priority"
-                    )
+                    "by_priority": self._count_by_enum(self._incidents.values(), "priority"),
                 },
                 "backups": {
                     "total": len(self._backups),
-                    "verified": len([
-                        b for b in self._backups.values()
-                        if b.verification_date
-                    ])
+                    "verified": len([b for b in self._backups.values() if b.verification_date]),
                 },
                 "third_parties": {
                     "total": len(self._third_parties),
                     "critical": len(self.get_critical_third_parties()),
-                    "active": len([
-                        p for p in self._third_parties.values()
-                        if p.status == "active"
-                    ])
+                    "active": len(
+                        [p for p in self._third_parties.values() if p.status == "active"]
+                    ),
                 },
                 "testing": {
                     "scheduled": len(self.get_scheduled_tests()),
-                    "completed": len([
-                        t for t in self._tests.values()
-                        if t.status == "completed"
-                    ]),
-                    "pass_rate": self._calculate_test_pass_rate()
+                    "completed": len([t for t in self._tests.values() if t.status == "completed"]),
+                    "pass_rate": self._calculate_test_pass_rate(),
                 },
                 "training": {
                     "sessions": len(self._training_sessions),
-                    "this_year": len([
-                        t for t in self._training_sessions.values()
-                        if t.training_date.year == datetime.now().year
-                    ])
+                    "this_year": len(
+                        [
+                            t
+                            for t in self._training_sessions.values()
+                            if t.training_date.year == datetime.now().year
+                        ]
+                    ),
                 },
                 "annual_reviews": {
                     "total": len(self._annual_reviews),
-                    "approved": len([
-                        r for r in self._annual_reviews.values()
-                        if r.management_approval
-                    ])
-                }
+                    "approved": len(
+                        [r for r in self._annual_reviews.values() if r.management_approval]
+                    ),
+                },
             }
 
     def _count_by_enum(self, items: Any, attr: str) -> dict[str, int]:
@@ -1588,7 +1572,7 @@ class DORASimplifiedFramework:
                 "testing_status": metrics["testing"],
                 "training_status": metrics["training"],
                 "annual_review_status": metrics["annual_reviews"],
-                "overall_compliance_score": self._calculate_overall_compliance()
+                "overall_compliance_score": self._calculate_overall_compliance(),
             }
 
     def _calculate_overall_compliance(self) -> float:
@@ -1606,10 +1590,7 @@ class DORASimplifiedFramework:
 
         # Incident management (15% weight)
         if self._incidents:
-            closed = len([
-                i for i in self._incidents.values()
-                if i.status == IncidentStatus.CLOSED
-            ])
+            closed = len([i for i in self._incidents.values() if i.status == IncidentStatus.CLOSED])
             scores.append((closed / len(self._incidents)) * 0.15)
 
         # Testing (15% weight)
@@ -1617,10 +1598,9 @@ class DORASimplifiedFramework:
 
         # Training (15% weight)
         current_year = datetime.now().year
-        training_this_year = len([
-            t for t in self._training_sessions.values()
-            if t.training_date.year == current_year
-        ])
+        training_this_year = len(
+            [t for t in self._training_sessions.values() if t.training_date.year == current_year]
+        )
         scores.append(min(training_this_year / 4, 1.0) * 0.15)  # Expect 4 sessions/year
 
         return sum(scores) if scores else 0.0
@@ -1649,9 +1629,8 @@ class DORASimplifiedFramework:
 # Factory Function
 # =============================================================================
 
-def create_dora_simplified_framework(
-    config: dict | None = None
-) -> DORASimplifiedFramework:
+
+def create_dora_simplified_framework(config: dict | None = None) -> DORASimplifiedFramework:
     """
     Factory function to create DORA Simplified Framework.
 

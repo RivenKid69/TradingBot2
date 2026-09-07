@@ -53,8 +53,8 @@ def test_static_universe_tradable_window():
     lo, hi = date_to_ms("2020-01-01"), date_to_ms("2021-01-01")
     u = StaticUniverse(["AAA"], tradable_from_ms=lo, tradable_to_ms=hi)
     assert u.constituents(date_to_ms("2020-06-01")) == ["AAA"]
-    assert u.constituents(date_to_ms("2019-06-01")) == []   # до окна
-    assert u.constituents(date_to_ms("2021-06-01")) == []   # после окна
+    assert u.constituents(date_to_ms("2019-06-01")) == []  # до окна
+    assert u.constituents(date_to_ms("2021-06-01")) == []  # после окна
 
 
 # ---------------------------------------------------------------------------
@@ -104,10 +104,10 @@ def _liquidity_panel():
     ts = [t0 + i * step for i in range(5)]
     liq = pd.DataFrame(
         {"timestamp": ts, "symbol": "LIQ", "close": [100.0] * 5, "volume": [10_000.0] * 5}
-    )   # dollar vol = 1e6
+    )  # dollar vol = 1e6
     ilq = pd.DataFrame(
         {"timestamp": ts, "symbol": "ILQ", "close": [10.0] * 5, "volume": [100.0] * 5}
-    )   # dollar vol = 1e3
+    )  # dollar vol = 1e3
     panel = PanelBuilder.from_frames({"LIQ": liq, "ILQ": ilq})
     return panel, ts
 
@@ -115,11 +115,9 @@ def _liquidity_panel():
 def test_adv_filter_cuts_illiquid_and_keeps_flag():
     panel, ts = _liquidity_panel()
     base = StaticUniverse(["LIQ", "ILQ"], name="base")
-    filt = ADVLiquidityFilter(
-        base, panel, min_adv=1e5, lookback=3, dollar_volume=True
-    )
+    filt = ADVLiquidityFilter(base, panel, min_adv=1e5, lookback=3, dollar_volume=True)
     asof = ts[-1] * 1000  # последний бар, в мс
-    assert filt.constituents(asof) == ["LIQ"]            # ILQ (1e3) < 1e5 → отсечён
+    assert filt.constituents(asof) == ["LIQ"]  # ILQ (1e3) < 1e5 → отсечён
     assert filt.is_tradable("LIQ", asof) is True
     assert filt.is_tradable("ILQ", asof) is False
     # honest-флаг базы сохранён

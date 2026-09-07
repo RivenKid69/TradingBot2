@@ -132,7 +132,9 @@ def main() -> None:
 
     if args.rc_historical_trades and args.rc_benchmark:
         trades_path = Path(cfg.input.trades_path)
-        equity_path = Path(args.rc_equity) if args.rc_equity else getattr(cfg.input, "equity_path", None)
+        equity_path = (
+            Path(args.rc_equity) if args.rc_equity else getattr(cfg.input, "equity_path", None)
+        )
         cmd = [
             sys.executable,
             "scripts/sim_reality_check.py",
@@ -147,6 +149,9 @@ def main() -> None:
         ]
         if equity_path:
             cmd.extend(["--equity", Path(equity_path).as_posix()])
+        # cmd is an argument list run without a shell, so the paths cannot be
+        # interpreted as shell syntax.
+        # nosemgrep: dangerous-subprocess-use-tainted-env-args
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.stdout:
             print(proc.stdout)
@@ -165,4 +170,3 @@ def main() -> None:
 
 if __name__ == "__main__":  # pragma: no cover - CLI entry point
     main()
-

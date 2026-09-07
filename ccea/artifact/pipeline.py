@@ -36,12 +36,14 @@ from ccea.crypto.digest import compute_file_digest
 
 class ArtifactFormat(str, Enum):
     """Artifact output format."""
+
     OCI = "oci"  # Primary format
     ZIP = "zip"  # Fallback
 
 
 class PipelineStage(str, Enum):
     """Pipeline stages."""
+
     INIT = "init"
     BUILD = "build"
     SBOM = "sbom"
@@ -55,6 +57,7 @@ class PipelineStage(str, Enum):
 @dataclass
 class PipelineConfig:
     """Pipeline configuration."""
+
     # Source
     source_dir: Path
     entrypoint_module: str
@@ -100,6 +103,7 @@ class PipelineConfig:
 @dataclass
 class PipelineResult:
     """Result of pipeline execution."""
+
     success: bool
     stage: PipelineStage
     artifact_id: str
@@ -248,7 +252,9 @@ class PublishPipeline:
                         manifest_path=manifest_path,
                         artifact_digest=artifact_digest,
                         manifest_digest=manifest_digest,
-                        errors=[f"Signing failed: {sign_result[1]}. Unsigned artifacts cannot be published."],
+                        errors=[
+                            f"Signing failed: {sign_result[1]}. Unsigned artifacts cannot be published."
+                        ],
                     )
                 else:
                     warnings.append(f"Signing skipped: {sign_result[1]}")
@@ -262,7 +268,9 @@ class PublishPipeline:
                     manifest_path=manifest_path,
                     artifact_digest=artifact_digest,
                     manifest_digest=manifest_digest,
-                    errors=["Signature is required but sign_artifact=False. Unsigned artifacts cannot be published."],
+                    errors=[
+                        "Signature is required but sign_artifact=False. Unsigned artifacts cannot be published."
+                    ],
                 )
 
             # Stage 4: Validate manifest

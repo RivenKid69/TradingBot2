@@ -52,10 +52,26 @@ from uuid import uuid4
 MINING_CPU_THRESHOLD: Final[float] = 80.0  # % CPU for sustained period
 MINING_DURATION_THRESHOLD: Final[int] = 60  # seconds of high CPU
 MINING_PROCESS_KEYWORDS: Final[Set[str]] = {
-    "xmrig", "minerd", "minergate", "cgminer", "bfgminer",
-    "ethminer", "claymore", "phoenixminer", "gminer", "lolminer",
-    "t-rex", "nbminer", "cpuminer", "cudaminer", "ccminer",
-    "nicehash", "nanominer", "excavator", "bminer", "srbminer",
+    "xmrig",
+    "minerd",
+    "minergate",
+    "cgminer",
+    "bfgminer",
+    "ethminer",
+    "claymore",
+    "phoenixminer",
+    "gminer",
+    "lolminer",
+    "t-rex",
+    "nbminer",
+    "cpuminer",
+    "cudaminer",
+    "ccminer",
+    "nicehash",
+    "nanominer",
+    "excavator",
+    "bminer",
+    "srbminer",
 }
 
 # Mining pool domains/IPs
@@ -109,6 +125,7 @@ ALERT_COOLDOWN_SECONDS: Final[int] = 300  # 5 minutes per alert type
 
 class AbuseType(Enum):
     """Type of detected abuse."""
+
     CRYPTOCURRENCY_MINING = auto()
     PORT_SCANNING = auto()
     NETWORK_SCANNING = auto()
@@ -125,6 +142,7 @@ class AbuseType(Enum):
 
 class AlertSeverity(Enum):
     """Alert severity level."""
+
     LOW = auto()
     MEDIUM = auto()
     HIGH = auto()
@@ -136,6 +154,7 @@ class AbuseAlert:
     """
     Alert for detected abuse.
     """
+
     alert_id: str = field(default_factory=lambda: str(uuid4()))
     tenant_id: str = ""
     job_id: str = ""
@@ -192,6 +211,7 @@ class AbuseDetectorConfig:
     """
     Configuration for abuse detector.
     """
+
     # Mining detection
     mining_detection_enabled: bool = True
     mining_cpu_threshold: float = MINING_CPU_THRESHOLD
@@ -237,6 +257,7 @@ class JobMetrics:
     """
     Real-time metrics from a running job.
     """
+
     job_id: str = ""
     sandbox_id: str = ""
     timestamp: datetime = field(default_factory=datetime.utcnow)
@@ -334,15 +355,9 @@ class AbuseDetector:
         self._last_alert_time: Dict[str, datetime] = {}  # (job_id, abuse_type) -> time
 
         # Compiled patterns
-        self._mining_pool_patterns = [
-            re.compile(p, re.IGNORECASE) for p in MINING_POOL_PATTERNS
-        ]
-        self._c2_patterns = [
-            re.compile(p) for p in C2_COMMUNICATION_PATTERNS
-        ]
-        self._exfil_patterns = [
-            re.compile(p, re.IGNORECASE) for p in EXFIL_PATTERNS
-        ]
+        self._mining_pool_patterns = [re.compile(p, re.IGNORECASE) for p in MINING_POOL_PATTERNS]
+        self._c2_patterns = [re.compile(p) for p in C2_COMMUNICATION_PATTERNS]
+        self._exfil_patterns = [re.compile(p, re.IGNORECASE) for p in EXFIL_PATTERNS]
 
         # Statistics
         self._stats = {
@@ -471,12 +486,14 @@ class AbuseDetector:
             state["unique_ports"][destination].add(port)
 
             # Record network activity
-            state["network_history"].append({
-                "timestamp": datetime.utcnow(),
-                "destination": destination,
-                "port": port,
-                "bytes": bytes_count,
-            })
+            state["network_history"].append(
+                {
+                    "timestamp": datetime.utcnow(),
+                    "destination": destination,
+                    "port": port,
+                    "bytes": bytes_count,
+                }
+            )
 
             # Trim history
             if len(state["network_history"]) > 1000:
@@ -490,9 +507,7 @@ class AbuseDetector:
 
             # Check for C2 patterns
             if self.config.botnet_detection_enabled:
-                alert = self._detect_c2_communication(
-                    destination, port, payload, state
-                )
+                alert = self._detect_c2_communication(destination, port, payload, state)
                 if alert:
                     return alert
 
@@ -578,7 +593,7 @@ class AbuseDetector:
             confidence=70.0,
             title="Potential cryptocurrency mining detected",
             description=f"Sustained high CPU usage ({metrics.cpu_percent:.1f}%) "
-                       f"for {duration:.0f} seconds",
+            f"for {duration:.0f} seconds",
             evidence={
                 "cpu_percent": metrics.cpu_percent,
                 "duration_seconds": duration,
@@ -633,8 +648,13 @@ class AbuseDetector:
 
         # Check for hashrate/mining function names
         mining_functions = [
-            "def mine(", "def hash_block(", "def proof_of_work(",
-            "cryptonight", "randomx", "ethash", "kawpow",
+            "def mine(",
+            "def hash_block(",
+            "def proof_of_work(",
+            "cryptonight",
+            "randomx",
+            "ethash",
+            "kawpow",
         ]
         for func in mining_functions:
             if func in code_lower:
@@ -757,7 +777,7 @@ class AbuseDetector:
                 confidence=80.0,
                 title="Rapid network scanning detected",
                 description=f"High connection rate: {len(unique_recent_dests)} unique "
-                           f"destinations in {SCAN_WINDOW_SECONDS}s",
+                f"destinations in {SCAN_WINDOW_SECONDS}s",
                 evidence={
                     "connections_in_window": len(recent),
                     "unique_destinations": len(unique_recent_dests),
@@ -865,8 +885,10 @@ class AbuseDetector:
         history = state["metrics_history"]
         if len(history) >= 2:
             disk_write_rate = (
-                metrics.disk_write_bytes - history[-2].disk_write_bytes
-            ) / self.config.monitoring_interval_seconds * 60
+                (metrics.disk_write_bytes - history[-2].disk_write_bytes)
+                / self.config.monitoring_interval_seconds
+                * 60
+            )
 
             if disk_write_rate > self.config.disk_write_threshold:
                 return self._create_alert(
@@ -1025,7 +1047,7 @@ class AbuseDetector:
         # Record alert
         self._alerts.append(alert)
         if len(self._alerts) > self._max_alerts:
-            self._alerts = self._alerts[-self._max_alerts:]
+            self._alerts = self._alerts[-self._max_alerts :]
 
         self._last_alert_time[cooldown_key] = now
         state.setdefault("alerts_raised", set()).add(alert_key)

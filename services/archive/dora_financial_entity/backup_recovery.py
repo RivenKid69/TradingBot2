@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class BackupType(Enum):
     """Backup types."""
+
     FULL = "full"
     INCREMENTAL = "incremental"
     DIFFERENTIAL = "differential"
@@ -53,6 +55,7 @@ class BackupType(Enum):
 
 class BackupFrequency(Enum):
     """Backup frequency."""
+
     REAL_TIME = "real_time"  # CDP
     HOURLY = "hourly"
     DAILY = "daily"
@@ -62,6 +65,7 @@ class BackupFrequency(Enum):
 
 class BackupStatus(Enum):
     """Backup job status."""
+
     SCHEDULED = "scheduled"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -72,6 +76,7 @@ class BackupStatus(Enum):
 
 class RecoveryTestType(Enum):
     """Recovery test types."""
+
     RESTORE_TEST = "restore_test"
     FAILOVER_TEST = "failover_test"
     FULL_RECOVERY = "full_recovery"
@@ -81,6 +86,7 @@ class RecoveryTestType(Enum):
 
 class RecoveryTestResult(Enum):
     """Recovery test results."""
+
     PASSED = "passed"
     PASSED_WITH_ISSUES = "passed_with_issues"
     FAILED = "failed"
@@ -89,6 +95,7 @@ class RecoveryTestResult(Enum):
 
 class LocationType(Enum):
     """Backup location types."""
+
     ON_PREMISE = "on_premise"
     OFF_SITE = "off_site"
     CLOUD = "cloud"
@@ -97,6 +104,7 @@ class LocationType(Enum):
 
 class DataClassification(Enum):
     """Data classification for backup scope."""
+
     CRITICAL = "critical"
     IMPORTANT = "important"
     STANDARD = "standard"
@@ -107,6 +115,7 @@ class DataClassification(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class BackupPolicy:
     """
@@ -114,6 +123,7 @@ class BackupPolicy:
 
     Defines scope and frequency of backups.
     """
+
     policy_id: str = ""
     name: str = ""
     description: str = ""
@@ -168,6 +178,7 @@ class BackupJob:
     """
     Backup job execution record.
     """
+
     job_id: str = ""
     policy_id: str = ""
     job_name: str = ""
@@ -219,6 +230,7 @@ class BackupLocation:
 
     Documents geographically diverse backup locations.
     """
+
     location_id: str = ""
     name: str = ""
     description: str = ""
@@ -271,6 +283,7 @@ class RecoveryTest:
 
     Documents testing of backup procedures and restoration methods.
     """
+
     test_id: str = ""
     test_name: str = ""
     description: str = ""
@@ -337,6 +350,7 @@ class RestorationProcedure:
     """
     Restoration procedure documentation.
     """
+
     procedure_id: str = ""
     name: str = ""
     description: str = ""
@@ -376,9 +390,11 @@ class RestorationProcedure:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class BackupRecoveryConfig:
     """Configuration for Backup and Recovery module."""
+
     # Default retention
     default_retention_days: int = 30
     critical_data_retention_days: int = 90
@@ -409,6 +425,7 @@ class BackupRecoveryConfig:
 # =============================================================================
 # Main Backup Recovery Class
 # =============================================================================
+
 
 class DORABackupRecovery:
     """
@@ -529,11 +546,14 @@ class DORABackupRecovery:
         with self._lock:
             self._policies[policy.policy_id] = policy
 
-        self._log_event("policy_created", {
-            "policy_id": policy.policy_id,
-            "name": name,
-            "classification": data_classification.value,
-        })
+        self._log_event(
+            "policy_created",
+            {
+                "policy_id": policy.policy_id,
+                "name": name,
+                "classification": data_classification.value,
+            },
+        )
 
         return policy
 
@@ -549,7 +569,8 @@ class DORABackupRecovery:
         """Get policies by data classification."""
         with self._lock:
             return [
-                p for p in self._policies.values()
+                p
+                for p in self._policies.values()
                 if p.data_classification == classification and p.is_active
             ]
 
@@ -607,11 +628,14 @@ class DORABackupRecovery:
         with self._lock:
             self._locations[location.location_id] = location
 
-        self._log_event("location_registered", {
-            "location_id": location.location_id,
-            "name": name,
-            "type": location_type.value,
-        })
+        self._log_event(
+            "location_registered",
+            {
+                "location_id": location.location_id,
+                "name": name,
+                "type": location_type.value,
+            },
+        )
 
         return location
 
@@ -651,10 +675,7 @@ class DORABackupRecovery:
 
             # Check distance
             min_distance = self.config.minimum_distance_km
-            compliant_dr = [
-                l for l in dr_locations
-                if l.distance_from_primary_km >= min_distance
-            ]
+            compliant_dr = [l for l in dr_locations if l.distance_from_primary_km >= min_distance]
 
             if not compliant_dr:
                 return {
@@ -698,9 +719,7 @@ class DORABackupRecovery:
         )
 
         # Calculate retention expiry
-        retention_expiry = (
-            datetime.now(timezone.utc) + timedelta(days=policy.retention_days)
-        )
+        retention_expiry = datetime.now(timezone.utc) + timedelta(days=policy.retention_days)
         job.retention_expiry = retention_expiry.isoformat()
 
         with self._lock:
@@ -718,10 +737,13 @@ class DORABackupRecovery:
             job.status = BackupStatus.RUNNING
             job.started_time = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("backup_started", {
-            "job_id": job_id,
-            "policy_id": job.policy_id,
-        })
+        self._log_event(
+            "backup_started",
+            {
+                "job_id": job_id,
+                "policy_id": job.policy_id,
+            },
+        )
 
         return job
 
@@ -758,11 +780,14 @@ class DORABackupRecovery:
         if not success and self.config.alert_on_failure:
             self._alert_backup_failure(job)
 
-        self._log_event("backup_completed", {
-            "job_id": job_id,
-            "success": success,
-            "bytes_transferred": bytes_transferred,
-        })
+        self._log_event(
+            "backup_completed",
+            {
+                "job_id": job_id,
+                "success": success,
+                "bytes_transferred": bytes_transferred,
+            },
+        )
 
         return job
 
@@ -815,7 +840,8 @@ class DORABackupRecovery:
 
         with self._lock:
             return [
-                j for j in self._jobs.values()
+                j
+                for j in self._jobs.values()
                 if j.status == BackupStatus.FAILED and j.scheduled_time > cutoff
             ]
 
@@ -877,10 +903,13 @@ class DORABackupRecovery:
         with self._lock:
             self._tests[test.test_id] = test
 
-        self._log_event("recovery_test_scheduled", {
-            "test_id": test.test_id,
-            "test_type": test_type.value,
-        })
+        self._log_event(
+            "recovery_test_scheduled",
+            {
+                "test_id": test.test_id,
+                "test_type": test_type.value,
+            },
+        )
 
         return test
 
@@ -930,16 +959,17 @@ class DORABackupRecovery:
             # Calculate duration
             if test.executed_date:
                 start = datetime.fromisoformat(test.executed_date.replace("Z", "+00:00"))
-                test.duration_minutes = (
-                    datetime.now(timezone.utc) - start
-                ).total_seconds() / 60
+                test.duration_minutes = (datetime.now(timezone.utc) - start).total_seconds() / 60
 
-        self._log_event("recovery_test_completed", {
-            "test_id": test_id,
-            "result": result.value,
-            "rto_met": test.rto_met,
-            "rpo_met": test.rpo_met,
-        })
+        self._log_event(
+            "recovery_test_completed",
+            {
+                "test_id": test_id,
+                "result": result.value,
+                "rto_met": test.rto_met,
+                "rpo_met": test.rpo_met,
+            },
+        )
 
         return test
 
@@ -965,19 +995,24 @@ class DORABackupRecovery:
 
                 # Find most recent test for this policy
                 policy_tests = [
-                    t for t in self._tests.values()
-                    if t.policy_id == policy.policy_id and t.result in (
+                    t
+                    for t in self._tests.values()
+                    if t.policy_id == policy.policy_id
+                    and t.result
+                    in (
                         RecoveryTestResult.PASSED,
                         RecoveryTestResult.PASSED_WITH_ISSUES,
                     )
                 ]
 
                 if not policy_tests:
-                    overdue.append({
-                        "policy_id": policy.policy_id,
-                        "policy_name": policy.name,
-                        "issue": "Never tested",
-                    })
+                    overdue.append(
+                        {
+                            "policy_id": policy.policy_id,
+                            "policy_name": policy.name,
+                            "issue": "Never tested",
+                        }
+                    )
                     continue
 
                 latest_test = max(policy_tests, key=lambda t: t.executed_date or "")
@@ -988,12 +1023,14 @@ class DORABackupRecovery:
                     days_since = (now - test_date).days
 
                     if days_since > policy.test_restore_frequency_days:
-                        overdue.append({
-                            "policy_id": policy.policy_id,
-                            "policy_name": policy.name,
-                            "issue": f"Last test was {days_since} days ago",
-                            "required_frequency_days": policy.test_restore_frequency_days,
-                        })
+                        overdue.append(
+                            {
+                                "policy_id": policy.policy_id,
+                                "policy_name": policy.name,
+                                "issue": f"Last test was {days_since} days ago",
+                                "required_frequency_days": policy.test_restore_frequency_days,
+                            }
+                        )
 
         return overdue
 
@@ -1036,10 +1073,7 @@ class DORABackupRecovery:
     def get_procedures_for_system(self, system: str) -> List[RestorationProcedure]:
         """Get procedures for a system."""
         with self._lock:
-            return [
-                p for p in self._procedures.values()
-                if system in p.systems and p.is_active
-            ]
+            return [p for p in self._procedures.values() if system in p.systems and p.is_active]
 
     # =========================================================================
     # Reporting
@@ -1050,10 +1084,9 @@ class DORABackupRecovery:
         with self._lock:
             all_jobs = list(self._jobs.values())
             recent_jobs = [
-                j for j in all_jobs
-                if j.scheduled_time > (
-                    datetime.now(timezone.utc) - timedelta(days=7)
-                ).isoformat()
+                j
+                for j in all_jobs
+                if j.scheduled_time > (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
             ]
 
             successful = [j for j in recent_jobs if j.success]
@@ -1066,8 +1099,7 @@ class DORABackupRecovery:
                     "active": sum(1 for p in self._policies.values() if p.is_active),
                     "by_classification": {
                         c.value: sum(
-                            1 for p in self._policies.values()
-                            if p.data_classification == c
+                            1 for p in self._policies.values() if p.data_classification == c
                         )
                         for c in DataClassification
                     },
@@ -1077,8 +1109,7 @@ class DORABackupRecovery:
                     "successful": len(successful),
                     "failed": len(failed),
                     "success_rate_pct": (
-                        len(successful) / len(recent_jobs) * 100
-                        if recent_jobs else 100.0
+                        len(successful) / len(recent_jobs) * 100 if recent_jobs else 100.0
                     ),
                 },
                 "locations": {
@@ -1090,8 +1121,7 @@ class DORABackupRecovery:
                 "recovery_tests": {
                     "total": len(self._tests),
                     "passed": sum(
-                        1 for t in self._tests.values()
-                        if t.result == RecoveryTestResult.PASSED
+                        1 for t in self._tests.values() if t.result == RecoveryTestResult.PASSED
                     ),
                     "overdue_policies": len(self.get_overdue_tests()),
                 },
@@ -1141,6 +1171,7 @@ class DORABackupRecovery:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_backup_recovery(
     config: Optional[BackupRecoveryConfig] = None,

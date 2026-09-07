@@ -134,6 +134,7 @@ The unified risk guard automatically detects asset type from symbol patterns:
 ### 3. Configurability
 
 All parameters are configurable via YAML files:
+
 - `configs/config_train_futures.yaml` - Training configuration
 - `configs/config_live_futures.yaml` - Live trading configuration
 - `configs/unified_futures_risk.yaml` - Risk management settings
@@ -142,6 +143,7 @@ All parameters are configurable via YAML files:
 ### 4. Testability
 
 Every component has comprehensive test coverage:
+
 - Unit tests for individual components
 - Integration tests for cross-component interactions
 - Validation tests against target metrics

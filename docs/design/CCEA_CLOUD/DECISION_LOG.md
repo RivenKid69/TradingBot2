@@ -9,6 +9,7 @@
 ## Decision Format
 
 Каждое решение содержит:
+
 - **ID**: Уникальный идентификатор
 - **Question**: Исходный вопрос
 - **Decision**: Принятое решение
@@ -26,11 +27,13 @@
 **Decision:** Process-ok с fallback, Docker рекомендован.
 
 **Rationale:**
+
 1. Требование Docker создаёт барьер для retail пользователей
 2. Process isolation достаточна для базовой безопасности
 3. Docker обеспечивает лучшую изоляцию, но опционален
 
 **Implementation:**
+
 ```yaml
 sandbox:
   mode: "auto"  # auto | docker | process
@@ -47,6 +50,7 @@ sandbox:
 ```
 
 **Implications:**
+
 - При отсутствии Docker: предупреждение пользователю, работа в process mode
 - Enterprise: Docker обязателен
 - Документация должна рекомендовать Docker
@@ -63,12 +67,14 @@ sandbox:
 **Decision:** Enterprise-only, opt-in, выключено по умолчанию.
 
 **Rationale:**
+
 1. RAW order data содержит sensitive информацию
 2. GDPR требует минимизации данных
 3. Retail пользователям AGGREGATED достаточно
 4. Enterprise нужны детальные данные для compliance
 
 **Implementation:**
+
 ```yaml
 telemetry:
   levels:
@@ -92,6 +98,7 @@ telemetry:
 ```
 
 **Implications:**
+
 - Retail: только AGGREGATED и DETAILED
 - Enterprise: все уровни по контракту
 - UI должен явно показывать уровень телеметрии
@@ -108,12 +115,14 @@ telemetry:
 **Decision:** По умолчанию только локально; enterprise — по договору.
 
 **Rationale:**
+
 1. Flatten = торговая операция = должна быть локальной
 2. Cloud не должен иметь возможность исполнять ордера
 3. Enterprise может требовать remote flatten для risk management
 4. Всегда требуется local approval или explicit policy
 
 **Implementation:**
+
 ```yaml
 flatten_policy:
   retail:
@@ -133,6 +142,7 @@ flatten_policy:
 ```
 
 **Implications:**
+
 - Retail: flatten только через local UI или kill switch
 - Enterprise: remote flatten требует dual approval
 - Все flatten операции логируются
@@ -149,12 +159,14 @@ flatten_policy:
 **Decision:** Не делаем в этой итерации.
 
 **Rationale:**
+
 1. Создаёт зависимость от cloud для live trading
 2. Усложняет архитектуру безопасности
 3. Latency concerns для HFT
 4. Можно добавить позже как опцию
 
 **Implementation:**
+
 ```yaml
 cloud_inference:
   enabled: false
@@ -166,6 +178,7 @@ cloud_inference:
 ```
 
 **Implications:**
+
 - Все inference происходит локально в Agent
 - Model artifacts загружаются из Registry
 - Нет realtime dependency на Cloud для trading decisions
@@ -184,20 +197,26 @@ cloud_inference:
 **Classification:**
 
 ### Level 1: PUBLIC
+
 Данные, которые можно свободно передавать:
+
 - Рыночные цены (public)
 - Торговые часы
 - Fee structures
 - Exchange info
 
 ### Level 2: INTERNAL
+
 Данные для внутреннего использования:
+
 - Aggregated performance metrics
 - Strategy configurations (non-secret)
 - Deployment states
 
 ### Level 3: SENSITIVE
+
 Требует защиты и redaction:
+
 - Account identifiers (masked)
 - IP addresses
 - Trade counts/volumes
@@ -205,13 +224,16 @@ cloud_inference:
 - User IDs
 
 ### Level 4: SECRET
+
 Никогда не покидает Agent:
+
 - Broker API keys
 - Master vault keys
 - Private keys
 - Raw order details (fills, modifications)
 
 **Implementation:**
+
 ```yaml
 data_classification:
   PUBLIC:
@@ -236,6 +258,7 @@ data_classification:
 ```
 
 **Implications:**
+
 - Telemetry pipeline применяет классификацию
 - Export tools автоматически redact
 - Audit trail для доступа к SENSITIVE+
@@ -253,7 +276,8 @@ data_classification:
 
 **Implementation:**
 
-### Retail (BYO Agent):
+### Retail (BYO Agent)
+
 ```yaml
 byo_verification:
   required:
@@ -263,7 +287,8 @@ byo_verification:
     - infrastructure_type: ["local_machine", "vps", "cloud_vm"]
 ```
 
-### Enterprise (VPS/Self-hosted):
+### Enterprise (VPS/Self-hosted)
+
 ```yaml
 enterprise_verification:
   required:
@@ -278,6 +303,7 @@ enterprise_verification:
 ```
 
 **Onboarding Flow:**
+
 1. User creates account
 2. User acknowledges ToS (includes BYO clause)
 3. User downloads/deploys Agent
@@ -285,6 +311,7 @@ enterprise_verification:
 5. First deployment requires explicit approval
 
 **Implications:**
+
 - Мы не несём ответственности за customer infrastructure
 - ToS явно указывает на customer responsibility
 - Audit trail фиксирует attestation
@@ -301,6 +328,7 @@ enterprise_verification:
 **Decision:** Dual approach: keyless sigstore для public, keyful для enterprise/offline.
 
 **Implementation:**
+
 ```yaml
 artifact_signing:
   default: sigstore_keyless
@@ -330,6 +358,7 @@ artifact_signing:
 ```
 
 **Implications:**
+
 - SaaS: sigstore keyless по умолчанию
 - Enterprise: поддержка customer CA
 - Agent: проверяет подпись против trust root
@@ -361,6 +390,7 @@ artifact_signing:
 **Mitigation:** Cloud build не содержит trading libraries.
 
 **Implementation:**
+
 - CI check: `no-trading-libs-in-cloud`
 - Build-time dependency scan
 - Runtime: no broker connectors
@@ -370,6 +400,7 @@ artifact_signing:
 **Mitigation:** Keys designed to remain in Agent (verify via security review).
 
 **Implementation:**
+
 - Vault only in Agent
 - Redaction mandatory
 - No key backup to Cloud
@@ -379,6 +410,7 @@ artifact_signing:
 **Mitigation:** Digest pinning + signature verification.
 
 **Implementation:**
+
 - Artifacts stored by digest
 - Signature required for publish
 - Agent rejects unsigned
@@ -388,6 +420,7 @@ artifact_signing:
 **Mitigation:** No order-like payloads in protocol.
 
 **Implementation:**
+
 - Schema prohibits side/qty/price
 - CI check for schema
 - Runtime validation
@@ -397,6 +430,7 @@ artifact_signing:
 **Mitigation:** Idempotency keys + timestamps.
 
 **Implementation:**
+
 - Unique idempotency_key per command
 - Timestamp validation
 - Dedup in Agent
@@ -418,6 +452,7 @@ artifact_signing:
 ---
 
 **Document Control:**
+
 - Author: CCEA Architecture Team
 - Reviewers: Security, Legal, Privacy, Engineering
 - Approval: Architecture Review Board

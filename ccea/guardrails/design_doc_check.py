@@ -25,7 +25,7 @@ from typing import Optional, Tuple
 # ============================================================================
 
 # Primary path (root location) - actual location of Design Doc
-PRIMARY_SNAPSHOT_PATH = Path("Design Doc CCEA Cloud.txt")
+PRIMARY_SNAPSHOT_PATH = Path("docs/history/design-doc-ccea-cloud.txt")
 
 # Legacy paths (for backwards compatibility)
 LEGACY_SNAPSHOT_PATH = Path("docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt")
@@ -36,12 +36,13 @@ DEFAULT_SNAPSHOT_PATH = PRIMARY_SNAPSHOT_PATH
 DEFAULT_RENDERED_PATH = LEGACY_RENDERED_PATH
 
 # Regex to extract SHA256 from rendered document
-SHA256_PATTERN = re.compile(r'\*\*SHA256\*\*:\s*([a-fA-F0-9]{64})')
+SHA256_PATTERN = re.compile(r"\*\*SHA256\*\*:\s*([a-fA-F0-9]{64})")
 
 
 # ============================================================================
 # SHA Verification Functions
 # ============================================================================
+
 
 def compute_sha256(file_path: Path) -> str:
     """
@@ -97,6 +98,7 @@ def find_design_doc_path() -> Optional[Path]:
         LEGACY_SNAPSHOT_PATH,
         Path("Design Doc CCEA Cloud.txt"),
         Path("docs/Design Doc CCEA Cloud.txt"),
+        Path("archive/root_files/Design Doc CCEA Cloud.txt"),
         Path("design_doc.txt"),
     ]
 
@@ -165,13 +167,12 @@ def verify_design_doc_sha(
 # CLI Interface
 # ============================================================================
 
+
 def main() -> int:
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Design Doc SHA Verification"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Design Doc SHA Verification")
     parser.add_argument(
         "--snapshot",
         type=Path,

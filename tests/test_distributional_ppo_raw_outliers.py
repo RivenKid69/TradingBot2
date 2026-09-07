@@ -438,10 +438,7 @@ def test_value_scale_rms_accumulates_across_rollouts() -> None:
 
     rng = np.random.default_rng(12345)
     batch_size = 64
-    batches = [
-        rng.normal(0.0, base_std, size=(batch_size, 1)).astype(np.float32)
-        for _ in range(5)
-    ]
+    batches = [rng.normal(0.0, base_std, size=(batch_size, 1)).astype(np.float32) for _ in range(5)]
 
     agg_before: list[float] = []
     agg_after: list[float] = []
@@ -458,7 +455,9 @@ def test_value_scale_rms_accumulates_across_rollouts() -> None:
         assert accumulator_after is not None
         agg_after.append(float(accumulator_after.count))
 
-    assert agg_before[:4] == pytest.approx([0.0, batch_size, batch_size * 2, batch_size * 3], rel=1e-3)
+    assert agg_before[:4] == pytest.approx(
+        [0.0, batch_size, batch_size * 2, batch_size * 3], rel=1e-3
+    )
     assert agg_after[:3] == pytest.approx([batch_size, batch_size * 2, batch_size * 3], rel=1e-3)
     assert agg_before[4] == pytest.approx(0.0, abs=1e-3)
     assert agg_after[3:] == pytest.approx([0.0, 0.0], abs=1e-3)
@@ -626,9 +625,7 @@ def test_non_normalized_value_scale_freeze_and_decode_path() -> None:
     # In the non-normalized path the decoded returns remain raw fractions scaled
     # by ``value_target_scale``; the p99 absolute magnitude should therefore
     # match the robust scale estimate captured during warmup.
-    assert abs_p99 == pytest.approx(
-        float(model._value_target_scale_robust), rel=1e-3, abs=1e-3
-    )
+    assert abs_p99 == pytest.approx(float(model._value_target_scale_robust), rel=1e-3, abs=1e-3)
 
     returns_decode_path = "scale_only"
     model.logger.record("train/returns_decode_path", returns_decode_path)

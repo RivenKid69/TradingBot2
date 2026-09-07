@@ -59,9 +59,7 @@ class BuildConfig:
     signature_algorithm: SignatureAlgorithm = SignatureAlgorithm.SIGSTORE
 
     # Runtime
-    runtime_requirements: RuntimeRequirements = field(
-        default_factory=RuntimeRequirements
-    )
+    runtime_requirements: RuntimeRequirements = field(default_factory=RuntimeRequirements)
 
     # Git info (for provenance)
     git_repo: str = ""
@@ -164,7 +162,9 @@ class ArtifactBuilder:
 
         try:
             if not config.sign_artifact:
-                result.errors.append("Unsigned artifacts are not allowed (sign_artifact must be True)")
+                result.errors.append(
+                    "Unsigned artifacts are not allowed (sign_artifact must be True)"
+                )
                 return result
 
             if self._signing_key is None:
@@ -179,9 +179,7 @@ class ArtifactBuilder:
             provenance = self._create_provenance(config)
 
             # Determine output directory
-            output_dir = config.output_path or Path(
-                tempfile.mkdtemp(prefix="ccea_cloud_artifact_")
-            )
+            output_dir = config.output_path or Path(tempfile.mkdtemp(prefix="ccea_cloud_artifact_"))
             output_dir.mkdir(parents=True, exist_ok=True)
 
             # Package artifact (zip bundle baseline; OCI image can be added later)
@@ -272,7 +270,9 @@ class ArtifactBuilder:
             build_timestamp=datetime.utcnow(),
             build_host=socket.gethostname(),
             ci_job_id=os.getenv("GITHUB_RUN_ID") or os.getenv("CI_JOB_ID"),
-            ci_pipeline_url=os.getenv("GITHUB_SERVER_URL") and os.getenv("GITHUB_REPOSITORY") and os.getenv("GITHUB_RUN_ID")
+            ci_pipeline_url=os.getenv("GITHUB_SERVER_URL")
+            and os.getenv("GITHUB_REPOSITORY")
+            and os.getenv("GITHUB_RUN_ID")
             and f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}",
             deps_lock_digest=deps_lock_digest,
         )

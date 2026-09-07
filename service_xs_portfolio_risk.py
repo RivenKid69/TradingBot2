@@ -28,14 +28,14 @@ _TOL = 1e-9
 
 @dataclass
 class PortfolioRiskLimits:
-    gross_max: Optional[float] = None         # Σ|w| ≤ gross_max
-    net_max: Optional[float] = None           # |Σw| ≤ net_max
-    max_position: Optional[float] = None       # max|w_i| ≤ max_position
-    max_sector: Optional[float] = None         # |экспозиция сектора| ≤ max_sector
+    gross_max: Optional[float] = None  # Σ|w| ≤ gross_max
+    net_max: Optional[float] = None  # |Σw| ≤ net_max
+    max_position: Optional[float] = None  # max|w_i| ≤ max_position
+    max_sector: Optional[float] = None  # |экспозиция сектора| ≤ max_sector
     sector_map: Optional[Dict[str, str]] = None
-    factor_caps: Optional[Dict[str, float]] = None   # |(Bᵀw)_f| ≤ cap
-    exposures: Optional[pd.DataFrame] = None          # B: index=symbol, cols=factor
-    max_turnover: Optional[float] = None       # Σ|w − w₀| ≤ max_turnover
+    factor_caps: Optional[Dict[str, float]] = None  # |(Bᵀw)_f| ≤ cap
+    exposures: Optional[pd.DataFrame] = None  # B: index=symbol, cols=factor
+    max_turnover: Optional[float] = None  # Σ|w − w₀| ≤ max_turnover
 
 
 @dataclass
@@ -45,7 +45,11 @@ class RiskDecision:
     metrics: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"approved": self.approved, "violations": list(self.violations), "metrics": self.metrics}
+        return {
+            "approved": self.approved,
+            "violations": list(self.violations),
+            "metrics": self.metrics,
+        }
 
 
 class PortfolioRiskGuard:

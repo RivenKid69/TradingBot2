@@ -35,7 +35,7 @@ References:
 - CME Group Contract Specs: https://www.cmegroup.com/trading/equity-index/
 - Phase 8: Training Integration from FUTURES_INTEGRATION_PLAN.md
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-12-02
 """
 
@@ -78,16 +78,16 @@ logger = logging.getLogger(__name__)
 
 # Standard funding intervals (UTC hours)
 BINANCE_FUNDING_TIMES = [0, 8, 16]  # 00:00, 08:00, 16:00 UTC
-BYBIT_FUNDING_TIMES = [0, 8, 16]   # Same as Binance
+BYBIT_FUNDING_TIMES = [0, 8, 16]  # Same as Binance
 
 # Default liquidation penalty (severe negative reward)
 DEFAULT_LIQUIDATION_PENALTY = -10.0
 
 # Margin ratio thresholds
-MARGIN_WARNING_THRESHOLD = 1.5     # Warning at 150% margin ratio
-MARGIN_DANGER_THRESHOLD = 1.2      # Danger at 120%
-MARGIN_CRITICAL_THRESHOLD = 1.05   # Critical at 105%
-MARGIN_LIQUIDATION_THRESHOLD = 1.0 # Liquidation at 100%
+MARGIN_WARNING_THRESHOLD = 1.5  # Warning at 150% margin ratio
+MARGIN_DANGER_THRESHOLD = 1.2  # Danger at 120%
+MARGIN_CRITICAL_THRESHOLD = 1.05  # Critical at 105%
+MARGIN_LIQUIDATION_THRESHOLD = 1.0  # Liquidation at 100%
 
 # Default leverage brackets (Binance BTCUSDT style)
 DEFAULT_LEVERAGE_BRACKETS = [
@@ -133,9 +133,11 @@ DEFAULT_LEVERAGE_BRACKETS = [
 # FUNDING RATE PROVIDER
 # =============================================================================
 
+
 @dataclass
 class FundingRateData:
     """Funding rate data point."""
+
     timestamp_ms: int
     funding_rate: Decimal
     mark_price: Optional[Decimal] = None
@@ -242,6 +244,7 @@ class FundingRateProvider:
 # MARGIN CALCULATOR
 # =============================================================================
 
+
 class MarginCalculator:
     """
     Calculator for futures margin requirements.
@@ -319,6 +322,7 @@ class MarginCalculator:
 # =============================================================================
 # LIQUIDATION CALCULATOR
 # =============================================================================
+
 
 class LiquidationCalculator:
     """
@@ -413,9 +417,11 @@ class LiquidationCalculator:
 # FUTURES TRADING ENVIRONMENT WRAPPER
 # =============================================================================
 
+
 @dataclass
 class FuturesEnvConfig:
     """Configuration for FuturesTradingEnv."""
+
     initial_leverage: int = 10
     max_leverage: int = 50
     margin_mode: str = "cross"  # "cross" or "isolated"
@@ -822,12 +828,8 @@ class FuturesTradingEnv(gym.Wrapper):
         # Check each funding time
         for funding_hour in self._funding_times:
             # Check if we crossed this funding hour
-            prev_funding = prev_dt.replace(
-                hour=funding_hour, minute=0, second=0, microsecond=0
-            )
-            curr_funding = curr_dt.replace(
-                hour=funding_hour, minute=0, second=0, microsecond=0
-            )
+            prev_funding = prev_dt.replace(hour=funding_hour, minute=0, second=0, microsecond=0)
+            curr_funding = curr_dt.replace(hour=funding_hour, minute=0, second=0, microsecond=0)
 
             # If prev_dt was before funding time and curr_dt is at/after
             if prev_dt < prev_funding <= curr_dt:
@@ -873,16 +875,21 @@ class FuturesTradingEnv(gym.Wrapper):
         mark_price = Decimal(str(info.get("mark_price", info.get("close", 1))))
 
         # Augmented features (normalized)
-        augmented = np.array([
-            # Margin ratio (clipped and normalized to [-1, 1])
-            np.clip((self._margin_ratio - 1.0) / 2.0, -1.0, 1.0),
-            # Funding rate (from info or default)
-            np.clip(float(info.get("funding_rate", 0)) * 1000, -1.0, 1.0),
-            # Liquidation distance (normalized log)
-            np.clip(math.log1p(self._calculate_liquidation_distance(mark_price)) / 5.0, 0.0, 1.0),
-            # Current leverage (normalized)
-            np.clip(self._leverage / self._max_leverage, 0.0, 1.0),
-        ], dtype=np.float32)
+        augmented = np.array(
+            [
+                # Margin ratio (clipped and normalized to [-1, 1])
+                np.clip((self._margin_ratio - 1.0) / 2.0, -1.0, 1.0),
+                # Funding rate (from info or default)
+                np.clip(float(info.get("funding_rate", 0)) * 1000, -1.0, 1.0),
+                # Liquidation distance (normalized log)
+                np.clip(
+                    math.log1p(self._calculate_liquidation_distance(mark_price)) / 5.0, 0.0, 1.0
+                ),
+                # Current leverage (normalized)
+                np.clip(self._leverage / self._max_leverage, 0.0, 1.0),
+            ],
+            dtype=np.float32,
+        )
 
         return np.concatenate([obs, augmented])
 
@@ -937,6 +944,7 @@ class FuturesTradingEnv(gym.Wrapper):
 # LEVERAGE WRAPPER (Simple leverage enforcement)
 # =============================================================================
 
+
 class FuturesLeverageWrapper(gym.Wrapper):
     """
     Simple wrapper that enforces leverage limits.
@@ -971,6 +979,7 @@ class FuturesLeverageWrapper(gym.Wrapper):
 # =============================================================================
 # FACTORY FUNCTIONS
 # =============================================================================
+
 
 def create_futures_env(
     base_env: gym.Env,

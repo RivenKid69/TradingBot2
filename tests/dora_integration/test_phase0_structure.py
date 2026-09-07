@@ -186,6 +186,7 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration can be imported."""
         try:
             from services import dora_integration
+
             # Phase 8 complete - version is now 2.0.0
             assert dora_integration.__version__ == "2.0.0"
             # Phase 8 complete - migration_phase is now 8
@@ -197,6 +198,7 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.due_diligence can be imported."""
         try:
             from services.dora_integration import due_diligence
+
             # Phase 1 complete - due_diligence now has exports
             assert len(due_diligence.__all__) > 0
         except ImportError as e:
@@ -206,6 +208,7 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.incident_interface can be imported."""
         try:
             from services.dora_integration import incident_interface
+
             # Phase 2 complete - incident_interface now has exports
             assert len(incident_interface.__all__) > 0
         except ImportError as e:
@@ -215,6 +218,7 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.third_party can be imported."""
         try:
             from services.dora_integration import third_party
+
             # Phase 3 complete - third_party now has 88 exports
             assert len(third_party.__all__) > 0
         except ImportError as e:
@@ -224,6 +228,7 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.contracts can be imported."""
         try:
             from services.dora_integration import contracts
+
             # Phase 4 complete - contracts now has exports
             assert len(contracts.__all__) > 0
         except ImportError as e:
@@ -233,6 +238,7 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.reporting can be imported."""
         try:
             from services.dora_integration import reporting
+
             # Phase 5 complete - reporting now has exports
             assert len(reporting.__all__) > 0
         except ImportError as e:
@@ -242,6 +248,7 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.sharing can be imported."""
         try:
             from services.dora_integration import sharing
+
             # Phase 6 complete - sharing now has 29 exports
             assert len(sharing.__all__) > 0
             assert "DORAInformationSharing" in sharing.__all__
@@ -256,6 +263,7 @@ class TestPhase0ExistingCodeIntegrity:
         """Verify services.dora can still be imported."""
         try:
             from services import dora
+
             assert hasattr(dora, "__version__")
         except ImportError as e:
             pytest.fail(f"Failed to import existing dora module: {e}")
@@ -264,6 +272,7 @@ class TestPhase0ExistingCodeIntegrity:
         """Verify key exports from services.dora still work."""
         try:
             from services.dora import DORAScope, FunctionClassifier
+
             assert DORAScope is not None
             assert FunctionClassifier is not None
         except ImportError as e:

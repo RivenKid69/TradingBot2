@@ -79,6 +79,7 @@ BarType = TypeVar("BarType", bound=Bar)
 # Base Adapter
 # =========================
 
+
 class BaseAdapter(ABC):
     """
     Base class for all exchange adapters.
@@ -172,6 +173,7 @@ class BaseAdapter(ABC):
 # =========================
 # Market Data Adapter
 # =========================
+
 
 class MarketDataAdapter(BaseAdapter):
     """
@@ -326,6 +328,7 @@ class MarketDataAdapter(BaseAdapter):
 # Fee Adapter
 # =========================
 
+
 class FeeAdapter(BaseAdapter):
     """
     Abstract adapter for fee computation.
@@ -426,6 +429,7 @@ class FeeAdapter(BaseAdapter):
 # =========================
 # Trading Hours Adapter
 # =========================
+
 
 class TradingHoursAdapter(BaseAdapter):
     """
@@ -579,9 +583,11 @@ class TradingHoursAdapter(BaseAdapter):
 # Order Execution Adapter
 # =========================
 
+
 @dataclass
 class OrderResult:
     """Result of order submission."""
+
     success: bool
     order_id: Optional[str] = None
     client_order_id: Optional[str] = None
@@ -728,6 +734,7 @@ class OrderExecutionAdapter(BaseAdapter):
 # Exchange Info Adapter
 # =========================
 
+
 class ExchangeInfoAdapter(BaseAdapter):
     """
     Abstract adapter for exchange metadata and symbol info.
@@ -839,6 +846,7 @@ class ExchangeInfoAdapter(BaseAdapter):
 # =========================
 # Corporate Actions Adapter (Phase 7)
 # =========================
+
 
 class CorporateActionsAdapter(BaseAdapter):
     """
@@ -1043,6 +1051,7 @@ class CorporateActionsAdapter(BaseAdapter):
 # Earnings Adapter (Phase 7)
 # =========================
 
+
 class EarningsAdapter(BaseAdapter):
     """
     Abstract adapter for earnings calendar and estimates.
@@ -1154,6 +1163,7 @@ class EarningsAdapter(BaseAdapter):
 # Combined Exchange Adapter
 # =========================
 
+
 class ExchangeAdapter(
     MarketDataAdapter,
     FeeAdapter,
@@ -1183,6 +1193,7 @@ class ExchangeAdapter(
 # Protocols for Duck Typing
 # =========================
 
+
 @runtime_checkable
 class SupportsMarketData(Protocol):
     """Protocol for classes supporting market data."""
@@ -1193,15 +1204,13 @@ class SupportsMarketData(Protocol):
         timeframe: str,
         *,
         limit: int = 500,
-    ) -> List[Bar]:
-        ...
+    ) -> List[Bar]: ...
 
     def stream_bars(
         self,
         symbols: Sequence[str],
         interval_ms: int,
-    ) -> Iterator[Bar]:
-        ...
+    ) -> Iterator[Bar]: ...
 
 
 @runtime_checkable
@@ -1213,24 +1222,22 @@ class SupportsFees(Protocol):
         notional: float,
         side: Side,
         liquidity: Union[str, Liquidity],
-    ) -> float:
-        ...
+    ) -> float: ...
 
 
 @runtime_checkable
 class SupportsTradingHours(Protocol):
     """Protocol for classes supporting trading hours."""
 
-    def is_market_open(self, ts: int) -> bool:
-        ...
+    def is_market_open(self, ts: int) -> bool: ...
 
-    def next_open(self, ts: int) -> int:
-        ...
+    def next_open(self, ts: int) -> int: ...
 
 
 # =========================
 # Factory Protocol
 # =========================
+
 
 class AdapterFactory(Protocol):
     """Protocol for adapter factories."""
@@ -1239,33 +1246,28 @@ class AdapterFactory(Protocol):
         self,
         vendor: ExchangeVendor,
         config: Optional[Mapping[str, Any]] = None,
-    ) -> MarketDataAdapter:
-        ...
+    ) -> MarketDataAdapter: ...
 
     def create_fee_adapter(
         self,
         vendor: ExchangeVendor,
         config: Optional[Mapping[str, Any]] = None,
-    ) -> FeeAdapter:
-        ...
+    ) -> FeeAdapter: ...
 
     def create_trading_hours_adapter(
         self,
         vendor: ExchangeVendor,
         config: Optional[Mapping[str, Any]] = None,
-    ) -> TradingHoursAdapter:
-        ...
+    ) -> TradingHoursAdapter: ...
 
     def create_order_execution_adapter(
         self,
         vendor: ExchangeVendor,
         config: Optional[Mapping[str, Any]] = None,
-    ) -> OrderExecutionAdapter:
-        ...
+    ) -> OrderExecutionAdapter: ...
 
     def create_exchange_info_adapter(
         self,
         vendor: ExchangeVendor,
         config: Optional[Mapping[str, Any]] = None,
-    ) -> ExchangeInfoAdapter:
-        ...
+    ) -> ExchangeInfoAdapter: ...

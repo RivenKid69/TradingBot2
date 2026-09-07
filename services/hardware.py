@@ -31,6 +31,7 @@ GPU_INSTALL_HINT = 'pip install -e ".[gpu]"  # PyTorch с CUDA 12.1 (см. pypro
 def _try_import_torch():
     try:
         import torch  # type: ignore
+
         return torch
     except Exception:
         return None
@@ -40,9 +41,14 @@ def _nvidia_smi_gpus() -> List[Dict[str, Any]]:
     """GPU-инвентарь через nvidia-smi (работает и при CPU-only torch)."""
     try:
         out = subprocess.run(
-            ["nvidia-smi", "--query-gpu=index,name,memory.total,memory.free,driver_version",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=10,
+            [
+                "nvidia-smi",
+                "--query-gpu=index,name,memory.total,memory.free,driver_version",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         if out.returncode != 0:
             return []
@@ -50,12 +56,15 @@ def _nvidia_smi_gpus() -> List[Dict[str, Any]]:
         for line in out.stdout.strip().splitlines():
             parts = [p.strip() for p in line.split(",")]
             if len(parts) >= 5:
-                gpus.append({
-                    "index": int(parts[0]), "name": parts[1],
-                    "vram_total_mb": int(float(parts[2])),
-                    "vram_free_mb": int(float(parts[3])),
-                    "driver": parts[4],
-                })
+                gpus.append(
+                    {
+                        "index": int(parts[0]),
+                        "name": parts[1],
+                        "vram_total_mb": int(float(parts[2])),
+                        "vram_free_mb": int(float(parts[3])),
+                        "driver": parts[4],
+                    }
+                )
         return gpus
     except Exception:
         return []
@@ -66,7 +75,7 @@ def gpu_status() -> Dict[str, Any]:
     status: Dict[str, Any] = {
         "torch_available": False,
         "torch_version": None,
-        "torch_cuda_build": None,     # версия CUDA, с которой собран torch (None = CPU-сборка)
+        "torch_cuda_build": None,  # версия CUDA, с которой собран torch (None = CPU-сборка)
         "cuda_available": False,
         "devices": [],
         "nvidia_smi_devices": _nvidia_smi_gpus(),
@@ -99,12 +108,15 @@ def gpu_status() -> Dict[str, Any]:
                 free_b, total_b = torch.cuda.mem_get_info(i)
             except Exception:
                 free_b, total_b = 0, getattr(props, "total_memory", 0)
-            devices.append({
-                "index": i, "name": props.name,
-                "vram_total_mb": int(total_b / 1e6),
-                "vram_free_mb": int(free_b / 1e6),
-                "capability": f"{props.major}.{props.minor}",
-            })
+            devices.append(
+                {
+                    "index": i,
+                    "name": props.name,
+                    "vram_total_mb": int(total_b / 1e6),
+                    "vram_free_mb": int(free_b / 1e6),
+                    "capability": f"{props.major}.{props.minor}",
+                }
+            )
         status["devices"] = devices
         status["recommended_device"] = "cuda"
         status["reason"] = f"CUDA доступна: {devices[0]['name']}" if devices else "CUDA доступна"
@@ -112,14 +124,20 @@ def gpu_status() -> Dict[str, Any]:
 
     # CUDA недоступна — объясняем почему.
     if status["torch_cuda_build"] is None:
-        status["reason"] = ("torch собран без CUDA (CPU-сборка) — обучение идёт на CPU. "
-                            "Для GPU переустановите torch с CUDA.")
+        status["reason"] = (
+            "torch собран без CUDA (CPU-сборка) — обучение идёт на CPU. "
+            "Для GPU переустановите torch с CUDA."
+        )
         status["install_hint"] = GPU_INSTALL_HINT
     elif status["nvidia_smi_devices"]:
-        status["reason"] = ("torch собран с CUDA, GPU виден драйверу, но torch.cuda.is_available()=False "
-                            "— проверьте совместимость версии драйвера и CUDA-сборки torch.")
+        status["reason"] = (
+            "torch собран с CUDA, GPU виден драйверу, но torch.cuda.is_available()=False "
+            "— проверьте совместимость версии драйвера и CUDA-сборки torch."
+        )
     else:
-        status["reason"] = "NVIDIA GPU/драйвер не обнаружены (nvidia-smi недоступен) — обучение на CPU."
+        status["reason"] = (
+            "NVIDIA GPU/драйвер не обнаружены (nvidia-smi недоступен) — обучение на CPU."
+        )
     return status
 
 
@@ -139,19 +157,24 @@ def resolve_device(requested: Optional[str] = None) -> Dict[str, Any]:
     cuda_ok = st["cuda_available"]
     if req in ("auto", ""):
         eff = "cuda" if cuda_ok else "cpu"
-        return {"requested": "auto", "effective": eff,
-                "reason": st["reason"] if not cuda_ok else f"auto → cuda ({st['reason']})"}
+        return {
+            "requested": "auto",
+            "effective": eff,
+            "reason": st["reason"] if not cuda_ok else f"auto → cuda ({st['reason']})",
+        }
 
     if req.startswith("cuda"):
         if cuda_ok:
             return {"requested": req, "effective": req, "reason": st["reason"]}
-        return {"requested": req, "effective": "cpu",
-                "reason": f"запрошен {req}, но {st['reason']}"}
+        return {
+            "requested": req,
+            "effective": "cpu",
+            "reason": f"запрошен {req}, но {st['reason']}",
+        }
 
     # Неизвестное значение — честный auto-фоллбек.
     eff = "cuda" if cuda_ok else "cpu"
-    return {"requested": req, "effective": eff,
-            "reason": f"неизвестное устройство {req!r} → {eff}"}
+    return {"requested": req, "effective": eff, "reason": f"неизвестное устройство {req!r} → {eff}"}
 
 
 def quick_benchmark(size: int = 2048, repeats: int = 3) -> Dict[str, Any]:
@@ -174,7 +197,7 @@ def quick_benchmark(size: int = 2048, repeats: int = 3) -> Dict[str, Any]:
                 (a @ b)
             if device.startswith("cuda"):
                 torch.cuda.synchronize()
-            return ( _t.perf_counter() - t0) / repeats * 1000.0
+            return (_t.perf_counter() - t0) / repeats * 1000.0
         except Exception as exc:
             logger.warning("gpu-bench(%s): %s", device, exc)
             return None

@@ -40,18 +40,29 @@ _DEFAULT_CAL_PATH = "data/forex/calendar/economic_calendar.parquet"
 class COTEnricher(AsofEnricher):
     """COT net-positioning как колонка ``cot_net`` через as-of join с publish-lag."""
 
-    def __init__(self, provider: Callable[[Sequence[str]], pd.DataFrame], *,
-                 value_col: str = "cot_net", publish_lag_days: int = 3,
-                 pit_quality: str = PIT_TRUE) -> None:
+    def __init__(
+        self,
+        provider: Callable[[Sequence[str]], pd.DataFrame],
+        *,
+        value_col: str = "cot_net",
+        publish_lag_days: int = 3,
+        pit_quality: str = PIT_TRUE,
+    ) -> None:
         # ВАЖНО: не использовать имя ``self._provider`` — оно занято AsofEnricher
         # (иначе self._long вызовет сам себя → бесконечная рекурсия).
         self._cot_provider = provider
         super().__init__(
-            self._long, columns=[value_col], publish_ts_col="publish_ts",
+            self._long,
+            columns=[value_col],
+            publish_ts_col="publish_ts",
             publish_lag_ms=int(publish_lag_days) * 86_400_000,
-            meta=DataSourceMeta(name="cot", vendor="cftc", kind="enrich",
-                                pit_quality=pit_quality,
-                                notes="CFTC COT net positioning (publish-lag → PIT)."),
+            meta=DataSourceMeta(
+                name="cot",
+                vendor="cftc",
+                kind="enrich",
+                pit_quality=pit_quality,
+                notes="CFTC COT net positioning (publish-lag → PIT).",
+            ),
         )
 
     def _long(self, symbols: Sequence[str]) -> pd.DataFrame:
@@ -64,25 +75,35 @@ class COTEnricher(AsofEnricher):
         return df if (df is not None and len(df)) else pd.DataFrame(columns=cols)
 
 
-def _parquet_cot_provider(path: str, *, symbol_col: str = "symbol",
-                          value_col: str = "cot_net", ts_col: str = "publish_ts"):
+def _parquet_cot_provider(
+    path: str, *, symbol_col: str = "symbol", value_col: str = "cot_net", ts_col: str = "publish_ts"
+):
     def provider(symbols: Sequence[str]) -> pd.DataFrame:
         if not os.path.exists(path):
             return pd.DataFrame(columns=["publish_ts", "symbol", "cot_net"])
         df = pd.read_parquet(path)
-        out = pd.DataFrame({
-            "publish_ts": PanelBuilder.normalize_ts(df[ts_col]) if hasattr(PanelBuilder, "normalize_ts")
-                          else pd.to_datetime(df[ts_col]).astype("int64") // 10**6,
-            "symbol": df[symbol_col].astype(str),
-            "cot_net": df[value_col].astype("float64"),
-        })
+        out = pd.DataFrame(
+            {
+                "publish_ts": (
+                    PanelBuilder.normalize_ts(df[ts_col])
+                    if hasattr(PanelBuilder, "normalize_ts")
+                    else pd.to_datetime(df[ts_col]).astype("int64") // 10**6
+                ),
+                "symbol": df[symbol_col].astype(str),
+                "cot_net": df[value_col].astype("float64"),
+            }
+        )
         return out[out["symbol"].isin(list(symbols))].reset_index(drop=True)
+
     return provider
 
 
-def make_cot_enricher(*, path: Optional[str] = None,
-                      provider: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None,
-                      publish_lag_days: int = 3) -> COTEnricher:
+def make_cot_enricher(
+    *,
+    path: Optional[str] = None,
+    provider: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None,
+    publish_lag_days: int = 3,
+) -> COTEnricher:
     prov = provider or _parquet_cot_provider(path or _DEFAULT_COT_PATH)
     return COTEnricher(prov, publish_lag_days=publish_lag_days)
 
@@ -94,15 +115,25 @@ class EconCalendarEnricher:
     """Флаг ``high_impact_soon``: high-impact событие по валюте символа в ближайшие
     ``window_days`` (анонсированный календарь, PIT-approx)."""
 
-    def __init__(self, events: pd.DataFrame, *, currency_map: Optional[Dict[str, str]] = None,
-                 window_days: int = 2, out_col: str = "high_impact_soon") -> None:
+    def __init__(
+        self,
+        events: pd.DataFrame,
+        *,
+        currency_map: Optional[Dict[str, str]] = None,
+        window_days: int = 2,
+        out_col: str = "high_impact_soon",
+    ) -> None:
         self.events = events
         self.currency_map = currency_map or {}
         self.window_ms = int(window_days) * 86_400_000
         self.out_col = out_col
-        self.meta = DataSourceMeta(name="econ_calendar", vendor="calendar", kind="enrich",
-                                   pit_quality=PIT_APPROX,
-                                   notes="High-impact event proximity flag (announced calendar).")
+        self.meta = DataSourceMeta(
+            name="econ_calendar",
+            vendor="calendar",
+            kind="enrich",
+            pit_quality=PIT_APPROX,
+            notes="High-impact event proximity flag (announced calendar).",
+        )
 
     def columns(self) -> List[str]:
         return [self.out_col]
@@ -126,8 +157,11 @@ class EconCalendarEnricher:
         ev = self.events
         # robust → ms независимо от разрешения datetime (pandas 3.0: ns/ms/us)
         ev_ts = pd.Series(
-            pd.to_datetime(ev["timestamp"], errors="coerce").values.astype("datetime64[ms]").astype("int64"),
-            index=ev.index)
+            pd.to_datetime(ev["timestamp"], errors="coerce")
+            .values.astype("datetime64[ms]")
+            .astype("int64"),
+            index=ev.index,
+        )
         impact = ev.get("impact", pd.Series(["High"] * len(ev))).astype(str).str.lower()
         ccy = ev.get("currency", pd.Series([""] * len(ev))).astype(str)
         high = impact.str.contains("high")
@@ -149,10 +183,13 @@ class EconCalendarEnricher:
         return out
 
 
-def make_econ_calendar_enricher(*, path: Optional[str] = None,
-                                events: Optional[pd.DataFrame] = None,
-                                currency_map: Optional[Dict[str, str]] = None,
-                                window_days: int = 2) -> EconCalendarEnricher:
+def make_econ_calendar_enricher(
+    *,
+    path: Optional[str] = None,
+    events: Optional[pd.DataFrame] = None,
+    currency_map: Optional[Dict[str, str]] = None,
+    window_days: int = 2,
+) -> EconCalendarEnricher:
     if events is None:
         p = path or _DEFAULT_CAL_PATH
         events = pd.read_parquet(p) if os.path.exists(p) else pd.DataFrame()
@@ -173,6 +210,10 @@ def build_altdata_enricher(name: str, cfg: Any) -> Optional[Any]:
 
 
 __all__ = [
-    "COTEnricher", "EconCalendarEnricher", "make_cot_enricher", "make_econ_calendar_enricher",
-    "ALTDATA_ENRICHERS", "build_altdata_enricher",
+    "COTEnricher",
+    "EconCalendarEnricher",
+    "make_cot_enricher",
+    "make_econ_calendar_enricher",
+    "ALTDATA_ENRICHERS",
+    "build_altdata_enricher",
 ]

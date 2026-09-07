@@ -143,7 +143,10 @@ def test_publish_signal_custom_dedup_key(tmp_path):
         dedup_key="custom2",
     )
 
-    assert [row["payload"]["target_weight"] for row in sent] == [pytest.approx(0.2), pytest.approx(0.4)]
+    assert [row["payload"]["target_weight"] for row in sent] == [
+        pytest.approx(0.2),
+        pytest.approx(0.4),
+    ]
 
 
 def test_publish_signal_payload_fields(tmp_path):
@@ -262,9 +265,7 @@ def test_load_and_flush_state(tmp_path):
     valid_sid = sid
     future_exp = now + 5000
     past_exp = now - 5000
-    sb._STATE_PATH.write_text(
-        json.dumps({valid_sid: future_exp, expired_sid: past_exp})
-    )
+    sb._STATE_PATH.write_text(json.dumps({valid_sid: future_exp, expired_sid: past_exp}))
     sb._SEEN.clear()
     sb._loaded = False
     sb.load_state()
@@ -364,6 +365,8 @@ def test_log_drop_counts():
     )
     sb.log_drop(envelope, "RISK_TEST")
     assert sb.dropped_by_reason["RISK_TEST"] == 1
+
+
 def _make_payload(weight: float = 0.1, *, edge: float = 10.0) -> SpotSignalTargetWeightPayload:
     economics = SpotSignalEconomics(
         edge_bps=edge,
@@ -373,4 +376,3 @@ def _make_payload(weight: float = 0.1, *, edge: float = 10.0) -> SpotSignalTarge
         act_now=True,
     )
     return SpotSignalTargetWeightPayload(target_weight=weight, economics=economics)
-

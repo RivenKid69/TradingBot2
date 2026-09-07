@@ -252,9 +252,7 @@ class TestDORASubcontractorManagement:
 
     def test_get_subcontractors_by_type(self, manager):
         """Test getting subcontractors by type."""
-        cloud_subs = manager.get_subcontractors_by_type(
-            SubcontractorType.CLOUD_INFRASTRUCTURE
-        )
+        cloud_subs = manager.get_subcontractors_by_type(SubcontractorType.CLOUD_INFRASTRUCTURE)
         # AWS should be found
         assert len(cloud_subs) >= 1
 
@@ -272,9 +270,7 @@ class TestSubcontractorChain:
     def test_register_sub_subcontractor(self, manager):
         """Test registering sub-subcontractor."""
         # Get AWS (parent)
-        aws_subs = manager.get_subcontractors_by_type(
-            SubcontractorType.CLOUD_INFRASTRUCTURE
-        )
+        aws_subs = manager.get_subcontractors_by_type(SubcontractorType.CLOUD_INFRASTRUCTURE)
         if aws_subs:
             parent = aws_subs[0]
 
@@ -444,8 +440,7 @@ class TestObjectionHandling:
 
             # Find critical function subcontractor
             critical_subs = [
-                s for s in manager.get_all_subcontractors()
-                if s.supports_critical_functions
+                s for s in manager.get_all_subcontractors() if s.supports_critical_functions
             ]
             if critical_subs:
                 change = manager.record_change(
@@ -526,8 +521,7 @@ class TestChangeImplementation:
     def test_implement_blocked_change_fails(self, manager):
         """Test implementing blocked change fails."""
         critical_subs = [
-            s for s in manager.get_all_subcontractors()
-            if s.supports_critical_functions
+            s for s in manager.get_all_subcontractors() if s.supports_critical_functions
         ]
         if critical_subs:
             change = manager.record_change(

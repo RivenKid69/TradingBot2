@@ -2,6 +2,7 @@
 Intensive coverage tests to boost line coverage to 95%+.
 Focus on: train() branches, edge cases in value prediction, VGS, etc.
 """
+
 from __future__ import annotations
 
 import numpy as np

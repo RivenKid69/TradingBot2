@@ -50,14 +50,17 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class TesterType(Enum):
     """Type of TLPT tester."""
+
     INTERNAL = "internal"
     EXTERNAL = "external"
 
 
 class TesterRole(Enum):
     """Roles in TLPT testing."""
+
     THREAT_INTELLIGENCE = "threat_intelligence"
     PENETRATION_TESTER = "penetration_tester"
     RED_TEAM_LEAD = "red_team_lead"
@@ -66,6 +69,7 @@ class TesterRole(Enum):
 
 class CertificationCategory(Enum):
     """Categories of security certifications."""
+
     PENETRATION_TESTING = "penetration_testing"
     RED_TEAMING = "red_teaming"
     THREAT_INTELLIGENCE = "threat_intelligence"
@@ -76,6 +80,7 @@ class CertificationCategory(Enum):
 
 class QualificationStatus(Enum):
     """Qualification validation status."""
+
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
@@ -85,6 +90,7 @@ class QualificationStatus(Enum):
 
 class ConflictCheckResult(Enum):
     """Results of conflict of interest check."""
+
     NO_CONFLICT = "no_conflict"
     POTENTIAL_CONFLICT = "potential_conflict"
     CONFLICT_IDENTIFIED = "conflict_identified"
@@ -95,11 +101,13 @@ class ConflictCheckResult(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class SecurityCertification:
     """
     Security certification per Article 27(1)(a).
     """
+
     certification_id: str = ""
     name: str = ""
     issuing_body: str = ""
@@ -139,6 +147,7 @@ class TesterExpertise:
     """
     Tester expertise record per Article 27(1)(a).
     """
+
     expertise_id: str = ""
     area: str = ""  # threat_intelligence, penetration_testing, red_teaming
     years_experience: float = 0.0
@@ -170,6 +179,7 @@ class ConflictOfInterestDeclaration:
     """
     Conflict of interest declaration per Article 27(2).
     """
+
     declaration_id: str = ""
     tester_id: str = ""
     engagement_id: str = ""
@@ -214,6 +224,7 @@ class ProfessionalIndemnityInsurance:
     """
     Professional indemnity insurance per Article 27(1)(b).
     """
+
     insurance_id: str = ""
     policy_number: str = ""
     insurer: str = ""
@@ -254,6 +265,7 @@ class TLPTTester:
     """
     TLPT Tester per Article 27.
     """
+
     tester_id: str = ""
     name: str = ""
     organization: str = ""
@@ -311,6 +323,7 @@ class TesterOrganization:
     """
     TLPT Testing organization per Article 27.
     """
+
     org_id: str = ""
     name: str = ""
     legal_name: str = ""
@@ -369,6 +382,7 @@ class TesterQualificationAssessment:
     """
     Assessment of tester qualifications per Article 27.
     """
+
     assessment_id: str = ""
     tester_id: str = ""
 
@@ -432,6 +446,7 @@ class InternalTesterApproval:
     """
     Internal tester approval per Article 27(2).
     """
+
     approval_id: str = ""
     tester_id: str = ""
     entity_name: str = ""
@@ -477,13 +492,37 @@ class InternalTesterApproval:
 
 RECOGNIZED_CERTIFICATIONS = {
     CertificationCategory.PENETRATION_TESTING: [
-        {"name": "OSCP", "full_name": "Offensive Security Certified Professional", "body": "Offensive Security"},
-        {"name": "OSCE", "full_name": "Offensive Security Certified Expert", "body": "Offensive Security"},
-        {"name": "OSWE", "full_name": "Offensive Security Web Expert", "body": "Offensive Security"},
-        {"name": "OSEE", "full_name": "Offensive Security Exploitation Expert", "body": "Offensive Security"},
+        {
+            "name": "OSCP",
+            "full_name": "Offensive Security Certified Professional",
+            "body": "Offensive Security",
+        },
+        {
+            "name": "OSCE",
+            "full_name": "Offensive Security Certified Expert",
+            "body": "Offensive Security",
+        },
+        {
+            "name": "OSWE",
+            "full_name": "Offensive Security Web Expert",
+            "body": "Offensive Security",
+        },
+        {
+            "name": "OSEE",
+            "full_name": "Offensive Security Exploitation Expert",
+            "body": "Offensive Security",
+        },
         {"name": "GPEN", "full_name": "GIAC Penetration Tester", "body": "GIAC/SANS"},
-        {"name": "GWAPT", "full_name": "GIAC Web Application Penetration Tester", "body": "GIAC/SANS"},
-        {"name": "GXPN", "full_name": "GIAC Exploit Researcher and Advanced Penetration Tester", "body": "GIAC/SANS"},
+        {
+            "name": "GWAPT",
+            "full_name": "GIAC Web Application Penetration Tester",
+            "body": "GIAC/SANS",
+        },
+        {
+            "name": "GXPN",
+            "full_name": "GIAC Exploit Researcher and Advanced Penetration Tester",
+            "body": "GIAC/SANS",
+        },
         {"name": "CEH", "full_name": "Certified Ethical Hacker", "body": "EC-Council"},
         {"name": "LPT", "full_name": "Licensed Penetration Tester", "body": "EC-Council"},
         {"name": "CPT", "full_name": "Certified Penetration Tester", "body": "IACRB"},
@@ -493,15 +532,31 @@ RECOGNIZED_CERTIFICATIONS = {
         {"name": "CRTL", "full_name": "Certified Red Team Lead", "body": "Zero-Point Security"},
         {"name": "GRTP", "full_name": "GIAC Red Team Professional", "body": "GIAC/SANS"},
         {"name": "CREST CRT", "full_name": "CREST Certified Red Team", "body": "CREST"},
-        {"name": "CREST CCT", "full_name": "CREST Certified Simulated Attack Manager", "body": "CREST"},
+        {
+            "name": "CREST CCT",
+            "full_name": "CREST Certified Simulated Attack Manager",
+            "body": "CREST",
+        },
     ],
     CertificationCategory.THREAT_INTELLIGENCE: [
         {"name": "GCTI", "full_name": "GIAC Cyber Threat Intelligence", "body": "GIAC/SANS"},
-        {"name": "CTIA", "full_name": "Certified Threat Intelligence Analyst", "body": "EC-Council"},
-        {"name": "CREST CTIA", "full_name": "CREST Certified Threat Intelligence Analyst", "body": "CREST"},
+        {
+            "name": "CTIA",
+            "full_name": "Certified Threat Intelligence Analyst",
+            "body": "EC-Council",
+        },
+        {
+            "name": "CREST CTIA",
+            "full_name": "CREST Certified Threat Intelligence Analyst",
+            "body": "CREST",
+        },
     ],
     CertificationCategory.SECURITY_MANAGEMENT: [
-        {"name": "CISSP", "full_name": "Certified Information Systems Security Professional", "body": "(ISC)2"},
+        {
+            "name": "CISSP",
+            "full_name": "Certified Information Systems Security Professional",
+            "body": "(ISC)2",
+        },
         {"name": "CISM", "full_name": "Certified Information Security Manager", "body": "ISACA"},
         {"name": "CISA", "full_name": "Certified Information Systems Auditor", "body": "ISACA"},
     ],
@@ -512,9 +567,11 @@ RECOGNIZED_CERTIFICATIONS = {
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class TesterManagementConfig:
     """Configuration for TLPT Tester Management."""
+
     # Certification requirements
     require_certification: bool = True
     minimum_certifications_pentest: int = 1
@@ -545,6 +602,7 @@ class TesterManagementConfig:
 # =============================================================================
 # Main Class Implementation
 # =============================================================================
+
 
 class DORATestermanagement:
     """
@@ -654,12 +712,15 @@ class DORATestermanagement:
 
         self._testers[tester.tester_id] = tester
 
-        self._log_event("tester_registered", {
-            "tester_id": tester.tester_id,
-            "name": name,
-            "organization": organization,
-            "type": tester_type.value,
-        })
+        self._log_event(
+            "tester_registered",
+            {
+                "tester_id": tester.tester_id,
+                "name": name,
+                "organization": organization,
+                "type": tester_type.value,
+            },
+        )
 
         logger.info(f"Tester registered: {tester.tester_id} - {name}")
         return tester
@@ -679,7 +740,8 @@ class DORATestermanagement:
     ) -> List[TLPTTester]:
         """Get qualified testers."""
         testers = [
-            t for t in self._testers.values()
+            t
+            for t in self._testers.values()
             if t.qualification_status == QualificationStatus.APPROVED and t.is_active
         ]
 
@@ -738,11 +800,14 @@ class DORATestermanagement:
         tester.certifications.append(cert.certification_id)
         tester.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("certification_added", {
-            "certification_id": cert.certification_id,
-            "tester_id": tester_id,
-            "name": name,
-        })
+        self._log_event(
+            "certification_added",
+            {
+                "certification_id": cert.certification_id,
+                "tester_id": tester_id,
+                "name": name,
+            },
+        )
 
         return cert
 
@@ -829,7 +894,10 @@ class DORATestermanagement:
             "valid_certifications": len(valid_certs),
             "matching_certifications": len(matching_certs),
             "meets_requirement": len(matching_certs) >= 1,
-            "certificates": [{"name": c.name, "verified": c.verified, "expired": c.is_expired} for c in matching_certs],
+            "certificates": [
+                {"name": c.name, "verified": c.verified, "expired": c.is_expired}
+                for c in matching_certs
+            ],
         }
 
     # =========================================================================
@@ -891,11 +959,7 @@ class DORATestermanagement:
             return []
 
         tester = self._testers[tester_id]
-        return [
-            self._expertise[eid]
-            for eid in tester.expertise_areas
-            if eid in self._expertise
-        ]
+        return [self._expertise[eid] for eid in tester.expertise_areas if eid in self._expertise]
 
     # =========================================================================
     # Insurance Management (Article 27(1)(b))
@@ -945,11 +1009,14 @@ class DORATestermanagement:
         tester.insurance_id = insurance.insurance_id
         tester.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("insurance_added", {
-            "insurance_id": insurance.insurance_id,
-            "tester_id": tester_id,
-            "coverage_eur": coverage_amount_eur,
-        })
+        self._log_event(
+            "insurance_added",
+            {
+                "insurance_id": insurance.insurance_id,
+                "tester_id": tester_id,
+                "coverage_eur": coverage_amount_eur,
+            },
+        )
 
         return insurance
 
@@ -1060,12 +1127,15 @@ class DORATestermanagement:
         tester.coi_declarations.append(declaration.declaration_id)
         tester.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("coi_declaration_submitted", {
-            "declaration_id": declaration.declaration_id,
-            "tester_id": tester_id,
-            "engagement_id": engagement_id,
-            "initial_result": declaration.check_result.value,
-        })
+        self._log_event(
+            "coi_declaration_submitted",
+            {
+                "declaration_id": declaration.declaration_id,
+                "tester_id": tester_id,
+                "engagement_id": engagement_id,
+                "initial_result": declaration.check_result.value,
+            },
+        )
 
         return declaration
 
@@ -1103,11 +1173,14 @@ class DORATestermanagement:
         declaration.review_date = datetime.now(timezone.utc).isoformat()
         declaration.approved = approved
 
-        self._log_event("coi_declaration_reviewed", {
-            "declaration_id": declaration_id,
-            "result": check_result.value,
-            "approved": approved,
-        })
+        self._log_event(
+            "coi_declaration_reviewed",
+            {
+                "declaration_id": declaration_id,
+                "result": check_result.value,
+                "approved": approved,
+            },
+        )
 
         return declaration
 
@@ -1154,23 +1227,33 @@ class DORATestermanagement:
 
         # Suitability check
         assessment.suitability_check = tester.is_active
-        assessment.suitability_notes = "Tester is active" if tester.is_active else "Tester is inactive"
+        assessment.suitability_notes = (
+            "Tester is active" if tester.is_active else "Tester is inactive"
+        )
 
         # Reputability check (based on engagement history)
         assessment.reputability_check = tester.total_engagements >= 0
         assessment.reputability_notes = f"{tester.total_engagements} engagements completed"
 
         # Technical capability check
-        tech_expertise = [e for e in expertise if e.years_experience >= self.config.minimum_experience_years]
+        tech_expertise = [
+            e for e in expertise if e.years_experience >= self.config.minimum_experience_years
+        ]
         assessment.technical_capability_check = len(tech_expertise) > 0
-        assessment.technical_capability_notes = f"{len(tech_expertise)} areas with sufficient experience"
+        assessment.technical_capability_notes = (
+            f"{len(tech_expertise)} areas with sufficient experience"
+        )
 
         # Certification check
         assessment.required_certifications = [
             cert["name"] for certs in RECOGNIZED_CERTIFICATIONS.values() for cert in certs
-        ][:5]  # Top 5 as examples
+        ][
+            :5
+        ]  # Top 5 as examples
         assessment.verified_certifications = [c.name for c in valid_certs]
-        assessment.certification_check = len(valid_certs) >= self.config.minimum_certifications_pentest
+        assessment.certification_check = (
+            len(valid_certs) >= self.config.minimum_certifications_pentest
+        )
         assessment.certification_notes = f"{len(valid_certs)} valid certifications"
 
         # Insurance check
@@ -1200,7 +1283,10 @@ class DORATestermanagement:
         ]
         if recent_coi:
             last_coi = recent_coi[-1]
-            assessment.coi_check = last_coi.approved and last_coi.check_result != ConflictCheckResult.CONFLICT_IDENTIFIED
+            assessment.coi_check = (
+                last_coi.approved
+                and last_coi.check_result != ConflictCheckResult.CONFLICT_IDENTIFIED
+            )
             assessment.coi_notes = f"Last COI: {last_coi.check_result.value}"
         else:
             assessment.coi_check = True  # No COI on file
@@ -1219,7 +1305,9 @@ class DORATestermanagement:
 
         if all(all_checks):
             assessment.overall_result = QualificationStatus.APPROVED
-            assessment.summary = "Tester designed to meet Article 27 requirements (pending external validation)"
+            assessment.summary = (
+                "Tester designed to meet Article 27 requirements (pending external validation)"
+            )
         else:
             assessment.overall_result = QualificationStatus.REJECTED
             failed = []
@@ -1245,11 +1333,14 @@ class DORATestermanagement:
 
         tester.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("qualification_assessed", {
-            "assessment_id": assessment.assessment_id,
-            "tester_id": tester_id,
-            "result": assessment.overall_result.value,
-        })
+        self._log_event(
+            "qualification_assessed",
+            {
+                "assessment_id": assessment.assessment_id,
+                "tester_id": tester_id,
+                "result": assessment.overall_result.value,
+            },
+        )
 
         return assessment
 
@@ -1297,11 +1388,14 @@ class DORATestermanagement:
 
         self._internal_approvals[approval.approval_id] = approval
 
-        self._log_event("internal_approval_requested", {
-            "approval_id": approval.approval_id,
-            "tester_id": tester_id,
-            "entity": entity_name,
-        })
+        self._log_event(
+            "internal_approval_requested",
+            {
+                "approval_id": approval.approval_id,
+                "tester_id": tester_id,
+                "entity": entity_name,
+            },
+        )
 
         return approval
 
@@ -1361,11 +1455,14 @@ class DORATestermanagement:
             tester.nca_approval_reference = approval_reference
             tester.updated_at = now
 
-        self._log_event("nca_approval_recorded", {
-            "approval_id": approval_id,
-            "tester_id": approval.tester_id,
-            "reference": approval_reference,
-        })
+        self._log_event(
+            "nca_approval_recorded",
+            {
+                "approval_id": approval_id,
+                "tester_id": approval.tester_id,
+                "reference": approval_reference,
+            },
+        )
 
         return approval
 
@@ -1404,10 +1501,13 @@ class DORATestermanagement:
 
         self._organizations[org.org_id] = org
 
-        self._log_event("organization_registered", {
-            "org_id": org.org_id,
-            "name": name,
-        })
+        self._log_event(
+            "organization_registered",
+            {
+                "org_id": org.org_id,
+                "name": name,
+            },
+        )
 
         return org
 
@@ -1468,16 +1568,23 @@ class DORATestermanagement:
             },
             "insurance": insurance_check,
             "engagements_completed": tester.total_engagements,
-            "nca_approved": tester.nca_approved if tester.tester_type == TesterType.INTERNAL else None,
+            "nca_approved": (
+                tester.nca_approved if tester.tester_type == TesterType.INTERNAL else None
+            ),
         }
 
     def get_compliance_summary(self) -> Dict[str, Any]:
         """Get Article 27 compliance summary."""
         total_testers = len(self._testers)
-        qualified = sum(1 for t in self._testers.values() if t.qualification_status == QualificationStatus.APPROVED)
+        qualified = sum(
+            1
+            for t in self._testers.values()
+            if t.qualification_status == QualificationStatus.APPROVED
+        )
         internal = sum(1 for t in self._testers.values() if t.tester_type == TesterType.INTERNAL)
         internal_approved = sum(
-            1 for t in self._testers.values()
+            1
+            for t in self._testers.values()
             if t.tester_type == TesterType.INTERNAL and t.nca_approved
         )
 
@@ -1495,7 +1602,11 @@ class DORATestermanagement:
             },
             "organizations": {
                 "total": len(self._organizations),
-                "qualified": sum(1 for o in self._organizations.values() if o.qualification_status == QualificationStatus.APPROVED),
+                "qualified": sum(
+                    1
+                    for o in self._organizations.values()
+                    if o.qualification_status == QualificationStatus.APPROVED
+                ),
             },
             "certifications": {
                 "total": len(self._certifications),
@@ -1527,6 +1638,7 @@ class DORATestermanagement:
 # Factory Functions
 # =============================================================================
 
+
 def create_tester_management(
     config: Optional[TesterManagementConfig] = None,
 ) -> DORATestermanagement:
@@ -1549,10 +1661,7 @@ def get_recognized_certifications() -> Dict[str, List[Dict[str, str]]]:
     Returns:
         Dictionary of certifications by category
     """
-    return {
-        cat.value: certs
-        for cat, certs in RECOGNIZED_CERTIFICATIONS.items()
-    }
+    return {cat.value: certs for cat, certs in RECOGNIZED_CERTIFICATIONS.items()}
 
 
 def get_tester_roles() -> List[TesterRole]:

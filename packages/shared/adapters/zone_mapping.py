@@ -136,8 +136,7 @@ def get_adapter_zone(module_name: str) -> AdapterZone:
 
     # Check patterns
     if any(
-        pattern in module_name
-        for pattern in ["order_execution", "options_execution", "_private"]
+        pattern in module_name for pattern in ["order_execution", "options_execution", "_private"]
     ):
         return AdapterZone.AGENT
 
@@ -226,7 +225,9 @@ def validate_zone_separation() -> Dict[str, List[str]]:
 # Documentation
 # ============================================================================
 
-ZONE_DOCUMENTATION: Final[str] = """
+ZONE_DOCUMENTATION: Final[
+    str
+] = """
 CCEA Adapter Zone Separation (Phase 2)
 =====================================
 

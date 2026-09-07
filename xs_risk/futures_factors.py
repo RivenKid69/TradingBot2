@@ -101,7 +101,10 @@ def build_futures_risk_model(
     from service_risk_model import FactorRiskModel
 
     B = build_futures_exposures(
-        returns_wide, asset_classes=asset_classes, market_symbol=market_symbol, vol_lookback=vol_lookback,
+        returns_wide,
+        asset_classes=asset_classes,
+        market_symbol=market_symbol,
+        vol_lookback=vol_lookback,
     )
     return FactorRiskModel(B, factor_cov_method=factor_cov_method)
 

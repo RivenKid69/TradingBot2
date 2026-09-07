@@ -9,6 +9,7 @@ Utility scripts for maintaining and managing the CustodiaCloud repository.
 **Purpose**: Remove build artifacts, backup files, and organize reports.
 
 **What it cleans:**
+
 - ✅ Compiled Cython artifacts (`*.so`, `*.c`)
 - ✅ Backup files (`*.backup`, `*.v2_backup`, `*.bak`)
 - ✅ Organizes reports from root → `docs/reports/`
@@ -31,6 +32,7 @@ python tools/cleanup_project.py --force
 ### Encoding Tools
 
 See [README_ENCODING.md](README_ENCODING.md) for encoding normalization tools:
+
 - `normalize_encoding.py` - Normalize Unicode to ASCII-safe
 - `check_encoding.py` - Check for encoding issues (CI/CD)
 - `fix_broken_encoding.py` - Convert non-UTF-8 files to UTF-8
@@ -110,6 +112,7 @@ python tools/quick_test_twin_critics_default.py
 ### Regular Maintenance
 
 **Weekly:**
+
 ```bash
 # 1. Clean up artifacts
 python tools/cleanup_project.py --dry-run
@@ -123,6 +126,7 @@ python tools/check_feature_parity.py
 ```
 
 **Before Committing:**
+
 ```bash
 # 1. Normalize encoding
 python tools/normalize_encoding.py . --dry-run
@@ -133,6 +137,7 @@ python tools/check_imports.py
 ```
 
 **After Major Changes:**
+
 ```bash
 # 1. Run comprehensive tests
 pytest tests/
@@ -198,6 +203,7 @@ Manual audit of 63-feature configuration.
 ### "No module named 'XXX'"
 
 Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -205,6 +211,7 @@ pip install -r requirements.txt
 ### "Permission denied"
 
 On Windows, run with proper permissions or use Git Bash:
+
 ```bash
 python tools/cleanup_project.py
 ```
@@ -217,6 +224,7 @@ Check manually if you need to replace it.
 ### After cleanup, build fails
 
 Rebuild Cython extensions:
+
 ```bash
 python setup.py build_ext --inplace
 ```

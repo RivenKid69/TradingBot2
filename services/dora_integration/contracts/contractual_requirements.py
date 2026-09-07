@@ -56,26 +56,35 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class RequirementCategory(Enum):
     """Requirement category per Article 30."""
+
     BASIC = "basic"  # Article 30(2) - all contracts
     CRITICAL = "critical"  # Article 30(3) - critical functions
 
 
 class RequirementType(Enum):
     """Types of contractual requirements."""
+
     # =========================================================================
     # Article 30(2) Basic Requirements - ALL ICT service contracts
     # Reference: https://www.digital-operational-resilience-act.com/Article_30.html
     # =========================================================================
     SERVICE_DESCRIPTION = "service_description"  # Art. 30(2)(a) - functions & ICT services
     DATA_LOCATION = "data_location"  # Art. 30(2)(b) - processing/storage locations
-    SERVICE_LEVELS = "service_levels"  # Art. 30(2)(c) - availability, authenticity, integrity, confidentiality
+    SERVICE_LEVELS = (
+        "service_levels"  # Art. 30(2)(c) - availability, authenticity, integrity, confidentiality
+    )
     DATA_ACCESS_RECOVERY = "data_access_recovery"  # Art. 30(2)(d) - data access, recovery, return upon termination/insolvency
-    SERVICE_LEVEL_DESCRIPTIONS = "service_level_descriptions"  # Art. 30(2)(e) - SLA descriptions with targets
+    SERVICE_LEVEL_DESCRIPTIONS = (
+        "service_level_descriptions"  # Art. 30(2)(e) - SLA descriptions with targets
+    )
     INCIDENT_ASSISTANCE = "incident_assistance"  # Art. 30(2)(f) - assistance during ICT incidents
     AUTHORITY_COOPERATION = "authority_cooperation"  # Art. 30(2)(g) - cooperation with NCAs
-    TERMINATION_RIGHTS = "termination_rights"  # Art. 30(2)(h) - termination rights and notice periods
+    TERMINATION_RIGHTS = (
+        "termination_rights"  # Art. 30(2)(h) - termination rights and notice periods
+    )
     TRAINING_PARTICIPATION = "training_participation"  # Art. 30(2)(i) - security awareness training
 
     # =========================================================================
@@ -103,6 +112,7 @@ class RequirementType(Enum):
 
 class ComplianceStatus(Enum):
     """Contract compliance status."""
+
     COMPLIANT = "compliant"
     PARTIALLY_COMPLIANT = "partially_compliant"
     NON_COMPLIANT = "non_compliant"
@@ -112,6 +122,7 @@ class ComplianceStatus(Enum):
 
 class GapSeverity(Enum):
     """Severity of identified gap."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -120,6 +131,7 @@ class GapSeverity(Enum):
 
 class RemediationStatus(Enum):
     """Remediation action status."""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -129,6 +141,7 @@ class RemediationStatus(Enum):
 
 class ContractStatus(Enum):
     """Contract review status."""
+
     ACTIVE = "active"
     UNDER_REVIEW = "under_review"
     PENDING_AMENDMENT = "pending_amendment"
@@ -140,6 +153,7 @@ class ContractStatus(Enum):
 # Contract Clause Templates (Art. 30(2)(h) Termination Rights)
 # =============================================================================
 
+
 @dataclass
 class TerminationClause:
     """
@@ -150,6 +164,7 @@ class TerminationClause:
     in accordance with the expectations of competent authorities and
     resolution authorities"
     """
+
     clause_id: str = ""
     clause_type: str = ""  # standard, for_cause, regulatory, convenience
 
@@ -212,7 +227,6 @@ This termination right exists without prejudice to any other termination
 rights under this Agreement or applicable law.
 """.strip(),
         ),
-
         "for_cause": TerminationClause(
             clause_type="for_cause",
             notice_period_days=30,
@@ -251,7 +265,6 @@ Upon termination for cause:
     available at law or equity.
 """.strip(),
         ),
-
         "regulatory": TerminationClause(
             clause_type="regulatory",
             notice_period_days=0,  # Immediate
@@ -291,7 +304,6 @@ Client's compliance with DORA (Regulation (EU) 2022/2554) and cannot be
 waived or limited.
 """.strip(),
         ),
-
         "critical_function": TerminationClause(
             clause_type="critical_function",
             notice_period_days=180,  # Extended for critical
@@ -341,6 +353,7 @@ For Services supporting Client's critical or important functions:
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ContractualRequirement:
     """
@@ -348,6 +361,7 @@ class ContractualRequirement:
 
     Defines requirements per Article 30(2) and 30(3).
     """
+
     requirement_id: str = ""
     requirement_type: RequirementType = RequirementType.SERVICE_DESCRIPTION
     category: RequirementCategory = RequirementCategory.BASIC
@@ -378,6 +392,7 @@ class ContractProvision:
 
     Maps to a requirement and tracks compliance.
     """
+
     provision_id: str = ""
     contract_id: str = ""
     requirement_id: str = ""
@@ -406,6 +421,7 @@ class ContractAssessment:
     """
     Assessment of a contract against DORA requirements.
     """
+
     assessment_id: str = ""
     contract_id: str = ""
     provider_name: str = ""
@@ -452,6 +468,7 @@ class ContractGap:
     """
     Identified gap in contract compliance.
     """
+
     gap_id: str = ""
     assessment_id: str = ""
     contract_id: str = ""
@@ -491,6 +508,7 @@ class ContractAmendment:
     """
     Proposed or completed contract amendment.
     """
+
     amendment_id: str = ""
     contract_id: str = ""
     provider_name: str = ""
@@ -530,6 +548,7 @@ class SLADefinition:
     """
     Service Level Agreement definition.
     """
+
     sla_id: str = ""
     contract_id: str = ""
     service_name: str = ""
@@ -563,6 +582,7 @@ class ICTContract:
     """
     ICT Service Contract record.
     """
+
     contract_id: str = ""
     contract_reference: str = ""
     provider_id: str = ""
@@ -608,6 +628,7 @@ class ICTContract:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ContractualRequirementsConfig:
     """Configuration for Contractual Requirements management."""
@@ -644,6 +665,7 @@ class ContractualRequirementsConfig:
 # DORA Article 30 Requirements Definition
 # =============================================================================
 
+
 def get_article_30_requirements() -> List[ContractualRequirement]:
     """
     Get all Article 30 requirements.
@@ -656,198 +678,216 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
     # Article 30(2) - Basic Requirements (ALL ICT service contracts)
     # ==========================================================================
 
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.SERVICE_DESCRIPTION,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(a)",
-        name="Clear Service Description",
-        description="Clear and complete description of all functions and ICT services to be provided",
-        detailed_criteria=[
-            "Complete list of ICT services provided",
-            "Description of each service functionality",
-            "Service scope and boundaries",
-            "Interfaces with other services",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.SERVICE_DESCRIPTION,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(a)",
+            name="Clear Service Description",
+            description="Clear and complete description of all functions and ICT services to be provided",
+            detailed_criteria=[
+                "Complete list of ICT services provided",
+                "Description of each service functionality",
+                "Service scope and boundaries",
+                "Interfaces with other services",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.DATA_LOCATION,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(b)",
-        name="Data Processing and Storage Locations",
-        description="Locations where data will be processed and stored",
-        detailed_criteria=[
-            "Specific countries for data processing",
-            "Specific countries for data storage",
-            "Requirements for location changes notification",
-            "Restrictions on data transfers",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.DATA_LOCATION,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(b)",
+            name="Data Processing and Storage Locations",
+            description="Locations where data will be processed and stored",
+            detailed_criteria=[
+                "Specific countries for data processing",
+                "Specific countries for data storage",
+                "Requirements for location changes notification",
+                "Restrictions on data transfers",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.SERVICE_LEVELS,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(c)",
-        name="Service Level Descriptions",
-        description="Provisions on availability, authenticity, integrity and confidentiality",
-        detailed_criteria=[
-            "Availability commitments",
-            "Data authenticity measures",
-            "Data integrity protection",
-            "Confidentiality requirements",
-            "Personal data protection measures",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.SERVICE_LEVELS,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(c)",
+            name="Service Level Descriptions",
+            description="Provisions on availability, authenticity, integrity and confidentiality",
+            detailed_criteria=[
+                "Availability commitments",
+                "Data authenticity measures",
+                "Data integrity protection",
+                "Confidentiality requirements",
+                "Personal data protection measures",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(2)(d) - Data Access, Recovery and Return
     # CRITICAL: This requirement is often missed but is MANDATORY for ALL contracts
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.DATA_ACCESS_RECOVERY,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(d)",
-        name="Data Access, Recovery and Return",
-        description="Provisions on data access, recovery and return in easily accessible format upon termination, insolvency, or resolution of ICT provider",
-        detailed_criteria=[
-            "Data export in easily accessible, non-proprietary format",
-            "Data access mechanisms upon contract termination",
-            "Data recovery procedures upon provider insolvency",
-            "Data return timeline commitments",
-            "Data management provisions during provider resolution",
-            "Escrow or safeguard arrangements for critical data",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.DATA_ACCESS_RECOVERY,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(d)",
+            name="Data Access, Recovery and Return",
+            description="Provisions on data access, recovery and return in easily accessible format upon termination, insolvency, or resolution of ICT provider",
+            detailed_criteria=[
+                "Data export in easily accessible, non-proprietary format",
+                "Data access mechanisms upon contract termination",
+                "Data recovery procedures upon provider insolvency",
+                "Data return timeline commitments",
+                "Data management provisions during provider resolution",
+                "Escrow or safeguard arrangements for critical data",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(2)(e) - Service Level Descriptions
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.SERVICE_LEVEL_DESCRIPTIONS,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(e)",
-        name="Service Level Descriptions",
-        description="Service level descriptions including quantitative and qualitative performance targets, with provisions for updates and revisions",
-        detailed_criteria=[
-            "Quantitative performance targets (uptime %, latency)",
-            "Qualitative service descriptions",
-            "Measurement methodology",
-            "Reporting frequency",
-            "Provisions for SLA updates and revisions",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.SERVICE_LEVEL_DESCRIPTIONS,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(e)",
+            name="Service Level Descriptions",
+            description="Service level descriptions including quantitative and qualitative performance targets, with provisions for updates and revisions",
+            detailed_criteria=[
+                "Quantitative performance targets (uptime %, latency)",
+                "Qualitative service descriptions",
+                "Measurement methodology",
+                "Reporting frequency",
+                "Provisions for SLA updates and revisions",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(2)(f) - Incident Assistance
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.INCIDENT_ASSISTANCE,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(f)",
-        name="Incident Assistance Obligations",
-        description="Obligation to provide assistance in the event of ICT incidents at no additional cost or at predetermined cost",
-        detailed_criteria=[
-            "Incident notification timelines",
-            "Support during incident response",
-            "Root cause analysis cooperation",
-            "Remediation support",
-            "Cost provisions for assistance (free or predetermined)",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.INCIDENT_ASSISTANCE,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(f)",
+            name="Incident Assistance Obligations",
+            description="Obligation to provide assistance in the event of ICT incidents at no additional cost or at predetermined cost",
+            detailed_criteria=[
+                "Incident notification timelines",
+                "Support during incident response",
+                "Root cause analysis cooperation",
+                "Remediation support",
+                "Cost provisions for assistance (free or predetermined)",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(2)(g) - Authority Cooperation
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.AUTHORITY_COOPERATION,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(g)",
-        name="Cooperation with Competent Authorities",
-        description="Obligation to fully cooperate with competent authorities and resolution authorities of the financial entity",
-        detailed_criteria=[
-            "Unrestricted NCA access provisions",
-            "Information provision on request",
-            "Cooperation in supervisory activities",
-            "Resolution authority access rights",
-            "No impediment to supervision clause",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.AUTHORITY_COOPERATION,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(g)",
+            name="Cooperation with Competent Authorities",
+            description="Obligation to fully cooperate with competent authorities and resolution authorities of the financial entity",
+            detailed_criteria=[
+                "Unrestricted NCA access provisions",
+                "Information provision on request",
+                "Cooperation in supervisory activities",
+                "Resolution authority access rights",
+                "No impediment to supervision clause",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(2)(h) - Termination Rights
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.TERMINATION_RIGHTS,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(h)",
-        name="Termination Rights and Notice Periods",
-        description="Termination rights and related minimum notice periods for contract termination, in line with supervisory expectations",
-        detailed_criteria=[
-            "Clear termination clauses",
-            "Minimum notice period requirements",
-            "Termination for cause provisions",
-            "Regulatory termination rights",
-            "Exit transition provisions",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.TERMINATION_RIGHTS,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(h)",
+            name="Termination Rights and Notice Periods",
+            description="Termination rights and related minimum notice periods for contract termination, in line with supervisory expectations",
+            detailed_criteria=[
+                "Clear termination clauses",
+                "Minimum notice period requirements",
+                "Termination for cause provisions",
+                "Regulatory termination rights",
+                "Exit transition provisions",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(2)(i) - Training Participation (ENHANCED per v2.1 audit)
     # Reference: Art. 30(2)(i) + Art. 13(6)
     # Art. 13(6): FEs shall develop ICT security awareness programmes and digital
     # operational resilience training as compulsory modules for staff
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.TRAINING_PARTICIPATION,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(i)",
-        name="Security Awareness and Resilience Training Participation",
-        description=(
-            "Conditions for ICT provider ACTIVE participation in financial entity's "
-            "security awareness programmes and digital operational resilience training "
-            "per Article 13(6). This is a MANDATORY clause requiring active involvement, "
-            "not merely availability upon request."
-        ),
-        detailed_criteria=[
-            # Active participation requirements
-            "ACTIVE participation in client security awareness programs (not just 'upon request')",
-            "Annual minimum attendance at client ICT security awareness sessions",
-            "Provider presents platform security architecture to client security team",
-            "Provider explains incident response procedures",
-            "Provider reviews shared responsibility model with client",
-            # Resilience training
-            "Participation in digital operational resilience training exercises",
-            "Joint tabletop exercises for incident scenarios",
-            "Joint DR/BCP drills with provider-side execution",
-            "Debriefing and lessons learned sharing",
-            # Joint testing (per Art. 30(3)(d) for critical functions)
-            "Failover testing coordination",
-            "Backup restoration verification",
-            "Communication channel testing",
-            "Escalation path validation",
-            # Provider-initiated support
-            "Proactive security briefings on material platform changes",
-            "Threat intelligence sharing (sanitized)",
-            "Self-service training materials availability",
-            # Scheduling and logistics
-            "Reasonable notice period (14 business days standard, 5 for urgent)",
-            "Designated key contacts (minimum 2 per client)",
-            "Remote participation as default, on-site upon request",
-            # Time commitment (tiered by SLA)
-            "Defined annual time commitment (4-16 hours depending on tier)",
-            "Cost provisions for additional training beyond commitment",
-            # Documentation
-            "Attendance records maintained for audit purposes",
-            "Training certificates issued upon request",
-            "Exercise reports provided post-exercise",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.TRAINING_PARTICIPATION,
+            category=RequirementCategory.BASIC,
+            article_reference="Article 30(2)(i)",
+            name="Security Awareness and Resilience Training Participation",
+            description=(
+                "Conditions for ICT provider ACTIVE participation in financial entity's "
+                "security awareness programmes and digital operational resilience training "
+                "per Article 13(6). This is a MANDATORY clause requiring active involvement, "
+                "not merely availability upon request."
+            ),
+            detailed_criteria=[
+                # Active participation requirements
+                "ACTIVE participation in client security awareness programs (not just 'upon request')",
+                "Annual minimum attendance at client ICT security awareness sessions",
+                "Provider presents platform security architecture to client security team",
+                "Provider explains incident response procedures",
+                "Provider reviews shared responsibility model with client",
+                # Resilience training
+                "Participation in digital operational resilience training exercises",
+                "Joint tabletop exercises for incident scenarios",
+                "Joint DR/BCP drills with provider-side execution",
+                "Debriefing and lessons learned sharing",
+                # Joint testing (per Art. 30(3)(d) for critical functions)
+                "Failover testing coordination",
+                "Backup restoration verification",
+                "Communication channel testing",
+                "Escalation path validation",
+                # Provider-initiated support
+                "Proactive security briefings on material platform changes",
+                "Threat intelligence sharing (sanitized)",
+                "Self-service training materials availability",
+                # Scheduling and logistics
+                "Reasonable notice period (14 business days standard, 5 for urgent)",
+                "Designated key contacts (minimum 2 per client)",
+                "Remote participation as default, on-site upon request",
+                # Time commitment (tiered by SLA)
+                "Defined annual time commitment (4-16 hours depending on tier)",
+                "Cost provisions for additional training beyond commitment",
+                # Documentation
+                "Attendance records maintained for audit purposes",
+                "Training certificates issued upon request",
+                "Exercise reports provided post-exercise",
+            ],
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # ==========================================================================
     # Article 30(3) - Additional Requirements (Critical/Important Functions)
@@ -855,223 +895,245 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
     # ==========================================================================
 
     # Article 30(3)(a) - Full SLAs with Quantitative Targets
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.SLA_TARGETS,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(a)",
-        name="Full SLAs with Quantitative Targets",
-        description="Full service level descriptions including quantitative and qualitative performance targets",
-        detailed_criteria=[
-            "Quantitative availability targets",
-            "Response time targets",
-            "Resolution time targets",
-            "Performance benchmarks",
-            "Capacity commitments",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.SLA_TARGETS,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(a)",
+            name="Full SLAs with Quantitative Targets",
+            description="Full service level descriptions including quantitative and qualitative performance targets",
+            detailed_criteria=[
+                "Quantitative availability targets",
+                "Response time targets",
+                "Resolution time targets",
+                "Performance benchmarks",
+                "Capacity commitments",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(b) - Notice Periods AND Reporting Obligations
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.NOTICE_PERIODS,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(b)",
-        name="Notice Periods and Reporting Obligations",
-        description="Notice periods and reporting obligations to the financial entity",
-        detailed_criteria=[
-            "Termination notice period",
-            "Change notification requirements",
-            "Minimum notice for material changes",
-            "Regular performance reporting",
-            "Incident reporting frequency",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.NOTICE_PERIODS,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(b)",
+            name="Notice Periods and Reporting Obligations",
+            description="Notice periods and reporting obligations to the financial entity",
+            detailed_criteria=[
+                "Termination notice period",
+                "Change notification requirements",
+                "Minimum notice for material changes",
+                "Regular performance reporting",
+                "Incident reporting frequency",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(c) - Provider's Business Contingency Plans
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.BCP_REQUIREMENTS,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(c)",
-        name="Provider Business Contingency Plans",
-        description="Requirements for ICT provider to maintain appropriate business contingency plans",
-        detailed_criteria=[
-            "Provider must have documented BCP",
-            "Disaster recovery plan requirements",
-            "ICT-specific contingency measures",
-            "Regular BCP review and updates",
-            "BCP summary available to client on request",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.BCP_REQUIREMENTS,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(c)",
+            name="Provider Business Contingency Plans",
+            description="Requirements for ICT provider to maintain appropriate business contingency plans",
+            detailed_criteria=[
+                "Provider must have documented BCP",
+                "Disaster recovery plan requirements",
+                "ICT-specific contingency measures",
+                "Regular BCP review and updates",
+                "BCP summary available to client on request",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(d) - Resilience Testing Participation
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.RESILIENCE_TESTING,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(d)",
-        name="Resilience Testing Participation",
-        description="Participation in testing of business contingency plans per Articles 26-27",
-        detailed_criteria=[
-            "Obligation to participate in client's resilience testing",
-            "Cooperation with penetration tests",
-            "Vulnerability assessment support",
-            "Threat-led testing cooperation (TLPT if required)",
-            "Testing results sharing provisions",
-            "Joint DR exercises",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.RESILIENCE_TESTING,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(d)",
+            name="Resilience Testing Participation",
+            description="Participation in testing of business contingency plans per Articles 26-27",
+            detailed_criteria=[
+                "Obligation to participate in client's resilience testing",
+                "Cooperation with penetration tests",
+                "Vulnerability assessment support",
+                "Threat-led testing cooperation (TLPT if required)",
+                "Testing results sharing provisions",
+                "Joint DR exercises",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(e) - UNRESTRICTED Audit and Access Rights
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.AUDIT_RIGHTS,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(e)",
-        name="Unrestricted Audit and Access Rights",
-        description="UNRESTRICTED rights of access, inspection and audit by financial entity and their competent authority",
-        detailed_criteria=[
-            "Unrestricted on-site audit rights",
-            "Remote audit capabilities",
-            "No cap on audit frequency for cause-based audits",
-            "Access to relevant documentation",
-            "Third-party auditor acceptance",
-            "NCA inspection cooperation",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.AUDIT_RIGHTS,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(e)",
+            name="Unrestricted Audit and Access Rights",
+            description="UNRESTRICTED rights of access, inspection and audit by financial entity and their competent authority",
+            detailed_criteria=[
+                "Unrestricted on-site audit rights",
+                "Remote audit capabilities",
+                "No cap on audit frequency for cause-based audits",
+                "Access to relevant documentation",
+                "Third-party auditor acceptance",
+                "NCA inspection cooperation",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(f) - Exit Strategies
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.EXIT_STRATEGY,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(f)",
-        name="Exit Strategies",
-        description="Exit strategies including adequate transition periods and data portability",
-        detailed_criteria=[
-            "Documented exit strategy",
-            "Adequate transition period",
-            "Data return procedures",
-            "Knowledge transfer requirements",
-            "No vendor lock-in provisions",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.EXIT_STRATEGY,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(f)",
+            name="Exit Strategies",
+            description="Exit strategies including adequate transition periods and data portability",
+            detailed_criteria=[
+                "Documented exit strategy",
+                "Adequate transition period",
+                "Data return procedures",
+                "Knowledge transfer requirements",
+                "No vendor lock-in provisions",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(f) continued - Transition Support
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.TRANSITION_SUPPORT,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(f)",
-        name="Transition Support",
-        description="Transition assistance for migration to alternative provider or in-house",
-        detailed_criteria=[
-            "Transition support duration",
-            "Technical assistance commitment",
-            "Parallel run provisions",
-            "Documentation transfer",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.TRANSITION_SUPPORT,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(f)",
+            name="Transition Support",
+            description="Transition assistance for migration to alternative provider or in-house",
+            detailed_criteria=[
+                "Transition support duration",
+                "Technical assistance commitment",
+                "Parallel run provisions",
+                "Documentation transfer",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(g) - Supervisory Cooperation
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.NCA_ACCESS,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(g)",
-        name="Supervisory Cooperation",
-        description="Participation in supervisory oversight activities and cooperation with competent authorities",
-        detailed_criteria=[
-            "Information provision to NCAs on request",
-            "No impediment to supervision",
-            "Cooperation in supervisory activities",
-            "Support for resolution planning",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.NCA_ACCESS,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(g)",
+            name="Supervisory Cooperation",
+            description="Participation in supervisory oversight activities and cooperation with competent authorities",
+            detailed_criteria=[
+                "Information provision to NCAs on request",
+                "No impediment to supervision",
+                "Cooperation in supervisory activities",
+                "Support for resolution planning",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(h) - Business Continuity Implementation
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.BUSINESS_CONTINUITY,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(h)",
-        name="Business Continuity Implementation",
-        description="Implementation and testing of business continuity measures ensuring service availability",
-        detailed_criteria=[
-            "Provider BCP implementation",
-            "DR capabilities demonstrated",
-            "Testing schedule and evidence",
-            "Recovery time commitments (RTO/RPO)",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.BUSINESS_CONTINUITY,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(h)",
+            name="Business Continuity Implementation",
+            description="Implementation and testing of business continuity measures ensuring service availability",
+            detailed_criteria=[
+                "Provider BCP implementation",
+                "DR capabilities demonstrated",
+                "Testing schedule and evidence",
+                "Recovery time commitments (RTO/RPO)",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(i) - Security Measures
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.SECURITY_MEASURES,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(i)",
-        name="ICT Security Measures",
-        description="ICT security-related arrangements including implementation and testing of security measures",
-        detailed_criteria=[
-            "Security policy implementation",
-            "Security testing provisions",
-            "Vulnerability management",
-            "Security certifications (SOC2, ISO27001)",
-            "Security incident handling",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.SECURITY_MEASURES,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(i)",
+            name="ICT Security Measures",
+            description="ICT security-related arrangements including implementation and testing of security measures",
+            detailed_criteria=[
+                "Security policy implementation",
+                "Security testing provisions",
+                "Vulnerability management",
+                "Security certifications (SOC2, ISO27001)",
+                "Security incident handling",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     # Article 30(3)(j) - Subcontracting Provisions
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.SUBCONTRACTING,
-        category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(j)",
-        name="Subcontracting Provisions",
-        description="Conditions for subcontracting, including prior approval requirements and chain monitoring",
-        detailed_criteria=[
-            "Prior approval for critical subcontracting",
-            "Notification of subcontractors",
-            "Flow-down of requirements",
-            "Subcontractor chain monitoring",
-            "Right to object to new subcontractors",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
+    requirements.append(
+        ContractualRequirement(
+            requirement_type=RequirementType.SUBCONTRACTING,
+            category=RequirementCategory.CRITICAL,
+            article_reference="Article 30(3)(j)",
+            name="Subcontracting Provisions",
+            description="Conditions for subcontracting, including prior approval requirements and chain monitoring",
+            detailed_criteria=[
+                "Prior approval for critical subcontracting",
+                "Notification of subcontractors",
+                "Flow-down of requirements",
+                "Subcontractor chain monitoring",
+                "Right to object to new subcontractors",
+            ],
+            applies_to_all=False,
+            applies_to_critical_only=True,
+            mandatory=True,
+            verification_method="document_review",
+        )
+    )
 
     return requirements
 
@@ -1079,6 +1141,7 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class DORAContractualRequirements:
     """
@@ -1153,16 +1216,14 @@ class DORAContractualRequirements:
         """Get Article 30(2) basic requirements."""
         with self._lock:
             return [
-                r for r in self._requirements.values()
-                if r.category == RequirementCategory.BASIC
+                r for r in self._requirements.values() if r.category == RequirementCategory.BASIC
             ]
 
     def get_critical_requirements(self) -> List[ContractualRequirement]:
         """Get Article 30(3) critical function requirements."""
         with self._lock:
             return [
-                r for r in self._requirements.values()
-                if r.category == RequirementCategory.CRITICAL
+                r for r in self._requirements.values() if r.category == RequirementCategory.CRITICAL
             ]
 
     def get_applicable_requirements(
@@ -1175,7 +1236,8 @@ class DORAContractualRequirements:
                 return list(self._requirements.values())
             else:
                 return [
-                    r for r in self._requirements.values()
+                    r
+                    for r in self._requirements.values()
                     if r.category == RequirementCategory.BASIC
                 ]
 
@@ -1240,11 +1302,14 @@ class DORAContractualRequirements:
             self._amendments_by_contract[contract.contract_id] = set()
             self._slas_by_contract[contract.contract_id] = set()
 
-        self._log_event("contract_registered", {
-            "contract_id": contract.contract_id,
-            "provider_name": provider_name,
-            "supports_critical_function": supports_critical_function,
-        })
+        self._log_event(
+            "contract_registered",
+            {
+                "contract_id": contract.contract_id,
+                "provider_name": provider_name,
+                "supports_critical_function": supports_critical_function,
+            },
+        )
 
         return contract
 
@@ -1264,17 +1329,15 @@ class DORAContractualRequirements:
         with self._lock:
             contracts = list(self._contracts.values())
             if not include_terminated:
-                contracts = [
-                    c for c in contracts
-                    if c.status != ContractStatus.TERMINATED
-                ]
+                contracts = [c for c in contracts if c.status != ContractStatus.TERMINATED]
             return contracts
 
     def get_contracts_for_critical_functions(self) -> List[ICTContract]:
         """Get contracts supporting critical functions."""
         with self._lock:
             return [
-                c for c in self._contracts.values()
+                c
+                for c in self._contracts.values()
                 if c.supports_critical_function and c.status == ContractStatus.ACTIVE
             ]
 
@@ -1386,11 +1449,7 @@ class DORAContractualRequirements:
         """Get all provisions for a contract."""
         with self._lock:
             provision_ids = self._provisions_by_contract.get(contract_id, set())
-            return [
-                self._provisions[pid]
-                for pid in provision_ids
-                if pid in self._provisions
-            ]
+            return [self._provisions[pid] for pid in provision_ids if pid in self._provisions]
 
     # =========================================================================
     # Contract Assessment
@@ -1420,15 +1479,11 @@ class DORAContractualRequirements:
             contract = self._contracts[contract_id]
 
             # Get applicable requirements
-            applicable = self.get_applicable_requirements(
-                contract.supports_critical_function
-            )
+            applicable = self.get_applicable_requirements(contract.supports_critical_function)
 
             # Get existing provisions
             provisions = self.get_provisions_for_contract(contract_id)
-            provisions_by_req = {
-                p.requirement_id: p for p in provisions
-            }
+            provisions_by_req = {p.requirement_id: p for p in provisions}
 
             assessment = ContractAssessment(
                 contract_id=contract_id,
@@ -1489,10 +1544,7 @@ class DORAContractualRequirements:
             # Calculate compliance score
             total = len(applicable)
             if total > 0:
-                weighted = (
-                    assessment.compliant_count +
-                    (assessment.partially_compliant_count * 0.5)
-                )
+                weighted = assessment.compliant_count + (assessment.partially_compliant_count * 0.5)
                 assessment.compliance_score_pct = (weighted / total) * 100
 
             # Determine overall compliance
@@ -1504,9 +1556,7 @@ class DORAContractualRequirements:
                 assessment.overall_compliance = ComplianceStatus.NON_COMPLIANT
 
             # Generate recommendations
-            assessment.recommendations = self._generate_recommendations(
-                assessment, applicable
-            )
+            assessment.recommendations = self._generate_recommendations(assessment, applicable)
 
             # Store assessment
             self._assessments[assessment.assessment_id] = assessment
@@ -1517,12 +1567,15 @@ class DORAContractualRequirements:
             contract.overall_compliance = assessment.overall_compliance
             contract.open_gaps = gaps_created
 
-        self._log_event("assessment_completed", {
-            "assessment_id": assessment.assessment_id,
-            "contract_id": contract_id,
-            "compliance_score": assessment.compliance_score_pct,
-            "gaps_count": len(gaps_created),
-        })
+        self._log_event(
+            "assessment_completed",
+            {
+                "assessment_id": assessment.assessment_id,
+                "contract_id": contract_id,
+                "compliance_score": assessment.compliance_score_pct,
+                "gaps_count": len(gaps_created),
+            },
+        )
 
         return assessment
 
@@ -1540,10 +1593,7 @@ class DORAContractualRequirements:
     ) -> List[ContractAssessment]:
         """Get all assessments for a contract."""
         with self._lock:
-            return [
-                a for a in self._assessments.values()
-                if a.contract_id == contract_id
-            ]
+            return [a for a in self._assessments.values() if a.contract_id == contract_id]
 
     def approve_assessment(
         self,
@@ -1592,9 +1642,7 @@ class DORAContractualRequirements:
         else:
             days = self.config.gap_remediation_default_days
 
-        gap.remediation_deadline = (
-            datetime.now(timezone.utc) + timedelta(days=days)
-        ).isoformat()
+        gap.remediation_deadline = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
 
         self._gaps[gap.gap_id] = gap
         self._gaps_by_contract[contract_id].add(gap.gap_id)
@@ -1602,11 +1650,14 @@ class DORAContractualRequirements:
         # Escalate if critical
         if severity == GapSeverity.CRITICAL and self.config.critical_gap_escalation:
             if self.config.escalation_callback:
-                self.config.escalation_callback("critical_gap", {
-                    "gap_id": gap.gap_id,
-                    "contract_id": contract_id,
-                    "description": gap_description,
-                })
+                self.config.escalation_callback(
+                    "critical_gap",
+                    {
+                        "gap_id": gap.gap_id,
+                        "contract_id": contract_id,
+                        "description": gap_description,
+                    },
+                )
 
         return gap
 
@@ -1625,21 +1676,16 @@ class DORAContractualRequirements:
         """Get all gaps for a contract."""
         with self._lock:
             gap_ids = self._gaps_by_contract.get(contract_id, set())
-            return [
-                self._gaps[gid]
-                for gid in gap_ids
-                if gid in self._gaps
-            ]
+            return [self._gaps[gid] for gid in gap_ids if gid in self._gaps]
 
     def get_open_gaps(self) -> List[ContractGap]:
         """Get all open gaps."""
         with self._lock:
             return [
-                g for g in self._gaps.values()
-                if g.remediation_status not in [
-                    RemediationStatus.COMPLETED,
-                    RemediationStatus.NOT_APPLICABLE
-                ]
+                g
+                for g in self._gaps.values()
+                if g.remediation_status
+                not in [RemediationStatus.COMPLETED, RemediationStatus.NOT_APPLICABLE]
             ]
 
     def get_gaps_by_severity(
@@ -1693,7 +1739,6 @@ class DORAContractualRequirements:
             RequirementType.AUTHORITY_COOPERATION: "Add NCA/resolution authority cooperation clause (Art. 30(2)(g))",
             RequirementType.TERMINATION_RIGHTS: "Add/clarify termination provisions and notice periods (Art. 30(2)(h))",
             RequirementType.TRAINING_PARTICIPATION: "Add security awareness training participation clause (Art. 30(2)(i))",
-
             # Article 30(3) Critical Function Requirements
             RequirementType.SLA_TARGETS: "Add full SLAs with quantitative targets (Art. 30(3)(a))",
             RequirementType.NOTICE_PERIODS: "Specify notice periods and reporting obligations (Art. 30(3)(b))",
@@ -1706,7 +1751,6 @@ class DORAContractualRequirements:
             RequirementType.BUSINESS_CONTINUITY: "Add BCP implementation requirements (Art. 30(3)(h))",
             RequirementType.SECURITY_MEASURES: "Add ICT security requirements clause (Art. 30(3)(i))",
             RequirementType.SUBCONTRACTING: "Add subcontracting provisions (Art. 30(3)(j))",
-
             # Additional
             RequirementType.REPORTING_OBLIGATIONS: "Add reporting obligations (part of Art. 30(3)(b))",
             RequirementType.PERFORMANCE_REMEDIATION: "Add SLA breach remediation clause",
@@ -1768,11 +1812,14 @@ class DORAContractualRequirements:
             self._amendments_by_contract[contract_id].add(amendment.amendment_id)
             contract.pending_amendments.append(amendment.amendment_id)
 
-        self._log_event("amendment_created", {
-            "amendment_id": amendment.amendment_id,
-            "contract_id": contract_id,
-            "gaps_addressed": len(gap_ids),
-        })
+        self._log_event(
+            "amendment_created",
+            {
+                "amendment_id": amendment.amendment_id,
+                "contract_id": contract_id,
+                "gaps_addressed": len(gap_ids),
+            },
+        )
 
         return amendment
 
@@ -1792,11 +1839,10 @@ class DORAContractualRequirements:
             contract = self._contracts[contract_id]
             gaps = self.get_gaps_for_contract(contract_id)
             open_gaps = [
-                g for g in gaps
-                if g.remediation_status not in [
-                    RemediationStatus.COMPLETED,
-                    RemediationStatus.NOT_APPLICABLE
-                ]
+                g
+                for g in gaps
+                if g.remediation_status
+                not in [RemediationStatus.COMPLETED, RemediationStatus.NOT_APPLICABLE]
             ]
 
             if not open_gaps:
@@ -1816,11 +1862,13 @@ class DORAContractualRequirements:
             for req_type, type_gaps in gaps_by_type.items():
                 proposed_changes = []
                 for gap in type_gaps:
-                    proposed_changes.append({
-                        "gap_id": gap.gap_id,
-                        "requirement": gap.requirement_id,
-                        "recommendation": gap.remediation_recommendation,
-                    })
+                    proposed_changes.append(
+                        {
+                            "gap_id": gap.gap_id,
+                            "requirement": gap.requirement_id,
+                            "recommendation": gap.remediation_recommendation,
+                        }
+                    )
 
                 amendment = self.create_amendment_request(
                     contract_id=contract_id,
@@ -1876,10 +1924,13 @@ class DORAContractualRequirements:
         # Notify if configured
         if self.config.notify_on_amendment_response:
             if self.config.notification_callback:
-                self.config.notification_callback("amendment_response", {
-                    "amendment_id": amendment_id,
-                    "status": amendment.status,
-                })
+                self.config.notification_callback(
+                    "amendment_response",
+                    {
+                        "amendment_id": amendment_id,
+                        "status": amendment.status,
+                    },
+                )
 
         return amendment
 
@@ -1924,18 +1975,13 @@ class DORAContractualRequirements:
         """Get all amendments for a contract."""
         with self._lock:
             amendment_ids = self._amendments_by_contract.get(contract_id, set())
-            return [
-                self._amendments[aid]
-                for aid in amendment_ids
-                if aid in self._amendments
-            ]
+            return [self._amendments[aid] for aid in amendment_ids if aid in self._amendments]
 
     def get_pending_amendments(self) -> List[ContractAmendment]:
         """Get all pending amendments."""
         with self._lock:
             return [
-                a for a in self._amendments.values()
-                if a.status not in ["implemented", "rejected"]
+                a for a in self._amendments.values() if a.status not in ["implemented", "rejected"]
             ]
 
     # =========================================================================
@@ -1986,11 +2032,7 @@ class DORAContractualRequirements:
         """Get all SLAs for a contract."""
         with self._lock:
             sla_ids = self._slas_by_contract.get(contract_id, set())
-            return [
-                self._slas[sid]
-                for sid in sla_ids
-                if sid in self._slas
-            ]
+            return [self._slas[sid] for sid in sla_ids if sid in self._slas]
 
     # =========================================================================
     # Reporting and Statistics
@@ -2005,25 +2047,31 @@ class DORAContractualRequirements:
         recommendations = []
 
         if assessment.compliance_score_pct < 50:
-            recommendations.append({
-                "priority": "high",
-                "recommendation": "Immediate contract review and amendment required",
-                "rationale": f"Compliance score ({assessment.compliance_score_pct:.1f}%) is below minimum threshold",
-            })
+            recommendations.append(
+                {
+                    "priority": "high",
+                    "recommendation": "Immediate contract review and amendment required",
+                    "rationale": f"Compliance score ({assessment.compliance_score_pct:.1f}%) is below minimum threshold",
+                }
+            )
 
         if assessment.non_compliant_count > 0:
-            recommendations.append({
-                "priority": "high",
-                "recommendation": f"Address {assessment.non_compliant_count} non-compliant requirements",
-                "rationale": "Non-compliant requirements create regulatory risk",
-            })
+            recommendations.append(
+                {
+                    "priority": "high",
+                    "recommendation": f"Address {assessment.non_compliant_count} non-compliant requirements",
+                    "rationale": "Non-compliant requirements create regulatory risk",
+                }
+            )
 
         if assessment.partially_compliant_count > 3:
-            recommendations.append({
-                "priority": "medium",
-                "recommendation": "Review partially compliant provisions for strengthening",
-                "rationale": "Multiple partial compliance areas indicate systemic gaps",
-            })
+            recommendations.append(
+                {
+                    "priority": "medium",
+                    "recommendation": "Review partially compliant provisions for strengthening",
+                    "rationale": "Multiple partial compliance areas indicate systemic gaps",
+                }
+            )
 
         return recommendations
 
@@ -2031,14 +2079,10 @@ class DORAContractualRequirements:
         """Get overall compliance summary across all contracts."""
         with self._lock:
             active_contracts = [
-                c for c in self._contracts.values()
-                if c.status == ContractStatus.ACTIVE
+                c for c in self._contracts.values() if c.status == ContractStatus.ACTIVE
             ]
 
-            critical_contracts = [
-                c for c in active_contracts
-                if c.supports_critical_function
-            ]
+            critical_contracts = [c for c in active_contracts if c.supports_critical_function]
 
             all_open_gaps = self.get_open_gaps()
 
@@ -2050,8 +2094,7 @@ class DORAContractualRequirements:
                     "critical_function": len(critical_contracts),
                     "by_compliance_status": {
                         status.value: sum(
-                            1 for c in active_contracts
-                            if c.overall_compliance == status
+                            1 for c in active_contracts if c.overall_compliance == status
                         )
                         for status in ComplianceStatus
                     },
@@ -2063,10 +2106,7 @@ class DORAContractualRequirements:
                 "gaps": {
                     "total_open": len(all_open_gaps),
                     "by_severity": {
-                        severity.value: sum(
-                            1 for g in all_open_gaps
-                            if g.severity == severity
-                        )
+                        severity.value: sum(1 for g in all_open_gaps if g.severity == severity)
                         for severity in GapSeverity
                     },
                 },
@@ -2076,13 +2116,12 @@ class DORAContractualRequirements:
                 },
                 "compliance_indicators": {
                     "all_contracts_assessed": all(
-                        c.last_assessment_date is not None
-                        for c in active_contracts
+                        c.last_assessment_date is not None for c in active_contracts
                     ),
                     "no_critical_gaps": sum(
-                        1 for g in all_open_gaps
-                        if g.severity == GapSeverity.CRITICAL
-                    ) == 0,
+                        1 for g in all_open_gaps if g.severity == GapSeverity.CRITICAL
+                    )
+                    == 0,
                     "all_critical_contracts_compliant": all(
                         c.overall_compliance == ComplianceStatus.COMPLIANT
                         for c in critical_contracts
@@ -2153,6 +2192,7 @@ class DORAContractualRequirements:
 # Factory Functions
 # =============================================================================
 
+
 def create_contractual_requirements(
     config: Optional[ContractualRequirementsConfig] = None,
 ) -> DORAContractualRequirements:
@@ -2175,15 +2215,13 @@ def get_requirement_types() -> List[RequirementType]:
 
 def get_basic_requirement_count() -> int:
     """Get count of basic requirements (Article 30(2))."""
-    return len([
-        r for r in get_article_30_requirements()
-        if r.category == RequirementCategory.BASIC
-    ])
+    return len(
+        [r for r in get_article_30_requirements() if r.category == RequirementCategory.BASIC]
+    )
 
 
 def get_critical_requirement_count() -> int:
     """Get count of critical function requirements (Article 30(3))."""
-    return len([
-        r for r in get_article_30_requirements()
-        if r.category == RequirementCategory.CRITICAL
-    ])
+    return len(
+        [r for r in get_article_30_requirements() if r.category == RequirementCategory.CRITICAL]
+    )

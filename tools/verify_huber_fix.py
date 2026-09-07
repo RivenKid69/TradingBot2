@@ -10,7 +10,7 @@ import sys
 import torch
 
 # Import the implementation
-sys.path.insert(0, '/home/user/ai-quant-platform')
+sys.path.insert(0, "/home/user/ai-quant-platform")
 from distributional_ppo import DistributionalPPO
 
 
@@ -145,7 +145,9 @@ def test_transition_continuity():
         diff = abs(loss_below.item() - loss_above.item())
         rel_diff = diff / max(loss_below.item(), 1e-8)
 
-        print(f"  κ = {kappa:3.1f}: below = {loss_below.item():.8f}, above = {loss_above.item():.8f}, diff = {diff:.2e}")
+        print(
+            f"  κ = {kappa:3.1f}: below = {loss_below.item():.8f}, above = {loss_above.item():.8f}, diff = {diff:.2e}"
+        )
 
         if rel_diff < 1e-3:
             print(f"    ✓ Continuous")
@@ -223,6 +225,7 @@ def main():
     except Exception as e:
         print(f"\n✗ ERROR: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

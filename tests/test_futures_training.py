@@ -31,6 +31,7 @@ from unittest.mock import MagicMock, patch, PropertyMock
 import numpy as np
 import pandas as pd
 import pytest
+
 gym = pytest.importorskip("gymnasium")
 pytest.importorskip("torch")
 
@@ -66,14 +67,16 @@ def sample_ohlcv_df() -> pd.DataFrame:
     returns = np.random.normal(0, 0.02, n_rows)
     prices = base_price * np.cumprod(1 + returns)
 
-    df = pd.DataFrame({
-        "timestamp_ms": timestamps[:n_rows],
-        "open": prices * (1 + np.random.uniform(-0.005, 0.005, n_rows)),
-        "high": prices * (1 + np.random.uniform(0, 0.01, n_rows)),
-        "low": prices * (1 - np.random.uniform(0, 0.01, n_rows)),
-        "close": prices,
-        "volume": np.random.uniform(100, 10000, n_rows),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp_ms": timestamps[:n_rows],
+            "open": prices * (1 + np.random.uniform(-0.005, 0.005, n_rows)),
+            "high": prices * (1 + np.random.uniform(0, 0.01, n_rows)),
+            "low": prices * (1 - np.random.uniform(0, 0.01, n_rows)),
+            "close": prices,
+            "volume": np.random.uniform(100, 10000, n_rows),
+        }
+    )
     df["close_orig"] = df["close"].copy()
     return df
 
@@ -90,32 +93,37 @@ def sample_funding_df() -> pd.DataFrame:
 
     rates = np.random.uniform(-0.0003, 0.0003, n_rows)
 
-    return pd.DataFrame({
-        "timestamp_ms": timestamps,
-        "funding_rate": rates,
-        "mark_price": np.random.uniform(49000, 51000, n_rows),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp_ms": timestamps,
+            "funding_rate": rates,
+            "mark_price": np.random.uniform(49000, 51000, n_rows),
+        }
+    )
 
 
 @pytest.fixture
 def mock_base_env():
     """Create mock base trading environment."""
     env = MagicMock(spec=gym.Env)
-    env.observation_space = gym.spaces.Box(
-        low=-np.inf, high=np.inf, shape=(100,), dtype=np.float32
-    )
+    env.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(100,), dtype=np.float32)
     env.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
     env.unwrapped = env
     env.reset.return_value = (
         np.zeros(100, dtype=np.float32),
-        {"timestamp_ms": 1609459200000, "close": 50000.0, "mark_price": 50000.0}
+        {"timestamp_ms": 1609459200000, "close": 50000.0, "mark_price": 50000.0},
     )
     env.step.return_value = (
         np.zeros(100, dtype=np.float32),
         0.0,
         False,
         False,
-        {"timestamp_ms": 1609473600000, "close": 50100.0, "mark_price": 50100.0, "signal_pos_next": 0.5}
+        {
+            "timestamp_ms": 1609473600000,
+            "close": 50100.0,
+            "mark_price": 50100.0,
+            "signal_pos_next": 0.5,
+        },
     )
     return env
 
@@ -154,6 +162,7 @@ class TestFuturesTradingEnvBasic:
             create_futures_env,
             create_cme_futures_env,
         )
+
         assert FuturesTradingEnv is not None
         assert FuturesEnvConfig is not None
         assert create_futures_env is not None
@@ -393,7 +402,7 @@ class TestFuturesTradingEnvFunding:
         rate = provider.get_funding_rate(first_ts)
 
         assert rate is not None
-        assert hasattr(rate, 'funding_rate')
+        assert hasattr(rate, "funding_rate")
 
     def test_funding_provider_default_rate(self):
         """Test FundingRateProvider with default rate."""
@@ -568,7 +577,7 @@ class TestFuturesTradingEnvLiquidation:
                 "close": 48000.0,
                 "mark_price": 48000.0,
                 "signal_pos_next": 1.0,
-            }
+            },
         )
 
         action = np.array([1.0], dtype=np.float32)
@@ -598,6 +607,7 @@ class TestFeatureFlagsIntegration:
             get_global_flags,
             set_global_flags,
         )
+
         assert FuturesFeatureFlags is not None
         assert FuturesFeature is not None
         assert RolloutStage is not None
@@ -742,10 +752,14 @@ features:
         flags.features[FuturesFeature.L3_EXECUTION] = config
 
         # Should be enabled for allowed symbols (with random_value to pass canary check)
-        assert flags.should_execute(FuturesFeature.L3_EXECUTION, symbol="BTCUSDT", random_value=50.0)
+        assert flags.should_execute(
+            FuturesFeature.L3_EXECUTION, symbol="BTCUSDT", random_value=50.0
+        )
 
         # Should be disabled for non-allowed symbols
-        assert not flags.should_execute(FuturesFeature.L3_EXECUTION, symbol="SOLUSDT", random_value=50.0)
+        assert not flags.should_execute(
+            FuturesFeature.L3_EXECUTION, symbol="SOLUSDT", random_value=50.0
+        )
 
 
 # =============================================================================
@@ -973,7 +987,7 @@ class TestObservationAugmentation:
         obs, _ = wrapped.reset()
 
         # Augmented values should be bounded
-        augmented_part = obs[mock_base_env.observation_space.shape[0]:]
+        augmented_part = obs[mock_base_env.observation_space.shape[0] :]
 
         assert np.all(np.isfinite(augmented_part))
         # Values should be in reasonable range after normalization
@@ -1207,7 +1221,7 @@ class TestMarginCalculator:
 
         calc = MarginCalculator(
             flat_initial_pct=Decimal("10.0"),  # 10%
-            flat_maint_pct=Decimal("5.0"),     # 5%
+            flat_maint_pct=Decimal("5.0"),  # 5%
         )
 
         result = calc.calculate_margin(

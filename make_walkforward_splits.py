@@ -54,36 +54,47 @@ def _write_phase_tables(df_out: pd.DataFrame, base: str, ext: str) -> tuple[list
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Сгенерировать walk-forward сплиты с PURGE (горизонт h) и EMBARGO (буфер).")
-    ap.add_argument("--config", help="Путь к YAML-файлу конфигурации (из него считывается путь к данным).")
-    ap.add_argument("--data", help="Входной датасет (CSV/Parquet) с колонкой ts_ms (UTC миллисекунды).")
-    ap.add_argument("--out", default="", help="Путь к выходному датасету с колонками wf_fold,wf_role. По умолчанию рядом с суффиксом _wf.")
+    ap = argparse.ArgumentParser(
+        description="Сгенерировать walk-forward сплиты с PURGE (горизонт h) и EMBARGO (буфер)."
+    )
+    ap.add_argument(
+        "--config", help="Путь к YAML-файлу конфигурации (из него считывается путь к данным)."
+    )
+    ap.add_argument(
+        "--data", help="Входной датасет (CSV/Parquet) с колонкой ts_ms (UTC миллисекунды)."
+    )
+    ap.add_argument(
+        "--out",
+        default="",
+        help="Путь к выходному датасету с колонками wf_fold,wf_role. По умолчанию рядом с суффиксом _wf.",
+    )
     ap.add_argument("--ts_col", default="ts_ms", help="Имя колонки времени.")
-    ap.add_argument("--symbol_col", default="symbol", help="Имя колонки символа (может отсутствовать).")
-    ap.add_argument("--interval_ms", type=int, default=None, help="Интервал бара в мс (если не задан — оценим автоматически).")
+    ap.add_argument(
+        "--symbol_col", default="symbol", help="Имя колонки символа (может отсутствовать)."
+    )
+    ap.add_argument(
+        "--interval_ms",
+        type=int,
+        default=None,
+        help="Интервал бара в мс (если не задан — оценим автоматически).",
+    )
     ap.add_argument(
         "--train_span_bars",
         type=int,
         default=7 * 6,
-        help=(
-            "Длина train-окна в барах. По умолчанию 42 бара (~7 дней при таймфрейме 4h)."
-        ),
+        help=("Длина train-окна в барах. По умолчанию 42 бара (~7 дней при таймфрейме 4h)."),
     )
     ap.add_argument(
         "--val_span_bars",
         type=int,
         default=6,
-        help=(
-            "Длина val-окна в барах. По умолчанию 6 баров (~1 день при таймфрейме 4h)."
-        ),
+        help=("Длина val-окна в барах. По умолчанию 6 баров (~1 день при таймфрейме 4h)."),
     )
     ap.add_argument(
         "--step_bars",
         type=int,
         default=6,
-        help=(
-            "Шаг окна в барах. По умолчанию 6 баров (~1 день при таймфрейме 4h)."
-        ),
+        help=("Шаг окна в барах. По умолчанию 6 баров (~1 день при таймфрейме 4h)."),
     )
     ap.add_argument(
         "--horizon_bars",
@@ -97,11 +108,11 @@ def main():
         "--embargo_bars",
         type=int,
         default=2,
-        help=(
-            "Буфер EMBARGO в барах. По умолчанию 2 бара (~8 часов при таймфрейме 4h)."
-        ),
+        help=("Буфер EMBARGO в барах. По умолчанию 2 бара (~8 часов при таймфрейме 4h)."),
     )
-    ap.add_argument("--manifest_dir", default="logs/walkforward", help="Куда записать манифесты (JSON/YAML).")
+    ap.add_argument(
+        "--manifest_dir", default="logs/walkforward", help="Куда записать манифесты (JSON/YAML)."
+    )
     ap.add_argument(
         "--n_splits",
         type=int,
@@ -197,7 +208,10 @@ def main():
     )
 
     base, ext = os.path.splitext(data_path)
-    out_path = args.out.strip() or f"{base}_wf{ext if ext.lower() in ('.csv', '.parquet', '.pq', '.txt') else '.parquet'}"
+    out_path = (
+        args.out.strip()
+        or f"{base}_wf{ext if ext.lower() in ('.csv', '.parquet', '.pq', '.txt') else '.parquet'}"
+    )
     _write_table(df_out, out_path)
     train_paths, val_paths = _write_phase_tables(df_out, base, ext)
 
@@ -210,7 +224,9 @@ def main():
     n_train = int((df_out["wf_role"] == "train").sum())
     n_val = int((df_out["wf_role"] == "val").sum())
     print(f"Готово. Записан датасет со сплитами: {out_path}")
-    print(f"Всего строк: {total}. В сплитах train: {n_train}, val: {n_val}, вне окон: {total - used}.")
+    print(
+        f"Всего строк: {total}. В сплитах train: {n_train}, val: {n_val}, вне окон: {total - used}."
+    )
     print(f"Train path: {train_paths[0]}, Val path: {val_paths[0]}")
     print(f"Манифесты: {json_path} и {yaml_path}")
     return train_paths, val_paths

@@ -12,6 +12,7 @@
 ## 📋 EXECUTIVE SUMMARY
 
 ### Цель
+
 Интеграция **всех типов фьючерсов** на уровне L3 с полной симуляцией:
 
 1. **Crypto Futures** (Binance USDT-M Perpetual & Quarterly)
@@ -224,6 +225,7 @@ class ExchangeVendor(str, Enum):
 ### Vendor-Specific Considerations
 
 #### Crypto Futures (Binance)
+
 ```
 Уникальные особенности:
 ├── Perpetual contracts (no expiry)
@@ -236,6 +238,7 @@ class ExchangeVendor(str, Enum):
 ```
 
 #### CME Index Futures (ES, NQ)
+
 ```
 Уникальные особенности:
 ├── Quarterly expiration (3rd Friday)
@@ -248,6 +251,7 @@ class ExchangeVendor(str, Enum):
 ```
 
 #### Commodity Futures (GC, CL)
+
 ```
 Уникальные особенности:
 ├── Monthly expiration
@@ -259,6 +263,7 @@ class ExchangeVendor(str, Enum):
 ```
 
 #### Currency Futures (6E, 6J)
+
 ```
 Уникальные особенности:
 ├── Quarterly expiration
@@ -342,6 +347,7 @@ class ExchangeVendor(str, Enum):
 ## 📦 PHASE 0: RESEARCH & FOUNDATION
 
 ### Цели
+
 - Детальное изучение API всех целевых бирж/брокеров
 - Анализ существующего кода для переиспользования
 - Определение унифицированной архитектуры
@@ -350,6 +356,7 @@ class ExchangeVendor(str, Enum):
 ### Задачи
 
 #### 0.1 Binance Futures API Analysis (Crypto Track)
+
 ```
 Endpoints to study:
 ├── Market Data
@@ -372,6 +379,7 @@ Endpoints to study:
 ```
 
 #### 0.2 Interactive Brokers TWS API Analysis (CME Track)
+
 ```
 TWS API Components to study:
 ├── Market Data
@@ -406,6 +414,7 @@ Key Differences from Binance:
 ```
 
 #### 0.3 CME Contract Specifications
+
 ```
 Index Futures (via IB):
 ├── ES (E-mini S&P 500)
@@ -451,6 +460,7 @@ Currency Futures:
 #### 0.4 Key Concepts Documentation
 
 **Crypto Futures (Binance) Concepts:**
+
 - **Mark Price**: TWAP of index price + funding basis
 - **Index Price**: Weighted average from multiple exchanges
 - **Funding Rate**: `(Mark Price - Index Price) / Index Price` + premium (каждые 8ч)
@@ -458,6 +468,7 @@ Currency Futures:
 - **ADL (Auto-Deleveraging)**: Forced position close when insurance fund depleted
 
 **CME Futures Concepts:**
+
 - **Settlement Price**: Daily settlement at 4:00pm ET (used for margin)
 - **SPAN Margin**: Portfolio-based margin (offsets between correlated products)
 - **Initial Margin**: Required to open position (~5-10% notional)
@@ -467,6 +478,7 @@ Currency Futures:
 - **Roll Date**: Standard roll ~8 days before expiry
 
 #### 0.5 Existing Code Audit
+
 ```bash
 # Files to review for reuse
 adapters/binance/*.py          # Binance integration (crypto futures base)
@@ -480,6 +492,7 @@ execution_providers.py         # L2 TCA (extend for futures)
 ```
 
 ### Deliverables Phase 0
+
 - [ ] Binance Futures API documentation summary
 - [ ] IB TWS API documentation summary
 - [ ] CME contract specifications database
@@ -488,6 +501,7 @@ execution_providers.py         # L2 TCA (extend for futures)
 - [ ] Test data collection plan (both crypto + CME)
 
 ### Tests
+
 ```bash
 # No code changes in Phase 0 - documentation only
 # Verify existing tests still pass
@@ -502,11 +516,13 @@ python -c "from ib_insync import IB; ib = IB(); print('IB available')"
 ## 📦 PHASE 1: UNIFIED CORE MODELS
 
 ### Цели
+
 - Создать унифицированные futures модели для ВСЕХ типов (crypto, index, commodity, currency)
 - Абстрагировать vendor-specific детали в адаптерах
 - Обеспечить backward compatibility с существующим кодом
 
 ### Ключевой принцип
+
 ```
 Унифицированные модели НЕ зависят от вендора.
 Различия между Binance и CME инкапсулированы в адаптерах.
@@ -1017,6 +1033,7 @@ class TestBinanceFuturesMarketDataAdapter:
 ```
 
 ### Regression Tests
+
 ```bash
 # Ensure no regressions in existing functionality
 pytest tests/test_binance*.py -v
@@ -1025,6 +1042,7 @@ pytest tests/test_alpaca*.py -v
 ```
 
 ### Deliverables Phase 1
+
 - [ ] `core_futures.py` - Core futures models
 - [ ] `adapters/binance/futures_market_data.py`
 - [ ] `adapters/binance/futures_exchange_info.py`
@@ -1038,6 +1056,7 @@ pytest tests/test_alpaca*.py -v
 ## 📦 PHASE 2: MARGIN & LIQUIDATION SYSTEM
 
 ### Цели
+
 - Реализовать margin calculation engine
 - Создать liquidation simulation
 - Поддержка cross и isolated margin
@@ -2312,6 +2331,7 @@ class TestLiquidationEngine:
 ```
 
 ### Deliverables Phase 2
+
 - [ ] `impl_futures_margin.py` - Margin calculator
 - [ ] `impl_futures_liquidation.py` - Liquidation engine
 - [ ] `data/futures/leverage_brackets.json` - Bracket data
@@ -2324,6 +2344,7 @@ class TestLiquidationEngine:
 ## 📦 PHASE 3A: FUNDING RATE MECHANICS (Crypto Track)
 
 ### Цели
+
 - Реализовать funding rate tracking для crypto perpetual
 - Симуляция funding payments
 - Integration с P&L calculation
@@ -2649,6 +2670,7 @@ class TestFundingRateTracker:
 ```
 
 ### Deliverables Phase 3A
+
 - [ ] `impl_futures_funding.py` - Funding rate tracker
 - [ ] `services/futures_funding_tracker.py` - Service wrapper
 - [ ] `scripts/download_funding_history.py` - Historical data download
@@ -2659,6 +2681,7 @@ class TestFundingRateTracker:
 ## 📦 PHASE 3B: INTERACTIVE BROKERS ADAPTERS (CME Track)
 
 ### Цели
+
 - Реализовать IB TWS API адаптеры для CME futures
 - Поддержка ES, NQ, GC, CL, 6E и других контрактов
 - Daily settlement вместо funding rate
@@ -3559,6 +3582,7 @@ class TestCMETradingCalendar:
 ```
 
 ### Deliverables Phase 3B
+
 - [ ] `adapters/ib/__init__.py` - IB adapter package
 - [ ] `adapters/ib/market_data.py` - IB market data adapter
 - [ ] `adapters/ib/order_execution.py` - IB order execution
@@ -3570,6 +3594,7 @@ class TestCMETradingCalendar:
 - [ ] `tests/test_cme_settlement.py` (40+ tests)
 
 ### Зависимости
+
 ```bash
 pip install ib_insync  # IB TWS API wrapper
 ```
@@ -3579,6 +3604,7 @@ pip install ib_insync  # IB TWS API wrapper
 ## 📦 PHASE 4A: L2 EXECUTION PROVIDER (Crypto Track)
 
 ### Цели
+
 - Создать L2 execution provider для futures
 - Адаптировать slippage model для futures
 - Интеграция с существующей инфраструктурой
@@ -3807,6 +3833,7 @@ class TestFuturesL2ExecutionProvider:
 ```
 
 ### Deliverables Phase 4A
+
 - [ ] `execution_providers_futures.py` - L2 crypto futures providers
 - [ ] Updated factory functions in `execution_providers.py`
 - [ ] `tests/test_futures_execution_providers.py` (80+ tests)
@@ -3816,6 +3843,7 @@ class TestFuturesL2ExecutionProvider:
 ## 📦 PHASE 4B: CME SPAN MARGIN & SLIPPAGE (CME Track)
 
 ### Цели
+
 - Реализовать SPAN margin calculation для CME
 - Создать slippage модель для index/commodity/currency futures
 - Учёт circuit breakers и daily limits
@@ -4439,6 +4467,7 @@ class TestCMECircuitBreaker:
 ```
 
 ### Deliverables Phase 4B
+
 - [ ] `impl_span_margin.py` - SPAN margin calculator
 - [ ] `execution_providers_cme.py` - CME slippage provider
 - [ ] `impl_circuit_breaker.py` - Circuit breaker simulation
@@ -4450,6 +4479,7 @@ class TestCMECircuitBreaker:
 ## 📦 PHASE 5A: L3 LOB INTEGRATION (Crypto Track)
 
 ### Цели
+
 - Интегрировать L3 LOB с futures mechanics
 - Адаптировать queue position для futures
 - Liquidation order flow simulation
@@ -4628,6 +4658,7 @@ class TestFuturesL3ExecutionProvider:
 ```
 
 ### Deliverables Phase 5A
+
 - [ ] `execution_providers_futures_l3.py` - L3 crypto futures provider
 - [ ] `lob/futures_extensions.py` - LOB extensions for crypto futures
 - [ ] `tests/test_futures_l3_execution.py` (60+ tests)
@@ -4637,6 +4668,7 @@ class TestFuturesL3ExecutionProvider:
 ## 📦 PHASE 5B: L3 LOB INTEGRATION (CME Track)
 
 ### Цели
+
 - Интегрировать L3 LOB с CME-specific mechanics
 - Circuit breaker simulation
 - Daily settlement simulation
@@ -5376,6 +5408,7 @@ class TestGlobexMatching:
 ```
 
 ### Deliverables Phase 5B
+
 - [ ] `execution_providers_cme_l3.py` - L3 CME futures provider
 - [ ] `lob/cme_matching.py` - Globex matching engine emulator
 - [ ] `tests/test_cme_l3_execution.py` (55+ tests)
@@ -5385,6 +5418,7 @@ class TestGlobexMatching:
 ## 📦 PHASE 6A: RISK MANAGEMENT (Crypto Track)
 
 ### Цели
+
 - Создать futures-specific risk guards
 - Интеграция с существующим risk_guard.py
 - Position sizing с учётом leverage
@@ -5906,6 +5940,7 @@ class TestFuturesMarginGuard:
 ```
 
 ### Deliverables Phase 6A
+
 - [ ] `services/futures_risk_guards.py` - Crypto futures risk guards
 - [ ] Updated `risk_guard.py` with crypto futures integration
 - [ ] `tests/test_futures_risk_guards.py` (80+ tests)
@@ -5915,6 +5950,7 @@ class TestFuturesMarginGuard:
 ## 📦 PHASE 6B: RISK MANAGEMENT (CME Track)
 
 ### Цели
+
 - SPAN margin integration с risk guards
 - Position limits по CME rules
 - Circuit breaker integration
@@ -6594,6 +6630,7 @@ class TestSettlementRiskGuard:
 ```
 
 ### Deliverables Phase 6B
+
 - [ ] `services/cme_risk_guards.py` - CME-specific risk guards
 - [ ] `impl_cme_settlement.py` - Daily settlement integration
 - [ ] `tests/test_cme_risk_guards.py` (70+ tests)
@@ -6603,6 +6640,7 @@ class TestSettlementRiskGuard:
 ## 📦 PHASE 7A: FEATURES & DATA PIPELINE (Crypto Track)
 
 ### Цели
+
 - Создать futures-specific features
 - Интеграция funding rate в features
 - Open interest и liquidation features
@@ -7106,6 +7144,7 @@ class TestBasisFeatures:
 ```
 
 ### Deliverables Phase 7
+
 - [ ] `futures_features.py` - Feature engineering
 - [ ] Updated `data_loader_multi_asset.py`
 - [ ] `scripts/download_futures_data.py`
@@ -7116,6 +7155,7 @@ class TestBasisFeatures:
 ## 📦 PHASE 8: TRAINING INTEGRATION
 
 ### Цели
+
 - Интеграция futures в training pipeline
 - Position sizing с leverage
 - Reward shaping для futures
@@ -8087,6 +8127,7 @@ class TestFuturesTraining:
 ```
 
 ### Deliverables Phase 8
+
 - [ ] `wrappers/futures_env.py` - Futures environment
 - [ ] Updated `train_model_multi_patch.py`
 - [ ] `configs/config_train_futures.yaml`
@@ -8097,6 +8138,7 @@ class TestFuturesTraining:
 ## 📦 PHASE 9: LIVE TRADING
 
 ### Цели
+
 - Live trading с futures
 - Position synchronization
 - Real-time funding tracking
@@ -8230,6 +8272,7 @@ class TestFuturesLiveRunner:
 ```
 
 ### Deliverables Phase 9
+
 - [x] `script_futures_live.py` - Live trading script
 - [x] `services/futures_position_sync.py` - Position sync service
 - [x] `services/futures_live_runner.py` - Live trading runner
@@ -8245,6 +8288,7 @@ class TestFuturesLiveRunner:
 ## 📦 PHASE 10: TESTING & VALIDATION
 
 ### Цели
+
 - Comprehensive test suite
 - Validation metrics
 - Documentation
@@ -8349,6 +8393,7 @@ docs/futures/
 ```
 
 ### Deliverables Phase 10
+
 - [ ] `tests/test_futures_validation.py` (100+ tests)
 - [ ] `tests/test_futures_backward_compatibility.py` (50+ tests)
 - [ ] `benchmarks/bench_futures_simulation.py`
@@ -8357,11 +8402,11 @@ docs/futures/
 
 ---
 
-## 📝 CLAUDE.MD INTEGRATION
+## 📝 PLATFORM REFERENCE INTEGRATION
 
-### Раздел для добавления в CLAUDE.md
+### Раздел для добавления в `PLATFORM_REFERENCE.md`
 
-При завершении интеграции добавить следующую секцию в `CLAUDE.md`:
+При завершении интеграции добавить следующую секцию в `PLATFORM_REFERENCE.md`:
 
 ```markdown
 ## 📈 Futures Integration (Phase 11)
@@ -9677,6 +9722,7 @@ Month 5-6: Phase 8-10 (Training + Live + Validation) ─────────
 ## 🔗 REFERENCES
 
 ### Research Papers
+
 1. Almgren & Chriss (2001): "Optimal Execution of Portfolio Transactions"
 2. Kyle (1985): "Continuous Auctions and Insider Trading"
 3. Cartea, Jaimungal, Penalva (2015): "Algorithmic and HF Trading"
@@ -9686,23 +9732,27 @@ Month 5-6: Phase 8-10 (Training + Live + Validation) ─────────
 ### Exchange Documentation
 
 #### Binance (Crypto Futures)
+
 1. [Binance Futures API](https://binance-docs.github.io/apidocs/futures/en/)
 2. [Binance Leverage & Margin](https://www.binance.com/en/support/faq/360033162192)
 3. [Binance Liquidation](https://www.binance.com/en/support/faq/360033525271)
 4. [Binance Funding Rate](https://www.binance.com/en/support/faq/360033525031)
 
 #### CME Group
+
 5. [CME Globex Documentation](https://www.cmegroup.com/confluence/display/EPICSANDBOX/Globex)
 6. [CME SPAN Margin](https://www.cmegroup.com/clearing/risk-management/span-overview.html)
 7. [CME Circuit Breakers](https://www.cmegroup.com/education/articles-and-reports/understanding-stock-index-futures-circuit-breakers.html)
 8. [CME Contract Specifications](https://www.cmegroup.com/trading/equity-index/us-index/e-mini-sandp500_contract_specifications.html)
 
 #### Interactive Brokers
+
 9. [IB TWS API](https://interactivebrokers.github.io/tws-api/)
 10. [ib_insync Library](https://ib-insync.readthedocs.io/)
 11. [IB Futures Trading](https://www.interactivebrokers.com/en/trading/futures.php)
 
 ### Internal Documentation
+
 1. [L3 LOB Simulation](l3_simulator/)
 2. [Forex Integration](FOREX_INTEGRATION_PLAN.md)
 3. [Execution Providers](futures/overview.md)
@@ -9711,5 +9761,5 @@ Month 5-6: Phase 8-10 (Training + Live + Validation) ─────────
 ---
 
 **Дата создания**: 2025-11-30
-**Автор**: Claude Code
+**Автор**: Sultan Suyunbayev
 **Версия плана**: 2.0 (Unified Multi-Asset Futures)

@@ -27,8 +27,10 @@ from uuid import uuid4
 # Enums and Constants
 # =============================================================================
 
+
 class ArtifactType(str, Enum):
     """Types of artifacts in the supply chain."""
+
     CONTAINER_IMAGE = "container_image"
     CONFIG_BLOB = "config_blob"
     BINARY = "binary"
@@ -41,6 +43,7 @@ class ArtifactType(str, Enum):
 
 class SigningAlgorithm(str, Enum):
     """Supported signing algorithms."""
+
     RSA_PSS_SHA256 = "rsa_pss_sha256"
     RSA_PKCS1_SHA256 = "rsa_pkcs1_sha256"
     ED25519 = "ed25519"
@@ -50,6 +53,7 @@ class SigningAlgorithm(str, Enum):
 
 class SignatureStatus(str, Enum):
     """Signature verification status."""
+
     VALID = "valid"
     INVALID = "invalid"
     EXPIRED = "expired"
@@ -60,6 +64,7 @@ class SignatureStatus(str, Enum):
 
 class SBOMFormat(str, Enum):
     """SBOM format standards."""
+
     SPDX_2_3 = "spdx_2.3"
     SPDX_3_0 = "spdx_3.0"
     CYCLONEDX_1_4 = "cyclonedx_1.4"
@@ -68,15 +73,17 @@ class SBOMFormat(str, Enum):
 
 class VulnerabilitySeverity(str, Enum):
     """Vulnerability severity levels (CVSS-based)."""
-    CRITICAL = "critical"   # CVSS 9.0-10.0
-    HIGH = "high"           # CVSS 7.0-8.9
-    MEDIUM = "medium"       # CVSS 4.0-6.9
-    LOW = "low"             # CVSS 0.1-3.9
-    NONE = "none"           # CVSS 0.0
+
+    CRITICAL = "critical"  # CVSS 9.0-10.0
+    HIGH = "high"  # CVSS 7.0-8.9
+    MEDIUM = "medium"  # CVSS 4.0-6.9
+    LOW = "low"  # CVSS 0.1-3.9
+    NONE = "none"  # CVSS 0.0
 
 
 class SupplyChainEventType(str, Enum):
     """Types of supply chain events."""
+
     ARTIFACT_REGISTERED = "artifact_registered"
     ARTIFACT_SIGNED = "artifact_signed"
     SIGNATURE_VERIFIED = "signature_verified"
@@ -105,9 +112,11 @@ TRUSTED_SIGNERS_CACHE_TTL_SECONDS = 300
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class SignedArtifact:
     """A signed artifact in the supply chain."""
+
     artifact_id: str = field(default_factory=lambda: str(uuid4()))
     artifact_type: ArtifactType = ArtifactType.CONTAINER_IMAGE
     name: str = ""
@@ -157,6 +166,7 @@ class SignedArtifact:
 @dataclass
 class SignatureVerification:
     """Result of signature verification."""
+
     artifact_id: str = ""
     digest: str = ""
     status: SignatureStatus = SignatureStatus.NOT_SIGNED
@@ -179,7 +189,9 @@ class SignatureVerification:
             "signer_name": self.signer_name,
             "algorithm": self.algorithm.value if self.algorithm else None,
             "certificate_valid": self.certificate_valid,
-            "certificate_expiry": self.certificate_expiry.isoformat() if self.certificate_expiry else None,
+            "certificate_expiry": (
+                self.certificate_expiry.isoformat() if self.certificate_expiry else None
+            ),
             "error": self.error,
             "verification_time_ms": self.verification_time_ms,
         }
@@ -188,6 +200,7 @@ class SignatureVerification:
 @dataclass
 class DigestPin:
     """A pinned digest for an artifact."""
+
     pin_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     artifact_type: ArtifactType = ArtifactType.CONTAINER_IMAGE
@@ -227,6 +240,7 @@ class DigestPin:
 @dataclass
 class RegistryConfig:
     """Configuration for an allowed registry."""
+
     registry_id: str = field(default_factory=lambda: str(uuid4()))
     hostname: str = ""  # e.g., "gcr.io/project", "ecr.eu-west-1.amazonaws.com"
     require_signature: bool = True
@@ -273,6 +287,7 @@ class RegistryConfig:
 @dataclass
 class RegistryAllowlist:
     """Allowlist of registries."""
+
     allowlist_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     registries: List[RegistryConfig] = field(default_factory=list)
@@ -280,7 +295,9 @@ class RegistryAllowlist:
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_by: str = ""
 
-    def is_registry_allowed(self, registry: str, repository: str) -> Tuple[bool, Optional[RegistryConfig]]:
+    def is_registry_allowed(
+        self, registry: str, repository: str
+    ) -> Tuple[bool, Optional[RegistryConfig]]:
         """Check if a registry/repository is allowed."""
         for config in self.registries:
             if config.matches_artifact(registry, repository):
@@ -305,6 +322,7 @@ class RegistryAllowlist:
 @dataclass
 class SBOMComponent:
     """A component in an SBOM."""
+
     name: str = ""
     version: str = ""
     purl: str = ""  # Package URL
@@ -330,6 +348,7 @@ class SBOMComponent:
 @dataclass
 class Vulnerability:
     """A vulnerability associated with an SBOM component."""
+
     vuln_id: str = ""  # CVE ID
     severity: VulnerabilitySeverity = VulnerabilitySeverity.MEDIUM
     cvss_score: float = 0.0
@@ -365,6 +384,7 @@ class Vulnerability:
 @dataclass
 class SBOM:
     """Software Bill of Materials."""
+
     sbom_id: str = field(default_factory=lambda: str(uuid4()))
     artifact_digest: str = ""  # Links to signed artifact
     format: SBOMFormat = SBOMFormat.CYCLONEDX_1_5
@@ -384,14 +404,17 @@ class SBOM:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "sbom_id": self.sbom_id,
-            "artifact_digest": self.artifact_digest,
-            "format": self.format.value,
-            "created_at": self.created_at.isoformat(),
-            "components_count": len(self.components),
-            "vulnerabilities_count": len(self.vulnerabilities),
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "sbom_id": self.sbom_id,
+                "artifact_digest": self.artifact_digest,
+                "format": self.format.value,
+                "created_at": self.created_at.isoformat(),
+                "components_count": len(self.components),
+                "vulnerabilities_count": len(self.vulnerabilities),
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def get_vulnerability_summary(self) -> Dict[str, int]:
@@ -423,6 +446,7 @@ class SBOM:
 @dataclass
 class TrustedSigner:
     """A trusted signer for artifact verification."""
+
     signer_id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
     public_key: str = ""  # PEM-encoded public key
@@ -451,7 +475,9 @@ class TrustedSigner:
         return {
             "signer_id": self.signer_id,
             "name": self.name,
-            "public_key": self.public_key[:50] + "..." if len(self.public_key) > 50 else self.public_key,
+            "public_key": (
+                self.public_key[:50] + "..." if len(self.public_key) > 50 else self.public_key
+            ),
             "algorithm": self.algorithm.value,
             "fingerprint": self.fingerprint,
             "valid_from": self.valid_from.isoformat(),
@@ -467,6 +493,7 @@ class TrustedSigner:
 @dataclass
 class SupplyChainEvent:
     """Event in the supply chain audit log."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     event_type: SupplyChainEventType = SupplyChainEventType.ARTIFACT_REGISTERED
@@ -483,15 +510,18 @@ class SupplyChainEvent:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "workspace_id": self.workspace_id,
-            "event_type": self.event_type.value,
-            "timestamp": self.timestamp.isoformat(),
-            "actor_id": self.actor_id,
-            "artifact_digest": self.artifact_digest,
-            "result": self.result,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "workspace_id": self.workspace_id,
+                "event_type": self.event_type.value,
+                "timestamp": self.timestamp.isoformat(),
+                "actor_id": self.actor_id,
+                "artifact_digest": self.artifact_digest,
+                "result": self.result,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -512,6 +542,7 @@ class SupplyChainEvent:
 @dataclass
 class SupplyChainStats:
     """Statistics for supply chain security."""
+
     workspace_id: str = ""
     total_artifacts: int = 0
     signed_artifacts: int = 0
@@ -553,6 +584,7 @@ class SupplyChainStats:
 # =============================================================================
 # Supply Chain Service
 # =============================================================================
+
 
 class SupplyChainService:
     """
@@ -1023,9 +1055,12 @@ class SupplyChainService:
         """Get the active pinned digest for an artifact."""
         with self._lock:
             for pin in self._pins.values():
-                if (pin.workspace_id == workspace_id and
-                    pin.artifact_name == artifact_name and
-                    pin.active and not pin.is_expired()):
+                if (
+                    pin.workspace_id == workspace_id
+                    and pin.artifact_name == artifact_name
+                    and pin.active
+                    and not pin.is_expired()
+                ):
                     return pin
         return None
 
@@ -1462,10 +1497,13 @@ class SupplyChainService:
         # Count policy violations in last 30 days
         cutoff = datetime.now(timezone.utc) - timedelta(days=30)
         with self._lock:
-            violations = [e for e in self._events
-                         if e.workspace_id == workspace_id
-                         and e.event_type == SupplyChainEventType.POLICY_VIOLATION
-                         and e.timestamp >= cutoff]
+            violations = [
+                e
+                for e in self._events
+                if e.workspace_id == workspace_id
+                and e.event_type == SupplyChainEventType.POLICY_VIOLATION
+                and e.timestamp >= cutoff
+            ]
 
         return SupplyChainStats(
             workspace_id=workspace_id,

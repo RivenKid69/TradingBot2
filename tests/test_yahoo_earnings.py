@@ -28,7 +28,7 @@ from adapters.models import (
 def mock_yfinance():
     """Create a mock yfinance module."""
     mock_yf = MagicMock()
-    with patch.dict(sys.modules, {'yfinance': mock_yf}):
+    with patch.dict(sys.modules, {"yfinance": mock_yf}):
         yield mock_yf
 
 

@@ -277,27 +277,33 @@ class TestConformanceTestSuite:
         )
 
         # Add tests
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            name="Critical Test 1",
-            category=TestCategory.KILL_SWITCH,
-            priority=TestPriority.CRITICAL,
-            result=TestResult.PASS,
-        ))
-        suite.add_test(ConformanceTest(
-            test_id="CT-002",
-            name="High Test 1",
-            category=TestCategory.PRE_TRADE,
-            priority=TestPriority.HIGH,
-            result=TestResult.PASS,
-        ))
-        suite.add_test(ConformanceTest(
-            test_id="CT-003",
-            name="Critical Test 2",
-            category=TestCategory.KILL_SWITCH,
-            priority=TestPriority.CRITICAL,
-            result=TestResult.FAIL,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                name="Critical Test 1",
+                category=TestCategory.KILL_SWITCH,
+                priority=TestPriority.CRITICAL,
+                result=TestResult.PASS,
+            )
+        )
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-002",
+                name="High Test 1",
+                category=TestCategory.PRE_TRADE,
+                priority=TestPriority.HIGH,
+                result=TestResult.PASS,
+            )
+        )
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-003",
+                name="Critical Test 2",
+                category=TestCategory.KILL_SWITCH,
+                priority=TestPriority.CRITICAL,
+                result=TestResult.FAIL,
+            )
+        )
 
         return suite
 
@@ -399,11 +405,13 @@ class TestConformanceTestSuite:
     def test_suite_complete_passed(self):
         """Test completing suite with passed status."""
         suite = ConformanceTestSuite()
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            priority=TestPriority.CRITICAL,
-            result=TestResult.PASS,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                priority=TestPriority.CRITICAL,
+                result=TestResult.PASS,
+            )
+        )
         suite.complete()
 
         assert suite.status == ConformanceSuiteStatus.PASSED
@@ -417,16 +425,20 @@ class TestConformanceTestSuite:
     def test_suite_complete_with_warnings(self):
         """Test completing suite with warnings."""
         suite = ConformanceTestSuite()
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            priority=TestPriority.CRITICAL,
-            result=TestResult.PASS,
-        ))
-        suite.add_test(ConformanceTest(
-            test_id="CT-002",
-            priority=TestPriority.HIGH,
-            result=TestResult.WARNING,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                priority=TestPriority.CRITICAL,
+                result=TestResult.PASS,
+            )
+        )
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-002",
+                priority=TestPriority.HIGH,
+                result=TestResult.WARNING,
+            )
+        )
         suite.complete()
 
         assert suite.status == ConformanceSuiteStatus.PASSED_WITH_WARNINGS
@@ -447,11 +459,13 @@ class TestConformanceTestSuite:
 
         # Suite with all tests passed can certify
         passed_suite = ConformanceTestSuite()
-        passed_suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            priority=TestPriority.CRITICAL,
-            result=TestResult.PASS,
-        ))
+        passed_suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                priority=TestPriority.CRITICAL,
+                result=TestResult.PASS,
+            )
+        )
         passed_suite.complete()
         assert passed_suite.can_certify()
 
@@ -462,11 +476,13 @@ class TestConformanceTestSuite:
             algorithm_version="1.0.0",
             environment=TestEnvironment.UAT,
         )
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            priority=TestPriority.CRITICAL,
-            result=TestResult.PASS,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                priority=TestPriority.CRITICAL,
+                result=TestResult.PASS,
+            )
+        )
         suite.start("tester")
         suite.complete()
 
@@ -558,12 +574,14 @@ class TestConformanceTestRunner:
             name="Test Suite",
             algorithm_id="ALGO-001",
         )
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            name="Test 1",
-            category=TestCategory.KILL_SWITCH,
-            priority=TestPriority.HIGH,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                name="Test 1",
+                category=TestCategory.KILL_SWITCH,
+                priority=TestPriority.HIGH,
+            )
+        )
 
         result = runner.run_suite(suite, executed_by="tester")
 
@@ -578,14 +596,18 @@ class TestConformanceTestRunner:
         """Test running suite with category filter."""
         runner = ConformanceTestRunner()
         suite = ConformanceTestSuite()
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            category=TestCategory.KILL_SWITCH,
-        ))
-        suite.add_test(ConformanceTest(
-            test_id="CT-002",
-            category=TestCategory.PRE_TRADE,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                category=TestCategory.KILL_SWITCH,
+            )
+        )
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-002",
+                category=TestCategory.PRE_TRADE,
+            )
+        )
 
         result = runner.run_suite(
             suite,
@@ -662,10 +684,7 @@ class TestFactoryFunctions:
         )
 
         # All tests should be kill switch category
-        assert all(
-            t.category == TestCategory.KILL_SWITCH
-            for t in suite.tests
-        )
+        assert all(t.category == TestCategory.KILL_SWITCH for t in suite.tests)
 
     def test_create_test_runner(self):
         """Test create_test_runner factory."""
@@ -757,20 +776,24 @@ class TestIntegration:
         )
 
         # Add critical tests that pass
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            name="Critical Test",
-            category=TestCategory.KILL_SWITCH,
-            priority=TestPriority.CRITICAL,
-            result=TestResult.PASS,
-        ))
-        suite.add_test(ConformanceTest(
-            test_id="CT-002",
-            name="High Priority Test",
-            category=TestCategory.PRE_TRADE,
-            priority=TestPriority.HIGH,
-            result=TestResult.PASS,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                name="Critical Test",
+                category=TestCategory.KILL_SWITCH,
+                priority=TestPriority.CRITICAL,
+                result=TestResult.PASS,
+            )
+        )
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-002",
+                name="High Priority Test",
+                category=TestCategory.PRE_TRADE,
+                priority=TestPriority.HIGH,
+                result=TestResult.PASS,
+            )
+        )
 
         suite.start("developer")
         suite.complete()

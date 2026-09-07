@@ -55,9 +55,9 @@ def test_quantile_huber_loss_kappa_scaling_quadratic_region() -> None:
         # In quadratic region: loss component = 0.5 * error²
         # With τ = 0.5, |τ - I{error<0}| = |0.5 - 0| = 0.5
         expected_loss = 0.5 * 0.5 * error**2
-        assert math.isclose(loss.item(), expected_loss, rel_tol=1e-5), (
-            f"κ={kappa}: Expected {expected_loss:.6f}, got {loss.item():.6f}"
-        )
+        assert math.isclose(
+            loss.item(), expected_loss, rel_tol=1e-5
+        ), f"κ={kappa}: Expected {expected_loss:.6f}, got {loss.item():.6f}"
 
 
 def test_quantile_huber_loss_kappa_scaling_linear_region() -> None:
@@ -96,9 +96,9 @@ def test_quantile_huber_loss_kappa_scaling_linear_region() -> None:
         # In linear region: loss component = κ * (|error| - 0.5 * κ)
         # With τ = 0.5, |τ - I{error<0}| = |0.5 - 0| = 0.5
         expected_loss = 0.5 * kappa * (abs(error) - 0.5 * kappa)
-        assert math.isclose(loss.item(), expected_loss, rel_tol=1e-5), (
-            f"κ={kappa}: Expected {expected_loss:.6f}, got {loss.item():.6f}"
-        )
+        assert math.isclose(
+            loss.item(), expected_loss, rel_tol=1e-5
+        ), f"κ={kappa}: Expected {expected_loss:.6f}, got {loss.item():.6f}"
 
 
 def test_quantile_huber_loss_transition_point() -> None:
@@ -130,16 +130,12 @@ def test_quantile_huber_loss_transition_point() -> None:
         # Test just below transition
         predicted_below = torch.tensor([[0.0]], dtype=torch.float32)
         targets_below = torch.tensor([[kappa - 1e-4]], dtype=torch.float32)
-        loss_below = DistributionalPPO._quantile_huber_loss(
-            algo, predicted_below, targets_below
-        )
+        loss_below = DistributionalPPO._quantile_huber_loss(algo, predicted_below, targets_below)
 
         # Test just above transition
         predicted_above = torch.tensor([[0.0]], dtype=torch.float32)
         targets_above = torch.tensor([[kappa + 1e-4]], dtype=torch.float32)
-        loss_above = DistributionalPPO._quantile_huber_loss(
-            algo, predicted_above, targets_above
-        )
+        loss_above = DistributionalPPO._quantile_huber_loss(algo, predicted_above, targets_above)
 
         # Should be very close (continuous)
         assert math.isclose(loss_below.item(), loss_above.item(), rel_tol=1e-3), (
@@ -192,9 +188,7 @@ def test_quantile_huber_loss_gradient_magnitude_with_kappa() -> None:
     # I{δ<0} = 0, so |0.25 - 0| = 0.25
     # grad = 0.25 * κ
     ratio = gradients[2.0] / gradients[1.0]
-    assert math.isclose(ratio, 2.0, rel_tol=0.1), (
-        f"Gradient ratio should be ~2.0, got {ratio:.4f}"
-    )
+    assert math.isclose(ratio, 2.0, rel_tol=0.1), f"Gradient ratio should be ~2.0, got {ratio:.4f}"
 
 
 def test_quantile_huber_loss_asymmetric_weighting() -> None:
@@ -234,16 +228,14 @@ def test_quantile_huber_loss_asymmetric_weighting() -> None:
     # Underestimation: predicted < target
     predicted_under = torch.tensor([[0.0]], dtype=torch.float32)
     targets_under = torch.tensor([[error]], dtype=torch.float32)
-    loss_under = DistributionalPPO._quantile_huber_loss(
-        algo, predicted_under, targets_under
-    )
+    loss_under = DistributionalPPO._quantile_huber_loss(algo, predicted_under, targets_under)
 
     # For τ = 0.1, underestimation should be penalized ~9x more than overestimation
     ratio = loss_under.item() / loss_over.item()
     expected_ratio = 0.9 / 0.1  # 9.0
-    assert math.isclose(ratio, expected_ratio, rel_tol=0.01), (
-        f"Expected ratio {expected_ratio:.1f}, got {ratio:.4f}"
-    )
+    assert math.isclose(
+        ratio, expected_ratio, rel_tol=0.01
+    ), f"Expected ratio {expected_ratio:.1f}, got {ratio:.4f}"
 
 
 def test_quantile_huber_loss_matches_reference_implementation() -> None:
@@ -270,9 +262,7 @@ def test_quantile_huber_loss_matches_reference_implementation() -> None:
     algo.policy = _PolicyStub()
 
     # Test case
-    predicted = torch.tensor(
-        [[0.0, 0.5, 1.0], [-1.0, 0.0, 1.0]], dtype=torch.float32
-    )
+    predicted = torch.tensor([[0.0, 0.5, 1.0], [-1.0, 0.0, 1.0]], dtype=torch.float32)
     targets = torch.tensor([[0.5], [-0.5]], dtype=torch.float32)
 
     loss = DistributionalPPO._quantile_huber_loss(algo, predicted, targets)
@@ -316,9 +306,7 @@ def test_quantile_huber_loss_zero_when_perfect_prediction() -> None:
 
     # All quantiles predict the same value as target
     target_value = 42.0
-    predicted = torch.tensor(
-        [[target_value, target_value, target_value]], dtype=torch.float32
-    )
+    predicted = torch.tensor([[target_value, target_value, target_value]], dtype=torch.float32)
     targets = torch.tensor([[target_value]], dtype=torch.float32)
 
     loss = DistributionalPPO._quantile_huber_loss(algo, predicted, targets)

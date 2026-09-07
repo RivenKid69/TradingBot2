@@ -7,11 +7,12 @@ CRITICAL #3: CVaR Division by Small Alpha (safe division protection)
 CRITICAL #4: LSTM Gradient Monitoring (per-layer gradient logging)
 CRITICAL #5: NaN/Inf Silent Propagation (detection before backward())
 
-Author: AI Assistant
+Author: Sultan Suyunbayev
 Date: 2025-11-20
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import torch.nn.functional as F
@@ -26,17 +27,20 @@ from optimizers.adaptive_upgd import AdaptiveUPGD
 # CRITICAL FIX #1: Log-Softmax Numerical Stability
 # ============================================================================
 
+
 class TestCriticalFix1LogSoftmax:
     """Test that log(softmax) is replaced with log_softmax for numerical stability."""
 
     def test_log_softmax_vs_log_of_softmax_stability(self):
         """Verify log_softmax is more stable than log(softmax) for extreme values."""
         # Create logits with extreme values that would cause issues with log(softmax)
-        logits = torch.tensor([
-            [-100.0, -50.0, 0.0, 50.0],
-            [-1000.0, -500.0, 0.0, 500.0],
-            [100.0, 200.0, 300.0, 400.0],
-        ])
+        logits = torch.tensor(
+            [
+                [-100.0, -50.0, 0.0, 50.0],
+                [-1000.0, -500.0, 0.0, 500.0],
+                [100.0, 200.0, 300.0, 400.0],
+            ]
+        )
 
         # Method 1: log(softmax) - OLD BUGGY WAY
         # This can produce NaN or -inf due to numerical underflow
@@ -48,7 +52,9 @@ class TestCriticalFix1LogSoftmax:
         log_probs_new = F.log_softmax(logits, dim=1)
 
         # Check that new method produces finite values
-        assert torch.isfinite(log_probs_new).all(), "log_softmax should always produce finite values"
+        assert torch.isfinite(
+            log_probs_new
+        ).all(), "log_softmax should always produce finite values"
 
         # For extreme logits, old method often produces -inf or NaN
         # while new method handles them gracefully
@@ -81,15 +87,20 @@ class TestCriticalFix1LogSoftmax:
     def test_extreme_logits_no_gradient_explosion(self):
         """Test that extreme logits don't cause gradient explosion with log_softmax."""
         # Create extreme logits that would cause problems with log(softmax)
-        logits = torch.tensor([
-            [-1000.0, 0.0, 1000.0],
-            [-500.0, 0.0, 500.0],
-        ], requires_grad=True)
+        logits = torch.tensor(
+            [
+                [-1000.0, 0.0, 1000.0],
+                [-500.0, 0.0, 500.0],
+            ],
+            requires_grad=True,
+        )
 
-        target = torch.tensor([
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0],
-        ])
+        target = torch.tensor(
+            [
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        )
 
         # Compute loss with log_softmax
         log_probs = F.log_softmax(logits, dim=1)
@@ -106,6 +117,7 @@ class TestCriticalFix1LogSoftmax:
 # ============================================================================
 # CRITICAL FIX #2: VGS-UPGD Noise Amplification
 # ============================================================================
+
 
 class TestCriticalFix2VGSAdaptiveNoise:
     """Test that adaptive noise is enabled when VGS is used with AdaptiveUPGD."""
@@ -174,6 +186,7 @@ class TestCriticalFix2VGSAdaptiveNoise:
 # CRITICAL FIX #3: CVaR Division by Small Alpha
 # ============================================================================
 
+
 class TestCriticalFix3CVaRSafeDivision:
     """Test safe division protection for CVaR with small alpha values."""
 
@@ -200,8 +213,16 @@ class TestCriticalFix3CVaRSafeDivision:
             full_mass = int(min(num_quantiles, k_float))
             frac = k_float - full_mass
 
-            tail_sum = predicted_quantiles[:, :full_mass].sum(dim=1) if full_mass > 0 else torch.zeros(batch_size)
-            partial = predicted_quantiles[:, full_mass] * frac if full_mass < num_quantiles else torch.zeros(batch_size)
+            tail_sum = (
+                predicted_quantiles[:, :full_mass].sum(dim=1)
+                if full_mass > 0
+                else torch.zeros(batch_size)
+            )
+            partial = (
+                predicted_quantiles[:, full_mass] * frac
+                if full_mass < num_quantiles
+                else torch.zeros(batch_size)
+            )
             expectation = mass * (tail_sum + partial)
             tail_mass = max(alpha, mass * (full_mass + frac))
 
@@ -244,11 +265,13 @@ class TestCriticalFix3CVaRSafeDivision:
 # CRITICAL FIX #4: LSTM Gradient Monitoring
 # ============================================================================
 
+
 class TestCriticalFix4LSTMGradientMonitoring:
     """Test LSTM gradient monitoring per layer."""
 
     def test_lstm_gradient_logging(self):
         """Test that LSTM gradients are logged per layer."""
+
         # Create a simple model with LSTM
         class SimpleLSTMModel(nn.Module):
             def __init__(self):
@@ -284,7 +307,7 @@ class TestCriticalFix4LSTMGradientMonitoring:
                         param_count += 1
 
         assert param_count > 0, "LSTM should have parameters with gradients"
-        lstm_grad_norm = lstm_grad_norm ** 0.5
+        lstm_grad_norm = lstm_grad_norm**0.5
         assert lstm_grad_norm > 0.0, "LSTM gradient norm should be positive"
         assert np.isfinite(lstm_grad_norm), "LSTM gradient norm should be finite"
 
@@ -302,7 +325,7 @@ class TestCriticalFix4LSTMGradientMonitoring:
         for param in lstm.parameters():
             if param.grad is not None:
                 lstm_grad_norm += param.grad.norm().item() ** 2
-        lstm_grad_norm = lstm_grad_norm ** 0.5
+        lstm_grad_norm = lstm_grad_norm**0.5
 
         # Should detect explosion (> 100)
         assert lstm_grad_norm > 100.0, "Should detect gradient explosion"
@@ -312,13 +335,14 @@ class TestCriticalFix4LSTMGradientMonitoring:
 # CRITICAL FIX #5: NaN/Inf Detection Before Backward
 # ============================================================================
 
+
 class TestCriticalFix5NaNInfDetection:
     """Test NaN/Inf detection before backward() call."""
 
     def test_nan_detection_before_backward(self):
         """Test that NaN loss is detected before backward()."""
         # Create a loss tensor with NaN
-        loss = torch.tensor(float('nan'), requires_grad=True)
+        loss = torch.tensor(float("nan"), requires_grad=True)
 
         # Check detection
         has_nan = torch.isnan(loss).any()
@@ -327,7 +351,7 @@ class TestCriticalFix5NaNInfDetection:
     def test_inf_detection_before_backward(self):
         """Test that Inf loss is detected before backward()."""
         # Create a loss tensor with Inf
-        loss = torch.tensor(float('inf'), requires_grad=True)
+        loss = torch.tensor(float("inf"), requires_grad=True)
 
         # Check detection
         has_inf = torch.isinf(loss).any()
@@ -344,7 +368,7 @@ class TestCriticalFix5NaNInfDetection:
         loss = output.sum()
 
         # Manually set to NaN to simulate the condition
-        loss = torch.tensor(float('nan'), requires_grad=True)
+        loss = torch.tensor(float("nan"), requires_grad=True)
 
         # Simulate the fix: check before backward
         if torch.isnan(loss).any() or torch.isinf(loss).any():
@@ -363,7 +387,7 @@ class TestCriticalFix5NaNInfDetection:
         mock_logger.record = Mock()
 
         # Simulate NaN detection and logging
-        loss = torch.tensor(float('nan'))
+        loss = torch.tensor(float("nan"))
         policy_loss = torch.tensor(1.0)
         critic_loss = torch.tensor(2.0)
         cvar_term = torch.tensor(0.5)
@@ -383,6 +407,7 @@ class TestCriticalFix5NaNInfDetection:
 # Integration Tests
 # ============================================================================
 
+
 class TestCriticalFixesIntegration:
     """Integration tests verifying all fixes work together."""
 
@@ -400,7 +425,7 @@ class TestCriticalFixesIntegration:
         # Fix #2: Adaptive noise with VGS
         model = nn.Linear(10, 10)
         optimizer = AdaptiveUPGD(model.parameters(), adaptive_noise=True, sigma=0.0005)
-        assert optimizer.param_groups[0]['adaptive_noise'] == True
+        assert optimizer.param_groups[0]["adaptive_noise"] == True
 
         # Fix #3: CVaR safe division
         alpha = 0.005
@@ -419,7 +444,7 @@ class TestCriticalFixesIntegration:
         assert has_grads
 
         # Fix #5: NaN detection
-        loss_nan = torch.tensor(float('nan'))
+        loss_nan = torch.tensor(float("nan"))
         should_skip = torch.isnan(loss_nan).any() or torch.isinf(loss_nan).any()
         assert should_skip
 

@@ -17,6 +17,7 @@ from typing import Any, Dict
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def alpaca_config() -> Dict[str, Any]:
     """Basic Alpaca configuration for testing."""
@@ -34,6 +35,7 @@ def alpaca_config() -> Dict[str, Any]:
 # =============================================================================
 # Test Registry and Models
 # =============================================================================
+
 
 class TestAlpacaModels:
     """Tests for Alpaca-related data models."""
@@ -106,6 +108,7 @@ class TestAlpacaRegistry:
 # =============================================================================
 # Test Fee Adapter
 # =============================================================================
+
 
 class TestAlpacaFeeAdapter:
     """Tests for Alpaca fee computation."""
@@ -233,6 +236,7 @@ class TestAlpacaFeeAdapter:
 # Test Trading Hours Adapter
 # =============================================================================
 
+
 class TestAlpacaTradingHoursAdapter:
     """Tests for Alpaca trading hours."""
 
@@ -329,6 +333,7 @@ class TestAlpacaTradingHoursAdapter:
 # Test Exchange Info Adapter
 # =============================================================================
 
+
 class TestAlpacaExchangeInfoAdapter:
     """Tests for Alpaca exchange info."""
 
@@ -381,6 +386,7 @@ class TestAlpacaExchangeInfoAdapter:
 # Test Configuration
 # =============================================================================
 
+
 class TestAlpacaConfig:
     """Tests for Alpaca configuration."""
 
@@ -429,6 +435,7 @@ class TestAlpacaConfig:
 # =============================================================================
 # Test Bar Source Wrapper
 # =============================================================================
+
 
 class TestAlpacaBarSource:
     """Tests for AlpacaBarSource wrapper."""
@@ -493,6 +500,7 @@ class TestAlpacaBarSource:
 # =============================================================================
 # Test DI Integration
 # =============================================================================
+
 
 class TestDIIntegration:
     """Tests for DI registry integration."""

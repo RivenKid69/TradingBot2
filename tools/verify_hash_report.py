@@ -7,6 +7,7 @@ invoked by `make verify-hash` and CI to guarantee that:
 - all built extension modules are covered by the report
 - builds are performed with Python 3.12.x (reproducibility policy)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,18 +34,39 @@ def load_report(path: Path) -> dict:
         return json.load(fh)
 
 
+# The report describes the extensions built in place. Everything below is either
+# a copy of one of them (setup.py leaves duplicates under build/) or belongs to
+# an installed dependency, so counting them as unreported artifacts only ever
+# produced false failures.
+IGNORED_DIRS = frozenset(
+    {
+        "build",
+        "dist",
+        ".venv",
+        "venv",
+        "env",
+        "site-packages",
+        ".git",
+        "node_modules",
+        ".eggs",
+        "__pycache__",
+    }
+)
+
+
 def find_built_artifacts(roots: Iterable[Path]) -> set[Path]:
     artifacts: set[Path] = set()
     suffixes = set(EXTENSION_SUFFIXES)
     for root in roots:
         for suffix in suffixes:
-            artifacts.update(root.rglob(f"*{suffix}"))
+            for path in root.rglob(f"*{suffix}"):
+                if IGNORED_DIRS.intersection(path.parts):
+                    continue
+                artifacts.add(path)
     return {path.resolve() for path in artifacts if path.exists()}
 
 
-def validate_report(
-    report_path: Path, artifact_roots: Iterable[Path], require_all: bool
-) -> dict:
+def validate_report(report_path: Path, artifact_roots: Iterable[Path], require_all: bool) -> dict:
     data = load_report(report_path)
 
     build_info = data.get("build_info", {})
@@ -81,9 +103,7 @@ def validate_report(
     if require_all:
         built_artifacts = find_built_artifacts(artifact_roots)
         unreported = [
-            str(path)
-            for path in built_artifacts
-            if path not in set(recorded_paths.values())
+            str(path) for path in built_artifacts if path not in set(recorded_paths.values())
         ]
         if unreported:
             mismatches.append(

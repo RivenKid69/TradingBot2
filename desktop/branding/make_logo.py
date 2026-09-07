@@ -32,8 +32,11 @@ def main() -> None:
     # Ascending gradient "quant" line with nodes (indigo -> cyan).
     indigo, cyan = (99, 102, 241), (34, 211, 238)
     pts = [
-        (0.20, 0.74), (0.37, 0.60), (0.50, 0.66),
-        (0.64, 0.42), (0.80, 0.30),
+        (0.20, 0.74),
+        (0.37, 0.60),
+        (0.50, 0.66),
+        (0.64, 0.42),
+        (0.80, 0.30),
     ]
     px = [(int(x * SIZE), int(y * SIZE)) for x, y in pts]
     width = int(SIZE * 0.045)
@@ -48,8 +51,10 @@ def main() -> None:
     # Arrow head at the last node.
     hx, hy = px[-1]
     a = int(SIZE * 0.055)
-    d.polygon([(hx + a, hy - a), (hx + a, hy + int(a * 0.2)), (hx - int(a * 0.2), hy - a)],
-              fill=cyan + (255,))
+    d.polygon(
+        [(hx + a, hy - a), (hx + a, hy + int(a * 0.2)), (hx - int(a * 0.2), hy - a)],
+        fill=cyan + (255,),
+    )
 
     img.save(OUT)
     print("wrote", OUT)

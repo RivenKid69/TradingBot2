@@ -14,12 +14,12 @@ from typing import Optional
 
 # Common encodings to try
 ENCODINGS_TO_TRY = [
-    'utf-8',
-    'windows-1251',  # Cyrillic (Russian)
-    'cp1252',        # Windows Western European
-    'iso-8859-1',    # Latin-1
-    'cp866',         # DOS Cyrillic
-    'koi8-r',        # KOI8-R (Russian)
+    "utf-8",
+    "windows-1251",  # Cyrillic (Russian)
+    "cp1252",  # Windows Western European
+    "iso-8859-1",  # Latin-1
+    "cp866",  # DOS Cyrillic
+    "koi8-r",  # KOI8-R (Russian)
 ]
 
 
@@ -38,7 +38,7 @@ def detect_and_convert(filepath: Path, dry_run: bool = False) -> bool:
 
     for encoding in ENCODINGS_TO_TRY:
         try:
-            with open(filepath, 'r', encoding=encoding) as f:
+            with open(filepath, "r", encoding=encoding) as f:
                 content = f.read()
             detected_encoding = encoding
             print(f"  [OK] Successfully read with {encoding}")
@@ -51,14 +51,14 @@ def detect_and_convert(filepath: Path, dry_run: bool = False) -> bool:
         return False
 
     # If already UTF-8, check if it's valid
-    if detected_encoding == 'utf-8':
+    if detected_encoding == "utf-8":
         print(f"  [INFO] File is already UTF-8")
         return True
 
     # Convert to UTF-8
     if not dry_run:
         try:
-            with open(filepath, 'w', encoding='utf-8', newline='\n') as f:
+            with open(filepath, "w", encoding="utf-8", newline="\n") as f:
                 f.write(content)
             print(f"  [OK] Converted from {detected_encoding} to UTF-8")
             return True
@@ -71,18 +71,10 @@ def detect_and_convert(filepath: Path, dry_run: bool = False) -> bool:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Fix files with broken encoding (non-UTF-8)'
-    )
+    parser = argparse.ArgumentParser(description="Fix files with broken encoding (non-UTF-8)")
+    parser.add_argument("files", nargs="+", help="Files to fix")
     parser.add_argument(
-        'files',
-        nargs='+',
-        help='Files to fix'
-    )
-    parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be done without modifying files'
+        "--dry-run", action="store_true", help="Show what would be done without modifying files"
     )
 
     args = parser.parse_args()
@@ -106,14 +98,14 @@ def main():
         print()
 
     # Summary
-    print("="*60)
+    print("=" * 60)
     print(f"Conversion completed:")
     print(f"  Success: {success_count}")
     print(f"  Failed: {fail_count}")
-    print("="*60)
+    print("=" * 60)
 
     return 0 if fail_count == 0 else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

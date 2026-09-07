@@ -317,10 +317,12 @@ class AnomalyDetector:
             # Store in history
             if metric not in self._metric_history:
                 self._metric_history[metric] = deque(maxlen=1000)
-            self._metric_history[metric].append({
-                "value": value,
-                "timestamp": time.time(),
-            })
+            self._metric_history[metric].append(
+                {
+                    "value": value,
+                    "timestamp": time.time(),
+                }
+            )
 
             # Check thresholds
             if metric not in self._thresholds:
@@ -352,8 +354,7 @@ class AnomalyDetector:
 
             # Check rate limit
             recent_alerts = sum(
-                1 for a in self._alert_history
-                if time.time() - a["timestamp"] < 3600
+                1 for a in self._alert_history if time.time() - a["timestamp"] < 3600
             )
             if recent_alerts >= self._config.max_alerts_per_hour:
                 return None
@@ -369,10 +370,12 @@ class AnomalyDetector:
                 recommended_action=self._get_recommended_action(metric, severity),
             )
 
-            self._alert_history.append({
-                "alert_id": alert.alert_id,
-                "timestamp": time.time(),
-            })
+            self._alert_history.append(
+                {
+                    "alert_id": alert.alert_id,
+                    "timestamp": time.time(),
+                }
+            )
             self._last_alert_time[alert_key] = time.time()
 
             logger.warning(f"Anomaly detected: {alert.message}")
@@ -527,8 +530,7 @@ class ManualOverrideController:
             self._override_history.append(veto.copy())
 
             logger.info(
-                f"Signal veto set: {symbol} {direction} by {operator} "
-                f"(expires {expiry})"
+                f"Signal veto set: {symbol} {direction} by {operator} " f"(expires {expiry})"
             )
 
             return veto_id
@@ -643,13 +645,15 @@ class AutomationBiasMonitor:
     ) -> None:
         """Record an AI recommendation."""
         with self._lock:
-            self._recommendations.append({
-                "id": recommendation_id,
-                "action": ai_action,
-                "confidence": confidence,
-                "context": context,
-                "timestamp": time.time(),
-            })
+            self._recommendations.append(
+                {
+                    "id": recommendation_id,
+                    "action": ai_action,
+                    "confidence": confidence,
+                    "context": context,
+                    "timestamp": time.time(),
+                }
+            )
 
     def record_human_decision(
         self,
@@ -673,14 +677,16 @@ class AutomationBiasMonitor:
             AnomalyAlert if automation bias detected.
         """
         with self._lock:
-            self._human_decisions.append({
-                "recommendation_id": recommendation_id,
-                "human_action": human_action,
-                "followed_ai": followed_ai,
-                "operator": operator,
-                "reason": reason,
-                "timestamp": time.time(),
-            })
+            self._human_decisions.append(
+                {
+                    "recommendation_id": recommendation_id,
+                    "human_action": human_action,
+                    "followed_ai": followed_ai,
+                    "operator": operator,
+                    "reason": reason,
+                    "timestamp": time.time(),
+                }
+            )
 
             # Calculate agreement rate
             return self._check_automation_bias()
@@ -688,22 +694,25 @@ class AutomationBiasMonitor:
     def _check_automation_bias(self) -> Optional[AnomalyAlert]:
         """Check for automation bias indicators."""
         recent_decisions = [
-            d for d in self._human_decisions
+            d
+            for d in self._human_decisions
             if time.time() - d["timestamp"] < self._review_interval_seconds
         ]
 
         if len(recent_decisions) < 10:
             return None
 
-        agreement_rate = sum(
-            1 for d in recent_decisions if d["followed_ai"]
-        ) / len(recent_decisions)
+        agreement_rate = sum(1 for d in recent_decisions if d["followed_ai"]) / len(
+            recent_decisions
+        )
 
-        self._agreement_rate_history.append({
-            "rate": agreement_rate,
-            "sample_size": len(recent_decisions),
-            "timestamp": time.time(),
-        })
+        self._agreement_rate_history.append(
+            {
+                "rate": agreement_rate,
+                "sample_size": len(recent_decisions),
+                "timestamp": time.time(),
+            }
+        )
 
         # Check for over-reliance (following AI too much)
         if agreement_rate >= self._high_agreement_threshold:
@@ -734,7 +743,8 @@ class AutomationBiasMonitor:
         """Get automation bias metrics summary."""
         with self._lock:
             recent_decisions = [
-                d for d in self._human_decisions
+                d
+                for d in self._human_decisions
                 if time.time() - d["timestamp"] < self._review_interval_seconds
             ]
 
@@ -745,9 +755,9 @@ class AutomationBiasMonitor:
                     "bias_risk": "insufficient_data",
                 }
 
-            agreement_rate = sum(
-                1 for d in recent_decisions if d["followed_ai"]
-            ) / len(recent_decisions)
+            agreement_rate = sum(1 for d in recent_decisions if d["followed_ai"]) / len(
+                recent_decisions
+            )
 
             # Determine bias risk level
             if agreement_rate >= self._high_agreement_threshold:
@@ -1169,9 +1179,7 @@ class HumanOversightSystem:
             return False, "Trading is paused"
 
         # Check signal veto
-        vetoed, veto_reason = self._override_controller.check_signal_vetoed(
-            symbol, direction
-        )
+        vetoed, veto_reason = self._override_controller.check_signal_vetoed(symbol, direction)
         if vetoed:
             return False, veto_reason
 

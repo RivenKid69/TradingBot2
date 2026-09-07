@@ -14,13 +14,15 @@ from typing import List, Dict, Tuple
 
 
 # Characters to check
+# Em-dash and en-dash are ordinary punctuation and are used throughout the
+# Russian-language documentation; they render correctly everywhere, so they are
+# not listed here. What remains are the characters that look like something they
+# are not, or that break parsers and diffs.
 PROBLEMATIC_CHARS = {
-    '\u2014': 'em-dash (should use --)',
-    '\u2013': 'en-dash (should use -)',
-    '\u2011': 'non-breaking hyphen (should use -)',
-    '\u00a0': 'non-breaking space',
-    '\u200b': 'zero-width space',
-    '\ufeff': 'BOM (should be removed)',
+    "\u2011": "non-breaking hyphen (looks like -, breaks search; use -)",
+    "\u00a0": "non-breaking space (looks like a space; use a space)",
+    "\u200b": "zero-width space (invisible)",
+    "\ufeff": "BOM (should be removed)",
 }
 
 
@@ -34,7 +36,7 @@ def check_file(filepath: Path) -> Dict[str, List[Tuple[int, str]]]:
     issues = {}
 
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         for line_num, line in enumerate(lines, 1):
@@ -45,7 +47,7 @@ def check_file(filepath: Path) -> Dict[str, List[Tuple[int, str]]]:
                     # Truncate long lines
                     line_preview = line.strip()
                     if len(line_preview) > 80:
-                        line_preview = line_preview[:77] + '...'
+                        line_preview = line_preview[:77] + "..."
                     issues[name].append((line_num, line_preview))
 
     except Exception as e:
@@ -56,9 +58,9 @@ def check_file(filepath: Path) -> Dict[str, List[Tuple[int, str]]]:
 
 def main():
     # Find all markdown and YAML files
-    root = Path('.')
-    patterns = ['*.md', '*.yaml', '*.yml']
-    exclude_dirs = {'.git', 'node_modules', 'venv', '__pycache__', '.pytest_cache'}
+    root = Path(".")
+    patterns = ["*.md", "*.yaml", "*.yml"]
+    exclude_dirs = {".git", "node_modules", "venv", "__pycache__", ".pytest_cache"}
 
     files = []
     for pattern in patterns:
@@ -94,18 +96,18 @@ def main():
                     print(f"    ... and {count - 3} more")
 
     # Summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     if total_issues > 0:
         print(f"[ERROR] Found {total_issues} encoding issue(s) in {len(files_with_issues)} file(s)")
         print("\nTo fix these issues, run:")
         print("  python tools/normalize_encoding.py")
-        print("="*60)
+        print("=" * 60)
         return 1
     else:
         print(f"[OK] No encoding issues found in {len(files)} file(s)")
-        print("="*60)
+        print("=" * 60)
         return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

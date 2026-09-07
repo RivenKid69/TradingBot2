@@ -19,6 +19,7 @@ BACKGROUND:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from optimizers import UPGD
@@ -36,7 +37,9 @@ class TestUPGDNormalizationRegression:
         """
         # Create model with known structure
         model = nn.Linear(10, 5, bias=False)
-        optimizer = UPGD(model.parameters(), lr=0.01, beta_utility=0.0, sigma=0.0)  # No EMA, no noise
+        optimizer = UPGD(
+            model.parameters(), lr=0.01, beta_utility=0.0, sigma=0.0
+        )  # No EMA, no noise
 
         # Set specific parameter values and gradients to create negative utilities
         # utility = -grad * param, so positive grad * positive param = negative utility
@@ -59,7 +62,9 @@ class TestUPGDNormalizationRegression:
         utility = state["avg_utility"]
 
         # Verify all utilities are negative
-        assert torch.all(utility < 0), f"Expected all negative utilities, got range [{utility.min():.6f}, {utility.max():.6f}]"
+        assert torch.all(
+            utility < 0
+        ), f"Expected all negative utilities, got range [{utility.min():.6f}, {utility.max():.6f}]"
 
         # Verify parameters CHANGED (not frozen)
         weights_after = model.weight.data
@@ -86,7 +91,7 @@ class TestUPGDNormalizationRegression:
             # Row 0: positive utility (negative grad or negative param)
             model.weight[0, :] = torch.ones(10) * -1.0  # Negative params
             # Row 1: negative utility (positive grad and positive param)
-            model.weight[1, :] = torch.ones(10) * 1.0   # Positive params
+            model.weight[1, :] = torch.ones(10) * 1.0  # Positive params
 
         model.zero_grad()
         model.weight.grad = torch.ones_like(model.weight) * 0.5  # All positive gradients
@@ -100,9 +105,9 @@ class TestUPGDNormalizationRegression:
         utility = state["avg_utility"]
 
         # Verify mixed utilities
-        assert torch.any(utility > 0) and torch.any(utility < 0), (
-            "Expected mixed utilities (both positive and negative)"
-        )
+        assert torch.any(utility > 0) and torch.any(
+            utility < 0
+        ), "Expected mixed utilities (both positive and negative)"
 
         print(f"Utility range: [{utility.min():.6f}, {utility.max():.6f}]")
         print(f"[PASS] Mixed utilities normalized correctly")
@@ -123,9 +128,9 @@ class TestUPGDNormalizationRegression:
         utility = state["avg_utility"]
 
         # All utilities should be zero
-        assert torch.allclose(utility, torch.zeros_like(utility)), (
-            f"Expected zero utilities with zero gradients, got range [{utility.min():.6f}, {utility.max():.6f}]"
-        )
+        assert torch.allclose(
+            utility, torch.zeros_like(utility)
+        ), f"Expected zero utilities with zero gradients, got range [{utility.min():.6f}, {utility.max():.6f}]"
 
         print(f"[PASS] Zero utilities handled correctly")
 
@@ -179,8 +184,10 @@ class TestUPGDNormalizationRegression:
         assert torch.all(torch.isfinite(utility)), "Utilities should be finite"
 
         # Verify utility statistics make sense
-        print(f"Utility stats: mean={utility.mean():.6f}, std={utility.std():.6f}, "
-              f"range=[{utility.min():.6f}, {utility.max():.6f}]")
+        print(
+            f"Utility stats: mean={utility.mean():.6f}, std={utility.std():.6f}, "
+            f"range=[{utility.min():.6f}, {utility.max():.6f}]"
+        )
 
         print(f"[PASS] Utility scaling produces valid values")
 

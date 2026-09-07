@@ -30,6 +30,7 @@ sys.path.insert(0, str(GUARDRAILS_ROOT.parent))
 # Schema Check Tests
 # ============================================================================
 
+
 class TestSchemaCheck:
     """Tests for schema_check guardrail."""
 
@@ -65,6 +66,7 @@ class TestSchemaCheck:
 # Intent Prohibition Tests
 # ============================================================================
 
+
 class TestIntentProhibition:
     """Tests for intent_prohibition guardrail."""
 
@@ -80,8 +82,14 @@ class TestIntentProhibition:
 
             # Critical intent fields
             intent_fields = {
-                "side", "quantity", "qty", "price", "order_type",
-                "intent", "signal", "target_position",
+                "side",
+                "quantity",
+                "qty",
+                "price",
+                "order_type",
+                "intent",
+                "signal",
+                "target_position",
             }
             assert intent_fields.issubset(PROHIBITED_INTENT_FIELDS)
         except ImportError:
@@ -94,7 +102,9 @@ class TestIntentProhibition:
 
             # Order commands should be prohibited
             prohibited = {
-                "PLACE_ORDER", "SUBMIT_ORDER", "EXECUTE_ORDER",
+                "PLACE_ORDER",
+                "SUBMIT_ORDER",
+                "EXECUTE_ORDER",
             }
             assert prohibited.issubset(PROHIBITED_COMMAND_TYPES)
         except ImportError:
@@ -104,6 +114,7 @@ class TestIntentProhibition:
 # ============================================================================
 # Cloud Allowlist Tests
 # ============================================================================
+
 
 class TestCloudAllowlist:
     """Tests for cloud_allowlist guardrail."""
@@ -139,6 +150,7 @@ class TestCloudAllowlist:
 # Build Artifact Check Tests
 # ============================================================================
 
+
 class TestBuildArtifactCheck:
     """Tests for build_artifact_check guardrail."""
 
@@ -162,6 +174,7 @@ class TestBuildArtifactCheck:
 # Protocol Check Tests
 # ============================================================================
 
+
 class TestProtocolCheck:
     """Tests for protocol_check guardrail."""
 
@@ -175,6 +188,7 @@ class TestProtocolCheck:
 # Import Boundary Tests
 # ============================================================================
 
+
 class TestImportBoundary:
     """Tests for import boundary guardrail."""
 
@@ -187,6 +201,7 @@ class TestImportBoundary:
 # ============================================================================
 # Artifact Check Tests
 # ============================================================================
+
 
 class TestArtifactCheck:
     """Tests for artifact_check guardrail."""
@@ -211,6 +226,7 @@ class TestArtifactCheck:
 # ============================================================================
 # Boundary Guardrails Tests
 # ============================================================================
+
 
 class TestBoundaryGuardrails:
     """Tests for Cloud/Agent boundary guardrails."""
@@ -255,6 +271,7 @@ class TestBoundaryGuardrails:
 # Telemetry Validation Integration Tests
 # ============================================================================
 
+
 class TestTelemetryValidationGuardrails:
     """Integration tests for telemetry validation guardrails."""
 
@@ -267,19 +284,33 @@ class TestTelemetryValidationGuardrails:
         # All critical trading fields must be prohibited
         critical_trading = {
             # Order fields
-            "side", "quantity", "qty", "price", "order_type",
-            "limit_price", "stop_price", "order_id",
+            "side",
+            "quantity",
+            "qty",
+            "price",
+            "order_type",
+            "limit_price",
+            "stop_price",
+            "order_id",
             # Intent fields
-            "intent", "signal", "target_position",
-            "execute_order", "place_order", "submit_order",
+            "intent",
+            "signal",
+            "target_position",
+            "execute_order",
+            "place_order",
+            "submit_order",
             # Position fields
-            "position_side", "position_size",
+            "position_side",
+            "position_size",
             # Execution fields
-            "execution_id", "trade_id", "fill_price",
+            "execution_id",
+            "trade_id",
+            "fill_price",
         }
 
-        assert critical_trading.issubset(PROHIBITED_ORDER_FIELDS), \
-            f"Missing fields: {critical_trading - PROHIBITED_ORDER_FIELDS}"
+        assert critical_trading.issubset(
+            PROHIBITED_ORDER_FIELDS
+        ), f"Missing fields: {critical_trading - PROHIBITED_ORDER_FIELDS}"
 
     def test_prohibited_pii_fields_comprehensive(self):
         """Test PII fields are covered."""
@@ -289,8 +320,12 @@ class TestTelemetryValidationGuardrails:
 
         # GDPR-relevant PII
         gdpr_pii = {
-            "email", "phone", "address", "ssn",
-            "credit_card", "date_of_birth",
+            "email",
+            "phone",
+            "address",
+            "ssn",
+            "credit_card",
+            "date_of_birth",
         }
 
         assert gdpr_pii.issubset(PROHIBITED_PII_FIELDS)
@@ -300,23 +335,29 @@ class TestTelemetryValidationGuardrails:
 # CI Workflow Verification Tests
 # ============================================================================
 
+
 class TestCIWorkflowIntegration:
     """Tests to verify CI workflow has guardrails."""
 
     def test_build_workflow_exists(self):
         """Test build workflow file exists."""
-        workflow_path = PACKAGE_ROOT.parent.parent.parent / ".github" / "workflows" / "build-and-test.yml"
+        workflow_path = (
+            PACKAGE_ROOT.parent.parent.parent / ".github" / "workflows" / "build-and-test.yml"
+        )
         assert workflow_path.exists(), "build-and-test.yml should exist"
 
     def test_security_workflow_exists(self):
         """Test security workflow file exists."""
-        workflow_path = PACKAGE_ROOT.parent.parent.parent / ".github" / "workflows" / "security-sast.yml"
+        workflow_path = (
+            PACKAGE_ROOT.parent.parent.parent / ".github" / "workflows" / "security-sast.yml"
+        )
         assert workflow_path.exists(), "security-sast.yml should exist"
 
 
 # ============================================================================
 # Guardrails __init__ Exports Tests
 # ============================================================================
+
 
 class TestGuardrailsInit:
     """Tests for guardrails __init__.py exports."""
@@ -350,6 +391,7 @@ class TestGuardrailsInit:
 # Forever Prohibitions Tests (2.8)
 # ============================================================================
 
+
 class TestForeverProhibitions:
     """Tests for 'forever' prohibitions (2.8)."""
 
@@ -370,8 +412,7 @@ class TestForeverProhibitions:
         )
 
         for pattern in forever_prohibited_patterns:
-            assert pattern in PROHIBITED_ORDER_FIELDS, \
-                f"'{pattern}' must be forever prohibited"
+            assert pattern in PROHIBITED_ORDER_FIELDS, f"'{pattern}' must be forever prohibited"
 
     def test_raw_order_telemetry_restricted(self):
         """Test RAW_ORDER_EVENTS telemetry is restricted to enterprise."""
@@ -387,8 +428,11 @@ class TestForeverProhibitions:
 
             # No order commands in lifecycle
             order_commands = {
-                "PLACE_ORDER", "SUBMIT_ORDER", "EXECUTE_ORDER",
-                "CANCEL_ORDER", "MODIFY_ORDER",
+                "PLACE_ORDER",
+                "SUBMIT_ORDER",
+                "EXECUTE_ORDER",
+                "CANCEL_ORDER",
+                "MODIFY_ORDER",
             }
             assert not order_commands.intersection(LIFECYCLE_COMMANDS)
         except ImportError:

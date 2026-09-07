@@ -31,6 +31,7 @@ from typing import Any, Dict, List, Optional
 
 def _now_iso() -> str:
     from datetime import datetime, timezone
+
     return datetime.now(timezone.utc).isoformat()
 
 
@@ -53,6 +54,7 @@ class DurableAlertStore:
         if isinstance(alert, dict):
             return alert
         import dataclasses
+
         d = dataclasses.asdict(alert) if dataclasses.is_dataclass(alert) else dict(vars(alert))
         # enums -> value
         for k, v in list(d.items()):
@@ -69,8 +71,13 @@ class DurableAlertStore:
             self._conn.execute(
                 "INSERT OR REPLACE INTO alerts (alert_id, triggered_at, severity, status, json) "
                 "VALUES (?,?,?,?,?)",
-                (aid, str(d.get("triggered_at", "")), str(d.get("severity", "")),
-                 str(d.get("status", "")), json.dumps(d, default=str)),
+                (
+                    aid,
+                    str(d.get("triggered_at", "")),
+                    str(d.get("severity", "")),
+                    str(d.get("status", "")),
+                    json.dumps(d, default=str),
+                ),
             )
             self._conn.commit()
 
@@ -85,13 +92,15 @@ class DurableAlertStore:
             d.update(fields)
             self._conn.execute(
                 "UPDATE alerts SET status=?, json=? WHERE alert_id=?",
-                (status, json.dumps(d, default=str), alert_id))
+                (status, json.dumps(d, default=str), alert_id),
+            )
             self._conn.commit()
 
     def load_all(self, *, limit: int = 10000) -> List[Dict[str, Any]]:
         with self._lock:
             cur = self._conn.execute(
-                "SELECT json FROM alerts ORDER BY triggered_at DESC LIMIT ?", (int(limit),))
+                "SELECT json FROM alerts ORDER BY triggered_at DESC LIMIT ?", (int(limit),)
+            )
             return [json.loads(r[0]) for r in cur.fetchall()]
 
     def count(self) -> int:
@@ -150,14 +159,17 @@ class AuditChain:
             h = self._hash(seq, ts, event_type, payload_json, prev)
             self._conn.execute(
                 "INSERT INTO audit (seq, ts, event_type, payload, prev_hash, entry_hash) "
-                "VALUES (?,?,?,?,?,?)", (seq, ts, event_type, payload_json, prev, h))
+                "VALUES (?,?,?,?,?,?)",
+                (seq, ts, event_type, payload_json, prev, h),
+            )
             self._conn.commit()
             return AuditEntry(seq, ts, event_type, payload, prev, h)
 
     def verify(self) -> bool:
         with self._lock:
             cur = self._conn.execute(
-                "SELECT seq, ts, event_type, payload, prev_hash, entry_hash FROM audit ORDER BY seq ASC")
+                "SELECT seq, ts, event_type, payload, prev_hash, entry_hash FROM audit ORDER BY seq ASC"
+            )
             prev = self._GENESIS
             for seq, ts, et, payload_json, prev_hash, entry_hash in cur.fetchall():
                 if prev_hash != prev:
@@ -171,9 +183,12 @@ class AuditChain:
         with self._lock:
             cur = self._conn.execute(
                 "SELECT seq, ts, event_type, payload, entry_hash FROM audit ORDER BY seq DESC LIMIT ?",
-                (int(n),))
-            return [{"seq": s, "ts": t, "event_type": e, "payload": json.loads(p), "entry_hash": h}
-                    for s, t, e, p, h in cur.fetchall()]
+                (int(n),),
+            )
+            return [
+                {"seq": s, "ts": t, "event_type": e, "payload": json.loads(p), "entry_hash": h}
+                for s, t, e, p, h in cur.fetchall()
+            ]
 
     def count(self) -> int:
         with self._lock:

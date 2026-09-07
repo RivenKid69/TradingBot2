@@ -49,21 +49,24 @@ from .redaction import TelemetryRedactionMiddleware, RedactionResult, ensure_red
 # Enums and Constants
 # ============================================================================
 
+
 class ExportFormat(Enum):
     """Supported export formats."""
-    JSON = "json"               # Pretty-printed JSON
+
+    JSON = "json"  # Pretty-printed JSON
     JSON_COMPACT = "json_compact"  # Minified JSON
-    JSONL = "jsonl"             # JSON Lines (one record per line)
-    CSV = "csv"                 # Comma-separated values
-    ENCRYPTED = "encrypted"     # Encrypted JSON
+    JSONL = "jsonl"  # JSON Lines (one record per line)
+    CSV = "csv"  # Comma-separated values
+    ENCRYPTED = "encrypted"  # Encrypted JSON
 
 
 class ExportScope(Enum):
     """Scope of data to export."""
-    ALL = auto()                # All telemetry
-    TIME_RANGE = auto()         # Specific time range
-    RUN = auto()                # Specific run
-    AGENT = auto()              # Specific agent
+
+    ALL = auto()  # All telemetry
+    TIME_RANGE = auto()  # Specific time range
+    RUN = auto()  # Specific run
+    AGENT = auto()  # Specific agent
 
 
 # Maximum export size (100MB uncompressed)
@@ -88,6 +91,7 @@ class ExportConfig:
         run_ids: Optional run ID filter
         agent_ids: Optional agent ID filter
     """
+
     format: ExportFormat = ExportFormat.JSONL
     include_metadata: bool = True
     compress: bool = False
@@ -121,6 +125,7 @@ class ExportResult:
         encrypted: Whether output is encrypted
         compressed: Whether output is compressed
     """
+
     success: bool = True
     export_id: str = field(default_factory=lambda: str(uuid4()))
     format: ExportFormat = ExportFormat.JSONL
@@ -154,6 +159,7 @@ class ExportResult:
 @dataclass
 class ExportMetadata:
     """Metadata included in export."""
+
     export_id: str
     exported_at: datetime
     format: str
@@ -257,7 +263,7 @@ class TelemetryExporter:
             filtered_data = self._apply_filters(processed_data, config)
 
             # Limit records
-            limited_data = filtered_data[:config.max_records]
+            limited_data = filtered_data[: config.max_records]
 
             # Generate content
             content = self._format_data(limited_data, config, export_id)
@@ -330,7 +336,7 @@ class TelemetryExporter:
             filtered_data = self._apply_filters(processed_data, config)
 
             # Limit records
-            limited_data = filtered_data[:config.max_records]
+            limited_data = filtered_data[: config.max_records]
 
             # Check size limit
             if len(limited_data) > 0:
@@ -490,8 +496,7 @@ class TelemetryExporter:
                 result[key] = self._anonymize_record(value)
             elif isinstance(value, list):
                 result[key] = [
-                    self._anonymize_record(v) if isinstance(v, dict) else v
-                    for v in value
+                    self._anonymize_record(v) if isinstance(v, dict) else v for v in value
                 ]
             elif key.endswith("_id") or key == "id":
                 # Anonymize IDs consistently
@@ -535,24 +540,15 @@ class TelemetryExporter:
         # Filter by time range
         if config.time_range:
             start, end = config.time_range
-            result = [
-                r for r in result
-                if self._record_in_time_range(r, start, end)
-            ]
+            result = [r for r in result if self._record_in_time_range(r, start, end)]
 
         # Filter by run IDs
         if config.run_ids:
-            result = [
-                r for r in result
-                if r.get("run_id") in config.run_ids
-            ]
+            result = [r for r in result if r.get("run_id") in config.run_ids]
 
         # Filter by agent IDs
         if config.agent_ids:
-            result = [
-                r for r in result
-                if r.get("agent_id") in config.agent_ids
-            ]
+            result = [r for r in result if r.get("agent_id") in config.agent_ids]
 
         return result
 
@@ -588,9 +584,7 @@ class TelemetryExporter:
                 "records": data,
             }
             if config.include_metadata:
-                output["_metadata"] = self._create_metadata(
-                    export_id, config, len(data)
-                ).to_dict()
+                output["_metadata"] = self._create_metadata(export_id, config, len(data)).to_dict()
             return json.dumps(output, indent=2, default=str).encode()
 
         elif config.format == ExportFormat.JSON_COMPACT:
@@ -598,9 +592,7 @@ class TelemetryExporter:
                 "records": data,
             }
             if config.include_metadata:
-                output["_metadata"] = self._create_metadata(
-                    export_id, config, len(data)
-                ).to_dict()
+                output["_metadata"] = self._create_metadata(export_id, config, len(data)).to_dict()
             return json.dumps(output, separators=(",", ":"), default=str).encode()
 
         elif config.format == ExportFormat.JSONL:
@@ -621,9 +613,7 @@ class TelemetryExporter:
                 "records": data,
             }
             if config.include_metadata:
-                output["_metadata"] = self._create_metadata(
-                    export_id, config, len(data)
-                ).to_dict()
+                output["_metadata"] = self._create_metadata(export_id, config, len(data)).to_dict()
             return json.dumps(output, default=str).encode()
 
         else:
@@ -762,6 +752,7 @@ class TelemetryExporter:
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def export_telemetry_json(
     data: List[Dict[str, Any]],

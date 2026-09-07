@@ -47,7 +47,9 @@ class SignalRateLimiter:
     _cooldown_until: float = field(default_factory=lambda: 0.0, init=False)
     _current_backoff: float = field(default_factory=lambda: 0.0, init=False)
 
-    def can_send(self, now: float | None = None) -> Tuple[bool, Literal["ok", "delayed", "rejected"]]:
+    def can_send(
+        self, now: float | None = None
+    ) -> Tuple[bool, Literal["ok", "delayed", "rejected"]]:
         """Return status whether a new signal can be sent at ``now``.
 
         Returns

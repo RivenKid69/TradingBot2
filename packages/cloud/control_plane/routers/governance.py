@@ -63,8 +63,10 @@ _alert_engine = AlertRulesEngine()
 # DSAR Endpoints
 # ============================================================================
 
+
 class DSARCreateRequest(BaseModel):
     """Create DSAR request."""
+
     workspace_id: str
     request_type: str = Field(..., description="ACCESS, PORTABILITY, or ERASURE")
     data_categories: Optional[List[str]] = None
@@ -73,6 +75,7 @@ class DSARCreateRequest(BaseModel):
 
 class DSARResponse(BaseModel):
     """DSAR response."""
+
     id: str
     request_type: str
     user_id: str
@@ -192,8 +195,10 @@ async def list_dsar_requests(
 # Data Residency Endpoints
 # ============================================================================
 
+
 class ResidencyPolicyRequest(BaseModel):
     """Create residency policy request."""
+
     workspace_id: str
     country_code: str
     mode: Optional[str] = None
@@ -201,6 +206,7 @@ class ResidencyPolicyRequest(BaseModel):
 
 class ResidencyPolicyResponse(BaseModel):
     """Residency policy response."""
+
     id: str
     workspace_id: str
     primary_region: str
@@ -272,8 +278,10 @@ async def get_residency_policy(
 # Retention Endpoints
 # ============================================================================
 
+
 class RetentionPolicyRequest(BaseModel):
     """Create retention policy request."""
+
     workspace_id: str
     data_type: str
     retention_days: int = 90
@@ -282,6 +290,7 @@ class RetentionPolicyRequest(BaseModel):
 
 class RetentionPolicyResponse(BaseModel):
     """Retention policy response."""
+
     id: str
     workspace_id: str
     data_type: str
@@ -384,8 +393,10 @@ async def set_legal_hold(
 # Break Glass Endpoints
 # ============================================================================
 
+
 class BreakGlassCreateRequest(BaseModel):
     """Create break-glass request."""
+
     workspace_id: str
     reason: str = Field(..., min_length=20)
     reason_type: str = "OTHER"
@@ -395,6 +406,7 @@ class BreakGlassCreateRequest(BaseModel):
 
 class BreakGlassResponse(BaseModel):
     """Break-glass response."""
+
     id: str
     requester_id: str
     workspace_id: str
@@ -503,8 +515,10 @@ async def approve_break_glass_request(
 # Health Monitor Endpoints
 # ============================================================================
 
+
 class AgentHealthResponse(BaseModel):
     """Agent health response."""
+
     agent_id: str
     workspace_id: str
     status: str
@@ -518,6 +532,7 @@ class AgentHealthResponse(BaseModel):
 
 class HealthDashboardResponse(BaseModel):
     """Health dashboard response."""
+
     workspace_id: str
     total_agents: int
     online_agents: int
@@ -603,8 +618,10 @@ async def get_health_issues(
 # Alert Endpoints
 # ============================================================================
 
+
 class AlertTriggerResponse(BaseModel):
     """Alert trigger response."""
+
     id: str
     rule_name: str
     alert_type: str
@@ -619,6 +636,7 @@ class AlertTriggerResponse(BaseModel):
 
 class AlertStatsResponse(BaseModel):
     """Alert statistics response."""
+
     total: int
     unresolved: int
     unacknowledged: int

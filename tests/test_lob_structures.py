@@ -15,6 +15,7 @@ Target: 50+ tests with <1μs per message benchmark
 
 import time
 import pytest
+
 pytest.importorskip("sortedcontainers")
 import numpy as np
 from typing import List, Tuple
@@ -458,25 +459,29 @@ class TestOrderBook:
 
         # Add bids at different prices
         for price in [98.0, 99.0, 100.0]:
-            book.add_limit_order(LimitOrder(
-                order_id=f"bid_{price}",
-                price=price,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.BUY,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"bid_{price}",
+                    price=price,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.BUY,
+                )
+            )
 
         # Add asks at different prices
         for price in [101.0, 102.0, 103.0]:
-            book.add_limit_order(LimitOrder(
-                order_id=f"ask_{price}",
-                price=price,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"ask_{price}",
+                    price=price,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.SELL,
+                )
+            )
 
         assert book.best_bid == 100.0  # Highest bid
         assert book.best_ask == 101.0  # Lowest ask
@@ -507,22 +512,26 @@ class TestOrderBook:
         book = OrderBook()
 
         # Add two orders
-        book.add_limit_order(LimitOrder(
-            order_id="order_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="order_2",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1001,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="order_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="order_2",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1001,
+                side=Side.BUY,
+            )
+        )
 
         # Decrease qty of first order
         book.modify_order("order_1", new_qty=50.0)
@@ -535,22 +544,26 @@ class TestOrderBook:
         """Test modifying order price loses priority."""
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="order_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="order_2",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1001,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="order_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="order_2",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1001,
+                side=Side.BUY,
+            )
+        )
 
         # Change price of first order
         book.modify_order("order_1", new_price=99.0)
@@ -616,14 +629,16 @@ class TestOrderBook:
 
         # Add asks
         for i, price in enumerate([101.0, 102.0, 103.0]):
-            book.add_limit_order(LimitOrder(
-                order_id=f"ask_{i}",
-                price=price,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"ask_{i}",
+                    price=price,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.SELL,
+                )
+            )
 
         # Execute market buy for 150
         fill = book.execute_market_order(Side.BUY, 150.0, "taker_1")
@@ -645,14 +660,16 @@ class TestOrderBook:
 
         # Add bids
         for i, price in enumerate([100.0, 99.0, 98.0]):
-            book.add_limit_order(LimitOrder(
-                order_id=f"bid_{i}",
-                price=price,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.BUY,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"bid_{i}",
+                    price=price,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.BUY,
+                )
+            )
 
         # Execute market sell for 250
         fill = book.execute_market_order(Side.SELL, 250.0)
@@ -667,14 +684,16 @@ class TestOrderBook:
         """Test market order with insufficient liquidity."""
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=101.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=101.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         fill = book.execute_market_order(Side.BUY, 200.0)
 
@@ -688,25 +707,29 @@ class TestOrderBook:
 
         # Add bids
         for price in [100.0, 99.0, 98.0]:
-            book.add_limit_order(LimitOrder(
-                order_id=f"bid_{price}",
-                price=price,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.BUY,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"bid_{price}",
+                    price=price,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.BUY,
+                )
+            )
 
         # Add asks
         for price in [101.0, 102.0, 103.0]:
-            book.add_limit_order(LimitOrder(
-                order_id=f"ask_{price}",
-                price=price,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"ask_{price}",
+                    price=price,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.SELL,
+                )
+            )
 
         bids, asks = book.get_depth(2)
 
@@ -722,22 +745,26 @@ class TestOrderBook:
         book = OrderBook()
 
         # Add asks
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=101.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="ask_2",
-            price=102.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=101.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_2",
+                price=102.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         avg_price, total_filled, fills = book.walk_book(Side.BUY, 150.0)
 
@@ -753,22 +780,26 @@ class TestOrderBook:
         book = OrderBook()
 
         # Add bids
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="bid_2",
-            price=99.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_2",
+                price=99.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         vwap = book.get_vwap(Side.SELL, 150.0)
         expected = (100.0 * 100 + 99.0 * 50) / 150
@@ -782,22 +813,26 @@ class TestOrderBook:
         """Test spread in basis points."""
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.10,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.10,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         # Spread = 0.10 / 100.05 * 10000 ≈ 10 bps
         assert book.spread_bps is not None
@@ -808,14 +843,16 @@ class TestOrderBook:
         book = OrderBook()
 
         for i in range(3):
-            book.add_limit_order(LimitOrder(
-                order_id=f"bid_{i}",
-                price=100.0 - i,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000 + i,
-                side=Side.BUY,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"bid_{i}",
+                    price=100.0 - i,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000 + i,
+                    side=Side.BUY,
+                )
+            )
 
         orders = book.get_mbo_snapshot(Side.BUY, n_orders=2)
         assert len(orders) == 2
@@ -826,22 +863,26 @@ class TestOrderBook:
         book = OrderBook()
 
         for i in range(3):
-            book.add_limit_order(LimitOrder(
-                order_id=f"bid_{i}",
-                price=100.0,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000 + i,
-                side=Side.BUY,
-            ))
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=101.0,
-            qty=50.0,
-            remaining_qty=50.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"bid_{i}",
+                    price=100.0,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000 + i,
+                    side=Side.BUY,
+                )
+            )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=101.0,
+                qty=50.0,
+                remaining_qty=50.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         snapshot = book.get_mbp_snapshot(n_levels=2)
         assert len(snapshot["bids"]) == 1
@@ -852,14 +893,16 @@ class TestOrderBook:
     def test_clone_book(self):
         """Test book cloning."""
         book = OrderBook(symbol="AAPL")
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         clone = book.clone()
 
@@ -873,24 +916,28 @@ class TestOrderBook:
     def test_swap_books(self):
         """Test swapping two books."""
         book1 = OrderBook(symbol="AAPL")
-        book1.add_limit_order(LimitOrder(
-            order_id="order_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book1.add_limit_order(
+            LimitOrder(
+                order_id="order_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         book2 = OrderBook(symbol="MSFT")
-        book2.add_limit_order(LimitOrder(
-            order_id="order_2",
-            price=200.0,
-            qty=200.0,
-            remaining_qty=200.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book2.add_limit_order(
+            LimitOrder(
+                order_id="order_2",
+                price=200.0,
+                qty=200.0,
+                remaining_qty=200.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         book1.swap(book2)
 
@@ -900,14 +947,16 @@ class TestOrderBook:
     def test_clear_book(self):
         """Test clearing book."""
         book = OrderBook()
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         book.clear()
 
@@ -918,22 +967,26 @@ class TestOrderBook:
         """Test crossed book detection."""
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=101.0,  # Higher than ask
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=101.0,  # Higher than ask
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         assert book.is_crossed
 
@@ -942,14 +995,16 @@ class TestOrderBook:
         book = OrderBook()
 
         for i in range(5):
-            book.add_limit_order(LimitOrder(
-                order_id=f"bid_{i}",
-                price=100.0 - i * 0.1,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.BUY,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"bid_{i}",
+                    price=100.0 - i * 0.1,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.BUY,
+                )
+            )
 
         # Within 50 bps of best bid (100.0)
         # 50 bps = 0.5% = $0.50 range
@@ -973,14 +1028,16 @@ class TestPerformance:
 
         start = time.perf_counter()
         for i in range(n_orders):
-            book.add_limit_order(LimitOrder(
-                order_id=f"order_{i}",
-                price=100.0 + (i % 100) * 0.01,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000 + i,
-                side=Side.BUY if i % 2 == 0 else Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"order_{i}",
+                    price=100.0 + (i % 100) * 0.01,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000 + i,
+                    side=Side.BUY if i % 2 == 0 else Side.SELL,
+                )
+            )
         elapsed = time.perf_counter() - start
 
         ops_per_sec = n_orders / elapsed
@@ -998,14 +1055,16 @@ class TestPerformance:
 
         # Pre-populate
         for i in range(n_orders):
-            book.add_limit_order(LimitOrder(
-                order_id=f"order_{i}",
-                price=100.0 + (i % 100) * 0.01,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000 + i,
-                side=Side.BUY,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"order_{i}",
+                    price=100.0 + (i % 100) * 0.01,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000 + i,
+                    side=Side.BUY,
+                )
+            )
 
         start = time.perf_counter()
         for i in range(n_orders):
@@ -1026,14 +1085,16 @@ class TestPerformance:
         # Pre-populate with 100 price levels
         for i in range(100):
             for j in range(10):
-                book.add_limit_order(LimitOrder(
-                    order_id=f"ask_{i}_{j}",
-                    price=101.0 + i * 0.01,
-                    qty=100.0,
-                    remaining_qty=100.0,
-                    timestamp_ns=1000,
-                    side=Side.SELL,
-                ))
+                book.add_limit_order(
+                    LimitOrder(
+                        order_id=f"ask_{i}_{j}",
+                        price=101.0 + i * 0.01,
+                        qty=100.0,
+                        remaining_qty=100.0,
+                        timestamp_ns=1000,
+                        side=Side.SELL,
+                    )
+                )
 
         n_orders = 1000
 
@@ -1042,14 +1103,16 @@ class TestPerformance:
             # Re-add liquidity (quick)
             for j in range(5):
                 try:
-                    book.add_limit_order(LimitOrder(
-                        order_id=f"new_{i}_{j}",
-                        price=101.0,
-                        qty=100.0,
-                        remaining_qty=100.0,
-                        timestamp_ns=1000,
-                        side=Side.SELL,
-                    ))
+                    book.add_limit_order(
+                        LimitOrder(
+                            order_id=f"new_{i}_{j}",
+                            price=101.0,
+                            qty=100.0,
+                            remaining_qty=100.0,
+                            timestamp_ns=1000,
+                            side=Side.SELL,
+                        )
+                    )
                 except ValueError:
                     pass
 
@@ -1066,14 +1129,16 @@ class TestPerformance:
 
         # Pre-populate
         for i in range(100):
-            book.add_limit_order(LimitOrder(
-                order_id=f"ask_{i}",
-                price=101.0 + i * 0.01,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"ask_{i}",
+                    price=101.0 + i * 0.01,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.SELL,
+                )
+            )
 
         n_walks = 10000
 
@@ -1121,27 +1186,31 @@ class TestEdgeCases:
         book = OrderBook()
 
         with pytest.raises(ValueError):
-            book.add_limit_order(LimitOrder(
-                order_id="order_1",
-                price=100.0,
-                qty=0.0,
-                remaining_qty=0.0,
-                timestamp_ns=1000,
-                side=Side.BUY,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id="order_1",
+                    price=100.0,
+                    qty=0.0,
+                    remaining_qty=0.0,
+                    timestamp_ns=1000,
+                    side=Side.BUY,
+                )
+            )
 
     def test_single_sided_book(self):
         """Test book with only one side."""
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         assert book.best_bid == 100.0
         assert book.best_ask is None
@@ -1153,14 +1222,16 @@ class TestEdgeCases:
         book = OrderBook()
 
         for i in range(10):
-            book.add_limit_order(LimitOrder(
-                order_id=f"order_{i}",
-                price=100.0,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000 + i,
-                side=Side.BUY,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"order_{i}",
+                    price=100.0,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000 + i,
+                    side=Side.BUY,
+                )
+            )
 
         assert book.best_bid_qty == 1000.0
 
@@ -1172,14 +1243,16 @@ class TestEdgeCases:
         """Test handling very large quantities."""
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="big_order",
-            price=100.0,
-            qty=1e12,  # 1 trillion
-            remaining_qty=1e12,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="big_order",
+                price=100.0,
+                qty=1e12,  # 1 trillion
+                remaining_qty=1e12,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         assert book.best_bid_qty == 1e12
 
@@ -1187,14 +1260,16 @@ class TestEdgeCases:
         """Test handling very small prices (penny stocks)."""
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="penny",
-            price=0.0001,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="penny",
+                price=0.0001,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         assert book.best_bid == 0.0001
 

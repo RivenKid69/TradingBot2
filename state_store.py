@@ -5,6 +5,7 @@ application may update.  The :func:`load` and :func:`save` helpers restore and
 persist these containers to disk using an atomic file replace to avoid partial
 writes.
 """
+
 from __future__ import annotations
 
 import json
@@ -28,9 +29,7 @@ throttle_last_refill: float | int | None = None
 _lock = threading.Lock()
 
 
-def load(
-    path: str | Path | None = None, ops_path: str | Path | None = None
-) -> None:
+def load(path: str | Path | None = None, ops_path: str | Path | None = None) -> None:
     """Load state from *path* if it exists.
 
     Missing files are ignored.  Any malformed content results in the state
@@ -68,9 +67,7 @@ def load(
         throttle_last_refill = data.get("throttle_last_refill")
 
 
-def save(
-    path: str | Path | None = None, ops_path: str | Path | None = None
-) -> None:
+def save(path: str | Path | None = None, ops_path: str | Path | None = None) -> None:
     """Persist current state to *path* using an atomic replace."""
     p = Path(path or DEFAULT_PATH)
     ops_p = Path(ops_path or OPS_STATE_PATH)

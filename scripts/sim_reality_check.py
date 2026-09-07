@@ -21,9 +21,7 @@ DEFAULT_SCENARIOS = {
 }
 
 
-def apply_fee_spread(
-    trades_df: pd.DataFrame, fee_mult: float, spread_mult: float
-) -> pd.DataFrame:
+def apply_fee_spread(trades_df: pd.DataFrame, fee_mult: float, spread_mult: float) -> pd.DataFrame:
     """Return a copy of ``trades_df`` with fee and spread adjustments applied.
 
     Parameters
@@ -251,9 +249,7 @@ def main() -> None:
     flags: dict[str, str] = {}
     for name, metrics in scenario_metrics.items():
         kpi = metrics.get("equity", {}).get("pnl_total", float("nan"))
-        rel_change = (
-            (kpi - baseline_kpi) / baseline_kpi if baseline_kpi else float("nan")
-        )
+        rel_change = (kpi - baseline_kpi) / baseline_kpi if baseline_kpi else float("nan")
         flag = name != "Med" and abs(rel_change) > args.sensitivity_threshold
         degradation_rows.append(
             {
@@ -266,9 +262,7 @@ def main() -> None:
         if flag:
             flags[f"scenario.{name}"] = "чрезмерная чувствительность"
 
-    degradation_ranking = pd.DataFrame(degradation_rows).sort_values(
-        "kpi", ascending=False
-    )
+    degradation_ranking = pd.DataFrame(degradation_rows).sort_values("kpi", ascending=False)
 
     equity_df = read_any(args.equity) if args.equity else equity_from_trades(trades_df)
     benchmark_df = read_any(args.benchmark)

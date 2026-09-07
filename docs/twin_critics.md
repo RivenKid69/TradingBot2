@@ -9,14 +9,18 @@ Twin Critics is a technique borrowed from TD3 and SAC algorithms that uses two i
 ## Background
 
 ### Problem: Overestimation Bias
+
 Standard reinforcement learning algorithms often overestimate action values, especially in stochastic environments like trading. This occurs because the same network is used for both:
+
 1. Selecting actions (policy)
 2. Evaluating those actions (critic)
 
 ### Solution: Twin Critics
+
 By maintaining two independent critic networks and using the minimum of their estimates, we get a more conservative (less biased) value estimate. This is the core idea behind TD3 (Twin Delayed DDPG) and is also used in SAC (Soft Actor-Critic).
 
 ### Research Support
+
 - **PDPPO (2025)**: Post-Decision PPO with Dual Critics showed ~2x better performance in stochastic environments
 - **DNA (2022)**: Dual Network Architecture for PPO demonstrated reduced negative interference between policy and value learning
 - **TD3 (2018)**: Addressing Function Approximation Error in Actor-Critic Methods
@@ -24,6 +28,7 @@ By maintaining two independent critic networks and using the minimum of their es
 ## Architecture
 
 ### With Twin Critics (Default - Enabled)
+
 ```
 [Observation] → [Features] → [LSTM] → [MLP] → [Critic Head 1] → [Value 1]
                                               ↘ [Critic Head 2] → [Value 2]
@@ -32,6 +37,7 @@ Target Value = min(Value 1, Value 2)
 ```
 
 ### Without Twin Critics (Legacy - Explicitly Disabled)
+
 ```
 [Observation] → [Features] → [LSTM] → [MLP] → [Critic Head] → [Value]
 ```
@@ -73,6 +79,7 @@ arch_params = {
 ### YAML Configuration
 
 **Default (Twin Critics Enabled)**:
+
 ```yaml
 model:
   arch_params:
@@ -85,6 +92,7 @@ model:
 ```
 
 **Explicit Disable**:
+
 ```yaml
 model:
   arch_params:
@@ -101,6 +109,7 @@ model:
 ### Supported Modes
 
 Twin Critics works with both:
+
 1. **Quantile Critic** (distributional=True): Two independent quantile value heads
 2. **Categorical Critic** (distributional=False): Two independent categorical value heads
 
@@ -212,12 +221,14 @@ pytest tests/test_twin_critics*.py --cov=custom_policy_patch1 --cov=distribution
 ### When to Use
 
 **Recommended for:**
+
 - Stochastic trading environments
 - High-variance reward signals
 - Long training runs
 - Production deployments
 
 **Not necessary for:**
+
 - Deterministic environments
 - Quick prototyping
 - Environments with low noise
@@ -227,12 +238,14 @@ pytest tests/test_twin_critics*.py --cov=custom_policy_patch1 --cov=distribution
 ### CustomActorCriticPolicy
 
 **New Attributes:**
+
 - `_use_twin_critics`: bool - Whether twin critics are enabled
 - `quantile_head_2`: QuantileValueHead - Second quantile critic (if quantile mode)
 - `dist_head_2`: nn.Linear - Second categorical critic (if categorical mode)
 - `_value_head_module_2`: nn.Module - Second critic module reference
 
 **New Methods:**
+
 - `_get_value_logits_2(latent_vf)`: Get second critic's raw outputs
 - `_get_twin_value_logits(latent_vf)`: Get both critics' outputs
 - `_get_min_twin_values(latent_vf)`: Get minimum of both critic estimates
@@ -240,6 +253,7 @@ pytest tests/test_twin_critics*.py --cov=custom_policy_patch1 --cov=distribution
 ### DistributionalPPO
 
 **New Methods:**
+
 - `_twin_critics_loss(latent_vf, targets, reduction)`: Compute loss for both critics
 
 ## Training Metrics
@@ -247,11 +261,13 @@ pytest tests/test_twin_critics*.py --cov=custom_policy_patch1 --cov=distribution
 When Twin Critics is enabled, the following additional metrics are logged to TensorBoard:
 
 **Logged Metrics**:
+
 - `train/twin_critics/critic_1_loss`: Loss value for the first critic
 - `train/twin_critics/critic_2_loss`: Loss value for the second critic
 - `train/twin_critics/loss_diff`: Absolute difference between critic losses
 
 **Monitoring Tips**:
+
 - Loss difference should stabilize during training
 - Both critics should have similar loss values (within 10-20%)
 - Large persistent differences may indicate learning issues

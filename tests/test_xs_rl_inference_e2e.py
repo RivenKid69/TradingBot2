@@ -97,9 +97,7 @@ def test_loader_loads_and_runs_critic(checkpoint):
 
 def test_e2e_value_signal(checkpoint):
     """from_checkpoint → available → RLAlphaSignal даёт конечный cross-sectional сигнал."""
-    adapter = RLInferenceAdapter.from_checkpoint(
-        checkpoint, feature_cols=FEATURES, utility="value"
-    )
+    adapter = RLInferenceAdapter.from_checkpoint(checkpoint, feature_cols=FEATURES, utility="value")
     assert adapter.available() is True
 
     panel = _make_panel()
@@ -138,9 +136,7 @@ def test_e2e_conformal_confidence_shrinks_signal(checkpoint):
     def wide_widths(p):
         return pd.Series(1.0, index=p.index)
 
-    base = RLInferenceAdapter.from_checkpoint(
-        checkpoint, feature_cols=FEATURES, utility="value"
-    )
+    base = RLInferenceAdapter.from_checkpoint(checkpoint, feature_cols=FEATURES, utility="value")
     shrunk = RLInferenceAdapter.from_checkpoint(
         checkpoint,
         feature_cols=FEATURES,

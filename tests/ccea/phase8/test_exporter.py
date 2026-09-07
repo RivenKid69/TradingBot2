@@ -497,6 +497,7 @@ class TestStreamExport:
     def test_export_stream(self):
         """Test streaming export."""
         import io
+
         exporter = TelemetryExporter()
 
         def data_iterator():
@@ -517,6 +518,7 @@ class TestStreamExport:
     def test_stream_respects_max_records(self):
         """Test stream export respects max records."""
         import io
+
         exporter = TelemetryExporter()
 
         def data_iterator():
@@ -550,6 +552,6 @@ class TestAnonymizationMapping:
         exporter.clear_anonymization_mapping()
 
         # Verify mapping was cleared by checking internal state
-        assert len(exporter._id_mapping) == 0, (
-            "ID anonymization mapping should be empty after clear()"
-        )
+        assert (
+            len(exporter._id_mapping) == 0
+        ), "ID anonymization mapping should be empty after clear()"

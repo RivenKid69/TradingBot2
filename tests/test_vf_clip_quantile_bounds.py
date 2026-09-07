@@ -14,6 +14,7 @@ Example from problem description:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -25,9 +26,9 @@ def test_mean_only_quantile_bounds_violation():
     This is the CORE problem: VF clipping should constrain value changes,
     but mean_only only clips the mean, not individual quantiles.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Quantile Bounds Violation in mean_only Mode")
-    print("="*80)
+    print("=" * 80)
 
     # Example from problem description
     old_value = 10.0
@@ -49,11 +50,7 @@ def test_mean_only_quantile_bounds_violation():
     print(f"  Mean: {new_mean.item():.2f}")
 
     # mean_only mode: clip mean, parallel shift
-    clipped_mean = torch.clamp(
-        new_mean,
-        min=clip_min,
-        max=clip_max
-    )
+    clipped_mean = torch.clamp(new_mean, min=clip_min, max=clip_max)
 
     delta = clipped_mean - new_mean
     quantiles_clipped = new_quantiles + delta
@@ -77,18 +74,25 @@ def test_mean_only_quantile_bounds_violation():
     if violation_low or violation_high:
         print(f"\n❌ BOUNDS VIOLATION DETECTED!")
         if violation_low:
-            print(f"   - Minimum quantile {quantile_min:.2f} < {clip_min:.2f} (underflow by {clip_min - quantile_min:.2f})")
+            print(
+                f"   - Minimum quantile {quantile_min:.2f} < {clip_min:.2f} (underflow by {clip_min - quantile_min:.2f})"
+            )
         if violation_high:
-            print(f"   - Maximum quantile {quantile_max:.2f} > {clip_max:.2f} (overflow by {quantile_max - clip_max:.2f})")
-        print(f"\n   This confirms the problem: mean_only mode does NOT constrain individual quantiles!")
+            print(
+                f"   - Maximum quantile {quantile_max:.2f} > {clip_max:.2f} (overflow by {quantile_max - clip_max:.2f})"
+            )
+        print(
+            f"\n   This confirms the problem: mean_only mode does NOT constrain individual quantiles!"
+        )
     else:
         print(f"\n✓ No bounds violation (but this is not guaranteed in general)")
 
     # Verify the problem exists
-    assert violation_low or violation_high, \
-        "Expected bounds violation in mean_only mode, but none detected!"
+    assert (
+        violation_low or violation_high
+    ), "Expected bounds violation in mean_only mode, but none detected!"
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     return violation_low, violation_high
 
 
@@ -99,9 +103,9 @@ def test_mean_and_variance_still_allows_bounds_violation():
     Variance constraint reduces the spread, but doesn't guarantee
     all quantiles stay within [old_value - clip_delta, old_value + clip_delta].
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Bounds Violation Possible in mean_and_variance Mode")
-    print("="*80)
+    print("=" * 80)
 
     old_value = 10.0
     clip_delta = 3.0  # Tighter clipping
@@ -135,11 +139,7 @@ def test_mean_and_variance_still_allows_bounds_violation():
     print(f"  Variance ratio: {(new_variance / old_variance).item():.2f}x")
 
     # mean_and_variance mode: clip mean + constrain variance
-    clipped_mean = torch.clamp(
-        new_mean,
-        min=clip_min,
-        max=clip_max
-    )
+    clipped_mean = torch.clamp(new_mean, min=clip_min, max=clip_max)
 
     # Parallel shift
     delta = clipped_mean - new_mean
@@ -148,9 +148,9 @@ def test_mean_and_variance_still_allows_bounds_violation():
     # Constrain variance (factor = 2.0)
     variance_factor = 2.0
     quantiles_centered = quantiles_shifted - clipped_mean
-    current_variance = (quantiles_centered ** 2).mean()
+    current_variance = (quantiles_centered**2).mean()
 
-    max_variance = old_variance * (variance_factor ** 2)
+    max_variance = old_variance * (variance_factor**2)
     variance_ratio = torch.sqrt(current_variance / (old_variance + 1e-8))
     variance_scale = torch.clamp(variance_ratio, max=variance_factor)
 
@@ -184,9 +184,11 @@ def test_mean_and_variance_still_allows_bounds_violation():
         print(f"\n   Even mean_and_variance mode does NOT guarantee quantile bounds!")
     else:
         print(f"\n✓ No bounds violation in this case")
-        print(f"   (But this is not guaranteed - depends on variance factor and distribution shape)")
+        print(
+            f"   (But this is not guaranteed - depends on variance factor and distribution shape)"
+        )
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
 
 
 def test_per_quantile_clipping_solution():
@@ -197,9 +199,9 @@ def test_per_quantile_clipping_solution():
 
     This GUARANTEES all quantiles stay within bounds [old_value - ε, old_value + ε].
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Per-Quantile Clipping Solution")
-    print("="*80)
+    print("=" * 80)
 
     old_value = 10.0
     clip_delta = 5.0
@@ -222,9 +224,7 @@ def test_per_quantile_clipping_solution():
     # Per-quantile clipping: clip each quantile relative to old_value
     # quantile_clipped = old_value + clip(quantile - old_value, -clip_delta, +clip_delta)
     quantiles_clipped = old_value + torch.clamp(
-        new_quantiles - old_value,
-        min=-clip_delta,
-        max=clip_delta
+        new_quantiles - old_value, min=-clip_delta, max=clip_delta
     )
 
     clipped_mean = quantiles_clipped.mean()
@@ -257,7 +257,7 @@ def test_per_quantile_clipping_solution():
     print(f"  - mean_and_variance: Clips mean + constrains variance → quantiles can still overflow")
     print(f"  - per_quantile: Clips EACH quantile → GUARANTEES bounds")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     return True
 
 
@@ -268,9 +268,9 @@ def analyze_impact_on_cvar():
     CVaR is computed from tail quantiles, so allowing tail quantiles
     to exceed bounds defeats the purpose of VF clipping for risk-sensitive RL.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ANALYSIS: Impact on CVaR (Conditional Value at Risk)")
-    print("="*80)
+    print("=" * 80)
 
     old_value = 10.0
     clip_delta = 5.0
@@ -302,13 +302,13 @@ def analyze_impact_on_cvar():
     print(f"  Clipped quantiles: {quantiles_mean_only.tolist()}")
     print(f"  Tail quantiles: {tail_quantiles_mean_only.tolist()}")
     print(f"  CVaR: {cvar_mean_only.item():.2f}")
-    print(f"  PROBLEM: Tail quantile {tail_quantiles_mean_only[0].item():.2f} < {old_value - clip_delta:.2f}")
+    print(
+        f"  PROBLEM: Tail quantile {tail_quantiles_mean_only[0].item():.2f} < {old_value - clip_delta:.2f}"
+    )
 
     # per_quantile clipping
     quantiles_per_quantile = old_value + torch.clamp(
-        new_quantiles - old_value,
-        min=-clip_delta,
-        max=clip_delta
+        new_quantiles - old_value, min=-clip_delta, max=clip_delta
     )
 
     tail_quantiles_per_quantile = quantiles_per_quantile[0, :2]
@@ -318,21 +318,23 @@ def analyze_impact_on_cvar():
     print(f"  Clipped quantiles: {quantiles_per_quantile.tolist()}")
     print(f"  Tail quantiles: {tail_quantiles_per_quantile.tolist()}")
     print(f"  CVaR: {cvar_per_quantile.item():.2f}")
-    print(f"  ✓ All tail quantiles within bounds [{old_value - clip_delta:.2f}, {old_value + clip_delta:.2f}]")
+    print(
+        f"  ✓ All tail quantiles within bounds [{old_value - clip_delta:.2f}, {old_value + clip_delta:.2f}]"
+    )
 
     print(f"\nConclusion:")
     print(f"  CVaR is computed from TAIL quantiles (where risk is!)")
     print(f"  If tail quantiles can exceed bounds, VF clipping fails for risk-sensitive RL!")
     print(f"  Per-quantile clipping is ESSENTIAL for CVaR-based training!")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
 
 
 if __name__ == "__main__":
     print("\n")
-    print("="*80)
+    print("=" * 80)
     print("DISTRIBUTIONAL VF CLIPPING: QUANTILE BOUNDS VIOLATION")
-    print("="*80)
+    print("=" * 80)
     print("\nThis test suite demonstrates the problem described:")
     print("VF clipping for distributional critics must constrain EACH quantile,")
     print("not just the mean or variance!")
@@ -343,14 +345,14 @@ if __name__ == "__main__":
     test_per_quantile_clipping_solution()
     analyze_impact_on_cvar()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SUMMARY")
-    print("="*80)
+    print("=" * 80)
     print("\n✓ Problem confirmed: mean_only and mean_and_variance modes")
     print("  can allow individual quantiles to exceed VF clipping bounds")
     print("\n✓ Solution validated: per_quantile mode guarantees")
     print("  all quantiles stay within [old_value - ε, old_value + ε]")
     print("\n✓ Impact: Critical for CVaR-based risk-sensitive RL,")
     print("  where tail quantiles must be properly constrained")
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("\n")

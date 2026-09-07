@@ -378,7 +378,7 @@ class TestConformitySelfAssessmentInit:
 
     def test_init_with_default_config(self, temp_dir):
         """Test initialization with default config."""
-        with patch.object(Path, 'mkdir'):
+        with patch.object(Path, "mkdir"):
             assessment = ConformitySelfAssessment()
         assert assessment.config is not None
 
@@ -632,7 +632,10 @@ class TestAssessmentExecution:
         report = initialized_assessment.run_full_assessment(auto_assess=True)
 
         # Check file exists
-        expected_path = Path(initialized_assessment.config.output_path) / f"assessment_report_{report.report_id}.json"
+        expected_path = (
+            Path(initialized_assessment.config.output_path)
+            / f"assessment_report_{report.report_id}.json"
+        )
         assert expected_path.exists()
 
         # Verify content
@@ -686,7 +689,10 @@ class TestEUDeclarationGeneration:
         initialized_assessment.run_full_assessment(auto_assess=True)
         declaration = initialized_assessment.generate_eu_declaration()
 
-        expected_path = Path(initialized_assessment.config.output_path) / f"eu_declaration_{declaration.declaration_id}.json"
+        expected_path = (
+            Path(initialized_assessment.config.output_path)
+            / f"eu_declaration_{declaration.declaration_id}.json"
+        )
         assert expected_path.exists()
 
 
@@ -698,7 +704,13 @@ class TestInstructionsForUseGeneration:
         ifu = assessment.generate_instructions_for_use(
             capabilities=["Capability 1", "Capability 2"],
             limitations=["Limitation 1"],
-            known_risks=[{"risk": "Market risk", "description": "Loss potential", "mitigation": "Position limits"}],
+            known_risks=[
+                {
+                    "risk": "Market risk",
+                    "description": "Loss potential",
+                    "mitigation": "Position limits",
+                }
+            ],
         )
 
         assert ifu.document_id is not None
@@ -730,7 +742,9 @@ class TestInstructionsForUseGeneration:
         """Test instructions saved to file."""
         ifu = assessment.generate_instructions_for_use()
 
-        expected_path = Path(assessment.config.output_path) / f"instructions_for_use_{ifu.document_id}.json"
+        expected_path = (
+            Path(assessment.config.output_path) / f"instructions_for_use_{ifu.document_id}.json"
+        )
         assert expected_path.exists()
 
 
@@ -764,7 +778,10 @@ class TestRegistrationPreparation:
         initialized_assessment.run_full_assessment(auto_assess=True)
         reg = initialized_assessment.prepare_registration()
 
-        expected_path = Path(initialized_assessment.config.output_path) / f"registration_{reg.registration_id}.json"
+        expected_path = (
+            Path(initialized_assessment.config.output_path)
+            / f"registration_{reg.registration_id}.json"
+        )
         assert expected_path.exists()
 
 
@@ -842,7 +859,7 @@ class TestFactoryFunctions:
 
     def test_create_conformity_assessment_no_config(self, temp_dir):
         """Test creating assessment without config."""
-        with patch.object(Path, 'mkdir'):
+        with patch.object(Path, "mkdir"):
             assessment = create_conformity_assessment()
         assert assessment is not None
 
@@ -979,21 +996,21 @@ class TestEdgeCases:
         items = initialized_assessment.get_checklist()
 
         # First third compliant
-        for item in items[:len(items)//3]:
+        for item in items[: len(items) // 3]:
             initialized_assessment.assess_item(
                 item_id=item.item_id,
                 status=ChecklistItemStatus.COMPLIANT,
             )
 
         # Second third partial
-        for item in items[len(items)//3:2*len(items)//3]:
+        for item in items[len(items) // 3 : 2 * len(items) // 3]:
             initialized_assessment.assess_item(
                 item_id=item.item_id,
                 status=ChecklistItemStatus.PARTIALLY_COMPLIANT,
             )
 
         # Rest N/A
-        for item in items[2*len(items)//3:]:
+        for item in items[2 * len(items) // 3 :]:
             initialized_assessment.assess_item(
                 item_id=item.item_id,
                 status=ChecklistItemStatus.NOT_APPLICABLE,

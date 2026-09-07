@@ -45,6 +45,7 @@ from services.ai_act.cybersecurity import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def temp_dir():
     """Create temporary directory."""
@@ -90,6 +91,7 @@ def security(security_config):
 # =============================================================================
 # Test Enums
 # =============================================================================
+
 
 class TestEnums:
     """Test enum definitions."""
@@ -137,6 +139,7 @@ class TestEnums:
 # =============================================================================
 # Test Data Classes
 # =============================================================================
+
 
 class TestDataClasses:
     """Test data class initialization."""
@@ -214,6 +217,7 @@ class TestDataClasses:
 # =============================================================================
 # Test Input Validator
 # =============================================================================
+
 
 class TestInputValidator:
     """Test input validation functionality."""
@@ -309,6 +313,7 @@ class TestInputValidator:
 # =============================================================================
 # Test Model Integrity Verifier
 # =============================================================================
+
 
 class TestModelIntegrityVerifier:
     """Test model integrity verification."""
@@ -408,6 +413,7 @@ class TestModelIntegrityVerifier:
 # Test Adversarial Detector
 # =============================================================================
 
+
 class TestAdversarialDetector:
     """Test adversarial input detection."""
 
@@ -471,6 +477,7 @@ class TestAdversarialDetector:
 # =============================================================================
 # Test Data Poisoning Detector
 # =============================================================================
+
 
 class TestDataPoisoningDetector:
     """Test data poisoning detection."""
@@ -548,6 +555,7 @@ class TestDataPoisoningDetector:
 # =============================================================================
 # Test Access Control Manager
 # =============================================================================
+
 
 class TestAccessControlManager:
     """Test access control functionality."""
@@ -669,6 +677,7 @@ class TestAccessControlManager:
 # Test Main Cybersecurity Class
 # =============================================================================
 
+
 class TestAIActCybersecurity:
     """Test main cybersecurity class."""
 
@@ -716,9 +725,7 @@ class TestAIActCybersecurity:
         security.set_data_baseline("test_dataset", baseline)
 
         new_data = np.random.randn(1000)
-        is_poisoned, confidence, details = security.detect_data_poisoning(
-            "test_dataset", new_data
-        )
+        is_poisoned, confidence, details = security.detect_data_poisoning("test_dataset", new_data)
 
         assert isinstance(is_poisoned, bool)
 
@@ -773,12 +780,16 @@ class TestAIActCybersecurity:
     def test_get_active_threats(self, security):
         """Test getting active threats."""
         t1 = security.record_threat(
-            ThreatType.ADVERSARIAL_EXAMPLE, ThreatSeverity.LOW,
-            "Threat 1", "Desc 1",
+            ThreatType.ADVERSARIAL_EXAMPLE,
+            ThreatSeverity.LOW,
+            "Threat 1",
+            "Desc 1",
         )
         t2 = security.record_threat(
-            ThreatType.MODEL_POISONING, ThreatSeverity.HIGH,
-            "Threat 2", "Desc 2",
+            ThreatType.MODEL_POISONING,
+            ThreatSeverity.HIGH,
+            "Threat 2",
+            "Desc 2",
         )
 
         security.mitigate_threat(t1.threat_id, "Fixed")
@@ -803,8 +814,10 @@ class TestAIActCybersecurity:
         """Test getting security status."""
         # Create some data
         security.record_threat(
-            ThreatType.ADVERSARIAL_EXAMPLE, ThreatSeverity.HIGH,
-            "Threat", "Description",
+            ThreatType.ADVERSARIAL_EXAMPLE,
+            ThreatSeverity.HIGH,
+            "Threat",
+            "Description",
         )
 
         status = security.get_security_status()
@@ -818,8 +831,10 @@ class TestAIActCybersecurity:
     def test_generate_security_report(self, security):
         """Test security report generation."""
         security.record_threat(
-            ThreatType.DATA_POISONING, ThreatSeverity.MEDIUM,
-            "Threat", "Description",
+            ThreatType.DATA_POISONING,
+            ThreatSeverity.MEDIUM,
+            "Threat",
+            "Description",
         )
 
         report = security.generate_security_report()
@@ -834,6 +849,7 @@ class TestAIActCybersecurity:
 # =============================================================================
 # Test Factory Functions
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Test factory functions."""
@@ -887,6 +903,7 @@ class TestFactoryFunctions:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -912,6 +929,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Thread Safety
 # =============================================================================
+
 
 class TestThreadSafety:
     """Test thread safety."""

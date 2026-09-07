@@ -115,7 +115,9 @@ class TestPasswordValidator:
 
         result = validator.validate("johnPassword123!", email="john@example.com")
         assert not result.valid
-        assert any(v.violation_type == PolicyViolationType.CONTAINS_EMAIL for v in result.violations)
+        assert any(
+            v.violation_type == PolicyViolationType.CONTAINS_EMAIL for v in result.violations
+        )
 
     def test_password_contains_username(self):
         """Password containing username should be rejected."""
@@ -123,7 +125,9 @@ class TestPasswordValidator:
 
         result = validator.validate("JohnDoe123Password!", username="johndoe")
         assert not result.valid
-        assert any(v.violation_type == PolicyViolationType.CONTAINS_USERNAME for v in result.violations)
+        assert any(
+            v.violation_type == PolicyViolationType.CONTAINS_USERNAME for v in result.violations
+        )
 
     def test_sequential_chars_rejected(self):
         """Sequential characters should be rejected."""
@@ -131,7 +135,9 @@ class TestPasswordValidator:
 
         result = validator.validate("Abcdefgh123!")
         assert not result.valid
-        assert any(v.violation_type == PolicyViolationType.SEQUENTIAL_CHARS for v in result.violations)
+        assert any(
+            v.violation_type == PolicyViolationType.SEQUENTIAL_CHARS for v in result.violations
+        )
 
     def test_repeated_chars_rejected(self):
         """Repeated characters should be rejected."""
@@ -139,7 +145,9 @@ class TestPasswordValidator:
 
         result = validator.validate("Passssword123!")
         assert not result.valid
-        assert any(v.violation_type == PolicyViolationType.REPEATED_CHARS for v in result.violations)
+        assert any(
+            v.violation_type == PolicyViolationType.REPEATED_CHARS for v in result.violations
+        )
 
     def test_strength_score_weak(self):
         """Weak password should have low strength score."""

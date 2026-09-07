@@ -14,6 +14,7 @@ class TestCorePackageExports:
     def test_version_exported(self):
         """Test version is exported."""
         from services.core.risk_controls import __version__
+
         assert __version__ == "1.0.0"
 
     def test_config_exports(self):
@@ -27,6 +28,7 @@ class TestCorePackageExports:
             RiskControlsConfig,
             load_risk_controls_config,
         )
+
         # Verify they are the right types
         assert hasattr(ControlsMode, "PRODUCTION")
         assert hasattr(TimeSyncConfig, "model_fields")
@@ -50,6 +52,7 @@ class TestCorePackageExports:
             create_risk_event_record,
             create_system_event_record,
         )
+
         assert hasattr(AuditEventType, "ORDER_SUBMITTED")
         assert hasattr(AuditRecordPriority, "CRITICAL")
         assert hasattr(OrderSide, "BUY")
@@ -68,6 +71,7 @@ class TestCorePackageExports:
             FileAuditStorage,
             create_audit_storage,
         )
+
         assert hasattr(StorageBackendType, "SQLITE")
         assert hasattr(StorageState, "READY")
         assert callable(create_audit_storage)
@@ -86,6 +90,7 @@ class TestCorePackageExports:
             RetentionManager,
             create_retention_manager,
         )
+
         assert hasattr(RetentionPeriod, "STANDARD")
         assert hasattr(ArchiveStatus, "ACTIVE")
         assert callable(create_retention_manager)
@@ -100,6 +105,7 @@ class TestCorePackageExports:
             AuditTrailWriter,
             create_audit_trail_writer,
         )
+
         assert hasattr(WriterMode, "SYNC")
         assert hasattr(WriterState, "RUNNING")
         assert callable(create_audit_trail_writer)
@@ -113,6 +119,7 @@ class TestCorePackageExports:
             ComplianceClock,
             create_compliance_clock,
         )
+
         assert hasattr(ClockDriftSeverity, "NORMAL")
         assert callable(create_compliance_clock)
 
@@ -128,6 +135,7 @@ class TestCorePackageExports:
             EnhancedKillSwitch,
             create_enhanced_kill_switch,
         )
+
         assert hasattr(KillSwitchScope, "ALL")
         assert hasattr(KillSwitchTriggerReason, "MANUAL")
         assert hasattr(KillSwitchState, "ARMED")
@@ -145,6 +153,7 @@ class TestCorePackageExports:
             PreTradeControls,
             create_pre_trade_controls,
         )
+
         assert hasattr(RejectionReason, "PRICE_COLLAR_BREACH")
         assert hasattr(ControlSeverity, "WARNING")
         assert callable(create_pre_trade_controls)
@@ -161,6 +170,7 @@ class TestCorePackageExports:
             RealTimeMonitor,
             create_realtime_monitor,
         )
+
         assert hasattr(AlertSeverity, "WARNING")
         assert hasattr(AlertCategory, "RISK_LIMIT")
         assert callable(create_realtime_monitor)
@@ -184,6 +194,7 @@ class TestCorePackageExports:
             save_bcp_to_file,
             get_standard_bcp_scenarios,
         )
+
         assert hasattr(ScenarioCategory, "SYSTEM_FAILURE")
         assert hasattr(ImpactLevel, "HIGH")
         assert callable(create_business_continuity_plan)
@@ -192,6 +203,7 @@ class TestCorePackageExports:
     def test_all_exports_in_dunder_all(self):
         """Test that all exports are listed in __all__."""
         import services.core.risk_controls as core
+
         assert hasattr(core, "__all__")
         # Verify some key exports are in __all__
         expected_exports = [
@@ -213,18 +225,21 @@ class TestCorePackageUsability:
     def test_create_memory_storage(self):
         """Test creating memory audit storage."""
         from services.core.risk_controls import create_audit_storage, StorageBackendType
+
         storage = create_audit_storage(backend_type=StorageBackendType.MEMORY)
         assert storage is not None
 
     def test_create_config(self):
         """Test creating risk controls config."""
         from services.core.risk_controls import RiskControlsConfig
+
         config = RiskControlsConfig()
         assert config.enabled is True
 
     def test_create_kill_switch(self):
         """Test creating kill switch."""
         from services.core.risk_controls import create_enhanced_kill_switch
+
         # Factory needs a callback, so skip the actual creation test
         # and just verify the factory is callable
         assert callable(create_enhanced_kill_switch)
@@ -232,11 +247,13 @@ class TestCorePackageUsability:
     def test_create_compliance_clock(self):
         """Test creating compliance clock."""
         from services.core.risk_controls import create_compliance_clock
+
         clock = create_compliance_clock()
         assert clock is not None
 
     def test_create_realtime_monitor(self):
         """Test creating realtime monitor."""
         from services.core.risk_controls import create_realtime_monitor
+
         monitor = create_realtime_monitor()
         assert monitor is not None

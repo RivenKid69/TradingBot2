@@ -549,6 +549,7 @@ ccea-cli compliance verify --mode on-prem \
 ```
 
 Expected checks:
+
 - [ ] EU residency verified
 - [ ] Telemetry local mode enabled
 - [ ] Redaction mandatory enabled

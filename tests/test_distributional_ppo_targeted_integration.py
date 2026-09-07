@@ -34,12 +34,8 @@ class EdgeInfoEnv(gymnasium.Env):
 
     def __init__(self, seed: int = 0, max_steps: int = 3) -> None:
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(4,), dtype=np.float32
-        )
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._step = 0
         self._max_steps = max_steps
@@ -61,7 +57,7 @@ class EdgeInfoEnv(gymnasium.Env):
             1.0,
         ).astype(np.float32)
 
-        reward = float(0.2 - np.sum(self._state ** 2) * 0.01)
+        reward = float(0.2 - np.sum(self._state**2) * 0.01)
         terminated = self._step >= self._max_steps
         truncated = False
 
@@ -108,12 +104,8 @@ class MinimalEnv(gymnasium.Env):
 
     def __init__(self, seed: int = 0, max_steps: int = 4) -> None:
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(4,), dtype=np.float32
-        )
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._step = 0
         self._max_steps = max_steps
@@ -249,8 +241,10 @@ def test_train_quantile_twin_critics_vf_clipping(monkeypatch):
 
     # Inject mismatched group keys to hit warning paths
     model._extract_group_keys_for_indices = lambda *_args, **_kwargs: ["only_one"]
+
     def _resolve_keys(_rollout_data, valid_indices, _value_valid_indices):
         return ["only_one"], valid_indices
+
     model._resolve_group_keys_for_training_batch = _resolve_keys
 
     # Add dummy critic modules with preset grads for gradient monitoring

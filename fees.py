@@ -148,7 +148,7 @@ def _round_value_to_decimals(value: float, decimals: int) -> float:
         pass
 
     try:
-        factor = 10 ** decimals
+        factor = 10**decimals
         scaled = float(value) * factor
         if scaled >= 0.0:
             adjusted = math.floor(scaled + 0.5)
@@ -409,9 +409,8 @@ def _sanitize_settlement_config(data: Any) -> Dict[str, Any]:
     if currency:
         normalized["currency"] = currency.upper()
 
-    fallback_currency = (
-        _sanitize_text(mapping.get("fallback_currency"))
-        or _sanitize_text(mapping.get("fallback_asset"))
+    fallback_currency = _sanitize_text(mapping.get("fallback_currency")) or _sanitize_text(
+        mapping.get("fallback_asset")
     )
     if fallback_currency:
         normalized["fallback_currency"] = fallback_currency.upper()
@@ -577,9 +576,7 @@ class SymbolFeeConfig:
         taker_mult = _sanitize_optional_non_negative(data.get("taker_discount_mult"))
         rounding_step_raw = data.get("fee_rounding_step")
         rounding_step = (
-            _sanitize_positive_float(rounding_step_raw)
-            if rounding_step_raw is not None
-            else None
+            _sanitize_positive_float(rounding_step_raw) if rounding_step_raw is not None else None
         )
 
         commission_step = _extract_commission_step(data)
@@ -709,12 +706,8 @@ class FeesModel:
         maker_bps = _sanitize_non_negative(d.get("maker_bps"), 1.0)
         taker_bps = _sanitize_non_negative(d.get("taker_bps"), 5.0)
         use_bnb = bool(d.get("use_bnb_discount", False))
-        maker_mult = _sanitize_discount(
-            d.get("maker_discount_mult"), 0.75 if use_bnb else 1.0
-        )
-        taker_mult = _sanitize_discount(
-            d.get("taker_discount_mult"), 0.75 if use_bnb else 1.0
-        )
+        maker_mult = _sanitize_discount(d.get("maker_discount_mult"), 0.75 if use_bnb else 1.0)
+        taker_mult = _sanitize_discount(d.get("taker_discount_mult"), 0.75 if use_bnb else 1.0)
         vip_tier = _sanitize_int(d.get("vip_tier", 0), default=0, minimum=0)
         raw_rounding = d.get("rounding") or d.get("rounding_options") or {}
         rounding_cfg = _sanitize_rounding_config(raw_rounding)
@@ -761,7 +754,9 @@ class FeesModel:
     def _resolve_rounding_context(
         self, symbol: Optional[str]
     ) -> Tuple[bool, Optional[float], Dict[str, Any]]:
-        rounding_cfg: Mapping[str, Any] = self.rounding if isinstance(self.rounding, Mapping) else {}
+        rounding_cfg: Mapping[str, Any] = (
+            self.rounding if isinstance(self.rounding, Mapping) else {}
+        )
 
         symbol_key = symbol.upper() if isinstance(symbol, str) else None
         per_symbol_cfg: Optional[Mapping[str, Any]] = None
@@ -770,11 +765,21 @@ class FeesModel:
             if isinstance(candidate, Mapping):
                 per_symbol_cfg = candidate
 
-        base_step = _sanitize_positive_float(rounding_cfg.get("step")) if isinstance(rounding_cfg, Mapping) else None
-        symbol_step = _sanitize_positive_float(per_symbol_cfg.get("step")) if per_symbol_cfg else None
+        base_step = (
+            _sanitize_positive_float(rounding_cfg.get("step"))
+            if isinstance(rounding_cfg, Mapping)
+            else None
+        )
+        symbol_step = (
+            _sanitize_positive_float(per_symbol_cfg.get("step")) if per_symbol_cfg else None
+        )
 
         cfg = self._symbol_config(symbol)
-        cfg_step = _sanitize_positive_float(cfg.fee_rounding_step) if cfg and cfg.fee_rounding_step is not None else None
+        cfg_step = (
+            _sanitize_positive_float(cfg.fee_rounding_step)
+            if cfg and cfg.fee_rounding_step is not None
+            else None
+        )
 
         fallback_step = _sanitize_positive_float(self.fee_rounding_step)
 
@@ -807,9 +812,7 @@ class FeesModel:
 
         return enabled, step, merged_options
 
-    def _resolve_settlement_context(
-        self, symbol: Optional[str]
-    ) -> Tuple[bool, Dict[str, Any]]:
+    def _resolve_settlement_context(self, symbol: Optional[str]) -> Tuple[bool, Dict[str, Any]]:
         settlement_cfg: Mapping[str, Any] = (
             self.settlement if isinstance(self.settlement, Mapping) else {}
         )
@@ -847,9 +850,7 @@ class FeesModel:
         base = self.maker_discount_mult if is_maker else self.taker_discount_mult
         cfg = self._symbol_config(symbol)
         if cfg:
-            override = (
-                cfg.maker_discount_mult if is_maker else cfg.taker_discount_mult
-            )
+            override = cfg.maker_discount_mult if is_maker else cfg.taker_discount_mult
             if override is not None:
                 base = _sanitize_discount(override, base)
         return _sanitize_discount(base, 1.0)
@@ -880,7 +881,6 @@ class FeesModel:
         taker_bps = self.get_fee_bps(symbol, False) * self._discount_multiplier(symbol, False)
         expected = prob * maker_bps + (1.0 - prob) * taker_bps
         return float(_sanitize_non_negative(expected, 0.0))
-
 
     def compute(
         self,
@@ -955,17 +955,21 @@ class FeesModel:
 
         fee = notional * (rate_bps / 1e4)
         if not math.isfinite(fee) or fee <= 0.0:
-            return 0.0 if not return_details else FeeComputation(
-                fee=0.0,
-                fee_before_rounding=0.0,
-                commission_step=None,
-                rounding_step=None,
-                rounding_enabled=False,
-                settlement_mode=None,
-                settlement_currency=None,
-                use_bnb_settlement=False,
-                bnb_conversion_rate=None,
-                requires_bnb_conversion=False,
+            return (
+                0.0
+                if not return_details
+                else FeeComputation(
+                    fee=0.0,
+                    fee_before_rounding=0.0,
+                    commission_step=None,
+                    rounding_step=None,
+                    rounding_enabled=False,
+                    settlement_mode=None,
+                    settlement_currency=None,
+                    use_bnb_settlement=False,
+                    bnb_conversion_rate=None,
+                    requires_bnb_conversion=False,
+                )
             )
 
         settlement_enabled, settlement_cfg = self._resolve_settlement_context(symbol)
@@ -987,9 +991,7 @@ class FeesModel:
             else:
                 requires_conversion = True
 
-        rounding_enabled, rounding_step, rounding_options = self._resolve_rounding_context(
-            symbol
-        )
+        rounding_enabled, rounding_step, rounding_options = self._resolve_rounding_context(symbol)
         adjusted_rounding_step = rounding_step
         adjusted_rounding_options = rounding_options
 
@@ -1092,6 +1094,7 @@ class FundingCalculator:
       - Для short (qty<0) при rate>0 — получение (cashflow > 0)
       - При отрицательной ставке — наоборот.
     """
+
     def __init__(
         self,
         *,
@@ -1127,7 +1130,9 @@ class FundingCalculator:
     def reset(self) -> None:
         self._next_ts_ms = None
 
-    def accrue(self, *, position_qty: float, mark_price: Optional[float], now_ts_ms: int) -> Tuple[float, List[FundingEvent]]:
+    def accrue(
+        self, *, position_qty: float, mark_price: Optional[float], now_ts_ms: int
+    ) -> Tuple[float, List[FundingEvent]]:
         """
         Начисляет funding за все прошедшие дискретные моменты с предыдущего вызова.
         :param position_qty: текущая чистая позиция (штук)
@@ -1157,13 +1162,15 @@ class FundingCalculator:
             sign = 1.0 if position_qty > 0 else -1.0
             cf = float(-sign * rate * notional)
             total += cf
-            events.append(FundingEvent(
-                ts_ms=int(self._next_ts_ms),
-                rate=float(rate),
-                position_qty=float(position_qty),
-                mark_price=float(mark_price),
-                cashflow=float(cf),
-            ))
+            events.append(
+                FundingEvent(
+                    ts_ms=int(self._next_ts_ms),
+                    rate=float(rate),
+                    position_qty=float(position_qty),
+                    mark_price=float(mark_price),
+                    cashflow=float(cf),
+                )
+            )
             # следующий интервал
             self._next_ts_ms = int(self._next_ts_ms + self.interval_seconds * 1000)
 

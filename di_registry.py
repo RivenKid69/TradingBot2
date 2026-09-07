@@ -34,6 +34,7 @@ from impl_quantizer import QuantizerImpl
 # Exchange Adapter Support
 # =============================================================================
 
+
 def _build_exchange_adapters(
     exchange_config: Mapping[str, Any],
     container: Dict[Any, Any],
@@ -105,7 +106,9 @@ def _load_class(dotted: str):
     try:
         module_name, cls_name = dotted.split(":")
     except ValueError as e:
-        raise ConfigError(f'Некорректный dotted path "{dotted}". Ожидается "module.submodule:ClassName"') from e
+        raise ConfigError(
+            f'Некорректный dotted path "{dotted}". Ожидается "module.submodule:ClassName"'
+        ) from e
     module = importlib.import_module(module_name)
     try:
         cls = getattr(module, cls_name)
@@ -133,9 +136,9 @@ def _instantiate(target_cls, params: Dict[str, Any], container: Mapping[Any, Any
     except Exception:
         hints = {}
     kwargs: Dict[str, Any] = {}
-    
+
     has_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
-    
+
     for name, p in sig.parameters.items():
         if name == "self":
             continue
@@ -154,12 +157,12 @@ def _instantiate(target_cls, params: Dict[str, Any], container: Mapping[Any, Any
                 ):
                     continue
                 # оставляем незаполненным — конструктор может это принять
-                
+
     if has_var_keyword:
         for k, v in params.items():
             if k not in kwargs and k not in sig.parameters:
                 kwargs[k] = v
-                
+
     return target_cls(**kwargs)
 
 
@@ -184,7 +187,9 @@ def resolve(key: Type[T], container: Mapping[Any, Any] | None = None) -> T:
     return cont[key]
 
 
-def build_graph(components: Components, run_config: Optional[CommonRunConfig] = None) -> Dict[Any, Any]:
+def build_graph(
+    components: Components, run_config: Optional[CommonRunConfig] = None
+) -> Dict[Any, Any]:
     """
     Сборка графа в последовательности: market_data → feature_pipe → policy → risk_guards → executor → backtest_engine
     (BacktestEngine опционален.)

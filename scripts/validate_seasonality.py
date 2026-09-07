@@ -35,7 +35,7 @@ def _load_dataset(path: Path) -> pd.DataFrame:
 def write_checksum(path: Path) -> Path:
     """Compute sha256 checksum for *path* and write `<path>.sha256`."""
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    checksum_path = path.with_suffix(path.suffix + '.sha256')
+    checksum_path = path.with_suffix(path.suffix + ".sha256")
     checksum_path.write_text(digest)
     return checksum_path
 
@@ -86,7 +86,9 @@ def _simulate(multipliers: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
     return result
 
 
-def _compare(hist: Dict[str, np.ndarray], sim: Dict[str, np.ndarray], threshold: float) -> Tuple[Dict[str, Dict[str, float]], bool]:
+def _compare(
+    hist: Dict[str, np.ndarray], sim: Dict[str, np.ndarray], threshold: float
+) -> Tuple[Dict[str, Dict[str, float]], bool]:
     stats: Dict[str, Dict[str, float]] = {}
     ok = True
     for key, hist_arr in hist.items():
@@ -119,7 +121,9 @@ def main(argv=None) -> bool:
         default=None,
         help="If set, load multipliers for this instrument symbol",
     )
-    parser.add_argument("--threshold", type=float, default=0.1, help="Max allowed relative difference")
+    parser.add_argument(
+        "--threshold", type=float, default=0.1, help="Max allowed relative difference"
+    )
     args = parser.parse_args(argv)
 
     hist_path = Path(args.historical)
@@ -146,6 +150,7 @@ def main(argv=None) -> bool:
 
 if __name__ == "__main__":  # pragma: no cover - CLI
     import sys
+
     success = main()
     if not success:
         sys.exit(1)

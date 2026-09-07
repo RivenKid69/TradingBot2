@@ -67,29 +67,34 @@ The L3 LOB (Level 3 Limit Order Book) Simulator is a high-fidelity market micros
 ## Key Features
 
 ### 1. High-Fidelity Execution Simulation
+
 - FIFO Price-Time Priority matching (CME Globex style)
 - Pro-Rata matching for options markets
 - Self-Trade Prevention (4 modes: CANCEL_NEWEST, CANCEL_OLDEST, CANCEL_BOTH, DECREMENT)
 - Queue position tracking with MBO/MBP estimation
 
 ### 2. Fill Probability Models
+
 - **Poisson Model**: Analytical fill probability based on arrival rates
 - **Queue-Reactive Model**: Intensity-based model (Huang et al.)
 - **Historical Rate Model**: Calibrated from historical execution data
 - **Queue Value**: Moallemi & Yuan methodology for optimal order placement
 
 ### 3. Market Impact Models
+
 - **Kyle Lambda**: Linear price impact (Kyle, 1985)
 - **Almgren-Chriss**: Square-root temporary + linear permanent impact
 - **Gatheral**: Transient impact with power-law decay
 
 ### 4. Latency Simulation
+
 - Four profiles: Co-located, Proximity, Retail, Institutional
 - Configurable distributions: Log-normal, Pareto, Gamma
 - Time-of-day and volatility adjustments
 - Event scheduling with race condition detection
 
 ### 5. Hidden Liquidity
+
 - Iceberg order detection from execution patterns
 - Hidden quantity estimation
 - Multi-venue dark pool simulation

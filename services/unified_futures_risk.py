@@ -123,10 +123,10 @@ class AssetType(str, Enum):
 class UnifiedMarginStatus(str, Enum):
     """Unified margin status across all asset types."""
 
-    HEALTHY = "healthy"          # >= warning threshold
-    WARNING = "warning"          # Between warning and danger
-    DANGER = "danger"            # Between danger and critical
-    CRITICAL = "critical"        # Between critical and liquidation
+    HEALTHY = "healthy"  # >= warning threshold
+    WARNING = "warning"  # Between warning and danger
+    DANGER = "danger"  # Between danger and critical
+    CRITICAL = "critical"  # Between critical and liquidation
     LIQUIDATION = "liquidation"  # At or below liquidation threshold
 
     @classmethod
@@ -281,31 +281,53 @@ class RiskSeverity(str, Enum):
 
 # CME product symbols by category
 CME_EQUITY_INDEX_SYMBOLS: Set[str] = {
-    "ES", "NQ", "YM", "RTY",  # Standard
-    "MES", "MNQ", "MYM", "M2K",  # Micro
+    "ES",
+    "NQ",
+    "YM",
+    "RTY",  # Standard
+    "MES",
+    "MNQ",
+    "MYM",
+    "M2K",  # Micro
 }
 
 CME_COMMODITY_METAL_SYMBOLS: Set[str] = {
-    "GC", "SI", "HG",  # Standard
-    "MGC", "SIL",  # Micro
+    "GC",
+    "SI",
+    "HG",  # Standard
+    "MGC",
+    "SIL",  # Micro
 }
 
 CME_COMMODITY_ENERGY_SYMBOLS: Set[str] = {
-    "CL", "NG", "RB", "HO",  # Standard
+    "CL",
+    "NG",
+    "RB",
+    "HO",  # Standard
     "MCL",  # Micro
 }
 
 CME_CURRENCY_SYMBOLS: Set[str] = {
-    "6E", "6J", "6B", "6A", "6C", "6S",
+    "6E",
+    "6J",
+    "6B",
+    "6A",
+    "6C",
+    "6S",
 }
 
 CME_BOND_SYMBOLS: Set[str] = {
-    "ZN", "ZB", "ZT", "ZF",
+    "ZN",
+    "ZB",
+    "ZT",
+    "ZF",
 }
 
 # Crypto perpetual patterns
 CRYPTO_PERPETUAL_PATTERNS: Set[str] = {
-    "USDT", "BUSD", "PERP",
+    "USDT",
+    "BUSD",
+    "PERP",
 }
 
 
@@ -430,13 +452,16 @@ class UnifiedMarginResult:
             available_margin=available_margin,
             asset_type=asset_type,
             symbol=None,  # Crypto MarginCheckResult doesn't have symbol
-            requires_reduction=result.status in (CryptoMarginStatus.DANGER, CryptoMarginStatus.CRITICAL),
+            requires_reduction=result.status
+            in (CryptoMarginStatus.DANGER, CryptoMarginStatus.CRITICAL),
             requires_liquidation=result.requires_liquidation,
             recommended_reduction_pct=0.0,  # Crypto doesn't have this
             crypto_details={
                 "margin_level": result.margin_level.value if result.margin_level else None,
                 "shortfall": float(result.shortfall),
-                "time_to_liquidation": str(result.time_to_liquidation) if result.time_to_liquidation else None,
+                "time_to_liquidation": (
+                    str(result.time_to_liquidation) if result.time_to_liquidation else None
+                ),
             },
         )
 
@@ -954,7 +979,9 @@ class UnifiedFuturesRiskGuard:
 
             entry_price = price or 0.0
             pos_leverage = int(leverage or 1)
-            proposed_position = SimplePosition(symbol, side_normalized, quantity, entry_price, pos_leverage)
+            proposed_position = SimplePosition(
+                symbol, side_normalized, quantity, entry_price, pos_leverage
+            )
 
             # Get current positions from kwargs
             current_positions = kwargs.get("current_positions", [])
@@ -992,7 +1019,10 @@ class UnifiedFuturesRiskGuard:
                     symbol=symbol,
                     timestamp_ms=timestamp_ms,
                 )
-                if margin_result.status in (CryptoMarginStatus.CRITICAL, CryptoMarginStatus.LIQUIDATION):
+                if margin_result.status in (
+                    CryptoMarginStatus.CRITICAL,
+                    CryptoMarginStatus.LIQUIDATION,
+                ):
                     event = self._margin_status_to_event(margin_result.status)
                     return UnifiedRiskCheckResult(
                         event=event,
@@ -1008,7 +1038,10 @@ class UnifiedFuturesRiskGuard:
                             "margin_ratio": float(margin_ratio),
                         },
                     )
-                elif margin_result.status in (CryptoMarginStatus.WARNING, CryptoMarginStatus.DANGER):
+                elif margin_result.status in (
+                    CryptoMarginStatus.WARNING,
+                    CryptoMarginStatus.DANGER,
+                ):
                     # Log warning but allow trade in non-strict mode
                     if self._config.crypto.strict_mode:
                         event = self._margin_status_to_event(margin_result.status)
@@ -1055,15 +1088,26 @@ class UnifiedFuturesRiskGuard:
                     current_funding_rate=Decimal(str(funding_rate)),
                     mark_price=Decimal(str(price)),
                 )
-                if funding_result.level in (FundingExposureLevel.EXCESSIVE, FundingExposureLevel.EXTREME):
+                if funding_result.level in (
+                    FundingExposureLevel.EXCESSIVE,
+                    FundingExposureLevel.EXTREME,
+                ):
                     return UnifiedRiskCheckResult(
                         event=UnifiedRiskEvent.FUNDING_RATE_EXTREME,
-                        severity=RiskSeverity.HIGH if funding_result.level == FundingExposureLevel.EXCESSIVE else RiskSeverity.CRITICAL,
+                        severity=(
+                            RiskSeverity.HIGH
+                            if funding_result.level == FundingExposureLevel.EXCESSIVE
+                            else RiskSeverity.CRITICAL
+                        ),
                         asset_type=asset_type,
                         symbol=symbol,
                         timestamp_ms=timestamp_ms,
                         can_trade=not self._config.crypto.strict_mode,
-                        block_reason=funding_result.recommendation if self._config.crypto.strict_mode else None,
+                        block_reason=(
+                            funding_result.recommendation
+                            if self._config.crypto.strict_mode
+                            else None
+                        ),
                         details={
                             "source": "crypto_funding",
                             "funding_level": funding_result.level.value,
@@ -1074,7 +1118,11 @@ class UnifiedFuturesRiskGuard:
             # Check 5: ADL risk (if percentiles provided)
             pnl_percentile = kwargs.get("pnl_percentile")
             leverage_percentile = kwargs.get("leverage_percentile")
-            if self._crypto_adl_guard and pnl_percentile is not None and leverage_percentile is not None:
+            if (
+                self._crypto_adl_guard
+                and pnl_percentile is not None
+                and leverage_percentile is not None
+            ):
                 adl_result = self._crypto_adl_guard.check_adl_risk(
                     position=proposed_position,
                     pnl_percentile=float(pnl_percentile),
@@ -1088,7 +1136,9 @@ class UnifiedFuturesRiskGuard:
                         symbol=symbol,
                         timestamp_ms=timestamp_ms,
                         can_trade=not self._config.crypto.strict_mode,
-                        block_reason=adl_result.recommendation if self._config.crypto.strict_mode else None,
+                        block_reason=(
+                            adl_result.recommendation if self._config.crypto.strict_mode else None
+                        ),
                         details={
                             "source": "crypto_adl",
                             "adl_level": adl_result.level.value,
@@ -1162,7 +1212,11 @@ class UnifiedFuturesRiskGuard:
                 symbol=symbol,
                 timestamp_ms=timestamp_ms,
                 can_trade=(event == UnifiedRiskEvent.NONE),
-                block_reason=self._cme_guard.get_last_event_details() if event != UnifiedRiskEvent.NONE else None,
+                block_reason=(
+                    self._cme_guard.get_last_event_details()
+                    if event != UnifiedRiskEvent.NONE
+                    else None
+                ),
                 details={
                     "source": "cme",
                     "original_event": result.value if hasattr(result, "value") else str(result),
@@ -1237,9 +1291,7 @@ class UnifiedFuturesRiskGuard:
         }
         return mapping.get(violation_type, UnifiedRiskEvent.LEVERAGE_EXCEEDED)
 
-    def _margin_status_to_event(
-        self, status: CryptoMarginStatus
-    ) -> UnifiedRiskEvent:
+    def _margin_status_to_event(self, status: CryptoMarginStatus) -> UnifiedRiskEvent:
         """Map crypto margin status to unified event."""
         mapping = {
             CryptoMarginStatus.HEALTHY: UnifiedRiskEvent.NONE,
@@ -1442,9 +1494,7 @@ class UnifiedFuturesRiskGuard:
             margin_guard = self._cme_guard._margin_guard
 
             # Convert prices to Decimal
-            decimal_prices = {
-                k: Decimal(str(v)) for k, v in (prices or {}).items()
-            }
+            decimal_prices = {k: Decimal(str(v)) for k, v in (prices or {}).items()}
 
             result = margin_guard.check_margin(
                 account_equity=Decimal(str(account_equity)),
@@ -1540,9 +1590,7 @@ class UnifiedFuturesRiskGuard:
             # Apply correlation adjustment if enabled
             correlation_factor = 1.0
             if self._config.portfolio.enable_correlation_tracking and len(positions) > 1:
-                correlation_factor = self._calculate_correlation_factor(
-                    list(positions.keys())
-                )
+                correlation_factor = self._calculate_correlation_factor(list(positions.keys()))
 
             adjusted_margin = total_margin * correlation_factor
 
@@ -1595,7 +1643,7 @@ class UnifiedFuturesRiskGuard:
         count = 0
 
         for i, sym1 in enumerate(symbols):
-            for sym2 in symbols[i + 1:]:
+            for sym2 in symbols[i + 1 :]:
                 key = (min(sym1, sym2), max(sym1, sym2))
                 if key in self._correlation_matrix:
                     total_corr += self._correlation_matrix[key]

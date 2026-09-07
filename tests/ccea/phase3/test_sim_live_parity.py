@@ -385,13 +385,15 @@ class TestSimulationRunner:
         strategy = SimpleTestStrategy()
 
         # Entry
-        strategy.set_next_intent(OrderIntent(
-            strategy_id="test",
-            symbol="BTCUSDT",
-            intent_type=IntentType.MARKET_ENTRY,
-            side=IntentSide.LONG,
-            target_quantity=Decimal("1.0"),
-        ))
+        strategy.set_next_intent(
+            OrderIntent(
+                strategy_id="test",
+                symbol="BTCUSDT",
+                intent_type=IntentType.MARKET_ENTRY,
+                side=IntentSide.LONG,
+                target_quantity=Decimal("1.0"),
+            )
+        )
 
         runner.initialize(strategy)
         runner.start()

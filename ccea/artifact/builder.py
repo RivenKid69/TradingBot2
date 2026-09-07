@@ -46,6 +46,7 @@ class BuildConfig:
     """
     Artifact build configuration.
     """
+
     # Source
     source_dir: Path
     entrypoint_module: str
@@ -83,6 +84,7 @@ class ArtifactPackage:
     """
     Built artifact package.
     """
+
     artifact_id: str
     version: str
     package_path: Path
@@ -181,6 +183,7 @@ class ArtifactBuilder:
         signature = None
         if config.sign and self.signing_key:
             from ccea.crypto.signing import sign_message
+
             signature = sign_message(
                 open(package_path, "rb").read(),
                 self.signing_key.private_key,
@@ -240,8 +243,7 @@ class ArtifactBuilder:
         for root, dirs, files in os.walk(config.source_dir):
             # Filter directories
             dirs[:] = [
-                d for d in dirs
-                if not any(fnmatch.fnmatch(d, p) for p in config.exclude_patterns)
+                d for d in dirs if not any(fnmatch.fnmatch(d, p) for p in config.exclude_patterns)
             ]
 
             for file in files:
@@ -335,13 +337,23 @@ class ArtifactBuilder:
                 gpu_required=config.gpu_required,
             ),
             deps_lock_digest=deps_lock_digest,
-            live_capabilities=LiveCapabilities(
-                requires_broker_access=config.requires_broker_access,
-                supported_brokers=config.supported_brokers if config.supported_brokers else None,
-            ) if config.requires_broker_access else None,
+            live_capabilities=(
+                LiveCapabilities(
+                    requires_broker_access=config.requires_broker_access,
+                    supported_brokers=(
+                        config.supported_brokers if config.supported_brokers else None
+                    ),
+                )
+                if config.requires_broker_access
+                else None
+            ),
             provenance=provenance,
             created_at=datetime.utcnow(),
-            change_class=ChangeClass.TRADING_IMPACTING if config.requires_broker_access else ChangeClass.NON_TRADING_IMPACTING,
+            change_class=(
+                ChangeClass.TRADING_IMPACTING
+                if config.requires_broker_access
+                else ChangeClass.NON_TRADING_IMPACTING
+            ),
         )
 
     def _create_zip_package(self, build_dir: Path, package_path: Path) -> None:
@@ -365,17 +377,19 @@ class ArtifactBuilder:
                     "type": "application",
                     "name": config.artifact_id or config.entrypoint_module,
                     "version": config.version,
-                }
+                },
             },
-            "components": []
+            "components": [],
         }
 
         # Add Python runtime
-        sbom["components"].append({
-            "type": "library",
-            "name": "python",
-            "version": config.python_version,
-        })
+        sbom["components"].append(
+            {
+                "type": "library",
+                "name": "python",
+                "version": config.python_version,
+            }
+        )
 
         # Add dependencies from requirements if available
         if config.requirements_file and config.requirements_file.exists():
@@ -386,17 +400,21 @@ class ArtifactBuilder:
                     parts = line.split("==")
                     name = parts[0].strip()
                     version = parts[1].strip() if len(parts) > 1 else "unknown"
-                    sbom["components"].append({
-                        "type": "library",
-                        "name": name,
-                        "version": version,
-                    })
+                    sbom["components"].append(
+                        {
+                            "type": "library",
+                            "name": name,
+                            "version": version,
+                        }
+                    )
 
         with open(sbom_path, "w") as f:
             json.dump(sbom, f, indent=2)
 
 
-def build_hello_strategy(output_dir: Path, signing_key: Optional[KeyPair] = None) -> ArtifactPackage:
+def build_hello_strategy(
+    output_dir: Path, signing_key: Optional[KeyPair] = None
+) -> ArtifactPackage:
     """
     Build the hello strategy artifact for Phase 1 testing.
 

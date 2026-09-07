@@ -65,7 +65,7 @@ class OrdType(str, Enum):
 class MsgType(str, Enum):
     NEW_ORDER_SINGLE = "D"
     ORDER_CANCEL_REQUEST = "F"
-    ORDER_CANCEL_REPLACE_REQUEST = "G"   # amend qty/price of a working order
+    ORDER_CANCEL_REPLACE_REQUEST = "G"  # amend qty/price of a working order
     EXECUTION_REPORT = "8"
     LOGON = "A"
     HEARTBEAT = "0"
@@ -78,8 +78,9 @@ def _checksum(s: str) -> str:
     return f"{sum(s.encode('latin-1')) % 256:03d}"
 
 
-def encode_message(msg_type: str, fields: List[Tuple[str, Any]], *,
-                   begin: str = BEGIN_STRING) -> str:
+def encode_message(
+    msg_type: str, fields: List[Tuple[str, Any]], *, begin: str = BEGIN_STRING
+) -> str:
     """Собрать FIX-сообщение с корректными BodyLength и CheckSum.
 
     ``fields`` — упорядоченный список (tag, value), БЕЗ 8/9/35/10 (добавляются здесь).
@@ -117,8 +118,8 @@ def verify_checksum(raw: Any) -> bool:
         pre = raw[:idx]
         got = raw[idx:].split(SOH)[0].split("=")[1]
     else:
-        pre = raw[: idx + 1]   # включая SOH перед 10=
-        got = raw[idx + 1:].split(SOH)[0].split("=")[1]
+        pre = raw[: idx + 1]  # включая SOH перед 10=
+        got = raw[idx + 1 :].split(SOH)[0].split("=")[1]
     return _checksum(pre) == got
 
 
@@ -145,10 +146,18 @@ class FixSession:
         ]
 
 
-def new_order_single(*, cl_ord_id: str, symbol: str, side: Side, qty: float,
-                     ord_type: OrdType = OrdType.MARKET, price: Optional[float] = None,
-                     tif: str = "0", transact_time: str = "20200101-00:00:00.000",
-                     session: Optional[FixSession] = None) -> str:
+def new_order_single(
+    *,
+    cl_ord_id: str,
+    symbol: str,
+    side: Side,
+    qty: float,
+    ord_type: OrdType = OrdType.MARKET,
+    price: Optional[float] = None,
+    tif: str = "0",
+    transact_time: str = "20200101-00:00:00.000",
+    session: Optional[FixSession] = None,
+) -> str:
     """NewOrderSingle (35=D)."""
     fields: List[Tuple[str, Any]] = []
     if session is not None:
@@ -166,9 +175,15 @@ def new_order_single(*, cl_ord_id: str, symbol: str, side: Side, qty: float,
     return encode_message(MsgType.NEW_ORDER_SINGLE.value, fields)
 
 
-def order_cancel_request(*, orig_cl_ord_id: str, cl_ord_id: str, symbol: str, side: Side,
-                         transact_time: str = "20200101-00:00:00.000",
-                         session: Optional[FixSession] = None) -> str:
+def order_cancel_request(
+    *,
+    orig_cl_ord_id: str,
+    cl_ord_id: str,
+    symbol: str,
+    side: Side,
+    transact_time: str = "20200101-00:00:00.000",
+    session: Optional[FixSession] = None,
+) -> str:
     fields: List[Tuple[str, Any]] = []
     if session is not None:
         fields += session._session_fields(transact_time)
@@ -183,9 +198,16 @@ def order_cancel_request(*, orig_cl_ord_id: str, cl_ord_id: str, symbol: str, si
 
 
 def order_cancel_replace_request(
-    *, orig_cl_ord_id: str, cl_ord_id: str, symbol: str, side: Side,
-    qty: float, ord_type: OrdType = OrdType.LIMIT, price: Optional[float] = None,
-    tif: str = "0", transact_time: str = "20200101-00:00:00.000",
+    *,
+    orig_cl_ord_id: str,
+    cl_ord_id: str,
+    symbol: str,
+    side: Side,
+    qty: float,
+    ord_type: OrdType = OrdType.LIMIT,
+    price: Optional[float] = None,
+    tif: str = "0",
+    transact_time: str = "20200101-00:00:00.000",
     session: Optional[FixSession] = None,
 ) -> str:
     """OrderCancelReplaceRequest (35=G) — amend a working order's qty and/or price.
@@ -210,16 +232,30 @@ def order_cancel_replace_request(
     return encode_message(MsgType.ORDER_CANCEL_REPLACE_REQUEST.value, fields)
 
 
-def execution_report(*, order_id: str, cl_ord_id: str, exec_id: str, symbol: str,
-                     side: Side, ord_status: str, exec_type: str, cum_qty: float,
-                     avg_px: float, leaves_qty: float = 0.0) -> str:
+def execution_report(
+    *,
+    order_id: str,
+    cl_ord_id: str,
+    exec_id: str,
+    symbol: str,
+    side: Side,
+    ord_status: str,
+    exec_type: str,
+    cum_qty: float,
+    avg_px: float,
+    leaves_qty: float = 0.0,
+) -> str:
     """ExecutionReport (35=8) — обычно от брокера; тут для симуляции/тестов."""
     fields = [
-        (Tag.OrderID, order_id), (Tag.ClOrdID, cl_ord_id), (Tag.ExecID, exec_id),
+        (Tag.OrderID, order_id),
+        (Tag.ClOrdID, cl_ord_id),
+        (Tag.ExecID, exec_id),
         (Tag.Symbol, symbol),
         (Tag.Side, side.value if isinstance(side, Side) else side),
-        (Tag.OrdStatus, ord_status), (Tag.ExecType, exec_type),
-        (Tag.CumQty, _num(cum_qty)), (Tag.AvgPx, _num(avg_px)),
+        (Tag.OrdStatus, ord_status),
+        (Tag.ExecType, exec_type),
+        (Tag.CumQty, _num(cum_qty)),
+        (Tag.AvgPx, _num(avg_px)),
         (Tag.LeavesQty, _num(leaves_qty)),
     ]
     return encode_message(MsgType.EXECUTION_REPORT.value, fields)
@@ -231,8 +267,18 @@ def _num(x: float) -> str:
 
 
 __all__ = [
-    "SOH", "BEGIN_STRING", "Tag", "Side", "OrdType", "MsgType", "FixSession",
-    "encode_message", "parse_message", "verify_checksum",
-    "new_order_single", "order_cancel_request", "order_cancel_replace_request",
+    "SOH",
+    "BEGIN_STRING",
+    "Tag",
+    "Side",
+    "OrdType",
+    "MsgType",
+    "FixSession",
+    "encode_message",
+    "parse_message",
+    "verify_checksum",
+    "new_order_single",
+    "order_cancel_request",
+    "order_cancel_replace_request",
     "execution_report",
 ]

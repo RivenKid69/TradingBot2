@@ -1,0 +1,40 @@
+# yamllint policy for this repository.
+#
+# It used to live as an inline -d string in the docs-quality workflow, which made
+# it invisible to anyone editing YAML locally. The rules that catch real mistakes
+# stay on; the ones that object to deliberate alignment in the strategy configs
+# are off, and long lines are a warning rather than a failure — several config
+# values are URLs and long descriptions that do not wrap usefully.
+
+extends: default
+
+rules:
+  # structure — these catch actual mistakes
+  indentation:
+    spaces: consistent
+    indent-sequences: consistent
+  key-duplicates: enable
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1
+  trailing-spaces: enable
+  new-line-at-end-of-file: enable
+
+  # `on:` in a GitHub workflow is the YAML 1.1 boolean, and that is the required
+  # spelling, so this can only ever be noise here
+  truthy:
+    allowed-values: ['true', 'false']
+    check-keys: false
+
+  line-length:
+    max: 120
+    level: warning
+
+  # the strategy configs align values into columns on purpose
+  commas: disable
+  colons: disable
+  comments: disable
+  comments-indentation: disable
+
+  document-start: disable

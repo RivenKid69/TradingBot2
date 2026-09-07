@@ -13,11 +13,13 @@ This Standard Operating Procedure establishes the process for detecting, assessi
 ## 2. Scope
 
 This SOP applies to:
+
 - All personal data processed by the CCEA Cloud platform
 - All employees, contractors, and third-party processors with access to personal data
 - Breaches affecting confidentiality, integrity, or availability of personal data
 
 **Out of Scope** (CCEA Boundary):
+
 - Data stored exclusively in the customer-operated Agent zone
 - Broker credentials, API keys, and secrets (designed not to be processed by Cloud; verify via architecture review)
 - Order/trade execution data (customer-controlled)
@@ -84,6 +86,7 @@ This SOP applies to:
 ```
 
 **Initial Report Form:**
+
 ```
 Breach Report #: [AUTO-GENERATED]
 Date/Time Detected: [TIMESTAMP]
@@ -161,6 +164,7 @@ Evidence Preserved: [YES/NO]
 ```
 
 **Decision Documentation:**
+
 ```
 Decision #: [AUTO-GENERATED]
 Breach #: [REFERENCE]
@@ -261,6 +265,7 @@ We sincerely apologize for any inconvenience this may cause.
 ### 6.6 Phase 6: Containment & Remediation (Ongoing)
 
 **Containment Checklist:**
+
 - [ ] Isolate affected systems
 - [ ] Revoke compromised credentials
 - [ ] Block malicious IPs/sources
@@ -269,6 +274,7 @@ We sincerely apologize for any inconvenience this may cause.
 - [ ] Verify containment effectiveness
 
 **Remediation Checklist:**
+
 - [ ] Identify root cause
 - [ ] Develop fix/patch
 - [ ] Test remediation in staging
@@ -280,6 +286,7 @@ We sincerely apologize for any inconvenience this may cause.
 ### 6.7 Phase 7: Resolution & Closure (Post-Incident)
 
 **Closure Criteria:**
+
 - [ ] All containment measures verified effective
 - [ ] Root cause identified and documented
 - [ ] Remediation deployed and verified
@@ -312,12 +319,14 @@ Detection        Assessment        Decision         Notification      Resolution
 ### 8.2 Exercise Requirements
 
 **Success Criteria:**
+
 - Draft notification package produced within 24 hours
 - All required content elements included
 - Clear decision rationale documented
 - Timeline SLA met (internal targets)
 
 **Scenario Types:**
+
 1. Ransomware attack on customer database
 2. Unauthorized employee access
 3. External data exfiltration

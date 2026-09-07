@@ -165,9 +165,7 @@ class TestLoadCalibrationArtifact:
         }
         artifact_path.write_text(json.dumps(artifact_data))
 
-        result = load_calibration_artifact(
-            str(artifact_path), symbols=["BTCUSDT"], enabled=True
-        )
+        result = load_calibration_artifact(str(artifact_path), symbols=["BTCUSDT"], enabled=True)
 
         assert result is not None
         assert "BTCUSDT" in result["symbols"]

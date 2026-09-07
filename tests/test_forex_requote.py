@@ -11,7 +11,7 @@ Tests cover:
 5. Statistics tracking
 6. Edge cases and integration scenarios
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 
@@ -50,6 +50,7 @@ from services.forex_requote import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def market_snapshot() -> MarketSnapshot:
     """Create a market snapshot for testing."""
@@ -84,6 +85,7 @@ def requote_simulator(requote_config: RequoteConfig) -> RequoteFlowSimulator:
 # =============================================================================
 # RequoteEvent Tests
 # =============================================================================
+
 
 class TestRequoteEvent:
     """Tests for RequoteEvent dataclass."""
@@ -137,6 +139,7 @@ class TestRequoteEvent:
 # =============================================================================
 # RequoteFlowResult Tests
 # =============================================================================
+
 
 class TestRequoteFlowResult:
     """Tests for RequoteFlowResult dataclass."""
@@ -230,6 +233,7 @@ class TestRequoteFlowResult:
 # RequoteConfig Tests
 # =============================================================================
 
+
 class TestRequoteConfig:
     """Tests for RequoteConfig dataclass."""
 
@@ -272,6 +276,7 @@ class TestRequoteConfig:
 # MarketSnapshot Tests
 # =============================================================================
 
+
 class TestMarketSnapshot:
     """Tests for MarketSnapshot dataclass."""
 
@@ -299,6 +304,7 @@ class TestMarketSnapshot:
 # =============================================================================
 # RequoteProbabilityModel Tests
 # =============================================================================
+
 
 class TestRequoteProbabilityModel:
     """Tests for RequoteProbabilityModel."""
@@ -445,7 +451,7 @@ class TestRequoteProbabilityModel:
             bid=1.08,
             ask=1.09,
             spread_pips=10.0,  # Wide spread
-            volatility=0.1,   # Very high vol
+            volatility=0.1,  # Very high vol
             session="weekend",
             is_news_event=True,
         )
@@ -463,6 +469,7 @@ class TestRequoteProbabilityModel:
 # =============================================================================
 # ClientAcceptanceModel Tests
 # =============================================================================
+
 
 class TestClientAcceptanceModel:
     """Tests for ClientAcceptanceModel."""
@@ -497,10 +504,7 @@ class TestClientAcceptanceModel:
         )
 
         # Run many trials
-        accepts = sum(
-            1 for _ in range(100)
-            if model.will_accept_requote(0.5)
-        )
+        accepts = sum(1 for _ in range(100) if model.will_accept_requote(0.5))
 
         # Should have relatively low acceptance (around 40%)
         assert accepts < 70
@@ -514,10 +518,7 @@ class TestClientAcceptanceModel:
         )
 
         # Run many trials
-        accepts = sum(
-            1 for _ in range(100)
-            if model.will_accept_requote(0.5)
-        )
+        accepts = sum(1 for _ in range(100) if model.will_accept_requote(0.5))
 
         # Should have high acceptance (around 90%)
         assert accepts > 70
@@ -531,15 +532,9 @@ class TestClientAcceptanceModel:
         )
 
         # Small difference
-        small_accepts = sum(
-            1 for _ in range(100)
-            if model.will_accept_requote(0.2)
-        )
+        small_accepts = sum(1 for _ in range(100) if model.will_accept_requote(0.2))
         # Large difference
-        large_accepts = sum(
-            1 for _ in range(100)
-            if model.will_accept_requote(3.0)
-        )
+        large_accepts = sum(1 for _ in range(100) if model.will_accept_requote(3.0))
 
         assert small_accepts > large_accepts
 
@@ -552,13 +547,11 @@ class TestClientAcceptanceModel:
 
         # First requote
         first_accepts = sum(
-            1 for _ in range(100)
-            if model.will_accept_requote(0.5, requote_count=1)
+            1 for _ in range(100) if model.will_accept_requote(0.5, requote_count=1)
         )
         # Third requote
         third_accepts = sum(
-            1 for _ in range(100)
-            if model.will_accept_requote(0.5, requote_count=3)
+            1 for _ in range(100) if model.will_accept_requote(0.5, requote_count=3)
         )
 
         # Fatigue should reduce acceptance
@@ -572,15 +565,9 @@ class TestClientAcceptanceModel:
         )
 
         # Low urgency
-        low_accepts = sum(
-            1 for _ in range(100)
-            if model.will_accept_requote(1.0, urgency=0.2)
-        )
+        low_accepts = sum(1 for _ in range(100) if model.will_accept_requote(1.0, urgency=0.2))
         # High urgency
-        high_accepts = sum(
-            1 for _ in range(100)
-            if model.will_accept_requote(1.0, urgency=0.9)
-        )
+        high_accepts = sum(1 for _ in range(100) if model.will_accept_requote(1.0, urgency=0.9))
 
         assert high_accepts >= low_accepts
 
@@ -588,6 +575,7 @@ class TestClientAcceptanceModel:
 # =============================================================================
 # RequoteFlowSimulator Tests
 # =============================================================================
+
 
 class TestRequoteFlowSimulator:
     """Tests for RequoteFlowSimulator."""
@@ -775,6 +763,7 @@ class TestRequoteFlowSimulator:
 # Factory Function Tests
 # =============================================================================
 
+
 class TestCreateRequoteSimulator:
     """Tests for create_requote_simulator factory."""
 
@@ -855,6 +844,7 @@ class TestSimulateRequoteScenario:
 # Integration Tests
 # =============================================================================
 
+
 class TestRequoteIntegration:
     """Integration tests for requote functionality."""
 
@@ -930,6 +920,7 @@ class TestRequoteIntegration:
 # =============================================================================
 # Edge Case Tests
 # =============================================================================
+
 
 class TestRequoteEdgeCases:
     """Edge case tests for requote functionality."""

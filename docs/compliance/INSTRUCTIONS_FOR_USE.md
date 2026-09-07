@@ -1,4 +1,5 @@
 # Instructions for Use
+
 ## CustodiaCloud
 
 **Document ID**: IFU-2025-001
@@ -211,6 +212,7 @@ The system includes a kill switch per Article 14(4)(f):
 ### 6.4 Operator Requirements
 
 Operators must:
+
 - Complete system training program
 - Understand AI capabilities and limitations
 - Monitor system during operation
@@ -255,28 +257,33 @@ Operators must:
 ### 8.1 Installation Steps
 
 1. **Clone Repository**
+
    ```bash
    git clone [authorized-repository-url]
    cd AI-Powered-Quantitative-Research-Platform
    ```
 
 2. **Install Dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 3. **Configure Environment**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 4. **Initialize Database**
+
    ```bash
    python scripts/init_database.py
    ```
 
 5. **Verify Installation**
+
    ```bash
    python -m pytest tests/ -v
    ```
@@ -371,6 +378,7 @@ The system automatically logs:
 ### 11.2 Update Procedures
 
 Updates require:
+
 1. Impact assessment
 2. Testing in staging environment
 3. Approval per QMS procedures
@@ -393,6 +401,7 @@ Updates require:
 ### 12.1 Reporting Requirements
 
 Incidents must be reported if they:
+
 - Cause or could cause serious harm
 - Involve system malfunction
 - Result in significant financial loss
@@ -420,6 +429,7 @@ Incidents must be reported if they:
 ### 13.1 EU AI Act Alignment
 
 This system is designed to align with:
+
 - Article 9: Risk Management System
 - Article 10: Data Governance
 - Article 11: Technical Documentation
@@ -432,6 +442,7 @@ This system is designed to align with:
 ### 13.2 Related Regulations
 
 Users must also comply with:
+
 - MiFID II/MiFIR (algorithmic trading requirements)
 - MAR (market abuse prevention)
 - Local financial regulations

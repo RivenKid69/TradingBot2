@@ -394,9 +394,7 @@ class TestForexConfigValidator:
 
     def test_high_leverage_warning(self):
         """Test warning for high leverage."""
-        config = ForexConfig(
-            leverage=LeverageConfig(max_leverage=100.0, default_leverage=50.0)
-        )
+        config = ForexConfig(leverage=LeverageConfig(max_leverage=100.0, default_leverage=50.0))
         validator = ForexConfigValidator()
         validator.validate(config)
         warnings = validator.get_warnings()
@@ -404,9 +402,7 @@ class TestForexConfigValidator:
 
     def test_weekend_filter_warning(self):
         """Test warning for disabled weekend filter."""
-        config = ForexConfig(
-            session=TradingSessionConfig(weekend_filter=False)
-        )
+        config = ForexConfig(session=TradingSessionConfig(weekend_filter=False))
         validator = ForexConfigValidator()
         validator.validate(config)
         warnings = validator.get_warnings()
@@ -414,9 +410,7 @@ class TestForexConfigValidator:
 
     def test_dealer_disabled_warning(self):
         """Test warning for disabled dealer simulation."""
-        config = ForexConfig(
-            dealer_simulation=DealerSimulationConfig(enabled=False)
-        )
+        config = ForexConfig(dealer_simulation=DealerSimulationConfig(enabled=False))
         validator = ForexConfigValidator()
         validator.validate(config)
         warnings = validator.get_warnings()
@@ -424,9 +418,7 @@ class TestForexConfigValidator:
 
     def test_swap_disabled_warning(self):
         """Test warning for disabled swap."""
-        config = ForexConfig(
-            fees=FeeConfig(swap_enabled=False)
-        )
+        config = ForexConfig(fees=FeeConfig(swap_enabled=False))
         validator = ForexConfigValidator()
         validator.validate(config)
         warnings = validator.get_warnings()
@@ -434,9 +426,7 @@ class TestForexConfigValidator:
 
     def test_invalid_num_dealers_error(self):
         """Test error for invalid num_dealers."""
-        config = ForexConfig(
-            dealer_simulation=DealerSimulationConfig(num_dealers=0)
-        )
+        config = ForexConfig(dealer_simulation=DealerSimulationConfig(num_dealers=0))
         validator = ForexConfigValidator()
         validator.validate(config)
         assert not validator.is_valid()
@@ -760,9 +750,7 @@ class TestFactoryFunctionsIntegration:
         - Evans & Lyons (2002): "Order Flow and Exchange Rate Dynamics"
     """
 
-    def test_create_forex_slippage_provider_returns_valid_instance(
-        self, sample_forex_config_dict
-    ):
+    def test_create_forex_slippage_provider_returns_valid_instance(self, sample_forex_config_dict):
         """Test that factory creates a valid slippage provider instance."""
         from services.forex_config import create_forex_slippage_provider
         from execution_providers import ForexParametricSlippageProvider
@@ -773,9 +761,7 @@ class TestFactoryFunctionsIntegration:
         assert provider is not None
         assert isinstance(provider, ForexParametricSlippageProvider)
 
-    def test_create_forex_slippage_provider_parameter_mapping(
-        self, sample_forex_config_dict
-    ):
+    def test_create_forex_slippage_provider_parameter_mapping(self, sample_forex_config_dict):
         """Test that SlippageConfig parameters are correctly mapped to ForexParametricConfig."""
         from services.forex_config import create_forex_slippage_provider
 
@@ -842,8 +828,9 @@ class TestFactoryFunctionsIntegration:
 
         # Overlaps should have highest liquidity (HIGHER multiplier value)
         # The formula uses 1/session_liquidity, so higher value = more liquidity = less slippage
-        assert sess["london_ny_overlap"] > sess["sydney"], \
-            f"london_ny_overlap ({sess['london_ny_overlap']}) should be > sydney ({sess['sydney']})"
+        assert (
+            sess["london_ny_overlap"] > sess["sydney"]
+        ), f"london_ny_overlap ({sess['london_ny_overlap']}) should be > sydney ({sess['sydney']})"
 
     def test_create_forex_slippage_provider_session_adjustment_disabled(self):
         """Test that session_adjustment=False creates uniform session_liquidity."""
@@ -891,9 +878,7 @@ class TestFactoryFunctionsIntegration:
         assert vol["normal"] < vol["high"]
         assert vol["high"] < vol["extreme"]
 
-    def test_create_forex_slippage_provider_compute_slippage(
-        self, sample_forex_config_dict
-    ):
+    def test_create_forex_slippage_provider_compute_slippage(self, sample_forex_config_dict):
         """Test that created provider can compute slippage correctly."""
         from services.forex_config import create_forex_slippage_provider
         from execution_providers import Order, MarketState, AssetClass
@@ -979,23 +964,20 @@ class TestFactoryFunctionsIntegration:
         )
 
         # Exotic should have significantly higher slippage
-        assert slippage_exotic > slippage_major, \
-            f"Exotic ({slippage_exotic:.2f}) should be > Major ({slippage_major:.2f})"
+        assert (
+            slippage_exotic > slippage_major
+        ), f"Exotic ({slippage_exotic:.2f}) should be > Major ({slippage_major:.2f})"
 
     def test_create_forex_slippage_provider_profile_selection(self):
         """Test that different profiles produce different spreads."""
         from services.forex_config import create_forex_slippage_provider
 
         # Retail profile
-        config_retail = ForexConfig.from_dict({
-            "forex": {"slippage": {"profile": "retail"}}
-        })
+        config_retail = ForexConfig.from_dict({"forex": {"slippage": {"profile": "retail"}}})
         provider_retail = create_forex_slippage_provider(config_retail)
 
         # Institutional profile
-        config_inst = ForexConfig.from_dict({
-            "forex": {"slippage": {"profile": "institutional"}}
-        })
+        config_inst = ForexConfig.from_dict({"forex": {"slippage": {"profile": "institutional"}}})
         provider_inst = create_forex_slippage_provider(config_inst)
 
         assert provider_retail.spread_profile == "retail"
@@ -1008,9 +990,7 @@ class TestFactoryFunctionsIntegration:
         # This test may need adjustment based on actual spread_profiles structure
         # The key assertion is that profiles are correctly passed through
 
-    def test_create_forex_dealer_simulator_returns_valid_instance(
-        self, sample_forex_config_dict
-    ):
+    def test_create_forex_dealer_simulator_returns_valid_instance(self, sample_forex_config_dict):
         """Test that factory creates a valid dealer simulator instance."""
         from services.forex_config import create_forex_dealer_simulator
 
@@ -1019,9 +999,7 @@ class TestFactoryFunctionsIntegration:
 
         assert simulator is not None
 
-    def test_create_forex_dealer_simulator_with_seed(
-        self, sample_forex_config_dict
-    ):
+    def test_create_forex_dealer_simulator_with_seed(self, sample_forex_config_dict):
         """Test that dealer simulator respects seed for reproducibility."""
         from services.forex_config import create_forex_dealer_simulator
 
@@ -1034,9 +1012,7 @@ class TestFactoryFunctionsIntegration:
         assert sim1 is not None
         assert sim2 is not None
 
-    def test_create_forex_fee_provider_returns_valid_instance(
-        self, sample_forex_config_dict
-    ):
+    def test_create_forex_fee_provider_returns_valid_instance(self, sample_forex_config_dict):
         """Test that factory creates a valid fee provider instance."""
         from services.forex_config import create_forex_fee_provider
         from execution_providers import ForexFeeProvider
@@ -1051,15 +1027,17 @@ class TestFactoryFunctionsIntegration:
         """Test fee provider with spread_only structure."""
         from services.forex_config import create_forex_fee_provider
 
-        config = ForexConfig.from_dict({
-            "forex": {
-                "fees": {
-                    "structure": "spread_only",
-                    "maker_bps": 0.0,
-                    "taker_bps": 0.0,
+        config = ForexConfig.from_dict(
+            {
+                "forex": {
+                    "fees": {
+                        "structure": "spread_only",
+                        "maker_bps": 0.0,
+                        "taker_bps": 0.0,
+                    }
                 }
             }
-        })
+        )
         provider = create_forex_fee_provider(config)
 
         # Spread-only should have zero commission (cost is embedded in spread)
@@ -1071,15 +1049,17 @@ class TestFactoryFunctionsIntegration:
         """Test fee provider with ECN structure."""
         from services.forex_config import create_forex_fee_provider
 
-        config = ForexConfig.from_dict({
-            "forex": {
-                "fees": {
-                    "structure": "ecn",
-                    "commission_per_lot": 3.5,
-                    "taker_bps": 1.0,
+        config = ForexConfig.from_dict(
+            {
+                "forex": {
+                    "fees": {
+                        "structure": "ecn",
+                        "commission_per_lot": 3.5,
+                        "taker_bps": 1.0,
+                    }
                 }
             }
-        })
+        )
         provider = create_forex_fee_provider(config)
 
         assert provider is not None
@@ -1163,5 +1143,6 @@ class TestFactoryFunctionsIntegration:
             participation_ratio=1e-12,
         )
 
-        assert slippage >= provider.config.min_slippage_pips, \
-            f"Slippage {slippage} below min {provider.config.min_slippage_pips}"
+        assert (
+            slippage >= provider.config.min_slippage_pips
+        ), f"Slippage {slippage} below min {provider.config.min_slippage_pips}"

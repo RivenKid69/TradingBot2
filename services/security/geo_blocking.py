@@ -145,8 +145,7 @@ class MockGeoIPProvider:
 
         # Return default country for unknown IPs
         return self._country_data.get(
-            self._default_country,
-            Country(code=self._default_country, name=self._default_country)
+            self._default_country, Country(code=self._default_country, name=self._default_country)
         )
 
 
@@ -157,7 +156,6 @@ BLOCKED_COUNTRIES: Dict[str, BlockReason] = {
     "IR": BlockReason.OFAC_SANCTIONS,  # Iran
     "KP": BlockReason.OFAC_SANCTIONS,  # North Korea
     "SY": BlockReason.OFAC_SANCTIONS,  # Syria
-
     # EU Comprehensive Sanctions (post-2022)
     "RU": BlockReason.EU_SANCTIONS,  # Russia
     "BY": BlockReason.EU_SANCTIONS,  # Belarus
@@ -258,10 +256,7 @@ class GeoBlockingService:
             # Allowed, but check if high-risk
             is_high_risk = country.code in self._high_risk
             if is_high_risk:
-                logger.info(
-                    f"GEO_HIGH_RISK | ip={ip_address} | "
-                    f"country={country.code}"
-                )
+                logger.info(f"GEO_HIGH_RISK | ip={ip_address} | " f"country={country.code}")
 
             return GeoCheckResult(
                 allowed=True,
@@ -276,9 +271,7 @@ class GeoBlockingService:
 
         except Exception as e:
             # Fail-open for unknown IPs, but log for review
-            logger.error(
-                f"GEO_LOOKUP_FAILED | ip={ip_address} | error={str(e)}"
-            )
+            logger.error(f"GEO_LOOKUP_FAILED | ip={ip_address} | error={str(e)}")
             return GeoCheckResult(
                 allowed=True,
                 country_code=None,
@@ -289,11 +282,7 @@ class GeoBlockingService:
                 },
             )
 
-    def check_registration(
-        self,
-        ip_address: str,
-        declared_country: str
-    ) -> GeoCheckResult:
+    def check_registration(self, ip_address: str, declared_country: str) -> GeoCheckResult:
         """
         Check both IP and declared country during registration.
 
@@ -349,7 +338,11 @@ class GeoBlockingService:
                 "ip_address": ip_address,
                 "ip_country": ip_check.country_code,
                 "declared_country": declared_country.upper(),
-                "mismatch": ip_check.country_code != declared_country.upper() if ip_check.country_code else False,
+                "mismatch": (
+                    ip_check.country_code != declared_country.upper()
+                    if ip_check.country_code
+                    else False
+                ),
                 "is_high_risk": declared_country.upper() in self._high_risk,
             },
         )
@@ -396,11 +389,7 @@ class GeoBlockingService:
         """
         return self._high_risk.copy()
 
-    def add_blocked_country(
-        self,
-        country_code: str,
-        reason: BlockReason
-    ) -> None:
+    def add_blocked_country(self, country_code: str, reason: BlockReason) -> None:
         """
         Add a country to the blocked list.
 
@@ -409,10 +398,7 @@ class GeoBlockingService:
             reason: Reason for blocking
         """
         self._blocked[country_code.upper()] = reason
-        logger.info(
-            f"GEO_BLOCK_ADDED | country={country_code.upper()} | "
-            f"reason={reason.value}"
-        )
+        logger.info(f"GEO_BLOCK_ADDED | country={country_code.upper()} | " f"reason={reason.value}")
 
     def remove_blocked_country(self, country_code: str) -> bool:
         """

@@ -116,16 +116,19 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 3.1 Organizational Context (GV.OC)
 
 **GV.OC-01: Organizational Mission Understood**
+
 - Security supports business objectives
 - Risk tolerance defined by leadership
 - Security integrated into business processes
 
 **GV.OC-02: Internal Stakeholders Understood**
+
 - Security team identified
 - Roles and responsibilities documented
 - Reporting structures defined
 
 **GV.OC-03: Legal Requirements Determined**
+
 - GDPR compliance
 - MiFID II client requirements
 - Contractual obligations
@@ -133,6 +136,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 3.2 Risk Management Strategy (GV.RM)
 
 **GV.RM-01: Risk Management Objectives**
+
 - Annual risk assessment
 - Risk appetite statement
 - Risk treatment plans
@@ -149,6 +153,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 3.3 Cybersecurity Supply Chain Risk (GV.SC)
 
 **GV.SC-01: Supply Chain Risk Managed**
+
 - Vendor security assessment process
 - Contractual security requirements
 - Ongoing vendor monitoring
@@ -211,11 +216,13 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 4.2 Risk Assessment (ID.RA)
 
 **ID.RA-01: Vulnerabilities Identified (Design Goals)**
+
 - Automated vulnerability scans (target: weekly cadence)
 - Penetration testing (target: annual cadence)
 - Security monitoring (target: continuous)
 
 **ID.RA-02: Threat Intelligence**
+
 - Subscribe to CVE feeds
 - Monitor fintech threat landscape
 - Industry information sharing
@@ -233,6 +240,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 4.3 Improvement (ID.IM)
 
 **ID.IM-01: Lessons Learned**
+
 - Post-incident reviews
 - Security metrics analysis
 - Control effectiveness testing
@@ -282,6 +290,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | GDPR awareness | All staff | Annual |
 
 **PR.AT-02: Privileged User Training**
+
 - Enhanced training for administrators
 - Hands-on incident response exercises
 - Regular tabletop exercises
@@ -307,6 +316,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | Admin access | TLS + VPN | 1.3 |
 
 **PR.DS-03: Data Lifecycle Management**
+
 - Data classification scheme
 - Retention policies
 - Secure deletion procedures
@@ -315,6 +325,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 5.4 Platform Security (PR.PS)
 
 **PR.PS-01: Configuration Management**
+
 - Infrastructure as Code (Terraform)
 - Configuration baselines
 - Change management process
@@ -332,6 +343,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | Operations | Vulnerability management |
 
 **PR.PS-03: Change Management**
+
 - Formal change request process
 - Testing requirements
 - Approval workflows
@@ -350,6 +362,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | Intrusion detection | AWS GuardDuty |
 
 **PR.IR-02: Recovery Capabilities**
+
 - RTO: 4 hours (target; pending DR test validation)
 - RPO: 1 hour (target; pending DR test validation)
 - Daily backups with 35-day retention (design goal)
@@ -383,6 +396,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | Data exfiltration | DLP alerts | <30 min |
 
 **DE.CM-03: Vulnerability Monitoring**
+
 - Weekly automated scans (Nessus/Qualys)
 - Daily dependency scanning (Snyk)
 - Real-time CVE monitoring
@@ -390,6 +404,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 6.2 Adverse Event Analysis (DE.AE)
 
 **DE.AE-01: Event Correlation**
+
 - AWS Security Hub aggregation
 - Cross-service correlation
 - Anomaly detection
@@ -463,6 +478,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 7.2 Incident Analysis (RS.AN)
 
 **RS.AN-01: Investigation Process**
+
 1. Preserve evidence
 2. Document timeline
 3. Identify root cause
@@ -470,6 +486,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 5. Determine scope
 
 **RS.AN-02: Forensic Capabilities**
+
 - Log retention (1 year production, 7 years audit) — design goal
 - Immutable audit trails (design goal; implementation pending)
 - External forensics capability (planned; retainer to be established as operational capacity scales)
@@ -488,6 +505,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | Low | Daily summary | N/A |
 
 **RS.CO-02: External Communications**
+
 - Regulatory notification (72 hours for GDPR)
 - Client notification (as contractually required)
 - Public disclosure (if required by law)
@@ -495,12 +513,14 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 7.4 Incident Mitigation (RS.MI)
 
 **RS.MI-01: Containment Procedures**
+
 - Account suspension
 - Network isolation
 - Service shutdown (if needed)
 - Evidence preservation
 
 **RS.MI-02: Eradication Procedures**
+
 - Malware removal
 - Credential rotation
 - System reimaging
@@ -522,6 +542,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | Monitoring | 1h | 1h | Re-deploy from IaC |
 
 **RC.RP-02: Backup Procedures**
+
 - Daily automated backups
 - 35-day retention
 - Cross-region replication
@@ -530,11 +551,13 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 8.2 Recovery Execution (RC.EX)
 
 **RC.EX-01: Communication During Recovery**
+
 - Status page updates
 - Client notifications
 - Internal status calls
 
 **RC.EX-02: Recovery Validation**
+
 - Functional testing
 - Security verification
 - Performance baseline comparison
@@ -542,6 +565,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ### 8.3 Recovery Improvements (RC.IM)
 
 **RC.IM-01: Post-Incident Improvements**
+
 - Blameless post-mortems
 - Control enhancements
 - Documentation updates

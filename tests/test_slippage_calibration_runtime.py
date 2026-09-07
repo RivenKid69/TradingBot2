@@ -218,9 +218,7 @@ def test_service_runner_bridges_market_regime_to_slippage(tmp_path):
             self._listeners: list[Callable[[Any], None]] = []
             self._last_market_regime: Any = "NORMAL"
 
-        def register_market_regime_listener(
-            self, callback: Callable[[Any], None]
-        ) -> None:
+        def register_market_regime_listener(self, callback: Callable[[Any], None]) -> None:
             self._listeners.append(callback)
             callback(self._last_market_regime)
 

@@ -337,7 +337,11 @@ class AnalyticalPoissonModel(FillProbabilityModel):
         # Get arrival rate from market state or use default
         arrival_rate = max(
             self._min_arrival_rate,
-            market_state.volume_rate if market_state.volume_rate > 0 else self._default_arrival_rate,
+            (
+                market_state.volume_rate
+                if market_state.volume_rate > 0
+                else self._default_arrival_rate
+            ),
         )
 
         # Handle front of queue case
@@ -397,7 +401,11 @@ class AnalyticalPoissonModel(FillProbabilityModel):
         """
         arrival_rate = max(
             self._min_arrival_rate,
-            market_state.volume_rate if market_state.volume_rate > 0 else self._default_arrival_rate,
+            (
+                market_state.volume_rate
+                if market_state.volume_rate > 0
+                else self._default_arrival_rate
+            ),
         )
 
         return (qty_ahead + 1) / arrival_rate
@@ -482,7 +490,9 @@ class QueueReactiveModel(FillProbabilityModel):
         queue_factor = 1.0 / (1.0 + self._queue_decay_alpha * qty_ahead)
 
         # Spread factor: g(s) = 1 + β * (s - s_ref) / s_ref
-        spread_bps = market_state.spread_bps if market_state.spread_bps > 0 else self._reference_spread_bps
+        spread_bps = (
+            market_state.spread_bps if market_state.spread_bps > 0 else self._reference_spread_bps
+        )
         spread_factor = 1.0 + self._spread_sensitivity_beta * (
             (spread_bps - self._reference_spread_bps) / self._reference_spread_bps
         )
@@ -658,8 +668,8 @@ class HistoricalRateModel(FillProbabilityModel):
         total_weight = self._global_fill_count + rate.fill_count
         if total_weight > 0:
             self._global_avg_rate = (
-                self._global_avg_rate * self._global_fill_count +
-                rate.avg_fill_rate * rate.fill_count
+                self._global_avg_rate * self._global_fill_count
+                + rate.avg_fill_rate * rate.fill_count
             ) / total_weight
             self._global_fill_count = total_weight
 
@@ -704,7 +714,11 @@ class HistoricalRateModel(FillProbabilityModel):
         """Compute fill probability using historical rates."""
         # Get rate using order info from market_state if available
         # Otherwise use imbalance-based heuristic for side
-        price = market_state.order_price if market_state.order_price is not None else market_state.mid_price
+        price = (
+            market_state.order_price
+            if market_state.order_price is not None
+            else market_state.mid_price
+        )
 
         if market_state.order_side is not None:
             side = market_state.order_side
@@ -758,7 +772,11 @@ class HistoricalRateModel(FillProbabilityModel):
     ) -> float:
         """Compute expected fill time."""
         # Use order info from market_state if available
-        price = market_state.order_price if market_state.order_price is not None else market_state.mid_price
+        price = (
+            market_state.order_price
+            if market_state.order_price is not None
+            else market_state.mid_price
+        )
 
         if market_state.order_side is not None:
             side = market_state.order_side

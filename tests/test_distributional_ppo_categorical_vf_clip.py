@@ -7,6 +7,7 @@ quantile implementation and adherence to PPO principles.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -194,7 +195,9 @@ class TestCategoricalVFClippingNumerical:
         # Clip mean to range [old_value - eps, old_value + eps]
         old_value = 0.0
         clip_eps = 2.0
-        mean_clipped = torch.clamp(original_mean, min=old_value - clip_eps, max=old_value + clip_eps)
+        mean_clipped = torch.clamp(
+            original_mean, min=old_value - clip_eps, max=old_value + clip_eps
+        )
 
         # Mean should be clipped to 2.0 (old_value + clip_eps)
         assert torch.allclose(mean_clipped, torch.tensor([2.0]), atol=1e-5)

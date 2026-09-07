@@ -86,6 +86,7 @@ ccea-agent broker diagnose
 ### 3.1 Connection Timeout
 
 **Symptoms:**
+
 - Orders timing out
 - Heartbeat failures
 - Telemetry shows broker disconnected
@@ -111,6 +112,7 @@ ccea-agent start
 ```
 
 **Automatic Handling:**
+
 - Agent retries with exponential backoff (1s, 2s, 4s, 8s, max 30s)
 - After 10 consecutive failures: auto-pause
 - After 30s disconnect: kill switch consideration
@@ -118,6 +120,7 @@ ccea-agent start
 ### 3.2 Authentication Failure
 
 **Symptoms:**
+
 - 401/403 responses from broker
 - "Invalid API key" or "Signature mismatch" errors
 
@@ -147,6 +150,7 @@ ccea-agent start
 ```
 
 **IMPORTANT:**
+
 - Never share API keys
 - Cloud does not have access to broker credentials
 - Rotation is a local-only operation
@@ -154,6 +158,7 @@ ccea-agent start
 ### 3.3 Rate Limiting
 
 **Symptoms:**
+
 - 429 (Too Many Requests) responses
 - Increasing latency
 - Orders queued
@@ -176,6 +181,7 @@ ccea-agent start
 ```
 
 **Automatic Handling:**
+
 - Agent tracks rate limits
 - Auto-queues orders when near limit
 - Backpressure applied to strategy
@@ -183,6 +189,7 @@ ccea-agent start
 ### 3.4 Order Rejection
 
 **Symptoms:**
+
 - Order returns rejected status
 - Specific error codes (e.g., insufficient balance, invalid symbol)
 
@@ -217,6 +224,7 @@ ccea-agent pause --reason "Order rejections"
 ### 3.5 Partial Fills
 
 **Symptoms:**
+
 - Order only partially executed
 - Remaining quantity open
 
@@ -244,6 +252,7 @@ ccea-agent config get strategy.partial_fill_handling
 ### 3.6 Market Closed
 
 **Symptoms:**
+
 - Orders rejected with "market closed"
 - Strategy attempting to trade outside hours
 
@@ -267,7 +276,7 @@ ccea-agent config get agent.respect_market_hours
 
 ## 4. Kill Switch Consideration
 
-### Trigger Kill Switch If:
+### Trigger Kill Switch If
 
 - [ ] Unable to verify position state
 - [ ] Broker returning inconsistent data

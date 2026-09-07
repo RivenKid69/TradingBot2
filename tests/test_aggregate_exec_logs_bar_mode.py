@@ -177,10 +177,7 @@ def test_aggregate_uses_single_cap_denominator(tmp_path: Path) -> None:
     ]
 
     trades_df = pd.DataFrame(
-        [
-            _make_row(120_000 + i * 10, meta)
-            for i, meta in enumerate(meta_rows)
-        ]
+        [_make_row(120_000 + i * 10, meta) for i, meta in enumerate(meta_rows)]
     )
     trades_path = tmp_path / "log_trades.csv"
     trades_df.to_csv(trades_path, index=False)

@@ -39,6 +39,7 @@ sys.path.insert(0, str(project_root))
 
 try:
     from obs_builder import build_observation_vector
+
     HAVE_OBS_BUILDER = True
 except ImportError:
     HAVE_OBS_BUILDER = False
@@ -48,6 +49,7 @@ except ImportError:
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
+
 
 def create_valid_inputs(**overrides):
     """
@@ -182,11 +184,12 @@ def get_bb_features(obs):
 # TEST CASES
 # =============================================================================
 
+
 def test_both_bands_nan():
     """Test 1: Both bb_lower and bb_upper are NaN (early bars, typical scenario)."""
     obs = build_obs_with_inputs(
-        bb_lower=float('nan'),
-        bb_upper=float('nan'),
+        bb_lower=float("nan"),
+        bb_upper=float("nan"),
     )
 
     assert_no_nan_or_inf(obs, "Test 1: Both bands NaN")
@@ -204,7 +207,7 @@ def test_both_bands_nan():
 def test_only_lower_nan():
     """Test 2: Only bb_lower is NaN, bb_upper is valid (asymmetric case)."""
     obs = build_obs_with_inputs(
-        bb_lower=float('nan'),
+        bb_lower=float("nan"),
         bb_upper=50500.0,
     )
 
@@ -233,7 +236,7 @@ def test_only_upper_nan():
     """
     obs = build_obs_with_inputs(
         bb_lower=49500.0,
-        bb_upper=float('nan'),
+        bb_upper=float("nan"),
     )
 
     assert_no_nan_or_inf(obs, "Test 3: Only bb_upper NaN (CRITICAL)")
@@ -251,8 +254,8 @@ def test_only_upper_nan():
 def test_both_bands_inf():
     """Test 4: Both bb_lower and bb_upper are Inf (calculation overflow)."""
     obs = build_obs_with_inputs(
-        bb_lower=float('inf'),
-        bb_upper=float('inf'),
+        bb_lower=float("inf"),
+        bb_upper=float("inf"),
     )
 
     assert_no_nan_or_inf(obs, "Test 4: Both bands Inf")
@@ -270,7 +273,7 @@ def test_both_bands_inf():
 def test_only_lower_inf():
     """Test 5: Only bb_lower is Inf, bb_upper is valid."""
     obs = build_obs_with_inputs(
-        bb_lower=float('inf'),
+        bb_lower=float("inf"),
         bb_upper=50500.0,
     )
 
@@ -289,7 +292,7 @@ def test_only_upper_inf():
     """Test 6: Only bb_upper is Inf, bb_lower is valid."""
     obs = build_obs_with_inputs(
         bb_lower=49500.0,
-        bb_upper=float('inf'),
+        bb_upper=float("inf"),
     )
 
     assert_no_nan_or_inf(obs, "Test 6: Only bb_upper Inf")
@@ -420,8 +423,8 @@ def test_extreme_but_valid():
 def test_negative_inf_bands():
     """Test 11: Negative infinity bands (edge case)."""
     obs = build_obs_with_inputs(
-        bb_lower=float('-inf'),
-        bb_upper=float('-inf'),
+        bb_lower=float("-inf"),
+        bb_upper=float("-inf"),
     )
 
     assert_no_nan_or_inf(obs, "Test 11: Negative Inf bands")
@@ -438,8 +441,8 @@ def test_negative_inf_bands():
 def test_mixed_inf_nan():
     """Test 12: Mix of Inf and NaN (chaos scenario)."""
     obs = build_obs_with_inputs(
-        bb_lower=float('nan'),
-        bb_upper=float('inf'),
+        bb_lower=float("nan"),
+        bb_upper=float("inf"),
     )
 
     assert_no_nan_or_inf(obs, "Test 12: Mixed NaN and Inf")
@@ -502,5 +505,6 @@ if __name__ == "__main__":
         print(f"❌ ERROR: {e}")
         print("=" * 80)
         import traceback
+
         traceback.print_exc()
         raise

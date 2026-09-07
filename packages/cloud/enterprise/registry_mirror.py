@@ -42,6 +42,7 @@ CHUNK_SIZE: Final[int] = 8192  # 8KB chunks
 
 class MirrorStatus(Enum):
     """Registry mirror status."""
+
     IDLE = auto()
     SYNCING = auto()
     SYNCED = auto()
@@ -51,6 +52,7 @@ class MirrorStatus(Enum):
 
 class SyncMode(Enum):
     """Synchronization mode."""
+
     FULL = "full"  # Sync all artifacts
     INCREMENTAL = "incremental"  # Sync only new/updated
     SELECTIVE = "selective"  # Sync specific artifacts only
@@ -59,6 +61,7 @@ class SyncMode(Enum):
 @dataclass
 class MirrorSyncResult:
     """Result of a mirror sync operation."""
+
     success: bool = False
     synced_count: int = 0
     skipped_count: int = 0
@@ -89,6 +92,7 @@ class MirrorSyncResult:
 @dataclass
 class ArtifactInfo:
     """Information about a mirrored artifact."""
+
     digest: str
     name: str
     tag: str
@@ -117,6 +121,7 @@ class ArtifactInfo:
 @dataclass
 class RegistryMirrorConfig:
     """Configuration for registry mirror."""
+
     # Storage
     storage_path: Path = field(default_factory=lambda: Path.home() / ".ccea" / "mirror")
     max_storage_bytes: int = 50 * 1024 * 1024 * 1024  # 50GB default
@@ -511,9 +516,7 @@ class RegistryMirror:
         # Import signature if provided
         sig_verified = False
         if signature_path and signature_path.exists():
-            sig_verified = await self._import_and_verify_signature(
-                digest, signature_path
-            )
+            sig_verified = await self._import_and_verify_signature(digest, signature_path)
 
         # Create artifact info
         artifact = ArtifactInfo(
@@ -623,9 +626,7 @@ class RegistryMirror:
                     size_bytes=item["size_bytes"],
                     created_at=datetime.fromisoformat(item["created_at"]),
                     synced_at=(
-                        datetime.fromisoformat(item["synced_at"])
-                        if item.get("synced_at")
-                        else None
+                        datetime.fromisoformat(item["synced_at"]) if item.get("synced_at") else None
                     ),
                     signature_verified=item.get("signature_verified", False),
                     sbom_available=item.get("sbom_available", False),
@@ -676,13 +677,15 @@ class RegistryMirror:
 
         if self.config.include_patterns:
             result = [
-                a for a in result
+                a
+                for a in result
                 if any(fnmatch.fnmatch(a, p) for p in self.config.include_patterns)
             ]
 
         if self.config.exclude_patterns:
             result = [
-                a for a in result
+                a
+                for a in result
                 if not any(fnmatch.fnmatch(a, p) for p in self.config.exclude_patterns)
             ]
 

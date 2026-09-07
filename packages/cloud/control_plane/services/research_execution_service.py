@@ -47,8 +47,10 @@ logger = logging.getLogger(__name__)
 # Enums
 # ============================================================================
 
+
 class ExecutionMode(str, Enum):
     """Execution isolation mode."""
+
     PROCESS = "process"  # Process isolation (development)
     CONTAINER = "container"  # Docker container (default)
     GVISOR = "gvisor"  # gVisor sandbox (high security)
@@ -57,6 +59,7 @@ class ExecutionMode(str, Enum):
 
 class JobPriority(str, Enum):
     """Job execution priority."""
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
@@ -66,9 +69,11 @@ class JobPriority(str, Enum):
 # Service Configuration
 # ============================================================================
 
+
 @dataclass
 class ExecutionServiceConfig:
     """Configuration for research execution service."""
+
     # Execution
     default_mode: ExecutionMode = ExecutionMode.CONTAINER
     max_concurrent_jobs: int = 10
@@ -107,9 +112,11 @@ class ExecutionServiceConfig:
 # Audit Events
 # ============================================================================
 
+
 @dataclass
 class AuditEvent:
     """Audit event for research job operations."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     event_type: str = ""
@@ -146,9 +153,11 @@ class AuditEvent:
 # Job Request/Result
 # ============================================================================
 
+
 @dataclass
 class JobSubmitRequest:
     """Request to submit a research job."""
+
     tenant_id: str
     user_id: str
     workspace_id: str
@@ -186,6 +195,7 @@ class JobSubmitRequest:
 @dataclass
 class JobExecutionResult:
     """Result of job execution."""
+
     job_id: str
     tenant_id: str
     success: bool
@@ -235,6 +245,7 @@ class JobExecutionResult:
 # ============================================================================
 # Research Execution Service
 # ============================================================================
+
 
 class ResearchExecutionService:
     """
@@ -343,36 +354,40 @@ class ResearchExecutionService:
         now = datetime.now(timezone.utc)
 
         # Audit: Job submission
-        self._emit_audit(AuditEvent(
-            event_type="job.submit",
-            tenant_id=request.tenant_id,
-            job_id=job_id,
-            user_id=request.user_id,
-            action="submit",
-            resource_id=job_id,
-            details={
-                "name": request.name,
-                "cpu": request.cpu,
-                "memory_mb": request.memory_mb,
-                "timeout_seconds": request.timeout_seconds,
-                "network_enabled": request.network_enabled,
-                "execution_mode": (request.execution_mode or self.config.default_mode).value,
-            },
-        ))
+        self._emit_audit(
+            AuditEvent(
+                event_type="job.submit",
+                tenant_id=request.tenant_id,
+                job_id=job_id,
+                user_id=request.user_id,
+                action="submit",
+                resource_id=job_id,
+                details={
+                    "name": request.name,
+                    "cpu": request.cpu,
+                    "memory_mb": request.memory_mb,
+                    "timeout_seconds": request.timeout_seconds,
+                    "network_enabled": request.network_enabled,
+                    "execution_mode": (request.execution_mode or self.config.default_mode).value,
+                },
+            )
+        )
 
         # Validate request
         validation_error = self._validate_request(request)
         if validation_error:
-            self._emit_audit(AuditEvent(
-                event_type="job.validation_failed",
-                tenant_id=request.tenant_id,
-                job_id=job_id,
-                user_id=request.user_id,
-                action="validate",
-                resource_id=job_id,
-                success=False,
-                error_message=validation_error,
-            ))
+            self._emit_audit(
+                AuditEvent(
+                    event_type="job.validation_failed",
+                    tenant_id=request.tenant_id,
+                    job_id=job_id,
+                    user_id=request.user_id,
+                    action="validate",
+                    resource_id=job_id,
+                    success=False,
+                    error_message=validation_error,
+                )
+            )
             return JobExecutionResult(
                 job_id=job_id,
                 tenant_id=request.tenant_id,
@@ -420,7 +435,7 @@ class ResearchExecutionService:
                 disk_mb=min(request.disk_mb, self.config.max_disk_mb),
                 isolation_level=isolation_level,
                 network_enabled=request.network_enabled,
-                egress_allowlist=request.egress_allowlist[:self.config.egress_allowlist_limit],
+                egress_allowlist=request.egress_allowlist[: self.config.egress_allowlist_limit],
                 docker_image=request.docker_image or self.config.docker_image,
                 entrypoint=request.entrypoint,
                 env_vars=request.env_vars,
@@ -455,7 +470,9 @@ class ResearchExecutionService:
                 exit_code=result.exit_code,
                 stdout=result.stdout,
                 stderr=result.stderr,
-                termination_reason=result.termination_reason.name if result.termination_reason else None,
+                termination_reason=(
+                    result.termination_reason.name if result.termination_reason else None
+                ),
                 error_message="; ".join(result.errors) if result.errors else None,
                 started_at=now,
                 completed_at=datetime.now(timezone.utc),
@@ -469,22 +486,24 @@ class ResearchExecutionService:
             )
 
             # Audit: Job completed
-            self._emit_audit(AuditEvent(
-                event_type="job.completed",
-                tenant_id=request.tenant_id,
-                job_id=job_id,
-                user_id=request.user_id,
-                action="complete",
-                resource_id=job_id,
-                success=result.success,
-                details={
-                    "exit_code": result.exit_code,
-                    "duration_seconds": result.duration_seconds,
-                    "termination_reason": execution_result.termination_reason,
-                    "alerts_count": len(result.alerts),
-                    "egress_violations_count": len(result.egress_violations),
-                },
-            ))
+            self._emit_audit(
+                AuditEvent(
+                    event_type="job.completed",
+                    tenant_id=request.tenant_id,
+                    job_id=job_id,
+                    user_id=request.user_id,
+                    action="complete",
+                    resource_id=job_id,
+                    success=result.success,
+                    details={
+                        "exit_code": result.exit_code,
+                        "duration_seconds": result.duration_seconds,
+                        "termination_reason": execution_result.termination_reason,
+                        "alerts_count": len(result.alerts),
+                        "egress_violations_count": len(result.egress_violations),
+                    },
+                )
+            )
 
             # Cleanup tracking
             self._active_jobs.pop(job_id, None)
@@ -495,16 +514,18 @@ class ResearchExecutionService:
             logger.exception(f"Job execution failed: {e}")
 
             # Audit: Job failed
-            self._emit_audit(AuditEvent(
-                event_type="job.error",
-                tenant_id=request.tenant_id,
-                job_id=job_id,
-                user_id=request.user_id,
-                action="execute",
-                resource_id=job_id,
-                success=False,
-                error_message=str(e),
-            ))
+            self._emit_audit(
+                AuditEvent(
+                    event_type="job.error",
+                    tenant_id=request.tenant_id,
+                    job_id=job_id,
+                    user_id=request.user_id,
+                    action="execute",
+                    resource_id=job_id,
+                    success=False,
+                    error_message=str(e),
+                )
+            )
 
             return JobExecutionResult(
                 job_id=job_id,
@@ -534,15 +555,17 @@ class ResearchExecutionService:
             True if cancelled successfully
         """
         # Audit: Cancel attempt
-        self._emit_audit(AuditEvent(
-            event_type="job.cancel",
-            tenant_id=tenant_id,
-            job_id=job_id,
-            user_id=user_id,
-            action="cancel",
-            resource_id=job_id,
-            details={"reason": reason},
-        ))
+        self._emit_audit(
+            AuditEvent(
+                event_type="job.cancel",
+                tenant_id=tenant_id,
+                job_id=job_id,
+                user_id=user_id,
+                action="cancel",
+                resource_id=job_id,
+                details={"reason": reason},
+            )
+        )
 
         # Check if job exists and belongs to tenant
         job_info = self._active_jobs.get(job_id)
@@ -659,7 +682,7 @@ class ResearchExecutionService:
                     job_id=result.job_id,
                     tenant_id=result.tenant_id,
                     success=result.success,
-                    state=result.state.name if hasattr(result.state, 'name') else str(result.state),
+                    state=result.state.name if hasattr(result.state, "name") else str(result.state),
                     exit_code=result.exit_code,
                     duration_seconds=result.duration_seconds,
                 )
@@ -674,20 +697,26 @@ class ResearchExecutionService:
             f"for job {violation.job_id}"
         )
 
-        self._emit_audit(AuditEvent(
-            event_type="security.egress_violation",
-            tenant_id=violation.tenant_id,
-            job_id=violation.job_id,
-            action="egress_violation",
-            resource_id=violation.job_id,
-            details={
-                "destination": violation.destination,
-                "port": violation.port,
-                "protocol": violation.protocol.value if hasattr(violation.protocol, 'value') else str(violation.protocol),
-                "reason": violation.reason,
-                "risk_score": violation.risk_score,
-            },
-        ))
+        self._emit_audit(
+            AuditEvent(
+                event_type="security.egress_violation",
+                tenant_id=violation.tenant_id,
+                job_id=violation.job_id,
+                action="egress_violation",
+                resource_id=violation.job_id,
+                details={
+                    "destination": violation.destination,
+                    "port": violation.port,
+                    "protocol": (
+                        violation.protocol.value
+                        if hasattr(violation.protocol, "value")
+                        else str(violation.protocol)
+                    ),
+                    "reason": violation.reason,
+                    "risk_score": violation.risk_score,
+                },
+            )
+        )
 
     def _on_abuse_alert(self, alert) -> None:
         """Handle abuse alert."""
@@ -695,20 +724,26 @@ class ResearchExecutionService:
             f"Abuse alert: {alert.abuse_type.name} for job {alert.job_id}: {alert.title}"
         )
 
-        self._emit_audit(AuditEvent(
-            event_type="security.abuse_alert",
-            tenant_id=alert.tenant_id,
-            job_id=alert.job_id,
-            action="abuse_detected",
-            resource_id=alert.job_id,
-            details={
-                "abuse_type": alert.abuse_type.name,
-                "severity": alert.severity.value if hasattr(alert.severity, 'value') else str(alert.severity),
-                "confidence": alert.confidence,
-                "title": alert.title,
-                "recommendation": alert.recommendation,
-            },
-        ))
+        self._emit_audit(
+            AuditEvent(
+                event_type="security.abuse_alert",
+                tenant_id=alert.tenant_id,
+                job_id=alert.job_id,
+                action="abuse_detected",
+                resource_id=alert.job_id,
+                details={
+                    "abuse_type": alert.abuse_type.name,
+                    "severity": (
+                        alert.severity.value
+                        if hasattr(alert.severity, "value")
+                        else str(alert.severity)
+                    ),
+                    "confidence": alert.confidence,
+                    "title": alert.title,
+                    "recommendation": alert.recommendation,
+                },
+            )
+        )
 
     def _on_abuse_terminate(self, job_id: str, reason: str) -> bool:
         """Handle abuse termination request."""
@@ -719,14 +754,16 @@ class ResearchExecutionService:
         if job_info and hasattr(job_info.get("request"), "tenant_id"):
             tenant_id = job_info["request"].tenant_id
 
-        self._emit_audit(AuditEvent(
-            event_type="security.abuse_terminate",
-            tenant_id=tenant_id,
-            job_id=job_id,
-            action="terminate",
-            resource_id=job_id,
-            details={"reason": reason},
-        ))
+        self._emit_audit(
+            AuditEvent(
+                event_type="security.abuse_terminate",
+                tenant_id=tenant_id,
+                job_id=job_id,
+                action="terminate",
+                resource_id=job_id,
+                details={"reason": reason},
+            )
+        )
 
         return True
 
@@ -777,6 +814,7 @@ class ResearchExecutionService:
 # ============================================================================
 # Factory
 # ============================================================================
+
 
 def create_execution_service(
     session: Optional[AsyncSession] = None,

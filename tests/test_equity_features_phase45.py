@@ -8,7 +8,7 @@ Comprehensive tests for Phase 4.5 equity features:
 4. Backward compatibility with crypto
 
 References:
-- CLAUDE.md: Phase 4.5 Unification
+- docs/PLATFORM_REFERENCE.md: Phase 4.5 Unification
 - services/trading_halts.py: LULD and MWCB implementation
 - trading_patchnew.py: Dividend adjustment in reward calculation
 """
@@ -24,6 +24,7 @@ from typing import Any, Dict, Optional
 # Test fixtures
 # =============================================================================
 
+
 def create_test_df(
     n_rows: int = 100,
     with_dividend: bool = False,
@@ -36,14 +37,16 @@ def create_test_df(
     # Generate price data
     prices = 100.0 * np.cumprod(1 + np.random.randn(n_rows) * 0.01)
 
-    df = pd.DataFrame({
-        "open": prices * (1 + np.random.randn(n_rows) * 0.001),
-        "high": prices * (1 + np.abs(np.random.randn(n_rows)) * 0.002),
-        "low": prices * (1 - np.abs(np.random.randn(n_rows)) * 0.002),
-        "close": prices,
-        "volume": np.random.randint(1000, 10000, n_rows).astype(float),
-        "ts_ms": np.arange(n_rows) * 14400000 + 1700000000000,  # 4H bars
-    })
+    df = pd.DataFrame(
+        {
+            "open": prices * (1 + np.random.randn(n_rows) * 0.001),
+            "high": prices * (1 + np.abs(np.random.randn(n_rows)) * 0.002),
+            "low": prices * (1 - np.abs(np.random.randn(n_rows)) * 0.002),
+            "close": prices,
+            "volume": np.random.randint(1000, 10000, n_rows).astype(float),
+            "ts_ms": np.arange(n_rows) * 14400000 + 1700000000000,  # 4H bars
+        }
+    )
 
     if with_dividend:
         df["dividend"] = 0.0
@@ -81,15 +84,17 @@ def create_test_df_with_ex_dividend(
     # Add small noise
     prices = prices + np.random.randn(n_rows) * 0.1
 
-    df = pd.DataFrame({
-        "open": prices,
-        "high": prices + 0.5,
-        "low": prices - 0.5,
-        "close": prices,
-        "volume": np.random.randint(1000, 10000, n_rows).astype(float),
-        "ts_ms": np.arange(n_rows) * 14400000 + 1700000000000,
-        "dividend": 0.0,
-    })
+    df = pd.DataFrame(
+        {
+            "open": prices,
+            "high": prices + 0.5,
+            "low": prices - 0.5,
+            "close": prices,
+            "volume": np.random.randint(1000, 10000, n_rows).astype(float),
+            "ts_ms": np.arange(n_rows) * 14400000 + 1700000000000,
+            "dividend": 0.0,
+        }
+    )
 
     # Set dividend on ex-date
     df.loc[ex_date_row, "dividend"] = dividend_amount
@@ -100,6 +105,7 @@ def create_test_df_with_ex_dividend(
 # =============================================================================
 # Test: TradingEnv asset_class parameter
 # =============================================================================
+
 
 class TestTradingEnvAssetClass:
     """Tests for TradingEnv asset_class parameter."""
@@ -174,6 +180,7 @@ class TestTradingEnvAssetClass:
 # =============================================================================
 # Test: Dividend-adjusted reward
 # =============================================================================
+
 
 class TestDividendAdjustedReward:
     """Tests for dividend-adjusted reward calculation."""
@@ -319,6 +326,7 @@ class TestDividendAdjustedReward:
 # =============================================================================
 # Test: Trading Halts Simulation
 # =============================================================================
+
 
 class TestTradingHaltsSimulator:
     """Tests for TradingHaltsSimulator."""
@@ -609,6 +617,7 @@ class TestTradingHaltsSimulator:
 # Test: TradingEnv trading_halts_enabled
 # =============================================================================
 
+
 class TestTradingEnvTradingHalts:
     """Tests for TradingEnv trading halts integration."""
 
@@ -648,6 +657,7 @@ class TestTradingEnvTradingHalts:
 # =============================================================================
 # Test: Backward Compatibility with Crypto
 # =============================================================================
+
 
 class TestCryptoBackwardCompatibility:
     """Tests to ensure crypto functionality is not affected."""
@@ -723,6 +733,7 @@ class TestCryptoBackwardCompatibility:
 # =============================================================================
 # Test: Factory Functions
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""

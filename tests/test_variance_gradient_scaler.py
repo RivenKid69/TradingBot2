@@ -13,6 +13,7 @@ Tests cover:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 
@@ -22,6 +23,7 @@ try:
 except ImportError:
     import sys
     import os
+
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from variance_gradient_scaler import VarianceGradientScaler
 

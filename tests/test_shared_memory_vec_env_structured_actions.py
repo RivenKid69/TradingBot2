@@ -2,6 +2,7 @@ import numpy as np
 import pathlib
 import sys
 import pytest
+
 pytest.importorskip("torch")
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parent.parent))

@@ -5,6 +5,7 @@
 ## Overview
 
 This runbook covers diagnosing and resolving latency issues across the CCEA architecture:
+
 - **Agent zone**: Order execution, broker communication
 - **Cloud zone**: Telemetry ingestion, control plane response
 
@@ -88,6 +89,7 @@ ccea-agent broker latency-report
 ### 3.1 High Broker API Latency
 
 **Symptoms:**
+
 - Order submission taking >500ms
 - Heartbeat delays
 - Timeout errors
@@ -117,6 +119,7 @@ ccea-agent alerts enable broker.latency --warning 500ms --critical 2000ms
 ### 3.2 Order Execution Delays
 
 **Symptoms:**
+
 - Orders taking long to fill
 - Strategy decisions delayed
 - Position updates slow
@@ -146,6 +149,7 @@ ccea-agent config set execution.async_fills true
 ### 3.3 Telemetry Upload Delays
 
 **Symptoms:**
+
 - Dashboard data stale
 - Alerts delayed
 - Cloud monitoring gaps
@@ -176,6 +180,7 @@ ccea-agent config set telemetry.local_buffer_size 10000
 ### 3.4 Data Feed Latency
 
 **Symptoms:**
+
 - Price data stale
 - Strategy using outdated quotes
 - Spread/slippage increased
@@ -202,6 +207,7 @@ ccea-agent pause --reason "Data feed latency"
 ### 3.5 Strategy Processing Delays
 
 **Symptoms:**
+
 - Signal generation slow
 - CPU usage high
 - Memory pressure

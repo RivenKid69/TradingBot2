@@ -32,9 +32,15 @@ SYM_COL = "symbol"
 class TSBackend(Protocol):
     def available(self) -> bool: ...
     def write(self, table: str, df: pd.DataFrame) -> None: ...
-    def read(self, table: str, *, symbols: Optional[Sequence[str]] = None,
-             start_ms: Optional[int] = None, end_ms: Optional[int] = None,
-             columns: Optional[Sequence[str]] = None) -> pd.DataFrame: ...
+    def read(
+        self,
+        table: str,
+        *,
+        symbols: Optional[Sequence[str]] = None,
+        start_ms: Optional[int] = None,
+        end_ms: Optional[int] = None,
+        columns: Optional[Sequence[str]] = None,
+    ) -> pd.DataFrame: ...
     def tables(self) -> List[str]: ...
 
 
@@ -74,9 +80,15 @@ class ParquetTSBackend:
             else:
                 g2.to_parquet(path, index=False)
 
-    def read(self, table: str, *, symbols: Optional[Sequence[str]] = None,
-             start_ms: Optional[int] = None, end_ms: Optional[int] = None,
-             columns: Optional[Sequence[str]] = None) -> pd.DataFrame:
+    def read(
+        self,
+        table: str,
+        *,
+        symbols: Optional[Sequence[str]] = None,
+        start_ms: Optional[int] = None,
+        end_ms: Optional[int] = None,
+        columns: Optional[Sequence[str]] = None,
+    ) -> pd.DataFrame:
         tdir = self._tdir(table)
         if not os.path.isdir(tdir):
             return pd.DataFrame(columns=[TS_COL, SYM_COL])
@@ -87,7 +99,7 @@ class ParquetTSBackend:
             files = []
             for fn in os.listdir(tdir):
                 if fn.startswith("symbol=") and fn.endswith(".parquet"):
-                    files.append((fn[len("symbol="):-len(".parquet")], os.path.join(tdir, fn)))
+                    files.append((fn[len("symbol=") : -len(".parquet")], os.path.join(tdir, fn)))
         frames = []
         for sym, path in files:
             cols = None
@@ -118,8 +130,14 @@ class ParquetTSBackend:
 class ClickHouseTSBackend:
     """ClickHouse-адаптер. Драйвер ``clickhouse_driver`` (lazy). MergeTree ORDER BY (symbol, ts_ms)."""
 
-    def __init__(self, *, host: str = "localhost", port: int = 9000, database: str = "default",
-                 client: Any = None) -> None:
+    def __init__(
+        self,
+        *,
+        host: str = "localhost",
+        port: int = 9000,
+        database: str = "default",
+        client: Any = None,
+    ) -> None:
         self._client = client
         self._cfg = {"host": host, "port": port, "database": database}
 
@@ -128,6 +146,7 @@ class ClickHouseTSBackend:
             return self._client
         try:
             from clickhouse_driver import Client  # type: ignore
+
             self._client = Client(**self._cfg)
         except Exception:
             self._client = None
@@ -143,13 +162,17 @@ class ClickHouseTSBackend:
         cols = list(df.columns)
         ddl_cols = ", ".join(
             f"{col} " + ("Int64" if col == TS_COL else "String" if col == SYM_COL else "Float64")
-            for col in cols)
-        c.execute(f"CREATE TABLE IF NOT EXISTS {table} ({ddl_cols}) "
-                  f"ENGINE = MergeTree ORDER BY ({SYM_COL}, {TS_COL})")
-        c.execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES",
-                  df.to_dict("records"))
+            for col in cols
+        )
+        c.execute(
+            f"CREATE TABLE IF NOT EXISTS {table} ({ddl_cols}) "
+            f"ENGINE = MergeTree ORDER BY ({SYM_COL}, {TS_COL})"
+        )
+        c.execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES", df.to_dict("records"))
 
-    def read(self, table: str, *, symbols=None, start_ms=None, end_ms=None, columns=None) -> pd.DataFrame:
+    def read(
+        self, table: str, *, symbols=None, start_ms=None, end_ms=None, columns=None
+    ) -> pd.DataFrame:
         c = self._ensure()
         if c is None:
             raise RuntimeError("clickhouse driver unavailable")
@@ -162,8 +185,11 @@ class ClickHouseTSBackend:
             where.append(f"{TS_COL} >= {int(start_ms)}")
         if end_ms is not None:
             where.append(f"{TS_COL} <= {int(end_ms)}")
-        q = f"SELECT {sel} FROM {table}" + (" WHERE " + " AND ".join(where) if where else "") \
+        q = (
+            f"SELECT {sel} FROM {table}"
+            + (" WHERE " + " AND ".join(where) if where else "")
             + f" ORDER BY {SYM_COL}, {TS_COL}"
+        )
         rows, meta = c.execute(q, with_column_types=True)
         return pd.DataFrame(rows, columns=[m[0] for m in meta])
 
@@ -186,6 +212,7 @@ class TimescaleTSBackend:
             return self._conn
         try:
             import psycopg2  # type: ignore
+
             self._conn = psycopg2.connect(self._dsn)
         except Exception:
             self._conn = None
@@ -201,40 +228,55 @@ class TimescaleTSBackend:
         cols = list(df.columns)
         ddl = ", ".join(
             f"{c} " + ("BIGINT" if c == TS_COL else "TEXT" if c == SYM_COL else "DOUBLE PRECISION")
-            for c in cols)
+            for c in cols
+        )
         cur = conn.cursor()
         cur.execute(f"CREATE TABLE IF NOT EXISTS {table} ({ddl})")
         try:
+            # hypertable and column names are identifiers supplied by the caller, and
+            # SQL cannot bind an identifier as a parameter.
+            # nosemgrep: sql-injection-format-string
             cur.execute(f"SELECT create_hypertable('{table}', '{TS_COL}', if_not_exists => TRUE)")
         except Exception:
             pass
-        args = ",".join(cur.mogrify("(" + ",".join(["%s"] * len(cols)) + ")", tuple(r)).decode()
-                        for r in df.itertuples(index=False))
+        args = ",".join(
+            cur.mogrify("(" + ",".join(["%s"] * len(cols)) + ")", tuple(r)).decode()
+            for r in df.itertuples(index=False)
+        )
         cur.execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES " + args)
         conn.commit()
 
-    def read(self, table: str, *, symbols=None, start_ms=None, end_ms=None, columns=None) -> pd.DataFrame:  # pragma: no cover
+    def read(
+        self, table: str, *, symbols=None, start_ms=None, end_ms=None, columns=None
+    ) -> pd.DataFrame:  # pragma: no cover
         conn = self._ensure()
         if conn is None:
             raise RuntimeError("psycopg2 unavailable")
         sel = "*" if not columns else ", ".join([TS_COL, SYM_COL] + list(columns))
         where, params = [], []
         if symbols is not None:
-            where.append(f"{SYM_COL} = ANY(%s)"); params.append(list(symbols))
+            where.append(f"{SYM_COL} = ANY(%s)")
+            params.append(list(symbols))
         if start_ms is not None:
-            where.append(f"{TS_COL} >= %s"); params.append(int(start_ms))
+            where.append(f"{TS_COL} >= %s")
+            params.append(int(start_ms))
         if end_ms is not None:
-            where.append(f"{TS_COL} <= %s"); params.append(int(end_ms))
-        q = f"SELECT {sel} FROM {table}" + (" WHERE " + " AND ".join(where) if where else "") \
+            where.append(f"{TS_COL} <= %s")
+            params.append(int(end_ms))
+        q = (
+            f"SELECT {sel} FROM {table}"
+            + (" WHERE " + " AND ".join(where) if where else "")
             + f" ORDER BY {SYM_COL}, {TS_COL}"
+        )
         return pd.read_sql(q, conn, params=params or None)
 
     def tables(self) -> List[str]:  # pragma: no cover
         conn = self._ensure()
         if conn is None:
             return []
-        return pd.read_sql("SELECT tablename FROM pg_tables WHERE schemaname='public'",
-                           conn)["tablename"].tolist()
+        return pd.read_sql("SELECT tablename FROM pg_tables WHERE schemaname='public'", conn)[
+            "tablename"
+        ].tolist()
 
 
 # ---------------------------------------------------------------------------
@@ -260,10 +302,12 @@ class TimeSeriesStore:
             long = long.rename(columns=ren)
         self.backend.write(table, long)
 
-    def read_panel(self, table: str, *, symbols=None, start_ms=None, end_ms=None,
-                   columns=None) -> pd.DataFrame:
-        long = self.backend.read(table, symbols=symbols, start_ms=start_ms,
-                                 end_ms=end_ms, columns=columns)
+    def read_panel(
+        self, table: str, *, symbols=None, start_ms=None, end_ms=None, columns=None
+    ) -> pd.DataFrame:
+        long = self.backend.read(
+            table, symbols=symbols, start_ms=start_ms, end_ms=end_ms, columns=columns
+        )
         if not len(long):
             return pd.DataFrame()
         return long.set_index([TS_COL, SYM_COL]).sort_index()
@@ -272,7 +316,7 @@ class TimeSeriesStore:
 def make_backend(kind: str = "parquet", **kwargs: Any) -> TSBackend:
     """Фабрика бэкенда по имени. CH/TS недоступны (нет драйвера) → graceful fallback на parquet."""
     k = (kind or "parquet").lower()
-    root = kwargs.pop("root", "data/tsdb")   # root — только для parquet (fallback)
+    root = kwargs.pop("root", "data/tsdb")  # root — только для parquet (fallback)
     if k == "clickhouse":
         b = ClickHouseTSBackend(**kwargs)
         return b if b.available() else ParquetTSBackend(root=root)
@@ -283,6 +327,12 @@ def make_backend(kind: str = "parquet", **kwargs: Any) -> TSBackend:
 
 
 __all__ = [
-    "TS_COL", "SYM_COL", "TSBackend", "ParquetTSBackend", "ClickHouseTSBackend",
-    "TimescaleTSBackend", "TimeSeriesStore", "make_backend",
+    "TS_COL",
+    "SYM_COL",
+    "TSBackend",
+    "ParquetTSBackend",
+    "ClickHouseTSBackend",
+    "TimescaleTSBackend",
+    "TimeSeriesStore",
+    "make_backend",
 ]

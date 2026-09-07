@@ -32,7 +32,9 @@ def _panel(n=12, syms=("BTC", "ETH", "SOL")):
     rng = np.random.default_rng(0)
     for k, s in enumerate(syms):
         close = 100.0 * np.cumprod(1.0 + rng.normal(0.0005 * (k + 1), 0.02, n))
-        frames[s] = pd.DataFrame({"timestamp": [T0 + i * STEP for i in range(n)], "symbol": s, "close": close})
+        frames[s] = pd.DataFrame(
+            {"timestamp": [T0 + i * STEP for i in range(n)], "symbol": s, "close": close}
+        )
     return PanelBuilder.from_frames(frames)
 
 
@@ -41,10 +43,12 @@ def _panel(n=12, syms=("BTC", "ETH", "SOL")):
 # ---------------------------------------------------------------------------
 def test_value_utility_from_stub():
     panel = _panel()
+
     # stub value_fn: «полезность» = z-score доходности (DI, без модели)
     def value_fn(p):
         ret = p["close"].groupby(level=SYMBOL_LEVEL, group_keys=False).pct_change().fillna(0.0)
         return ret.to_numpy()
+
     adapter = RLInferenceAdapter(value_fn=value_fn, utility="value")
     assert adapter.available()
     u = adapter.utility_panel(panel)
@@ -54,9 +58,11 @@ def test_value_utility_from_stub():
 def test_cvar_utility_from_quantiles():
     panel = _panel(n=6, syms=("BTC", "ETH"))
     nq = 5
+
     def quantiles_fn(p):
         base = np.linspace(-1, 1, nq)
         return np.tile(base, (len(p), 1)) + np.arange(len(p)).reshape(-1, 1) * 0.01
+
     adapter = RLInferenceAdapter(quantiles_fn=quantiles_fn, utility="cvar", cvar_alpha=0.4)
     u = adapter.utility_panel(panel)
     # CVaR(0.4) = среднее нижних 40% квантилей (2 из 5) = mean(линспейс[:2]) + сдвиг
@@ -79,9 +85,9 @@ def test_conformal_confidence_matches_canonical_scaling():
 
     np.testing.assert_allclose(conf.to_numpy(), [canon(w) for w in widths], rtol=1e-12)
     # инварианты: граница, floor, монотонность
-    assert conf.iloc[1] == pytest.approx(1.0)        # width == baseline → conf 1
-    assert conf.iloc[3] == pytest.approx(min_conf)   # width == 2*baseline → floor
-    assert (conf.diff().dropna() <= 1e-12).all()     # не возрастает с ростом ширины
+    assert conf.iloc[1] == pytest.approx(1.0)  # width == baseline → conf 1
+    assert conf.iloc[3] == pytest.approx(min_conf)  # width == 2*baseline → floor
+    assert (conf.diff().dropna() <= 1e-12).all()  # не возрастает с ростом ширины
 
 
 def test_cvar_utility_uses_accurate_integration():
@@ -96,18 +102,21 @@ def test_cvar_utility_uses_accurate_integration():
 
 def test_confidence_shrinks_utility():
     panel = _panel(n=5, syms=("BTC",))
+
     def value_fn(p):
         return np.ones(len(p))
+
     def widths_fn(p):
         # узкий интервал → высокая уверенность; широкий → низкая
         return pd.Series(np.linspace(0.1, 1.0, len(p)), index=p.index)
+
     adapter = RLInferenceAdapter(value_fn=value_fn, widths_fn=widths_fn, conf_baseline_width=0.1)
     sig = adapter.build_signal("rl")
     out = sig.compute_panel(panel)
     # utility=1; conf=clip(0.1/width,0.5,1) убывает → сигнал убывает
     vals = out.xs("BTC", level=SYMBOL_LEVEL).to_numpy()
-    assert vals[0] == pytest.approx(1.0)          # width=0.1 → conf=1
-    assert vals[-1] < vals[0]                       # шире интервал → ниже сигнал
+    assert vals[0] == pytest.approx(1.0)  # width=0.1 → conf=1
+    assert vals[-1] < vals[0]  # шире интервал → ниже сигнал
 
 
 # ---------------------------------------------------------------------------
@@ -115,10 +124,10 @@ def test_confidence_shrinks_utility():
 # ---------------------------------------------------------------------------
 def test_graceful_no_checkpoint():
     panel = _panel()
-    adapter = RLInferenceAdapter(checkpoint=None)      # нет ни fn, ни checkpoint
+    adapter = RLInferenceAdapter(checkpoint=None)  # нет ни fn, ни checkpoint
     assert adapter.available() is False
     u = adapter.utility_panel(panel)
-    assert u.isna().all()                              # нейтрально, без падения
+    assert u.isna().all()  # нейтрально, без падения
 
 
 def test_graceful_checkpoint_no_loader():
@@ -133,28 +142,41 @@ def test_graceful_checkpoint_no_loader():
 # ---------------------------------------------------------------------------
 def test_rl_signal_ic_measurable():
     from impl_signal_diagnostics import signal_report
+
     panel = _panel(n=40, syms=("A", "B", "C", "D"))
+
     # value_fn слабо коррелирует с будущей доходностью → IC измерим
     def value_fn(p):
-        return p["close"].groupby(level=SYMBOL_LEVEL, group_keys=False).pct_change().shift(0).fillna(0.0).to_numpy()
+        return (
+            p["close"]
+            .groupby(level=SYMBOL_LEVEL, group_keys=False)
+            .pct_change()
+            .shift(0)
+            .fillna(0.0)
+            .to_numpy()
+        )
+
     adapter = RLInferenceAdapter(value_fn=value_fn)
     sig = adapter.build_signal("rl_alpha").compute_panel(panel)
     fwd = PanelBuilder.add_forward_returns(panel, price_col="close")["fwd_return"]
     rep = signal_report(sig, fwd)
-    assert "ic_mean" in rep                              # IC посчитан (рядом с факторами)
+    assert "ic_mean" in rep  # IC посчитан (рядом с факторами)
 
 
 def test_pipeline_kind_rl_alpha_neutral_without_artifact():
     from service_xs_pipeline import XSConfig, build_signal_library, load_panel
-    cfg = XSConfig.model_validate({
-        "asset_class": "crypto",
-        "data": {"source": "synthetic", "symbols": ["BTC", "ETH", "SOL"], "synthetic_bars": 30},
-        "signals": [{"name": "rl", "kind": "rl_alpha"}],   # без cfg.rl/checkpoint → нейтрален
-    })
+
+    cfg = XSConfig.model_validate(
+        {
+            "asset_class": "crypto",
+            "data": {"source": "synthetic", "symbols": ["BTC", "ETH", "SOL"], "synthetic_bars": 30},
+            "signals": [{"name": "rl", "kind": "rl_alpha"}],  # без cfg.rl/checkpoint → нейтрален
+        }
+    )
     lib = build_signal_library(cfg)
     assert lib.names == ["rl"]
     out = lib.compute(load_panel(cfg))
-    assert out["rl"].isna().all()                       # graceful нейтрален, не падает
+    assert out["rl"].isna().all()  # graceful нейтрален, не падает
 
 
 def test_rl_signal_in_backtest_with_stub_adapter():
@@ -167,20 +189,31 @@ def test_rl_signal_in_backtest_with_stub_adapter():
     from impl_universe import StaticUniverse
 
     panel = _panel(n=60, syms=("A", "B", "C", "D", "E"))
+
     def value_fn(p):
-        return p["close"].groupby(level=SYMBOL_LEVEL, group_keys=False).pct_change().fillna(0.0).to_numpy()
+        return (
+            p["close"]
+            .groupby(level=SYMBOL_LEVEL, group_keys=False)
+            .pct_change()
+            .fillna(0.0)
+            .to_numpy()
+        )
+
     rl_sig = RLInferenceAdapter(value_fn=value_fn).build_signal("rl_alpha")
 
     lib = SignalLibrary()
     lib.register(MomentumSignal("mom", lookback=10), transforms=["zscore"])
-    lib.register(rl_sig, transforms=["zscore"])          # RL рядом с классикой
+    lib.register(rl_sig, transforms=["zscore"])  # RL рядом с классикой
     bt = CrossSectionalBacktest(
         universe=StaticUniverse(["A", "B", "C", "D", "E"]),
-        alpha_model=ICWeightedAlpha(), risk_model=StatRiskModel(),
-        optimizer=PortfolioOptimizer(objective="mean_variance",
-                                     constraints=OptimizerConstraints(gross_max=1.0, net_target=0.0)),
+        alpha_model=ICWeightedAlpha(),
+        risk_model=StatRiskModel(),
+        optimizer=PortfolioOptimizer(
+            objective="mean_variance",
+            constraints=OptimizerConstraints(gross_max=1.0, net_target=0.0),
+        ),
         signal_library=lib,
         config=XSBacktestConfig(rebalance_every=5, cov_lookback=20, min_cov_obs=10),
     )
     res = bt.run(panel)
-    assert res.weights.shape[0] > 0                      # отработал с RL-сигналом среди факторов
+    assert res.weights.shape[0] > 0  # отработал с RL-сигналом среди факторов

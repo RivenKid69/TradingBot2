@@ -264,9 +264,7 @@ class RetentionManager:
         if self.cold_storage is None and self.config.cold_storage_path:
             cold_config = AuditStorageConfig(
                 backend_type=StorageBackendType.FILE,
-                database_path=os.path.join(
-                    self.config.cold_storage_path, "archive.jsonl"
-                ),
+                database_path=os.path.join(self.config.cold_storage_path, "archive.jsonl"),
             )
             self.cold_storage = create_audit_storage(cold_config)
 
@@ -405,7 +403,9 @@ class RetentionManager:
             if request.request_type == NCARequestType.LEGAL_HOLD:
                 self._apply_legal_hold(request)
 
-            logger.info(f"NCA request registered: {request.request_id} ({request.request_type.value})")
+            logger.info(
+                f"NCA request registered: {request.request_id} ({request.request_type.value})"
+            )
             return True
 
     def close_nca_request(self, request_id: str, reason: str = "") -> bool:
@@ -664,9 +664,7 @@ class RetentionManager:
 
         # If cold storage exists and dates are old, also export from there
         if self.cold_storage and request.scope_start_date:
-            archive_cutoff = datetime.utcnow() - timedelta(
-                days=self.config.archive_after_days
-            )
+            archive_cutoff = datetime.utcnow() - timedelta(days=self.config.archive_after_days)
             if request.scope_start_date < archive_cutoff:
                 cold_result = self.cold_storage.export(export_request)
                 result.records_exported += cold_result.records_exported
@@ -854,14 +852,10 @@ class RetentionManager:
                 "hot_storage_bytes": metrics.hot_storage_bytes,
                 "cold_storage_bytes": metrics.cold_storage_bytes,
                 "last_archive_run": (
-                    metrics.last_archive_run.isoformat()
-                    if metrics.last_archive_run
-                    else None
+                    metrics.last_archive_run.isoformat() if metrics.last_archive_run else None
                 ),
                 "last_deletion_run": (
-                    metrics.last_deletion_run.isoformat()
-                    if metrics.last_deletion_run
-                    else None
+                    metrics.last_deletion_run.isoformat() if metrics.last_deletion_run else None
                 ),
             },
             "age_distribution": age_distribution,

@@ -268,27 +268,15 @@ def create_app(
     # Include routers
     app.include_router(health.router, prefix="/api/v1/health", tags=["Health"])
     app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-    app.include_router(
-        organizations.router, prefix="/api/v1/organizations", tags=["Organizations"]
-    )
-    app.include_router(
-        workspaces.router, prefix="/api/v1/workspaces", tags=["Workspaces"]
-    )
+    app.include_router(organizations.router, prefix="/api/v1/organizations", tags=["Organizations"])
+    app.include_router(workspaces.router, prefix="/api/v1/workspaces", tags=["Workspaces"])
     app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
     app.include_router(agents.router, prefix="/api/v1/agents", tags=["Agents"])
-    app.include_router(
-        strategies.router, prefix="/api/v1/strategies", tags=["Strategies"]
-    )
-    app.include_router(
-        deployments.router, prefix="/api/v1/deployments", tags=["Deployments"]
-    )
+    app.include_router(strategies.router, prefix="/api/v1/strategies", tags=["Strategies"])
+    app.include_router(deployments.router, prefix="/api/v1/deployments", tags=["Deployments"])
     app.include_router(commands.router, prefix="/api/v1/commands", tags=["Commands"])
-    app.include_router(
-        config_blobs.router, prefix="/api/v1/config-blobs", tags=["Config Blobs"]
-    )
-    app.include_router(
-        telemetry.router, prefix="/api/v1/telemetry", tags=["Telemetry"]
-    )
+    app.include_router(config_blobs.router, prefix="/api/v1/config-blobs", tags=["Config Blobs"])
+    app.include_router(telemetry.router, prefix="/api/v1/telemetry", tags=["Telemetry"])
     # Phase 7 (WI-CLOUD-02): Agent lifecycle endpoints with AgentDep auth
     app.include_router(
         agent_lifecycle.router,

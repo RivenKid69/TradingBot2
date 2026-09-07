@@ -52,7 +52,7 @@ class SendResult:
     submitted: List[Dict[str, Any]] = field(default_factory=list)
     skipped: List[Dict[str, Any]] = field(default_factory=list)
     errors: List[Dict[str, Any]] = field(default_factory=list)
-    parents: List[str] = field(default_factory=list)   # parent_ids when sliced
+    parents: List[str] = field(default_factory=list)  # parent_ids when sliced
     sliced: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
@@ -78,16 +78,16 @@ class AgentClient:
         self,
         engine: LiveExecutionEngine,
         *,
-        prices_provider: Any = None,        # .get_prices() -> {symbol: price}
-        position_provider: Any = None,      # .get_positions() -> {symbol: notional}
+        prices_provider: Any = None,  # .get_prices() -> {symbol: price}
+        position_provider: Any = None,  # .get_positions() -> {symbol: notional}
         strategy_id: str = "xs_cross_sectional",
         min_trade_notional: float = 1.0,
-        child_executor: Any = None,         # ClockDrivenChildExecutor (optional -> sliced)
-        n_slices: int = 1,                  # >1 with child_executor => TWAP slicing
+        child_executor: Any = None,  # ClockDrivenChildExecutor (optional -> sliced)
+        n_slices: int = 1,  # >1 with child_executor => TWAP slicing
         slice_weights: Optional[List[float]] = None,
-        fill_handler: Any = None,           # FillHandler (drives OMS lifecycle)
-        fill_source: Any = None,            # FillSource polled by pump()
-        clock: Any = None,                  # callable() -> epoch seconds (for sliced release)
+        fill_handler: Any = None,  # FillHandler (drives OMS lifecycle)
+        fill_source: Any = None,  # FillSource polled by pump()
+        clock: Any = None,  # callable() -> epoch seconds (for sliced release)
     ) -> None:
         self._engine = engine
         self._prices_provider = prices_provider
@@ -115,13 +115,16 @@ class AgentClient:
         if self._position_provider is None:
             return {}
         try:
-            return {str(k): float(v) for k, v in (self._position_provider.get_positions() or {}).items()}
+            return {
+                str(k): float(v) for k, v in (self._position_provider.get_positions() or {}).items()
+            }
         except Exception as exc:  # pragma: no cover
             logger.warning("position_provider failed: %s", exc)
             return {}
 
-    def _sync_portfolio(self, equity: float, positions_notional: Dict[str, float],
-                        prices: Dict[str, float]) -> None:
+    def _sync_portfolio(
+        self, equity: float, positions_notional: Dict[str, float], prices: Dict[str, float]
+    ) -> None:
         """Push current state into the engine for policy / risk checks."""
         positions: Dict[str, Decimal] = {}
         position_values: Dict[str, Decimal] = {}
@@ -161,7 +164,9 @@ class AgentClient:
         # demand (the get_prices() contract takes no args).
         if self._prices_provider is not None and hasattr(self._prices_provider, "prime"):
             try:
-                self._prices_provider.prime([str(it.symbol) for it in (getattr(batch, "intents", []) or [])])
+                self._prices_provider.prime(
+                    [str(it.symbol) for it in (getattr(batch, "intents", []) or [])]
+                )
             except Exception:  # pragma: no cover
                 pass
         prices = self._get_prices()
@@ -175,7 +180,9 @@ class AgentClient:
 
         # union: trade dropped names down to zero too
         symbols = sorted(set(target_notional) | set(cur_notional))
-        result = SendResult(idempotency_key=idem, sliced=bool(self._child_executor) and self._n_slices > 1)
+        result = SendResult(
+            idempotency_key=idem, sliced=bool(self._child_executor) and self._n_slices > 1
+        )
 
         now_ts = self._now()
         for sym in symbols:
@@ -183,7 +190,9 @@ class AgentClient:
             cur = float(cur_notional.get(sym, 0.0))
             delta = tgt - cur
             if abs(delta) < self._min_trade_notional:
-                result.skipped.append({"symbol": sym, "delta_notional": delta, "reason": "below_min"})
+                result.skipped.append(
+                    {"symbol": sym, "delta_notional": delta, "reason": "below_min"}
+                )
                 continue
             price = prices.get(sym)
             if price is None or not math.isfinite(price) or price <= 0:
@@ -195,17 +204,26 @@ class AgentClient:
             if result.sliced and self._child_executor is not None:
                 try:
                     parent = self._child_executor.submit_parent(
-                        symbol=sym, side=side, total_qty=qty,
-                        n_slices=self._n_slices, weights=self._slice_weights,
+                        symbol=sym,
+                        side=side,
+                        total_qty=qty,
+                        n_slices=self._n_slices,
+                        weights=self._slice_weights,
                         start_ts=now_ts,
                         parent_id=f"{idem[:12]}_{sym}",
                     )
                     result.parents.append(parent.parent_id)
-                    result.submitted.append({
-                        "symbol": sym, "side": side, "qty": str(qty),
-                        "delta_notional": delta, "mode": "sliced",
-                        "parent_id": parent.parent_id, "n_slices": len(parent.children),
-                    })
+                    result.submitted.append(
+                        {
+                            "symbol": sym,
+                            "side": side,
+                            "qty": str(qty),
+                            "delta_notional": delta,
+                            "mode": "sliced",
+                            "parent_id": parent.parent_id,
+                            "n_slices": len(parent.children),
+                        }
+                    )
                 except Exception as exc:
                     result.errors.append({"symbol": sym, "reason": f"slice_failed: {exc}"})
                 continue
@@ -224,7 +242,8 @@ class AgentClient:
                 intent_id=self._intent_id(idem, sym),
             )
             exec_result = self._engine.execute(
-                intent, current_price=Decimal(str(price)), origin="runner")
+                intent, current_price=Decimal(str(price)), origin="runner"
+            )
             if exec_result.success and exec_result.order is not None:
                 o = exec_result.order
                 if self._fill_source is not None and hasattr(self._fill_source, "track"):
@@ -232,17 +251,25 @@ class AgentClient:
                         self._fill_source.track(o.client_order_id)
                     except Exception:  # pragma: no cover
                         pass
-                result.submitted.append({
-                    "symbol": sym, "side": side, "qty": str(o.quantity),
-                    "delta_notional": delta, "mode": "market",
-                    "client_order_id": o.client_order_id,
-                    "broker_order_id": o.broker_order_id,
-                    "status": o.status.value,
-                })
+                result.submitted.append(
+                    {
+                        "symbol": sym,
+                        "side": side,
+                        "qty": str(o.quantity),
+                        "delta_notional": delta,
+                        "mode": "market",
+                        "client_order_id": o.client_order_id,
+                        "broker_order_id": o.broker_order_id,
+                        "status": o.status.value,
+                    }
+                )
             else:
-                result.errors.append({
-                    "symbol": sym, "reason": exec_result.error_message or "execute_failed",
-                })
+                result.errors.append(
+                    {
+                        "symbol": sym,
+                        "reason": exec_result.error_message or "execute_failed",
+                    }
+                )
 
         return result
 
@@ -266,13 +293,17 @@ class AgentClient:
 
         fills_handled = 0
         if self._fill_handler is not None and self._fill_source is not None:
-            fills_handled = self._fill_handler.consume(self._fill_source, max_batches=max_fill_batches)
+            fills_handled = self._fill_handler.consume(
+                self._fill_source, max_batches=max_fill_batches
+            )
 
         return {
             "ts": ts,
             "fills_handled": fills_handled,
             "step": step_summary,
-            "complete": (self._child_executor.all_complete() if self._child_executor is not None else True),
+            "complete": (
+                self._child_executor.all_complete() if self._child_executor is not None else True
+            ),
         }
 
     def _now(self) -> float:
@@ -282,6 +313,7 @@ class AgentClient:
             except Exception:  # pragma: no cover
                 pass
         import time as _time
+
         return _time.time()
 
 

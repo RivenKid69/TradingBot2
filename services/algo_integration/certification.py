@@ -171,7 +171,9 @@ class CertificateCondition:
             requirement=data.get("requirement", ""),
             deadline=date.fromisoformat(data["deadline"]) if data.get("deadline") else None,
             satisfied=data.get("satisfied", False),
-            satisfied_date=date.fromisoformat(data["satisfied_date"]) if data.get("satisfied_date") else None,
+            satisfied_date=(
+                date.fromisoformat(data["satisfied_date"]) if data.get("satisfied_date") else None
+            ),
             satisfied_by=data.get("satisfied_by", ""),
             notes=data.get("notes", ""),
         )
@@ -523,7 +525,9 @@ changes to the algorithm require recertification.
 
         unsatisfied = self.get_unsatisfied_conditions()
         if unsatisfied:
-            return f"ERROR: {len(unsatisfied)} condition(s) not satisfied. Deployment not authorized."
+            return (
+                f"ERROR: {len(unsatisfied)} condition(s) not satisfied. Deployment not authorized."
+            )
 
         return f"""
 ================================================================================
@@ -646,10 +650,7 @@ Certificate Hash: {self.compute_hash()}
             cert.revocation_date = date.fromisoformat(data["revocation_date"])
 
         # Parse conditions
-        cert.conditions = [
-            CertificateCondition.from_dict(c)
-            for c in data.get("conditions", [])
-        ]
+        cert.conditions = [CertificateCondition.from_dict(c) for c in data.get("conditions", [])]
 
         return cert
 
@@ -754,11 +755,13 @@ class CertificateManager:
 
         # Add warning condition if there were warnings
         if metrics["warnings"] > 0:
-            cert.add_condition(CertificateCondition(
-                description="Review test warnings before deployment",
-                requirement=f"Review and document resolution of {metrics['warnings']} test warnings",
-                deadline=date.today() + timedelta(days=14),
-            ))
+            cert.add_condition(
+                CertificateCondition(
+                    description="Review test warnings before deployment",
+                    requirement=f"Review and document resolution of {metrics['warnings']} test warnings",
+                    deadline=date.today() + timedelta(days=14),
+                )
+            )
 
         self._certificates[cert.certificate_id] = cert
         logger.info(f"Certificate {cert.certificate_number} created for {suite.algorithm_id}")
@@ -773,7 +776,9 @@ class CertificateManager:
         """Get certificate by ID."""
         return self._certificates.get(certificate_id)
 
-    def get_certificate_by_number(self, certificate_number: str) -> Optional[ConformanceCertificate]:
+    def get_certificate_by_number(
+        self, certificate_number: str
+    ) -> Optional[ConformanceCertificate]:
         """Get certificate by certificate number."""
         for cert in self._certificates.values():
             if cert.certificate_number == certificate_number:
@@ -786,17 +791,16 @@ class CertificateManager:
         include_invalid: bool = False,
     ) -> List[ConformanceCertificate]:
         """Get all certificates for an algorithm."""
-        certs = [
-            c for c in self._certificates.values()
-            if c.algorithm_id == algorithm_id
-        ]
+        certs = [c for c in self._certificates.values() if c.algorithm_id == algorithm_id]
 
         if not include_invalid:
             certs = [c for c in certs if c.is_valid()]
 
         return sorted(certs, key=lambda c: c.created_timestamp_ns, reverse=True)
 
-    def get_valid_certificate(self, algorithm_id: str, version: str) -> Optional[ConformanceCertificate]:
+    def get_valid_certificate(
+        self, algorithm_id: str, version: str
+    ) -> Optional[ConformanceCertificate]:
         """Get valid certificate for specific algorithm version."""
         for cert in self._certificates.values():
             if (

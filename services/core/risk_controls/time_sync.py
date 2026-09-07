@@ -445,7 +445,7 @@ class ComplianceClock:
             self._last_sync = status
             self._sync_history.append(status)
             if len(self._sync_history) > self._max_history_size:
-                self._sync_history = self._sync_history[-self._max_history_size:]
+                self._sync_history = self._sync_history[-self._max_history_size :]
 
         self._stats["sync_successes"] += 1
 
@@ -593,7 +593,9 @@ class ComplianceClock:
             "report_timestamp": datetime.utcnow().isoformat(),
             "regulation": "RTS 25 (Regulation 2017/574)",
             "requirement": "Clock Synchronisation",
-            "compliance_status": "COMPLIANT" if status.is_compliant(self._max_offset_ms) else "NON-COMPLIANT",
+            "compliance_status": (
+                "COMPLIANT" if status.is_compliant(self._max_offset_ms) else "NON-COMPLIANT"
+            ),
             "current_status": status.to_dict(),
             "configuration": {
                 "ntp_servers": self._ntp_servers,

@@ -50,78 +50,105 @@ from .residency import DataRegion, EU_REGIONS
 # ============================================================================
 
 # Valid EU AWS regions
-EU_AWS_REGIONS: Final[FrozenSet[str]] = frozenset({
-    "eu-west-1",      # Ireland
-    "eu-west-2",      # London
-    "eu-west-3",      # Paris
-    "eu-central-1",   # Frankfurt
-    "eu-central-2",   # Zurich
-    "eu-north-1",     # Stockholm
-    "eu-south-1",     # Milan
-    "eu-south-2",     # Spain
-})
+EU_AWS_REGIONS: Final[FrozenSet[str]] = frozenset(
+    {
+        "eu-west-1",  # Ireland
+        "eu-west-2",  # London
+        "eu-west-3",  # Paris
+        "eu-central-1",  # Frankfurt
+        "eu-central-2",  # Zurich
+        "eu-north-1",  # Stockholm
+        "eu-south-1",  # Milan
+        "eu-south-2",  # Spain
+    }
+)
 
 # Valid EU GCP regions
-EU_GCP_REGIONS: Final[FrozenSet[str]] = frozenset({
-    "europe-west1",   # Belgium
-    "europe-west2",   # London
-    "europe-west3",   # Frankfurt
-    "europe-west4",   # Netherlands
-    "europe-west6",   # Zurich
-    "europe-west8",   # Milan
-    "europe-west9",   # Paris
-    "europe-west10",  # Berlin
-    "europe-west12",  # Turin
-    "europe-north1",  # Finland
-    "europe-central2", # Warsaw
-    "europe-southwest1", # Madrid
-})
+EU_GCP_REGIONS: Final[FrozenSet[str]] = frozenset(
+    {
+        "europe-west1",  # Belgium
+        "europe-west2",  # London
+        "europe-west3",  # Frankfurt
+        "europe-west4",  # Netherlands
+        "europe-west6",  # Zurich
+        "europe-west8",  # Milan
+        "europe-west9",  # Paris
+        "europe-west10",  # Berlin
+        "europe-west12",  # Turin
+        "europe-north1",  # Finland
+        "europe-central2",  # Warsaw
+        "europe-southwest1",  # Madrid
+    }
+)
 
 # Valid EU Azure regions
-EU_AZURE_REGIONS: Final[FrozenSet[str]] = frozenset({
-    "westeurope",       # Netherlands
-    "northeurope",      # Ireland
-    "germanywestcentral", # Frankfurt
-    "francecentral",    # Paris
-    "francesouth",      # Marseille
-    "swedencentral",    # Gavle
-    "swedensouth",      # Stockholm
-    "norwayeast",       # Oslo
-    "norwaywest",       # Stavanger
-    "switzerlandnorth", # Zurich
-    "switzerlandwest",  # Geneva
-    "polandcentral",    # Warsaw
-    "italynorth",       # Milan
-    "uksouth",          # London
-    "ukwest",           # Cardiff
-    "spaincentral",     # Madrid
-})
+EU_AZURE_REGIONS: Final[FrozenSet[str]] = frozenset(
+    {
+        "westeurope",  # Netherlands
+        "northeurope",  # Ireland
+        "germanywestcentral",  # Frankfurt
+        "francecentral",  # Paris
+        "francesouth",  # Marseille
+        "swedencentral",  # Gavle
+        "swedensouth",  # Stockholm
+        "norwayeast",  # Oslo
+        "norwaywest",  # Stavanger
+        "switzerlandnorth",  # Zurich
+        "switzerlandwest",  # Geneva
+        "polandcentral",  # Warsaw
+        "italynorth",  # Milan
+        "uksouth",  # London
+        "ukwest",  # Cardiff
+        "spaincentral",  # Madrid
+    }
+)
 
 # All valid EU regions across providers
-ALL_EU_REGIONS: Final[FrozenSet[str]] = EU_AWS_REGIONS | EU_GCP_REGIONS | EU_AZURE_REGIONS | frozenset({
-    "EU",             # Generic EU designation
-    "eu",             # Lowercase variant
-    "Europe",         # Generic Europe
-    "europe",         # Lowercase variant
-    "EU (Germany)",   # Specific country mentions
-    "EU (Ireland)",
-    "EU (Netherlands)",
-    "EU (France)",
-})
+ALL_EU_REGIONS: Final[FrozenSet[str]] = (
+    EU_AWS_REGIONS
+    | EU_GCP_REGIONS
+    | EU_AZURE_REGIONS
+    | frozenset(
+        {
+            "EU",  # Generic EU designation
+            "eu",  # Lowercase variant
+            "Europe",  # Generic Europe
+            "europe",  # Lowercase variant
+            "EU (Germany)",  # Specific country mentions
+            "EU (Ireland)",
+            "EU (Netherlands)",
+            "EU (France)",
+        }
+    )
+)
 
 # Non-EU regions that should always fail
-NON_EU_REGIONS: Final[FrozenSet[str]] = frozenset({
-    # US regions
-    "us-east-1", "us-east-2", "us-west-1", "us-west-2",
-    "us-gov-east-1", "us-gov-west-1",
-    # Asia Pacific
-    "ap-northeast-1", "ap-northeast-2", "ap-northeast-3",
-    "ap-southeast-1", "ap-southeast-2", "ap-southeast-3",
-    "ap-south-1", "ap-east-1",
-    # Other
-    "sa-east-1", "af-south-1", "me-south-1", "me-central-1",
-    "ca-central-1",
-})
+NON_EU_REGIONS: Final[FrozenSet[str]] = frozenset(
+    {
+        # US regions
+        "us-east-1",
+        "us-east-2",
+        "us-west-1",
+        "us-west-2",
+        "us-gov-east-1",
+        "us-gov-west-1",
+        # Asia Pacific
+        "ap-northeast-1",
+        "ap-northeast-2",
+        "ap-northeast-3",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-southeast-3",
+        "ap-south-1",
+        "ap-east-1",
+        # Other
+        "sa-east-1",
+        "af-south-1",
+        "me-south-1",
+        "me-central-1",
+        "ca-central-1",
+    }
+)
 
 # AWS endpoint patterns
 AWS_ENDPOINT_PATTERNS: List[Tuple[Pattern, str]] = [
@@ -160,8 +187,10 @@ AWS_ENDPOINT_PATTERNS: List[Tuple[Pattern, str]] = [
 # Enums
 # ============================================================================
 
+
 class DriftCheckStatus(str, Enum):
     """Status of a drift check."""
+
     PASS = "PASS"
     FAIL = "FAIL"
     WARNING = "WARNING"
@@ -170,6 +199,7 @@ class DriftCheckStatus(str, Enum):
 
 class ComponentType(str, Enum):
     """Type of infrastructure component."""
+
     DATABASE_PRIMARY = "database_primary"
     DATABASE_REPLICA = "database_replica"
     OBJECT_STORAGE = "object_storage"
@@ -190,19 +220,22 @@ class ComponentType(str, Enum):
 
 class CheckSeverity(str, Enum):
     """Severity of drift check violations."""
-    CRITICAL = "critical"    # Blocks deployment
-    HIGH = "high"           # Should block, requires override
-    MEDIUM = "medium"       # Warning
-    LOW = "low"             # Informational
+
+    CRITICAL = "critical"  # Blocks deployment
+    HIGH = "high"  # Should block, requires override
+    MEDIUM = "medium"  # Warning
+    LOW = "low"  # Informational
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class EndpointCheck:
     """Result of checking a single endpoint."""
+
     component: str
     component_type: ComponentType
     endpoint: str
@@ -231,6 +264,7 @@ class EndpointCheck:
 @dataclass
 class SubprocessorCheck:
     """Result of checking a subprocessor."""
+
     name: str
     legal_entity: str
     service: str
@@ -259,6 +293,7 @@ class SubprocessorCheck:
 @dataclass
 class DriftCheckViolation:
     """A residency drift violation."""
+
     component: str
     violation_type: str
     severity: CheckSeverity
@@ -289,7 +324,10 @@ class ResidencyDriftReport:
 
     Format aligned with docs/compliance/SUBPROCESSORS_REGISTER.md Section 5.2.
     """
-    check_id: str = field(default_factory=lambda: f"drift-check-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}-{str(uuid4())[:8]}")
+
+    check_id: str = field(
+        default_factory=lambda: f"drift-check-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}-{str(uuid4())[:8]}"
+    )
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     status: DriftCheckStatus = DriftCheckStatus.UNKNOWN
     checks: List[EndpointCheck] = field(default_factory=list)
@@ -332,13 +370,16 @@ class ResidencyDriftReport:
 
     def _compute_hash(self) -> None:
         """Compute SHA-256 hash of report content."""
-        content = json.dumps({
-            "check_id": self.check_id,
-            "timestamp": self.timestamp.isoformat(),
-            "checks": [c.to_dict() for c in self.checks],
-            "subprocessors": [s.to_dict() for s in self.subprocessors],
-            "violations": [v.to_dict() for v in self.violations],
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "check_id": self.check_id,
+                "timestamp": self.timestamp.isoformat(),
+                "checks": [c.to_dict() for c in self.checks],
+                "subprocessors": [s.to_dict() for s in self.subprocessors],
+                "violations": [v.to_dict() for v in self.violations],
+            },
+            sort_keys=True,
+        )
         self.report_hash = f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     @property
@@ -388,6 +429,7 @@ class ResidencyConfiguration:
 
     Loaded from environment, config files, or Helm values.
     """
+
     # Database
     database_primary_endpoint: str = ""
     database_primary_region: str = ""
@@ -450,7 +492,9 @@ class ResidencyConfiguration:
             monitoring_endpoint=os.getenv("MONITORING_ENDPOINT", ""),
             monitoring_region=os.getenv("MONITORING_REGION", ""),
             error_tracking_service=os.getenv("ERROR_TRACKING_SERVICE", "sentry"),
-            error_tracking_region=os.getenv("ERROR_TRACKING_REGION", os.getenv("SENTRY_REGION", "")),
+            error_tracking_region=os.getenv(
+                "ERROR_TRACKING_REGION", os.getenv("SENTRY_REGION", "")
+            ),
             artifact_registry=os.getenv("ARTIFACT_REGISTRY", ""),
             artifact_registry_region=os.getenv("ARTIFACT_REGISTRY_REGION", ""),
             payment_processor=os.getenv("PAYMENT_PROCESSOR", "stripe"),
@@ -470,6 +514,7 @@ class ResidencyConfiguration:
 # ============================================================================
 # EU-Only Drift Checker
 # ============================================================================
+
 
 class EUOnlyDriftChecker:
     """
@@ -1012,14 +1057,16 @@ class EUOnlyDriftChecker:
     def _log_audit(self, action: str, report: ResidencyDriftReport) -> None:
         """Log audit event."""
         with self._lock:
-            self._audit_log.append({
-                "action": action,
-                "check_id": report.check_id,
-                "status": report.status.value,
-                "endpoints_verified": report.endpoints_verified,
-                "non_eu_endpoints": report.non_eu_endpoints,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            self._audit_log.append(
+                {
+                    "action": action,
+                    "check_id": report.check_id,
+                    "status": report.status.value,
+                    "endpoints_verified": report.endpoints_verified,
+                    "non_eu_endpoints": report.non_eu_endpoints,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
     def get_audit_log(self) -> List[Dict[str, Any]]:
         """Get audit log entries."""
@@ -1030,6 +1077,7 @@ class EUOnlyDriftChecker:
 # ============================================================================
 # Deployment Configuration Validator
 # ============================================================================
+
 
 class DeploymentConfigValidator:
     """
@@ -1114,9 +1162,7 @@ class DeploymentConfigValidator:
         # Redis
         redis = values.get("redis", {})
         if redis.get("enabled"):
-            config.cache_region = self._infer_region_from_helm(
-                redis, global_config, data_residency
-            )
+            config.cache_region = self._infer_region_from_helm(redis, global_config, data_residency)
 
         # Evidence Pack Exporter
         evidence_pack = values.get("evidencePackExporter", {})
@@ -1232,6 +1278,7 @@ class DeploymentConfigValidator:
 # Evidence Pack Exporter
 # ============================================================================
 
+
 class ResidencyEvidenceExporter:
     """
     Exports residency evidence for audit purposes.
@@ -1274,12 +1321,16 @@ class ResidencyEvidenceExporter:
         # 2. Subprocessors summary
         subprocessors_path = output_dir / "subprocessors_summary.json"
         with open(subprocessors_path, "w") as f:
-            json.dump({
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "total_subprocessors": len(subprocessors),
-                "all_eu_compliant": all(s.eu_compliant for s in subprocessors),
-                "subprocessors": [s.to_dict() for s in subprocessors],
-            }, f, indent=2)
+            json.dump(
+                {
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "total_subprocessors": len(subprocessors),
+                    "all_eu_compliant": all(s.eu_compliant for s in subprocessors),
+                    "subprocessors": [s.to_dict() for s in subprocessors],
+                },
+                f,
+                indent=2,
+            )
         evidence_files["subprocessors_summary"] = subprocessors_path
 
         # 3. EU residency attestation
@@ -1294,12 +1345,16 @@ class ResidencyEvidenceExporter:
             "subprocessors_verified": len(subprocessors),
             "non_eu_findings": report.non_eu_endpoints,
             "statement": (
-                "This attestation confirms that all verified endpoints and "
-                "subprocessors are located within the European Union, in accordance "
-                "with our EU-only data residency commitment."
-            ) if report.passed else (
-                "WARNING: EU-only residency verification FAILED. "
-                f"Found {report.non_eu_endpoints} non-EU endpoints."
+                (
+                    "This attestation confirms that all verified endpoints and "
+                    "subprocessors are located within the European Union, in accordance "
+                    "with our EU-only data residency commitment."
+                )
+                if report.passed
+                else (
+                    "WARNING: EU-only residency verification FAILED. "
+                    f"Found {report.non_eu_endpoints} non-EU endpoints."
+                )
             ),
         }
         with open(attestation_path, "w") as f:
@@ -1309,9 +1364,13 @@ class ResidencyEvidenceExporter:
         # 4. Audit log
         audit_path = output_dir / "drift_check_audit.json"
         with open(audit_path, "w") as f:
-            json.dump({
-                "audit_entries": self._checker.get_audit_log(),
-            }, f, indent=2)
+            json.dump(
+                {
+                    "audit_entries": self._checker.get_audit_log(),
+                },
+                f,
+                indent=2,
+            )
         evidence_files["audit_log"] = audit_path
 
         return evidence_files
@@ -1379,6 +1438,7 @@ class ResidencyEvidenceExporter:
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def check_eu_residency(
     config: Optional[ResidencyConfiguration] = None,

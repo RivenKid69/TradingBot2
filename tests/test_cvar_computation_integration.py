@@ -10,6 +10,7 @@ This test verifies that CVaR computation works correctly with:
 import math
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from gymnasium import spaces
@@ -52,7 +53,9 @@ class TestCVaRComputationIntegration:
         print(f"Error: {abs(approx_cvar - expected_cvar):.4f}")
 
         # Should be close (within reasonable approximation error)
-        assert abs(approx_cvar - expected_cvar) < 1.0, f"CVaR error too large: {abs(approx_cvar - expected_cvar):.4f}"
+        assert (
+            abs(approx_cvar - expected_cvar) < 1.0
+        ), f"CVaR error too large: {abs(approx_cvar - expected_cvar):.4f}"
 
     def test_cvar_extrapolation_case(self):
         """Test CVaR computation when alpha < tau_0 (extrapolation needed)."""
@@ -64,10 +67,12 @@ class TestCVaRComputationIntegration:
 
         # Create quantiles from standard normal
         from scipy.stats import norm
+
         quantile_values = torch.tensor(
-            [norm.ppf(tau) for tau in taus],
-            dtype=torch.float32
-        ).unsqueeze(0)  # [1, N]
+            [norm.ppf(tau) for tau in taus], dtype=torch.float32
+        ).unsqueeze(
+            0
+        )  # [1, N]
 
         # Verify extrapolation is needed
         assert alpha < taus[0], f"alpha={alpha} should be < tau_0={taus[0]:.4f}"
@@ -101,7 +106,9 @@ class TestCVaRComputationIntegration:
         print(f"Error: {abs(cvar_extrapolated - true_cvar):.4f}")
 
         # Extrapolation should be reasonably accurate
-        assert abs(cvar_extrapolated - true_cvar) / abs(true_cvar) < 0.25, "Extrapolation error too large"
+        assert (
+            abs(cvar_extrapolated - true_cvar) / abs(true_cvar) < 0.25
+        ), "Extrapolation error too large"
 
     def test_cvar_consistency_across_num_quantiles(self):
         """Test CVaR computation consistency for different N."""
@@ -115,8 +122,7 @@ class TestCVaRComputationIntegration:
 
             # Standard normal quantiles
             quantile_values = torch.tensor(
-                [norm.ppf(tau) for tau in taus],
-                dtype=torch.float32
+                [norm.ppf(tau) for tau in taus], dtype=torch.float32
             ).unsqueeze(0)
 
             # Simple CVaR: mean of tail
@@ -124,9 +130,9 @@ class TestCVaRComputationIntegration:
             approx_cvar = quantile_values[:, :k_tail].mean(dim=1).item()
 
             results[N] = {
-                'cvar': approx_cvar,
-                'k_tail': k_tail,
-                'tau_coverage': taus[k_tail - 1] if k_tail > 0 else 0.0
+                "cvar": approx_cvar,
+                "k_tail": k_tail,
+                "tau_coverage": taus[k_tail - 1] if k_tail > 0 else 0.0,
             }
 
         # True CVaR
@@ -135,13 +141,15 @@ class TestCVaRComputationIntegration:
         print(f"\nCVaR Consistency Test (alpha={alpha}):")
         print(f"True CVaR: {true_cvar:.4f}")
         for N, res in results.items():
-            error = abs(res['cvar'] - true_cvar)
+            error = abs(res["cvar"] - true_cvar)
             error_pct = error / abs(true_cvar) * 100
-            print(f"N={N:2d}: CVaR={res['cvar']:7.4f}, k={res['k_tail']:2d}, "
-                  f"tau_cov={res['tau_coverage']:.4f}, error={error_pct:5.2f}%")
+            print(
+                f"N={N:2d}: CVaR={res['cvar']:7.4f}, k={res['k_tail']:2d}, "
+                f"tau_cov={res['tau_coverage']:.4f}, error={error_pct:5.2f}%"
+            )
 
         # Error should decrease with more quantiles
-        errors = [abs(results[N]['cvar'] - true_cvar) for N in [11, 21, 32, 51]]
+        errors = [abs(results[N]["cvar"] - true_cvar) for N in [11, 21, 32, 51]]
         print(f"\nErrors: {errors}")
         # Generally expect: error(51) <= error(21) <= error(11)
         # (32 might be slightly worse than 21 due to discrete k_tail)
@@ -179,9 +187,9 @@ class TestCVaRComputationIntegration:
 
         # Standard normal (symmetric)
         from scipy.stats import norm
+
         quantile_values = torch.tensor(
-            [norm.ppf(tau) for tau in taus],
-            dtype=torch.float32
+            [norm.ppf(tau) for tau in taus], dtype=torch.float32
         ).unsqueeze(0)
 
         # CVaR_alpha (left tail)
@@ -198,7 +206,9 @@ class TestCVaRComputationIntegration:
         print(f"Sum: {cvar_left + cvar_right:.4f} (should be ~0 for symmetric dist)")
 
         # For symmetric distribution, CVaR_alpha + CVaR_{1-alpha} ≈ 0
-        assert abs(cvar_left + cvar_right) < 0.5, "Symmetric distribution should have symmetric CVaR"
+        assert (
+            abs(cvar_left + cvar_right) < 0.5
+        ), "Symmetric distribution should have symmetric CVaR"
 
     def test_quantile_head_tau_buffer_persistence(self):
         """Test that tau buffer is persistent and survives state_dict save/load."""

@@ -19,9 +19,7 @@ class DummyAlerts:
         self.notifications.append((key, message))
 
 
-def _record_bar_metrics(
-    agg: MonitoringAggregator, symbol: str, metrics: dict[str, object]
-) -> None:
+def _record_bar_metrics(agg: MonitoringAggregator, symbol: str, metrics: dict[str, object]) -> None:
     agg.record_bar_execution(
         symbol,
         decisions=int(metrics.get("decisions", 0) or 0),

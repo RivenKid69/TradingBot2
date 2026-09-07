@@ -9,7 +9,7 @@ These tests verify that:
 3. asset_class detection works correctly from config
 4. load_all_data() routes correctly based on asset_class
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 
@@ -31,23 +31,26 @@ import pytest
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def crypto_feather_file(tmp_path: Path) -> Path:
     """Create a minimal crypto .feather file for testing."""
     n_rows = 100
-    df = pd.DataFrame({
-        "timestamp": np.arange(1609459200, 1609459200 + n_rows * 14400, 14400),
-        "open": np.random.uniform(30000, 50000, n_rows),
-        "high": np.random.uniform(30000, 50000, n_rows),
-        "low": np.random.uniform(30000, 50000, n_rows),
-        "close": np.random.uniform(30000, 50000, n_rows),
-        "volume": np.random.uniform(100, 1000, n_rows),
-        "quote_asset_volume": np.random.uniform(1000000, 10000000, n_rows),
-        "number_of_trades": np.random.randint(100, 1000, n_rows),
-        "taker_buy_base_asset_volume": np.random.uniform(50, 500, n_rows),
-        "taker_buy_quote_asset_volume": np.random.uniform(500000, 5000000, n_rows),
-        "symbol": "BTCUSDT",
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": np.arange(1609459200, 1609459200 + n_rows * 14400, 14400),
+            "open": np.random.uniform(30000, 50000, n_rows),
+            "high": np.random.uniform(30000, 50000, n_rows),
+            "low": np.random.uniform(30000, 50000, n_rows),
+            "close": np.random.uniform(30000, 50000, n_rows),
+            "volume": np.random.uniform(100, 1000, n_rows),
+            "quote_asset_volume": np.random.uniform(1000000, 10000000, n_rows),
+            "number_of_trades": np.random.randint(100, 1000, n_rows),
+            "taker_buy_base_asset_volume": np.random.uniform(50, 500, n_rows),
+            "taker_buy_quote_asset_volume": np.random.uniform(500000, 5000000, n_rows),
+            "symbol": "BTCUSDT",
+        }
+    )
 
     file_path = tmp_path / "BTCUSDT.feather"
     df.to_feather(file_path)
@@ -58,15 +61,17 @@ def crypto_feather_file(tmp_path: Path) -> Path:
 def stock_parquet_file(tmp_path: Path) -> Path:
     """Create a minimal stock .parquet file for testing."""
     n_rows = 100
-    df = pd.DataFrame({
-        "timestamp": np.arange(1609459200, 1609459200 + n_rows * 14400, 14400),
-        "open": np.random.uniform(100, 200, n_rows),
-        "high": np.random.uniform(100, 200, n_rows),
-        "low": np.random.uniform(100, 200, n_rows),
-        "close": np.random.uniform(100, 200, n_rows),
-        "volume": np.random.uniform(10000, 100000, n_rows),
-        "symbol": "AAPL",
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": np.arange(1609459200, 1609459200 + n_rows * 14400, 14400),
+            "open": np.random.uniform(100, 200, n_rows),
+            "high": np.random.uniform(100, 200, n_rows),
+            "low": np.random.uniform(100, 200, n_rows),
+            "close": np.random.uniform(100, 200, n_rows),
+            "volume": np.random.uniform(10000, 100000, n_rows),
+            "symbol": "AAPL",
+        }
+    )
 
     file_path = tmp_path / "AAPL.parquet"
     df.to_parquet(file_path)
@@ -103,6 +108,7 @@ def mock_config_equity() -> MagicMock:
 # Test: Asset Class Detection
 # =============================================================================
 
+
 class TestAssetClassDetection:
     """Test asset_class detection from config."""
 
@@ -112,9 +118,7 @@ class TestAssetClassDetection:
 
         # Simulate the detection logic from train_model_multi_patch.py
         asset_class = (
-            getattr(cfg, "asset_class", None)
-            or getattr(cfg.data, "asset_class", None)
-            or "crypto"
+            getattr(cfg, "asset_class", None) or getattr(cfg.data, "asset_class", None) or "crypto"
         ).lower()
 
         assert asset_class == "crypto"
@@ -127,9 +131,7 @@ class TestAssetClassDetection:
         cfg.data.asset_class = None
 
         asset_class = (
-            getattr(cfg, "asset_class", None)
-            or getattr(cfg.data, "asset_class", None)
-            or "crypto"
+            getattr(cfg, "asset_class", None) or getattr(cfg.data, "asset_class", None) or "crypto"
         ).lower()
 
         assert asset_class == "equity"
@@ -142,9 +144,7 @@ class TestAssetClassDetection:
         cfg.data.asset_class = "equity"
 
         asset_class = (
-            getattr(cfg, "asset_class", None)
-            or getattr(cfg.data, "asset_class", None)
-            or "crypto"
+            getattr(cfg, "asset_class", None) or getattr(cfg.data, "asset_class", None) or "crypto"
         ).lower()
 
         assert asset_class == "equity"
@@ -157,9 +157,7 @@ class TestAssetClassDetection:
         cfg.data.asset_class = "equity"  # Should be ignored
 
         asset_class = (
-            getattr(cfg, "asset_class", None)
-            or getattr(cfg.data, "asset_class", None)
-            or "crypto"
+            getattr(cfg, "asset_class", None) or getattr(cfg.data, "asset_class", None) or "crypto"
         ).lower()
 
         assert asset_class == "crypto"
@@ -172,9 +170,7 @@ class TestAssetClassDetection:
         cfg.data.asset_class = None
 
         asset_class = (
-            getattr(cfg, "asset_class", None)
-            or getattr(cfg.data, "asset_class", None)
-            or "crypto"
+            getattr(cfg, "asset_class", None) or getattr(cfg.data, "asset_class", None) or "crypto"
         ).lower()
 
         assert asset_class == "equity"
@@ -183,6 +179,7 @@ class TestAssetClassDetection:
 # =============================================================================
 # Test: load_all_data() Routing
 # =============================================================================
+
 
 class TestLoadAllDataRouting:
     """Test that load_all_data() routes correctly based on asset_class."""
@@ -246,6 +243,7 @@ class TestLoadAllDataRouting:
 # Test: Crypto Backward Compatibility (CRITICAL)
 # =============================================================================
 
+
 class TestCryptoBackwardCompatibility:
     """
     CRITICAL: These tests verify crypto pipeline remains unchanged.
@@ -283,9 +281,17 @@ class TestCryptoBackwardCompatibility:
 
         df = all_dfs["BTCUSDT"]
         required_cols = [
-            "timestamp", "open", "high", "low", "close", "volume",
-            "quote_asset_volume", "number_of_trades",
-            "taker_buy_base_asset_volume", "taker_buy_quote_asset_volume", "symbol"
+            "timestamp",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "quote_asset_volume",
+            "number_of_trades",
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume",
+            "symbol",
         ]
         for col in required_cols:
             assert col in df.columns, f"Missing column: {col}"
@@ -302,8 +308,13 @@ class TestCryptoBackwardCompatibility:
 
         df = all_dfs["BTCUSDT"]
         stock_feature_cols = [
-            "vix_normalized", "vix_regime", "market_regime",
-            "rs_spy_20d", "rs_spy_50d", "rs_qqq_20d", "sector_momentum"
+            "vix_normalized",
+            "vix_regime",
+            "market_regime",
+            "rs_spy_20d",
+            "rs_spy_50d",
+            "rs_qqq_20d",
+            "sector_momentum",
         ]
         for col in stock_feature_cols:
             assert col not in df.columns, f"Crypto should not have stock feature: {col}"
@@ -313,10 +324,12 @@ class TestCryptoBackwardCompatibility:
         from fetch_all_data_patch import load_all_data
 
         # Create mock F&G data
-        fng_df = pd.DataFrame({
-            "timestamp": [1609459200, 1609545600],
-            "fear_greed_value": [50, 60],
-        })
+        fng_df = pd.DataFrame(
+            {
+                "timestamp": [1609459200, 1609545600],
+                "fear_greed_value": [50, 60],
+            }
+        )
 
         with patch("fetch_all_data_patch._read_fng", return_value=fng_df):
             all_dfs, _ = load_all_data(
@@ -345,6 +358,7 @@ class TestCryptoBackwardCompatibility:
 # =============================================================================
 # Test: Equity Features Integration
 # =============================================================================
+
 
 class TestEquityFeaturesIntegration:
     """Test that equity data gets stock features added."""
@@ -388,6 +402,7 @@ class TestEquityFeaturesIntegration:
 # Test: Config YAML Compatibility
 # =============================================================================
 
+
 class TestConfigYAMLCompatibility:
     """Test that existing YAML configs work correctly."""
 
@@ -402,7 +417,7 @@ class TestConfigYAMLCompatibility:
             },
             "model": {
                 "algo": "ppo",
-            }
+            },
         }
 
         # Detection logic
@@ -438,6 +453,7 @@ class TestConfigYAMLCompatibility:
 # =============================================================================
 # Test: Error Messages
 # =============================================================================
+
 
 class TestErrorMessages:
     """Test that error messages are appropriate for each asset class."""
@@ -477,6 +493,7 @@ class TestErrorMessages:
 # =============================================================================
 # Integration Test: Full Pipeline Mock
 # =============================================================================
+
 
 class TestFullPipelineIntegration:
     """Integration tests for the full training pipeline changes."""

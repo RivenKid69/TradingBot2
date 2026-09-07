@@ -80,9 +80,7 @@ class WatchdogVecEnv(VecEnv):
         """Закрыть текущую и создать новую базовую среду."""
         self._restarts += 1
         if self._restarts > self._max_restarts:
-            raise RuntimeError(
-                f"WatchdogVecEnv exceeded max_restarts={self._max_restarts}"
-            )
+            raise RuntimeError(f"WatchdogVecEnv exceeded max_restarts={self._max_restarts}")
         try:
             self.env.close()
         except Exception:
@@ -130,9 +128,7 @@ class WatchdogVecEnv(VecEnv):
         return self.env.set_attr(attr_name, value, indices=indices)
 
     def env_method(self, method_name: str, *method_args, indices=None, **method_kwargs):
-        return self.env.env_method(
-            method_name, *method_args, indices=indices, **method_kwargs
-        )
+        return self.env.env_method(method_name, *method_args, indices=indices, **method_kwargs)
 
     def env_is_wrapped(self, wrapper_class, indices=None):
         return self.env.env_is_wrapped(wrapper_class, indices=indices)

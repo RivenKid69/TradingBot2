@@ -458,8 +458,7 @@ class TestPolicyEngine:
         created = await engine.create_policy(policy)
 
         updated = await engine.update_policy(
-            created.policy_id,
-            {"name": "Updated", "status": PolicyStatus.ACTIVE}
+            created.policy_id, {"name": "Updated", "status": PolicyStatus.ACTIVE}
         )
 
         assert updated.name == "Updated"

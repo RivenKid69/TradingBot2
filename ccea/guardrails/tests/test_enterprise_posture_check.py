@@ -34,6 +34,7 @@ from ccea.guardrails.enterprise_posture_check import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def check() -> EnterprisePostureCheck:
     """Create posture check instance."""
@@ -77,6 +78,7 @@ def create_env_file(path: Path, content: str) -> Path:
 # Test EU Residency Detection
 # =============================================================================
 
+
 class TestEUResidencyDetection:
     """Tests for EU residency validation."""
 
@@ -92,10 +94,7 @@ class TestEUResidencyDetection:
 
         report = check.run([temp_dir])
 
-        residency_violations = [
-            v for v in report.violations
-            if "NON_EU" in v.rule_id
-        ]
+        residency_violations = [v for v in report.violations if "NON_EU" in v.rule_id]
         assert len(residency_violations) == 0
 
     def test_us_region_fails(self, check, temp_dir):
@@ -110,8 +109,7 @@ class TestEUResidencyDetection:
         report = check.run([temp_dir])
 
         residency_violations = [
-            v for v in report.violations
-            if v.rule_id == "NON_EU_DATA_RESIDENCY"
+            v for v in report.violations if v.rule_id == "NON_EU_DATA_RESIDENCY"
         ]
         assert len(residency_violations) == 1
         assert residency_violations[0].severity == ViolationSeverity.CRITICAL
@@ -127,10 +125,7 @@ class TestEUResidencyDetection:
 
         report = check.run([temp_dir])
 
-        region_violations = [
-            v for v in report.violations
-            if v.rule_id == "NON_EU_REGION_VALUE"
-        ]
+        region_violations = [v for v in report.violations if v.rule_id == "NON_EU_REGION_VALUE"]
         assert len(region_violations) >= 1
 
     def test_on_prem_residency_passes(self, check, temp_dir):
@@ -145,8 +140,7 @@ class TestEUResidencyDetection:
         report = check.run([temp_dir])
 
         residency_violations = [
-            v for v in report.violations
-            if v.rule_id == "NON_EU_DATA_RESIDENCY"
+            v for v in report.violations if v.rule_id == "NON_EU_DATA_RESIDENCY"
         ]
         assert len(residency_violations) == 0
 
@@ -160,10 +154,7 @@ AWS_REGION=us-west-2
 
         report = check.run([temp_dir])
 
-        aws_violations = [
-            v for v in report.violations
-            if v.rule_id == "NON_EU_AWS_REGION"
-        ]
+        aws_violations = [v for v in report.violations if v.rule_id == "NON_EU_AWS_REGION"]
         assert len(aws_violations) == 1
 
     def test_env_file_eu_region_passes(self, check, temp_dir):
@@ -176,16 +167,14 @@ AWS_REGION=eu-west-1
 
         report = check.run([temp_dir])
 
-        aws_violations = [
-            v for v in report.violations
-            if v.rule_id == "NON_EU_AWS_REGION"
-        ]
+        aws_violations = [v for v in report.violations if v.rule_id == "NON_EU_AWS_REGION"]
         assert len(aws_violations) == 0
 
 
 # =============================================================================
 # Test Telemetry Configuration
 # =============================================================================
+
 
 class TestTelemetryConfiguration:
     """Tests for telemetry configuration validation."""
@@ -204,8 +193,7 @@ class TestTelemetryConfiguration:
         report = check.run([temp_dir])
 
         redaction_violations = [
-            v for v in report.violations
-            if v.rule_id == "REDACTION_NOT_MANDATORY"
+            v for v in report.violations if v.rule_id == "REDACTION_NOT_MANDATORY"
         ]
         assert len(redaction_violations) == 0
 
@@ -223,8 +211,7 @@ class TestTelemetryConfiguration:
         report = check.run([temp_dir])
 
         redaction_violations = [
-            v for v in report.violations
-            if v.rule_id == "REDACTION_NOT_MANDATORY"
+            v for v in report.violations if v.rule_id == "REDACTION_NOT_MANDATORY"
         ]
         assert len(redaction_violations) == 1
         assert redaction_violations[0].severity == ViolationSeverity.CRITICAL
@@ -246,10 +233,7 @@ class TestTelemetryConfiguration:
 
         report = on_prem_check.run([temp_dir])
 
-        local_violations = [
-            v for v in report.violations
-            if v.rule_id == "TELEMETRY_NOT_LOCAL"
-        ]
+        local_violations = [v for v in report.violations if v.rule_id == "TELEMETRY_NOT_LOCAL"]
         assert len(local_violations) >= 1
 
     def test_on_prem_telemetry_local_enabled_passes(self, on_prem_check, temp_dir):
@@ -269,16 +253,14 @@ class TestTelemetryConfiguration:
 
         report = on_prem_check.run([temp_dir])
 
-        local_violations = [
-            v for v in report.violations
-            if v.rule_id == "TELEMETRY_NOT_LOCAL"
-        ]
+        local_violations = [v for v in report.violations if v.rule_id == "TELEMETRY_NOT_LOCAL"]
         assert len(local_violations) == 0
 
 
 # =============================================================================
 # Test Air-Gapped Mode
 # =============================================================================
+
 
 class TestAirGappedMode:
     """Tests for air-gapped mode validation."""
@@ -295,10 +277,7 @@ class TestAirGappedMode:
 
         report = air_gapped_check.run([temp_dir])
 
-        air_gap_violations = [
-            v for v in report.violations
-            if v.rule_id == "AIR_GAP_NOT_ENABLED"
-        ]
+        air_gap_violations = [v for v in report.violations if v.rule_id == "AIR_GAP_NOT_ENABLED"]
         assert len(air_gap_violations) >= 1
 
     def test_external_egress_not_allowed(self, air_gapped_check, temp_dir):
@@ -318,10 +297,7 @@ class TestAirGappedMode:
 
         report = air_gapped_check.run([temp_dir])
 
-        egress_violations = [
-            v for v in report.violations
-            if v.rule_id == "EXTERNAL_EGRESS_ALLOWED"
-        ]
+        egress_violations = [v for v in report.violations if v.rule_id == "EXTERNAL_EGRESS_ALLOWED"]
         assert len(egress_violations) >= 1
 
     def test_external_url_detected(self, air_gapped_check, temp_dir):
@@ -339,10 +315,7 @@ class TestAirGappedMode:
 
         report = air_gapped_check.run([temp_dir])
 
-        url_violations = [
-            v for v in report.violations
-            if v.rule_id == "EXTERNAL_URL_IN_AIR_GAP"
-        ]
+        url_violations = [v for v in report.violations if v.rule_id == "EXTERNAL_URL_IN_AIR_GAP"]
         assert len(url_violations) >= 1
 
     def test_local_url_allowed(self, air_gapped_check, temp_dir):
@@ -365,10 +338,7 @@ class TestAirGappedMode:
 
         report = air_gapped_check.run([temp_dir])
 
-        url_violations = [
-            v for v in report.violations
-            if v.rule_id == "EXTERNAL_URL_IN_AIR_GAP"
-        ]
+        url_violations = [v for v in report.violations if v.rule_id == "EXTERNAL_URL_IN_AIR_GAP"]
         assert len(url_violations) == 0
 
     def test_env_file_external_url(self, air_gapped_check, temp_dir):
@@ -382,16 +352,14 @@ UPSTREAM_REGISTRY_URL=https://registry-1.docker.io
 
         report = air_gapped_check.run([temp_dir])
 
-        url_violations = [
-            v for v in report.violations
-            if v.rule_id == "EXTERNAL_URL_IN_AIR_GAP"
-        ]
+        url_violations = [v for v in report.violations if v.rule_id == "EXTERNAL_URL_IN_AIR_GAP"]
         assert len(url_violations) >= 1
 
 
 # =============================================================================
 # Test On-Prem Mode
 # =============================================================================
+
 
 class TestOnPremMode:
     """Tests for on-prem mode validation."""
@@ -413,8 +381,7 @@ class TestOnPremMode:
         report = on_prem_check.run([temp_dir])
 
         evidence_violations = [
-            v for v in report.violations
-            if v.rule_id == "EVIDENCE_EXPORT_NOT_LOCAL"
+            v for v in report.violations if v.rule_id == "EVIDENCE_EXPORT_NOT_LOCAL"
         ]
         # This is a MEDIUM severity (warning)
         assert len(evidence_violations) >= 1
@@ -456,6 +423,7 @@ class TestOnPremMode:
 # =============================================================================
 # Test Mode Auto-Detection
 # =============================================================================
+
 
 class TestModeAutoDetection:
     """Tests for deployment mode auto-detection."""
@@ -518,6 +486,7 @@ CCEA_DATA_RESIDENCY=on-prem
 # Test Report Generation
 # =============================================================================
 
+
 class TestReportGeneration:
     """Tests for report generation."""
 
@@ -573,6 +542,7 @@ class TestReportGeneration:
 # Test Violation Details
 # =============================================================================
 
+
 class TestViolationDetails:
     """Tests for violation detail capture."""
 
@@ -602,8 +572,7 @@ class TestViolationDetails:
         report = check.run([temp_dir])
 
         residency_violations = [
-            v for v in report.violations
-            if v.rule_id == "NON_EU_DATA_RESIDENCY"
+            v for v in report.violations if v.rule_id == "NON_EU_DATA_RESIDENCY"
         ]
         assert len(residency_violations) > 0
         assert residency_violations[0].key_path == "global.dataResidency"
@@ -620,8 +589,7 @@ class TestViolationDetails:
         report = check.run([temp_dir])
 
         residency_violations = [
-            v for v in report.violations
-            if v.rule_id == "NON_EU_DATA_RESIDENCY"
+            v for v in report.violations if v.rule_id == "NON_EU_DATA_RESIDENCY"
         ]
         assert len(residency_violations) > 0
         assert residency_violations[0].actual_value == "us-west-2"
@@ -637,10 +605,7 @@ AWS_REGION=us-east-1
 
         report = check.run([temp_dir])
 
-        aws_violations = [
-            v for v in report.violations
-            if v.rule_id == "NON_EU_AWS_REGION"
-        ]
+        aws_violations = [v for v in report.violations if v.rule_id == "NON_EU_AWS_REGION"]
         assert len(aws_violations) > 0
         assert aws_violations[0].line_number is not None
 
@@ -648,6 +613,7 @@ AWS_REGION=us-east-1
 # =============================================================================
 # Test Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
@@ -669,10 +635,7 @@ class TestEdgeCases:
         report = check.run([temp_dir])
 
         # Should log error but not crash
-        parse_errors = [
-            v for v in report.violations
-            if v.rule_id == "YAML_PARSE_ERROR"
-        ]
+        parse_errors = [v for v in report.violations if v.rule_id == "YAML_PARSE_ERROR"]
         assert len(parse_errors) >= 1
 
     def test_nonexistent_path(self, check):
@@ -714,6 +677,7 @@ class TestEdgeCases:
 # Test Constants
 # =============================================================================
 
+
 class TestConstants:
     """Tests for module constants."""
 
@@ -733,6 +697,7 @@ class TestConstants:
 # =============================================================================
 # Test Violation Severity
 # =============================================================================
+
 
 class TestViolationSeverity:
     """Tests for violation severity handling."""

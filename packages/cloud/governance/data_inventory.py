@@ -44,65 +44,72 @@ logger = logging.getLogger(__name__)
 # Constants
 # ============================================================================
 
+
 # Data sensitivity classifications
 class DataSensitivity(str, Enum):
     """Sensitivity classification for data fields."""
-    PUBLIC = "public"              # Non-sensitive, can be exposed
-    INTERNAL = "internal"          # Internal use only
+
+    PUBLIC = "public"  # Non-sensitive, can be exposed
+    INTERNAL = "internal"  # Internal use only
     CONFIDENTIAL = "confidential"  # Business-sensitive
-    SENSITIVE = "sensitive"        # Personal data (GDPR relevant)
-    CRITICAL = "critical"          # Credentials, PII, financial
-    RESTRICTED = "restricted"      # Highest sensitivity (broker creds, order data)
+    SENSITIVE = "sensitive"  # Personal data (GDPR relevant)
+    CRITICAL = "critical"  # Credentials, PII, financial
+    RESTRICTED = "restricted"  # Highest sensitivity (broker creds, order data)
 
 
 class DataCategory(str, Enum):
     """Category of data for GDPR purposes."""
-    TECHNICAL = "technical"           # System metrics, logs
-    OPERATIONAL = "operational"       # Commands, configs, deployments
-    TELEMETRY = "telemetry"           # Telemetry events
-    AUDIT = "audit"                   # Access logs, audit trails
-    COMPLIANCE = "compliance"         # DSAR, approval records
-    USER = "user"                     # User settings, preferences
-    FINANCIAL = "financial"           # Billing, transactions
-    TRADING = "trading"               # Order, position, fill data
-    CREDENTIAL = "credential"         # API keys, tokens, secrets
-    PII = "pii"                       # Personal identifiable information
+
+    TECHNICAL = "technical"  # System metrics, logs
+    OPERATIONAL = "operational"  # Commands, configs, deployments
+    TELEMETRY = "telemetry"  # Telemetry events
+    AUDIT = "audit"  # Access logs, audit trails
+    COMPLIANCE = "compliance"  # DSAR, approval records
+    USER = "user"  # User settings, preferences
+    FINANCIAL = "financial"  # Billing, transactions
+    TRADING = "trading"  # Order, position, fill data
+    CREDENTIAL = "credential"  # API keys, tokens, secrets
+    PII = "pii"  # Personal identifiable information
 
 
 class ResidencyRequirement(str, Enum):
     """Data residency requirement."""
-    EU_ONLY = "eu_only"               # Must remain in EU
-    EU_PREFERRED = "eu_preferred"     # Prefer EU, allow exceptions
-    GLOBAL = "global"                 # No residency restriction
+
+    EU_ONLY = "eu_only"  # Must remain in EU
+    EU_PREFERRED = "eu_preferred"  # Prefer EU, allow exceptions
+    GLOBAL = "global"  # No residency restriction
     CUSTOMER_REGION = "customer_region"  # Follow customer region
 
 
 class RedactionRequirement(str, Enum):
     """Redaction handling for this data."""
-    NONE = "none"                     # No redaction needed
-    OPTIONAL = "optional"             # Redaction available if requested
-    MANDATORY = "mandatory"           # Must be redacted before transmission
+
+    NONE = "none"  # No redaction needed
+    OPTIONAL = "optional"  # Redaction available if requested
+    MANDATORY = "mandatory"  # Must be redacted before transmission
     NEVER_TRANSMIT = "never_transmit"  # Designed to remain in agent
 
 
 class InventoryEntryType(str, Enum):
     """Type of inventory entry."""
-    FIELD = "field"           # Individual data field
-    STORE = "store"           # Data store (database, cache)
-    LOG_STREAM = "log_stream" # Log output stream
-    TABLE = "table"           # Database table
-    COLLECTION = "collection" # Document collection
-    BUCKET = "bucket"         # Object storage bucket
-    QUEUE = "queue"           # Message queue
-    TOPIC = "topic"           # Event topic
+
+    FIELD = "field"  # Individual data field
+    STORE = "store"  # Data store (database, cache)
+    LOG_STREAM = "log_stream"  # Log output stream
+    TABLE = "table"  # Database table
+    COLLECTION = "collection"  # Document collection
+    BUCKET = "bucket"  # Object storage bucket
+    QUEUE = "queue"  # Message queue
+    TOPIC = "topic"  # Event topic
 
 
 class ReviewStatus(str, Enum):
     """Review status for inventory entry."""
-    PENDING = "pending"       # Not yet reviewed
-    APPROVED = "approved"     # Approved for use
-    REJECTED = "rejected"     # Not approved
-    DEPRECATED = "deprecated" # Marked for removal
+
+    PENDING = "pending"  # Not yet reviewed
+    APPROVED = "approved"  # Approved for use
+    REJECTED = "rejected"  # Not approved
+    DEPRECATED = "deprecated"  # Marked for removal
     UNDER_REVIEW = "under_review"  # Currently being reviewed
 
 
@@ -118,10 +125,13 @@ ALWAYS_REDACT_PATTERNS: Final[List[Tuple[re.Pattern, str]]] = [
     (re.compile(r"password", re.IGNORECASE), "Password"),
     (re.compile(r"passphrase", re.IGNORECASE), "Passphrase"),
     (re.compile(r"credential", re.IGNORECASE), "Credential"),
-    (re.compile(
-        r"(binance|alpaca|deribit|oanda|interactive_brokers|ib)[_-]?(key|secret|token)",
-        re.IGNORECASE
-    ), "Broker credential"),
+    (
+        re.compile(
+            r"(binance|alpaca|deribit|oanda|interactive_brokers|ib)[_-]?(key|secret|token)",
+            re.IGNORECASE,
+        ),
+        "Broker credential",
+    ),
 ]
 
 # PII field patterns
@@ -155,6 +165,7 @@ ORDER_FIELD_PATTERNS: Final[List[Tuple[re.Pattern, str]]] = [
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class InventoryEntry:
     """
@@ -163,21 +174,22 @@ class InventoryEntry:
     Represents a data field, store, log stream, or other data element
     with all GDPR-required metadata.
     """
+
     # Identity
     id: str = field(default_factory=lambda: str(uuid4()))
-    name: str = ""                    # Field/store name
+    name: str = ""  # Field/store name
     entry_type: InventoryEntryType = InventoryEntryType.FIELD
-    path: str = ""                    # Full path (e.g., table.column, log.field)
+    path: str = ""  # Full path (e.g., table.column, log.field)
 
     # Classification
     sensitivity: DataSensitivity = DataSensitivity.INTERNAL
     category: DataCategory = DataCategory.TECHNICAL
     description: str = ""
-    purpose: str = ""                 # GDPR Art. 30: purpose of processing
-    lawful_basis: str = ""            # GDPR Art. 6: lawful basis
+    purpose: str = ""  # GDPR Art. 30: purpose of processing
+    lawful_basis: str = ""  # GDPR Art. 6: lawful basis
 
     # Retention
-    retention_days: int = 90          # Default retention period
+    retention_days: int = 90  # Default retention period
     retention_action: str = "delete"  # delete, archive, anonymize, aggregate
 
     # Residency
@@ -254,25 +266,27 @@ class InventoryEntry:
     @property
     def is_compliant(self) -> bool:
         """Check if entry has all required GDPR fields."""
-        return all([
-            self.name,
-            self.sensitivity,
-            self.category,
-            self.purpose,
-            self.lawful_basis,
-            self.retention_days > 0,
-            self.residency,
-            self.review_status == ReviewStatus.APPROVED,
-        ])
+        return all(
+            [
+                self.name,
+                self.sensitivity,
+                self.category,
+                self.purpose,
+                self.lawful_basis,
+                self.retention_days > 0,
+                self.residency,
+                self.review_status == ReviewStatus.APPROVED,
+            ]
+        )
 
     @property
     def requires_dpia(self) -> bool:
         """Check if this entry requires Data Protection Impact Assessment."""
         return (
-            self.sensitivity in (DataSensitivity.CRITICAL, DataSensitivity.RESTRICTED) or
-            self.pii_detected or
-            self.category == DataCategory.FINANCIAL or
-            self.category == DataCategory.TRADING
+            self.sensitivity in (DataSensitivity.CRITICAL, DataSensitivity.RESTRICTED)
+            or self.pii_detected
+            or self.category == DataCategory.FINANCIAL
+            or self.category == DataCategory.TRADING
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -336,6 +350,7 @@ class InventoryEntry:
 @dataclass
 class InventoryValidationResult:
     """Result of validating a data field against the inventory."""
+
     is_registered: bool = False
     is_compliant: bool = False
     entry: Optional[InventoryEntry] = None
@@ -364,6 +379,7 @@ class InventoryValidationResult:
 @dataclass
 class InventoryReport:
     """Report on data inventory status."""
+
     report_id: str = field(default_factory=lambda: str(uuid4()))
     generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     generated_by: str = "system"
@@ -401,13 +417,16 @@ class InventoryReport:
 
     def _compute_hash(self) -> str:
         """Compute integrity hash for this report."""
-        content = json.dumps({
-            "report_id": self.report_id,
-            "generated_at": self.generated_at.isoformat(),
-            "total_entries": self.total_entries,
-            "compliant_entries": self.compliant_entries,
-            "non_compliant_entries": self.non_compliant_entries,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "report_id": self.report_id,
+                "generated_at": self.generated_at.isoformat(),
+                "total_entries": self.total_entries,
+                "compliant_entries": self.compliant_entries,
+                "non_compliant_entries": self.non_compliant_entries,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -422,7 +441,8 @@ class InventoryReport:
                 "non_compliant_entries": self.non_compliant_entries,
                 "compliance_rate": (
                     self.compliant_entries / self.total_entries * 100
-                    if self.total_entries > 0 else 0
+                    if self.total_entries > 0
+                    else 0
                 ),
             },
             "by_type": self.by_type,
@@ -444,9 +464,7 @@ class InventoryReport:
                 "missing_lawful_basis": self.missing_lawful_basis,
                 "missing_retention": self.missing_retention,
                 "total_issues": (
-                    self.missing_purpose +
-                    self.missing_lawful_basis +
-                    self.missing_retention
+                    self.missing_purpose + self.missing_lawful_basis + self.missing_retention
                 ),
             },
             "integrity_hash": self.integrity_hash,
@@ -456,6 +474,7 @@ class InventoryReport:
 @dataclass
 class InventoryChangeEvent:
     """Event recording a change to the inventory."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     action: str = "create"  # create, update, delete, approve, reject
@@ -473,13 +492,16 @@ class InventoryChangeEvent:
 
     def _compute_hash(self) -> str:
         """Compute integrity hash."""
-        content = json.dumps({
-            "event_id": self.event_id,
-            "timestamp": self.timestamp.isoformat(),
-            "action": self.action,
-            "entry_id": self.entry_id,
-            "actor_id": self.actor_id,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "timestamp": self.timestamp.isoformat(),
+                "action": self.action,
+                "entry_id": self.entry_id,
+                "actor_id": self.actor_id,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -501,6 +523,7 @@ class InventoryChangeEvent:
 # ============================================================================
 # Data Inventory Registry
 # ============================================================================
+
 
 class DataInventoryRegistry:
     """
@@ -706,18 +729,18 @@ class DataInventoryRegistry:
                     created_by=created_by,
                     path=entry_data.get("path"),
                     description=entry_data.get("description", ""),
-                    residency=ResidencyRequirement(
-                        entry_data.get("residency", "eu_only")
-                    ),
+                    residency=ResidencyRequirement(entry_data.get("residency", "eu_only")),
                     min_telemetry_level=entry_data.get("min_telemetry_level", "AGGREGATED"),
                     tags=entry_data.get("tags", []),
                 )
                 created.append(entry)
             except Exception as e:
-                errors.append({
-                    "name": entry_data.get("name", "unknown"),
-                    "error": str(e),
-                })
+                errors.append(
+                    {
+                        "name": entry_data.get("name", "unknown"),
+                        "error": str(e),
+                    }
+                )
 
         return created, errors
 
@@ -795,10 +818,11 @@ class DataInventoryRegistry:
             if query:
                 query_lower = query.lower()
                 results = [
-                    e for e in results
-                    if query_lower in e.name.lower() or
-                       query_lower in e.path.lower() or
-                       query_lower in e.description.lower()
+                    e
+                    for e in results
+                    if query_lower in e.name.lower()
+                    or query_lower in e.path.lower()
+                    or query_lower in e.description.lower()
                 ]
 
             # Type filter
@@ -819,10 +843,7 @@ class DataInventoryRegistry:
 
             # Tags filter
             if tags:
-                results = [
-                    e for e in results
-                    if any(t in e.tags for t in tags)
-                ]
+                results = [e for e in results if any(t in e.tags for t in tags)]
 
             return results
 
@@ -866,9 +887,7 @@ class DataInventoryRegistry:
 
         if not entry:
             result.is_registered = False
-            result.violations.append(
-                f"Field '{name}' is not registered in data inventory"
-            )
+            result.violations.append(f"Field '{name}' is not registered in data inventory")
 
             # Add specific warnings for detected patterns
             if result.auto_detected["credential"]:
@@ -897,9 +916,7 @@ class DataInventoryRegistry:
 
         # Check compliance
         if entry.review_status != ReviewStatus.APPROVED:
-            result.violations.append(
-                f"Entry not approved (status: {entry.review_status.value})"
-            )
+            result.violations.append(f"Entry not approved (status: {entry.review_status.value})")
 
         if not entry.purpose:
             result.violations.append("Missing purpose (GDPR Art. 30)")
@@ -912,40 +929,28 @@ class DataInventoryRegistry:
 
         # Check auto-detection matches registration
         if result.auto_detected["credential"] and not entry.credential_detected:
-            result.warnings.append(
-                "Field appears to be credential but not marked as such"
-            )
+            result.warnings.append("Field appears to be credential but not marked as such")
 
         if result.auto_detected["pii"] and not entry.pii_detected:
-            result.warnings.append(
-                "Field appears to be PII but not marked as such"
-            )
+            result.warnings.append("Field appears to be PII but not marked as such")
 
         if result.auto_detected["order_field"] and not entry.order_field_detected:
-            result.warnings.append(
-                "Field appears to be order-related but not marked as such"
-            )
+            result.warnings.append("Field appears to be order-related but not marked as such")
 
         # Check credential redaction
         if entry.credential_detected and entry.redaction != RedactionRequirement.NEVER_TRANSMIT:
-            result.violations.append(
-                "Credential field must have NEVER_TRANSMIT redaction"
-            )
+            result.violations.append("Credential field must have NEVER_TRANSMIT redaction")
 
         # Check PII redaction
         if entry.pii_detected and entry.redaction not in (
             RedactionRequirement.MANDATORY,
             RedactionRequirement.NEVER_TRANSMIT,
         ):
-            result.violations.append(
-                "PII field must have MANDATORY or NEVER_TRANSMIT redaction"
-            )
+            result.violations.append("PII field must have MANDATORY or NEVER_TRANSMIT redaction")
 
         # Check EU residency
         if entry.residency != ResidencyRequirement.EU_ONLY:
-            result.warnings.append(
-                "Non-EU residency may require additional compliance review"
-            )
+            result.warnings.append("Non-EU residency may require additional compliance review")
 
         result.is_compliant = len(result.violations) == 0
         return result
@@ -965,10 +970,7 @@ class DataInventoryRegistry:
         Returns:
             Dictionary of name -> InventoryValidationResult
         """
-        return {
-            name: self.validate(name, check_compliance=check_compliance)
-            for name in names
-        }
+        return {name: self.validate(name, check_compliance=check_compliance) for name in names}
 
     def validate_all(self) -> Tuple[int, int, List[str]]:
         """
@@ -1228,8 +1230,7 @@ class DataInventoryRegistry:
                 del self._by_path[entry.path]
             if entry.entry_type in self._by_type:
                 self._by_type[entry.entry_type] = [
-                    eid for eid in self._by_type[entry.entry_type]
-                    if eid != entry_id
+                    eid for eid in self._by_type[entry.entry_type] if eid != entry_id
                 ]
 
         # Log event
@@ -1377,9 +1378,7 @@ class DataInventoryRegistry:
                 # Convert to kwargs
                 kwargs = {
                     "name": entry_data.get("name"),
-                    "entry_type": InventoryEntryType(
-                        entry_data.get("entry_type", "field")
-                    ),
+                    "entry_type": InventoryEntryType(entry_data.get("entry_type", "field")),
                     "path": entry_data.get("path"),
                     "sensitivity": DataSensitivity(
                         entry_data.get("classification", {}).get("sensitivity", "internal")
@@ -1455,8 +1454,7 @@ class DataInventoryRegistry:
             total = len(self._entries)
             compliant = sum(1 for e in self._entries.values() if e.is_compliant)
             pending = sum(
-                1 for e in self._entries.values()
-                if e.review_status == ReviewStatus.PENDING
+                1 for e in self._entries.values() if e.review_status == ReviewStatus.PENDING
             )
 
         return {
@@ -1473,6 +1471,7 @@ class DataInventoryRegistry:
 # Pre-populated Core Inventory
 # ============================================================================
 
+
 def create_core_inventory() -> DataInventoryRegistry:
     """
     Create a registry pre-populated with core CCEA data fields.
@@ -1484,41 +1483,106 @@ def create_core_inventory() -> DataInventoryRegistry:
     # Telemetry fields (from TELEMETRY_DATA_DICTIONARY.md)
     telemetry_fields = [
         # Aggregated level fields
-        {"name": "timestamp", "category": "telemetry", "sensitivity": "public",
-         "purpose": "Event timing", "lawful_basis": "Legitimate interest",
-         "retention_days": 90, "min_telemetry_level": "AGGREGATED"},
-        {"name": "count", "category": "telemetry", "sensitivity": "public",
-         "purpose": "Aggregate metrics", "lawful_basis": "Legitimate interest",
-         "retention_days": 90, "min_telemetry_level": "AGGREGATED"},
-        {"name": "cpu_percent", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "System monitoring", "lawful_basis": "Contract performance",
-         "retention_days": 30, "min_telemetry_level": "AGGREGATED"},
-        {"name": "memory_percent", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "System monitoring", "lawful_basis": "Contract performance",
-         "retention_days": 30, "min_telemetry_level": "AGGREGATED"},
-        {"name": "latency_ms", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "Performance monitoring", "lawful_basis": "Contract performance",
-         "retention_days": 30, "min_telemetry_level": "AGGREGATED"},
-        {"name": "strategy_id", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "Strategy identification", "lawful_basis": "Contract performance",
-         "retention_days": 365, "min_telemetry_level": "AGGREGATED"},
-        {"name": "workspace_id", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "Workspace context", "lawful_basis": "Contract performance",
-         "retention_days": 365, "min_telemetry_level": "AGGREGATED"},
-        {"name": "error_count", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "Error monitoring", "lawful_basis": "Contract performance",
-         "retention_days": 90, "min_telemetry_level": "AGGREGATED"},
-
+        {
+            "name": "timestamp",
+            "category": "telemetry",
+            "sensitivity": "public",
+            "purpose": "Event timing",
+            "lawful_basis": "Legitimate interest",
+            "retention_days": 90,
+            "min_telemetry_level": "AGGREGATED",
+        },
+        {
+            "name": "count",
+            "category": "telemetry",
+            "sensitivity": "public",
+            "purpose": "Aggregate metrics",
+            "lawful_basis": "Legitimate interest",
+            "retention_days": 90,
+            "min_telemetry_level": "AGGREGATED",
+        },
+        {
+            "name": "cpu_percent",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "System monitoring",
+            "lawful_basis": "Contract performance",
+            "retention_days": 30,
+            "min_telemetry_level": "AGGREGATED",
+        },
+        {
+            "name": "memory_percent",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "System monitoring",
+            "lawful_basis": "Contract performance",
+            "retention_days": 30,
+            "min_telemetry_level": "AGGREGATED",
+        },
+        {
+            "name": "latency_ms",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "Performance monitoring",
+            "lawful_basis": "Contract performance",
+            "retention_days": 30,
+            "min_telemetry_level": "AGGREGATED",
+        },
+        {
+            "name": "strategy_id",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "Strategy identification",
+            "lawful_basis": "Contract performance",
+            "retention_days": 365,
+            "min_telemetry_level": "AGGREGATED",
+        },
+        {
+            "name": "workspace_id",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "Workspace context",
+            "lawful_basis": "Contract performance",
+            "retention_days": 365,
+            "min_telemetry_level": "AGGREGATED",
+        },
+        {
+            "name": "error_count",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "Error monitoring",
+            "lawful_basis": "Contract performance",
+            "retention_days": 90,
+            "min_telemetry_level": "AGGREGATED",
+        },
         # Detailed level fields
-        {"name": "event_type", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "Event classification", "lawful_basis": "Contract performance",
-         "retention_days": 30, "min_telemetry_level": "DETAILED_NON_SENSITIVE"},
-        {"name": "trace_id", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "Distributed tracing", "lawful_basis": "Contract performance",
-         "retention_days": 7, "min_telemetry_level": "DETAILED_NON_SENSITIVE"},
-        {"name": "error_code", "category": "telemetry", "sensitivity": "internal",
-         "purpose": "Error classification", "lawful_basis": "Contract performance",
-         "retention_days": 30, "min_telemetry_level": "DETAILED_NON_SENSITIVE"},
+        {
+            "name": "event_type",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "Event classification",
+            "lawful_basis": "Contract performance",
+            "retention_days": 30,
+            "min_telemetry_level": "DETAILED_NON_SENSITIVE",
+        },
+        {
+            "name": "trace_id",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "Distributed tracing",
+            "lawful_basis": "Contract performance",
+            "retention_days": 7,
+            "min_telemetry_level": "DETAILED_NON_SENSITIVE",
+        },
+        {
+            "name": "error_code",
+            "category": "telemetry",
+            "sensitivity": "internal",
+            "purpose": "Error classification",
+            "lawful_basis": "Contract performance",
+            "retention_days": 30,
+            "min_telemetry_level": "DETAILED_NON_SENSITIVE",
+        },
     ]
 
     for field_data in telemetry_fields:
@@ -1540,15 +1604,33 @@ def create_core_inventory() -> DataInventoryRegistry:
 
     # Data stores
     stores = [
-        {"name": "telemetry_store", "entry_type": "store", "category": "telemetry",
-         "sensitivity": "confidential", "purpose": "Telemetry storage",
-         "lawful_basis": "Contract performance", "retention_days": 90},
-        {"name": "audit_log_store", "entry_type": "store", "category": "audit",
-         "sensitivity": "critical", "purpose": "Compliance audit trail",
-         "lawful_basis": "Legal obligation", "retention_days": 2555},
-        {"name": "user_settings_store", "entry_type": "store", "category": "user",
-         "sensitivity": "sensitive", "purpose": "User preferences",
-         "lawful_basis": "Contract performance", "retention_days": 365},
+        {
+            "name": "telemetry_store",
+            "entry_type": "store",
+            "category": "telemetry",
+            "sensitivity": "confidential",
+            "purpose": "Telemetry storage",
+            "lawful_basis": "Contract performance",
+            "retention_days": 90,
+        },
+        {
+            "name": "audit_log_store",
+            "entry_type": "store",
+            "category": "audit",
+            "sensitivity": "critical",
+            "purpose": "Compliance audit trail",
+            "lawful_basis": "Legal obligation",
+            "retention_days": 2555,
+        },
+        {
+            "name": "user_settings_store",
+            "entry_type": "store",
+            "category": "user",
+            "sensitivity": "sensitive",
+            "purpose": "User preferences",
+            "lawful_basis": "Contract performance",
+            "retention_days": 365,
+        },
     ]
 
     for store_data in stores:

@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class OnCallTier(Enum):
     """On-call tier options."""
+
     OPTION_A = "option_a"  # No formal rotation (not recommended)
     OPTION_B = "option_b"  # Business hours (9x5) - 2 engineers
     OPTION_C = "option_c"  # 24/7 coverage - 4+ engineers
@@ -37,6 +38,7 @@ class OnCallTier(Enum):
 
 class RotationSchedule(Enum):
     """Rotation schedule types."""
+
     WEEKLY = "weekly"
     BIWEEKLY = "biweekly"
     DAILY = "daily"
@@ -45,6 +47,7 @@ class RotationSchedule(Enum):
 
 class EscalationPath(Enum):
     """Escalation path levels."""
+
     PRIMARY = "primary"
     SECONDARY = "secondary"
     MANAGER = "manager"
@@ -54,6 +57,7 @@ class EscalationPath(Enum):
 
 class IncidentPriority(Enum):
     """Incident priority levels."""
+
     P1 = "P1"  # Critical - Immediate response
     P2 = "P2"  # High - 15 min response
     P3 = "P3"  # Medium - 1 hour response
@@ -63,6 +67,7 @@ class IncidentPriority(Enum):
 @dataclass
 class OnCallEngineer:
     """On-call engineer record."""
+
     engineer_id: str = ""
     name: str = ""
     email: str = ""
@@ -83,6 +88,7 @@ class OnCallEngineer:
 @dataclass
 class OnCallShift:
     """On-call shift assignment."""
+
     shift_id: str = ""
     engineer_id: str = ""
     engineer_name: str = ""
@@ -107,6 +113,7 @@ class OnCallShift:
 @dataclass
 class EscalationRule:
     """Escalation rule configuration."""
+
     rule_id: str = ""
     priority: IncidentPriority = IncidentPriority.P2
     escalation_path: List[EscalationPath] = field(default_factory=list)
@@ -121,6 +128,7 @@ class EscalationRule:
 @dataclass
 class OnCallIncident:
     """Incident assigned to on-call."""
+
     incident_id: str = ""
     title: str = ""
     description: str = ""
@@ -152,17 +160,20 @@ class OnCallIncident:
 @dataclass
 class OnCallRotationConfig:
     """Configuration for OnCallRotationManager."""
+
     tier: OnCallTier = OnCallTier.OPTION_B
     rotation_schedule: RotationSchedule = RotationSchedule.WEEKLY
     business_hours_start: int = 9  # 9 AM
-    business_hours_end: int = 18   # 6 PM
+    business_hours_end: int = 18  # 6 PM
     business_days: List[int] = field(default_factory=lambda: [0, 1, 2, 3, 4])  # Mon-Fri
-    default_response_sla: Dict[str, int] = field(default_factory=lambda: {
-        "P1": 5,
-        "P2": 15,
-        "P3": 60,
-        "P4": 480,  # 8 hours
-    })
+    default_response_sla: Dict[str, int] = field(
+        default_factory=lambda: {
+            "P1": 5,
+            "P2": 15,
+            "P3": 60,
+            "P4": 480,  # 8 hours
+        }
+    )
     log_all_events: bool = True
     log_path: str = "logs/core/oncall"
     alert_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None
@@ -213,7 +224,11 @@ class OnCallRotationManager:
             response_time = self.config.default_response_sla.get(priority.value, 60)
             rule = EscalationRule(
                 priority=priority,
-                escalation_path=[EscalationPath.PRIMARY, EscalationPath.SECONDARY, EscalationPath.MANAGER],
+                escalation_path=[
+                    EscalationPath.PRIMARY,
+                    EscalationPath.SECONDARY,
+                    EscalationPath.MANAGER,
+                ],
                 initial_response_minutes=response_time,
             )
             self._escalation_rules[rule.rule_id] = rule
@@ -265,16 +280,19 @@ class OnCallRotationManager:
 
         return shift
 
-    def get_current_oncall(self, escalation_path: EscalationPath = EscalationPath.PRIMARY) -> Optional[OnCallEngineer]:
+    def get_current_oncall(
+        self, escalation_path: EscalationPath = EscalationPath.PRIMARY
+    ) -> Optional[OnCallEngineer]:
         """Get currently on-call engineer."""
         now = datetime.now(timezone.utc).isoformat()
 
         with self._lock:
             active_shifts = [
-                s for s in self._shifts.values()
-                if s.is_active and
-                s.escalation_path == escalation_path and
-                s.start_time <= now <= s.end_time
+                s
+                for s in self._shifts.values()
+                if s.is_active
+                and s.escalation_path == escalation_path
+                and s.start_time <= now <= s.end_time
             ]
 
             if not active_shifts:
@@ -306,11 +324,14 @@ class OnCallRotationManager:
 
         # Alert on-call
         if oncall and self.config.alert_callback:
-            self.config.alert_callback("incident_assigned", {
-                "incident_id": incident.incident_id,
-                "engineer": oncall.name,
-                "priority": priority.value,
-            })
+            self.config.alert_callback(
+                "incident_assigned",
+                {
+                    "incident_id": incident.incident_id,
+                    "engineer": oncall.name,
+                    "priority": priority.value,
+                },
+            )
 
         return incident
 
@@ -331,7 +352,9 @@ class OnCallRotationManager:
 
         return incident
 
-    def resolve_incident(self, incident_id: str, resolution_notes: str = "") -> Optional[OnCallIncident]:
+    def resolve_incident(
+        self, incident_id: str, resolution_notes: str = ""
+    ) -> Optional[OnCallIncident]:
         """Resolve an incident."""
         with self._lock:
             if incident_id not in self._incidents:
@@ -358,7 +381,12 @@ class OnCallRotationManager:
             incident.escalation_level += 1
 
             # Get next escalation path
-            paths = [EscalationPath.PRIMARY, EscalationPath.SECONDARY, EscalationPath.MANAGER, EscalationPath.DIRECTOR]
+            paths = [
+                EscalationPath.PRIMARY,
+                EscalationPath.SECONDARY,
+                EscalationPath.MANAGER,
+                EscalationPath.DIRECTOR,
+            ]
             if incident.escalation_level < len(paths):
                 next_path = paths[incident.escalation_level]
                 next_oncall = self.get_current_oncall(next_path)
@@ -407,9 +435,11 @@ class OnCallRotationManager:
 
         with self._lock:
             incidents = list(self._incidents.values())
-            recent = [i for i in incidents if i.created_at > (
-                datetime.now(timezone.utc) - timedelta(days=30)
-            ).isoformat()]
+            recent = [
+                i
+                for i in incidents
+                if i.created_at > (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+            ]
 
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),

@@ -11,7 +11,7 @@ Tests cover:
 5. Wednesday triple swap calculation
 6. Quality indicators and staleness detection
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 
@@ -53,6 +53,7 @@ from services.forex_realtime_swaps import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_swap_rate() -> RealtimeSwapRate:
     """Create a sample swap rate for testing."""
@@ -90,6 +91,7 @@ def cache_config(tmp_path: Path) -> SwapRateCacheConfig:
 # =============================================================================
 # RealtimeSwapRate Tests
 # =============================================================================
+
 
 class TestRealtimeSwapRate:
     """Tests for RealtimeSwapRate dataclass."""
@@ -229,6 +231,7 @@ class TestSwapRateUpdate:
 # SwapRateCalculator Tests
 # =============================================================================
 
+
 class TestSwapRateCalculator:
     """Tests for SwapRateCalculator."""
 
@@ -331,6 +334,7 @@ class TestSwapRateCalculator:
 # OandaSwapRateClient Tests
 # =============================================================================
 
+
 class TestOandaSwapRateClient:
     """Tests for OandaSwapRateClient."""
 
@@ -397,6 +401,7 @@ class TestOandaSwapRateClient:
 # =============================================================================
 # RealtimeSwapRateProvider Tests
 # =============================================================================
+
 
 class TestRealtimeSwapRateProvider:
     """Tests for RealtimeSwapRateProvider."""
@@ -631,6 +636,7 @@ class TestRealtimeSwapRateProvider:
 # Factory Function Tests
 # =============================================================================
 
+
 class TestCreateRealtimeSwapProvider:
     """Tests for create_realtime_swap_provider factory."""
 
@@ -661,6 +667,7 @@ class TestCreateRealtimeSwapProvider:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestSwapRateIntegration:
     """Integration tests for swap rate functionality."""
@@ -727,14 +734,13 @@ class TestSwapRateIntegration:
 # Edge Case Tests
 # =============================================================================
 
+
 class TestSwapRateEdgeCases:
     """Edge case tests for swap rate functionality."""
 
     def test_zero_interest_rate(self) -> None:
         """Test handling of zero interest rate."""
-        calc = SwapRateCalculator(
-            interest_rates={"USD": 5.0, "XXX": 0.0}
-        )
+        calc = SwapRateCalculator(interest_rates={"USD": 5.0, "XXX": 0.0})
         pips, pct = calc.calculate_swap_rate("USD_XXX", SwapDirection.LONG)
         assert isinstance(pips, float)
 

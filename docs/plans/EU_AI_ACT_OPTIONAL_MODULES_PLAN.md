@@ -1,17 +1,24 @@
 # EU AI Act Optional Modules Refactoring Plan v2.2
+
 ## Task: Make Optional EU AI Act Modules Explicit
+
 ### Version: 2.2.0 | Target: AI Agent Execution | Reviewed: All Critical Issues Resolved + Phases Restructured
+
 ---
+
 ## 1. EXECUTIVE SUMMARY
+
 **Objective**: Restructure `services/ai_act/` to separate transparency/documentation tooling (Articles 50/53; deployment-dependent) from optional conservative coverage of Articles 9–17 and related workflows (enterprise feature).
 **Legal Basis**: EU AI Act Regulation 2024/1689. Applicability/classification depends on deployment context; do not self-classify in docs without counsel review.
 **Architecture Pattern**: Follow `services/dora/` facade pattern with integration layers.
 **Key Changes from v2.1:**
+
 - **RESTRUCTURED**: 10 explicit phases (0-9) with clear Goals and Exit Criteria
 - **ADDED**: Phase 0 (Pre-Migration) and Phase 9 (Post-Migration Validation) as formal phases
 - **IMPROVED**: Each phase has Verification scripts and explicit Commit message
 
 **Key Changes from v2.0:**
+
 - **CRITICAL**: Enterprise access guard with `RuntimeError` (not just DeprecationWarning)
 - **CRITICAL**: Config check in enterprise `__getattr__` before module loading
 - **CRITICAL**: TYPE_CHECKING guards for cross-imports (prevent circular imports)
@@ -26,9 +33,13 @@
 - Lazy loading in enterprise package
 - Full `.pyi` stub support for IDE/mypy
 - Proper test isolation with autouse fixtures
+
 ---
+
 ## 2. LEGAL CLASSIFICATION REFERENCE
+
 ### 2.1 Mandatory (GPAI Provider - Article 53, Annex XI)
+
 | Module | Article | Requirement |
 |--------|---------|-------------|
 | transparency_disclosure.py | 50 | AI interaction disclosure |
@@ -37,7 +48,9 @@
 | training_data_summary.py | 53(1)(d) | Public training data summary |
 | user_acknowledgment.py | 50 | User acknowledgment of AI |
 | gpai_technical_docs.py | 53(1)(a), Annex XI | GPAI technical documentation (NEW - split from technical_documentation.py) |
+
 ### 2.2 Optional (High-Risk - Enterprise Feature, Article 11, Annex IV)
+
 | Module | Article | Use Case |
 |--------|---------|----------|
 | risk_management.py | 9 | Enterprise clients requiring formal RMS |
@@ -69,8 +82,11 @@
 > The platform is designed as a **B2B software/ICT provider**. Users connect their own broker accounts; live execution occurs only via the customer-controlled Agent, and the Cloud does not hold assets/credentials or provide execution-as-a-service. EU AI Act applicability and classification are deployment-dependent; we do not self-classify as “high-risk AI” in documentation. Optional modules may support Articles 9–17 as a conservative engineering posture.
 
 ---
+
 ## 3. TARGET ARCHITECTURE
+
 ### 3.1 Directory Structure
+
 ```
 services/ai_act/
 ├── __init__.py                    # Facade with lazy loading + TYPE_CHECKING
@@ -109,7 +125,9 @@ services/ai_act/
     ├── conformity_assessment.py
     └── high_risk_technical_docs.py # NEW: Art.11, Annex IV
 ```
+
 ### 3.2 Custom Exceptions
+
 ```python
 # services/ai_act/exceptions.py
 """
@@ -161,6 +179,7 @@ class ModuleLoadError(AIActComplianceError):
 ```
 
 ### 3.3 Module Cache with Invalidation
+
 ```python
 # services/ai_act/_cache.py
 """
@@ -250,6 +269,7 @@ def invalidate_enterprise_cache() -> None:
 ```
 
 ### 3.4 Configuration Model (Thread-Safe with ENV Override)
+
 ```python
 # services/ai_act/config.py
 """
@@ -552,7 +572,9 @@ def ai_act_config_context(
     finally:
         reset_ai_act_config(token)
 ```
+
 ### 3.3 Version and Deprecation Constants
+
 ```python
 # services/ai_act/_version.py
 """Version constants and deprecation timeline."""
@@ -571,7 +593,9 @@ DEPRECATION_MESSAGE_TEMPLATE = (
     "Set AIActComplianceLevel.ENTERPRISE to suppress this warning."
 )
 ```
+
 ### 3.4 Backward Compatibility Module
+
 ```python
 # services/ai_act/_compat.py
 """
@@ -680,7 +704,9 @@ def get_all_enterprise_names() -> list[str]:
     """Get list of all enterprise export names."""
     return list(ENTERPRISE_MODULE_ALIASES.keys())
 ```
+
 ### 3.5 Enterprise Access Guard
+
 ```python
 # services/ai_act/enterprise/_guard.py
 """
@@ -783,6 +809,7 @@ def _is_guard_active() -> bool:
 ```
 
 ### 3.6 Enterprise Package with Lazy Loading and Config Check
+
 ```python
 # services/ai_act/enterprise/__init__.py
 """
@@ -999,7 +1026,9 @@ if TYPE_CHECKING:
     from services.ai_act.enterprise.high_risk_technical_docs import *
 __all__ = list(_NAME_TO_MODULE.keys())
 ```
+
 ### 3.6 Stub Files for IDE/Mypy Support
+
 ```python
 # services/ai_act/enterprise/__init__.pyi
 """
@@ -1027,7 +1056,9 @@ from services.ai_act.enterprise.risk_registry import (
 # ... (continue for all modules - full explicit re-exports)
 __all__: list[str]
 ```
+
 ### 3.7 Main Facade Module
+
 ```python
 # services/ai_act/__init__.py
 """
@@ -1294,15 +1325,23 @@ __all__ = [
     "create_gpai_documentation_generator",
 ]
 ```
+
 ---
+
 ## 4. CRITICAL: Split technical_documentation.py
+
 ### 4.1 Problem
+
 Original `technical_documentation.py` mixes:
+
 - Article 11 / Annex IV (High-Risk documentation)
 - Article 53(1)(a) / Annex XI (GPAI documentation)
+
 ### 4.2 Solution
+
 Split into two files:
 **core/gpai_technical_docs.py** (Article 53(1)(a), Annex XI):
+
 ```python
 """
 GPAI Technical Documentation (Article 53(1)(a), Annex XI).
@@ -1338,7 +1377,9 @@ class GPAIDocumentationGenerator:
     """Generate Annex XI-aligned documentation for GPAI models."""
     # ... implementation
 ```
+
 **enterprise/high_risk_technical_docs.py** (Article 11, Annex IV):
+
 ```python
 """
 High-Risk AI Technical Documentation (Article 11, Annex IV).
@@ -1413,8 +1454,11 @@ class HighRiskDocumentationGenerator:
 
     # ... rest of implementation
 ```
+
 ---
+
 ## 5. TEST FIXTURES (Thread-Safe with Enterprise Guard Support)
+
 ```python
 # tests/conftest_ai_act.py
 """
@@ -1639,7 +1683,9 @@ def pytest_configure(config):
         "gpai_only: mark test as testing GPAI-only behavior"
     )
 ```
+
 ---
+
 ## 6. INTERNAL IMPORT UPDATES (TYPE_CHECKING Pattern)
 
 ### 6.1 Pattern: TYPE_CHECKING for Cross-Module Dependencies
@@ -1673,6 +1719,7 @@ class MyClass:
 ```
 
 ### 6.2 enterprise/risk_registry.py
+
 ```python
 """Risk Registry - depends on risk_management types."""
 from __future__ import annotations
@@ -1743,6 +1790,7 @@ class RiskRegistry:
 **DI = Dependency Injection**: Dependencies passed to `__init__`, not imported at module level.
 
 ### 6.4 Refactored conformity_assessment.py Example
+
 ```python
 """Conformity Assessment - heavy cross-dependencies, uses DI pattern."""
 from __future__ import annotations
@@ -1810,9 +1858,13 @@ class ConformitySelfAssessment:
 
     # ... rest of implementation
 ```
+
 ---
+
 ## 7. ROLLBACK PLAN (Improved)
+
 ### 7.1 Pre-Migration
+
 ```bash
 # Create feature branch
 git checkout -b feature/ai-act-tiered-architecture
@@ -1821,8 +1873,11 @@ git tag backup/ai-act-before-tiered-$(date +%Y%m%d)
 # Run baseline tests
 pytest tests/test_ai_act_*.py -v > baseline_test_results.txt
 ```
+
 ### 7.2 Incremental Commits
+
 Each phase should be a separate commit:
+
 ```bash
 git commit -m "feat(ai-act): add thread-safe config with contextvars"
 git commit -m "feat(ai-act): create core package with GPAI modules"
@@ -1833,7 +1888,9 @@ git commit -m "feat(ai-act): add .pyi stub files for IDE support"
 git commit -m "test(ai-act): update test fixtures for thread safety"
 git commit -m "docs(ai-act): update documentation for tiered architecture"
 ```
+
 ### 7.3 Rollback Commands
+
 ```bash
 # Rollback single phase (last commit)
 git revert HEAD
@@ -1845,7 +1902,9 @@ git checkout backup/ai-act-before-tiered-YYYYMMDD -- services/ai_act/
 # Full reset to backup
 git reset --hard backup/ai-act-before-tiered-YYYYMMDD
 ```
+
 ### 7.4 Validation Before Merge
+
 ```bash
 # Run all AI Act tests
 pytest tests/test_ai_act_*.py -v --tb=short
@@ -1868,7 +1927,9 @@ except DeprecationWarning as e:
     print(f'OK: DeprecationWarning raised: {e}')
 "
 ```
+
 ---
+
 ## 8. MIGRATION PHASES (0-9)
 
 | Phase | Name | Description |
@@ -1887,6 +1948,7 @@ except DeprecationWarning as e:
 ---
 
 ### Phase 0: Pre-Migration
+
 **Goal:** Prepare environment, create safety net
 
 - [ ] Create feature branch: `git checkout -b feature/ai-act-tiered-architecture`
@@ -1896,6 +1958,7 @@ except DeprecationWarning as e:
 - [ ] Count baseline LOC: `wc -l services/ai_act/*.py`
 
 **Exit Criteria:**
+
 - [ ] Feature branch exists
 - [ ] Backup tag created
 - [ ] Baseline test results saved
@@ -1904,6 +1967,7 @@ except DeprecationWarning as e:
 ---
 
 ### Phase 1: Core Infrastructure
+
 **Goal:** Create foundational files (NEW FILES ONLY, no moves)
 
 - [ ] Create `services/ai_act/_version.py`
@@ -1913,6 +1977,7 @@ except DeprecationWarning as e:
 - [ ] Create `services/ai_act/_compat.py` with full module mapping
 
 **Verification:**
+
 ```bash
 python -c "from services.ai_act.config import ai_act_config_context; print('OK: config')"
 python -c "from services.ai_act.exceptions import EnterpriseNotAvailableError; print('OK: exceptions')"
@@ -1922,6 +1987,7 @@ python -c "from services.ai_act._cache import ModuleCache; print('OK: cache')"
 **Commit:** `git commit -m "feat(ai-act): add core infrastructure files"`
 
 **Exit Criteria:**
+
 - [ ] All 5 files created
 - [ ] All verification commands pass
 - [ ] Commit created
@@ -1929,6 +1995,7 @@ python -c "from services.ai_act._cache import ModuleCache; print('OK: cache')"
 ---
 
 ### Phase 2: Create Core Package
+
 **Goal:** Move GPAI modules to `core/` subdirectory
 
 - [ ] `mkdir -p services/ai_act/core`
@@ -1942,6 +2009,7 @@ python -c "from services.ai_act._cache import ModuleCache; print('OK: cache')"
 - [ ] Create `services/ai_act/core/gpai_technical_docs.py` (extract from `technical_documentation.py`)
 
 **Verification:**
+
 ```bash
 python -c "from services.ai_act.core import TransparencyDisclosureManager; print('OK: core')"
 python -c "from services.ai_act.core import GPAIDocumentationGenerator; print('OK: gpai_docs')"
@@ -1950,6 +2018,7 @@ python -c "from services.ai_act.core import GPAIDocumentationGenerator; print('O
 **Commit:** `git commit -m "feat(ai-act): create core package with GPAI modules"`
 
 **Exit Criteria:**
+
 - [ ] 6 modules in `core/`
 - [ ] `__init__.py` exports all GPAI classes
 - [ ] Verification commands pass
@@ -1957,6 +2026,7 @@ python -c "from services.ai_act.core import GPAIDocumentationGenerator; print('O
 ---
 
 ### Phase 3: Create Enterprise Package
+
 **Goal:** Move High-Risk modules to `enterprise/` subdirectory with access guard
 
 - [ ] `mkdir -p services/ai_act/enterprise`
@@ -1983,6 +2053,7 @@ python -c "from services.ai_act.core import GPAIDocumentationGenerator; print('O
 - [ ] Add `require_enterprise_access(__name__)` to each enterprise module
 
 **Verification:**
+
 ```bash
 # Should FAIL in GPAI mode (default)
 python -c "
@@ -2004,6 +2075,7 @@ print('OK: Enterprise loaded with ENV')
 **Commit:** `git commit -m "feat(ai-act): create enterprise package with access guard"`
 
 **Exit Criteria:**
+
 - [ ] 15 modules in `enterprise/`
 - [ ] Guard blocks access in GPAI mode
 - [ ] ENV override enables access
@@ -2012,9 +2084,11 @@ print('OK: Enterprise loaded with ENV')
 ---
 
 ### Phase 4: Update Internal Imports
+
 **Goal:** Fix cross-module dependencies using TYPE_CHECKING pattern
 
 Modules with cross-dependencies:
+
 | Module | Dependencies | Pattern |
 |--------|-------------|---------|
 | `risk_registry.py` | `risk_management` | TYPE_CHECKING + lazy |
@@ -2032,6 +2106,7 @@ Modules with cross-dependencies:
 - [ ] Update `enterprise/high_risk_technical_docs.py`
 
 **Verification:**
+
 ```bash
 python -m py_compile services/ai_act/enterprise/*.py
 AIACT_COMPLIANCE_LEVEL=enterprise python -c "from services.ai_act.enterprise import *; print('OK: no circular imports')"
@@ -2040,6 +2115,7 @@ AIACT_COMPLIANCE_LEVEL=enterprise python -c "from services.ai_act.enterprise imp
 **Commit:** `git commit -m "refactor(ai-act): update imports to TYPE_CHECKING pattern"`
 
 **Exit Criteria:**
+
 - [ ] All 6 modules updated
 - [ ] No circular import errors
 - [ ] py_compile passes
@@ -2047,6 +2123,7 @@ AIACT_COMPLIANCE_LEVEL=enterprise python -c "from services.ai_act.enterprise imp
 ---
 
 ### Phase 5: Update Facade
+
 **Goal:** Rewrite main `__init__.py` with tiered architecture
 
 - [ ] Rewrite `services/ai_act/__init__.py`:
@@ -2058,6 +2135,7 @@ AIACT_COMPLIANCE_LEVEL=enterprise python -c "from services.ai_act.enterprise imp
 - [ ] Create `services/ai_act/__init__.pyi` for type hints
 
 **Verification:**
+
 ```bash
 # GPAI imports work
 python -c "from services.ai_act import TransparencyDisclosureManager; print('OK: GPAI')"
@@ -2092,6 +2170,7 @@ print('OK: Legacy import works in ENTERPRISE mode')
 **Commit:** `git commit -m "feat(ai-act): add facade with enterprise guard"`
 
 **Exit Criteria:**
+
 - [ ] Facade imports GPAI without config
 - [ ] Facade blocks enterprise in GPAI mode
 - [ ] ENV override works
@@ -2100,6 +2179,7 @@ print('OK: Legacy import works in ENTERPRISE mode')
 ---
 
 ### Phase 6: Update Tests
+
 **Goal:** Create test fixtures for proper isolation
 
 - [ ] Create `tests/conftest_ai_act.py` with:
@@ -2121,6 +2201,7 @@ print('OK: Legacy import works in ENTERPRISE mode')
   - [ ] Thread safety (contextvars)
 
 **Verification:**
+
 ```bash
 pytest tests/test_ai_act_*.py -v --tb=short
 pytest tests/test_ai_act_*.py -v -n auto  # Parallel execution
@@ -2129,6 +2210,7 @@ pytest tests/test_ai_act_*.py -v -n auto  # Parallel execution
 **Commit:** `git commit -m "test(ai-act): update fixtures with enterprise guard support"`
 
 **Exit Criteria:**
+
 - [ ] All fixtures created
 - [ ] Tests pass sequentially
 - [ ] Tests pass in parallel (pytest-xdist)
@@ -2137,11 +2219,13 @@ pytest tests/test_ai_act_*.py -v -n auto  # Parallel execution
 ---
 
 ### Phase 7: Integration
+
 **Goal:** Integrate AI Act config with main application config
 
 - [ ] Add `ai_act: Optional[AIActComplianceConfig]` field to `CommonRunConfig` in `core_config.py`
 - [ ] Implement `from_yaml_section()` support
 - [ ] Update YAML config examples:
+
 ```yaml
 ai_act:
   level: enterprise  # or gpai, custom
@@ -2149,9 +2233,11 @@ ai_act:
     risk_management: true
     human_oversight: true
 ```
+
 - [ ] Add config validation on startup
 
 **Verification:**
+
 ```bash
 python -c "
 from core_config import CommonRunConfig
@@ -2163,6 +2249,7 @@ print(f'AI Act config: {config.ai_act}')
 **Commit:** `git commit -m "feat(config): integrate AI Act config with CommonRunConfig"`
 
 **Exit Criteria:**
+
 - [ ] `CommonRunConfig.ai_act` field exists
 - [ ] YAML parsing works
 - [ ] Default is GPAI_ONLY
@@ -2170,6 +2257,7 @@ print(f'AI Act config: {config.ai_act}')
 ---
 
 ### Phase 8: Documentation
+
 **Goal:** Update all documentation
 
 - [ ] Update `docs/EU_AI_ACT_INTEGRATION_PLAN.md`
@@ -2184,6 +2272,7 @@ print(f'AI Act config: {config.ai_act}')
 **Commit:** `git commit -m "docs(ai-act): update documentation for tiered architecture"`
 
 **Exit Criteria:**
+
 - [ ] Integration plan updated
 - [ ] Migration guide created
 - [ ] All docstrings accurate
@@ -2191,14 +2280,17 @@ print(f'AI Act config: {config.ai_act}')
 ---
 
 ### Phase 9: Post-Migration Validation
+
 **Goal:** Full verification before merge
 
 **Test Suite:**
+
 - [ ] `pytest tests/test_ai_act_*.py -v` (all tests pass)
 - [ ] `pytest tests/test_ai_act_*.py -v -n auto` (parallel tests pass)
 - [ ] `mypy services/ai_act/ --strict` (type checking passes)
 
 **Behavior Verification:**
+
 ```bash
 # 1. Enterprise blocked in GPAI mode
 python -c "
@@ -2239,11 +2331,13 @@ print('PASS: GPAI always available')
 ```
 
 **Final Steps:**
+
 - [ ] Verify all 1007+ tests pass
 - [ ] Create PR: `gh pr create --title "feat(ai-act): tiered architecture v2.1"`
 - [ ] After merge: `git tag v5.1.0-ai-act-tiered`
 
 **Exit Criteria:**
+
 - [ ] All tests pass (sequential + parallel)
 - [ ] Type checking passes
 - [ ] All 5 behavior verifications pass
@@ -2251,9 +2345,11 @@ print('PASS: GPAI always available')
 - [ ] Tag created after merge
 
 ---
+
 ## 9. RESOLVED ISSUES SUMMARY
 
 ### v2.0 Issues (from v1.0)
+
 | # | Issue | Resolution |
 |---|-------|------------|
 | 1 | Thread safety | `contextvars` instead of global state |
@@ -2261,7 +2357,7 @@ print('PASS: GPAI always available')
 | 3 | Wrong dependency direction | Fixed: risk_registry imports FROM risk_management |
 | 4 | IDE/mypy support | Added `.pyi` stub files + TYPE_CHECKING blocks |
 | 5 | Import order dependency | Context manager `ai_act_config_context` for scoped config |
-| 6 | Incomplete __all__ | Fully explicit __all__ with all exports |
+| 6 | Incomplete **all** | Fully explicit **all** with all exports |
 | 7 | Test fixture state leak | `autouse=True` fixture with token-based reset |
 | 8 | Empty _compat.py | Full implementation with module mapping |
 | 9 | YAML enum validation | `@field_validator` with normalization |
@@ -2271,6 +2367,7 @@ print('PASS: GPAI always available')
 | 13 | No deprecation versioning | `_version.py` with DEPRECATION_VERSION and REMOVAL_DATE |
 
 ### v2.1 Issues (from v2.0 review)
+
 | # | Issue | Resolution |
 |---|-------|------------|
 | 14 | **Enterprise loads without config check** | `_check_enterprise_access()` in `__getattr__` BEFORE loading module |
@@ -2287,6 +2384,7 @@ print('PASS: GPAI always available')
 | 25 | **No testing markers** | `@pytest.mark.enterprise` and `@pytest.mark.gpai_only` markers |
 
 ### Design Decisions
+
 | Decision | Rationale |
 |----------|-----------|
 | **RuntimeError over Warning** | Enterprise is B2B feature requiring explicit enablement. Silent warnings could lead to compliance issues and accidental usage. |
@@ -2294,8 +2392,11 @@ print('PASS: GPAI always available')
 | **TYPE_CHECKING + DI pattern** | Prevents circular imports while maintaining full type safety. DI enables testing with mocks. |
 | **ENV override priority** | Allows DevOps to control compliance level without code changes. Useful for staging/production differences. |
 | **Module cache with invalidation** | Performance: avoid re-importing. Testing: clean state between tests. Hot-reload: support development workflow. |
+
 ---
+
 ## 10. EXECUTION COMMAND SEQUENCE v2.1
+
 ```bash
 # Setup
 git checkout -b feature/ai-act-tiered-architecture-v2.1
@@ -2391,10 +2492,13 @@ git add -A
 git commit -m "feat(ai-act): implement tiered architecture v2.1 with enterprise guard"
 git push -u origin feature/ai-act-tiered-architecture-v2.1
 ```
+
 ---
+
 ## 11. QUICK REFERENCE CARD
 
 ### Environment Variable
+
 ```bash
 # Enable enterprise features
 export AIACT_COMPLIANCE_LEVEL=enterprise
@@ -2403,6 +2507,7 @@ export AIACT_COMPLIANCE_LEVEL=enterprise
 ```
 
 ### Python Config
+
 ```python
 from services.ai_act.config import (
     AIActComplianceConfig,
@@ -2416,6 +2521,7 @@ with ai_act_config_context(AIActComplianceConfig(level=AIActComplianceLevel.ENTE
 ```
 
 ### Import Patterns
+
 ```python
 # GPAI (always available)
 from services.ai_act.core import TransparencyDisclosureManager
@@ -2430,6 +2536,7 @@ from services.ai_act.enterprise import AIActRiskManager
 ```
 
 ### Testing
+
 ```python
 # Test that enterprise is blocked
 def test_gpai_blocks_enterprise(expect_enterprise_error):

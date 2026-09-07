@@ -87,11 +87,11 @@ def find_registry_entry(sha256: str, registry: Any = None):
     """
     if registry is None:
         from service_experiment_tracking import get_registry
+
         registry = get_registry()
     try:
         names = [
-            d for d in os.listdir(registry.root)
-            if os.path.isdir(os.path.join(registry.root, d))
+            d for d in os.listdir(registry.root) if os.path.isdir(os.path.join(registry.root, d))
         ]
     except OSError:
         return None
@@ -122,8 +122,9 @@ def verify_model_artifact(
     успеет распаковать pickle.
     """
     eff_policy = resolve_policy(policy, live=live)
-    verdict = SignatureVerdict(path=str(path), policy=eff_policy,
-                               production_required=_production_required())
+    verdict = SignatureVerdict(
+        path=str(path), policy=eff_policy, production_required=_production_required()
+    )
 
     if eff_policy == "off":
         verdict.ok = True
@@ -137,6 +138,7 @@ def verify_model_artifact(
         return _finalize(verdict, context)
 
     from service_experiment_tracking import get_registry, sha256_file
+
     if registry is None:
         registry = get_registry()
 
@@ -159,9 +161,11 @@ def verify_model_artifact(
     verdict.algo = getattr(art, "algo", None)
 
     try:
-        verdict.signature_valid = bool(registry.signer.verify(
-            verdict.sha256, art.signature, art.algo, getattr(art, "public_key", None)
-        ))
+        verdict.signature_valid = bool(
+            registry.signer.verify(
+                verdict.sha256, art.signature, art.algo, getattr(art, "public_key", None)
+            )
+        )
     except Exception as exc:
         verdict.signature_valid = False
         verdict.reason = f"ошибка проверки подписи: {exc}"
@@ -182,7 +186,9 @@ def verify_model_artifact(
         return _finalize(verdict, context)
 
     verdict.ok = True
-    verdict.reason = f"подпись валидна: '{name}' v{mv.version} (stage={verdict.stage}, {verdict.algo})"
+    verdict.reason = (
+        f"подпись валидна: '{name}' v{mv.version} (stage={verdict.stage}, {verdict.algo})"
+    )
     logger.info("model-signature[%s]: OK %s", context or "load", verdict.reason)
     return verdict
 
@@ -199,8 +205,9 @@ def _finalize(verdict: SignatureVerdict, context: str) -> SignatureVerdict:
     return verdict
 
 
-def assert_model_trusted(path: str, *, context: str = "live",
-                         policy: Optional[str] = None) -> SignatureVerdict:
+def assert_model_trusted(
+    path: str, *, context: str = "live", policy: Optional[str] = None
+) -> SignatureVerdict:
     """Строгий вариант для торговых путей: дефолтная политика enforce."""
     return verify_model_artifact(path, policy=policy, live=True, context=context)
 

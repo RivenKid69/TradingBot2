@@ -36,16 +36,19 @@ from ..models import TelemetryLevel
 # Enums
 # ============================================================================
 
+
 class ValidationSeverity(str, Enum):
     """Validation violation severity."""
-    CRITICAL = "critical"   # Block ingestion immediately
-    HIGH = "high"           # Block with detailed logging
-    MEDIUM = "medium"       # Allow with warning
-    LOW = "low"             # Log only
+
+    CRITICAL = "critical"  # Block ingestion immediately
+    HIGH = "high"  # Block with detailed logging
+    MEDIUM = "medium"  # Allow with warning
+    LOW = "low"  # Log only
 
 
 class ViolationType(str, Enum):
     """Type of validation violation."""
+
     PROHIBITED_FIELD = "prohibited_field"
     INTENT_INJECTION = "intent_injection"
     MISSING_REDACTION = "missing_redaction"
@@ -61,81 +64,82 @@ class ViolationType(str, Enum):
 # ============================================================================
 
 # Order/Intent fields - NEVER allowed in Cloud telemetry
-PROHIBITED_ORDER_FIELDS: FrozenSet[str] = frozenset({
-    # Direct order fields
-    "side",
-    "quantity",
-    "qty",
-    "price",
-    "order_type",
-    "limit_price",
-    "stop_price",
-    "take_profit",
-    "stop_loss",
-    "order_id",
-    "client_order_id",
-    "filled_qty",
-    "remaining_qty",
-    "average_price",
-    "commission",
-    "fills",
-
-    # Intent/Signal fields
-    "intent",
-    "signal",
-    "target_position",
-    "target_qty",
-    "target_allocation",
-    "execute_order",
-    "place_order",
-    "submit_order",
-    "cancel_order",
-    "modify_order",
-
-    # Position fields that indicate trading activity
-    "position_side",
-    "position_size",
-    "entry_price",
-    "exit_price",
-    "unrealized_pnl",
-    "realized_pnl",
-
-    # Execution details
-    "execution_id",
-    "trade_id",
-    "fill_price",
-    "fill_qty",
-    "slippage",
-})
+PROHIBITED_ORDER_FIELDS: FrozenSet[str] = frozenset(
+    {
+        # Direct order fields
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "limit_price",
+        "stop_price",
+        "take_profit",
+        "stop_loss",
+        "order_id",
+        "client_order_id",
+        "filled_qty",
+        "remaining_qty",
+        "average_price",
+        "commission",
+        "fills",
+        # Intent/Signal fields
+        "intent",
+        "signal",
+        "target_position",
+        "target_qty",
+        "target_allocation",
+        "execute_order",
+        "place_order",
+        "submit_order",
+        "cancel_order",
+        "modify_order",
+        # Position fields that indicate trading activity
+        "position_side",
+        "position_size",
+        "entry_price",
+        "exit_price",
+        "unrealized_pnl",
+        "realized_pnl",
+        # Execution details
+        "execution_id",
+        "trade_id",
+        "fill_price",
+        "fill_qty",
+        "slippage",
+    }
+)
 
 # PII fields - Must be redacted
-PROHIBITED_PII_FIELDS: FrozenSet[str] = frozenset({
-    "email",
-    "phone",
-    "phone_number",
-    "address",
-    "ssn",
-    "social_security",
-    "tax_id",
-    "passport",
-    "driver_license",
-    "credit_card",
-    "card_number",
-    "cvv",
-    "account_number",
-    "routing_number",
-    "iban",
-    "swift",
-    "bank_account",
-    "date_of_birth",
-    "dob",
-    "ip_address",  # Unless aggregated
-    "mac_address",
-    "device_id",   # Unless hashed
-    "user_agent",  # Unless aggregated
-    "password",    # Never store passwords
-    "secret",      # Generic secret field
-})
+PROHIBITED_PII_FIELDS: FrozenSet[str] = frozenset(
+    {
+        "email",
+        "phone",
+        "phone_number",
+        "address",
+        "ssn",
+        "social_security",
+        "tax_id",
+        "passport",
+        "driver_license",
+        "credit_card",
+        "card_number",
+        "cvv",
+        "account_number",
+        "routing_number",
+        "iban",
+        "swift",
+        "bank_account",
+        "date_of_birth",
+        "dob",
+        "ip_address",  # Unless aggregated
+        "mac_address",
+        "device_id",  # Unless hashed
+        "user_agent",  # Unless aggregated
+        "password",  # Never store passwords
+        "secret",  # Generic secret field
+    }
+)
 
 # Broker credential patterns - CRITICAL
 BROKER_CREDENTIAL_PATTERNS: List[Tuple[str, str]] = [
@@ -148,135 +152,134 @@ BROKER_CREDENTIAL_PATTERNS: List[Tuple[str, str]] = [
     (r"bearer[_-]?token", "Bearer token"),
     (r"password", "Password"),
     (r"passphrase", "Passphrase"),
-    (r"(binance|alpaca|deribit|oanda|interactive_brokers|ib)[_-]?(key|secret|token)", "Broker credential"),
+    (
+        r"(binance|alpaca|deribit|oanda|interactive_brokers|ib)[_-]?(key|secret|token)",
+        "Broker credential",
+    ),
 ]
 
 # Allowed telemetry payload fields for AGGREGATED level
-ALLOWED_AGGREGATED_FIELDS: FrozenSet[str] = frozenset({
-    # Metrics
-    "timestamp",
-    "event_time",
-    "count",
-    "sum",
-    "avg",
-    "min",
-    "max",
-    "median",
-    "p50",
-    "p90",
-    "p95",
-    "p99",
-    "stddev",
-    "variance",
-    "histogram",
-    "buckets",
-
-    # System metrics
-    "cpu_percent",
-    "cpu_usage",
-    "memory_percent",
-    "memory_usage",
-    "memory_mb",
-    "disk_usage",
-    "disk_percent",
-    "network_bytes_sent",
-    "network_bytes_recv",
-    "latency_ms",
-    "latency_p50",
-    "latency_p95",
-    "latency_p99",
-
-    # Trading metrics (aggregated only)
-    "trade_count",
-    "order_count",
-    "fill_rate",
-    "win_rate",
-    "sharpe_ratio",
-    "sortino_ratio",
-    "max_drawdown",
-    "daily_return",
-    "cumulative_return",
-    "volatility",
-    "alpha",
-    "beta",
-    "information_ratio",
-
-    # Strategy metrics
-    "strategy_id",
-    "strategy_name",
-    "run_id",
-    "deployment_id",
-    "agent_id",
-    "workspace_id",
-    "version",
-    "status",
-    "state",
-    "is_paper_trading",
-
-    # Error metrics
-    "error_count",
-    "error_rate",
-    "warning_count",
-    "success_count",
-    "failure_count",
-    "retry_count",
-    "timeout_count",
-
-    # Resource usage
-    "active_connections",
-    "queue_depth",
-    "processing_time_ms",
-    "request_count",
-    "response_count",
-    "cache_hit_rate",
-    "cache_miss_rate",
-
-    # Time windows
-    "period",
-    "window",
-    "interval",
-    "start_time",
-    "end_time",
-    "duration_seconds",
-})
+ALLOWED_AGGREGATED_FIELDS: FrozenSet[str] = frozenset(
+    {
+        # Metrics
+        "timestamp",
+        "event_time",
+        "count",
+        "sum",
+        "avg",
+        "min",
+        "max",
+        "median",
+        "p50",
+        "p90",
+        "p95",
+        "p99",
+        "stddev",
+        "variance",
+        "histogram",
+        "buckets",
+        # System metrics
+        "cpu_percent",
+        "cpu_usage",
+        "memory_percent",
+        "memory_usage",
+        "memory_mb",
+        "disk_usage",
+        "disk_percent",
+        "network_bytes_sent",
+        "network_bytes_recv",
+        "latency_ms",
+        "latency_p50",
+        "latency_p95",
+        "latency_p99",
+        # Trading metrics (aggregated only)
+        "trade_count",
+        "order_count",
+        "fill_rate",
+        "win_rate",
+        "sharpe_ratio",
+        "sortino_ratio",
+        "max_drawdown",
+        "daily_return",
+        "cumulative_return",
+        "volatility",
+        "alpha",
+        "beta",
+        "information_ratio",
+        # Strategy metrics
+        "strategy_id",
+        "strategy_name",
+        "run_id",
+        "deployment_id",
+        "agent_id",
+        "workspace_id",
+        "version",
+        "status",
+        "state",
+        "is_paper_trading",
+        # Error metrics
+        "error_count",
+        "error_rate",
+        "warning_count",
+        "success_count",
+        "failure_count",
+        "retry_count",
+        "timeout_count",
+        # Resource usage
+        "active_connections",
+        "queue_depth",
+        "processing_time_ms",
+        "request_count",
+        "response_count",
+        "cache_hit_rate",
+        "cache_miss_rate",
+        # Time windows
+        "period",
+        "window",
+        "interval",
+        "start_time",
+        "end_time",
+        "duration_seconds",
+    }
+)
 
 # Allowed additional fields for DETAILED_NON_SENSITIVE level
-ALLOWED_DETAILED_FIELDS: FrozenSet[str] = frozenset({
-    # Can include non-sensitive details
-    "event_type",
-    "event_name",
-    "event_category",
-    "source",
-    "component",
-    "module",
-    "function",
-    "level",
-    "severity",
-    "message",
-    "description",
-    "details",
-    "context",
-    "metadata",
-    "tags",
-    "labels",
-    "annotations",
-
-    # Error details (without PII)
-    "error_type",
-    "error_code",
-    "error_class",
-    "stack_trace_hash",  # Hash only, not full stack trace
-
-    # Performance details
-    "operation",
-    "operation_type",
-    "resource_type",
-    "resource_id",
-    "correlation_id",
-    "trace_id",
-    "span_id",
-    "parent_span_id",
-})
+ALLOWED_DETAILED_FIELDS: FrozenSet[str] = frozenset(
+    {
+        # Can include non-sensitive details
+        "event_type",
+        "event_name",
+        "event_category",
+        "source",
+        "component",
+        "module",
+        "function",
+        "level",
+        "severity",
+        "message",
+        "description",
+        "details",
+        "context",
+        "metadata",
+        "tags",
+        "labels",
+        "annotations",
+        # Error details (without PII)
+        "error_type",
+        "error_code",
+        "error_class",
+        "stack_trace_hash",  # Hash only, not full stack trace
+        # Performance details
+        "operation",
+        "operation_type",
+        "resource_type",
+        "resource_id",
+        "correlation_id",
+        "trace_id",
+        "span_id",
+        "parent_span_id",
+    }
+)
 
 
 # ============================================================================
@@ -286,55 +289,53 @@ ALLOWED_DETAILED_FIELDS: FrozenSet[str] = frozenset({
 # ALLOWED_RAW_ORDER_FIELDS: Enterprise-only telemetry for auditing/compliance
 # IMPORTANT: Only available with enterprise license and explicit opt-in
 # Stored in isolated enterprise storage with strict access controls
-ALLOWED_RAW_ORDER_FIELDS: FrozenSet[str] = frozenset({
-    # Order fields - enterprise audit/compliance only
-    "side",
-    "quantity",
-    "qty",
-    "price",
-    "order_type",
-    "limit_price",
-    "stop_price",
-    "order_id",
-    "client_order_id",
-    "filled_qty",
-    "remaining_qty",
-    "average_price",
-    "fill_price",
-    "fill_qty",
-    "execution_id",
-    "trade_id",
-    "commission",
-    "slippage",
-
-    # Position fields - enterprise audit only
-    "position_side",
-    "position_size",
-    "entry_price",
-    "exit_price",
-    "unrealized_pnl",
-    "realized_pnl",
-
-    # Signal/Intent fields - for compliance audit trail
-    "signal",
-    "intent",
-    "target_position",
-    "target_qty",
-
-    # Order lifecycle
-    "order_status",
-    "order_created_at",
-    "order_submitted_at",
-    "order_filled_at",
-    "order_cancelled_at",
-
-    # Execution timing for latency analysis
-    "signal_timestamp",
-    "submit_timestamp",
-    "ack_timestamp",
-    "fill_timestamp",
-    "exchange_timestamp",
-})
+ALLOWED_RAW_ORDER_FIELDS: FrozenSet[str] = frozenset(
+    {
+        # Order fields - enterprise audit/compliance only
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "limit_price",
+        "stop_price",
+        "order_id",
+        "client_order_id",
+        "filled_qty",
+        "remaining_qty",
+        "average_price",
+        "fill_price",
+        "fill_qty",
+        "execution_id",
+        "trade_id",
+        "commission",
+        "slippage",
+        # Position fields - enterprise audit only
+        "position_side",
+        "position_size",
+        "entry_price",
+        "exit_price",
+        "unrealized_pnl",
+        "realized_pnl",
+        # Signal/Intent fields - for compliance audit trail
+        "signal",
+        "intent",
+        "target_position",
+        "target_qty",
+        # Order lifecycle
+        "order_status",
+        "order_created_at",
+        "order_submitted_at",
+        "order_filled_at",
+        "order_cancelled_at",
+        # Execution timing for latency analysis
+        "signal_timestamp",
+        "submit_timestamp",
+        "ack_timestamp",
+        "fill_timestamp",
+        "exchange_timestamp",
+    }
+)
 
 # Enterprise config check marker - actual implementation in enterprise module
 ENTERPRISE_RAW_ORDER_ENABLED_HEADER = "X-CCEA-Enterprise-Raw-Order-Enabled"
@@ -344,9 +345,11 @@ ENTERPRISE_RAW_ORDER_ENABLED_HEADER = "X-CCEA-Enterprise-Raw-Order-Enabled"
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class ValidationViolation:
     """A validation violation."""
+
     violation_type: ViolationType
     severity: ValidationSeverity
     field_path: str
@@ -358,6 +361,7 @@ class ValidationViolation:
 @dataclass
 class ValidationResult:
     """Result of telemetry validation."""
+
     valid: bool
     violations: List[ValidationViolation] = field(default_factory=list)
     blocked: bool = False
@@ -378,6 +382,7 @@ class ValidationResult:
 # ============================================================================
 # Telemetry Validator
 # ============================================================================
+
 
 class TelemetryValidator:
     """
@@ -445,27 +450,31 @@ class TelemetryValidator:
 
         # 1. Validate redaction flag
         if telemetry_level != TelemetryLevel.AGGREGATED.value and not redaction_applied:
-            violations.append(ValidationViolation(
-                violation_type=ViolationType.MISSING_REDACTION,
-                severity=ValidationSeverity.CRITICAL,
-                field_path="redaction_applied",
-                message=f"Non-aggregated telemetry requires redaction_applied=True",
-                blocked=True,
-            ))
+            violations.append(
+                ValidationViolation(
+                    violation_type=ViolationType.MISSING_REDACTION,
+                    severity=ValidationSeverity.CRITICAL,
+                    field_path="redaction_applied",
+                    message=f"Non-aggregated telemetry requires redaction_applied=True",
+                    blocked=True,
+                )
+            )
             blocked = True
 
         # 2. Scan for prohibited order/intent fields
         # EXCEPTION: Enterprise RAW_ORDER_EVENTS mode allows order fields
         if telemetry_level == TelemetryLevel.RAW_ORDER_EVENTS.value:
             if not self.enterprise_raw_order_enabled:
-                violations.append(ValidationViolation(
-                    violation_type=ViolationType.RAW_ORDER_DATA,
-                    severity=ValidationSeverity.CRITICAL,
-                    field_path="telemetry_level",
-                    message="RAW_ORDER_EVENTS level requires enterprise license. "
-                            "Contact sales@ccea.io to enable this feature.",
-                    blocked=True,
-                ))
+                violations.append(
+                    ValidationViolation(
+                        violation_type=ViolationType.RAW_ORDER_DATA,
+                        severity=ValidationSeverity.CRITICAL,
+                        field_path="telemetry_level",
+                        message="RAW_ORDER_EVENTS level requires enterprise license. "
+                        "Contact sales@ccea.io to enable this feature.",
+                        blocked=True,
+                    )
+                )
                 blocked = True
             # Enterprise mode: order fields are allowed, skip order scan
         else:
@@ -485,9 +494,7 @@ class TelemetryValidator:
 
         # 4. Scan for PII if not aggregated
         if telemetry_level != TelemetryLevel.AGGREGATED.value:
-            pii_violations = self._scan_prohibited_fields(
-                payload, PROHIBITED_PII_FIELDS, "PII"
-            )
+            pii_violations = self._scan_prohibited_fields(payload, PROHIBITED_PII_FIELDS, "PII")
             if pii_violations:
                 violations.extend(pii_violations)
                 blocked = True
@@ -504,8 +511,10 @@ class TelemetryValidator:
 
         # 6. Deep scan for intent injection
         # Skip for enterprise RAW_ORDER_EVENTS mode - order structures are expected
-        if not (telemetry_level == TelemetryLevel.RAW_ORDER_EVENTS.value
-                and self.enterprise_raw_order_enabled):
+        if not (
+            telemetry_level == TelemetryLevel.RAW_ORDER_EVENTS.value
+            and self.enterprise_raw_order_enabled
+        ):
             intent_violations = self._deep_scan_intent_injection(payload)
             if intent_violations:
                 violations.extend(intent_violations)
@@ -540,13 +549,15 @@ class TelemetryValidator:
 
                 # Check if key is prohibited
                 if key_lower in prohibited:
-                    violations.append(ValidationViolation(
-                        violation_type=ViolationType.PROHIBITED_FIELD,
-                        severity=ValidationSeverity.CRITICAL,
-                        field_path=current_path,
-                        message=f"Prohibited {category} field detected: {key}",
-                        blocked=True,
-                    ))
+                    violations.append(
+                        ValidationViolation(
+                            violation_type=ViolationType.PROHIBITED_FIELD,
+                            severity=ValidationSeverity.CRITICAL,
+                            field_path=current_path,
+                            message=f"Prohibited {category} field detected: {key}",
+                            blocked=True,
+                        )
+                    )
 
                 # Recurse into nested structures
                 violations.extend(
@@ -576,34 +587,36 @@ class TelemetryValidator:
                 # Check key against credential patterns
                 for pattern, desc in self._compiled_patterns:
                     if pattern.search(key):
-                        violations.append(ValidationViolation(
-                            violation_type=ViolationType.BROKER_CREDENTIALS,
-                            severity=ValidationSeverity.CRITICAL,
-                            field_path=current_path,
-                            message=f"Potential broker credential detected: {desc}",
-                            blocked=True,
-                        ))
+                        violations.append(
+                            ValidationViolation(
+                                violation_type=ViolationType.BROKER_CREDENTIALS,
+                                severity=ValidationSeverity.CRITICAL,
+                                field_path=current_path,
+                                message=f"Potential broker credential detected: {desc}",
+                                blocked=True,
+                            )
+                        )
 
                 # Also check if value looks like a credential
                 if isinstance(value, str) and len(value) >= 16:
                     # Check for patterns that look like API keys
                     if self._looks_like_credential(value):
-                        violations.append(ValidationViolation(
-                            violation_type=ViolationType.BROKER_CREDENTIALS,
-                            severity=ValidationSeverity.CRITICAL,
-                            field_path=current_path,
-                            message=f"Value appears to be a credential or token",
-                            blocked=True,
-                        ))
+                        violations.append(
+                            ValidationViolation(
+                                violation_type=ViolationType.BROKER_CREDENTIALS,
+                                severity=ValidationSeverity.CRITICAL,
+                                field_path=current_path,
+                                message=f"Value appears to be a credential or token",
+                                blocked=True,
+                            )
+                        )
 
                 # Recurse
                 violations.extend(self._scan_credential_patterns(value, current_path))
 
         elif isinstance(data, list):
             for i, item in enumerate(data):
-                violations.extend(
-                    self._scan_credential_patterns(item, f"{path}[{i}]")
-                )
+                violations.extend(self._scan_credential_patterns(item, f"{path}[{i}]"))
 
         return violations
 
@@ -611,11 +624,11 @@ class TelemetryValidator:
         """Check if a string looks like a credential."""
         # Check for common credential patterns
         patterns = [
-            r'^[A-Za-z0-9+/]{32,}={0,2}$',  # Base64
-            r'^[a-f0-9]{32,}$',              # Hex
-            r'^sk-[a-zA-Z0-9]{20,}$',        # API key pattern
-            r'^pk-[a-zA-Z0-9]{20,}$',        # Public key pattern
-            r'^[A-Z0-9]{20,}$',              # AWS-style key
+            r"^[A-Za-z0-9+/]{32,}={0,2}$",  # Base64
+            r"^[a-f0-9]{32,}$",  # Hex
+            r"^sk-[a-zA-Z0-9]{20,}$",  # API key pattern
+            r"^pk-[a-zA-Z0-9]{20,}$",  # Public key pattern
+            r"^[A-Z0-9]{20,}$",  # AWS-style key
         ]
 
         for pattern in patterns:
@@ -643,25 +656,29 @@ class TelemetryValidator:
             # Order-like structure detection
             order_indicators = {"side", "quantity", "price"}
             if order_indicators.issubset(keys_lower):
-                violations.append(ValidationViolation(
-                    violation_type=ViolationType.INTENT_INJECTION,
-                    severity=ValidationSeverity.CRITICAL,
-                    field_path=path or "(root)",
-                    message="Detected order-like structure with side/quantity/price",
-                    blocked=True,
-                ))
+                violations.append(
+                    ValidationViolation(
+                        violation_type=ViolationType.INTENT_INJECTION,
+                        severity=ValidationSeverity.CRITICAL,
+                        field_path=path or "(root)",
+                        message="Detected order-like structure with side/quantity/price",
+                        blocked=True,
+                    )
+                )
 
             # Intent-like structure detection
             intent_indicators = {"signal", "target"}
             if intent_indicators.intersection(keys_lower):
                 if any(k in keys_lower for k in ("position", "allocation", "order")):
-                    violations.append(ValidationViolation(
-                        violation_type=ViolationType.INTENT_INJECTION,
-                        severity=ValidationSeverity.CRITICAL,
-                        field_path=path or "(root)",
-                        message="Detected trading intent structure",
-                        blocked=True,
-                    ))
+                    violations.append(
+                        ValidationViolation(
+                            violation_type=ViolationType.INTENT_INJECTION,
+                            severity=ValidationSeverity.CRITICAL,
+                            field_path=path or "(root)",
+                            message="Detected trading intent structure",
+                            blocked=True,
+                        )
+                    )
 
             # Recurse
             for key, value in data.items():
@@ -670,9 +687,7 @@ class TelemetryValidator:
 
         elif isinstance(data, list):
             for i, item in enumerate(data):
-                violations.extend(
-                    self._deep_scan_intent_injection(item, f"{path}[{i}]")
-                )
+                violations.extend(self._deep_scan_intent_injection(item, f"{path}[{i}]"))
 
         return violations
 
@@ -687,9 +702,7 @@ class TelemetryValidator:
             # Only returned if enterprise_raw_order_enabled is True
             if self.enterprise_raw_order_enabled:
                 return (
-                    ALLOWED_AGGREGATED_FIELDS |
-                    ALLOWED_DETAILED_FIELDS |
-                    ALLOWED_RAW_ORDER_FIELDS
+                    ALLOWED_AGGREGATED_FIELDS | ALLOWED_DETAILED_FIELDS | ALLOWED_RAW_ORDER_FIELDS
                 )
             else:
                 # Not enterprise - return minimal set (validation will fail anyway)
@@ -710,13 +723,15 @@ class TelemetryValidator:
         for key in data.keys():
             current_path = f"{path}.{key}" if path else key
             if key.lower() not in allowed:
-                violations.append(ValidationViolation(
-                    violation_type=ViolationType.UNKNOWN_FIELD,
-                    severity=ValidationSeverity.MEDIUM,
-                    field_path=current_path,
-                    message=f"Unknown field not in allowlist: {key}",
-                    blocked=False,  # Unknown fields don't block by default
-                ))
+                violations.append(
+                    ValidationViolation(
+                        violation_type=ViolationType.UNKNOWN_FIELD,
+                        severity=ValidationSeverity.MEDIUM,
+                        field_path=current_path,
+                        message=f"Unknown field not in allowlist: {key}",
+                        blocked=False,  # Unknown fields don't block by default
+                    )
+                )
 
         return violations
 
@@ -736,9 +751,7 @@ class TelemetryValidator:
         def sanitize_recursive(data: Any) -> Any:
             if isinstance(data, dict):
                 return {
-                    k: sanitize_recursive(v)
-                    for k, v in data.items()
-                    if k.lower() not in prohibited
+                    k: sanitize_recursive(v) for k, v in data.items() if k.lower() not in prohibited
                 }
             elif isinstance(data, list):
                 return [sanitize_recursive(item) for item in data]
@@ -752,6 +765,7 @@ class TelemetryValidator:
 # Redaction Enforcer
 # ============================================================================
 
+
 class RedactionEnforcer:
     """
     Enforces mandatory redaction rules for telemetry.
@@ -760,16 +774,18 @@ class RedactionEnforcer:
     """
 
     # Fields that must be redacted/hashed
-    MUST_REDACT_FIELDS: FrozenSet[str] = frozenset({
-        "ip_address",
-        "user_agent",
-        "device_id",
-        "session_id",
-        "request_id",
-        "correlation_id",
-        "stack_trace",
-        "error_message",
-    })
+    MUST_REDACT_FIELDS: FrozenSet[str] = frozenset(
+        {
+            "ip_address",
+            "user_agent",
+            "device_id",
+            "session_id",
+            "request_id",
+            "correlation_id",
+            "stack_trace",
+            "error_message",
+        }
+    )
 
     # Redaction markers to look for
     REDACTION_MARKERS: Set[str] = {
@@ -822,11 +838,10 @@ class RedactionEnforcer:
                     if isinstance(value, str):
                         # Check for redaction markers
                         has_marker = any(
-                            marker in value.upper()
-                            for marker in self.REDACTION_MARKERS
+                            marker in value.upper() for marker in self.REDACTION_MARKERS
                         )
                         # Or check if it's hashed (64 char hex)
-                        is_hashed = bool(re.match(r'^[a-f0-9]{64}$', value))
+                        is_hashed = bool(re.match(r"^[a-f0-9]{64}$", value))
 
                         if not has_marker and not is_hashed:
                             unredacted.append(current_path)
@@ -842,6 +857,7 @@ class RedactionEnforcer:
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def validate_telemetry_payload(
     payload: Dict[str, Any],
@@ -891,9 +907,7 @@ def assert_no_order_fields(payload: Dict[str, Any]) -> None:
             if v.violation_type in (ViolationType.PROHIBITED_FIELD, ViolationType.INTENT_INJECTION)
         ]
         if violations:
-            raise ValueError(
-                f"Prohibited order/intent fields detected:\n" + "\n".join(violations)
-            )
+            raise ValueError(f"Prohibited order/intent fields detected:\n" + "\n".join(violations))
 
 
 # ============================================================================
@@ -921,10 +935,12 @@ class TelemetryValidationMiddleware(BaseHTTPMiddleware):
     """
 
     # Paths that should be validated for telemetry
-    TELEMETRY_PATHS = frozenset({
-        "/api/v1/telemetry",
-        "/api/v1/agent/telemetry",
-    })
+    TELEMETRY_PATHS = frozenset(
+        {
+            "/api/v1/telemetry",
+            "/api/v1/agent/telemetry",
+        }
+    )
 
     def __init__(
         self,
@@ -953,6 +969,7 @@ class TelemetryValidationMiddleware(BaseHTTPMiddleware):
             body = await request.body()
             if body:
                 import json
+
                 try:
                     data = json.loads(body)
                 except json.JSONDecodeError:
@@ -960,15 +977,14 @@ class TelemetryValidationMiddleware(BaseHTTPMiddleware):
 
                 # Get telemetry level from payload
                 telemetry_level = data.get(
-                    "telemetry_level",
-                    data.get("level", TelemetryLevel.AGGREGATED.value)
+                    "telemetry_level", data.get("level", TelemetryLevel.AGGREGATED.value)
                 )
                 redaction_applied = data.get("redaction_applied", True)
 
                 # Check for enterprise mode
-                enterprise_enabled = request.headers.get(
-                    ENTERPRISE_RAW_ORDER_ENABLED_HEADER
-                ) == "true"
+                enterprise_enabled = (
+                    request.headers.get(ENTERPRISE_RAW_ORDER_ENABLED_HEADER) == "true"
+                )
 
                 # Create validator with enterprise mode if needed
                 if enterprise_enabled:
@@ -996,7 +1012,7 @@ class TelemetryValidationMiddleware(BaseHTTPMiddleware):
                                 {"type": v.violation_type.value, "path": v.field_path}
                                 for v in result.violations[:10]  # Limit to 10
                             ],
-                        }
+                        },
                     )
 
                     # Return detailed error for rejected telemetry
@@ -1014,7 +1030,7 @@ class TelemetryValidationMiddleware(BaseHTTPMiddleware):
                                 }
                                 for v in result.critical_violations[:5]
                             ],
-                        }
+                        },
                     )
 
                 # Store validation result in request state

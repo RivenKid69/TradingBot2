@@ -121,9 +121,11 @@ class TestSandboxPermissionsEnforcer:
             network_allowed=True,
             egress_allowlist=["a.com", "b.com", "c.com"],
         )
-        policy_engine.set_local_policy({
-            "egress_allowlist": ["b.com", "c.com", "d.com"],
-        })
+        policy_engine.set_local_policy(
+            {
+                "egress_allowlist": ["b.com", "c.com", "d.com"],
+            }
+        )
 
         perms = enforcer.compute_permissions(manifest, "artifact-1")
 

@@ -20,7 +20,7 @@ def test_gradient_flow_new_tensor():
 
     # Create a simple loss with requires_grad
     theta = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-    base_loss = (theta ** 2).sum()
+    base_loss = (theta**2).sum()
 
     # Simulate constraint violation that depends on theta
     constraint_violation = torch.clamp(theta.mean() - 1.5, min=0.0)
@@ -68,7 +68,7 @@ def test_gradient_flow_torch_tensor():
 
     # Create a simple loss with requires_grad
     theta = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-    base_loss = (theta ** 2).sum()
+    base_loss = (theta**2).sum()
 
     # Simulate constraint violation that depends on theta
     constraint_violation = torch.clamp(theta.mean() - 1.5, min=0.0)
@@ -116,7 +116,7 @@ def test_gradient_equivalence():
 
     # Test 1: new_tensor
     theta1 = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-    base_loss1 = (theta1 ** 2).sum()
+    base_loss1 = (theta1**2).sum()
     constraint_violation1 = torch.clamp(theta1.mean() - 1.5, min=0.0)
     lambda_scaled = 0.5
     lambda_tensor1 = base_loss1.new_tensor(lambda_scaled)
@@ -126,7 +126,7 @@ def test_gradient_equivalence():
 
     # Test 2: torch.tensor
     theta2 = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-    base_loss2 = (theta2 ** 2).sum()
+    base_loss2 = (theta2**2).sum()
     constraint_violation2 = torch.clamp(theta2.mean() - 1.5, min=0.0)
     lambda_tensor2 = torch.tensor(lambda_scaled, device=base_loss2.device, dtype=base_loss2.dtype)
     total_loss2 = base_loss2 + lambda_tensor2 * constraint_violation2
@@ -152,7 +152,7 @@ def test_detach_issue():
     print("=" * 80)
 
     theta = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-    base_loss = (theta ** 2).sum()
+    base_loss = (theta**2).sum()
 
     # This is WRONG - detaching constraint_violation blocks gradients
     constraint_violation = torch.clamp(theta.mean() - 1.5, min=0.0).detach()

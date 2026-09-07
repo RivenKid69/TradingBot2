@@ -64,9 +64,11 @@ PROTOCOL_PATTERNS = [
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class ProtocolChange:
     """Detected protocol change."""
+
     file_path: str
     change_type: str  # added, modified, deleted
     patterns_matched: List[str]
@@ -75,6 +77,7 @@ class ProtocolChange:
 @dataclass
 class JournalEntry:
     """Protocol change journal entry."""
+
     change_id: str
     review_id: str
     timestamp: datetime
@@ -100,6 +103,7 @@ class JournalEntry:
 @dataclass
 class CheckResult:
     """Result of protocol review check."""
+
     passed: bool
     message: str
     protocol_changes: List[ProtocolChange]
@@ -109,6 +113,7 @@ class CheckResult:
 # ============================================================================
 # Detection Functions
 # ============================================================================
+
 
 def get_changed_files(base_branch: str = "origin/main") -> List[Tuple[str, str]]:
     """
@@ -210,11 +215,13 @@ def detect_protocol_changes() -> List[ProtocolChange]:
         patterns = get_file_content_patterns(file_path) if not is_protocol else []
 
         if is_protocol or patterns:
-            changes.append(ProtocolChange(
-                file_path=file_path,
-                change_type=change_type,
-                patterns_matched=patterns if patterns else ["protocol_path"],
-            ))
+            changes.append(
+                ProtocolChange(
+                    file_path=file_path,
+                    change_type=change_type,
+                    patterns_matched=patterns if patterns else ["protocol_path"],
+                )
+            )
 
     return changes
 
@@ -222,6 +229,7 @@ def detect_protocol_changes() -> List[ProtocolChange]:
 # ============================================================================
 # Journal Functions
 # ============================================================================
+
 
 def load_journal() -> List[JournalEntry]:
     """Load protocol change journal."""
@@ -272,7 +280,8 @@ def find_recent_approval(
     cutoff = now - timedelta(hours=max_age_hours)
 
     recent = [
-        entry for entry in journal
+        entry
+        for entry in journal
         if entry.timestamp.replace(tzinfo=timezone.utc) > cutoff
         and entry.approval_status in ("APPROVED", "APPROVED_WITH_CONDITIONS")
     ]
@@ -287,6 +296,7 @@ def find_recent_approval(
 # ============================================================================
 # Check Function
 # ============================================================================
+
 
 def check_protocol_changes() -> CheckResult:
     """
@@ -382,6 +392,7 @@ def check_protocol_changes() -> CheckResult:
 # ============================================================================
 # Main Entry Point
 # ============================================================================
+
 
 def main() -> int:
     """Main entry point for CI."""

@@ -96,12 +96,8 @@ def test_process_propagates_open_and_close(monkeypatch) -> None:
 
     monitoring_stub = _make_monitoring_stub()
     monkeypatch.setattr(service_signal_runner, "monitoring", monitoring_stub)
-    monkeypatch.setattr(
-        service_signal_runner, "pipeline_stage_drop_count", _DummyMetric()
-    )
-    monkeypatch.setattr(
-        service_signal_runner, "skipped_incomplete_bars", _DummyMetric()
-    )
+    monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", _DummyMetric())
+    monkeypatch.setattr(service_signal_runner, "skipped_incomplete_bars", _DummyMetric())
 
     dedup_should_calls: list[tuple[str, int]] = []
     dedup_update_calls: list[tuple[str, int]] = []
@@ -130,9 +126,7 @@ def test_process_propagates_open_and_close(monkeypatch) -> None:
             self.timeframe_ms = timeframe_ms
             self.spread_ttl_ms = 0
 
-        def update(
-            self, bar: Bar, *, skip_metrics: bool | None = None
-        ) -> dict[str, float]:
+        def update(self, bar: Bar, *, skip_metrics: bool | None = None) -> dict[str, float]:
             return {"close": float(bar.close)}
 
     class _StubPolicy:
@@ -369,12 +363,8 @@ def test_process_spot_envelope_records_created_ts(monkeypatch) -> None:
 
     monitoring_stub = _make_monitoring_stub()
     monkeypatch.setattr(service_signal_runner, "monitoring", monitoring_stub)
-    monkeypatch.setattr(
-        service_signal_runner, "pipeline_stage_drop_count", _DummyMetric()
-    )
-    monkeypatch.setattr(
-        service_signal_runner, "skipped_incomplete_bars", _DummyMetric()
-    )
+    monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", _DummyMetric())
+    monkeypatch.setattr(service_signal_runner, "skipped_incomplete_bars", _DummyMetric())
 
     monkeypatch.setattr(service_signal_runner.signal_bus, "ENABLED", True, raising=False)
 
@@ -426,9 +416,7 @@ def test_process_spot_envelope_records_created_ts(monkeypatch) -> None:
         )
         return True
 
-    monkeypatch.setattr(
-        service_signal_runner, "publish_signal_envelope", _publish_signal
-    )
+    monkeypatch.setattr(service_signal_runner, "publish_signal_envelope", _publish_signal)
 
     class _StubFeaturePipe:
         def __init__(self) -> None:
@@ -436,9 +424,7 @@ def test_process_spot_envelope_records_created_ts(monkeypatch) -> None:
             self.timeframe_ms = timeframe_ms
             self.spread_ttl_ms = 0
 
-        def update(
-            self, bar: Bar, *, skip_metrics: bool | None = None
-        ) -> dict[str, float]:
+        def update(self, bar: Bar, *, skip_metrics: bool | None = None) -> dict[str, float]:
             return {"close": float(bar.close)}
 
     class _StubPolicy:
@@ -557,12 +543,8 @@ def test_emit_clamps_expires_at_to_bar_close(monkeypatch) -> None:
 
     monitoring_stub = _make_monitoring_stub()
     monkeypatch.setattr(service_signal_runner, "monitoring", monitoring_stub)
-    monkeypatch.setattr(
-        service_signal_runner, "pipeline_stage_drop_count", _DummyMetric()
-    )
-    monkeypatch.setattr(
-        service_signal_runner, "skipped_incomplete_bars", _DummyMetric()
-    )
+    monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", _DummyMetric())
+    monkeypatch.setattr(service_signal_runner, "skipped_incomplete_bars", _DummyMetric())
 
     monkeypatch.setattr(service_signal_runner.signal_bus, "ENABLED", True, raising=False)
     monkeypatch.setattr(service_signal_runner.signal_bus, "OUT_WRITER", None, raising=False)
@@ -604,9 +586,7 @@ def test_emit_clamps_expires_at_to_bar_close(monkeypatch) -> None:
             self.timeframe_ms = timeframe_ms
             self.spread_ttl_ms = 0
 
-        def update(
-            self, bar: Bar, *, skip_metrics: bool | None = None
-        ) -> dict[str, float]:
+        def update(self, bar: Bar, *, skip_metrics: bool | None = None) -> dict[str, float]:
             return {"close": float(bar.close)}
 
     class _StubPolicy:
@@ -663,12 +643,8 @@ def test_emit_populates_equity_before_bar_execute(monkeypatch) -> None:
 
     monitoring_stub = _make_monitoring_stub()
     monkeypatch.setattr(service_signal_runner, "monitoring", monitoring_stub)
-    monkeypatch.setattr(
-        service_signal_runner, "pipeline_stage_drop_count", _DummyMetric()
-    )
-    monkeypatch.setattr(
-        service_signal_runner, "skipped_incomplete_bars", _DummyMetric()
-    )
+    monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", _DummyMetric())
+    monkeypatch.setattr(service_signal_runner, "skipped_incomplete_bars", _DummyMetric())
 
     monkeypatch.setattr(service_signal_runner.signal_bus, "ENABLED", True, raising=False)
     monkeypatch.setattr(service_signal_runner.signal_bus, "OUT_WRITER", None, raising=False)
@@ -706,9 +682,7 @@ def test_emit_populates_equity_before_bar_execute(monkeypatch) -> None:
         dispatcher({"symbol": symbol, "payload": payload})
         return True
 
-    monkeypatch.setattr(
-        service_signal_runner, "publish_signal_envelope", _publish_signal
-    )
+    monkeypatch.setattr(service_signal_runner, "publish_signal_envelope", _publish_signal)
 
     class _StubFeaturePipe:
         def __init__(self) -> None:
@@ -716,9 +690,7 @@ def test_emit_populates_equity_before_bar_execute(monkeypatch) -> None:
             self.timeframe_ms = timeframe_ms
             self.spread_ttl_ms = 0
 
-        def update(
-            self, bar: Bar, *, skip_metrics: bool | None = None
-        ) -> dict[str, float]:
+        def update(self, bar: Bar, *, skip_metrics: bool | None = None) -> dict[str, float]:
             return {"close": float(bar.close)}
 
     class _StubPolicy:
@@ -787,18 +759,15 @@ def test_emit_populates_equity_before_bar_execute(monkeypatch) -> None:
     assert equity_vals[0] is not None and float(equity_vals[0]) > 0.0
     assert order.meta.get("equity_usd") == equity_vals[0]
 
+
 def test_build_drop_envelope_clamps_expires(monkeypatch) -> None:
     timeframe_ms = 60_000
     bar_close_ms = 1_700_000_300_000
 
     monitoring_stub = _make_monitoring_stub()
     monkeypatch.setattr(service_signal_runner, "monitoring", monitoring_stub)
-    monkeypatch.setattr(
-        service_signal_runner, "pipeline_stage_drop_count", _DummyMetric()
-    )
-    monkeypatch.setattr(
-        service_signal_runner, "skipped_incomplete_bars", _DummyMetric()
-    )
+    monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", _DummyMetric())
+    monkeypatch.setattr(service_signal_runner, "skipped_incomplete_bars", _DummyMetric())
 
     def _check_ttl(*, bar_close_ms: int, now_ms: int, timeframe_ms: int):
         return True, bar_close_ms - 20_000, None
@@ -812,9 +781,7 @@ def test_build_drop_envelope_clamps_expires(monkeypatch) -> None:
             self.timeframe_ms = timeframe_ms
             self.spread_ttl_ms = 0
 
-        def update(
-            self, bar: Bar, *, skip_metrics: bool | None = None
-        ) -> dict[str, float]:
+        def update(self, bar: Bar, *, skip_metrics: bool | None = None) -> dict[str, float]:
             return {"close": float(bar.close)}
 
     class _StubPolicy:

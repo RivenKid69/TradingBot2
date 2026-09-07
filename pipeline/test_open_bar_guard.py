@@ -32,9 +32,7 @@ def monitoring_mocks(monkeypatch: pytest.MonkeyPatch) -> tuple[Mock, Mock]:
     return stage_mock, reason_mock
 
 
-def test_open_bar_guard_enforcement_disabled(
-    monitoring_mocks: tuple[Mock, Mock]
-) -> None:
+def test_open_bar_guard_enforcement_disabled(monitoring_mocks: tuple[Mock, Mock]) -> None:
     stage_mock, reason_mock = monitoring_mocks
     bar = _make_bar(1_000, is_final=False)
 
@@ -62,9 +60,7 @@ def test_open_bar_guard_requires_final_flag_with_zero_lag(
     reason_mock.assert_called_once_with(Reason.INCOMPLETE_BAR)
 
 
-def test_open_bar_guard_allows_final_bar_with_zero_lag(
-    monitoring_mocks: tuple[Mock, Mock]
-) -> None:
+def test_open_bar_guard_allows_final_bar_with_zero_lag(monitoring_mocks: tuple[Mock, Mock]) -> None:
     stage_mock, reason_mock = monitoring_mocks
     bar = _make_bar(1_000, is_final=True)
 
@@ -77,9 +73,7 @@ def test_open_bar_guard_allows_final_bar_with_zero_lag(
     reason_mock.assert_not_called()
 
 
-def test_open_bar_guard_rejects_missing_timestamp(
-    monitoring_mocks: tuple[Mock, Mock]
-) -> None:
+def test_open_bar_guard_rejects_missing_timestamp(monitoring_mocks: tuple[Mock, Mock]) -> None:
     stage_mock, reason_mock = monitoring_mocks
     bar = _make_bar(None, is_final=True)
 

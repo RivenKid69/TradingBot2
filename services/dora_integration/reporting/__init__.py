@@ -155,14 +155,12 @@ __all__ = [
     # =========================================================================
     # Unified Reporting Manager
     # =========================================================================
-
     # Enums
     "ReportType",
     "ReportStatus",
     "ReportChannel",
     "PackageFormat",
     "ClientType",
-
     # Data structures
     "ReportDestination",
     "ReportValidationResult",
@@ -170,20 +168,16 @@ __all__ = [
     "SubmissionPackage",
     "DeliveryRecord",
     "UnifiedReportingConfig",
-
     # Main class
     "UnifiedReportingManager",
-
     # Factory functions
     "create_unified_reporting_manager",
     "create_report_destination",
     "get_report_types",
     "get_report_statuses",
-
     # =========================================================================
     # Reporting Templates
     # =========================================================================
-
     # Enums
     "IncidentTypeCode",
     "DataTypeCode",
@@ -191,17 +185,14 @@ __all__ = [
     "ServiceTypeCode",
     "ResponseEffectivenessCode",
     "TemplateExportFormat",
-
     # Data structures
     "ITSInitialNotificationTemplate",
     "ITSIntermediateReportTemplate",
     "ITSFinalReportTemplate",
     "TimelineEvent",
     "ClientIncidentDataPackage",
-
     # Main class
     "DORAReportingTemplates",
-
     # Factory functions
     "create_reporting_templates",
     "get_incident_type_codes",
@@ -209,11 +200,9 @@ __all__ = [
     "get_service_type_codes",
     "get_client_type_codes",
     "create_timeline_event",
-
     # =========================================================================
     # Register of Information (ROI Data Generator)
     # =========================================================================
-
     # Enums
     "ContractType",
     "ServiceType",
@@ -222,7 +211,6 @@ __all__ = [
     "ProviderLocationType",
     "SubcontractingLevel",
     "ExportFormat",
-
     # Data structures
     "ProviderIdentification",
     "ContractReferenceData",
@@ -230,10 +218,8 @@ __all__ = [
     "ServiceRecord",
     "ROIDataPackage",
     "ROIDataGeneratorConfig",
-
     # Main class
     "DORARegisterOfInformation",
-
     # Factory functions
     "create_register_of_information",
     "create_roi_data_generator",

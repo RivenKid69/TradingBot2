@@ -32,7 +32,7 @@ import pandas as pd
 import yaml
 
 from binance_public import BinancePublicClient
-from services.rest_budget import RestBudgetSession
+from services.rest_budget import RestBudgetSession, split_time_range
 from utils.time import hour_of_week
 from utils_time import parse_time_to_ms
 
@@ -328,18 +328,12 @@ def _raw_to_df(raw: Sequence[Sequence[Any]], symbol: str, interval: str) -> pd.D
             "low": pd.to_numeric(df["low"], errors="coerce"),
             "close": pd.to_numeric(df["close"], errors="coerce"),
             "volume": pd.to_numeric(df["volume"], errors="coerce"),
-            "quote_asset_volume": pd.to_numeric(
-                df["quote_asset_volume"], errors="coerce"
+            "quote_asset_volume": pd.to_numeric(df["quote_asset_volume"], errors="coerce"),
+            "number_of_trades": pd.to_numeric(df["number_of_trades"], errors="coerce").astype(
+                "Int64"
             ),
-            "number_of_trades": pd.to_numeric(
-                df["number_of_trades"], errors="coerce"
-            ).astype("Int64"),
-            "taker_buy_base": pd.to_numeric(
-                df["taker_buy_base"], errors="coerce"
-            ),
-            "taker_buy_quote": pd.to_numeric(
-                df["taker_buy_quote"], errors="coerce"
-            ),
+            "taker_buy_base": pd.to_numeric(df["taker_buy_base"], errors="coerce"),
+            "taker_buy_quote": pd.to_numeric(df["taker_buy_quote"], errors="coerce"),
         }
     )
     out["interval"] = interval
@@ -866,7 +860,9 @@ def main() -> None:
 
                 handled_signals: Dict[int, Any] = {}
 
-                def _handle_signal(signum: int, frame: Any | None) -> None:  # pragma: no cover - signal handler
+                def _handle_signal(
+                    signum: int, frame: Any | None
+                ) -> None:  # pragma: no cover - signal handler
                     payload = checkpoint_state.get("payload")
                     if isinstance(payload, Mapping):
                         session.save_checkpoint(

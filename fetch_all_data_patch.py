@@ -25,6 +25,7 @@ from typing import Dict, Tuple, List
 
 FNG_PATH = os.path.join("data", "fear_greed.csv")
 
+
 def _read_fng() -> pd.DataFrame:
     if not os.path.exists(FNG_PATH):
         # No F&G available — return empty frame
@@ -33,8 +34,16 @@ def _read_fng() -> pd.DataFrame:
     # expected columns: timestamp (unix seconds or ms), value (0..100) or 'fear_greed_value'
     cols = {c.lower(): c for c in fng.columns}
     # normalize timestamp to seconds (int) UTC
-    ts_col = "timestamp" if "timestamp" in cols else next((c for c in fng.columns if "time" in c.lower()), "timestamp")
-    val_col = "fear_greed_value" if "fear_greed_value" in fng.columns else ("value" if "value" in fng.columns else None)
+    ts_col = (
+        "timestamp"
+        if "timestamp" in cols
+        else next((c for c in fng.columns if "time" in c.lower()), "timestamp")
+    )
+    val_col = (
+        "fear_greed_value"
+        if "fear_greed_value" in fng.columns
+        else ("value" if "value" in fng.columns else None)
+    )
     fng = fng.rename(columns={ts_col: "timestamp"})
     if val_col and val_col != "fear_greed_value":
         fng = fng.rename(columns={val_col: "fear_greed_value"})
@@ -52,20 +61,37 @@ def _read_fng() -> pd.DataFrame:
     fng = fng.drop_duplicates(subset=["timestamp"]).sort_values("timestamp")
     return fng
 
+
 def _ensure_required_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Minimal set; tolerate extra columns
     required = [
-        "timestamp", "open", "high", "low", "close", "volume",
-        "quote_asset_volume", "number_of_trades",
-        "taker_buy_base_asset_volume", "taker_buy_quote_asset_volume", "symbol"
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_asset_volume",
+        "number_of_trades",
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume",
+        "symbol",
     ]
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns in preprocessed file: {missing}")
     # enforce types
     df = df.copy()
-    float_cols = ["open","high","low","close","volume","quote_asset_volume",
-                  "taker_buy_base_asset_volume","taker_buy_quote_asset_volume"]
+    float_cols = [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_asset_volume",
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume",
+    ]
     int_cols = ["number_of_trades"]
     for c in float_cols:
         df[c] = df[c].astype(float)
@@ -82,7 +108,10 @@ def _ensure_required_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop_duplicates(subset=["timestamp"]).sort_values("timestamp")
     return df
 
-def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, seed: int = 42, *args, **kwargs) -> Tuple[Dict[str, pd.DataFrame], Dict[str, np.ndarray]]:
+
+def load_all_data(
+    feather_paths: List[str], synthetic_fraction: float = 0.0, seed: int = 42, *args, **kwargs
+) -> Tuple[Dict[str, pd.DataFrame], Dict[str, np.ndarray]]:
     """Load all .feather files and perform safe merge with Fear & Greed if available.
     Keys are derived from file stem (e.g., BTCUSDT).
     synthetic_fraction/seed are accepted for compatibility and ignored here.
@@ -93,7 +122,16 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
     fng = _read_fng()
     for p in feather_paths:
         sym = os.path.splitext(os.path.basename(p))[0]
-        if any(suffix in sym for suffix in ["_corporate_actions", "_features", "_targets", "_training_table", "_predictions"]):
+        if any(
+            suffix in sym
+            for suffix in [
+                "_corporate_actions",
+                "_features",
+                "_targets",
+                "_training_table",
+                "_predictions",
+            ]
+        ):
             continue
         if p.endswith(".parquet"):
             df = pd.read_parquet(p)
@@ -117,7 +155,7 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
             else:
                 raise ValueError(f"{p}: neither 'timestamp' nor close/open_time present")
         # Ensure required columns exist; if quote_asset_volume missing, try derive
-        if "quote_asset_volume" not in df.columns and {"close","volume"}.issubset(df.columns):
+        if "quote_asset_volume" not in df.columns and {"close", "volume"}.issubset(df.columns):
             df["quote_asset_volume"] = df["close"].astype(float) * df["volume"].astype(float)
         if "number_of_trades" not in df.columns:
             df["number_of_trades"] = 0
@@ -152,7 +190,7 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
         # - This eliminates the semantic conflict
         #
         # References:
-        # - CLAUDE.md: DATA_LEAKAGE_FIX_REPORT_2025_11_23.md
+        # - docs/PLATFORM_REFERENCE.md: DATA_LEAKAGE_FIX_REPORT_2025_11_23.md
         # - tests/test_data_leakage_prevention.py
         # - tests/test_close_orig_semantic_fix.py (NEW)
         # =========================================================================
@@ -162,12 +200,9 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
             orig_fear_col = "fear_greed_value_orig"
             df = df.rename(columns={"fear_greed_value": orig_fear_col})
         if not fng.empty:
-            fng_sorted = fng.sort_values("timestamp")[["timestamp","fear_greed_value"]].copy()
+            fng_sorted = fng.sort_values("timestamp")[["timestamp", "fear_greed_value"]].copy()
             df = pd.merge_asof(
-                df.sort_values("timestamp"),
-                fng_sorted,
-                on="timestamp",
-                direction="backward"
+                df.sort_values("timestamp"), fng_sorted, on="timestamp", direction="backward"
             )
             if "fear_greed_value" in df.columns:
                 df["fear_greed_value"] = df["fear_greed_value"].ffill()
@@ -180,21 +215,24 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
         # Strip training-only artefacts that would zero-out weights during RL.
         # ``apply_no_trade_mask`` may export the mask column or derived labels;
         # keep the runtime dataset clean by dropping them eagerly.
-        artefact_columns = [
-            col
-            for col in ("train_weight",)
-            if col in df.columns
-        ]
-        artefact_columns.extend(
-            col for col in df.columns if col.startswith("no_trade_")
-        )
+        artefact_columns = [col for col in ("train_weight",) if col in df.columns]
+        artefact_columns.extend(col for col in df.columns if col.startswith("no_trade_"))
         if artefact_columns:
             df = df.drop(columns=sorted(set(artefact_columns)))
 
         # Maintain stable column order
         base_cols = [
-            "timestamp","symbol","open","high","low","close","volume","quote_asset_volume",
-            "number_of_trades","taker_buy_base_asset_volume","taker_buy_quote_asset_volume"
+            "timestamp",
+            "symbol",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "quote_asset_volume",
+            "number_of_trades",
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume",
         ]
         other_cols = [c for c in df.columns if c not in base_cols]
         # enforce stable order for trainer

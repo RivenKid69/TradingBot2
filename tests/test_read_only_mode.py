@@ -12,6 +12,7 @@ from core_models import Bar
 try:
     import risk_manager
 except Exception:  # pragma: no cover - fallback for environments without C extensions
+
     class _DummyRM:
         @staticmethod
         def apply_close_if_needed(state, readonly=False):
@@ -19,10 +20,11 @@ except Exception:  # pragma: no cover - fallback for environments without C exte
             if working.net_worth > working.peak_value:
                 working.peak_value = working.net_worth
             return 0
+
     risk_manager = _DummyRM()
 
 
-def _make_bar(ts:int, price:float) -> Bar:
+def _make_bar(ts: int, price: float) -> Bar:
     d = Decimal(str(price))
     return Bar(ts=ts, symbol="BTC", open=d, high=d, low=d, close=d)
 

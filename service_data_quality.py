@@ -69,8 +69,14 @@ def pit_leak_scan(
             continue
         min_pub = int(np.min(pubs))
         if first_value_ts < min_pub:
-            leaks.append({"symbol": str(sym), "first_value_ts": first_value_ts,
-                          "min_publish_ts": min_pub, "reason": "look-ahead: value before first publish"})
+            leaks.append(
+                {
+                    "symbol": str(sym),
+                    "first_value_ts": first_value_ts,
+                    "min_publish_ts": min_pub,
+                    "reason": "look-ahead: value before first publish",
+                }
+            )
     return leaks
 
 
@@ -111,8 +117,13 @@ def data_trust_report(
     survivorship_biased: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Data-Trust: DataQualityReport + per-signal PIT-lineage + verdict (trusted|caution|untrusted)."""
-    base = build_quality_report(panel, provenance, price_col=price_col, now_ms=now_ms,
-                                survivorship_biased=survivorship_biased)
+    base = build_quality_report(
+        panel,
+        provenance,
+        price_col=price_col,
+        now_ms=now_ms,
+        survivorship_biased=survivorship_biased,
+    )
     pit_by_col = {p.column: p.pit_quality for p in provenance}
 
     lineage: Dict[str, Any] = {}

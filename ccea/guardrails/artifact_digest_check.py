@@ -52,17 +52,19 @@ INVALID_REF_PATTERNS: List[Tuple[Pattern, str]] = [
 ]
 
 # Allowed registries (EU-only for GDPR compliance)
-ALLOWED_REGISTRIES: FrozenSet[str] = frozenset({
-    # Platform registries (EU)
-    "registry.ccea.io",
-    "eu.registry.ccea.io",
-    "ghcr.io/ccea",
-    # Enterprise registries (customer-controlled, must be EU)
-    "registry.enterprise.ccea.io",
-    # Local development
-    "localhost",
-    "127.0.0.1",
-})
+ALLOWED_REGISTRIES: FrozenSet[str] = frozenset(
+    {
+        # Platform registries (EU)
+        "registry.ccea.io",
+        "eu.registry.ccea.io",
+        "ghcr.io/ccea",
+        # Enterprise registries (customer-controlled, must be EU)
+        "registry.enterprise.ccea.io",
+        # Local development
+        "localhost",
+        "127.0.0.1",
+    }
+)
 
 # Files to check for artifact references
 ARTIFACT_REFERENCE_FILES: List[str] = [
@@ -86,28 +88,32 @@ ARTIFACT_REFERENCE_FILES: List[str] = [
 ]
 
 # Field names that should contain digests
-DIGEST_FIELD_NAMES: FrozenSet[str] = frozenset({
-    "artifact_digest",
-    "config_digest",
-    "new_artifact_digest",
-    "old_artifact_digest",
-    "new_config_digest",
-    "old_config_digest",
-    "image_digest",
-    "digest",
-    "sha256",
-    "content_digest",
-    "evidence_hash",
-})
+DIGEST_FIELD_NAMES: FrozenSet[str] = frozenset(
+    {
+        "artifact_digest",
+        "config_digest",
+        "new_artifact_digest",
+        "old_artifact_digest",
+        "new_config_digest",
+        "old_config_digest",
+        "image_digest",
+        "digest",
+        "sha256",
+        "content_digest",
+        "evidence_hash",
+    }
+)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class DigestViolation:
     """A digest pinning or registry violation."""
+
     file_path: str
     line_number: int
     violation_type: str  # "no_digest", "invalid_digest", "invalid_registry", "latest_tag"
@@ -119,6 +125,7 @@ class DigestViolation:
 @dataclass
 class CheckResult:
     """Result of artifact digest check."""
+
     passed: bool
     message: str
     violations: List[DigestViolation] = field(default_factory=list)
@@ -129,6 +136,7 @@ class CheckResult:
 # ============================================================================
 # Validation Functions
 # ============================================================================
+
 
 def is_valid_digest(value: str) -> bool:
     """
@@ -192,6 +200,7 @@ def check_for_invalid_patterns(
 # File Checking Functions
 # ============================================================================
 
+
 def find_files_to_check() -> List[Path]:
     """Find all files that should be checked for artifact references."""
     import glob
@@ -231,26 +240,30 @@ def check_yaml_file(file_path: Path) -> List[DigestViolation]:
                 # Check for invalid patterns (latest, etc.)
                 error = check_for_invalid_patterns(image_ref)
                 if error:
-                    violations.append(DigestViolation(
-                        file_path=str(file_path),
-                        line_number=line_num,
-                        violation_type="latest_tag",
-                        message=error,
-                        value=image_ref,
-                    ))
+                    violations.append(
+                        DigestViolation(
+                            file_path=str(file_path),
+                            line_number=line_num,
+                            violation_type="latest_tag",
+                            message=error,
+                            value=image_ref,
+                        )
+                    )
 
                 # Check for digest
                 if "@sha256:" not in image_ref and not is_valid_digest(image_ref):
                     # Check registry
                     registry = extract_registry(image_ref)
                     if registry and not is_allowed_registry(registry):
-                        violations.append(DigestViolation(
-                            file_path=str(file_path),
-                            line_number=line_num,
-                            violation_type="invalid_registry",
-                            message=f"Registry '{registry}' not in allowlist",
-                            value=image_ref,
-                        ))
+                        violations.append(
+                            DigestViolation(
+                                file_path=str(file_path),
+                                line_number=line_num,
+                                violation_type="invalid_registry",
+                                message=f"Registry '{registry}' not in allowlist",
+                                value=image_ref,
+                            )
+                        )
 
         # Check for digest fields
         for field_name in DIGEST_FIELD_NAMES:
@@ -260,13 +273,15 @@ def check_yaml_file(file_path: Path) -> List[DigestViolation]:
                 if match:
                     value = match.group(1).strip()
                     if value and value != "null" and not is_valid_digest(value):
-                        violations.append(DigestViolation(
-                            file_path=str(file_path),
-                            line_number=line_num,
-                            violation_type="invalid_digest",
-                            message=f"Field '{field_name}' must be a valid SHA256 digest",
-                            value=value,
-                        ))
+                        violations.append(
+                            DigestViolation(
+                                file_path=str(file_path),
+                                line_number=line_num,
+                                violation_type="invalid_digest",
+                                message=f"Field '{field_name}' must be a valid SHA256 digest",
+                                value=value,
+                            )
+                        )
 
     return violations
 
@@ -289,26 +304,30 @@ def check_json_file(file_path: Path) -> List[DigestViolation]:
                 # Check digest fields
                 if key.lower() in DIGEST_FIELD_NAMES:
                     if isinstance(value, str) and value and not is_valid_digest(value):
-                        violations.append(DigestViolation(
-                            file_path=str(file_path),
-                            line_number=0,  # JSON doesn't have line numbers easily
-                            violation_type="invalid_digest",
-                            message=f"Field '{key}' must be a valid SHA256 digest",
-                            value=value,
-                        ))
+                        violations.append(
+                            DigestViolation(
+                                file_path=str(file_path),
+                                line_number=0,  # JSON doesn't have line numbers easily
+                                violation_type="invalid_digest",
+                                message=f"Field '{key}' must be a valid SHA256 digest",
+                                value=value,
+                            )
+                        )
 
                 # Check image references
                 if key.lower() in ("image", "artifact", "artifact_ref"):
                     if isinstance(value, str):
                         error = check_for_invalid_patterns(value)
                         if error:
-                            violations.append(DigestViolation(
-                                file_path=str(file_path),
-                                line_number=0,
-                                violation_type="latest_tag",
-                                message=error,
-                                value=value,
-                            ))
+                            violations.append(
+                                DigestViolation(
+                                    file_path=str(file_path),
+                                    line_number=0,
+                                    violation_type="latest_tag",
+                                    message=error,
+                                    value=value,
+                                )
+                            )
 
                 check_recursive(value, current_path)
 
@@ -347,26 +366,30 @@ def check_python_file(file_path: Path) -> List[DigestViolation]:
                 if value and not is_valid_digest(value):
                     # Skip if it's a variable reference or pattern
                     if not value.startswith("{") and not value.startswith("$"):
-                        violations.append(DigestViolation(
-                            file_path=str(file_path),
-                            line_number=line_num,
-                            violation_type="invalid_digest",
-                            message=f"Field '{field_name}' must be a valid SHA256 digest",
-                            value=value,
-                        ))
+                        violations.append(
+                            DigestViolation(
+                                file_path=str(file_path),
+                                line_number=line_num,
+                                violation_type="invalid_digest",
+                                message=f"Field '{field_name}' must be a valid SHA256 digest",
+                                value=value,
+                            )
+                        )
 
         # Check for :latest patterns in strings
-        if ":latest" in line and not "forbidden" in line.lower():
+        if ":latest" in line and "forbidden" not in line.lower():
             match = re.search(r'["\']([^"\']*:latest[^"\']*)["\']', line)
             if match:
                 value = match.group(1)
-                violations.append(DigestViolation(
-                    file_path=str(file_path),
-                    line_number=line_num,
-                    violation_type="latest_tag",
-                    message="Using ':latest' tag is forbidden",
-                    value=value,
-                ))
+                violations.append(
+                    DigestViolation(
+                        file_path=str(file_path),
+                        line_number=line_num,
+                        violation_type="latest_tag",
+                        message="Using ':latest' tag is forbidden",
+                        value=value,
+                    )
+                )
 
     return violations
 
@@ -388,6 +411,7 @@ def check_file(file_path: Path) -> List[DigestViolation]:
 # ============================================================================
 # Main Check Function
 # ============================================================================
+
 
 def check_artifact_digests() -> CheckResult:
     """
@@ -425,6 +449,7 @@ def check_artifact_digests() -> CheckResult:
 # ============================================================================
 # Validation API (for runtime use)
 # ============================================================================
+
 
 def validate_artifact_reference(
     reference: str,
@@ -489,6 +514,7 @@ def validate_digest(digest: str) -> Tuple[bool, Optional[str]]:
 # ============================================================================
 # Main Entry Point
 # ============================================================================
+
 
 def main() -> int:
     """Main entry point for CI."""

@@ -10,7 +10,9 @@ import service_signal_runner
 from service_signal_runner import MixedQuoteError
 
 
-def test_service_signal_runner_rejects_mixed_quote(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+def test_service_signal_runner_rejects_mixed_quote(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     logs_dir = tmp_path / "logs"
     artifacts_dir = tmp_path / "artifacts"
     logs_dir.mkdir()

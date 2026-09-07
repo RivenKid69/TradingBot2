@@ -59,6 +59,7 @@ logger = logging.getLogger(__name__)
 # PROTOCOL INTERFACE
 # ============================================================================
 
+
 class FuturesMarginCalculator(Protocol):
     """
     Protocol for margin calculation providers.
@@ -163,6 +164,7 @@ class FuturesMarginCalculator(Protocol):
 # ============================================================================
 # TIERED MARGIN CALCULATOR (Binance)
 # ============================================================================
+
 
 class TieredMarginCalculator:
     """
@@ -567,6 +569,7 @@ class TieredMarginCalculator:
 # CME MARGIN CALCULATOR (Simplified SPAN)
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class CMEMarginRate:
     """
@@ -581,6 +584,7 @@ class CMEMarginRate:
         maintenance_margin: Maintenance margin per contract (USD)
         day_trading_margin: Intraday margin (optional, lower)
     """
+
     symbol: str
     initial_margin: Decimal
     maintenance_margin: Decimal
@@ -788,6 +792,7 @@ class CMEMarginCalculator:
 # SIMPLE MARGIN CALCULATOR
 # ============================================================================
 
+
 class SimpleMarginCalculator:
     """
     Simple fixed-percentage margin calculator.
@@ -905,6 +910,7 @@ class SimpleMarginCalculator:
 # FACTORY FUNCTIONS
 # ============================================================================
 
+
 def create_margin_calculator(
     futures_type: FuturesType,
     brackets: Optional[List[LeverageBracket]] = None,
@@ -936,8 +942,12 @@ def create_margin_calculator(
                 liquidation_fee_rate=Decimal(str(config.get("liquidation_fee_rate", "0.005"))),
             )
 
-    elif futures_type in (FuturesType.INDEX_FUTURES, FuturesType.COMMODITY_FUTURES,
-                          FuturesType.CURRENCY_FUTURES, FuturesType.BOND_FUTURES):
+    elif futures_type in (
+        FuturesType.INDEX_FUTURES,
+        FuturesType.COMMODITY_FUTURES,
+        FuturesType.CURRENCY_FUTURES,
+        FuturesType.BOND_FUTURES,
+    ):
         return CMEMarginCalculator(
             margin_rates=config.get("margin_rates"),
             use_day_trading_margin=config.get("use_day_trading_margin", False),
@@ -962,16 +972,66 @@ def get_default_btc_brackets() -> List[LeverageBracket]:
         List of LeverageBracket
     """
     return [
-        LeverageBracket(bracket=1, notional_cap=Decimal("50000"), maint_margin_rate=Decimal("0.004"), max_leverage=125),
-        LeverageBracket(bracket=2, notional_cap=Decimal("250000"), maint_margin_rate=Decimal("0.005"), max_leverage=100),
-        LeverageBracket(bracket=3, notional_cap=Decimal("1000000"), maint_margin_rate=Decimal("0.01"), max_leverage=50),
-        LeverageBracket(bracket=4, notional_cap=Decimal("10000000"), maint_margin_rate=Decimal("0.025"), max_leverage=20),
-        LeverageBracket(bracket=5, notional_cap=Decimal("20000000"), maint_margin_rate=Decimal("0.05"), max_leverage=10),
-        LeverageBracket(bracket=6, notional_cap=Decimal("50000000"), maint_margin_rate=Decimal("0.10"), max_leverage=5),
-        LeverageBracket(bracket=7, notional_cap=Decimal("100000000"), maint_margin_rate=Decimal("0.125"), max_leverage=4),
-        LeverageBracket(bracket=8, notional_cap=Decimal("200000000"), maint_margin_rate=Decimal("0.15"), max_leverage=3),
-        LeverageBracket(bracket=9, notional_cap=Decimal("300000000"), maint_margin_rate=Decimal("0.25"), max_leverage=2),
-        LeverageBracket(bracket=10, notional_cap=Decimal("9223372036854775807"), maint_margin_rate=Decimal("0.50"), max_leverage=1),
+        LeverageBracket(
+            bracket=1,
+            notional_cap=Decimal("50000"),
+            maint_margin_rate=Decimal("0.004"),
+            max_leverage=125,
+        ),
+        LeverageBracket(
+            bracket=2,
+            notional_cap=Decimal("250000"),
+            maint_margin_rate=Decimal("0.005"),
+            max_leverage=100,
+        ),
+        LeverageBracket(
+            bracket=3,
+            notional_cap=Decimal("1000000"),
+            maint_margin_rate=Decimal("0.01"),
+            max_leverage=50,
+        ),
+        LeverageBracket(
+            bracket=4,
+            notional_cap=Decimal("10000000"),
+            maint_margin_rate=Decimal("0.025"),
+            max_leverage=20,
+        ),
+        LeverageBracket(
+            bracket=5,
+            notional_cap=Decimal("20000000"),
+            maint_margin_rate=Decimal("0.05"),
+            max_leverage=10,
+        ),
+        LeverageBracket(
+            bracket=6,
+            notional_cap=Decimal("50000000"),
+            maint_margin_rate=Decimal("0.10"),
+            max_leverage=5,
+        ),
+        LeverageBracket(
+            bracket=7,
+            notional_cap=Decimal("100000000"),
+            maint_margin_rate=Decimal("0.125"),
+            max_leverage=4,
+        ),
+        LeverageBracket(
+            bracket=8,
+            notional_cap=Decimal("200000000"),
+            maint_margin_rate=Decimal("0.15"),
+            max_leverage=3,
+        ),
+        LeverageBracket(
+            bracket=9,
+            notional_cap=Decimal("300000000"),
+            maint_margin_rate=Decimal("0.25"),
+            max_leverage=2,
+        ),
+        LeverageBracket(
+            bracket=10,
+            notional_cap=Decimal("9223372036854775807"),
+            maint_margin_rate=Decimal("0.50"),
+            max_leverage=1,
+        ),
     ]
 
 
@@ -983,15 +1043,60 @@ def get_default_eth_brackets() -> List[LeverageBracket]:
         List of LeverageBracket
     """
     return [
-        LeverageBracket(bracket=1, notional_cap=Decimal("10000"), maint_margin_rate=Decimal("0.005"), max_leverage=100),
-        LeverageBracket(bracket=2, notional_cap=Decimal("100000"), maint_margin_rate=Decimal("0.0065"), max_leverage=75),
-        LeverageBracket(bracket=3, notional_cap=Decimal("500000"), maint_margin_rate=Decimal("0.01"), max_leverage=50),
-        LeverageBracket(bracket=4, notional_cap=Decimal("1000000"), maint_margin_rate=Decimal("0.02"), max_leverage=25),
-        LeverageBracket(bracket=5, notional_cap=Decimal("2000000"), maint_margin_rate=Decimal("0.05"), max_leverage=10),
-        LeverageBracket(bracket=6, notional_cap=Decimal("5000000"), maint_margin_rate=Decimal("0.10"), max_leverage=5),
-        LeverageBracket(bracket=7, notional_cap=Decimal("10000000"), maint_margin_rate=Decimal("0.125"), max_leverage=4),
-        LeverageBracket(bracket=8, notional_cap=Decimal("20000000"), maint_margin_rate=Decimal("0.15"), max_leverage=3),
-        LeverageBracket(bracket=9, notional_cap=Decimal("9223372036854775807"), maint_margin_rate=Decimal("0.25"), max_leverage=2),
+        LeverageBracket(
+            bracket=1,
+            notional_cap=Decimal("10000"),
+            maint_margin_rate=Decimal("0.005"),
+            max_leverage=100,
+        ),
+        LeverageBracket(
+            bracket=2,
+            notional_cap=Decimal("100000"),
+            maint_margin_rate=Decimal("0.0065"),
+            max_leverage=75,
+        ),
+        LeverageBracket(
+            bracket=3,
+            notional_cap=Decimal("500000"),
+            maint_margin_rate=Decimal("0.01"),
+            max_leverage=50,
+        ),
+        LeverageBracket(
+            bracket=4,
+            notional_cap=Decimal("1000000"),
+            maint_margin_rate=Decimal("0.02"),
+            max_leverage=25,
+        ),
+        LeverageBracket(
+            bracket=5,
+            notional_cap=Decimal("2000000"),
+            maint_margin_rate=Decimal("0.05"),
+            max_leverage=10,
+        ),
+        LeverageBracket(
+            bracket=6,
+            notional_cap=Decimal("5000000"),
+            maint_margin_rate=Decimal("0.10"),
+            max_leverage=5,
+        ),
+        LeverageBracket(
+            bracket=7,
+            notional_cap=Decimal("10000000"),
+            maint_margin_rate=Decimal("0.125"),
+            max_leverage=4,
+        ),
+        LeverageBracket(
+            bracket=8,
+            notional_cap=Decimal("20000000"),
+            maint_margin_rate=Decimal("0.15"),
+            max_leverage=3,
+        ),
+        LeverageBracket(
+            bracket=9,
+            notional_cap=Decimal("9223372036854775807"),
+            maint_margin_rate=Decimal("0.25"),
+            max_leverage=2,
+        ),
     ]
 
 
@@ -1020,12 +1125,16 @@ def load_brackets_from_json(filepath: str) -> Dict[str, List[LeverageBracket]]:
     for symbol, brackets_data in data.items():
         brackets = []
         for i, b in enumerate(brackets_data):
-            brackets.append(LeverageBracket(
-                bracket=b.get("bracket", i + 1),
-                notional_cap=Decimal(str(b.get("notionalCap", b.get("notional_cap", "0")))),
-                maint_margin_rate=Decimal(str(b.get("maintMarginRate", b.get("maint_margin_rate", "0.01")))),
-                max_leverage=int(b.get("maxLeverage", b.get("max_leverage", 1))),
-            ))
+            brackets.append(
+                LeverageBracket(
+                    bracket=b.get("bracket", i + 1),
+                    notional_cap=Decimal(str(b.get("notionalCap", b.get("notional_cap", "0")))),
+                    maint_margin_rate=Decimal(
+                        str(b.get("maintMarginRate", b.get("maint_margin_rate", "0.01")))
+                    ),
+                    max_leverage=int(b.get("maxLeverage", b.get("max_leverage", 1))),
+                )
+            )
         result[symbol] = brackets
 
     return result

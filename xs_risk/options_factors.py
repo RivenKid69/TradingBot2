@@ -39,7 +39,9 @@ def _vol_index_changes(iv_changes_wide: pd.DataFrame, vol_index_symbol: Optional
     return iv_changes_wide.mean(axis=1).astype("float64")
 
 
-def vol_level_beta(iv_changes_wide: pd.DataFrame, *, vol_index_symbol: Optional[str] = None) -> pd.Series:
+def vol_level_beta(
+    iv_changes_wide: pd.DataFrame, *, vol_index_symbol: Optional[str] = None
+) -> pd.Series:
     """β изменений IV символа к vol-индексу: cov/var."""
     m = _vol_index_changes(iv_changes_wide, vol_index_symbol)
     var_m = float(np.nanvar(m.to_numpy()))
@@ -70,7 +72,9 @@ def build_options_exposures(
     """Построить vol-факторные экспозиции B (index=symbol, cols=[vol_level_beta, skew?, term?])."""
     symbols = list(iv_changes_wide.columns)
     cols: Dict[str, pd.Series] = {}
-    cols["vol_level_beta"] = vol_level_beta(iv_changes_wide, vol_index_symbol=vol_index_symbol).reindex(symbols)
+    cols["vol_level_beta"] = vol_level_beta(
+        iv_changes_wide, vol_index_symbol=vol_index_symbol
+    ).reindex(symbols)
     if skews:
         cols["skew"] = _standardize(pd.Series({s: float(skews.get(s, np.nan)) for s in symbols}))
     if terms:
@@ -90,7 +94,9 @@ def build_options_risk_model(
     """Удобный конструктор FactorRiskModel с vol-факторными экспозициями."""
     from service_risk_model import FactorRiskModel
 
-    B = build_options_exposures(iv_changes_wide, skews=skews, terms=terms, vol_index_symbol=vol_index_symbol)
+    B = build_options_exposures(
+        iv_changes_wide, skews=skews, terms=terms, vol_index_symbol=vol_index_symbol
+    )
     return FactorRiskModel(B, factor_cov_method=factor_cov_method)
 
 

@@ -5,6 +5,7 @@
 Realistic latency simulation is critical for modeling HFT and institutional execution. The L3 simulator provides configurable latency profiles with time-of-day and volatility adjustments.
 
 **Files**:
+
 - `lob/latency_model.py` (~997 lines) - Latency distributions
 - `lob/event_scheduler.py` (~970 lines) - Event ordering
 

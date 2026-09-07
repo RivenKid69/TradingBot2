@@ -161,9 +161,7 @@ class LatencyVolatilityCache:
             threshold = self._window
         return threshold
 
-    def is_ready(
-        self, symbol: Optional[str] = None, *, min_count: Optional[int] = None
-    ) -> bool:
+    def is_ready(self, symbol: Optional[str] = None, *, min_count: Optional[int] = None) -> bool:
         """Return ``True`` if enough observations are available for ``symbol``.
 
         The ``symbol`` argument should correspond to a trading pair identifier.
@@ -340,4 +338,3 @@ class LatencyVolatilityCache:
 
 
 __all__ = ["LatencyVolatilityCache"]
-

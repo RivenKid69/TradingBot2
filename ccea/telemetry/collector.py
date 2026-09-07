@@ -32,6 +32,7 @@ class TelemetryLevel(str, Enum):
     DETAILED_NON_SENSITIVE: Opt-in - trade counts, timing
     RAW_ORDER_EVENTS: Enterprise-only - full order details
     """
+
     AGGREGATED = "AGGREGATED"
     DETAILED_NON_SENSITIVE = "DETAILED_NON_SENSITIVE"
     RAW_ORDER_EVENTS = "RAW_ORDER_EVENTS"
@@ -39,6 +40,7 @@ class TelemetryLevel(str, Enum):
 
 class EventType(str, Enum):
     """Standard event types."""
+
     # System events
     AGENT_STARTED = "AGENT_STARTED"
     AGENT_STOPPED = "AGENT_STOPPED"
@@ -74,6 +76,7 @@ class TelemetryEvent:
 
     All events are redacted before storage/export.
     """
+
     event_type: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
     data: Dict[str, Any] = field(default_factory=dict)

@@ -55,41 +55,43 @@ DEFAULT_ALLOWED_PORTS: Final[FrozenSet[int]] = frozenset({443})
 EXTENDED_ALLOWED_PORTS: Final[FrozenSet[int]] = frozenset({80, 443, 8080, 8443})
 
 # Always blocked ports (security-sensitive)
-BLOCKED_PORTS: Final[FrozenSet[int]] = frozenset({
-    22,    # SSH
-    23,    # Telnet
-    25,    # SMTP (spam)
-    135,   # RPC
-    137,   # NetBIOS
-    138,   # NetBIOS
-    139,   # NetBIOS
-    445,   # SMB
-    1433,  # MSSQL
-    1434,  # MSSQL Browser
-    3306,  # MySQL
-    3389,  # RDP
-    5432,  # PostgreSQL
-    6379,  # Redis
-    27017, # MongoDB
-})
+BLOCKED_PORTS: Final[FrozenSet[int]] = frozenset(
+    {
+        22,  # SSH
+        23,  # Telnet
+        25,  # SMTP (spam)
+        135,  # RPC
+        137,  # NetBIOS
+        138,  # NetBIOS
+        139,  # NetBIOS
+        445,  # SMB
+        1433,  # MSSQL
+        1434,  # MSSQL Browser
+        3306,  # MySQL
+        3389,  # RDP
+        5432,  # PostgreSQL
+        6379,  # Redis
+        27017,  # MongoDB
+    }
+)
 
 # Always blocked IP ranges (private, loopback, link-local)
 BLOCKED_IP_RANGES: Final[List[str]] = [
-    "10.0.0.0/8",       # Private Class A
-    "172.16.0.0/12",    # Private Class B
-    "192.168.0.0/16",   # Private Class C
-    "127.0.0.0/8",      # Loopback
-    "169.254.0.0/16",   # Link-local
-    "224.0.0.0/4",      # Multicast
-    "240.0.0.0/4",      # Reserved
-    "100.64.0.0/10",    # Carrier-grade NAT
-    "0.0.0.0/8",        # Current network
+    "10.0.0.0/8",  # Private Class A
+    "172.16.0.0/12",  # Private Class B
+    "192.168.0.0/16",  # Private Class C
+    "127.0.0.0/8",  # Loopback
+    "169.254.0.0/16",  # Link-local
+    "224.0.0.0/4",  # Multicast
+    "240.0.0.0/4",  # Reserved
+    "100.64.0.0/10",  # Carrier-grade NAT
+    "0.0.0.0/8",  # Current network
     "255.255.255.255/32",  # Broadcast
 ]
 
 # Cloud metadata endpoints (MUST BLOCK)
 BLOCKED_METADATA_IPS: Final[Set[str]] = {
-    "169.254.169.254",   # AWS/GCP/Azure metadata
+    "169.254.169.254",  # AWS/GCP/Azure metadata
     "metadata.google.internal",
     "metadata.azure.internal",
 }
@@ -111,7 +113,6 @@ DEFAULT_ALLOWLIST: Final[List[str]] = [
     "api.polygon.io",
     "query1.finance.yahoo.com",
     "query2.finance.yahoo.com",
-
     # Public data sources
     "api.github.com",
     "raw.githubusercontent.com",
@@ -122,6 +123,7 @@ DEFAULT_ALLOWLIST: Final[List[str]] = [
 
 class EgressAction(Enum):
     """Action to take on egress attempt."""
+
     ALLOW = auto()
     DENY = auto()
     LOG_AND_ALLOW = auto()
@@ -131,6 +133,7 @@ class EgressAction(Enum):
 
 class EgressProtocol(Enum):
     """Network protocol."""
+
     TCP = auto()
     UDP = auto()
     ICMP = auto()
@@ -144,6 +147,7 @@ class EgressRule:
 
     Rules are evaluated in order; first match wins.
     """
+
     rule_id: str = field(default_factory=lambda: str(uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -278,6 +282,7 @@ class EgressPolicy:
 
     Policies are tenant-specific and define allowed egress patterns.
     """
+
     policy_id: str = field(default_factory=lambda: str(uuid4()))
     tenant_id: str = ""
     name: str = "default"
@@ -336,6 +341,7 @@ class EgressPolicy:
 @dataclass
 class EgressViolation:
     """Record of an egress policy violation."""
+
     violation_id: str = field(default_factory=lambda: str(uuid4()))
     tenant_id: str = ""
     job_id: str = ""
@@ -444,8 +450,7 @@ class EgressFirewall:
 
         # Pre-compiled blocked IP networks
         self._blocked_networks = [
-            ipaddress.ip_network(cidr, strict=False)
-            for cidr in BLOCKED_IP_RANGES
+            ipaddress.ip_network(cidr, strict=False) for cidr in BLOCKED_IP_RANGES
         ]
 
         # Statistics
@@ -583,7 +588,7 @@ class EgressFirewall:
             # Add new destinations
             if add_destinations:
                 for dest in add_destinations:
-                    for port in (add_ports or DEFAULT_ALLOWED_PORTS):
+                    for port in add_ports or DEFAULT_ALLOWED_PORTS:
                         rule = EgressRule(
                             name=f"allow-{dest}:{port}",
                             destination=dest,
@@ -597,9 +602,9 @@ class EgressFirewall:
             if remove_destinations:
                 for dest in remove_destinations:
                     policy.rules = [
-                        r for r in policy.rules
-                        if r.destination.lower() != dest.lower()
-                        or r.action != EgressAction.ALLOW
+                        r
+                        for r in policy.rules
+                        if r.destination.lower() != dest.lower() or r.action != EgressAction.ALLOW
                     ]
 
             policy.updated_at = datetime.utcnow()
@@ -648,10 +653,17 @@ class EgressFirewall:
             blocked_reason = self._check_builtin_blocks(destination, resolved_ip, port)
             if blocked_reason:
                 violation = self._create_violation(
-                    tenant_id, job_id, sandbox_id,
-                    destination, port, protocol, bytes_count,
-                    EgressAction.DENY, blocked_reason,
-                    risk_score=80.0, is_suspicious=True,
+                    tenant_id,
+                    job_id,
+                    sandbox_id,
+                    destination,
+                    port,
+                    protocol,
+                    bytes_count,
+                    EgressAction.DENY,
+                    blocked_reason,
+                    risk_score=80.0,
+                    is_suspicious=True,
                 )
                 self._record_violation(violation)
                 self._stats["denied"] += 1
@@ -662,9 +674,15 @@ class EgressFirewall:
             if not policy or not policy.enabled:
                 # No policy = default deny
                 violation = self._create_violation(
-                    tenant_id, job_id, sandbox_id,
-                    destination, port, protocol, bytes_count,
-                    EgressAction.DENY, "No egress policy defined",
+                    tenant_id,
+                    job_id,
+                    sandbox_id,
+                    destination,
+                    port,
+                    protocol,
+                    bytes_count,
+                    EgressAction.DENY,
+                    "No egress policy defined",
                     risk_score=50.0,
                 )
                 self._record_violation(violation)
@@ -675,9 +693,15 @@ class EgressFirewall:
             rate_key = f"{tenant_id}:{job_id}"
             if not self._check_rate_limit(rate_key, bytes_count, policy):
                 violation = self._create_violation(
-                    tenant_id, job_id, sandbox_id,
-                    destination, port, protocol, bytes_count,
-                    EgressAction.RATE_LIMIT, "Rate limit exceeded",
+                    tenant_id,
+                    job_id,
+                    sandbox_id,
+                    destination,
+                    port,
+                    protocol,
+                    bytes_count,
+                    EgressAction.RATE_LIMIT,
+                    "Rate limit exceeded",
                     risk_score=30.0,
                 )
                 self._record_violation(violation)
@@ -696,9 +720,15 @@ class EgressFirewall:
                         # Log if required
                         if rule.action == EgressAction.LOG_AND_ALLOW or policy.log_all_attempts:
                             violation = self._create_violation(
-                                tenant_id, job_id, sandbox_id,
-                                destination, port, protocol, bytes_count,
-                                EgressAction.ALLOW, f"Allowed by rule: {rule.name}",
+                                tenant_id,
+                                job_id,
+                                sandbox_id,
+                                destination,
+                                port,
+                                protocol,
+                                bytes_count,
+                                EgressAction.ALLOW,
+                                f"Allowed by rule: {rule.name}",
                                 matched_rule_id=rule.rule_id,
                                 matched_rule_name=rule.name,
                             )
@@ -709,9 +739,15 @@ class EgressFirewall:
                     else:
                         # Deny
                         violation = self._create_violation(
-                            tenant_id, job_id, sandbox_id,
-                            destination, port, protocol, bytes_count,
-                            rule.action, f"Denied by rule: {rule.name}",
+                            tenant_id,
+                            job_id,
+                            sandbox_id,
+                            destination,
+                            port,
+                            protocol,
+                            bytes_count,
+                            rule.action,
+                            f"Denied by rule: {rule.name}",
                             matched_rule_id=rule.rule_id,
                             matched_rule_name=rule.name,
                             risk_score=60.0,
@@ -727,9 +763,15 @@ class EgressFirewall:
                 return True, None
             else:
                 violation = self._create_violation(
-                    tenant_id, job_id, sandbox_id,
-                    destination, port, protocol, bytes_count,
-                    policy.default_action, "No matching rule, default deny",
+                    tenant_id,
+                    job_id,
+                    sandbox_id,
+                    destination,
+                    port,
+                    protocol,
+                    bytes_count,
+                    policy.default_action,
+                    "No matching rule, default deny",
                     risk_score=40.0,
                 )
                 self._record_violation(violation)
@@ -796,8 +838,7 @@ class EgressFirewall:
         if key in self._request_counts:
             # Remove old entries
             self._request_counts[key] = [
-                ts for ts in self._request_counts[key]
-                if ts > window_start
+                ts for ts in self._request_counts[key] if ts > window_start
             ]
             if len(self._request_counts[key]) >= policy.max_requests_per_minute:
                 return False
@@ -805,8 +846,7 @@ class EgressFirewall:
         # Bytes check
         if key in self._byte_counts:
             self._byte_counts[key] = [
-                (ts, b) for ts, b in self._byte_counts[key]
-                if ts > window_start
+                (ts, b) for ts, b in self._byte_counts[key] if ts > window_start
             ]
             total_bytes = sum(b for _, b in self._byte_counts[key])
             if total_bytes + bytes_count > policy.max_bytes_per_minute:
@@ -866,7 +906,7 @@ class EgressFirewall:
 
         # Trim history
         if len(self._violations) > self._max_violation_history:
-            self._violations = self._violations[-self._max_violation_history:]
+            self._violations = self._violations[-self._max_violation_history :]
 
         # Trigger callbacks
         if violation.action_taken in (EgressAction.DENY, EgressAction.LOG_AND_DENY):
@@ -934,13 +974,13 @@ class EgressFirewall:
             "tenant_id": tenant_id,
             "total_violations": len(violations),
             "denied_count": sum(
-                1 for v in violations
+                1
+                for v in violations
                 if v.action_taken in (EgressAction.DENY, EgressAction.LOG_AND_DENY)
             ),
             "suspicious_count": sum(1 for v in violations if v.is_suspicious),
             "rate_limited_count": sum(
-                1 for v in violations
-                if v.action_taken == EgressAction.RATE_LIMIT
+                1 for v in violations if v.action_taken == EgressAction.RATE_LIMIT
             ),
         }
 

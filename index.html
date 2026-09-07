@@ -617,14 +617,14 @@
                     </div>
 
                     <div class="grid grid-cols-3 gap-5">
-                        <!-- Left: Claude Code style Interactive Terminal (2 cols) -->
+                        <!-- Left: Interactive Terminal (2 cols) -->
                         <div class="col-span-2 bg-[#09090C] rounded-2xl border border-[#2B2B36] p-4 flex flex-col justify-between min-h-[460px] font-mono shadow-xl relative text-left">
                             <div class="flex items-center justify-between border-b border-[#232329]/60 pb-2 mb-3 select-none">
                                 <div class="flex items-center gap-1.5">
                                     <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                                     <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
                                     <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
-                                    <span id="pro-terminal-header-path" class="text-[10px] text-gray-500 font-bold ml-2">claude-code@rivenquant:~/startup</span>
+                                    <span id="pro-terminal-header-path" class="text-[10px] text-gray-500 font-bold ml-2">custodia@localhost:~/custodiacloud</span>
                                 </div>
                                 <span class="text-[9px] text-purple-400 font-semibold bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">AGENTIC CLI</span>
                             </div>
@@ -728,8 +728,8 @@
                             <div class="p-4 bg-[#131316] border border-[#232329] rounded-2xl space-y-3 font-mono text-xs">
                                 <h4 class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-[#232329]/60 pb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-yellow-500/80"></i> Project Shortcuts</h4>
                                 <div class="grid grid-cols-2 gap-2 text-[10px] font-sans font-medium">
-                                    <a href="file:///c:/Users/Зефирка/StartUp/README.md" target="_blank" class="bg-[#1A1A22] border border-[#2B2B36] hover:bg-[#202029] hover:text-white text-gray-400 p-2 rounded-xl transition-all block text-center"><i class="fa-solid fa-file-lines mr-1 text-blue-400"></i> README</a>
-                                    <a href="file:///c:/Users/Зефирка/StartUp/ARCHITECTURE.md" target="_blank" class="bg-[#1A1A22] border border-[#2B2B36] hover:bg-[#202029] hover:text-white text-gray-400 p-2 rounded-xl transition-all block text-center"><i class="fa-solid fa-drafting-compass mr-1 text-emerald-400"></i> Architecture</a>
+                                    <a href="https://github.com/sultan-suyunbayev/AI-Powered-Quantitative-Research-Platform/blob/main/README.md" target="_blank" class="bg-[#1A1A22] border border-[#2B2B36] hover:bg-[#202029] hover:text-white text-gray-400 p-2 rounded-xl transition-all block text-center"><i class="fa-solid fa-file-lines mr-1 text-blue-400"></i> README</a>
+                                    <a href="https://github.com/sultan-suyunbayev/AI-Powered-Quantitative-Research-Platform/blob/main/ARCHITECTURE.md" target="_blank" class="bg-[#1A1A22] border border-[#2B2B36] hover:bg-[#202029] hover:text-white text-gray-400 p-2 rounded-xl transition-all block text-center"><i class="fa-solid fa-drafting-compass mr-1 text-emerald-400"></i> Architecture</a>
                                 </div>
                             </div>
                         </div>
@@ -10667,7 +10667,7 @@ NZD -> RBNZCTR</textarea>
                     </div>
                 </div>
 
-                <!-- SUBPANEL 9.3: Claude Interactive CLI & Job Router -->
+                <!-- SUBPANEL 9.3: Interactive CLI & Job Router -->
                 <div id="pro-dev-suite-panel-cli" class="hidden space-y-6">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- Left side: terminal simulator (2 cols) -->
@@ -10677,7 +10677,7 @@ NZD -> RBNZCTR</textarea>
                                     <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                                     <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
                                     <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
-                                    <span id="pro-dev-terminal-header-path" class="text-[10px] text-gray-500 font-bold ml-2">claude-code@rivenquant:~/startup</span>
+                                    <span id="pro-dev-terminal-header-path" class="text-[10px] text-gray-500 font-bold ml-2">custodia@localhost:~/custodiacloud</span>
                                 </div>
                                 <span id="pro-dev-terminal-status-badge" class="text-[9px] text-violet-400 font-semibold bg-violet-500/10 px-1.5 py-0.5 rounded border border-violet-500/20">IDLE</span>
                             </div>
@@ -13094,7 +13094,7 @@ NZD -> RBNZCTR</textarea>
             'pro-risk': { title: '6. Risk Firewall (Pro)', icon: 'fa-shield-halved', color: 'text-rose-400', desc: 'Stateful лимит-контроль, проверка SPAN маржи, PDT Guard, расчет Greeks опционов и автоматическое срабатывание Kill Switch.', actions: [{label: 'Запустить аудит рисков', cmd: 'check-guards'}] },
             'pro-security': { title: '7. CCEA Security & Deployment (Pro)', icon: 'fa-lock', color: 'text-emerald-400', desc: 'Контроль цифровых подписей актов (RSA/ECDSA), криптографическое хранилище Vault и управление локальными политиками безопасности.', actions: [{label: 'Верифицировать подписи', cmd: 'verify_signatures'}] },
             'pro-compliance': { title: '8. Regulatory Compliance Center (Pro)', icon: 'fa-scale-balanced', color: 'text-teal-400', desc: 'Комплаенс-контроль соответствия директивам MiFID II (RTS 25), DORA и EU AI Act. Trade surveillance аудит рыночных манипуляций.', actions: [{label: 'Сгенерировать MIFID II отчет', cmd: 'mifid_report'}] },
-            'pro-dev-suite': { title: '9. Developer Suite (Pro)', icon: 'fa-code', color: 'text-violet-400', desc: 'Среда разработки квантовых стратегий на Python, интерактивный CLI-доступ к Claude и редактирование YAML-конфигураций.', actions: [{label: 'Проверить синтаксис стратегий', cmd: 'check_syntax'}] },
+            'pro-dev-suite': { title: '9. Developer Suite (Pro)', icon: 'fa-code', color: 'text-violet-400', desc: 'Среда разработки квантовых стратегий на Python, интерактивный CLI-доступ к платформе и редактирование YAML-конфигураций.', actions: [{label: 'Проверить синтаксис стратегий', cmd: 'check_syntax'}] },
             'realtime-signaler': { title: '2. Realtime Signaler', icon: 'fa-tower-broadcast', color: 'text-blue-400', desc: 'Управление фоновым процессом live-сигналирования. Симуляция запускается в фоне по configs/realtime.yaml.', inputs: [{label: 'Runtime Config', key: 'config', type: 'text', default: 'configs/realtime.yaml'}], actions: [{label: 'Запустить сигналер', cmd: '/start'}, {label: 'Остановить сигналер', cmd: '/stop'}] },
             'monitoring': { title: '5. Системный мониторинг', icon: 'fa-gauge-high', color: 'text-emerald-400', desc: 'Метрики использования ресурсов (CPU/RAM) и задержек синхронизации времени с серверами Binance/CME.', actions: [{label: 'Обновить метрики', cmd: '/status'}] },
             'drift-monitor': { title: '6. Drift Monitor', icon: 'fa-triangle-exclamation', color: 'text-amber-400', desc: 'Выявление «дрейфа данных» (concept drift). Рассчитывает индекс стабильности популяции (PSI) для фичей обучающей выборки относительно живого рынка.', actions: [{label: 'Рассчитать PSI', cmd: 'run_psi'}] },
@@ -14340,7 +14340,7 @@ function renderPipelineStatusDetails(asset) {
             }
         }
 
-        // --- Claude Code CLI Terminal Core Functions ---
+        // --- Interactive CLI Terminal Core Functions ---
         let terminalLogInterval = null;
         let lastLogLength = 0;
         let terminalCwd = ''; // Tracks active directory of the terminal
@@ -14371,7 +14371,7 @@ function renderPipelineStatusDetails(asset) {
             const el = document.getElementById('pro-terminal-header-path');
             if (!el) return;
             if (!terminalCwd) {
-                el.innerText = 'claude-code@rivenquant:~/startup';
+                el.innerText = 'custodia@localhost:~/custodiacloud';
             } else {
                 let folder = terminalCwd;
                 if (folder.includes('\\')) {
@@ -14381,7 +14381,7 @@ function renderPipelineStatusDetails(asset) {
                     const parts = folder.split('/');
                     folder = parts[parts.length - 1] || folder;
                 }
-                el.innerText = `claude-code@rivenquant:~/${folder}`;
+                el.innerText = `custodia@localhost:~/${folder}`;
             }
         }
 

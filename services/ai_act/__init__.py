@@ -480,11 +480,9 @@ __all__ = [
     # Version info
     "__version__",
     "__ai_act_compliance_phase__",
-
     # =========================================================================
     # Phase 1: Foundation & Risk Management
     # =========================================================================
-
     # Risk Management (Article 9)
     "AIActRiskCategory",
     "AIActRiskSeverity",
@@ -495,14 +493,12 @@ __all__ = [
     "AIActRiskManager",
     "AIActRiskConfig",
     "create_risk_manager",
-
     # Risk Registry
     "RiskEntry",
     "RiskStatus",
     "RiskRegistry",
     "create_risk_registry",
     "get_default_trading_risks",
-
     # Human Oversight (Article 14)
     "OversightLevel",
     "OversightCapability",
@@ -512,7 +508,6 @@ __all__ = [
     "ManualOverrideController",
     "AutomationBiasMonitor",
     "create_human_oversight_system",
-
     # Explainability
     "ExplanationType",
     "FeatureContribution",
@@ -520,7 +515,6 @@ __all__ = [
     "CounterfactualExplanation",
     "DecisionExplainer",
     "create_decision_explainer",
-
     # Accuracy Metrics (Article 15)
     "MetricType",
     "AccuracyMetric",
@@ -528,7 +522,6 @@ __all__ = [
     "AccuracyMonitor",
     "create_accuracy_monitor",
     "get_default_trading_metrics",
-
     # Robustness Testing (Article 15)
     "RobustnessTestType",
     "RobustnessTestResult",
@@ -537,11 +530,9 @@ __all__ = [
     "DistributionShiftTester",
     "FailsafeTester",
     "create_robustness_test_suite",
-
     # =========================================================================
     # Phase 2: Technical Documentation & Logging
     # =========================================================================
-
     # Logging System (Article 12)
     "AIActLogEventType",
     "AIActLogCategory",
@@ -554,7 +545,6 @@ __all__ = [
     "AIActEventBus",
     "create_ai_act_logger",
     "create_ai_act_event_bus",
-
     # Data Governance (Article 10)
     "DataQualityDimension",
     "BiasType",
@@ -573,7 +563,6 @@ __all__ = [
     "DataGovernanceFramework",
     "create_data_governance_framework",
     "create_bias_detector",
-
     # Data Lineage
     "DataNodeType",
     "TransformationType",
@@ -584,7 +573,6 @@ __all__ = [
     "LineageGraph",
     "DataLineageTracker",
     "create_data_lineage_tracker",
-
     # Technical Documentation (Article 11, Annex IV)
     "DocumentationSectionType",
     "ComplianceStatus",
@@ -596,11 +584,9 @@ __all__ = [
     "TechnicalDocumentationConfig",
     "TechnicalDocumentationGenerator",
     "create_technical_documentation_generator",
-
     # =========================================================================
     # Phase 3: QMS & Testing
     # =========================================================================
-
     # QMS (Article 17)
     "QMSElementType",
     "ProcedureStatus",
@@ -623,7 +609,6 @@ __all__ = [
     "QualityManagementSystem",
     "create_qms",
     "get_default_qms_procedures",
-
     # Testing Framework (Article 9)
     "TestCategory",
     "TestPriority",
@@ -640,7 +625,6 @@ __all__ = [
     "AIActTestingFramework",
     "create_testing_framework",
     "get_default_test_metrics",
-
     # Cybersecurity (Article 15(5))
     "ThreatType",
     "ThreatSeverity",
@@ -662,7 +646,6 @@ __all__ = [
     "AIActCybersecurity",
     "create_cybersecurity",
     "get_default_security_policies",
-
     # Post-Market Monitoring (Article 72)
     "MonitoringMetricType",
     "DriftType",
@@ -684,11 +667,9 @@ __all__ = [
     "PostMarketMonitoringSystem",
     "create_post_market_monitoring",
     "get_default_monitoring_metrics",
-
     # =========================================================================
     # Phase 4: Conformity Assessment & Deployment
     # =========================================================================
-
     # Conformity Assessment (Article 43, Annex VI)
     "ConformityStatus",
     "ChecklistItemStatus",
@@ -705,11 +686,9 @@ __all__ = [
     "ConformitySelfAssessment",
     "create_conformity_assessment",
     "get_default_checklist",
-
     # =========================================================================
     # Software Provider / GPAI Compliance (Articles 50, 53)
     # =========================================================================
-
     # Transparency Disclosure (Article 50)
     "DisclosureType",
     "DisclosureContext",
@@ -723,7 +702,6 @@ __all__ = [
     "create_transparency_manager",
     "get_disclosure_requirements",
     "validate_disclosure_text",
-
     # Copyright Compliance (Article 53(1)(c))
     "DataSourceType",
     "CopyrightStatus",
@@ -736,7 +714,6 @@ __all__ = [
     "create_copyright_manager",
     "get_default_data_sources",
     "validate_source_record",
-
     # Training Data Summary (Article 53(1)(d))
     "DataCategory",
     "DataQualityLevel",
@@ -747,11 +724,9 @@ __all__ = [
     "create_summary_manager",
     "get_data_categories",
     "validate_dataset_info",
-
     # =========================================================================
     # GPAI Phase 2: Model Card & User Acknowledgment
     # =========================================================================
-
     # GPAI Model Card (Article 53(1)(b))
     "IntendedUse",
     "LimitationType",
@@ -770,7 +745,6 @@ __all__ = [
     "get_default_biases",
     "get_default_downstream_requirements",
     "validate_model_card",
-
     # User Acknowledgment (Article 50)
     "AcknowledgmentType",
     "AcknowledgmentStatus",

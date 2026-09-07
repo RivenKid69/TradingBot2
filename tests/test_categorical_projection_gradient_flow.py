@@ -27,6 +27,7 @@ which can break the computational graph in PyTorch.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -210,11 +211,7 @@ class TestCategoricalProjectionGradientFlow:
         mean_old = torch.zeros(batch_size, 1)
         clip_range = 2.0
 
-        mean_clipped = torch.clamp(
-            mean_pred,
-            min=mean_old - clip_range,
-            max=mean_old + clip_range
-        )
+        mean_clipped = torch.clamp(mean_pred, min=mean_old - clip_range, max=mean_old + clip_range)
 
         # Compute delta and shift atoms (exactly as in distributional_ppo.py:8790)
         delta_norm = mean_clipped - mean_pred
@@ -245,8 +242,9 @@ class TestCategoricalProjectionGradientFlow:
         # All batch items should have gradients
         for i in range(batch_size):
             row_grad = logits.grad[i]
-            assert torch.any(torch.abs(row_grad) > 1e-6), \
-                f"Batch item {i} should have non-negligible gradients"
+            assert torch.any(
+                torch.abs(row_grad) > 1e-6
+            ), f"Batch item {i} should have non-negligible gradients"
 
         # Gradient should be finite
         assert torch.all(torch.isfinite(logits.grad)), "Gradient should be finite"

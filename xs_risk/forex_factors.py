@@ -101,7 +101,11 @@ def build_forex_risk_model(
     from service_risk_model import FactorRiskModel
 
     B = build_forex_exposures(
-        returns_wide, carries=carries, values=values, blocs=blocs, usd_symbol=usd_symbol,
+        returns_wide,
+        carries=carries,
+        values=values,
+        blocs=blocs,
+        usd_symbol=usd_symbol,
     )
     return FactorRiskModel(B, factor_cov_method=factor_cov_method)
 

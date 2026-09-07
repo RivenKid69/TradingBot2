@@ -29,10 +29,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class OfflineCSVConfig:
-    paths: List[str]                     # список путей/глобов к CSV, можно со звёздочками
-    timeframe: str                       # например "1m"
+    paths: List[str]  # список путей/глобов к CSV, можно со звёздочками
+    timeframe: str  # например "1m"
     symbol_col: str = "symbol"
-    ts_col: str = "ts"                   # миллисекунды или ISO8601
+    ts_col: str = "ts"  # миллисекунды или ISO8601
     o_col: str = "open"
     h_col: str = "high"
     l_col: str = "low"
@@ -57,6 +57,7 @@ class OfflineCSVBarSource(MarketDataSource):
     ) -> None:
         if cfg is None:
             import dataclasses
+
             cfg_fields = {f.name for f in dataclasses.fields(OfflineCSVConfig)}
             cfg_params = {k: v for k, v in kwargs.items() if k in cfg_fields}
             cfg = OfflineCSVConfig(**cfg_params)
@@ -173,11 +174,7 @@ class OfflineCSVBarSource(MarketDataSource):
                     low=Decimal(str(r[self.cfg.l_col])),
                     close=Decimal(str(r[self.cfg.c_col])),
                     volume_base=Decimal(str(r[self.cfg.v_col])),
-                    trades=(
-                        None
-                        if not self.cfg.n_trades_col
-                        else int(r[self.cfg.n_trades_col])
-                    ),
+                    trades=(None if not self.cfg.n_trades_col else int(r[self.cfg.n_trades_col])),
                     taker_buy_base=(
                         None
                         if not self.cfg.taker_buy_base_col
@@ -247,16 +244,10 @@ class OfflineCSVBarSource(MarketDataSource):
             for candidate in taker_buy_base_candidates:
                 if candidate in available_cols:
                     self.cfg.taker_buy_base_col = candidate
-                    logger.info(
-                        "Auto-detected taker_buy_base column: %s",
-                        candidate
-                    )
+                    logger.info("Auto-detected taker_buy_base column: %s", candidate)
                     return
         except Exception as e:
-            logger.debug(
-                "Failed to auto-detect taker_buy_base column: %s",
-                e
-            )
+            logger.debug("Failed to auto-detect taker_buy_base column: %s", e)
 
     def stream_ticks(self, symbols: Sequence[str]) -> Iterator[Tick]:
         return iter([])

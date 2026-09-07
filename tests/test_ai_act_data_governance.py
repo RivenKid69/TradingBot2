@@ -91,20 +91,23 @@ def sample_trading_df():
 
     # Use recent dates to pass staleness checks
     from datetime import datetime, timedelta
+
     end_date = datetime.now() - timedelta(hours=1)
     start_date = end_date - timedelta(hours=n_records)
     dates = pd.date_range(start=start_date, periods=n_records, freq="1h")
     base_price = 50000
 
-    df = pd.DataFrame({
-        "timestamp": dates,
-        "symbol": np.random.choice(["BTCUSDT", "ETHUSDT", "SOLUSDT"], n_records),
-        "open": base_price + np.random.randn(n_records) * 100,
-        "high": base_price + np.random.randn(n_records) * 100 + 50,
-        "low": base_price + np.random.randn(n_records) * 100 - 50,
-        "close": base_price + np.random.randn(n_records) * 100,
-        "volume": np.abs(np.random.randn(n_records) * 1000 + 5000),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": dates,
+            "symbol": np.random.choice(["BTCUSDT", "ETHUSDT", "SOLUSDT"], n_records),
+            "open": base_price + np.random.randn(n_records) * 100,
+            "high": base_price + np.random.randn(n_records) * 100 + 50,
+            "low": base_price + np.random.randn(n_records) * 100 - 50,
+            "close": base_price + np.random.randn(n_records) * 100,
+            "volume": np.abs(np.random.randn(n_records) * 1000 + 5000),
+        }
+    )
 
     # Ensure OHLC consistency
     df["high"] = df[["open", "high", "low", "close"]].max(axis=1)
@@ -126,15 +129,17 @@ def biased_df():
     # Asset bias: BTCUSDT heavily over-represented
     symbols = ["BTCUSDT"] * 900 + ["ETHUSDT"] * 80 + ["SOLUSDT"] * 20
 
-    df = pd.DataFrame({
-        "timestamp": dates,
-        "symbol": symbols,
-        "open": 50000 + np.random.randn(1000) * 100,
-        "high": 50050 + np.random.randn(1000) * 100,
-        "low": 49950 + np.random.randn(1000) * 100,
-        "close": 50000 + np.random.randn(1000) * 100,
-        "volume": np.abs(np.random.randn(1000) * 1000 + 5000),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": dates,
+            "symbol": symbols,
+            "open": 50000 + np.random.randn(1000) * 100,
+            "high": 50050 + np.random.randn(1000) * 100,
+            "low": 49950 + np.random.randn(1000) * 100,
+            "close": 50000 + np.random.randn(1000) * 100,
+            "volume": np.abs(np.random.randn(1000) * 1000 + 5000),
+        }
+    )
 
     return df
 
@@ -145,15 +150,17 @@ def incomplete_df():
     np.random.seed(42)
     n_records = 1000
 
-    df = pd.DataFrame({
-        "timestamp": pd.date_range(start="2024-01-01", periods=n_records, freq="1h"),
-        "symbol": np.random.choice(["BTCUSDT", "ETHUSDT"], n_records),
-        "open": 50000 + np.random.randn(n_records) * 100,
-        "high": 50050 + np.random.randn(n_records) * 100,
-        "low": 49950 + np.random.randn(n_records) * 100,
-        "close": 50000 + np.random.randn(n_records) * 100,
-        "volume": np.abs(np.random.randn(n_records) * 1000 + 5000),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(start="2024-01-01", periods=n_records, freq="1h"),
+            "symbol": np.random.choice(["BTCUSDT", "ETHUSDT"], n_records),
+            "open": 50000 + np.random.randn(n_records) * 100,
+            "high": 50050 + np.random.randn(n_records) * 100,
+            "low": 49950 + np.random.randn(n_records) * 100,
+            "close": 50000 + np.random.randn(n_records) * 100,
+            "volume": np.abs(np.random.randn(n_records) * 1000 + 5000),
+        }
+    )
 
     # Introduce missing values (>10% to trigger gap detection)
     df.loc[np.random.choice(n_records, 150, replace=False), "close"] = np.nan
@@ -441,12 +448,14 @@ class TestDataQualityAssessor:
     def test_check_ohlc_inconsistency(self, governance_config):
         """Test OHLC inconsistency detection."""
         # Create inconsistent data
-        df = pd.DataFrame({
-            "open": [100, 101, 102],
-            "high": [99, 100, 101],  # High < Open - invalid!
-            "low": [98, 99, 100],
-            "close": [99, 100, 101],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100, 101, 102],
+                "high": [99, 100, 101],  # High < Open - invalid!
+                "low": [98, 99, 100],
+                "close": [99, 100, 101],
+            }
+        )
 
         assessor = DataQualityAssessor(governance_config)
         result = assessor._check_ohlc_consistency(df)
@@ -517,12 +526,14 @@ class TestBiasDetector:
     def test_check_look_ahead_bias(self, governance_config):
         """Test detecting look-ahead bias patterns."""
         # Create data with suspicious columns
-        df = pd.DataFrame({
-            "timestamp": pd.date_range("2024-01-01", periods=100, freq="1h"),
-            "close": np.random.randn(100),
-            "future_return": np.random.randn(100),  # Suspicious!
-            "next_close": np.random.randn(100),      # Suspicious!
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=100, freq="1h"),
+                "close": np.random.randn(100),
+                "future_return": np.random.randn(100),  # Suspicious!
+                "next_close": np.random.randn(100),  # Suspicious!
+            }
+        )
 
         detector = BiasDetector(governance_config)
         result = detector._check_look_ahead_bias_structural(df)
@@ -535,9 +546,7 @@ class TestBiasDetector:
     def test_check_survivorship_bias(self, governance_config, sample_trading_df):
         """Test survivorship bias check."""
         detector = BiasDetector(governance_config)
-        result = detector._check_survivorship_bias(
-            sample_trading_df, "symbol", "timestamp"
-        )
+        result = detector._check_survivorship_bias(sample_trading_df, "symbol", "timestamp")
 
         assert result is not None
         assert result.bias_type == "survivorship_bias"
@@ -565,10 +574,12 @@ class TestDataGapAnalyzer:
         dates2 = pd.date_range("2024-06-01", periods=100, freq="1h")
         dates = pd.concat([pd.Series(dates1), pd.Series(dates2)]).reset_index(drop=True)
 
-        df = pd.DataFrame({
-            "timestamp": dates,
-            "close": np.random.randn(200),
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": dates,
+                "close": np.random.randn(200),
+            }
+        )
 
         analyzer = DataGapAnalyzer(governance_config)
         gap = analyzer._check_time_period_gaps(df, "timestamp")
@@ -579,10 +590,12 @@ class TestDataGapAnalyzer:
     def test_check_asset_coverage_gaps(self, governance_config):
         """Test checking for asset coverage gaps."""
         # Create data with under-represented asset
-        df = pd.DataFrame({
-            "symbol": ["BTCUSDT"] * 500 + ["ETHUSDT"] * 10,  # ETHUSDT under-represented
-            "close": np.random.randn(510),
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTCUSDT"] * 500 + ["ETHUSDT"] * 10,  # ETHUSDT under-represented
+                "close": np.random.randn(510),
+            }
+        )
 
         analyzer = DataGapAnalyzer(governance_config)
         gap = analyzer._check_asset_coverage_gaps(df, "symbol")
@@ -627,11 +640,13 @@ class TestDataValidator:
 
     def test_validate_missing_columns(self, governance_config):
         """Test validating data with missing required columns."""
-        df = pd.DataFrame({
-            "timestamp": pd.date_range("2024-01-01", periods=10, freq="1h"),
-            "close": np.random.randn(10),
-            # Missing: open, high, low, volume
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=10, freq="1h"),
+                "close": np.random.randn(10),
+                # Missing: open, high, low, volume
+            }
+        )
 
         validator = DataValidator(governance_config)
         is_valid, errors = validator.validate(df)
@@ -641,14 +656,16 @@ class TestDataValidator:
 
     def test_validate_infinite_values(self, governance_config):
         """Test validating data with infinite values."""
-        df = pd.DataFrame({
-            "timestamp": pd.date_range("2024-01-01", periods=10, freq="1h"),
-            "open": [100] * 10,
-            "high": [101] * 10,
-            "low": [99] * 10,
-            "close": [100] * 9 + [np.inf],  # Infinite value!
-            "volume": [1000] * 10,
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=10, freq="1h"),
+                "open": [100] * 10,
+                "high": [101] * 10,
+                "low": [99] * 10,
+                "close": [100] * 9 + [np.inf],  # Infinite value!
+                "volume": [1000] * 10,
+            }
+        )
 
         validator = DataValidator(governance_config)
         is_valid, errors = validator.validate(df)
@@ -879,18 +896,17 @@ class TestArticle10Compliance:
         )
 
         # Should assess completeness (free of errors)
-        completeness_checks = [c for c in report.quality_checks
-                              if c.dimension == "completeness"]
+        completeness_checks = [c for c in report.quality_checks if c.dimension == "completeness"]
         assert len(completeness_checks) > 0
 
         # Should assess accuracy
-        accuracy_checks = [c for c in report.quality_checks
-                         if c.dimension == "accuracy"]
+        accuracy_checks = [c for c in report.quality_checks if c.dimension == "accuracy"]
         assert len(accuracy_checks) > 0
 
         # Should assess representativeness
-        representativeness_checks = [c for c in report.quality_checks
-                                    if c.dimension == "representativeness"]
+        representativeness_checks = [
+            c for c in report.quality_checks if c.dimension == "representativeness"
+        ]
         assert len(representativeness_checks) > 0
 
     def test_bias_examination(self, governance_framework, sample_trading_df):
@@ -905,8 +921,7 @@ class TestArticle10Compliance:
         assert len(report.bias_checks) > 0
 
         # Should check for temporal bias
-        temporal_checks = [b for b in report.bias_checks
-                         if b.bias_type == "temporal_bias"]
+        temporal_checks = [b for b in report.bias_checks if b.bias_type == "temporal_bias"]
         assert len(temporal_checks) > 0
 
     def test_data_gap_identification(self, governance_framework, sample_trading_df):
@@ -980,15 +995,17 @@ class TestEdgeCases:
 
     def test_single_row_dataframe(self, governance_config):
         """Test handling single-row DataFrame."""
-        df = pd.DataFrame({
-            "timestamp": [datetime.now()],
-            "open": [100],
-            "high": [101],
-            "low": [99],
-            "close": [100],
-            "volume": [1000],
-            "symbol": ["BTCUSDT"],
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [datetime.now()],
+                "open": [100],
+                "high": [101],
+                "low": [99],
+                "close": [100],
+                "volume": [1000],
+                "symbol": ["BTCUSDT"],
+            }
+        )
 
         framework = DataGovernanceFramework(governance_config)
         # Should not crash
@@ -998,11 +1015,13 @@ class TestEdgeCases:
 
     def test_all_null_column(self, governance_config):
         """Test handling column with all null values."""
-        df = pd.DataFrame({
-            "timestamp": pd.date_range("2024-01-01", periods=100, freq="1h"),
-            "close": np.random.randn(100),
-            "all_null": [np.nan] * 100,
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=100, freq="1h"),
+                "close": np.random.randn(100),
+                "all_null": [np.nan] * 100,
+            }
+        )
 
         assessor = DataQualityAssessor(governance_config)
         results = assessor.assess(df)
@@ -1012,12 +1031,14 @@ class TestEdgeCases:
 
     def test_non_numeric_ohlc(self, governance_config):
         """Test handling non-numeric OHLC columns."""
-        df = pd.DataFrame({
-            "open": ["100", "101", "102"],  # Strings instead of numbers
-            "high": ["101", "102", "103"],
-            "low": ["99", "100", "101"],
-            "close": ["100", "101", "102"],
-        })
+        df = pd.DataFrame(
+            {
+                "open": ["100", "101", "102"],  # Strings instead of numbers
+                "high": ["101", "102", "103"],
+                "low": ["99", "100", "101"],
+                "close": ["100", "101", "102"],
+            }
+        )
 
         validator = DataValidator(governance_config)
         is_valid, errors = validator.validate(df)

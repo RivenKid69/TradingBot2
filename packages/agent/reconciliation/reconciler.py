@@ -240,7 +240,9 @@ class PositionReconciler:
                 return result
 
             if broker_status != entry.status:
-                self._journal.update_status(entry.entry_id, broker_status, broker_order_id=entry.broker_order_id)
+                self._journal.update_status(
+                    entry.entry_id, broker_status, broker_order_id=entry.broker_order_id
+                )
                 result.resolved.append(entry.client_order_id)
 
         # After reconciliation, if any unresolved remain, halt (still uncertain).
@@ -250,7 +252,9 @@ class PositionReconciler:
             result.halted = True
             sample_ids = ", ".join(e.client_order_id for e in remaining[:5])
             more = "" if len(remaining) <= 5 else f" (+{len(remaining) - 5} more)"
-            result.halt_reason = f"Unresolved orders remain after reconciliation: {sample_ids}{more}"
+            result.halt_reason = (
+                f"Unresolved orders remain after reconciliation: {sample_ids}{more}"
+            )
             return result
 
         return result

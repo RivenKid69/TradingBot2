@@ -13,18 +13,20 @@ _agg = _mod._agg
 
 
 def _mk(ts_list):
-    return pd.DataFrame({
-        "ts_ms": ts_list,
-        "symbol": ["BTCUSDT"] * len(ts_list),
-        "open": [1.0] * len(ts_list),
-        "high": [1.0] * len(ts_list),
-        "low": [1.0] * len(ts_list),
-        "close": [1.0] * len(ts_list),
-        "volume": [1.0] * len(ts_list),
-        "number_of_trades": [1] * len(ts_list),
-        "taker_buy_base": [0.0] * len(ts_list),
-        "taker_buy_quote": [0.0] * len(ts_list),
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": ts_list,
+            "symbol": ["BTCUSDT"] * len(ts_list),
+            "open": [1.0] * len(ts_list),
+            "high": [1.0] * len(ts_list),
+            "low": [1.0] * len(ts_list),
+            "close": [1.0] * len(ts_list),
+            "volume": [1.0] * len(ts_list),
+            "number_of_trades": [1] * len(ts_list),
+            "taker_buy_base": [0.0] * len(ts_list),
+            "taker_buy_quote": [0.0] * len(ts_list),
+        }
+    )
 
 
 def test_gap_detection_raises():

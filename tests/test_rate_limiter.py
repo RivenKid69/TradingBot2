@@ -8,12 +8,12 @@ import asyncio
 import math
 
 
-
 # Ensure stdlib logging is used instead of local logging.py
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 _orig_sys_path = list(sys.path)
 sys.path = [p for p in sys.path if p not in ("", str(REPO_ROOT))]
 import logging as std_logging  # type: ignore
+
 sys.modules["logging"] = std_logging
 sys.path = _orig_sys_path
 if str(REPO_ROOT) not in sys.path:
@@ -26,9 +26,12 @@ import pytest
 
 from utils import SignalRateLimiter, TokenBucket
 
+
 # provide dummy websockets module for importing binance_ws without dependency
 class _DummyWS:
     pass
+
+
 sys.modules.setdefault("websockets", _DummyWS())
 
 import binance_public
@@ -37,6 +40,7 @@ from services.event_bus import EventBus
 
 
 # --- TokenBucket tests ---
+
 
 def test_token_bucket_basic():
     tb = TokenBucket(rps=2.0, burst=4.0, tokens=4.0, last_ts=0.0)
@@ -48,6 +52,7 @@ def test_token_bucket_basic():
 
 
 # --- SignalRateLimiter tests ---
+
 
 def test_rate_limit_per_second():
     rl = SignalRateLimiter(max_per_sec=2)
@@ -111,6 +116,7 @@ def test_rate_limiter_sub_unit_rate_backoff():
 
 # --- BinancePublicClient REST integration ---
 
+
 @pytest.mark.parametrize(
     "method_name, kwargs, response, expected_url, expected_budget, expected_tokens, expected_result",
     [
@@ -121,9 +127,7 @@ def test_rate_limiter_sub_unit_rate_backoff():
                 "symbols": [
                     {
                         "symbol": "BTCUSDT",
-                        "filters": [
-                            {"filterType": "PRICE_FILTER", "tickSize": "0.1"}
-                        ],
+                        "filters": [{"filterType": "PRICE_FILTER", "tickSize": "0.1"}],
                     }
                 ]
             },
@@ -332,12 +336,14 @@ def test_get_spread_bps_falls_back_to_range():
 
 # --- BinanceWS limiter inclusion and counters ---
 
+
 def test_binance_ws_rate_limit_counters(monkeypatch):
     bus = EventBus(queue_size=10, drop_policy="newest")
     ws = binance_ws.BinanceWS(symbols=["BTCUSDT"], bus=bus, rate_limit=1)
     rl_mock = MagicMock()
     rl_mock.can_send.side_effect = [
-        (False, "rejected"), (True, "ok"),
+        (False, "rejected"),
+        (True, "ok"),
         (False, "delayed"),
     ]
     rl_mock._cooldown_until = 0.0
@@ -348,6 +354,7 @@ def test_binance_ws_rate_limit_counters(monkeypatch):
         return None
 
     monkeypatch.setattr(binance_ws.asyncio, "sleep", dummy_sleep)
+
     async def run():
         allowed = await ws._check_rate_limit()
         assert allowed

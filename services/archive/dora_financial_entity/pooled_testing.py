@@ -47,8 +47,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class PooledTestStatus(Enum):
     """Status of pooled testing arrangement."""
+
     PROPOSED = "proposed"
     ORGANIZING = "organizing"
     PARTICIPANTS_CONFIRMED = "participants_confirmed"
@@ -61,14 +63,16 @@ class PooledTestStatus(Enum):
 
 class ParticipantRole(Enum):
     """Role of participant in pooled testing."""
-    ORGANIZER = "organizer"           # Lead organizing entity
-    PARTICIPANT = "participant"        # Contributing participant
-    OBSERVER = "observer"             # Observing entity
-    PROVIDER = "provider"             # Third-party provider being tested
+
+    ORGANIZER = "organizer"  # Lead organizing entity
+    PARTICIPANT = "participant"  # Contributing participant
+    OBSERVER = "observer"  # Observing entity
+    PROVIDER = "provider"  # Third-party provider being tested
 
 
 class ParticipantStatus(Enum):
     """Status of participant in pooled arrangement."""
+
     INVITED = "invited"
     CONFIRMED = "confirmed"
     CONTRACT_SIGNED = "contract_signed"
@@ -79,29 +83,33 @@ class ParticipantStatus(Enum):
 
 class CostSharingModel(Enum):
     """Cost sharing models for pooled testing."""
-    EQUAL = "equal"                    # Equal split among participants
+
+    EQUAL = "equal"  # Equal split among participants
     PROPORTIONAL_USAGE = "proportional_usage"  # Based on usage of provider
-    PROPORTIONAL_SIZE = "proportional_size"    # Based on entity size
+    PROPORTIONAL_SIZE = "proportional_size"  # Based on entity size
     PROPORTIONAL_CRITICALITY = "proportional_criticality"  # Based on criticality
-    CUSTOM = "custom"                  # Custom arrangement
+    CUSTOM = "custom"  # Custom arrangement
 
 
 class ProviderCriticality(Enum):
     """Criticality of provider to financial entities."""
-    CRITICAL = "critical"              # Designated CTPP or critical service
-    IMPORTANT = "important"            # Important but not critical
-    STANDARD = "standard"              # Standard service
+
+    CRITICAL = "critical"  # Designated CTPP or critical service
+    IMPORTANT = "important"  # Important but not critical
+    STANDARD = "standard"  # Standard service
 
 
 # =============================================================================
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class SharedProvider:
     """
     Shared ICT third-party provider for pooled testing.
     """
+
     provider_id: str = ""
     name: str = ""
     lei: str = ""  # Legal Entity Identifier
@@ -145,6 +153,7 @@ class PooledTestingParticipant:
     """
     Participant in pooled TLPT arrangement.
     """
+
     participant_id: str = ""
     pooled_test_id: str = ""
 
@@ -213,6 +222,7 @@ class PooledTestingScope:
     """
     Scope for pooled TLPT engagement.
     """
+
     scope_id: str = ""
     pooled_test_id: str = ""
 
@@ -264,6 +274,7 @@ class CostSharingAgreement:
     """
     Cost sharing agreement for pooled testing.
     """
+
     agreement_id: str = ""
     pooled_test_id: str = ""
 
@@ -304,6 +315,7 @@ class PooledTestingEngagement:
     """
     Pooled TLPT engagement per Article 26(3).
     """
+
     pooled_test_id: str = ""
     name: str = ""
     description: str = ""
@@ -368,7 +380,9 @@ class PooledTestingEngagement:
 
     def __post_init__(self):
         if not self.pooled_test_id:
-            self.pooled_test_id = f"POOL-{datetime.now().strftime('%Y')}-{uuid.uuid4().hex[:8].upper()}"
+            self.pooled_test_id = (
+                f"POOL-{datetime.now().strftime('%Y')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -378,6 +392,7 @@ class PooledTestingResults:
     """
     Results from pooled TLPT for distribution to participants.
     """
+
     results_id: str = ""
     pooled_test_id: str = ""
 
@@ -433,9 +448,11 @@ class PooledTestingResults:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class PooledTestingConfig:
     """Configuration for Pooled TLPT."""
+
     # Participant limits
     min_participants: int = 2
     max_participants: int = 20
@@ -454,6 +471,7 @@ class PooledTestingConfig:
 # =============================================================================
 # Main Class Implementation
 # =============================================================================
+
 
 class DORAPooledTesting:
     """
@@ -560,11 +578,14 @@ class DORAPooledTesting:
 
         self._providers[provider.provider_id] = provider
 
-        self._log_event("provider_registered", {
-            "provider_id": provider.provider_id,
-            "name": name,
-            "is_ctpp": is_ctpp,
-        })
+        self._log_event(
+            "provider_registered",
+            {
+                "provider_id": provider.provider_id,
+                "name": name,
+                "is_ctpp": is_ctpp,
+            },
+        )
 
         return provider
 
@@ -636,11 +657,14 @@ class DORAPooledTesting:
         )
         organizer.status = ParticipantStatus.CONFIRMED
 
-        self._log_event("pooled_engagement_created", {
-            "pooled_test_id": engagement.pooled_test_id,
-            "provider": provider_name,
-            "organizer": organizer_entity,
-        })
+        self._log_event(
+            "pooled_engagement_created",
+            {
+                "pooled_test_id": engagement.pooled_test_id,
+                "provider": provider_name,
+                "organizer": organizer_entity,
+            },
+        )
 
         logger.info(f"Pooled engagement created: {engagement.pooled_test_id}")
         return engagement
@@ -673,10 +697,13 @@ class DORAPooledTesting:
         elif status == PooledTestStatus.COMPLETED:
             engagement.actual_test_end = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("engagement_status_updated", {
-            "pooled_test_id": pooled_test_id,
-            "status": status.value,
-        })
+        self._log_event(
+            "engagement_status_updated",
+            {
+                "pooled_test_id": pooled_test_id,
+                "status": status.value,
+            },
+        )
 
         return engagement
 
@@ -745,12 +772,15 @@ class DORAPooledTesting:
         engagement.participant_ids.append(participant.participant_id)
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("participant_added", {
-            "participant_id": participant.participant_id,
-            "pooled_test_id": pooled_test_id,
-            "entity_name": entity_name,
-            "role": role.value,
-        })
+        self._log_event(
+            "participant_added",
+            {
+                "participant_id": participant.participant_id,
+                "pooled_test_id": pooled_test_id,
+                "entity_name": entity_name,
+                "role": role.value,
+            },
+        )
 
         return participant
 
@@ -836,10 +866,13 @@ class DORAPooledTesting:
         participant.status = ParticipantStatus.WITHDRAWN
         participant.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("participant_withdrawn", {
-            "participant_id": participant_id,
-            "reason": reason,
-        })
+        self._log_event(
+            "participant_withdrawn",
+            {
+                "participant_id": participant_id,
+                "reason": reason,
+            },
+        )
 
         return participant
 
@@ -911,11 +944,14 @@ class DORAPooledTesting:
         engagement.scope_id = scope.scope_id
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("pooled_scope_created", {
-            "scope_id": scope.scope_id,
-            "pooled_test_id": pooled_test_id,
-            "services": services_in_scope,
-        })
+        self._log_event(
+            "pooled_scope_created",
+            {
+                "scope_id": scope.scope_id,
+                "pooled_test_id": pooled_test_id,
+                "services": services_in_scope,
+            },
+        )
 
         return scope
 
@@ -1007,12 +1043,15 @@ class DORAPooledTesting:
         engagement.cost_agreement_id = agreement.agreement_id
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("cost_agreement_created", {
-            "agreement_id": agreement.agreement_id,
-            "pooled_test_id": pooled_test_id,
-            "total_cost": total_estimated_cost_eur,
-            "model": cost_sharing_model.value,
-        })
+        self._log_event(
+            "cost_agreement_created",
+            {
+                "agreement_id": agreement.agreement_id,
+                "pooled_test_id": pooled_test_id,
+                "total_cost": total_estimated_cost_eur,
+                "model": cost_sharing_model.value,
+            },
+        )
 
         return agreement
 
@@ -1025,7 +1064,8 @@ class DORAPooledTesting:
         """Calculate cost shares based on model."""
         shares = []
         active_participants = [
-            p for p in participants
+            p
+            for p in participants
             if p.status != ParticipantStatus.WITHDRAWN and p.role != ParticipantRole.PROVIDER
         ]
 
@@ -1035,12 +1075,14 @@ class DORAPooledTesting:
         if model == CostSharingModel.EQUAL:
             equal_share = 100.0 / len(active_participants)
             for p in active_participants:
-                shares.append({
-                    "participant_id": p.participant_id,
-                    "entity_name": p.entity_name,
-                    "percentage": equal_share,
-                    "amount_eur": total_cost * (equal_share / 100),
-                })
+                shares.append(
+                    {
+                        "participant_id": p.participant_id,
+                        "entity_name": p.entity_name,
+                        "percentage": equal_share,
+                        "amount_eur": total_cost * (equal_share / 100),
+                    }
+                )
 
         elif model == CostSharingModel.PROPORTIONAL_CRITICALITY:
             criticality_weights = {
@@ -1049,19 +1091,20 @@ class DORAPooledTesting:
                 ProviderCriticality.STANDARD: 1,
             }
             total_weight = sum(
-                criticality_weights.get(p.provider_criticality, 1)
-                for p in active_participants
+                criticality_weights.get(p.provider_criticality, 1) for p in active_participants
             )
 
             for p in active_participants:
                 weight = criticality_weights.get(p.provider_criticality, 1)
                 percentage = (weight / total_weight) * 100
-                shares.append({
-                    "participant_id": p.participant_id,
-                    "entity_name": p.entity_name,
-                    "percentage": percentage,
-                    "amount_eur": total_cost * (percentage / 100),
-                })
+                shares.append(
+                    {
+                        "participant_id": p.participant_id,
+                        "entity_name": p.entity_name,
+                        "percentage": percentage,
+                        "amount_eur": total_cost * (percentage / 100),
+                    }
+                )
 
         elif model == CostSharingModel.PROPORTIONAL_USAGE:
             # Based on number of services used
@@ -1072,12 +1115,14 @@ class DORAPooledTesting:
             for p in active_participants:
                 services = len(p.services_used) if p.services_used else 1
                 percentage = (services / total_services) * 100
-                shares.append({
-                    "participant_id": p.participant_id,
-                    "entity_name": p.entity_name,
-                    "percentage": percentage,
-                    "amount_eur": total_cost * (percentage / 100),
-                })
+                shares.append(
+                    {
+                        "participant_id": p.participant_id,
+                        "entity_name": p.entity_name,
+                        "percentage": percentage,
+                        "amount_eur": total_cost * (percentage / 100),
+                    }
+                )
 
         return shares
 
@@ -1172,11 +1217,14 @@ class DORAPooledTesting:
         engagement.high_findings = findings_by_severity.get("high", 0)
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("results_created", {
-            "results_id": results.results_id,
-            "pooled_test_id": pooled_test_id,
-            "total_findings": total_findings,
-        })
+        self._log_event(
+            "results_created",
+            {
+                "results_id": results.results_id,
+                "pooled_test_id": pooled_test_id,
+                "total_findings": total_findings,
+            },
+        )
 
         return results
 
@@ -1205,7 +1253,8 @@ class DORAPooledTesting:
         # Get confirmed participants
         participants = self.get_participants_for_engagement(engagement.pooled_test_id)
         confirmed = [
-            p for p in participants
+            p
+            for p in participants
             if p.status not in (ParticipantStatus.WITHDRAWN, ParticipantStatus.INVITED)
         ]
 
@@ -1225,10 +1274,13 @@ class DORAPooledTesting:
         engagement.results_distribution_date = now
         engagement.updated_at = now
 
-        self._log_event("results_distributed", {
-            "results_id": results_id,
-            "recipients": len(confirmed),
-        })
+        self._log_event(
+            "results_distributed",
+            {
+                "results_id": results_id,
+                "recipients": len(confirmed),
+            },
+        )
 
         logger.info(f"Results distributed to {len(confirmed)} participants")
         return results
@@ -1279,10 +1331,13 @@ class DORAPooledTesting:
                 engagement.all_attestations_submitted = True
                 engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("attestation_recorded", {
-            "participant_id": participant_id,
-            "reference": attestation_reference,
-        })
+        self._log_event(
+            "attestation_recorded",
+            {
+                "participant_id": participant_id,
+                "reference": attestation_reference,
+            },
+        )
 
         return participant
 
@@ -1311,14 +1366,29 @@ class DORAPooledTesting:
             "organizer": engagement.organizer_entity,
             "participants": {
                 "total": len(participants),
-                "confirmed": sum(1 for p in participants if p.status in (ParticipantStatus.CONFIRMED, ParticipantStatus.CONTRACT_SIGNED, ParticipantStatus.ACTIVE)),
-                "completed": sum(1 for p in participants if p.status == ParticipantStatus.COMPLETED),
+                "confirmed": sum(
+                    1
+                    for p in participants
+                    if p.status
+                    in (
+                        ParticipantStatus.CONFIRMED,
+                        ParticipantStatus.CONTRACT_SIGNED,
+                        ParticipantStatus.ACTIVE,
+                    )
+                ),
+                "completed": sum(
+                    1 for p in participants if p.status == ParticipantStatus.COMPLETED
+                ),
                 "list": [{"name": p.entity_name, "status": p.status.value} for p in participants],
             },
             "scope": {
                 "services": scope.services_in_scope if scope else [],
                 "critical_functions": scope.all_critical_functions if scope else [],
-                "approved": scope.scope_agreed_by_participants and scope.scope_agreed_by_provider if scope else False,
+                "approved": (
+                    scope.scope_agreed_by_participants and scope.scope_agreed_by_provider
+                    if scope
+                    else False
+                ),
             },
             "cost": {
                 "total_eur": cost_agreement.total_estimated_cost_eur if cost_agreement else 0,
@@ -1377,11 +1447,19 @@ class DORAPooledTesting:
             "participants": [
                 asdict(p) for p in self.get_participants_for_engagement(pooled_test_id)
             ],
-            "scope": asdict(self._scopes[engagement.scope_id]) if engagement.scope_id in self._scopes else None,
-            "cost_agreement": asdict(self._cost_agreements[engagement.cost_agreement_id]) if engagement.cost_agreement_id in self._cost_agreements else None,
+            "scope": (
+                asdict(self._scopes[engagement.scope_id])
+                if engagement.scope_id in self._scopes
+                else None
+            ),
+            "cost_agreement": (
+                asdict(self._cost_agreements[engagement.cost_agreement_id])
+                if engagement.cost_agreement_id in self._cost_agreements
+                else None
+            ),
             "results": next(
                 (asdict(r) for r in self._results.values() if r.pooled_test_id == pooled_test_id),
-                None
+                None,
             ),
         }
 
@@ -1408,6 +1486,7 @@ class DORAPooledTesting:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_pooled_testing(
     config: Optional[PooledTestingConfig] = None,

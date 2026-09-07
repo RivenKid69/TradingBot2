@@ -12,9 +12,7 @@ BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-spec_exec = importlib.util.spec_from_file_location(
-    "execution_sim", BASE_DIR / "execution_sim.py"
-)
+spec_exec = importlib.util.spec_from_file_location("execution_sim", BASE_DIR / "execution_sim.py")
 exec_mod = importlib.util.module_from_spec(spec_exec)
 sys.modules["execution_sim"] = exec_mod
 spec_exec.loader.exec_module(exec_mod)
@@ -93,7 +91,9 @@ class _StubRisk:
         pass
 
 
-def _write_bar_capacity(tmp_path: pathlib.Path, symbol: str, *, per_bar: float, timeframe_ms: int) -> pathlib.Path:
+def _write_bar_capacity(
+    tmp_path: pathlib.Path, symbol: str, *, per_bar: float, timeframe_ms: int
+) -> pathlib.Path:
     bars_per_day = 86_400_000.0 / float(timeframe_ms if timeframe_ms > 0 else 1)
     daily_base = float(per_bar) * bars_per_day
     payload = {str(symbol).upper(): daily_base}

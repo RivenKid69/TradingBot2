@@ -260,9 +260,7 @@ class SimExecutionEngine:
                 )
 
         # Calculate fill price with slippage
-        slippage_multiplier = Decimal("1") + (
-            self.config.slippage_bps / Decimal("10000")
-        )
+        slippage_multiplier = Decimal("1") + (self.config.slippage_bps / Decimal("10000"))
         if intent.side == IntentSide.LONG:
             fill_price = price * slippage_multiplier
         else:

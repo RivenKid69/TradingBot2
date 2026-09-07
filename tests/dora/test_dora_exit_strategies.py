@@ -53,6 +53,7 @@ from services.dora_integration.contracts import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def config():
     """Create test configuration."""
@@ -105,6 +106,7 @@ def plan_with_alternatives(manager, sample_plan):
 # Enumeration Tests
 # =============================================================================
 
+
 class TestEnumerations:
     """Test all enumeration classes."""
 
@@ -150,6 +152,7 @@ class TestEnumerations:
 # =============================================================================
 # Data Structure Tests
 # =============================================================================
+
 
 class TestAlternativeProvider:
     """Test AlternativeProvider data structure."""
@@ -260,6 +263,7 @@ class TestExitExecution:
 # Configuration Tests
 # =============================================================================
 
+
 class TestExitStrategiesConfig:
     """Test ExitStrategiesConfig."""
 
@@ -284,6 +288,7 @@ class TestExitStrategiesConfig:
 # =============================================================================
 # Exit Plan Management Tests
 # =============================================================================
+
 
 class TestExitPlanManagement:
     """Test exit plan management functionality."""
@@ -365,6 +370,7 @@ class TestExitPlanManagement:
 # =============================================================================
 # Alternative Provider Tests
 # =============================================================================
+
 
 class TestAlternativeProviderManagement:
     """Test alternative provider management."""
@@ -455,6 +461,7 @@ class TestAlternativeProviderManagement:
 # Task Management Tests
 # =============================================================================
 
+
 class TestTaskManagement:
     """Test task management functionality."""
 
@@ -508,6 +515,7 @@ class TestTaskManagement:
 # =============================================================================
 # Risk and Cost Tests
 # =============================================================================
+
 
 class TestRiskAndCostManagement:
     """Test risk and cost management."""
@@ -582,6 +590,7 @@ class TestRiskAndCostManagement:
 # Exit Readiness Tests
 # =============================================================================
 
+
 class TestExitReadiness:
     """Test exit readiness assessment."""
 
@@ -614,6 +623,7 @@ class TestExitReadiness:
 # =============================================================================
 # Exit Execution Tests
 # =============================================================================
+
 
 class TestExitExecution:
     """Test exit execution functionality."""
@@ -681,6 +691,7 @@ class TestExitExecution:
 # Testing and Reporting Tests
 # =============================================================================
 
+
 class TestTestingAndReporting:
     """Test testing and reporting functionality."""
 
@@ -709,6 +720,7 @@ class TestTestingAndReporting:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Test factory functions."""
@@ -747,6 +759,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests for complete workflows."""

@@ -12,6 +12,7 @@ Test Coverage:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import pytest
@@ -25,6 +26,7 @@ from variance_gradient_scaler import VarianceGradientScaler
 
 class SimpleModel(nn.Module):
     """Simple model for testing."""
+
     def __init__(self, input_dim: int = 10, output_dim: int = 1):
         super().__init__()
         self.linear = nn.Linear(input_dim, output_dim)
@@ -39,12 +41,13 @@ def compute_grad_norm(model: nn.Module) -> float:
     for param in model.parameters():
         if param.grad is not None:
             total_norm_sq += param.grad.data.norm(2).item() ** 2
-    return total_norm_sq ** 0.5
+    return total_norm_sq**0.5
 
 
 # =============================================================================
 # Unit Tests
 # =============================================================================
+
 
 class TestAdaptiveNoiseUnit:
     """Unit tests for adaptive noise functionality."""
@@ -169,13 +172,13 @@ class TestAdaptiveNoiseUnit:
 
         # Verify min_noise_std floor is enforced in optimizer state
         for group in optimizer.param_groups:
-            for p in group['params']:
+            for p in group["params"]:
                 if p in optimizer.state:
                     state = optimizer.state[p]
-                    if 'noise_std' in state:
-                        assert state['noise_std'] >= group.get('min_noise_std', 0), (
-                            f"noise_std {state['noise_std']} should be >= min_noise_std"
-                        )
+                    if "noise_std" in state:
+                        assert state["noise_std"] >= group.get(
+                            "min_noise_std", 0
+                        ), f"noise_std {state['noise_std']} should be >= min_noise_std"
 
     def test_noise_scales_with_gradients(self):
         """Test that adaptive noise scales proportionally to gradient magnitude."""
@@ -188,8 +191,12 @@ class TestAdaptiveNoiseUnit:
             for p1, p2 in zip(model1.parameters(), model2.parameters()):
                 p2.data.copy_(p1.data)
 
-        optimizer1 = AdaptiveUPGD(model1.parameters(), adaptive_noise=True, sigma=0.05, noise_beta=0.9)
-        optimizer2 = AdaptiveUPGD(model2.parameters(), adaptive_noise=True, sigma=0.05, noise_beta=0.9)
+        optimizer1 = AdaptiveUPGD(
+            model1.parameters(), adaptive_noise=True, sigma=0.05, noise_beta=0.9
+        )
+        optimizer2 = AdaptiveUPGD(
+            model2.parameters(), adaptive_noise=True, sigma=0.05, noise_beta=0.9
+        )
 
         # Scenario 1: Normal gradients
         X1 = torch.randn(16, 10)
@@ -239,12 +246,15 @@ class TestAdaptiveNoiseUnit:
         # ema1 should be larger than ema2 (model1 has larger gradients)
         # Allow wider tolerance due to EMA dynamics and different convergence rates
         ratio = ema1 / ema2
-        assert 1.3 < ratio < 5.0, f"Expected ratio 1.3-5.0 (larger gradients → larger EMA), got {ratio:.2f}"
+        assert (
+            1.3 < ratio < 5.0
+        ), f"Expected ratio 1.3-5.0 (larger gradients → larger EMA), got {ratio:.2f}"
 
 
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestAdaptiveNoiseIntegration:
     """Integration tests with VGS and gradient scaling."""
@@ -329,11 +339,15 @@ class TestAdaptiveNoiseIntegration:
         skip = 40
         avg_gn_without = sum(grad_norms_without_vgs[skip:]) / len(grad_norms_without_vgs[skip:])
         avg_gn_with_pre = sum(grad_norms_with_vgs_pre[skip:]) / len(grad_norms_with_vgs_pre[skip:])
-        avg_gn_with_post = sum(grad_norms_with_vgs_post[skip:]) / len(grad_norms_with_vgs_post[skip:])
+        avg_gn_with_post = sum(grad_norms_with_vgs_post[skip:]) / len(
+            grad_norms_with_vgs_post[skip:]
+        )
 
         # VGS should reduce gradients
         vgs_reduction = (avg_gn_with_pre - avg_gn_with_post) / avg_gn_with_pre
-        assert vgs_reduction > 0.1, f"VGS should reduce gradients by >10%, got {vgs_reduction*100:.1f}%"
+        assert (
+            vgs_reduction > 0.1
+        ), f"VGS should reduce gradients by >10%, got {vgs_reduction*100:.1f}%"
 
         # With adaptive noise, the noise-to-signal ratio should be SIMILAR
         # Extract grad_norm_ema from both optimizers
@@ -363,7 +377,9 @@ class TestAdaptiveNoiseIntegration:
         # 2. EMA has warmup lag (10 steps) and convergence dynamics
         # 3. VGS warmup period (10 steps) affects early gradient norms
         # Allow 300% difference (i.e., up to 4x ratio) as reasonable upper bound
-        ratio_diff = abs(noise_to_signal_with - noise_to_signal_without) / max(noise_to_signal_without, 1e-8)
+        ratio_diff = abs(noise_to_signal_with - noise_to_signal_without) / max(
+            noise_to_signal_without, 1e-8
+        )
 
         print(f"\n  Noise-to-signal without VGS: {noise_to_signal_without:.6f}")
         print(f"  Noise-to-signal with VGS:    {noise_to_signal_with:.6f}")
@@ -429,6 +445,7 @@ class TestAdaptiveNoiseIntegration:
 # Regression Tests
 # =============================================================================
 
+
 class TestAdaptiveNoiseRegression:
     """Regression tests for backward compatibility."""
 
@@ -452,21 +469,24 @@ class TestAdaptiveNoiseRegression:
             opt1.step()
 
         # Save checkpoint
-        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.pth') as f:
+        with tempfile.NamedTemporaryFile(mode="wb", delete=False, suffix=".pth") as f:
             checkpoint_path = f.name
-            torch.save({
-                'model': model1.state_dict(),
-                'optimizer': opt1.state_dict(),
-            }, f)
+            torch.save(
+                {
+                    "model": model1.state_dict(),
+                    "optimizer": opt1.state_dict(),
+                },
+                f,
+            )
 
         try:
             # Load into new optimizer (might have adaptive_noise in code)
             checkpoint = torch.load(checkpoint_path)
-            model2.load_state_dict(checkpoint['model'])
+            model2.load_state_dict(checkpoint["model"])
 
             # Create new optimizer and load state
             opt2 = AdaptiveUPGD(model2.parameters(), lr=0.001, sigma=0.001, adaptive_noise=False)
-            opt2.load_state_dict(checkpoint['optimizer'])
+            opt2.load_state_dict(checkpoint["optimizer"])
 
             # Should work without errors
             opt2.zero_grad()
@@ -477,7 +497,9 @@ class TestAdaptiveNoiseRegression:
 
             # Verify checkpoint loaded correctly - model params are valid tensors
             for param in model2.parameters():
-                assert torch.isfinite(param).all(), "Model params should be finite after checkpoint load"
+                assert torch.isfinite(
+                    param
+                ).all(), "Model params should be finite after checkpoint load"
         finally:
             os.unlink(checkpoint_path)
 
@@ -510,12 +532,15 @@ class TestAdaptiveNoiseRegression:
         # Note: With fixed noise and random seed, convergence can be noisy
         early_loss = sum(losses[:10]) / 10
         late_loss = sum(losses[-10:]) / 10
-        assert late_loss < early_loss * 0.95, "Training should show progress (loss decreases) with fixed noise"
+        assert (
+            late_loss < early_loss * 0.95
+        ), "Training should show progress (loss decreases) with fixed noise"
 
 
 # =============================================================================
 # Validation Tests
 # =============================================================================
+
 
 class TestProblem4Resolution:
     """Validation tests confirming Problem #4 (VGS+UPGD noise amplification) is resolved."""
@@ -582,7 +607,9 @@ class TestProblem4Resolution:
             # With instant_noise_scale=True (default), noise_std = sigma * current_grad_norm
             # This ensures noise-to-signal ratio = sigma (constant)
             # FIX (2025-11-26): Changed from EMA-based to current-grad-norm-based measurement
-            noise_std_baseline = upgd_sigma * gn_baseline  # Matches optimizer's instant_noise_scale=True
+            noise_std_baseline = (
+                upgd_sigma * gn_baseline
+            )  # Matches optimizer's instant_noise_scale=True
             baseline_ratios.append(noise_std_baseline / gn_baseline if gn_baseline > 0 else 0)
             opt_baseline.step()
 
@@ -597,7 +624,9 @@ class TestProblem4Resolution:
 
             # With instant_noise_scale=True, noise is computed from POST-VGS gradient norm
             # This maintains constant noise-to-signal ratio even with VGS scaling
-            noise_std_test = upgd_sigma * gn_test_post  # Matches optimizer's instant_noise_scale=True
+            noise_std_test = (
+                upgd_sigma * gn_test_post
+            )  # Matches optimizer's instant_noise_scale=True
             test_ratios.append(noise_std_test / gn_test_post if gn_test_post > 0 else 0)
 
             opt_test.step()

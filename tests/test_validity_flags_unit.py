@@ -40,7 +40,7 @@ def test_get_safe_float_with_validity_nan_handling():
     """Test that NaN values return (default, False)."""
     from mediator import Mediator
 
-    row = {"nan_feature": float('nan'), "inf_feature": float('inf'), "neg_inf": float('-inf')}
+    row = {"nan_feature": float("nan"), "inf_feature": float("inf"), "neg_inf": float("-inf")}
 
     # NaN
     value, is_valid = Mediator._get_safe_float_with_validity(row, "nan_feature", default=0.0)
@@ -147,7 +147,7 @@ def test_get_safe_float_with_validity_semantic_distinction():
     value_zero, is_valid_zero = Mediator._get_safe_float_with_validity(row_zero, "cvd_24h", 0.0)
 
     # Scenario 2: CVD is missing (NaN)
-    row_nan = {"cvd_24h": float('nan')}
+    row_nan = {"cvd_24h": float("nan")}
     value_nan, is_valid_nan = Mediator._get_safe_float_with_validity(row_nan, "cvd_24h", 0.0)
 
     # VALUES are the same (both 0.0)
@@ -168,7 +168,7 @@ def test_extract_norm_cols_returns_tuple():
 
     mediator = Mediator.__new__(Mediator)
 
-    row = {"cvd_24h": 1.0, "cvd_7d": float('nan'), "yang_zhang_48h": 0.5}
+    row = {"cvd_24h": 1.0, "cvd_7d": float("nan"), "yang_zhang_48h": 0.5}
 
     result = mediator._extract_norm_cols(row)
 
@@ -195,14 +195,14 @@ def test_extract_norm_cols_validity_tracking():
 
     # Mix of valid, NaN, and None values
     row = {
-        "cvd_24h": 1.5,               # [0] - valid
-        "cvd_7d": float('nan'),       # [1] - invalid (NaN)
-        "yang_zhang_48h": 0.8,        # [2] - valid
-        "yang_zhang_7d": None,        # [3] - invalid (None)
-        "garch_200h": float('inf'),   # [4] - invalid (Inf)
-        "garch_14d": 0.5,             # [5] - valid
-        "ret_12h": 0.0,               # [6] - valid (zero is valid!)
-        "ret_24h": -0.1,              # [7] - valid (negative is valid!)
+        "cvd_24h": 1.5,  # [0] - valid
+        "cvd_7d": float("nan"),  # [1] - invalid (NaN)
+        "yang_zhang_48h": 0.8,  # [2] - valid
+        "yang_zhang_7d": None,  # [3] - invalid (None)
+        "garch_200h": float("inf"),  # [4] - invalid (Inf)
+        "garch_14d": 0.5,  # [5] - valid
+        "ret_12h": 0.0,  # [6] - valid (zero is valid!)
+        "ret_24h": -0.1,  # [7] - valid (negative is valid!)
         # Rest default to 0.0 with validity depending on presence
     }
 
@@ -245,13 +245,21 @@ def test_extract_norm_cols_all_valid():
 
     # All 21 features present and valid
     row = {
-        "cvd_24h": 0.1, "cvd_7d": 0.2,
-        "yang_zhang_48h": 0.3, "yang_zhang_7d": 0.4,
-        "garch_200h": 0.5, "garch_14d": 0.6,
-        "ret_12h": 0.01, "ret_24h": 0.02, "ret_4h": 0.005,
-        "sma_12000": 50000.0, "yang_zhang_30d": 0.7,
-        "parkinson_48h": 0.8, "parkinson_7d": 0.9,
-        "garch_30d": 0.35, "taker_buy_ratio": 0.52,
+        "cvd_24h": 0.1,
+        "cvd_7d": 0.2,
+        "yang_zhang_48h": 0.3,
+        "yang_zhang_7d": 0.4,
+        "garch_200h": 0.5,
+        "garch_14d": 0.6,
+        "ret_12h": 0.01,
+        "ret_24h": 0.02,
+        "ret_4h": 0.005,
+        "sma_12000": 50000.0,
+        "yang_zhang_30d": 0.7,
+        "parkinson_48h": 0.8,
+        "parkinson_7d": 0.9,
+        "garch_30d": 0.35,
+        "taker_buy_ratio": 0.52,
         "taker_buy_ratio_sma_24h": 0.51,
         "taker_buy_ratio_sma_8h": 0.50,
         "taker_buy_ratio_sma_16h": 0.505,
@@ -278,7 +286,7 @@ def test_extract_norm_cols_all_missing():
     mediator = Mediator.__new__(Mediator)
 
     # All features are NaN (e.g., during cold start or data outage)
-    row = {f"feature_{i}": float('nan') for i in range(30)}  # Fake row with NaN
+    row = {f"feature_{i}": float("nan") for i in range(30)}  # Fake row with NaN
 
     values, validity = mediator._extract_norm_cols(row)
 
@@ -298,17 +306,17 @@ def test_extract_norm_cols_partial_missing():
     # Realistic scenario: Some features present, some missing
     # E.g., during GARCH warmup period (first 200h), GARCH features are NaN
     row = {
-        "cvd_24h": 100.0,             # Valid
-        "cvd_7d": 500.0,              # Valid
-        "yang_zhang_48h": 0.015,      # Valid
-        "yang_zhang_7d": 0.018,       # Valid
-        "garch_200h": float('nan'),   # Missing (warmup)
-        "garch_14d": float('nan'),    # Missing (warmup)
-        "garch_30d": float('nan'),    # Missing (warmup)
-        "ret_12h": 0.002,             # Valid
-        "ret_24h": 0.005,             # Valid
-        "ret_4h": 0.001,              # Valid
-        "taker_buy_ratio": 0.55,      # Valid
+        "cvd_24h": 100.0,  # Valid
+        "cvd_7d": 500.0,  # Valid
+        "yang_zhang_48h": 0.015,  # Valid
+        "yang_zhang_7d": 0.018,  # Valid
+        "garch_200h": float("nan"),  # Missing (warmup)
+        "garch_14d": float("nan"),  # Missing (warmup)
+        "garch_30d": float("nan"),  # Missing (warmup)
+        "ret_12h": 0.002,  # Valid
+        "ret_24h": 0.005,  # Valid
+        "ret_4h": 0.001,  # Valid
+        "taker_buy_ratio": 0.55,  # Valid
         # Other features missing
     }
 

@@ -24,6 +24,7 @@ class LogConfig:
     Примечание по parquet:
       Мы пишем «частями»: <path>.part-000001.parquet, <path>.part-000002.parquet, ...
     """
+
     enabled: bool = True
     format: str = "csv"
     trades_path: str = "logs/log_trades_<runid>.csv"
@@ -47,6 +48,7 @@ class LogWriter:
       - append(report, symbol, ts_ms): кладёт трейды и снэпшот отчёта в буфер
       - flush(): сбрасывает буферы на диск
     """
+
     def __init__(self, cfg: Optional[LogConfig] = None, *, run_id: str = "sim"):
         self.cfg = cfg or LogConfig()
         self._run_id = str(run_id)
@@ -69,7 +71,9 @@ class LogWriter:
         regime_value = rep_dict.get("market_regime", getattr(report, "market_regime", None))
         wrote_trade = False
         for t in rep_dict.get("trades", []):
-            er = trade_dict_to_core_exec_report(t, parent=rep_dict, symbol=str(symbol), run_id=self._run_id)
+            er = trade_dict_to_core_exec_report(
+                t, parent=rep_dict, symbol=str(symbol), run_id=self._run_id
+            )
             for k in ["slippage_bps", "spread_bps", "latency_ms", "tif", "ttl_steps"]:
                 v = t.get(k)
                 if v is not None:
@@ -124,7 +128,11 @@ class LogWriter:
                 meta={
                     "mark_price": float(getattr(report, "mark_price", 0.0)),
                     "equity": float(getattr(report, "equity", 0.0)),
-                    "drawdown": float(getattr(report, "drawdown", 0.0)) if getattr(report, "drawdown", None) is not None else None,
+                    "drawdown": (
+                        float(getattr(report, "drawdown", 0.0))
+                        if getattr(report, "drawdown", None) is not None
+                        else None
+                    ),
                     "reason": str(reason),
                 },
             )
@@ -178,13 +186,26 @@ class LogWriter:
             unrealized_pnl=Decimal(str(getattr(report, "unrealized_pnl", 0.0))),
             equity=Decimal(str(getattr(report, "equity", 0.0))),
             mark_price=Decimal(str(getattr(report, "mark_price", 0.0))),
-            notional=Decimal(str(getattr(report, "position_qty", 0.0))) * Decimal(str(getattr(report, "mark_price", 0.0))),
-            drawdown=Decimal(str(getattr(report, "drawdown", 0.0))) if getattr(report, "drawdown", None) is not None else None,
+            notional=Decimal(str(getattr(report, "position_qty", 0.0)))
+            * Decimal(str(getattr(report, "mark_price", 0.0))),
+            drawdown=(
+                Decimal(str(getattr(report, "drawdown", 0.0)))
+                if getattr(report, "drawdown", None) is not None
+                else None
+            ),
             risk_paused_until_ms=int(getattr(report, "risk_paused_until_ms", 0)),
             risk_events_count=int(len(getattr(report, "risk_events", []) or [])),
             funding_events_count=int(len(getattr(report, "funding_events", []) or [])),
-            funding_cashflow=Decimal(str(getattr(report, "funding_cashflow", 0.0))) if getattr(report, "funding_cashflow", None) is not None else None,
-            cash=Decimal(str(getattr(report, "cash", 0.0))) if getattr(report, "cash", None) is not None else None,
+            funding_cashflow=(
+                Decimal(str(getattr(report, "funding_cashflow", 0.0)))
+                if getattr(report, "funding_cashflow", None) is not None
+                else None
+            ),
+            cash=(
+                Decimal(str(getattr(report, "cash", 0.0)))
+                if getattr(report, "cash", None) is not None
+                else None
+            ),
         )
         eq_dict = eq.to_dict()
         eq_dict["spread_bps"] = getattr(report, "spread_bps", None)

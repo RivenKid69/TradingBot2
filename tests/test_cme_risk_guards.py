@@ -89,6 +89,7 @@ from services.cme_risk_guards import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def es_contract_spec() -> FuturesContractSpec:
     """E-mini S&P 500 contract specification."""
@@ -217,6 +218,7 @@ def sample_contract_specs(
 # Test Enums
 # =============================================================================
 
+
 class TestEnums:
     """Tests for enum definitions."""
 
@@ -275,6 +277,7 @@ class TestEnums:
 # Test Constants
 # =============================================================================
 
+
 class TestConstants:
     """Tests for constants."""
 
@@ -315,6 +318,7 @@ class TestConstants:
 # =============================================================================
 # Test Configuration Classes
 # =============================================================================
+
 
 class TestSPANMarginGuardConfig:
     """Tests for SPANMarginGuardConfig."""
@@ -414,6 +418,7 @@ class TestRolloverGuardConfig:
 # =============================================================================
 # Test Result Classes
 # =============================================================================
+
 
 class TestMarginCheckResult:
     """Tests for MarginCheckResult."""
@@ -516,6 +521,7 @@ class TestMarginCallEvent:
 # =============================================================================
 # Test SPANMarginGuard
 # =============================================================================
+
 
 class TestSPANMarginGuard:
     """Tests for SPANMarginGuard."""
@@ -707,6 +713,7 @@ class TestSPANMarginGuard:
 # Test CMEPositionLimitGuard
 # =============================================================================
 
+
 class TestCMEPositionLimitGuard:
     """Tests for CMEPositionLimitGuard."""
 
@@ -809,6 +816,7 @@ class TestCMEPositionLimitGuard:
 # Test CircuitBreakerAwareGuard
 # =============================================================================
 
+
 class TestCircuitBreakerAwareGuard:
     """Tests for CircuitBreakerAwareGuard."""
 
@@ -828,10 +836,12 @@ class TestCircuitBreakerAwareGuard:
         guard = CircuitBreakerAwareGuard()
         guard.add_symbol("ES")
         guard.add_symbol("NQ")
-        guard.set_reference_prices({
-            "ES": Decimal("4500"),
-            "NQ": Decimal("15000"),
-        })
+        guard.set_reference_prices(
+            {
+                "ES": Decimal("4500"),
+                "NQ": Decimal("15000"),
+            }
+        )
         assert guard._reference_prices["ES"] == Decimal("4500")
         assert guard._reference_prices["NQ"] == Decimal("15000")
 
@@ -862,7 +872,10 @@ class TestCircuitBreakerAwareGuard:
             is_rth=True,
         )
         # Circuit breaker should be triggered
-        assert result.circuit_breaker_level in (CircuitBreakerLevel.LEVEL_1, CircuitBreakerLevel.NONE)
+        assert result.circuit_breaker_level in (
+            CircuitBreakerLevel.LEVEL_1,
+            CircuitBreakerLevel.NONE,
+        )
 
     def test_check_trading_allowed_non_equity(self) -> None:
         """Test non-equity products always allowed."""
@@ -903,6 +916,7 @@ class TestCircuitBreakerAwareGuard:
 # =============================================================================
 # Test SettlementRiskGuard
 # =============================================================================
+
 
 class TestSettlementRiskGuard:
     """Tests for SettlementRiskGuard."""
@@ -960,6 +974,7 @@ class TestSettlementRiskGuard:
 # =============================================================================
 # Test RolloverGuard
 # =============================================================================
+
 
 class TestRolloverGuard:
     """Tests for RolloverGuard."""
@@ -1042,6 +1057,7 @@ class TestRolloverGuard:
 # =============================================================================
 # Test CMEFuturesRiskGuard (Unified)
 # =============================================================================
+
 
 class TestCMEFuturesRiskGuard:
     """Tests for unified CMEFuturesRiskGuard."""
@@ -1193,6 +1209,7 @@ class TestCMEFuturesRiskGuard:
 # Test Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory functions."""
 
@@ -1285,6 +1302,7 @@ class TestFactoryFunctions:
 # Test Thread Safety
 # =============================================================================
 
+
 class TestThreadSafety:
     """Tests for thread safety."""
 
@@ -1363,6 +1381,7 @@ class TestThreadSafety:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases."""
 
@@ -1436,6 +1455,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Integration Scenarios
 # =============================================================================
+
 
 class TestIntegrationScenarios:
     """Tests for integration scenarios."""
@@ -1624,6 +1644,7 @@ class TestIntegrationScenarios:
 # Test Risk Summary
 # =============================================================================
 
+
 class TestRiskSummary:
     """Tests for risk summary functionality."""
 
@@ -1698,7 +1719,13 @@ class TestRiskSummary:
         )
 
         # With no positions, should be healthy
-        assert summary["margin"]["status"] in ("healthy", "warning", "danger", "critical", "liquidation")
+        assert summary["margin"]["status"] in (
+            "healthy",
+            "warning",
+            "danger",
+            "critical",
+            "liquidation",
+        )
         assert summary["position_limit"]["within_limit"] is True
         assert summary["position_limit"]["current_position"] == 0
 
@@ -1706,6 +1733,7 @@ class TestRiskSummary:
 # =============================================================================
 # Additional Edge Case Tests
 # =============================================================================
+
 
 class TestAdditionalEdgeCases:
     """Additional edge case tests for complete coverage."""
@@ -1992,7 +2020,7 @@ class TestAdditionalEdgeCases:
         # Simulate velocity pause by having CB guard return velocity_paused
         with patch.object(
             guard._cb_guard,
-            'check_trading_allowed',
+            "check_trading_allowed",
             return_value=CircuitBreakerCheckResult(
                 can_trade=False,
                 trading_state=TradingState.VELOCITY_PAUSE,  # Correct enum value
@@ -2024,7 +2052,7 @@ class TestAdditionalEdgeCases:
 
         with patch.object(
             guard._margin_guard,
-            'check_margin',
+            "check_margin",
             return_value=MarginCheckResult(
                 status=MarginStatus.WARNING,
                 level=MarginCallLevel.WARNING,
@@ -2059,7 +2087,7 @@ class TestAdditionalEdgeCases:
 
         with patch.object(
             guard._settlement_guard,
-            'check_settlement_risk',
+            "check_settlement_risk",
             return_value=SettlementRiskCheckResult(
                 risk_level=SettlementRiskLevel.IMMINENT,
                 minutes_to_settlement=10,
@@ -2090,7 +2118,7 @@ class TestAdditionalEdgeCases:
 
         with patch.object(
             guard._settlement_guard,
-            'check_settlement_risk',
+            "check_settlement_risk",
             return_value=SettlementRiskCheckResult(
                 risk_level=SettlementRiskLevel.APPROACHING,
                 minutes_to_settlement=45,
@@ -2121,7 +2149,7 @@ class TestAdditionalEdgeCases:
 
         with patch.object(
             guard._rollover_guard,
-            'check_rollover_risk',
+            "check_rollover_risk",
             return_value=RolloverCheckResult(
                 risk_level=RolloverRiskLevel.EXPIRED,
                 days_to_roll=-1,
@@ -2152,7 +2180,7 @@ class TestAdditionalEdgeCases:
 
         with patch.object(
             guard._rollover_guard,
-            'check_rollover_risk',
+            "check_rollover_risk",
             return_value=RolloverCheckResult(
                 risk_level=RolloverRiskLevel.IMMINENT,
                 days_to_roll=1,
@@ -2183,7 +2211,7 @@ class TestAdditionalEdgeCases:
 
         with patch.object(
             guard._rollover_guard,
-            'check_rollover_risk',
+            "check_rollover_risk",
             return_value=RolloverCheckResult(
                 risk_level=RolloverRiskLevel.APPROACHING,
                 days_to_roll=3,
@@ -2254,7 +2282,7 @@ class TestAdditionalEdgeCases:
         # Mock the internal method to return specific minutes
         with patch.object(
             guard._engine,
-            'get_next_settlement_time',
+            "get_next_settlement_time",
             return_value=datetime_time(15, 30),
         ):
             # Test at a time that would give ~90 minutes to settlement
@@ -2279,7 +2307,7 @@ class TestAdditionalEdgeCases:
         # Mock to return a settlement time very close to current time
         with patch.object(
             guard,
-            'check_settlement_risk',
+            "check_settlement_risk",
             return_value=SettlementRiskCheckResult(
                 risk_level=SettlementRiskLevel.SETTLEMENT,
                 minutes_to_settlement=5,

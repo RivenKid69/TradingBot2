@@ -1,4 +1,5 @@
 """Comprehensive tests for services.event_bus module."""
+
 import asyncio
 from unittest.mock import patch
 
@@ -109,7 +110,7 @@ class TestEventBusPut:
         with pytest.raises(RuntimeError, match="EventBus is closed"):
             await bus.put({"test": "data"})
 
-    @patch('services.monitoring.events_in')
+    @patch("services.monitoring.events_in")
     async def test_put_increments_metrics(self, mock_counter):
         """Test put increments monitoring metrics."""
         bus = EventBus(queue_size=10, drop_policy="newest")
@@ -117,7 +118,7 @@ class TestEventBusPut:
         await bus.put({"test": "data"})
         mock_counter.inc.assert_called_once()
 
-    @patch('services.monitoring.dropped_bp')
+    @patch("services.monitoring.dropped_bp")
     async def test_put_increments_dropped_metric_when_full(self, mock_counter):
         """Test put increments dropped metric when queue is full."""
         bus = EventBus(queue_size=1, drop_policy="newest")
@@ -194,7 +195,7 @@ class TestEventBusGet:
         assert result1 is None
         assert result2 is None
 
-    @patch('services.monitoring.queue_depth')
+    @patch("services.monitoring.queue_depth")
     async def test_get_updates_depth_metric(self, mock_gauge):
         """Test get updates queue depth metric."""
         bus = EventBus(queue_size=10, drop_policy="newest")
@@ -439,7 +440,7 @@ class TestEventBusEdgeCases:
         """Test that metrics exceptions don't break functionality."""
         bus = EventBus(queue_size=10, drop_policy="newest")
 
-        with patch('services.monitoring.events_in') as mock:
+        with patch("services.monitoring.events_in") as mock:
             mock.inc.side_effect = Exception("Metrics error")
 
             # Should not raise despite metrics error

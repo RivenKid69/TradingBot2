@@ -67,8 +67,10 @@ logger = logging.getLogger(__name__)
 # Enumerations per ITS
 # =============================================================================
 
+
 class ContractType(Enum):
     """Contract type classification per ITS."""
+
     OUTSOURCING = "outsourcing"
     PROCUREMENT = "procurement"
     INTRA_GROUP = "intra_group"
@@ -77,6 +79,7 @@ class ContractType(Enum):
 
 class ServiceType(Enum):
     """ICT service type per ITS."""
+
     CLOUD_COMPUTING = "cloud_computing"
     DATA_CENTERS = "data_centers"
     SOFTWARE = "software"
@@ -92,6 +95,7 @@ class ServiceType(Enum):
 
 class FunctionType(Enum):
     """Business function type per ITS."""
+
     CRITICAL = "critical"
     IMPORTANT = "important"
     STANDARD = "standard"
@@ -99,6 +103,7 @@ class FunctionType(Enum):
 
 class DataLocation(Enum):
     """Data location classification."""
+
     EU = "eu"
     EEA = "eea"
     ADEQUACY_DECISION = "adequacy_decision"
@@ -107,6 +112,7 @@ class DataLocation(Enum):
 
 class ProviderLocationType(Enum):
     """Provider location classification."""
+
     EU_MEMBER_STATE = "eu_member_state"
     EEA_COUNTRY = "eea_country"
     THIRD_COUNTRY = "third_country"
@@ -114,6 +120,7 @@ class ProviderLocationType(Enum):
 
 class SubcontractingLevel(Enum):
     """Level in subcontracting chain."""
+
     DIRECT = "direct"
     LEVEL_1 = "level_1"
     LEVEL_2 = "level_2"
@@ -122,6 +129,7 @@ class SubcontractingLevel(Enum):
 
 class ExportFormat(Enum):
     """Export format for ROI data packages."""
+
     JSON = "json"
     CSV = "csv"
     XML = "xml"
@@ -132,6 +140,7 @@ class ExportFormat(Enum):
 # ITS Template Data Structures - Provider Data for Client ROI
 # =============================================================================
 
+
 @dataclass
 class ProviderIdentification:
     """
@@ -139,6 +148,7 @@ class ProviderIdentification:
 
     OUR identification data for client ROI population.
     """
+
     # Provider identifiers
     provider_id: str = ""
     lei: str = ""  # Our LEI (mandatory if we have one)
@@ -217,6 +227,7 @@ class ContractReferenceData:
     Our data about the contract for client ROI population.
     Client adds their arrangement IDs and function mappings.
     """
+
     # Reference (our internal)
     contract_reference: str = ""
 
@@ -274,6 +285,7 @@ class SubcontractorData:
 
     Our subcontractor chain data for client ROI population.
     """
+
     # Subcontractor identification
     subcontractor_id: str = ""
     lei: str = ""
@@ -322,6 +334,7 @@ class ServiceRecord:
 
     Our service details for client ROI population.
     """
+
     # Service identification
     service_id: str = ""
     contract_reference: str = ""
@@ -334,7 +347,7 @@ class ServiceRecord:
     # Service levels
     availability_target_pct: float = 99.0
     rpo_hours: int = 24  # Recovery Point Objective
-    rto_hours: int = 4   # Recovery Time Objective
+    rto_hours: int = 4  # Recovery Time Objective
 
     # For client criticality assessment
     supports_trading_functions: bool = False
@@ -372,6 +385,7 @@ class ROIDataPackage:
 
     Contains all our data that clients need to populate their ROI.
     """
+
     package_id: str = ""
     generated_at: str = ""
     reference_date: str = ""
@@ -425,6 +439,7 @@ class ROIDataPackage:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ROIDataGeneratorConfig:
     """Configuration for ROI Data Generator."""
@@ -459,6 +474,7 @@ class ROIDataGeneratorConfig:
 # =============================================================================
 # Main Implementation - ROI Data Generator
 # =============================================================================
+
 
 class DORARegisterOfInformation:
     """
@@ -553,9 +569,33 @@ class DORARegisterOfInformation:
     def _determine_location_type(self, country_code: str) -> ProviderLocationType:
         """Determine location type from country code."""
         EU_COUNTRIES = {
-            "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-            "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
-            "PL", "PT", "RO", "SK", "SI", "ES", "SE"
+            "AT",
+            "BE",
+            "BG",
+            "HR",
+            "CY",
+            "CZ",
+            "DK",
+            "EE",
+            "FI",
+            "FR",
+            "DE",
+            "GR",
+            "HU",
+            "IE",
+            "IT",
+            "LV",
+            "LT",
+            "LU",
+            "MT",
+            "NL",
+            "PL",
+            "PT",
+            "RO",
+            "SK",
+            "SI",
+            "ES",
+            "SE",
         }
         EEA_COUNTRIES = {"IS", "LI", "NO"}
 
@@ -592,9 +632,7 @@ class DORARegisterOfInformation:
             if hasattr(self._provider_identification, key):
                 setattr(self._provider_identification, key, value)
 
-        self._provider_identification.generated_at = (
-            datetime.now(timezone.utc).isoformat()
-        )
+        self._provider_identification.generated_at = datetime.now(timezone.utc).isoformat()
 
         return self._provider_identification
 
@@ -647,12 +685,8 @@ class DORARegisterOfInformation:
             contract_end_date=contract_end_date,
             annual_value_eur=annual_value_eur,
             notice_period_days=notice_period_days,
-            data_processing_countries=[
-                c.upper() for c in (data_processing_countries or [])
-            ],
-            data_storage_countries=[
-                c.upper() for c in (data_storage_countries or [])
-            ],
+            data_processing_countries=[c.upper() for c in (data_processing_countries or [])],
+            data_storage_countries=[c.upper() for c in (data_storage_countries or [])],
             personal_data_processed=personal_data_processed,
             subcontracting_permitted=subcontracting_permitted,
             audit_rights_granted=audit_rights_granted,
@@ -774,11 +808,7 @@ class DORARegisterOfInformation:
     ) -> List[ServiceRecord]:
         """Get services for a contract."""
         service_ids = self._services_by_contract.get(contract_reference, set())
-        return [
-            self._services[sid]
-            for sid in service_ids
-            if sid in self._services
-        ]
+        return [self._services[sid] for sid in service_ids if sid in self._services]
 
     def get_all_services(self) -> List[ServiceRecord]:
         """Get all services."""
@@ -827,9 +857,7 @@ class DORARegisterOfInformation:
             parent_contract_reference=parent_contract_reference,
             subcontracting_level=subcontracting_level,
             services_subcontracted=services_subcontracted or [],
-            data_processing_countries=[
-                c.upper() for c in (data_processing_countries or [])
-            ],
+            data_processing_countries=[c.upper() for c in (data_processing_countries or [])],
             personal_data_access=personal_data_access,
             notified_to_clients=True,
             notification_date=datetime.now(timezone.utc).isoformat(),
@@ -850,11 +878,7 @@ class DORARegisterOfInformation:
     ) -> List[SubcontractorData]:
         """Get subcontractors for a contract."""
         sub_ids = self._subcontractors_by_contract.get(contract_reference, set())
-        return [
-            self._subcontractors[sid]
-            for sid in sub_ids
-            if sid in self._subcontractors
-        ]
+        return [self._subcontractors[sid] for sid in sub_ids if sid in self._subcontractors]
 
     def get_full_subcontracting_chain(
         self,
@@ -915,9 +939,7 @@ class DORARegisterOfInformation:
         # Determine contracts to include
         if contract_references:
             contracts = [
-                self._contracts[ref]
-                for ref in contract_references
-                if ref in self._contracts
+                self._contracts[ref] for ref in contract_references if ref in self._contracts
             ]
         else:
             contracts = list(self._contracts.values())
@@ -925,16 +947,12 @@ class DORARegisterOfInformation:
         # Gather services for included contracts
         services = []
         for contract in contracts:
-            services.extend(
-                self.get_services_for_contract(contract.contract_reference)
-            )
+            services.extend(self.get_services_for_contract(contract.contract_reference))
 
         # Gather subcontractors for included contracts
         subcontractors = []
         for contract in contracts:
-            subcontractors.extend(
-                self.get_subcontractors_for_contract(contract.contract_reference)
-            )
+            subcontractors.extend(self.get_subcontractors_for_contract(contract.contract_reference))
 
         # Update data_as_of_date
         self._provider_identification.data_as_of_date = reference_date
@@ -984,13 +1002,13 @@ class DORARegisterOfInformation:
         for contract in package.contracts:
             if not contract.service_types_provided:
                 warnings.append(
-                    f"Contract {contract.contract_reference}: "
-                    f"no service types specified"
+                    f"Contract {contract.contract_reference}: " f"no service types specified"
                 )
 
             if contract.subcontracting_permitted:
                 subs = [
-                    s for s in package.subcontractors
+                    s
+                    for s in package.subcontractors
                     if s.parent_contract_reference == contract.contract_reference
                 ]
                 if not subs:
@@ -1052,9 +1070,7 @@ class DORARegisterOfInformation:
         result["B_06_01_Services"] = self._export_services_csv(package.services)
 
         # B_04.01 - Subcontractors
-        result["B_04_01_Subcontractors"] = self._export_subcontractors_csv(
-            package.subcontractors
-        )
+        result["B_04_01_Subcontractors"] = self._export_subcontractors_csv(package.subcontractors)
 
         return result
 
@@ -1063,20 +1079,41 @@ class DORARegisterOfInformation:
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow([
-            "Provider_ID", "LEI", "Alternative_ID", "Legal_Name", "Trading_Name",
-            "HQ_Country", "HQ_Address", "Location_Type", "Is_CTPP",
-            "CTPP_Overseer", "Contact_Name", "Contact_Email", "Data_As_Of"
-        ])
+        writer.writerow(
+            [
+                "Provider_ID",
+                "LEI",
+                "Alternative_ID",
+                "Legal_Name",
+                "Trading_Name",
+                "HQ_Country",
+                "HQ_Address",
+                "Location_Type",
+                "Is_CTPP",
+                "CTPP_Overseer",
+                "Contact_Name",
+                "Contact_Email",
+                "Data_As_Of",
+            ]
+        )
 
-        writer.writerow([
-            provider.provider_id, provider.lei, provider.alternative_id,
-            provider.legal_name, provider.trading_name,
-            provider.headquarters_country, provider.headquarters_address,
-            provider.location_type.value, provider.is_designated_ctpp,
-            provider.ctpp_lead_overseer, provider.primary_contact_name,
-            provider.primary_contact_email, provider.data_as_of_date
-        ])
+        writer.writerow(
+            [
+                provider.provider_id,
+                provider.lei,
+                provider.alternative_id,
+                provider.legal_name,
+                provider.trading_name,
+                provider.headquarters_country,
+                provider.headquarters_address,
+                provider.location_type.value,
+                provider.is_designated_ctpp,
+                provider.ctpp_lead_overseer,
+                provider.primary_contact_name,
+                provider.primary_contact_email,
+                provider.data_as_of_date,
+            ]
+        )
 
         return output.getvalue()
 
@@ -1088,24 +1125,46 @@ class DORARegisterOfInformation:
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow([
-            "Contract_Reference", "Provider_LEI", "Provider_Name",
-            "Contract_Type", "Start_Date", "End_Date", "Value_EUR",
-            "Notice_Days", "Service_Types", "Data_Processing_Countries",
-            "Personal_Data", "Subcontracting_Permitted", "Audit_Rights",
-            "Exit_Plan", "Data_As_Of"
-        ])
+        writer.writerow(
+            [
+                "Contract_Reference",
+                "Provider_LEI",
+                "Provider_Name",
+                "Contract_Type",
+                "Start_Date",
+                "End_Date",
+                "Value_EUR",
+                "Notice_Days",
+                "Service_Types",
+                "Data_Processing_Countries",
+                "Personal_Data",
+                "Subcontracting_Permitted",
+                "Audit_Rights",
+                "Exit_Plan",
+                "Data_As_Of",
+            ]
+        )
 
         for c in contracts:
-            writer.writerow([
-                c.contract_reference, c.provider_lei, c.provider_name,
-                c.contract_type.value, c.contract_start_date, c.contract_end_date,
-                c.annual_value_eur, c.notice_period_days,
-                ";".join(c.service_types_provided),
-                ";".join(c.data_processing_countries),
-                c.personal_data_processed, c.subcontracting_permitted,
-                c.audit_rights_granted, c.exit_plan_provided, c.data_as_of_date
-            ])
+            writer.writerow(
+                [
+                    c.contract_reference,
+                    c.provider_lei,
+                    c.provider_name,
+                    c.contract_type.value,
+                    c.contract_start_date,
+                    c.contract_end_date,
+                    c.annual_value_eur,
+                    c.notice_period_days,
+                    ";".join(c.service_types_provided),
+                    ";".join(c.data_processing_countries),
+                    c.personal_data_processed,
+                    c.subcontracting_permitted,
+                    c.audit_rights_granted,
+                    c.exit_plan_provided,
+                    c.data_as_of_date,
+                ]
+            )
 
         return output.getvalue()
 
@@ -1114,22 +1173,40 @@ class DORARegisterOfInformation:
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow([
-            "Service_ID", "Contract_Reference", "Service_Name", "Service_Type",
-            "Availability_Target", "RPO_Hours", "RTO_Hours",
-            "Supports_Trading", "Supports_Payments", "Supports_Custody",
-            "Personal_Data", "Data_As_Of"
-        ])
+        writer.writerow(
+            [
+                "Service_ID",
+                "Contract_Reference",
+                "Service_Name",
+                "Service_Type",
+                "Availability_Target",
+                "RPO_Hours",
+                "RTO_Hours",
+                "Supports_Trading",
+                "Supports_Payments",
+                "Supports_Custody",
+                "Personal_Data",
+                "Data_As_Of",
+            ]
+        )
 
         for s in services:
-            writer.writerow([
-                s.service_id, s.contract_reference, s.service_name,
-                s.service_type.value, s.availability_target_pct,
-                s.rpo_hours, s.rto_hours,
-                s.supports_trading_functions, s.supports_payment_functions,
-                s.supports_custody_functions, s.personal_data_involved,
-                s.data_as_of_date
-            ])
+            writer.writerow(
+                [
+                    s.service_id,
+                    s.contract_reference,
+                    s.service_name,
+                    s.service_type.value,
+                    s.availability_target_pct,
+                    s.rpo_hours,
+                    s.rto_hours,
+                    s.supports_trading_functions,
+                    s.supports_payment_functions,
+                    s.supports_custody_functions,
+                    s.personal_data_involved,
+                    s.data_as_of_date,
+                ]
+            )
 
         return output.getvalue()
 
@@ -1141,26 +1218,46 @@ class DORARegisterOfInformation:
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow([
-            "Subcontractor_ID", "Contract_Reference", "LEI", "Legal_Name",
-            "Country", "Level", "Chain_Rank", "Services",
-            "Data_Processing_Countries", "Personal_Data_Access",
-            "Notified_Date", "Data_As_Of"
-        ])
+        writer.writerow(
+            [
+                "Subcontractor_ID",
+                "Contract_Reference",
+                "LEI",
+                "Legal_Name",
+                "Country",
+                "Level",
+                "Chain_Rank",
+                "Services",
+                "Data_Processing_Countries",
+                "Personal_Data_Access",
+                "Notified_Date",
+                "Data_As_Of",
+            ]
+        )
 
         for s in subcontractors:
-            writer.writerow([
-                s.subcontractor_id, s.parent_contract_reference, s.lei,
-                s.legal_name, s.country, s.subcontracting_level.value,
-                s.chain_rank, ";".join(s.services_subcontracted),
-                ";".join(s.data_processing_countries), s.personal_data_access,
-                s.notification_date, s.data_as_of_date
-            ])
+            writer.writerow(
+                [
+                    s.subcontractor_id,
+                    s.parent_contract_reference,
+                    s.lei,
+                    s.legal_name,
+                    s.country,
+                    s.subcontracting_level.value,
+                    s.chain_rank,
+                    ";".join(s.services_subcontracted),
+                    ";".join(s.data_processing_countries),
+                    s.personal_data_access,
+                    s.notification_date,
+                    s.data_as_of_date,
+                ]
+            )
 
         return output.getvalue()
 
     def export_package_to_xml(self, package: ROIDataPackage) -> str:
         """Export package to XML format."""
+
         def dict_to_xml(d: Dict[str, Any], root_tag: str) -> str:
             xml_parts = [f"<{root_tag}>"]
             for key, value in d.items():
@@ -1170,9 +1267,7 @@ class DORARegisterOfInformation:
                         if isinstance(item, dict):
                             xml_parts.append(dict_to_xml(item, "item"))
                         else:
-                            xml_parts.append(
-                                f"<item>{_escape_xml(str(item))}</item>"
-                            )
+                            xml_parts.append(f"<item>{_escape_xml(str(item))}</item>")
                     xml_parts.append(f"</{key}>")
                 elif isinstance(value, dict):
                     xml_parts.append(dict_to_xml(value, key))
@@ -1226,14 +1321,15 @@ class DORARegisterOfInformation:
 # Helper Functions
 # =============================================================================
 
+
 def _escape_xml(text: str) -> str:
     """Escape special XML characters."""
     return (
         text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&apos;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
     )
 
 

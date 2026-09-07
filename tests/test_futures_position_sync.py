@@ -535,8 +535,7 @@ class TestFuturesPositionSynchronizer:
 
         assert result.has_events is True
         qty_mismatch_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.QTY_MISMATCH
+            e for e in result.events if e.event_type == FuturesSyncEventType.QTY_MISMATCH
         ]
         assert len(qty_mismatch_events) >= 1
 
@@ -579,8 +578,7 @@ class TestFuturesPositionSynchronizer:
         result = sync.sync_once()
 
         leverage_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.LEVERAGE_MISMATCH
+            e for e in result.events if e.event_type == FuturesSyncEventType.LEVERAGE_MISMATCH
         ]
         assert len(leverage_events) >= 1
 
@@ -615,8 +613,7 @@ class TestFuturesPositionSynchronizer:
         result = sync.sync_once()
 
         opened_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.POSITION_OPENED
+            e for e in result.events if e.event_type == FuturesSyncEventType.POSITION_OPENED
         ]
         assert len(opened_events) == 1
         assert opened_events[0].symbol == "BTCUSDT"
@@ -652,8 +649,7 @@ class TestFuturesPositionSynchronizer:
         result = sync.sync_once()
 
         closed_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.POSITION_CLOSED
+            e for e in result.events if e.event_type == FuturesSyncEventType.POSITION_CLOSED
         ]
         assert len(closed_events) == 1
 
@@ -756,8 +752,7 @@ class TestLiquidationDetection:
         result = sync.sync_once()
 
         liquidation_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.LIQUIDATION_DETECTED
+            e for e in result.events if e.event_type == FuturesSyncEventType.LIQUIDATION_DETECTED
         ]
         assert len(liquidation_events) >= 1
         assert sync.liquidation_count >= 1
@@ -840,10 +835,7 @@ class TestADLMonitoring:
 
         result = sync.sync_once()
 
-        adl_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.ADL_DETECTED
-        ]
+        adl_events = [e for e in result.events if e.event_type == FuturesSyncEventType.ADL_DETECTED]
         assert len(adl_events) >= 1
         assert adl_events[0].adl_risk_level == ADLRiskLevel.WARNING
 
@@ -875,10 +867,7 @@ class TestADLMonitoring:
 
         result = sync.sync_once()
 
-        adl_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.ADL_DETECTED
-        ]
+        adl_events = [e for e in result.events if e.event_type == FuturesSyncEventType.ADL_DETECTED]
         assert len(adl_events) >= 1
         # 5/5 = 100% which is >= 85% danger and >= 95% critical
         assert adl_events[0].adl_risk_level in (ADLRiskLevel.DANGER, ADLRiskLevel.CRITICAL)
@@ -945,10 +934,7 @@ class TestADLMonitoring:
 
         result = sync.sync_once()
 
-        adl_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.ADL_DETECTED
-        ]
+        adl_events = [e for e in result.events if e.event_type == FuturesSyncEventType.ADL_DETECTED]
         assert len(adl_events) == 0  # No events for safe level
 
 
@@ -1134,6 +1120,7 @@ class TestCallbacks:
         mock_futures_position,
     ):
         """Test callbacks handle errors gracefully."""
+
         def bad_callback(event):
             raise Exception("Callback error")
 
@@ -1286,9 +1273,30 @@ class TestSymbolFiltering:
     ):
         """Test include symbols filtering."""
         positions = [
-            FuturesPosition(symbol="BTCUSDT", side=PositionSide.LONG, entry_price=Decimal("50000"), qty=Decimal("1.0"), leverage=10, margin_mode=MarginMode.CROSS),
-            FuturesPosition(symbol="ETHUSDT", side=PositionSide.LONG, entry_price=Decimal("3000"), qty=Decimal("5.0"), leverage=10, margin_mode=MarginMode.CROSS),
-            FuturesPosition(symbol="SOLUSDT", side=PositionSide.LONG, entry_price=Decimal("100"), qty=Decimal("100"), leverage=10, margin_mode=MarginMode.CROSS),
+            FuturesPosition(
+                symbol="BTCUSDT",
+                side=PositionSide.LONG,
+                entry_price=Decimal("50000"),
+                qty=Decimal("1.0"),
+                leverage=10,
+                margin_mode=MarginMode.CROSS,
+            ),
+            FuturesPosition(
+                symbol="ETHUSDT",
+                side=PositionSide.LONG,
+                entry_price=Decimal("3000"),
+                qty=Decimal("5.0"),
+                leverage=10,
+                margin_mode=MarginMode.CROSS,
+            ),
+            FuturesPosition(
+                symbol="SOLUSDT",
+                side=PositionSide.LONG,
+                entry_price=Decimal("100"),
+                qty=Decimal("100"),
+                leverage=10,
+                margin_mode=MarginMode.CROSS,
+            ),
         ]
 
         provider = MagicMock()
@@ -1307,9 +1315,7 @@ class TestSymbolFiltering:
 
         # Verify include_symbols is passed to provider
         sync.sync_once()
-        provider.get_futures_positions.assert_called_with(
-            symbols=["BTCUSDT", "ETHUSDT"]
-        )
+        provider.get_futures_positions.assert_called_with(symbols=["BTCUSDT", "ETHUSDT"])
 
     def test_exclude_symbols(
         self,
@@ -1317,8 +1323,22 @@ class TestSymbolFiltering:
     ):
         """Test exclude symbols filtering."""
         positions = [
-            FuturesPosition(symbol="BTCUSDT", side=PositionSide.LONG, entry_price=Decimal("50000"), qty=Decimal("1.0"), leverage=10, margin_mode=MarginMode.CROSS),
-            FuturesPosition(symbol="DOGEUSDT", side=PositionSide.LONG, entry_price=Decimal("0.1"), qty=Decimal("10000"), leverage=10, margin_mode=MarginMode.CROSS),
+            FuturesPosition(
+                symbol="BTCUSDT",
+                side=PositionSide.LONG,
+                entry_price=Decimal("50000"),
+                qty=Decimal("1.0"),
+                leverage=10,
+                margin_mode=MarginMode.CROSS,
+            ),
+            FuturesPosition(
+                symbol="DOGEUSDT",
+                side=PositionSide.LONG,
+                entry_price=Decimal("0.1"),
+                qty=Decimal("10000"),
+                leverage=10,
+                margin_mode=MarginMode.CROSS,
+            ),
         ]
 
         provider = MagicMock()
@@ -1378,10 +1398,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=sync_worker)
-            for _ in range(5)
-        ]
+        threads = [threading.Thread(target=sync_worker) for _ in range(5)]
 
         for t in threads:
             t.start()
@@ -1492,8 +1509,7 @@ class TestEdgeCases:
 
         # Should detect position closed (zero qty)
         closed_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.POSITION_CLOSED
+            e for e in result.events if e.event_type == FuturesSyncEventType.POSITION_CLOSED
         ]
         assert len(closed_events) >= 1
 
@@ -1503,6 +1519,7 @@ class TestEdgeCases:
         mock_account_provider,
     ):
         """Test handling of local state getter errors."""
+
         def bad_getter():
             raise Exception("Local state error")
 
@@ -1560,8 +1577,7 @@ class TestEdgeCases:
 
         # Should NOT detect mismatch for tiny difference
         qty_mismatch_events = [
-            e for e in result.events
-            if e.event_type == FuturesSyncEventType.QTY_MISMATCH
+            e for e in result.events if e.event_type == FuturesSyncEventType.QTY_MISMATCH
         ]
         assert len(qty_mismatch_events) == 0
 
@@ -1631,23 +1647,27 @@ class TestIntegration:
         def get_positions(*args, **kwargs):
             call_count[0] += 1
             if call_count[0] == 1:
-                return [FuturesPosition(
-                    symbol="BTCUSDT",
-                    side=PositionSide.LONG,
-                    entry_price=Decimal("50000"),
-                    qty=Decimal("1.0"),
-                    leverage=10,
-                    margin_mode=MarginMode.CROSS,
-                )]
+                return [
+                    FuturesPosition(
+                        symbol="BTCUSDT",
+                        side=PositionSide.LONG,
+                        entry_price=Decimal("50000"),
+                        qty=Decimal("1.0"),
+                        leverage=10,
+                        margin_mode=MarginMode.CROSS,
+                    )
+                ]
             else:
-                return [FuturesPosition(
-                    symbol="BTCUSDT",
-                    side=PositionSide.LONG,
-                    entry_price=Decimal("50000"),
-                    qty=Decimal("2.0"),  # Qty increased
-                    leverage=10,
-                    margin_mode=MarginMode.CROSS,
-                )]
+                return [
+                    FuturesPosition(
+                        symbol="BTCUSDT",
+                        side=PositionSide.LONG,
+                        entry_price=Decimal("50000"),
+                        qty=Decimal("2.0"),  # Qty increased
+                        leverage=10,
+                        margin_mode=MarginMode.CROSS,
+                    )
+                ]
 
         mock_position_provider.get_futures_positions.side_effect = get_positions
 
@@ -1678,8 +1698,7 @@ class TestIntegration:
         assert result2.success is True
 
         qty_events = [
-            e for e in result2.events
-            if e.event_type == FuturesSyncEventType.QTY_MISMATCH
+            e for e in result2.events if e.event_type == FuturesSyncEventType.QTY_MISMATCH
         ]
         assert len(qty_events) >= 1
 

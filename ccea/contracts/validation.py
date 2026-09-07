@@ -40,6 +40,7 @@ DEFAULT_SCHEMA_PATH: Final[str] = "docs/schemas/protocol_messages.schema.json"
 @dataclass
 class EnumDrift:
     """Represents drift between two enum sets."""
+
     enum_name: str
     source: str
     target: str
@@ -62,6 +63,7 @@ class EnumDrift:
 @dataclass
 class ContractValidationResult:
     """Result of contract validation."""
+
     passed: bool = True
     drifts: List[EnumDrift] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
@@ -376,9 +378,7 @@ def main() -> int:
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Contract Validation"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Contract Validation")
     parser.add_argument(
         "--schema",
         type=Path,

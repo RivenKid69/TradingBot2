@@ -12,12 +12,30 @@ def test_header_and_append(tmp_path):
     path = tmp_path / "signals.csv"
     w = SignalCSVWriter(str(path))
     ts = _ts_ms(datetime.utcnow())
-    w.write({"ts_ms": ts, "symbol": "BTC", "side": "BUY", "volume_frac": 1, "score": 0.1, "features_hash": "x"})
+    w.write(
+        {
+            "ts_ms": ts,
+            "symbol": "BTC",
+            "side": "BUY",
+            "volume_frac": 1,
+            "score": 0.1,
+            "features_hash": "x",
+        }
+    )
     w.flush_fsync()
     w.close()
 
     w2 = SignalCSVWriter(str(path))
-    w2.write({"ts_ms": ts, "symbol": "ETH", "side": "SELL", "volume_frac": 2, "score": 0.2, "features_hash": "y"})
+    w2.write(
+        {
+            "ts_ms": ts,
+            "symbol": "ETH",
+            "side": "SELL",
+            "volume_frac": 2,
+            "score": 0.2,
+            "features_hash": "y",
+        }
+    )
     w2.close()
 
     lines = path.read_text().strip().splitlines()
@@ -34,7 +52,16 @@ def test_rotation_on_init(tmp_path):
     os.utime(path, (ts_old, ts_old))
 
     w = SignalCSVWriter(str(path))
-    w.write({"ts_ms": _ts_ms(datetime.utcnow()), "symbol": "BTC", "side": "BUY", "volume_frac": 1, "score": 0.1, "features_hash": "x"})
+    w.write(
+        {
+            "ts_ms": _ts_ms(datetime.utcnow()),
+            "symbol": "BTC",
+            "side": "BUY",
+            "volume_frac": 1,
+            "score": 0.1,
+            "features_hash": "x",
+        }
+    )
     w.close()
 
     assert rotated.exists()
@@ -47,8 +74,26 @@ def test_rotation_on_write(tmp_path):
     w = SignalCSVWriter(str(path))
     day1 = datetime(2024, 1, 1, tzinfo=timezone.utc)
     day2 = day1 + timedelta(days=1)
-    w.write({"ts_ms": _ts_ms(day1), "symbol": "BTC", "side": "BUY", "volume_frac": 1, "score": 0.1, "features_hash": "x"})
-    w.write({"ts_ms": _ts_ms(day2), "symbol": "BTC", "side": "SELL", "volume_frac": 2, "score": 0.2, "features_hash": "y"})
+    w.write(
+        {
+            "ts_ms": _ts_ms(day1),
+            "symbol": "BTC",
+            "side": "BUY",
+            "volume_frac": 1,
+            "score": 0.1,
+            "features_hash": "x",
+        }
+    )
+    w.write(
+        {
+            "ts_ms": _ts_ms(day2),
+            "symbol": "BTC",
+            "side": "SELL",
+            "volume_frac": 2,
+            "score": 0.2,
+            "features_hash": "y",
+        }
+    )
     w.close()
 
     rotated = tmp_path / "signals-2024-01-01.csv"

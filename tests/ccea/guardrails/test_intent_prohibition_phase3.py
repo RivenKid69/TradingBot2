@@ -35,8 +35,8 @@ class TestAsciiSafeOutput:
 
         # Capture stdout
         captured = io.StringIO()
-        with patch.object(sys, 'stdout', captured):
-            with patch.object(sys, 'argv', ['intent_prohibition', '--cloud-path', str(cloud_dir)]):
+        with patch.object(sys, "stdout", captured):
+            with patch.object(sys, "argv", ["intent_prohibition", "--cloud-path", str(cloud_dir)]):
                 try:
                     exit_code = intent_main()
                 except SystemExit as e:
@@ -54,15 +54,12 @@ class TestAsciiSafeOutput:
         cloud_dir = tmp_path / "packages" / "cloud"
         cloud_dir.mkdir(parents=True)
         # File with intent field
-        (cloud_dir / "bad.py").write_text(
-            'signal = {"side": "BUY"}\n',
-            encoding="utf-8"
-        )
+        (cloud_dir / "bad.py").write_text('signal = {"side": "BUY"}\n', encoding="utf-8")
 
         # Capture stdout
         captured = io.StringIO()
-        with patch.object(sys, 'stdout', captured):
-            with patch.object(sys, 'argv', ['intent_prohibition', '--cloud-path', str(cloud_dir)]):
+        with patch.object(sys, "stdout", captured):
+            with patch.object(sys, "argv", ["intent_prohibition", "--cloud-path", str(cloud_dir)]):
                 try:
                     exit_code = intent_main()
                 except SystemExit as e:
@@ -81,8 +78,8 @@ class TestAsciiSafeOutput:
         (cloud_dir / "safe.py").write_text("x = 1\n", encoding="utf-8")
 
         captured = io.StringIO()
-        with patch.object(sys, 'stdout', captured):
-            with patch.object(sys, 'argv', ['intent_prohibition', '--cloud-path', str(cloud_dir)]):
+        with patch.object(sys, "stdout", captured):
+            with patch.object(sys, "argv", ["intent_prohibition", "--cloud-path", str(cloud_dir)]):
                 try:
                     intent_main()
                 except SystemExit:
@@ -99,8 +96,8 @@ class TestAsciiSafeOutput:
         (cloud_dir / "bad.py").write_text('intent = "test"\n', encoding="utf-8")
 
         captured = io.StringIO()
-        with patch.object(sys, 'stdout', captured):
-            with patch.object(sys, 'argv', ['intent_prohibition', '--cloud-path', str(cloud_dir)]):
+        with patch.object(sys, "stdout", captured):
+            with patch.object(sys, "argv", ["intent_prohibition", "--cloud-path", str(cloud_dir)]):
                 try:
                     intent_main()
                 except SystemExit:
@@ -120,8 +117,7 @@ class TestIntentProhibition:
         cloud_dir.mkdir(parents=True)
         # Create code with prohibited order-like JSON pattern
         (cloud_dir / "service.py").write_text(
-            'data = {"target_position": 100, "symbol": "AAPL"}\n',
-            encoding="utf-8"
+            'data = {"target_position": 100, "symbol": "AAPL"}\n', encoding="utf-8"
         )
 
         result = check_cloud_package_for_intents(cloud_dir)
@@ -135,8 +131,7 @@ class TestIntentProhibition:
         cloud_dir = tmp_path / "packages" / "cloud"
         cloud_dir.mkdir(parents=True)
         (cloud_dir / "service.py").write_text(
-            'order = {"side": "BUY", "qty": 100}\n',
-            encoding="utf-8"
+            'order = {"side": "BUY", "qty": 100}\n', encoding="utf-8"
         )
 
         result = check_cloud_package_for_intents(cloud_dir)
@@ -148,8 +143,7 @@ class TestIntentProhibition:
         cloud_dir = tmp_path / "packages" / "cloud"
         cloud_dir.mkdir(parents=True)
         (cloud_dir / "service.py").write_text(
-            'def analyze(data):\n    return data.mean()\n',
-            encoding="utf-8"
+            "def analyze(data):\n    return data.mean()\n", encoding="utf-8"
         )
 
         result = check_cloud_package_for_intents(cloud_dir)
@@ -161,8 +155,7 @@ class TestIntentProhibition:
         cloud_dir = tmp_path / "packages" / "cloud"
         cloud_dir.mkdir(parents=True)
         (cloud_dir / "metrics.py").write_text(
-            'stats = {"total_return": 0.15, "sharpe_ratio": 1.2}\n',
-            encoding="utf-8"
+            'stats = {"total_return": 0.15, "sharpe_ratio": 1.2}\n', encoding="utf-8"
         )
 
         result = check_cloud_package_for_intents(cloud_dir)

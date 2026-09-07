@@ -62,14 +62,16 @@ class TestDeprecatedStacksMarked:
         if not init_file.exists():
             pytest.skip("ccea/agent/__init__.py not found")
 
-        content = init_file.read_text(encoding='utf-8')
+        content = init_file.read_text(encoding="utf-8")
 
         # Check for deprecation markers
-        has_deprecation = any([
-            "deprecated" in content.lower(),
-            "DeprecationWarning" in content,
-            "warnings.warn" in content,
-        ])
+        has_deprecation = any(
+            [
+                "deprecated" in content.lower(),
+                "DeprecationWarning" in content,
+                "warnings.warn" in content,
+            ]
+        )
         assert has_deprecation, "ccea/agent/ should be marked as deprecated"
 
     def test_ccea_control_plane_deprecated(self, project_root):
@@ -78,14 +80,16 @@ class TestDeprecatedStacksMarked:
         if not init_file.exists():
             pytest.skip("ccea/control_plane/__init__.py not found")
 
-        content = init_file.read_text(encoding='utf-8')
+        content = init_file.read_text(encoding="utf-8")
 
         # Check for deprecation markers
-        has_deprecation = any([
-            "deprecated" in content.lower(),
-            "DeprecationWarning" in content,
-            "warnings.warn" in content,
-        ])
+        has_deprecation = any(
+            [
+                "deprecated" in content.lower(),
+                "DeprecationWarning" in content,
+                "warnings.warn" in content,
+            ]
+        )
         assert has_deprecation, "ccea/control_plane/ should be marked as deprecated"
 
     def test_ccea_agent_points_to_canonical(self, project_root):
@@ -94,11 +98,12 @@ class TestDeprecatedStacksMarked:
         if not init_file.exists():
             pytest.skip("ccea/agent/__init__.py not found")
 
-        content = init_file.read_text(encoding='utf-8')
+        content = init_file.read_text(encoding="utf-8")
 
         # Should mention packages.agent
-        assert "packages.agent" in content or "packages/agent" in content, \
-            "ccea/agent/ should point to packages.agent as canonical"
+        assert (
+            "packages.agent" in content or "packages/agent" in content
+        ), "ccea/agent/ should point to packages.agent as canonical"
 
     def test_ccea_control_plane_points_to_canonical(self, project_root):
         """Test ccea/control_plane/ docstring points to canonical implementation."""
@@ -106,11 +111,12 @@ class TestDeprecatedStacksMarked:
         if not init_file.exists():
             pytest.skip("ccea/control_plane/__init__.py not found")
 
-        content = init_file.read_text(encoding='utf-8')
+        content = init_file.read_text(encoding="utf-8")
 
         # Should mention packages.cloud.control_plane
-        assert "packages.cloud.control_plane" in content or "packages/cloud/control_plane" in content, \
-            "ccea/control_plane/ should point to packages.cloud.control_plane as canonical"
+        assert (
+            "packages.cloud.control_plane" in content or "packages/cloud/control_plane" in content
+        ), "ccea/control_plane/ should point to packages.cloud.control_plane as canonical"
 
 
 class TestDeprecationWarningsEmitted:
@@ -119,7 +125,7 @@ class TestDeprecationWarningsEmitted:
     def test_ccea_agent_import_warns(self):
         """Test importing ccea.agent emits deprecation warning."""
         # Clear any cached imports
-        modules_to_remove = [k for k in sys.modules.keys() if k.startswith('ccea.agent')]
+        modules_to_remove = [k for k in sys.modules.keys() if k.startswith("ccea.agent")]
         for mod in modules_to_remove:
             del sys.modules[mod]
 
@@ -131,12 +137,14 @@ class TestDeprecationWarningsEmitted:
                 pytest.skip("ccea.agent not importable")
 
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
-            assert len(deprecation_warnings) > 0, "Importing ccea.agent should emit DeprecationWarning"
+            assert (
+                len(deprecation_warnings) > 0
+            ), "Importing ccea.agent should emit DeprecationWarning"
 
     def test_ccea_control_plane_import_warns(self):
         """Test importing ccea.control_plane emits deprecation warning."""
         # Clear any cached imports
-        modules_to_remove = [k for k in sys.modules.keys() if k.startswith('ccea.control_plane')]
+        modules_to_remove = [k for k in sys.modules.keys() if k.startswith("ccea.control_plane")]
         for mod in modules_to_remove:
             del sys.modules[mod]
 
@@ -148,7 +156,9 @@ class TestDeprecationWarningsEmitted:
                 pytest.skip("ccea.control_plane not importable")
 
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
-            assert len(deprecation_warnings) > 0, "Importing ccea.control_plane should emit DeprecationWarning"
+            assert (
+                len(deprecation_warnings) > 0
+            ), "Importing ccea.control_plane should emit DeprecationWarning"
 
 
 class TestNoNewCodeUsesDeprecated:
@@ -166,14 +176,12 @@ class TestNoNewCodeUsesDeprecated:
             pytest.skip("packages/agent/ not found")
 
         for py_file in agent_pkg.rglob("*.py"):
-            content = py_file.read_text(encoding='utf-8')
+            content = py_file.read_text(encoding="utf-8")
             # Check for imports from deprecated module
-            has_deprecated_import = (
-                "from ccea.agent" in content or
-                "import ccea.agent" in content
-            )
-            assert not has_deprecated_import, \
-                f"{py_file} should not import from deprecated ccea.agent"
+            has_deprecated_import = "from ccea.agent" in content or "import ccea.agent" in content
+            assert (
+                not has_deprecated_import
+            ), f"{py_file} should not import from deprecated ccea.agent"
 
     def test_packages_cloud_no_import_ccea_control_plane(self, project_root):
         """Test packages/cloud/ doesn't import from ccea.control_plane."""
@@ -182,14 +190,14 @@ class TestNoNewCodeUsesDeprecated:
             pytest.skip("packages/cloud/ not found")
 
         for py_file in cloud_pkg.rglob("*.py"):
-            content = py_file.read_text(encoding='utf-8')
+            content = py_file.read_text(encoding="utf-8")
             # Check for imports from deprecated module
             has_deprecated_import = (
-                "from ccea.control_plane" in content or
-                "import ccea.control_plane" in content
+                "from ccea.control_plane" in content or "import ccea.control_plane" in content
             )
-            assert not has_deprecated_import, \
-                f"{py_file} should not import from deprecated ccea.control_plane"
+            assert (
+                not has_deprecated_import
+            ), f"{py_file} should not import from deprecated ccea.control_plane"
 
 
 class TestStackSeparation:

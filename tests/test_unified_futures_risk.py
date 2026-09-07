@@ -462,6 +462,7 @@ class TestUnifiedMarginResult:
     def test_from_crypto(self):
         """Test creation from crypto result."""
         from decimal import Decimal as D
+
         # Use the actual CryptoMarginCheckResult fields from futures_risk_guards.py
         crypto_result = CryptoMarginCheckResult(
             status=CryptoMarginStatus.WARNING,
@@ -937,8 +938,12 @@ class TestUnifiedFuturesRiskGuardEventConversion:
         assert guard._event_to_severity(UnifiedRiskEvent.NONE) == RiskSeverity.INFO
         assert guard._event_to_severity(UnifiedRiskEvent.MARGIN_WARNING) == RiskSeverity.WARNING
         assert guard._event_to_severity(UnifiedRiskEvent.MARGIN_DANGER) == RiskSeverity.DANGER
-        assert guard._event_to_severity(UnifiedRiskEvent.MARGIN_LIQUIDATION) == RiskSeverity.EMERGENCY
-        assert guard._event_to_severity(UnifiedRiskEvent.CIRCUIT_BREAKER_L3) == RiskSeverity.EMERGENCY
+        assert (
+            guard._event_to_severity(UnifiedRiskEvent.MARGIN_LIQUIDATION) == RiskSeverity.EMERGENCY
+        )
+        assert (
+            guard._event_to_severity(UnifiedRiskEvent.CIRCUIT_BREAKER_L3) == RiskSeverity.EMERGENCY
+        )
 
 
 # =============================================================================
@@ -1049,10 +1054,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=update_correlation, args=(i,))
-            for i in range(100)
-        ]
+        threads = [threading.Thread(target=update_correlation, args=(i,)) for i in range(100)]
 
         for t in threads:
             t.start()
@@ -1266,6 +1268,7 @@ class TestEdgeCases:
 
     def test_callback_exception_handling(self):
         """Test that callback exceptions are handled."""
+
         def bad_callback(result):
             raise RuntimeError("Callback error")
 
@@ -1308,11 +1311,13 @@ class TestModuleExports:
     def test_asset_type_exported(self):
         """Test AssetType is exported."""
         from services.unified_futures_risk import AssetType
+
         assert AssetType is not None
 
     def test_unified_risk_guard_exported(self):
         """Test UnifiedFuturesRiskGuard is exported."""
         from services.unified_futures_risk import UnifiedFuturesRiskGuard
+
         assert UnifiedFuturesRiskGuard is not None
 
     def test_factory_functions_exported(self):
@@ -1321,5 +1326,6 @@ class TestModuleExports:
             create_unified_risk_guard,
             create_unified_config_from_yaml,
         )
+
         assert create_unified_risk_guard is not None
         assert create_unified_config_from_yaml is not None

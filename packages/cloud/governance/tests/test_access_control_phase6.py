@@ -70,6 +70,7 @@ from ..change_management import (
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def rbac_service() -> RBACService:
     """Create RBAC service for testing."""
@@ -130,6 +131,7 @@ def admin_principal() -> Principal:
 # ============================================================================
 # RBAC Service Tests
 # ============================================================================
+
 
 class TestRBACService:
     """Test suite for RBAC Service."""
@@ -248,7 +250,9 @@ class TestRBACService:
         assert decision.granted
         assert decision.method == "rbac"
 
-    def test_check_access_denied_no_permission(self, rbac_service: RBACService, test_principal: Principal):
+    def test_check_access_denied_no_permission(
+        self, rbac_service: RBACService, test_principal: Principal
+    ):
         """Test access check - denied due to no permission."""
         # Assign viewer role (limited permissions)
         role = rbac_service.get_role_by_name("viewer", "org-test")
@@ -335,7 +339,9 @@ class TestRBACService:
             "read",
         )
 
-    def test_require_permission_raises_on_deny(self, rbac_service: RBACService, test_principal: Principal):
+    def test_require_permission_raises_on_deny(
+        self, rbac_service: RBACService, test_principal: Principal
+    ):
         """Test require_permission raises PermissionError on deny."""
         with pytest.raises(PermissionError):
             rbac_service.require_permission(
@@ -368,6 +374,7 @@ class TestRBACService:
 # ============================================================================
 # Access Audit Service Tests
 # ============================================================================
+
 
 class TestAccessAuditService:
     """Test suite for Access Audit Service."""
@@ -555,7 +562,12 @@ class TestAccessAuditService:
         assert is_valid
         assert len(errors) == 0
 
-    def test_log_from_rbac_context(self, audit_service: AccessAuditService, rbac_service: RBACService, test_principal: Principal):
+    def test_log_from_rbac_context(
+        self,
+        audit_service: AccessAuditService,
+        rbac_service: RBACService,
+        test_principal: Principal,
+    ):
         """Test logging from RBAC context."""
         context = AccessContext(
             principal=test_principal,
@@ -578,6 +590,7 @@ class TestAccessAuditService:
 # ============================================================================
 # Break-Glass Phase 6 Service Tests
 # ============================================================================
+
 
 class TestBreakGlassPhase6Service:
     """Test suite for Break-Glass Phase 6 Service."""
@@ -644,7 +657,9 @@ class TestBreakGlassPhase6Service:
         assert approve_result.access_token is not None
         assert approve_result.expires_at is not None
 
-    def test_approve_request_self_approval_denied(self, break_glass_service: BreakGlassPhase6Service):
+    def test_approve_request_self_approval_denied(
+        self, break_glass_service: BreakGlassPhase6Service
+    ):
         """Test self-approval is denied."""
         create_result = break_glass_service.create_request(
             requester_id="user-123",
@@ -663,7 +678,9 @@ class TestBreakGlassPhase6Service:
         assert not approve_result.success
         assert "Self-approval" in approve_result.error
 
-    def test_approve_request_unauthorized_denied(self, break_glass_service: BreakGlassPhase6Service):
+    def test_approve_request_unauthorized_denied(
+        self, break_glass_service: BreakGlassPhase6Service
+    ):
         """Test unauthorized approver is denied."""
         create_result = break_glass_service.create_request(
             requester_id="user-123",
@@ -682,7 +699,9 @@ class TestBreakGlassPhase6Service:
         assert not approve_result.success
         assert "Not authorized" in approve_result.error
 
-    def test_elevated_scopes_require_elevated_approver(self, break_glass_service: BreakGlassPhase6Service):
+    def test_elevated_scopes_require_elevated_approver(
+        self, break_glass_service: BreakGlassPhase6Service
+    ):
         """Test elevated scopes require elevated approver."""
         create_result = break_glass_service.create_request(
             requester_id="user-123",
@@ -858,6 +877,7 @@ class TestBreakGlassPhase6Service:
 # Change Management Service Tests
 # ============================================================================
 
+
 class TestChangeManagementService:
     """Test suite for Change Management Service."""
 
@@ -941,7 +961,9 @@ class TestChangeManagementService:
         assert approval.user_acknowledged
         assert change.status == ChangeStatus.APPROVED
 
-    def test_approve_trading_impacting_requires_reason(self, change_service: ChangeManagementService):
+    def test_approve_trading_impacting_requires_reason(
+        self, change_service: ChangeManagementService
+    ):
         """Test that trading-impacting changes require reason."""
         change = change_service.create_change(
             workspace_id="ws-123",
@@ -961,7 +983,9 @@ class TestChangeManagementService:
         )
         assert approval is None  # Rejected due to short reason
 
-    def test_approve_trading_impacting_requires_acknowledgment(self, change_service: ChangeManagementService):
+    def test_approve_trading_impacting_requires_acknowledgment(
+        self, change_service: ChangeManagementService
+    ):
         """Test that trading-impacting changes require user acknowledgment."""
         change = change_service.create_change(
             workspace_id="ws-123",
@@ -1155,10 +1179,16 @@ class TestChangeManagementService:
 # Integration Tests
 # ============================================================================
 
+
 class TestPhase6Integration:
     """Integration tests for Phase 6 components."""
 
-    def test_rbac_with_audit(self, rbac_service: RBACService, audit_service: AccessAuditService, test_principal: Principal):
+    def test_rbac_with_audit(
+        self,
+        rbac_service: RBACService,
+        audit_service: AccessAuditService,
+        test_principal: Principal,
+    ):
         """Test RBAC integrated with audit logging."""
         # Set up audit callback
         logged_entries = []
@@ -1183,7 +1213,9 @@ class TestPhase6Integration:
         context.resource_type = ResourceType.TELEMETRY.value
         decision = rbac_service.check_access(context)
 
-    def test_break_glass_with_audit(self, break_glass_service: BreakGlassPhase6Service, audit_service: AccessAuditService):
+    def test_break_glass_with_audit(
+        self, break_glass_service: BreakGlassPhase6Service, audit_service: AccessAuditService
+    ):
         """Test break-glass with audit logging."""
         # Create and approve request
         create_result = break_glass_service.create_request(
@@ -1208,17 +1240,21 @@ class TestPhase6Integration:
         )
 
         # Check audit log
-        entries = audit_service.query(AuditQuery(
-            workspace_id="ws-456",
-            actions=[
-                AuditAction.BREAK_GLASS_REQUEST,
-                AuditAction.BREAK_GLASS_APPROVE,
-                AuditAction.BREAK_GLASS_ACCESS,
-            ],
-        ))
+        entries = audit_service.query(
+            AuditQuery(
+                workspace_id="ws-456",
+                actions=[
+                    AuditAction.BREAK_GLASS_REQUEST,
+                    AuditAction.BREAK_GLASS_APPROVE,
+                    AuditAction.BREAK_GLASS_ACCESS,
+                ],
+            )
+        )
         assert len(entries) >= 3
 
-    def test_change_management_with_audit(self, change_service: ChangeManagementService, audit_service: AccessAuditService):
+    def test_change_management_with_audit(
+        self, change_service: ChangeManagementService, audit_service: AccessAuditService
+    ):
         """Test change management with audit logging."""
         change = change_service.create_change(
             workspace_id="ws-123",
@@ -1238,10 +1274,12 @@ class TestPhase6Integration:
         )
 
         # Check audit log
-        entries = audit_service.query(AuditQuery(
-            workspace_id="ws-123",
-            actions=[AuditAction.CHANGE_REQUEST, AuditAction.CHANGE_APPROVE],
-        ))
+        entries = audit_service.query(
+            AuditQuery(
+                workspace_id="ws-123",
+                actions=[AuditAction.CHANGE_REQUEST, AuditAction.CHANGE_APPROVE],
+            )
+        )
         assert len(entries) >= 2
 
     def test_full_workflow_deploy_with_break_glass(
@@ -1313,12 +1351,15 @@ class TestPhase6Integration:
 
         # 8. Verify audit trail
         entries = audit_service.query(AuditQuery(workspace_id="ws-123"))
-        assert len(entries) >= 4  # change_request, change_approve, bg_request, bg_approve, bg_access
+        assert (
+            len(entries) >= 4
+        )  # change_request, change_approve, bg_request, bg_approve, bg_access
 
 
 # ============================================================================
 # DoD Verification Tests
 # ============================================================================
+
 
 class TestPhase6DoD:
     """Tests to verify Definition of Done for Phase 6."""
@@ -1455,6 +1496,7 @@ class TestPhase6DoD:
 # Edge Case Tests
 # ============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -1477,9 +1519,11 @@ class TestEdgeCases:
 
     def test_audit_query_with_no_results(self, audit_service: AccessAuditService):
         """Test query with no matching results."""
-        results = audit_service.query(AuditQuery(
-            workspace_id="nonexistent-ws",
-        ))
+        results = audit_service.query(
+            AuditQuery(
+                workspace_id="nonexistent-ws",
+            )
+        )
         assert len(results) == 0
 
     def test_break_glass_invalid_token(self, break_glass_service: BreakGlassPhase6Service):

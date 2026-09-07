@@ -47,7 +47,12 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from core_experiment import (
-    ArtifactRef, Lineage, ModelStage, ModelVersion, RunRecord, RunStatus,
+    ArtifactRef,
+    Lineage,
+    ModelStage,
+    ModelVersion,
+    RunRecord,
+    RunStatus,
 )
 
 _ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -119,9 +124,18 @@ def capture_environment() -> Dict[str, Any]:
     and versions of key packages (a lightweight in-lineage lockfile)."""
     import platform as _platform
     import sys as _sys
+
     pkgs: Dict[str, str] = {}
-    for name in ("numpy", "pandas", "scipy", "scikit-learn", "torch", "cvxpy",
-                 "pydantic", "fastapi"):
+    for name in (
+        "numpy",
+        "pandas",
+        "scipy",
+        "scikit-learn",
+        "torch",
+        "cvxpy",
+        "pydantic",
+        "fastapi",
+    ):
         try:
             mod = __import__(name.replace("-", "_"))
             pkgs[name] = str(getattr(mod, "__version__", "?"))
@@ -224,12 +238,14 @@ class ArtifactSigner:
         s = self.sign_digest(digest)
         return {"sha256": digest, "size_bytes": os.path.getsize(path), **s}
 
-    def verify(self, digest_hex: str, signature: str, algo: str,
-               public_key: Optional[str] = None) -> bool:
+    def verify(
+        self, digest_hex: str, signature: str, algo: str, public_key: Optional[str] = None
+    ) -> bool:
         try:
             msg = digest_hex.encode("utf-8")
             if algo == "ed25519":
                 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
                 pub_hex = public_key or self._pub_hex
                 if not pub_hex:
                     return False
@@ -261,20 +277,35 @@ class ArtifactSigner:
         signature was present AND verified; an unsigned (integrity-only)
         artifact reports ``status='unsigned'`` and ``signature_valid=False``."""
         if not os.path.exists(path):
-            return {"integrity_ok": False, "signed": False,
-                    "signature_valid": False, "status": "missing"}
+            return {
+                "integrity_ok": False,
+                "signed": False,
+                "signature_valid": False,
+                "status": "missing",
+            }
         integrity_ok = sha256_file(path) == ref.sha256
         signed = bool(ref.signature) and ref.algo not in (None, "", "none")
         if not integrity_ok:
-            return {"integrity_ok": False, "signed": signed,
-                    "signature_valid": False, "status": "hash_mismatch"}
+            return {
+                "integrity_ok": False,
+                "signed": signed,
+                "signature_valid": False,
+                "status": "hash_mismatch",
+            }
         if not signed:
-            return {"integrity_ok": True, "signed": False,
-                    "signature_valid": False, "status": "unsigned"}
+            return {
+                "integrity_ok": True,
+                "signed": False,
+                "signature_valid": False,
+                "status": "unsigned",
+            }
         sig_ok = self.verify(sha256_file(path), ref.signature, ref.algo, ref.public_key)
-        return {"integrity_ok": True, "signed": True,
-                "signature_valid": bool(sig_ok),
-                "status": "verified" if sig_ok else "signature_mismatch"}
+        return {
+            "integrity_ok": True,
+            "signed": True,
+            "signature_valid": bool(sig_ok),
+            "status": "verified" if sig_ok else "signature_mismatch",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -310,11 +341,19 @@ class ActiveRun:
         for k, v in metrics.items():
             self.log_metric(k, v, step)
 
-    def set_lineage(self, *, data_hash: Optional[str] = None, config_hash: Optional[str] = None,
-                    dataset_uri: Optional[str] = None, config_uri: Optional[str] = None,
-                    parent_run_id: Optional[str] = None, capture_git: bool = True,
-                    seed: Optional[int] = None, capture_env: bool = True,
-                    **extra: Any) -> None:
+    def set_lineage(
+        self,
+        *,
+        data_hash: Optional[str] = None,
+        config_hash: Optional[str] = None,
+        dataset_uri: Optional[str] = None,
+        config_uri: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        capture_git: bool = True,
+        seed: Optional[int] = None,
+        capture_env: bool = True,
+        **extra: Any,
+    ) -> None:
         lg = self.record.lineage
         # Reproducibility (P2 #23): capture RNG seed + environment fingerprint.
         if seed is not None:
@@ -382,19 +421,23 @@ class ExperimentTracker:
     # -- persistence --
     def _save_run(self, rec: RunRecord) -> None:
         with self._lock:
-            _atomic_write(self._meta_path(rec),
-                          json.dumps(rec.to_dict(), indent=2, ensure_ascii=False))
+            _atomic_write(
+                self._meta_path(rec), json.dumps(rec.to_dict(), indent=2, ensure_ascii=False)
+            )
 
     def _append_metric(self, rec: RunRecord, key: str, value: float, step: int) -> None:
-        line = json.dumps({"key": key, "value": value, "step": step, "ts": _now_ms()},
-                          ensure_ascii=False)
+        line = json.dumps(
+            {"key": key, "value": value, "step": step, "ts": _now_ms()}, ensure_ascii=False
+        )
         path = self._metrics_path(rec)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with self._lock:
             with open(path, "a", encoding="utf-8") as fh:
                 fh.write(line + "\n")
 
-    def _log_artifact(self, rec: RunRecord, src_path: str, name: Optional[str] = None) -> ArtifactRef:
+    def _log_artifact(
+        self, rec: RunRecord, src_path: str, name: Optional[str] = None
+    ) -> ArtifactRef:
         if not os.path.exists(src_path):
             raise FileNotFoundError(src_path)
         adir = os.path.join(self._run_dir(rec.experiment, rec.run_id), "artifacts")
@@ -404,9 +447,15 @@ class ExperimentTracker:
         with open(src_path, "rb") as r, open(dst, "wb") as w:
             w.write(r.read())
         s = self.signer.sign_file(dst)
-        ref = ArtifactRef(path=dst, sha256=s["sha256"], size_bytes=s["size_bytes"],
-                          algo=s["algo"], signature=s["signature"],
-                          public_key=s.get("public_key"), name=base)
+        ref = ArtifactRef(
+            path=dst,
+            sha256=s["sha256"],
+            size_bytes=s["size_bytes"],
+            algo=s["algo"],
+            signature=s["signature"],
+            public_key=s.get("public_key"),
+            name=base,
+        )
         # сохранить sidecar-подпись
         _atomic_write(dst + ".sig", json.dumps(ref.to_dict(), indent=2, ensure_ascii=False))
         rec.artifacts.append(ref)
@@ -414,14 +463,23 @@ class ExperimentTracker:
         return ref
 
     # -- public API --
-    def start_run(self, experiment: str, *, params: Optional[Dict[str, Any]] = None,
-                  tags: Optional[Dict[str, Any]] = None,
-                  run_name: Optional[str] = None) -> ActiveRun:
+    def start_run(
+        self,
+        experiment: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        run_name: Optional[str] = None,
+    ) -> ActiveRun:
         ts = time.strftime("%Y%m%d-%H%M%S", time.localtime())
         rid = f"{run_name + '-' if run_name else ''}{ts}-{uuid.uuid4().hex[:6]}"
         rec = RunRecord(
-            run_id=rid, experiment=experiment, status=RunStatus.RUNNING.value,
-            start_ms=_now_ms(), params=dict(params or {}), tags=dict(tags or {}),
+            run_id=rid,
+            experiment=experiment,
+            status=RunStatus.RUNNING.value,
+            start_ms=_now_ms(),
+            params=dict(params or {}),
+            tags=dict(tags or {}),
             lineage=Lineage(),
         )
         self._save_run(rec)
@@ -441,8 +499,9 @@ class ExperimentTracker:
     def list_experiments(self) -> List[str]:
         if not os.path.isdir(self.root):
             return []
-        return sorted([d for d in os.listdir(self.root)
-                       if os.path.isdir(os.path.join(self.root, d))])
+        return sorted(
+            [d for d in os.listdir(self.root) if os.path.isdir(os.path.join(self.root, d))]
+        )
 
     def list_runs(self, experiment: str) -> List[RunRecord]:
         edir = os.path.join(self.root, experiment)
@@ -499,17 +558,23 @@ class ModelRegistry:
             return json.load(fh)
 
     def _save(self, name: str, data: Dict[str, Any]) -> None:
-        _atomic_write(self._registry_path(name),
-                      json.dumps(data, indent=2, ensure_ascii=False))
+        _atomic_write(self._registry_path(name), json.dumps(data, indent=2, ensure_ascii=False))
 
-    def register(self, name: str, *, run_id: Optional[str] = None,
-                 artifact_path: str, metrics: Optional[Dict[str, float]] = None,
-                 lineage: Optional[Lineage] = None, description: str = "") -> ModelVersion:
+    def register(
+        self,
+        name: str,
+        *,
+        run_id: Optional[str] = None,
+        artifact_path: str,
+        metrics: Optional[Dict[str, float]] = None,
+        lineage: Optional[Lineage] = None,
+        description: str = "",
+    ) -> ModelVersion:
         if not os.path.exists(artifact_path):
             raise FileNotFoundError(artifact_path)
         with self._lock:
             data = self._load(name)
-            next_ver = (max([v["version"] for v in data["versions"]], default=0) + 1)
+            next_ver = max([v["version"] for v in data["versions"]], default=0) + 1
             vdir = os.path.join(self._name_dir(name), f"v{next_ver}")
             os.makedirs(vdir, exist_ok=True)
             base = os.path.basename(artifact_path)
@@ -517,15 +582,26 @@ class ModelRegistry:
             with open(artifact_path, "rb") as r, open(dst, "wb") as w:
                 w.write(r.read())
             s = self.signer.sign_file(dst)
-            ref = ArtifactRef(path=dst, sha256=s["sha256"], size_bytes=s["size_bytes"],
-                              algo=s["algo"], signature=s["signature"],
-                              public_key=s.get("public_key"), name=base)
+            ref = ArtifactRef(
+                path=dst,
+                sha256=s["sha256"],
+                size_bytes=s["size_bytes"],
+                algo=s["algo"],
+                signature=s["signature"],
+                public_key=s.get("public_key"),
+                name=base,
+            )
             _atomic_write(dst + ".sig", json.dumps(ref.to_dict(), indent=2, ensure_ascii=False))
             mv = ModelVersion(
-                name=name, version=next_ver, run_id=run_id,
-                stage=ModelStage.NONE.value, artifact=ref,
-                metrics=dict(metrics or {}), lineage=lineage or Lineage(),
-                description=description, created_ms=_now_ms(),
+                name=name,
+                version=next_ver,
+                run_id=run_id,
+                stage=ModelStage.NONE.value,
+                artifact=ref,
+                metrics=dict(metrics or {}),
+                lineage=lineage or Lineage(),
+                description=description,
+                created_ms=_now_ms(),
             )
             data["versions"].append(mv.to_dict())
             self._save(name, data)
@@ -541,8 +617,9 @@ class ModelRegistry:
                 return v
         return None
 
-    def get(self, name: str, *, stage: Optional[str] = None,
-            version: Optional[int] = None) -> Optional[ModelVersion]:
+    def get(
+        self, name: str, *, stage: Optional[str] = None, version: Optional[int] = None
+    ) -> Optional[ModelVersion]:
         if version is not None:
             return self.get_version(name, version)
         stage = stage or ModelStage.PRODUCTION.value
@@ -551,7 +628,9 @@ class ModelRegistry:
             return None
         return max(cands, key=lambda v: v.version)
 
-    def transition(self, name: str, version: int, stage: str, *, force: bool = False) -> ModelVersion:
+    def transition(
+        self, name: str, version: int, stage: str, *, force: bool = False
+    ) -> ModelVersion:
         stage = ModelStage(stage).value
         with self._lock:
             data = self._load(name)
@@ -559,7 +638,10 @@ class ModelRegistry:
             for v in data["versions"]:
                 if v["version"] == version:
                     target = v
-                elif stage == ModelStage.PRODUCTION.value and v.get("stage") == ModelStage.PRODUCTION.value:
+                elif (
+                    stage == ModelStage.PRODUCTION.value
+                    and v.get("stage") == ModelStage.PRODUCTION.value
+                ):
                     # единственный production: архивируем предыдущий
                     v["stage"] = ModelStage.ARCHIVED.value
             if target is None:
@@ -568,7 +650,7 @@ class ModelRegistry:
             # dirty git tree to PRODUCTION (its exact code state isn't recoverable),
             # unless explicitly forced.
             if stage == ModelStage.PRODUCTION.value and not force:
-                lin = (target.get("lineage") or {})
+                lin = target.get("lineage") or {}
                 if lin.get("git_dirty") is True:
                     raise ValueError(
                         f"refusing to promote '{name}' v{version} to production: built from a "
@@ -586,7 +668,8 @@ class ModelRegistry:
             if to_version is None:
                 archived = sorted(
                     [v for v in versions if v.stage == ModelStage.ARCHIVED.value],
-                    key=lambda v: v.version, reverse=True,
+                    key=lambda v: v.version,
+                    reverse=True,
                 )
                 if not archived:
                     raise ValueError(f"no archived version to roll back to for '{name}'")
@@ -603,8 +686,12 @@ class ModelRegistry:
         """Honest verification breakdown (see ArtifactSigner.verify_status)."""
         mv = self.get_version(name, version)
         if mv is None or mv.artifact is None:
-            return {"integrity_ok": False, "signed": False,
-                    "signature_valid": False, "status": "not_found"}
+            return {
+                "integrity_ok": False,
+                "signed": False,
+                "signature_valid": False,
+                "status": "not_found",
+            }
         return self.signer.verify_status(mv.artifact.path, mv.artifact)
 
 
@@ -630,7 +717,14 @@ def get_registry() -> ModelRegistry:
 
 
 __all__ = [
-    "ArtifactSigner", "ExperimentTracker", "ModelRegistry", "ActiveRun",
-    "get_tracker", "get_registry",
-    "sha256_file", "sha256_bytes", "hash_config", "git_lineage",
+    "ArtifactSigner",
+    "ExperimentTracker",
+    "ModelRegistry",
+    "ActiveRun",
+    "get_tracker",
+    "get_registry",
+    "sha256_file",
+    "sha256_bytes",
+    "hash_config",
+    "git_lineage",
 ]

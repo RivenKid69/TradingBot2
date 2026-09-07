@@ -38,6 +38,7 @@ from services.core.risk_controls.kill_switch import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def mock_cancel_callback():
     """Mock order cancellation callback."""
@@ -82,6 +83,7 @@ def kill_switch(mock_cancel_callback, config):
 # =============================================================================
 # Test KillSwitchEvent
 # =============================================================================
+
 
 class TestKillSwitchEvent:
     """Tests for KillSwitchEvent data class."""
@@ -139,6 +141,7 @@ class TestKillSwitchEvent:
 # Test KillSwitchConfig
 # =============================================================================
 
+
 class TestKillSwitchConfig:
     """Tests for kill switch configuration."""
 
@@ -167,6 +170,7 @@ class TestKillSwitchConfig:
 # =============================================================================
 # Test EnhancedKillSwitch - Basic Operations
 # =============================================================================
+
 
 class TestEnhancedKillSwitchBasic:
     """Tests for basic kill switch operations."""
@@ -234,6 +238,7 @@ class TestEnhancedKillSwitchBasic:
 # Test Recovery Operations
 # =============================================================================
 
+
 class TestKillSwitchRecovery:
     """Tests for kill switch recovery."""
 
@@ -287,6 +292,7 @@ class TestKillSwitchRecovery:
 # Test Trading Permission Checks
 # =============================================================================
 
+
 class TestTradingPermissions:
     """Tests for trading permission checks."""
 
@@ -332,6 +338,7 @@ class TestTradingPermissions:
 # Test Rate Limiting
 # =============================================================================
 
+
 class TestRateLimiting:
     """Tests for trigger rate limiting."""
 
@@ -359,6 +366,7 @@ class TestRateLimiting:
 # =============================================================================
 # Test Emergency Contacts
 # =============================================================================
+
 
 class TestEmergencyContacts:
     """Tests for emergency contact management."""
@@ -398,6 +406,7 @@ class TestEmergencyContacts:
 # Test Callbacks
 # =============================================================================
 
+
 class TestCallbacks:
     """Tests for callback notifications."""
 
@@ -434,6 +443,7 @@ class TestCallbacks:
 # =============================================================================
 # Test Event History
 # =============================================================================
+
 
 class TestEventHistory:
     """Tests for event history tracking."""
@@ -479,6 +489,7 @@ class TestEventHistory:
 # Test Statistics and Reporting
 # =============================================================================
 
+
 class TestStatisticsAndReporting:
     """Tests for statistics and compliance reporting."""
 
@@ -513,6 +524,7 @@ class TestStatisticsAndReporting:
 # Test Arm/Disarm
 # =============================================================================
 
+
 class TestArmDisarm:
     """Tests for arming and disarming."""
 
@@ -535,6 +547,7 @@ class TestArmDisarm:
 # =============================================================================
 # Test Thread Safety
 # =============================================================================
+
 
 class TestThreadSafety:
     """Tests for thread safety."""
@@ -579,6 +592,7 @@ class TestThreadSafety:
 # Test Factory Function
 # =============================================================================
 
+
 class TestFactoryFunction:
     """Tests for factory function."""
 
@@ -612,11 +626,13 @@ class TestFactoryFunction:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
     def test_cancellation_callback_error(self, mock_alert_callback):
         """Test handling of cancellation callback error."""
+
         def failing_callback(scope, scope_id):
             raise Exception("Cancellation failed")
 

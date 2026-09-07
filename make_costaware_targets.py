@@ -81,18 +81,50 @@ def _try_read_fees_bps_total(sim_yaml_path: Optional[str]) -> Optional[float]:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Сделать cost-aware таргет (eff_ret_h и, опционально, y_eff_h) с учётом комиссий и динамич. спреда.")
-    ap.add_argument("--data", required=True, help="Путь к входным данным (CSV/Parquet) с колонками ts_ms,symbol,ref_price,(high/low или ret_1m), ликвидность (number_of_trades или volume)")
-    ap.add_argument("--out", default="", help="Путь к выходному файлу (CSV/Parquet). По умолчанию — рядом с суффиксом _costaware.")
-    ap.add_argument("--sandbox_config", default="configs/legacy_sandbox.yaml", help="Путь к legacy_sandbox.yaml (берём dynamic_spread)")
-    ap.add_argument("--sim_config", default="configs/config_sim.yaml", help="Путь к config_sim.yaml (пытаемся взять комиссии)")
-    ap.add_argument("--fees_bps_total", type=float, default=None, help="Кругорейсовая комиссия в bps (перебивает sim.yaml)")
+    ap = argparse.ArgumentParser(
+        description="Сделать cost-aware таргет (eff_ret_h и, опционально, y_eff_h) с учётом комиссий и динамич. спреда."
+    )
+    ap.add_argument(
+        "--data",
+        required=True,
+        help="Путь к входным данным (CSV/Parquet) с колонками ts_ms,symbol,ref_price,(high/low или ret_1m), ликвидность (number_of_trades или volume)",
+    )
+    ap.add_argument(
+        "--out",
+        default="",
+        help="Путь к выходному файлу (CSV/Parquet). По умолчанию — рядом с суффиксом _costaware.",
+    )
+    ap.add_argument(
+        "--sandbox_config",
+        default="configs/legacy_sandbox.yaml",
+        help="Путь к legacy_sandbox.yaml (берём dynamic_spread)",
+    )
+    ap.add_argument(
+        "--sim_config",
+        default="configs/config_sim.yaml",
+        help="Путь к config_sim.yaml (пытаемся взять комиссии)",
+    )
+    ap.add_argument(
+        "--fees_bps_total",
+        type=float,
+        default=None,
+        help="Кругорейсовая комиссия в bps (перебивает sim.yaml)",
+    )
     ap.add_argument("--horizon_bars", type=int, default=60, help="Горизонт таргета в барах")
-    ap.add_argument("--threshold", type=float, default=None, help="Порог для бинарной метки (если задан — добавим y_eff_h)")
+    ap.add_argument(
+        "--threshold",
+        type=float,
+        default=None,
+        help="Порог для бинарной метки (если задан — добавим y_eff_h)",
+    )
     ap.add_argument("--ts_col", default="ts_ms", help="Колонка метки времени")
     ap.add_argument("--symbol_col", default="symbol", help="Колонка символа")
     ap.add_argument("--price_col", default="ref_price", help="Колонка референс-цены")
-    ap.add_argument("--roundtrip_spread", action="store_true", help="Использовать spread_bps как полную кругорейсовую издержку (по умолчанию так и делаем)")
+    ap.add_argument(
+        "--roundtrip_spread",
+        action="store_true",
+        help="Использовать spread_bps как полную кругорейсовую издержку (по умолчанию так и делаем)",
+    )
     args = ap.parse_args()
 
     df = _read_table(args.data)
@@ -123,9 +155,11 @@ def main():
 
     _write_table(out, out_path)
     print(f"Готово. Записано: {out_path}")
-    print(f"Добавлены колонки: eff_ret_{int(args.horizon_bars)}, slippage_bps, fees_bps_total"
-          + (f", y_eff_{int(args.horizon_bars)}" if args.threshold is not None else ""))
-    
+    print(
+        f"Добавлены колонки: eff_ret_{int(args.horizon_bars)}, slippage_bps, fees_bps_total"
+        + (f", y_eff_{int(args.horizon_bars)}" if args.threshold is not None else "")
+    )
+
 
 if __name__ == "__main__":
     main()

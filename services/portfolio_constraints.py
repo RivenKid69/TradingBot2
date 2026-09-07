@@ -145,8 +145,10 @@ SYMBOL_TO_SECTOR: Dict[str, str] = {
 # Enumerations
 # =============================================================================
 
+
 class ConstraintViolationType(str, Enum):
     """Types of constraint violations."""
+
     NONE = "NONE"
     POSITION_LIMIT_MAX = "POSITION_LIMIT_MAX"
     POSITION_LIMIT_MIN = "POSITION_LIMIT_MIN"
@@ -160,6 +162,7 @@ class ConstraintViolationType(str, Enum):
 
 class RebalanceAction(str, Enum):
     """Actions from rebalancing."""
+
     NO_ACTION = "NO_ACTION"
     REDUCE = "REDUCE"
     INCREASE = "INCREASE"
@@ -169,6 +172,7 @@ class RebalanceAction(str, Enum):
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass
 class PositionLimit:
@@ -181,6 +185,7 @@ class PositionLimit:
         min_weight: Minimum portfolio weight (-1.0 to max_weight, negative for shorts)
         reason: Optional reason for the limit
     """
+
     symbol: str
     max_weight: float = DEFAULT_MAX_POSITION_WEIGHT
     min_weight: float = 0.0
@@ -213,6 +218,7 @@ class SectorExposure:
         min_weight: Minimum sector weight (0.0 to max_weight)
         reason: Optional reason for the limit
     """
+
     sector: str
     max_weight: float = DEFAULT_MAX_SECTOR_WEIGHT
     min_weight: float = 0.0
@@ -244,6 +250,7 @@ class FactorTiltLimit:
         min_tilt: Minimum absolute factor exposure (for mandatory tilts)
         reason: Optional reason for the limit
     """
+
     factor: str
     max_tilt: float = DEFAULT_MAX_FACTOR_TILT
     min_tilt: float = -DEFAULT_MAX_FACTOR_TILT  # Can be negative for short exposure
@@ -275,7 +282,10 @@ class PortfolioState:
         sector_weights: Dict of sector -> weight
         factor_exposures: Dict of factor -> exposure value
     """
-    positions: Dict[str, Tuple[float, float]] = field(default_factory=dict)  # symbol -> (qty, price)
+
+    positions: Dict[str, Tuple[float, float]] = field(
+        default_factory=dict
+    )  # symbol -> (qty, price)
     cash: float = 0.0
     total_nav: float = 0.0
     weights: Dict[str, float] = field(default_factory=dict)
@@ -317,6 +327,7 @@ class PortfolioState:
 @dataclass
 class Order:
     """Simple order representation for validation."""
+
     symbol: str
     side: str  # "BUY" or "SELL"
     qty: float
@@ -327,6 +338,7 @@ class Order:
 @dataclass
 class ValidationResult:
     """Result of order validation against constraints."""
+
     is_valid: bool
     violations: List[ConstraintViolationType] = field(default_factory=list)
     messages: List[str] = field(default_factory=list)
@@ -341,6 +353,7 @@ class ValidationResult:
 @dataclass
 class RebalanceResult:
     """Result of portfolio rebalancing."""
+
     target_weights: Dict[str, float]
     actions: Dict[str, Tuple[RebalanceAction, float]]  # symbol -> (action, delta_weight)
     estimated_turnover: float
@@ -350,6 +363,7 @@ class RebalanceResult:
 # =============================================================================
 # Validators
 # =============================================================================
+
 
 class PositionLimitsValidator:
     """Validates position-level weight limits."""
@@ -513,6 +527,7 @@ class FactorTiltValidator:
 # Rebalance Engine
 # =============================================================================
 
+
 class RebalanceEngine:
     """
     Portfolio rebalancing engine.
@@ -670,6 +685,7 @@ class RebalanceEngine:
 # Main Constraint Manager
 # =============================================================================
 
+
 class PortfolioConstraintManager:
     """
     Central portfolio constraint manager.
@@ -810,7 +826,9 @@ class PortfolioConstraintManager:
             violations.append(violation)
             limit = self._sector_validator.get_limit(sector)
             if limit:
-                sector_weight = self._sector_validator.compute_sector_weights(post_trade_weights).get(sector, 0.0)
+                sector_weight = self._sector_validator.compute_sector_weights(
+                    post_trade_weights
+                ).get(sector, 0.0)
                 messages.append(
                     f"Sector {sector}: weight {sector_weight:.2%} "
                     f"violates limit [{limit.min_weight:.2%}, {limit.max_weight:.2%}]"
@@ -822,7 +840,9 @@ class PortfolioConstraintManager:
             violations.append(violation)
             limit = self._factor_validator.get_limit(factor)
             if limit:
-                exposure = self._factor_validator.compute_portfolio_factor_exposure(post_trade_weights, factor)
+                exposure = self._factor_validator.compute_portfolio_factor_exposure(
+                    post_trade_weights, factor
+                )
                 messages.append(
                     f"Factor {factor}: exposure {exposure:.2f} "
                     f"violates limit [{limit.min_tilt:.2f}, {limit.max_tilt:.2f}]"
@@ -979,6 +999,7 @@ class PortfolioConstraintManager:
 # Factory Functions
 # =============================================================================
 
+
 def create_constraint_manager(
     max_position_weight: float = DEFAULT_MAX_POSITION_WEIGHT,
     max_sector_weight: float = DEFAULT_MAX_SECTOR_WEIGHT,
@@ -998,16 +1019,12 @@ def create_constraint_manager(
     manager = PortfolioConstraintManager()
 
     # Set default position limit
-    manager.set_default_position_limit(
-        PositionLimit("__DEFAULT__", max_weight=max_position_weight)
-    )
+    manager.set_default_position_limit(PositionLimit("__DEFAULT__", max_weight=max_position_weight))
 
     # Add sector limits
     sectors = sectors_to_limit or list(SECTOR_ETFS.keys())
     for sector in sectors:
-        manager.add_sector_exposure(
-            SectorExposure(sector, max_weight=max_sector_weight)
-        )
+        manager.add_sector_exposure(SectorExposure(sector, max_weight=max_sector_weight))
 
     return manager
 

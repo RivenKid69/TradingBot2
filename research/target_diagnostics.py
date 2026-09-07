@@ -171,9 +171,7 @@ def _compute_acf(
             g = grp
             if time_col is not None and time_col in g.columns:
                 g = g.sort_values(time_col)
-            series = pd.to_numeric(g[target_col], errors="coerce").dropna().to_numpy(
-                dtype=float
-            )
+            series = pd.to_numeric(g[target_col], errors="coerce").dropna().to_numpy(dtype=float)
             if series.size >= 2:
                 per_symbol_acfs.append(_acf_numpy(series, max_lag))
         if per_symbol_acfs:
@@ -252,9 +250,7 @@ def _stationarity(series: np.ndarray) -> Dict[str, Any]:
     m2 = float(second.mean())
     s1 = float(first.std(ddof=1)) if first.size > 1 else 0.0
     s2 = float(second.std(ddof=1)) if second.size > 1 else 0.0
-    se = math.sqrt(
-        (s1 ** 2 / max(first.size, 1)) + (s2 ** 2 / max(second.size, 1))
-    )
+    se = math.sqrt((s1**2 / max(first.size, 1)) + (s2**2 / max(second.size, 1)))
     if se > 0:
         z = (m2 - m1) / se
     else:
@@ -362,8 +358,7 @@ def diagnose_target(
     # Autocorrelation
     acf_vals = _compute_acf(df, target_col, eff_time, eff_symbol, acf_lags)
     result["autocorrelation"] = [
-        {"lag": lag, "acf": _safe_float(acf_vals[lag - 1])}
-        for lag in range(1, acf_lags + 1)
+        {"lag": lag, "acf": _safe_float(acf_vals[lag - 1])} for lag in range(1, acf_lags + 1)
     ]
 
     global_series = _global_sorted_series(df, target_col, eff_time, eff_symbol)
@@ -376,17 +371,13 @@ def diagnose_target(
     if has_symbol:
         per_symbol: List[Dict[str, Any]] = []
         for sym, grp in df.groupby(symbol_col, sort=False):
-            s = pd.to_numeric(grp[target_col], errors="coerce").dropna().to_numpy(
-                dtype=float
-            )
+            s = pd.to_numeric(grp[target_col], errors="coerce").dropna().to_numpy(dtype=float)
             entry: Dict[str, Any] = {
                 "symbol": str(sym),
                 "n": int(s.size),
             }
             if is_binary:
-                entry["positive_rate"] = (
-                    _safe_float(np.mean(s == 1.0)) if s.size else None
-                )
+                entry["positive_rate"] = _safe_float(np.mean(s == 1.0)) if s.size else None
             else:
                 entry["mean"] = _safe_float(s.mean()) if s.size else None
             entry["std"] = (
@@ -474,9 +465,7 @@ def _run_selftest() -> int:
 # CLI
 # ---------------------------------------------------------------------------
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Target/Label Diagnostics panel."
-    )
+    parser = argparse.ArgumentParser(description="Target/Label Diagnostics panel.")
     parser.add_argument("--selftest", action="store_true", help="Run self-test.")
     parser.add_argument("--in", dest="in_path", help="Input parquet/csv file.")
     parser.add_argument(

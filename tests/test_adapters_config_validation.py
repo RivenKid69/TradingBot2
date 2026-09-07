@@ -46,6 +46,7 @@ from adapters.config import (
 # ConfigValidationResult Tests
 # =============================================================================
 
+
 class TestConfigValidationResult:
     """Tests for ConfigValidationResult dataclass."""
 
@@ -96,6 +97,7 @@ class TestConfigValidationResult:
 # URL Validation Tests
 # =============================================================================
 
+
 class TestUrlValidation:
     """Tests for URL validation."""
 
@@ -145,6 +147,7 @@ class TestUrlValidation:
 # Timeout Validation Tests
 # =============================================================================
 
+
 class TestTimeoutValidation:
     """Tests for timeout validation."""
 
@@ -181,6 +184,7 @@ class TestTimeoutValidation:
 # Fee Validation Tests
 # =============================================================================
 
+
 class TestFeeValidation:
     """Tests for fee validation."""
 
@@ -212,6 +216,7 @@ class TestFeeValidation:
 # VIP Tier Validation Tests
 # =============================================================================
 
+
 class TestVipTierValidation:
     """Tests for VIP tier validation."""
 
@@ -239,6 +244,7 @@ class TestVipTierValidation:
 # =============================================================================
 # Alpaca Feed Validation Tests
 # =============================================================================
+
 
 class TestAlpacaFeedValidation:
     """Tests for Alpaca feed validation."""
@@ -268,6 +274,7 @@ class TestAlpacaFeedValidation:
 # =============================================================================
 # BinanceConfig Validation Tests
 # =============================================================================
+
 
 class TestValidateBinanceConfig:
     """Tests for Binance config validation."""
@@ -312,10 +319,7 @@ class TestValidateBinanceConfig:
 
     def test_api_credentials_validation(self):
         """Test API credentials validation."""
-        config = BinanceConfig(
-            api_key="short",  # Too short
-            api_secret="also_short"
-        )
+        config = BinanceConfig(api_key="short", api_secret="also_short")  # Too short
         result = validate_binance_config(config)
         assert result.is_valid is False
         assert any("API credentials" in e for e in result.errors)
@@ -323,8 +327,7 @@ class TestValidateBinanceConfig:
     def test_valid_api_credentials(self):
         """Test valid API credentials."""
         config = BinanceConfig(
-            api_key="a" * 64,  # 64 char key
-            api_secret="b" * 64  # 64 char secret
+            api_key="a" * 64, api_secret="b" * 64  # 64 char key  # 64 char secret
         )
         result = validate_binance_config(config)
         # Should be valid (may have other warnings)
@@ -334,6 +337,7 @@ class TestValidateBinanceConfig:
 # =============================================================================
 # AlpacaConfig Validation Tests
 # =============================================================================
+
 
 class TestValidateAlpacaConfig:
     """Tests for Alpaca config validation."""
@@ -403,6 +407,7 @@ class TestValidateAlpacaConfig:
 # FeeConfig Validation Tests
 # =============================================================================
 
+
 class TestValidateFeeConfig:
     """Tests for fee config validation."""
 
@@ -432,6 +437,7 @@ class TestValidateFeeConfig:
 # ExchangeConfig Validation Tests
 # =============================================================================
 
+
 class TestValidateConfig:
     """Tests for main config validation."""
 
@@ -452,10 +458,7 @@ class TestValidateConfig:
 
     def test_unknown_market_type_warning(self):
         """Test unknown market type generates warning."""
-        config = ExchangeConfig(
-            vendor="binance",
-            market_type="UNKNOWN_TYPE"
-        )
+        config = ExchangeConfig(vendor="binance", market_type="UNKNOWN_TYPE")
         result = validate_config(config)
         # Should be valid but with warning
         assert any("Unknown market type" in w for w in result.warnings)
@@ -467,7 +470,7 @@ class TestValidateConfig:
             alpaca=AlpacaConfig(
                 api_key="",
                 api_secret="",
-            )
+            ),
         )
         result = validate_config(config)
         assert result.is_valid is False
@@ -484,6 +487,7 @@ class TestValidateConfig:
 # =============================================================================
 # validate_config_strict Tests
 # =============================================================================
+
 
 class TestValidateConfigStrict:
     """Tests for strict validation."""
@@ -506,6 +510,7 @@ class TestValidateConfigStrict:
 # get_config_summary Tests
 # =============================================================================
 
+
 class TestGetConfigSummary:
     """Tests for config summary."""
 
@@ -516,7 +521,7 @@ class TestGetConfigSummary:
             binance=BinanceConfig(
                 api_key="secret_key",
                 api_secret="secret_secret",
-            )
+            ),
         )
         summary = get_config_summary(config)
 
@@ -537,7 +542,7 @@ class TestGetConfigSummary:
                 api_secret="alpaca_secret",
                 paper=True,
                 feed="sip",
-            )
+            ),
         )
         summary = get_config_summary(config)
 
@@ -566,6 +571,7 @@ class TestGetConfigSummary:
 # =============================================================================
 # Environment Variable Resolution Tests
 # =============================================================================
+
 
 class TestEnvVarResolution:
     """Tests for environment variable resolution."""
@@ -600,6 +606,7 @@ class TestEnvVarResolution:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestConfigValidationIntegration:
     """Integration tests for config validation."""

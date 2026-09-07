@@ -604,10 +604,14 @@ class TestGapManagement:
         manager, contract, assessment = manager_with_gaps
         open_gaps = manager.get_open_gaps()
         assert len(open_gaps) > 0
-        assert all(g.remediation_status not in [
-            RemediationStatus.COMPLETED,
-            RemediationStatus.NOT_APPLICABLE,
-        ] for g in open_gaps)
+        assert all(
+            g.remediation_status
+            not in [
+                RemediationStatus.COMPLETED,
+                RemediationStatus.NOT_APPLICABLE,
+            ]
+            for g in open_gaps
+        )
 
     def test_get_gaps_by_severity(self, manager_with_gaps):
         """Test get_gaps_by_severity."""
@@ -854,9 +858,7 @@ class TestReporting:
     def test_generate_gap_report_for_contract(self, manager_with_data):
         """Test generate_gap_report for specific contract."""
         contracts = manager_with_data.get_all_contracts()
-        report = manager_with_data.generate_gap_report(
-            contract_id=contracts[0].contract_id
-        )
+        report = manager_with_data.generate_gap_report(contract_id=contracts[0].contract_id)
         assert report["contract_id"] == contracts[0].contract_id
 
 

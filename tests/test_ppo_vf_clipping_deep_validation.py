@@ -23,6 +23,7 @@ import math
 # PART 1: Standalone quantile Huber loss for testing
 # ============================================================================
 
+
 def quantile_huber_loss_reference(
     predicted_quantiles: torch.Tensor,
     targets: torch.Tensor,
@@ -39,7 +40,7 @@ def quantile_huber_loss_reference(
         raise ValueError(f"Invalid reduction: {reduction}")
 
     tau = quantile_levels.view(1, -1)  # [1, num_quantiles]
-    targets = targets.reshape(-1, 1)   # [batch, 1]
+    targets = targets.reshape(-1, 1)  # [batch, 1]
 
     # Compute quantile Huber loss
     delta = predicted_quantiles - targets  # [batch, num_quantiles]
@@ -69,6 +70,7 @@ def quantile_huber_loss_reference(
 # PART 2: Test VF Clipping Mathematical Correctness
 # ============================================================================
 
+
 class TestVFClippingNumericalCorrectness:
     """Test that VF clipping produces mathematically correct results."""
 
@@ -78,9 +80,9 @@ class TestVFClippingNumericalCorrectness:
 
         This demonstrates the bug matters with real numbers.
         """
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: mean(max) vs max(mean) - Numerical Difference")
-        print("="*70)
+        print("=" * 70)
 
         # Create scenario where the difference is clear
         batch_size = 4
@@ -104,25 +106,27 @@ class TestVFClippingNumericalCorrectness:
         print(f"Difference:                {abs(correct.item() - incorrect.item()):.6f}")
 
         # Verify they are different
-        assert not torch.allclose(correct, incorrect, atol=1e-6), \
-            "mean(max) should differ from max(mean) in this scenario"
+        assert not torch.allclose(
+            correct, incorrect, atol=1e-6
+        ), "mean(max) should differ from max(mean) in this scenario"
 
         # Compute element-wise max to show what correct does
         elementwise_max = torch.max(loss_unclipped, loss_clipped)
         print(f"\nElement-wise max:          {elementwise_max.tolist()}")
         print(f"Mean of element-wise max:  {elementwise_max.mean().item():.6f}")
 
-        assert torch.allclose(correct, elementwise_max.mean()), \
-            "mean(max) should equal mean of element-wise max"
+        assert torch.allclose(
+            correct, elementwise_max.mean()
+        ), "mean(max) should equal mean of element-wise max"
 
         print("✓ Test passed: mean(max) ≠ max(mean)")
         return True
 
     def test_quantile_loss_with_known_values(self):
         """Test quantile Huber loss with manually computed values."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Quantile Huber Loss - Known Values")
-        print("="*70)
+        print("=" * 70)
 
         batch_size = 2
         num_quantiles = 3
@@ -164,9 +168,9 @@ class TestVFClippingNumericalCorrectness:
 
     def test_vf_clipping_with_concrete_scenario(self):
         """Test VF clipping with a concrete scenario."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: VF Clipping - Concrete Scenario")
-        print("="*70)
+        print("=" * 70)
 
         batch_size = 4
         num_quantiles = 5
@@ -180,19 +184,25 @@ class TestVFClippingNumericalCorrectness:
         # Sample 2: losses equal → either is fine
         # Sample 3: large difference → should clearly choose larger
 
-        predicted_unclipped = torch.tensor([
-            [1.0, 1.5, 2.0, 2.5, 3.0],  # Far from target
-            [5.0, 5.1, 5.2, 5.3, 5.4],  # Close to target
-            [3.0, 3.0, 3.0, 3.0, 3.0],  # Equal
-            [0.0, 1.0, 2.0, 3.0, 4.0],  # Very far
-        ], dtype=torch.float32)
+        predicted_unclipped = torch.tensor(
+            [
+                [1.0, 1.5, 2.0, 2.5, 3.0],  # Far from target
+                [5.0, 5.1, 5.2, 5.3, 5.4],  # Close to target
+                [3.0, 3.0, 3.0, 3.0, 3.0],  # Equal
+                [0.0, 1.0, 2.0, 3.0, 4.0],  # Very far
+            ],
+            dtype=torch.float32,
+        )
 
-        predicted_clipped = torch.tensor([
-            [1.5, 2.0, 2.5, 3.0, 3.5],  # Closer to target (clipped towards)
-            [4.0, 4.5, 5.0, 5.5, 6.0],  # Further from target (clipped away)
-            [3.0, 3.0, 3.0, 3.0, 3.0],  # Same
-            [1.0, 2.0, 3.0, 4.0, 5.0],  # Still far but closer
-        ], dtype=torch.float32)
+        predicted_clipped = torch.tensor(
+            [
+                [1.5, 2.0, 2.5, 3.0, 3.5],  # Closer to target (clipped towards)
+                [4.0, 4.5, 5.0, 5.5, 6.0],  # Further from target (clipped away)
+                [3.0, 3.0, 3.0, 3.0, 3.0],  # Same
+                [1.0, 2.0, 3.0, 4.0, 5.0],  # Still far but closer
+            ],
+            dtype=torch.float32,
+        )
 
         targets = torch.tensor([[2.0], [5.0], [3.0], [10.0]], dtype=torch.float32)
 
@@ -231,15 +241,11 @@ class TestVFClippingNumericalCorrectness:
 # PART 3: Gradient Validation with Numerical Differentiation
 # ============================================================================
 
+
 class TestVFClippingGradients:
     """Test that gradients are computed correctly."""
 
-    def numerical_gradient(
-        self,
-        func,
-        x: torch.Tensor,
-        epsilon: float = 1e-4
-    ) -> torch.Tensor:
+    def numerical_gradient(self, func, x: torch.Tensor, epsilon: float = 1e-4) -> torch.Tensor:
         """Compute numerical gradient using finite differences."""
         grad = torch.zeros_like(x)
         x_flat = x.view(-1)
@@ -261,9 +267,9 @@ class TestVFClippingGradients:
 
     def test_quantile_loss_gradients(self):
         """Verify gradients using numerical differentiation."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Quantile Loss Gradients - Numerical Verification")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
 
@@ -311,9 +317,9 @@ class TestVFClippingGradients:
 
         For each sample, only the larger loss should receive gradients.
         """
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: VF Clipping Gradient Routing")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
 
@@ -348,29 +354,35 @@ class TestVFClippingGradients:
                 if loss_unclipped[i] > loss_clipped[i]:
                     # Unclipped has larger loss → should have gradient
                     has_grad_unclipped = torch.any(predicted_unclipped.grad[i] != 0)
-                    print(f"Sample {i}: unclipped larger ({loss_unclipped[i].item():.4f} > {loss_clipped[i].item():.4f}), "
-                          f"has gradient: {has_grad_unclipped}")
+                    print(
+                        f"Sample {i}: unclipped larger ({loss_unclipped[i].item():.4f} > {loss_clipped[i].item():.4f}), "
+                        f"has gradient: {has_grad_unclipped}"
+                    )
                     assert has_grad_unclipped, f"Sample {i}: unclipped should have gradient"
 
                 elif loss_clipped[i] > loss_unclipped[i]:
                     # Clipped has larger loss → should have gradient
                     has_grad_clipped = torch.any(predicted_clipped.grad[i] != 0)
-                    print(f"Sample {i}: clipped larger ({loss_clipped[i].item():.4f} > {loss_unclipped[i].item():.4f}), "
-                          f"has gradient: {has_grad_clipped}")
+                    print(
+                        f"Sample {i}: clipped larger ({loss_clipped[i].item():.4f} > {loss_unclipped[i].item():.4f}), "
+                        f"has gradient: {has_grad_clipped}"
+                    )
                     assert has_grad_clipped, f"Sample {i}: clipped should have gradient"
 
                 else:
                     # Equal → both may have gradients (tie breaking)
-                    print(f"Sample {i}: equal ({loss_unclipped[i].item():.4f} == {loss_clipped[i].item():.4f})")
+                    print(
+                        f"Sample {i}: equal ({loss_unclipped[i].item():.4f} == {loss_clipped[i].item():.4f})"
+                    )
 
         print("✓ Gradient routing correct")
         return True
 
     def test_vf_clipping_gradient_magnitude(self):
         """Test that VF clipping produces reasonable gradient magnitudes."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: VF Clipping Gradient Magnitude")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
 
@@ -382,7 +394,9 @@ class TestVFClippingGradients:
         targets = torch.randn(batch_size, 1)
 
         predicted_unclipped = torch.randn(batch_size, num_quantiles, requires_grad=True)
-        predicted_clipped = predicted_unclipped.detach().clone() + torch.randn(batch_size, num_quantiles) * 0.1
+        predicted_clipped = (
+            predicted_unclipped.detach().clone() + torch.randn(batch_size, num_quantiles) * 0.1
+        )
         predicted_clipped.requires_grad = True
 
         # Compute VF clipping loss
@@ -408,8 +422,9 @@ class TestVFClippingGradients:
         assert torch.all(torch.isfinite(grad_clipped)), "Clipped gradients should be finite"
 
         # At least one prediction should have non-zero gradient
-        assert torch.any(grad_unclipped != 0) or torch.any(grad_clipped != 0), \
-            "At least one prediction should have non-zero gradient"
+        assert torch.any(grad_unclipped != 0) or torch.any(
+            grad_clipped != 0
+        ), "At least one prediction should have non-zero gradient"
 
         print(f"Unclipped gradient norm: {grad_unclipped.norm().item():.6f}")
         print(f"Clipped gradient norm: {grad_clipped.norm().item():.6f}")
@@ -428,14 +443,15 @@ class TestVFClippingGradients:
 # PART 4: Categorical Distribution VF Clipping
 # ============================================================================
 
+
 class TestCategoricalVFClipping:
     """Test VF clipping for categorical distributions."""
 
     def test_categorical_cross_entropy_vf_clipping(self):
         """Test categorical cross-entropy with VF clipping."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Categorical Cross-Entropy VF Clipping")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
 
@@ -447,7 +463,9 @@ class TestCategoricalVFClipping:
 
         # Predicted distributions
         logits_unclipped = torch.randn(batch_size, num_atoms, requires_grad=True)
-        logits_clipped = logits_unclipped.detach().clone() + torch.randn(batch_size, num_atoms) * 0.2
+        logits_clipped = (
+            logits_unclipped.detach().clone() + torch.randn(batch_size, num_atoms) * 0.2
+        )
         logits_clipped.requires_grad = True
 
         # Compute log probabilities
@@ -488,14 +506,15 @@ class TestCategoricalVFClipping:
 # PART 5: Edge Cases and Boundary Conditions
 # ============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
     def test_empty_batch(self):
         """Test with empty batch."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Empty Batch")
-        print("="*70)
+        print("=" * 70)
 
         num_quantiles = 5
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
@@ -503,9 +522,7 @@ class TestEdgeCases:
         predicted = torch.empty(0, num_quantiles)
         targets = torch.empty(0, 1)
 
-        loss = quantile_huber_loss_reference(
-            predicted, targets, quantile_levels, reduction="none"
-        )
+        loss = quantile_huber_loss_reference(predicted, targets, quantile_levels, reduction="none")
 
         assert loss.shape == (0,), f"Expected shape (0,), got {loss.shape}"
 
@@ -521,9 +538,9 @@ class TestEdgeCases:
 
     def test_single_sample(self):
         """Test with single sample."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Single Sample")
-        print("="*70)
+        print("=" * 70)
 
         num_quantiles = 5
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
@@ -531,9 +548,7 @@ class TestEdgeCases:
         predicted = torch.randn(1, num_quantiles)
         targets = torch.randn(1, 1)
 
-        loss = quantile_huber_loss_reference(
-            predicted, targets, quantile_levels, reduction="none"
-        )
+        loss = quantile_huber_loss_reference(predicted, targets, quantile_levels, reduction="none")
 
         assert loss.shape == (1,)
         assert torch.isfinite(loss)
@@ -544,9 +559,9 @@ class TestEdgeCases:
 
     def test_large_batch(self):
         """Test with large batch."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Large Batch")
-        print("="*70)
+        print("=" * 70)
 
         batch_size = 1024
         num_quantiles = 51
@@ -555,9 +570,7 @@ class TestEdgeCases:
         predicted = torch.randn(batch_size, num_quantiles)
         targets = torch.randn(batch_size, 1)
 
-        loss = quantile_huber_loss_reference(
-            predicted, targets, quantile_levels, reduction="none"
-        )
+        loss = quantile_huber_loss_reference(predicted, targets, quantile_levels, reduction="none")
 
         assert loss.shape == (batch_size,)
         assert torch.all(torch.isfinite(loss))
@@ -569,9 +582,9 @@ class TestEdgeCases:
 
     def test_extreme_values(self):
         """Test with extreme values."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Extreme Values")
-        print("="*70)
+        print("=" * 70)
 
         num_quantiles = 5
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
@@ -580,9 +593,7 @@ class TestEdgeCases:
         predicted = torch.randn(3, num_quantiles) * 1000
         targets = torch.randn(3, 1) * 1000
 
-        loss = quantile_huber_loss_reference(
-            predicted, targets, quantile_levels, reduction="mean"
-        )
+        loss = quantile_huber_loss_reference(predicted, targets, quantile_levels, reduction="mean")
 
         assert torch.isfinite(loss), "Loss should be finite even with extreme values"
         print(f"Loss with extreme values: {loss.item():.6f}")
@@ -603,9 +614,9 @@ class TestEdgeCases:
 
     def test_identical_predictions(self):
         """Test when predictions are identical."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Identical Predictions")
-        print("="*70)
+        print("=" * 70)
 
         batch_size = 4
         num_quantiles = 5
@@ -624,8 +635,9 @@ class TestEdgeCases:
         loss_vf = torch.mean(torch.max(loss_unclipped, loss_clipped))
         loss_plain = loss_unclipped.mean()
 
-        assert torch.allclose(loss_vf, loss_plain, atol=1e-6), \
-            "VF loss should equal plain loss when predictions identical"
+        assert torch.allclose(
+            loss_vf, loss_plain, atol=1e-6
+        ), "VF loss should equal plain loss when predictions identical"
 
         print(f"VF loss: {loss_vf.item():.6f}")
         print(f"Plain loss: {loss_plain.item():.6f}")
@@ -637,14 +649,15 @@ class TestEdgeCases:
 # PART 6: Integration Test - Full Forward/Backward Pass
 # ============================================================================
 
+
 class TestIntegration:
     """Integration tests simulating full training."""
 
     def test_full_training_iteration(self):
         """Simulate a full training iteration with VF clipping."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Full Training Iteration")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
 
@@ -718,32 +731,45 @@ class TestIntegration:
 # MAIN TEST RUNNER
 # ============================================================================
 
+
 def run_all_tests():
     """Run all deep validation tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("STARTING COMPREHENSIVE VF CLIPPING VALIDATION")
-    print("="*70)
+    print("=" * 70)
 
     test_results = []
 
     # Part 1: Numerical Correctness
     print("\n" + "🔬 PART 1: NUMERICAL CORRECTNESS")
     suite1 = TestVFClippingNumericalCorrectness()
-    test_results.append(("mean(max) vs max(mean)", suite1.test_mean_of_max_vs_max_of_mean_difference()))
-    test_results.append(("Quantile loss known values", suite1.test_quantile_loss_with_known_values()))
-    test_results.append(("VF clipping concrete scenario", suite1.test_vf_clipping_with_concrete_scenario()))
+    test_results.append(
+        ("mean(max) vs max(mean)", suite1.test_mean_of_max_vs_max_of_mean_difference())
+    )
+    test_results.append(
+        ("Quantile loss known values", suite1.test_quantile_loss_with_known_values())
+    )
+    test_results.append(
+        ("VF clipping concrete scenario", suite1.test_vf_clipping_with_concrete_scenario())
+    )
 
     # Part 2: Gradient Validation
     print("\n" + "🔬 PART 2: GRADIENT VALIDATION")
     suite2 = TestVFClippingGradients()
     test_results.append(("Quantile loss gradients", suite2.test_quantile_loss_gradients()))
-    test_results.append(("VF clipping gradient routing", suite2.test_vf_clipping_gradient_routing()))
-    test_results.append(("VF clipping gradient magnitude", suite2.test_vf_clipping_gradient_magnitude()))
+    test_results.append(
+        ("VF clipping gradient routing", suite2.test_vf_clipping_gradient_routing())
+    )
+    test_results.append(
+        ("VF clipping gradient magnitude", suite2.test_vf_clipping_gradient_magnitude())
+    )
 
     # Part 3: Categorical Distribution
     print("\n" + "🔬 PART 3: CATEGORICAL DISTRIBUTION")
     suite3 = TestCategoricalVFClipping()
-    test_results.append(("Categorical CE VF clipping", suite3.test_categorical_cross_entropy_vf_clipping()))
+    test_results.append(
+        ("Categorical CE VF clipping", suite3.test_categorical_cross_entropy_vf_clipping())
+    )
 
     # Part 4: Edge Cases
     print("\n" + "🔬 PART 4: EDGE CASES")
@@ -760,9 +786,9 @@ def run_all_tests():
     test_results.append(("Full training iteration", suite5.test_full_training_iteration()))
 
     # Summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST SUMMARY")
-    print("="*70)
+    print("=" * 70)
 
     passed = sum(1 for _, result in test_results if result)
     total = len(test_results)

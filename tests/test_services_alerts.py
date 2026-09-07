@@ -1,4 +1,5 @@
 """Comprehensive tests for services.alerts module."""
+
 import os
 import time
 from unittest.mock import patch, MagicMock
@@ -18,6 +19,7 @@ class TestGetCfgValue:
 
     def test_get_from_object(self):
         """Test getting value from object."""
+
         class Cfg:
             key = "value"
 
@@ -36,7 +38,7 @@ class TestGetCfgValue:
 class TestSendTelegram:
     """Tests for send_telegram function."""
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_success(self, mock_post):
         """Test successful telegram message send."""
         mock_response = MagicMock()
@@ -53,17 +55,16 @@ class TestSendTelegram:
         assert result is True
         mock_post.assert_called_once()
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_uses_env_vars(self, mock_post):
         """Test send_telegram uses environment variables."""
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_post.return_value = mock_response
 
-        with patch.dict(os.environ, {
-            "TELEGRAM_BOT_TOKEN": "env_token",
-            "TELEGRAM_CHAT_ID": "env_chat_id"
-        }):
+        with patch.dict(
+            os.environ, {"TELEGRAM_BOT_TOKEN": "env_token", "TELEGRAM_CHAT_ID": "env_chat_id"}
+        ):
             result = send_telegram("Test message", None)
 
             assert result is True
@@ -76,10 +77,11 @@ class TestSendTelegram:
         with pytest.raises(EnvironmentError, match="must be set"):
             send_telegram("Test message", None)
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_request_failure(self, mock_post):
         """Test send_telegram handles request failure."""
         import requests
+
         mock_post.side_effect = requests.exceptions.RequestException("Connection error")
 
         config = {
@@ -91,10 +93,11 @@ class TestSendTelegram:
 
         assert result is False
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_http_error(self, mock_post):
         """Test send_telegram handles HTTP error."""
         import requests
+
         mock_response = MagicMock()
         mock_response.status_code = 400
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError()
@@ -109,7 +112,7 @@ class TestSendTelegram:
 
         assert result is False
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_custom_api_base(self, mock_post):
         """Test send_telegram with custom API base URL."""
         mock_response = MagicMock()
@@ -127,7 +130,7 @@ class TestSendTelegram:
         call_args = mock_post.call_args
         assert "custom.api.com" in call_args[0][0]
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_custom_timeout(self, mock_post):
         """Test send_telegram with custom timeout."""
         mock_response = MagicMock()
@@ -145,7 +148,7 @@ class TestSendTelegram:
         call_kwargs = mock_post.call_args[1]
         assert call_kwargs["timeout"] == 5.0
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_extra_payload(self, mock_post):
         """Test send_telegram with extra payload."""
         mock_response = MagicMock()
@@ -158,7 +161,7 @@ class TestSendTelegram:
             "extra_payload": {
                 "parse_mode": "Markdown",
                 "disable_notification": True,
-            }
+            },
         }
 
         send_telegram("Test message", config)
@@ -187,7 +190,7 @@ class TestAlertManagerInit:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
@@ -219,7 +222,7 @@ class TestAlertManagerNotify:
         # Should not raise
         manager.notify("test_key", "Test message")
 
-    @patch('services.alerts.send_telegram')
+    @patch("services.alerts.send_telegram")
     def test_notify_telegram_channel(self, mock_send):
         """Test notify with telegram channel."""
         mock_send.return_value = True
@@ -229,7 +232,7 @@ class TestAlertManagerNotify:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
@@ -237,7 +240,7 @@ class TestAlertManagerNotify:
 
         mock_send.assert_called_once_with("Test message", settings["telegram"])
 
-    @patch('services.alerts.send_telegram')
+    @patch("services.alerts.send_telegram")
     def test_notify_respects_cooldown(self, mock_send):
         """Test notify respects cooldown period."""
         mock_send.return_value = True
@@ -248,7 +251,7 @@ class TestAlertManagerNotify:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
@@ -265,7 +268,7 @@ class TestAlertManagerNotify:
         manager.notify("test_key", "Message 3")
         assert mock_send.call_count == 2
 
-    @patch('services.alerts.send_telegram')
+    @patch("services.alerts.send_telegram")
     def test_notify_different_keys_independent_cooldown(self, mock_send):
         """Test different keys have independent cooldowns."""
         mock_send.return_value = True
@@ -276,7 +279,7 @@ class TestAlertManagerNotify:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
@@ -286,7 +289,7 @@ class TestAlertManagerNotify:
         # Both should be sent (different keys)
         assert mock_send.call_count == 2
 
-    @patch('services.alerts.send_telegram')
+    @patch("services.alerts.send_telegram")
     def test_notify_failure_does_not_update_cooldown(self, mock_send):
         """Test failed send doesn't update cooldown timer."""
         mock_send.return_value = False
@@ -297,7 +300,7 @@ class TestAlertManagerNotify:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
@@ -307,7 +310,7 @@ class TestAlertManagerNotify:
         # Both should be attempted (no cooldown on failure)
         assert mock_send.call_count == 2
 
-    @patch('services.alerts.send_telegram')
+    @patch("services.alerts.send_telegram")
     def test_notify_exception_handling(self, mock_send):
         """Test notify handles exceptions gracefully."""
         mock_send.side_effect = Exception("Test error")
@@ -317,7 +320,7 @@ class TestAlertManagerNotify:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
@@ -340,7 +343,7 @@ class TestAlertManagerNotify:
         # Should not raise
         manager.notify("test_key", "Test message")
 
-    @patch('services.alerts.send_telegram')
+    @patch("services.alerts.send_telegram")
     def test_notify_with_zero_cooldown(self, mock_send):
         """Test notify with zero cooldown sends every time."""
         mock_send.return_value = True
@@ -351,7 +354,7 @@ class TestAlertManagerNotify:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
@@ -380,7 +383,7 @@ class TestAlertManagerEdgeCases:
 
         assert manager.cooldown_sec == 60.0
 
-    @patch('services.alerts.send_telegram')
+    @patch("services.alerts.send_telegram")
     def test_notify_empty_message(self, mock_send):
         """Test notify with empty message."""
         mock_send.return_value = True
@@ -390,14 +393,14 @@ class TestAlertManagerEdgeCases:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
         manager.notify("test_key", "")
         mock_send.assert_called_once_with("", settings["telegram"])
 
-    @patch('services.alerts.send_telegram')
+    @patch("services.alerts.send_telegram")
     def test_notify_unicode_message(self, mock_send):
         """Test notify with unicode characters."""
         mock_send.return_value = True
@@ -407,7 +410,7 @@ class TestAlertManagerEdgeCases:
             "telegram": {
                 "bot_token": "test_token",
                 "chat_id": "12345",
-            }
+            },
         }
         manager = AlertManager(settings)
 
@@ -419,7 +422,7 @@ class TestAlertManagerEdgeCases:
 class TestSendTelegramEdgeCases:
     """Tests for send_telegram edge cases."""
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_custom_env_var_names(self, mock_post):
         """Test send_telegram with custom env var names."""
         mock_response = MagicMock()
@@ -431,14 +434,13 @@ class TestSendTelegramEdgeCases:
             "chat_id_env": "CUSTOM_CHAT_VAR",
         }
 
-        with patch.dict(os.environ, {
-            "CUSTOM_TOKEN_VAR": "custom_token",
-            "CUSTOM_CHAT_VAR": "custom_chat"
-        }):
+        with patch.dict(
+            os.environ, {"CUSTOM_TOKEN_VAR": "custom_token", "CUSTOM_CHAT_VAR": "custom_chat"}
+        ):
             result = send_telegram("Test", config)
             assert result is True
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_empty_text(self, mock_post):
         """Test send_telegram with empty text."""
         mock_response = MagicMock()
@@ -453,7 +455,7 @@ class TestSendTelegramEdgeCases:
         result = send_telegram("", config)
         assert result is True
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_send_telegram_config_overrides_env(self, mock_post):
         """Test config values override environment variables."""
         mock_response = MagicMock()
@@ -465,10 +467,9 @@ class TestSendTelegramEdgeCases:
             "chat_id": "config_chat",
         }
 
-        with patch.dict(os.environ, {
-            "TELEGRAM_BOT_TOKEN": "env_token",
-            "TELEGRAM_CHAT_ID": "env_chat"
-        }):
+        with patch.dict(
+            os.environ, {"TELEGRAM_BOT_TOKEN": "env_token", "TELEGRAM_CHAT_ID": "env_chat"}
+        ):
             send_telegram("Test", config)
 
             # Should use config values

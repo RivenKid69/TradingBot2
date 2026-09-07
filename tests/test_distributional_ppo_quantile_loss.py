@@ -1,9 +1,12 @@
 import math
 
 import pytest
+
 pytest.importorskip("torch")
 
-from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import (
+    test_distributional_ppo_raw_outliers,
+)  # noqa: F401  # ensure RL stubs are installed
 
 
 @pytest.mark.parametrize("target_shape", [(2,), (2, 1), (2, 1, 1), (2, 1, 1, 1)])
@@ -24,9 +27,7 @@ def test_quantile_huber_loss_preserves_batch_dimension(target_shape) -> None:
 
     algo.policy = _PolicyStub()
 
-    predicted = torch.tensor(
-        [[0.0, 0.0], [0.0, 0.0]], dtype=torch.float32, requires_grad=True
-    )
+    predicted = torch.tensor([[0.0, 0.0], [0.0, 0.0]], dtype=torch.float32, requires_grad=True)
     targets = torch.tensor([0.0, 1.0], dtype=torch.float32).reshape(target_shape)
 
     loss = DistributionalPPO._quantile_huber_loss(algo, predicted, targets)
@@ -61,16 +62,12 @@ def test_quantile_huber_loss_unsqueeze_path_produces_distinct_gradients() -> Non
 
     algo.policy = _PolicyStub()
 
-    predicted = torch.tensor(
-        [[0.0, 0.0], [0.0, 0.0]], dtype=torch.float32, requires_grad=True
-    )
+    predicted = torch.tensor([[0.0, 0.0], [0.0, 0.0]], dtype=torch.float32, requires_grad=True)
     target_returns_norm_selected = torch.tensor([0.0, 1.0], dtype=torch.float32)
     if target_returns_norm_selected.dim() == 1:  # mirror _train_step behaviour
         target_returns_norm_selected = target_returns_norm_selected.unsqueeze(1)
 
-    loss = DistributionalPPO._quantile_huber_loss(
-        algo, predicted, target_returns_norm_selected
-    )
+    loss = DistributionalPPO._quantile_huber_loss(algo, predicted, target_returns_norm_selected)
     loss.backward()
 
     grad_first = predicted.grad[0].abs().max().item()
@@ -114,9 +111,7 @@ def test_quantile_huber_loss_optim_step_preserves_positive_ev() -> None:
     ev = safe_explained_variance(targets_np, predicted_means)
 
     assert ev > 0.0
-    assert not math.isclose(
-        float(predicted_means[0]), float(predicted_means[1]), abs_tol=1e-3
-    )
+    assert not math.isclose(float(predicted_means[0]), float(predicted_means[1]), abs_tol=1e-3)
     assert predicted_means[0] < predicted_means[1]
 
 
@@ -191,4 +186,3 @@ def test_merge_valid_indices_preserves_primary_when_override_missing() -> None:
     result_override = DistributionalPPO._merge_valid_indices(primary, override)
 
     assert result_override is override
-

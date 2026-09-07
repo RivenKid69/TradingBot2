@@ -1,6 +1,7 @@
 """
 Additional coverage tests for distributional_ppo.py - simplified version.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -38,7 +39,13 @@ def _make_env(max_steps: int = 10) -> DummyVecEnv:
             def step(self, action):
                 self._step += 1
                 done = self._step >= self._max
-                return np.zeros(4, dtype=np.float32), 0.1, done, False, {"TimeLimit.truncated": done}
+                return (
+                    np.zeros(4, dtype=np.float32),
+                    0.1,
+                    done,
+                    False,
+                    {"TimeLimit.truncated": done},
+                )
 
         return _Env()
 

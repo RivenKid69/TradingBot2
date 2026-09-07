@@ -57,9 +57,7 @@ def test_closed_bar_guard_requires_final_flag(monitoring_mocks: tuple[Mock, Mock
     reason_mock.assert_called_once_with(Reason.INCOMPLETE_BAR)
 
 
-def test_closed_bar_guard_final_websocket_bar_passes(
-    monitoring_mocks: tuple[Mock, Mock]
-) -> None:
+def test_closed_bar_guard_final_websocket_bar_passes(monitoring_mocks: tuple[Mock, Mock]) -> None:
     stage_mock, reason_mock = monitoring_mocks
     bar = _make_bar(1_000, is_final=True)
 

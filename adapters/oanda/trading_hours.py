@@ -341,19 +341,19 @@ class OandaTradingHoursAdapter(TradingHoursAdapter):
 
         # Weekend check (Saturday all day, Sunday before market open)
         if weekday == 5:
-            return (ForexSessionType.WEEKEND, 0.0, float('inf'))
+            return (ForexSessionType.WEEKEND, 0.0, float("inf"))
 
         # Sunday before market open (5pm ET)
         if weekday == 6:
             dt_et = dt_utc.astimezone(ET)
             if dt_et.hour < self.MARKET_OPEN_HOUR:
-                return (ForexSessionType.WEEKEND, 0.0, float('inf'))
+                return (ForexSessionType.WEEKEND, 0.0, float("inf"))
 
         # Friday after market close
         if weekday == 4:
             dt_et = dt_utc.astimezone(ET)
             if dt_et.hour >= self.MARKET_CLOSE_HOUR:
-                return (ForexSessionType.WEEKEND, 0.0, float('inf'))
+                return (ForexSessionType.WEEKEND, 0.0, float("inf"))
 
         # Check overlaps first (they take priority for best liquidity)
         # London/NY Overlap: 12:00-16:00 UTC (BEST)
@@ -492,12 +492,12 @@ class OandaTradingHoursAdapter(TradingHoursAdapter):
 
         # Session boundaries (UTC hours)
         boundaries = [
-            (6, ForexSessionType.TOKYO),       # Sydney -> Tokyo
+            (6, ForexSessionType.TOKYO),  # Sydney -> Tokyo
             (7, ForexSessionType.TOKYO_LONDON_OVERLAP),  # Tokyo -> Overlap
-            (9, ForexSessionType.LONDON),      # Overlap -> London
+            (9, ForexSessionType.LONDON),  # Overlap -> London
             (12, ForexSessionType.LONDON_NY_OVERLAP),  # London -> L/NY Overlap
-            (16, ForexSessionType.NEW_YORK),   # Overlap -> NY
-            (21, ForexSessionType.SYDNEY),     # NY -> Sydney
+            (16, ForexSessionType.NEW_YORK),  # Overlap -> NY
+            (21, ForexSessionType.SYDNEY),  # NY -> Sydney
         ]
 
         # Find next boundary

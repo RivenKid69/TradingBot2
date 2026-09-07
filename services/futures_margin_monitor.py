@@ -64,8 +64,8 @@ logger = logging.getLogger(__name__)
 
 # Default thresholds (margin ratio = equity / margin_used)
 DEFAULT_WARNING_RATIO = Decimal("1.5")  # 150%
-DEFAULT_DANGER_RATIO = Decimal("1.2")   # 120%
-DEFAULT_CRITICAL_RATIO = Decimal("1.1") # 110%
+DEFAULT_DANGER_RATIO = Decimal("1.2")  # 120%
+DEFAULT_CRITICAL_RATIO = Decimal("1.1")  # 110%
 DEFAULT_LIQUIDATION_RATIO = Decimal("1.0")  # 100%
 
 # Monitoring intervals
@@ -75,24 +75,27 @@ DEFAULT_ALERT_COOLDOWN_SEC = 300.0  # 5 minutes
 
 # Auto-reduction parameters
 DEFAULT_TARGET_MARGIN_RATIO = Decimal("2.0")  # Target 200% after reduction
-DEFAULT_REDUCTION_STEP_PCT = Decimal("0.1")   # 10% position reduction per step
+DEFAULT_REDUCTION_STEP_PCT = Decimal("0.1")  # 10% position reduction per step
 
 
 # ============================================================================
 # ENUMS
 # ============================================================================
 
+
 class MarginLevel(Enum):
     """Margin level classifications."""
-    HEALTHY = auto()      # > warning threshold
-    WARNING = auto()      # between warning and danger
-    DANGER = auto()       # between danger and critical
-    CRITICAL = auto()     # between critical and liquidation
+
+    HEALTHY = auto()  # > warning threshold
+    WARNING = auto()  # between warning and danger
+    DANGER = auto()  # between danger and critical
+    CRITICAL = auto()  # between critical and liquidation
     LIQUIDATION = auto()  # at or below liquidation threshold
 
 
 class MarginAlertType(Enum):
     """Types of margin alerts."""
+
     LEVEL_CHANGE = auto()
     APPROACHING_WARNING = auto()
     APPROACHING_DANGER = auto()
@@ -105,6 +108,7 @@ class MarginAlertType(Enum):
 # ============================================================================
 # PROTOCOLS
 # ============================================================================
+
 
 @runtime_checkable
 class MarginDataProvider(Protocol):
@@ -149,9 +153,11 @@ class AlertCallback(Protocol):
 # DATA CLASSES
 # ============================================================================
 
+
 @dataclass
 class MarginSnapshot:
     """Point-in-time margin snapshot."""
+
     timestamp_ms: int
     equity: Decimal
     margin_used: Decimal
@@ -196,6 +202,7 @@ class MarginSnapshot:
 @dataclass
 class MarginAlert:
     """Margin alert event."""
+
     timestamp_ms: int
     alert_type: MarginAlertType
     level: MarginLevel
@@ -226,6 +233,7 @@ class MarginAlert:
 @dataclass
 class ReductionSuggestion:
     """Suggestion for position reduction."""
+
     symbol: str
     current_qty: Decimal
     suggested_reduction_qty: Decimal
@@ -248,6 +256,7 @@ class ReductionSuggestion:
 @dataclass
 class MarginMonitorConfig:
     """Configuration for margin monitor."""
+
     # Thresholds
     warning_ratio: Decimal = DEFAULT_WARNING_RATIO
     danger_ratio: Decimal = DEFAULT_DANGER_RATIO
@@ -288,9 +297,15 @@ class MarginMonitorConfig:
             history_max_size=int(d.get("history_max_size", DEFAULT_HISTORY_MAX_SIZE)),
             alert_cooldown_sec=float(d.get("alert_cooldown_sec", DEFAULT_ALERT_COOLDOWN_SEC)),
             enable_alerts=bool(d.get("enable_alerts", True)),
-            enable_auto_reduction_suggestions=bool(d.get("enable_auto_reduction_suggestions", True)),
-            target_margin_ratio=Decimal(str(d.get("target_margin_ratio", DEFAULT_TARGET_MARGIN_RATIO))),
-            reduction_step_pct=Decimal(str(d.get("reduction_step_pct", DEFAULT_REDUCTION_STEP_PCT))),
+            enable_auto_reduction_suggestions=bool(
+                d.get("enable_auto_reduction_suggestions", True)
+            ),
+            target_margin_ratio=Decimal(
+                str(d.get("target_margin_ratio", DEFAULT_TARGET_MARGIN_RATIO))
+            ),
+            reduction_step_pct=Decimal(
+                str(d.get("reduction_step_pct", DEFAULT_REDUCTION_STEP_PCT))
+            ),
             futures_type=futures_type,
         )
 
@@ -315,6 +330,7 @@ class MarginMonitorConfig:
 # ============================================================================
 # MARGIN LEVEL TRACKER
 # ============================================================================
+
 
 class MarginLevelTracker:
     """Tracks margin levels and detects transitions."""
@@ -420,6 +436,7 @@ class MarginLevelTracker:
 # ALERT MANAGER
 # ============================================================================
 
+
 class MarginAlertManager:
     """Manages margin alerts with cooldowns."""
 
@@ -495,6 +512,7 @@ class MarginAlertManager:
 # ============================================================================
 # MAIN MONITOR CLASS
 # ============================================================================
+
 
 class FuturesMarginMonitor:
     """
@@ -876,14 +894,16 @@ class FuturesMarginMonitor:
 
             reason = self._get_reduction_reason(snapshot.level)
 
-            suggestions.append(ReductionSuggestion(
-                symbol=symbol,
-                current_qty=abs(position.qty),
-                suggested_reduction_qty=reduction_qty,
-                suggested_reduction_pct=reduction_pct,
-                reason=reason,
-                priority=priority,
-            ))
+            suggestions.append(
+                ReductionSuggestion(
+                    symbol=symbol,
+                    current_qty=abs(position.qty),
+                    suggested_reduction_qty=reduction_qty,
+                    suggested_reduction_pct=reduction_pct,
+                    reason=reason,
+                    priority=priority,
+                )
+            )
 
             priority += 1
 
@@ -940,7 +960,9 @@ class FuturesMarginMonitor:
 
         return {
             "snapshot_count": len(history),
-            "time_range_ms": history[-1].timestamp_ms - history[0].timestamp_ms if len(history) > 1 else 0,
+            "time_range_ms": (
+                history[-1].timestamp_ms - history[0].timestamp_ms if len(history) > 1 else 0
+            ),
             "current_ratio": ratios[-1] if ratios else 0,
             "min_ratio": min(ratios) if ratios else 0,
             "max_ratio": max(ratios) if ratios else 0,
@@ -948,10 +970,15 @@ class FuturesMarginMonitor:
             "std_ratio": statistics.stdev(ratios) if len(ratios) > 1 else 0,
             "level_distribution": level_counts,
             "time_at_risk_pct": (
-                (level_counts.get("DANGER", 0) +
-                 level_counts.get("CRITICAL", 0) +
-                 level_counts.get("LIQUIDATION", 0)) / len(levels) * 100
-                if levels else 0
+                (
+                    level_counts.get("DANGER", 0)
+                    + level_counts.get("CRITICAL", 0)
+                    + level_counts.get("LIQUIDATION", 0)
+                )
+                / len(levels)
+                * 100
+                if levels
+                else 0
             ),
         }
 
@@ -959,6 +986,7 @@ class FuturesMarginMonitor:
 # ============================================================================
 # FACTORY FUNCTIONS
 # ============================================================================
+
 
 def create_margin_monitor(
     margin_provider: MarginDataProvider,

@@ -97,10 +97,14 @@ class _NullVolEstimator:
     ) -> float:
         return 0.0
 
-    def value(self, symbol: str, metric: str | None = None) -> float | None:  # pragma: no cover - trivial
+    def value(
+        self, symbol: str, metric: str | None = None
+    ) -> float | None:  # pragma: no cover - trivial
         return None
 
-    def last(self, symbol: str, metric: str | None = None) -> float | None:  # pragma: no cover - trivial
+    def last(
+        self, symbol: str, metric: str | None = None
+    ) -> float | None:  # pragma: no cover - trivial
         return None
 
 
@@ -245,11 +249,7 @@ class BarBacktestSimBridge:
         # Trades placed in the current step impact the position immediately, while
         # the resulting mark-to-market PnL is booked once the *next* bar arrives
         # and we have a subsequent close to compare against ``prev_price``.
-        if (
-            canonical_price is not None
-            and prev_price is not None
-            and prev_price > 0.0
-        ):
+        if canonical_price is not None and prev_price is not None and prev_price > 0.0:
             try:
                 bar_return = (canonical_price / prev_price) - 1.0
             except ZeroDivisionError:
@@ -390,9 +390,7 @@ class BarBacktestSimBridge:
         report_ref_price = (
             canonical_price
             if canonical_price is not None
-            else prev_price
-            if prev_price is not None
-            else 0.0
+            else prev_price if prev_price is not None else 0.0
         )
 
         report: Dict[str, Any] = {
@@ -414,9 +412,7 @@ class BarBacktestSimBridge:
             "trades": [],
             "core_exec_reports": [],
             "core_order_intents": [],
-            "expected_cost_components": {"cost_usd": trade_cost_usd}
-            if trade_cost_usd
-            else {},
+            "expected_cost_components": {"cost_usd": trade_cost_usd} if trade_cost_usd else {},
             "decisions": decisions,
             "decision": decisions[-1] if decisions else None,
             "instructions": instructions,
@@ -427,6 +423,7 @@ class BarBacktestSimBridge:
             report["skip_reason"] = "missing_bar_price"
 
         return report
+
 
 def _coerce_timeframe_ms(value: Any) -> Optional[int]:
     """Best-effort conversion of ``value`` to timeframe in milliseconds."""
@@ -469,9 +466,7 @@ def _extract_dynamic_slippage_cfg(
     if isinstance(slip_cfg, dict):
         dyn_block = slip_cfg.get("dynamic") or slip_cfg.get("dynamic_spread")
     else:
-        dyn_block = getattr(slip_cfg, "dynamic", None) or getattr(
-            slip_cfg, "dynamic_spread", None
-        )
+        dyn_block = getattr(slip_cfg, "dynamic", None) or getattr(slip_cfg, "dynamic_spread", None)
     if dyn_block is None:
         return None
     payload: Optional[Dict[str, Any]] = None
@@ -641,11 +636,7 @@ def _as_mapping(cfg: Any) -> Dict[str, Any]:
                     return dict(payload)
     if hasattr(cfg, "__dict__"):
         try:
-            return {
-                str(k): v
-                for k, v in vars(cfg).items()
-                if not str(k).startswith("_")
-            }
+            return {str(k): v for k, v in vars(cfg).items() if not str(k).startswith("_")}
         except Exception:
             return {}
     return {}
@@ -730,9 +721,7 @@ def _finalise_bar_capacity_payload(
     if "enabled" in raw_cfg:
         payload["enabled"] = bool(raw_cfg.get("enabled"))
     if "capacity_frac_of_ADV_base" in raw_cfg:
-        payload["capacity_frac_of_ADV_base"] = raw_cfg.get(
-            "capacity_frac_of_ADV_base"
-        )
+        payload["capacity_frac_of_ADV_base"] = raw_cfg.get("capacity_frac_of_ADV_base")
     if "floor_base" in raw_cfg:
         payload["floor_base"] = raw_cfg.get("floor_base")
 
@@ -879,9 +868,7 @@ def _iter_filter_rejection_entries(reason: Any) -> Sequence[Mapping[str, Any]]:
     entries: List[Mapping[str, Any]] = []
     if isinstance(reason, Mapping):
         rejections = reason.get("rejections")
-        if isinstance(rejections, Sequence) and not isinstance(
-            rejections, (str, bytes, bytearray)
-        ):
+        if isinstance(rejections, Sequence) and not isinstance(rejections, (str, bytes, bytearray)):
             for entry in rejections:
                 entries.extend(_iter_filter_rejection_entries(entry))
         details_val = reason.get("details")
@@ -895,15 +882,11 @@ def _iter_filter_rejection_entries(reason: Any) -> Sequence[Mapping[str, Any]]:
             entries.extend(_iter_filter_rejection_entries(extra_val))
         primary = reason.get("primary")
         if primary is not None:
-            if not (
-                isinstance(details_val, Mapping) and "rejections" in details_val
-            ):
+            if not (isinstance(details_val, Mapping) and "rejections" in details_val):
                 entries.append(reason)
         elif "which" in reason:
             entries.append(reason)
-    elif isinstance(reason, Sequence) and not isinstance(
-        reason, (str, bytes, bytearray)
-    ):
+    elif isinstance(reason, Sequence) and not isinstance(reason, (str, bytes, bytearray)):
         for item in reason:
             entries.extend(_iter_filter_rejection_entries(item))
     return entries
@@ -924,9 +907,7 @@ def _extract_filter_rejection_counts(reason: Any) -> Dict[str, int]:
             nested_counts = _extract_filter_rejection_counts(nested)
             for code, value in nested_counts.items():
                 counts[code] = counts.get(code, 0) + value
-    elif isinstance(reason, Sequence) and not isinstance(
-        reason, (str, bytes, bytearray)
-    ):
+    elif isinstance(reason, Sequence) and not isinstance(reason, (str, bytes, bytearray)):
         for item in reason:
             nested_counts = _extract_filter_rejection_counts(item)
             for code, value in nested_counts.items():
@@ -1082,7 +1063,9 @@ class ServiceBacktest:
             existing_impl = getattr(sim, "quantizer_impl", None)
             existing_meta = getattr(sim, "quantizer_metadata", None)
             metadata_missing = not isinstance(existing_meta, Mapping) or not existing_meta
-            impl_mismatch = not isinstance(existing_impl, QuantizerImpl) or existing_impl is not quantizer
+            impl_mismatch = (
+                not isinstance(existing_impl, QuantizerImpl) or existing_impl is not quantizer
+            )
             if not (metadata_missing or impl_mismatch):
                 return
             try:
@@ -1114,9 +1097,7 @@ class ServiceBacktest:
     class _EmptySource:
         """Заглушка источника данных для SimAdapter."""
 
-        def stream_bars(
-            self, symbols, interval_ms
-        ):  # pragma: no cover - простая заглушка
+        def stream_bars(self, symbols, interval_ms):  # pragma: no cover - простая заглушка
             return iter(())
 
         def stream_ticks(self, symbols):  # pragma: no cover - простая заглушка
@@ -1131,13 +1112,14 @@ class ServiceBacktest:
         run_config: CommonRunConfig | None = None,
     ) -> None:
         from collections.abc import Mapping
+
         if not hasattr(cfg, "symbol"):
             symbol = None
             if hasattr(cfg, "symbols") and cfg.symbols:
                 symbol = cfg.symbols[0]
             elif hasattr(cfg, "data") and getattr(cfg.data, "symbols", None):
                 symbol = cfg.data.symbols[0]
-            
+
             timeframe = None
             if hasattr(cfg, "timeframe"):
                 timeframe = cfg.timeframe
@@ -1145,34 +1127,34 @@ class ServiceBacktest:
                 timeframe = cfg.data.timeframe
             elif hasattr(cfg, "timing") and getattr(cfg.timing, "timeframe", None):
                 timeframe = cfg.timing.timeframe
-                
+
             symbol = symbol or "BTCUSDT"
             timeframe = timeframe or "4h"
-            
+
             dynamic_spread_config = getattr(cfg, "slippage", None)
             if hasattr(dynamic_spread_config, "dict"):
                 dynamic_spread_config = dynamic_spread_config.dict()
             elif isinstance(dynamic_spread_config, Mapping):
                 dynamic_spread_config = dict(dynamic_spread_config)
-                
+
             guards_config = getattr(cfg, "risk", None)
             if hasattr(guards_config, "dict"):
                 guards_config = guards_config.dict()
             elif isinstance(guards_config, Mapping):
                 guards_config = dict(guards_config)
-                
+
             no_trade_config = getattr(cfg, "no_trade", None)
             if hasattr(no_trade_config, "dict"):
                 no_trade_config = no_trade_config.dict()
             elif isinstance(no_trade_config, Mapping):
                 no_trade_config = dict(no_trade_config)
-                
+
             timing_config = getattr(cfg, "timing", None)
             if hasattr(timing_config, "dict"):
                 timing_config = timing_config.dict()
             elif isinstance(timing_config, Mapping):
                 timing_config = dict(timing_config)
-                
+
             cfg = BacktestConfig(
                 symbol=symbol,
                 timeframe=timeframe,
@@ -1196,9 +1178,7 @@ class ServiceBacktest:
             sim, run_config, context="service_backtest"
         )
         self._run_config = (
-            run_config
-            or getattr(sim, "run_config", None)
-            or getattr(sim, "_run_config", None)
+            run_config or getattr(sim, "run_config", None) or getattr(sim, "_run_config", None)
         )
 
         exec_cfg_block = getattr(self._run_config, "execution", None)
@@ -1221,15 +1201,15 @@ class ServiceBacktest:
         SimExecutorCls.apply_execution_profile(
             self.sim,
             exec_profile,
-            getattr(self._run_config, "execution_params", None)
-            if self._run_config is not None
-            else None,
+            (
+                getattr(self._run_config, "execution_params", None)
+                if self._run_config is not None
+                else None
+            ),
         )
 
         ws_dedup_cfg = (
-            getattr(self._run_config, "ws_dedup", None)
-            if self._run_config is not None
-            else None
+            getattr(self._run_config, "ws_dedup", None) if self._run_config is not None else None
         )
         dedup_enabled_val = (
             SimExecutorCls._bool_or_none(getattr(ws_dedup_cfg, "enabled", None))
@@ -1286,9 +1266,9 @@ class ServiceBacktest:
                 slip_payload = _slippage_to_dict(rc_slip_cfg)
                 if slip_payload:
                     try:
-                        SlippageImpl.from_dict(
-                            slip_payload, run_config=self._run_config
-                        ).attach_to(self.sim)
+                        SlippageImpl.from_dict(slip_payload, run_config=self._run_config).attach_to(
+                            self.sim
+                        )
                     except Exception:
                         logger.exception("Failed to attach slippage config to simulator")
         elif getattr(self._run_config, "slippage", None):
@@ -1327,9 +1307,7 @@ class ServiceBacktest:
         try:  # переподключаем логгер симулятора с нужными путями
             from sim_logging import LogWriter, LogConfig  # type: ignore
 
-            self.sim._logger = LogWriter(
-                LogConfig.from_dict(logging_config), run_id=run_id
-            )
+            self.sim._logger = LogWriter(LogConfig.from_dict(logging_config), run_id=run_id)
         except Exception:
             pass
 
@@ -1369,9 +1347,7 @@ class ServiceBacktest:
     ) -> List[Dict[str, Any]]:
         if self.cfg.snapshot_config_path and self.cfg.artifacts_dir:
             snapshot_config(self.cfg.snapshot_config_path, self.cfg.artifacts_dir)
-        reports = self._bt.run(
-            df, ts_col=ts_col, symbol_col=symbol_col, price_col=price_col
-        )
+        reports = self._bt.run(df, ts_col=ts_col, symbol_col=symbol_col, price_col=price_col)
 
         expected_payload: Dict[str, Any] = (
             dict(self._fees_expected_payload)
@@ -1423,9 +1399,7 @@ class ServiceBacktest:
             total_fill_sum += per_fill_sum
             total_fill_count += per_fill_count
 
-            fill_ratio_avg = self._safe_float(
-                rep.get("bar_capacity_base_fill_ratio_avg")
-            )
+            fill_ratio_avg = self._safe_float(rep.get("bar_capacity_base_fill_ratio_avg"))
             if fill_ratio_avg is not None:
                 clip_ratio_values.append(fill_ratio_avg)
 
@@ -1541,9 +1515,7 @@ class ServiceBacktest:
             if reason_code is not None:
                 detail_row["reason_code"] = reason_code
 
-            collected_reasons = _collect_filter_rejection_counts(
-                reason_counts, reason_payload
-            )
+            collected_reasons = _collect_filter_rejection_counts(reason_counts, reason_payload)
             if not collected_reasons:
                 meta_payload = rep.get("meta")
                 if isinstance(meta_payload, Mapping):
@@ -1558,13 +1530,9 @@ class ServiceBacktest:
             if default_share is not None and not share_values:
                 share_values.append(default_share)
                 share_expected_flag = True
-            default_fee = self._safe_float(
-                expected_payload.get("expected_fee_bps")
-            )
+            default_fee = self._safe_float(expected_payload.get("expected_fee_bps"))
             if default_fee is None:
-                default_fee = self._safe_float(
-                    expected_payload.get("taker_fee_bps")
-                )
+                default_fee = self._safe_float(expected_payload.get("taker_fee_bps"))
             if default_fee is not None and not fee_values:
                 fee_values.append(default_fee)
                 fee_expected_flag = True
@@ -1598,6 +1566,7 @@ class ServiceBacktest:
                 )
         share_count = len(share_values)
         fee_count = len(fee_values)
+
         def _avg(series: List[float]) -> Optional[float]:
             if not series:
                 return None
@@ -1622,23 +1591,17 @@ class ServiceBacktest:
                 "rows": len(bar_report_rows),
                 "spread_bps_avg": spread_component_avg,
                 "spread_bps_count": (
-                    len(spread_component_values)
-                    if spread_component_values
-                    else len(spread_values)
+                    len(spread_component_values) if spread_component_values else len(spread_values)
                 ),
                 "impact_bps_avg": impact_component_avg,
                 "impact_bps_count": len(impact_component_values),
                 "fee_bps_avg": fee_component_avg,
                 "fee_bps_count": (
-                    len(fee_component_values)
-                    if fee_component_values
-                    else len(fee_values)
+                    len(fee_component_values) if fee_component_values else len(fee_values)
                 ),
                 "clip_ratio_avg": clip_ratio_avg,
                 "clip_ratio_weighted": (
-                    total_fill_sum / total_fill_count
-                    if total_fill_count
-                    else None
+                    total_fill_sum / total_fill_count if total_fill_count else None
                 ),
                 "clip_ratio_count": len(clip_ratio_values),
             }
@@ -1655,6 +1618,7 @@ class ServiceBacktest:
             or spread_bps_avg is not None
             or component_avg
         ):
+
             def _fmt(value: Optional[float], expected: bool = False) -> str:
                 if value is None:
                     return "None"
@@ -1662,11 +1626,7 @@ class ServiceBacktest:
                 return f"{value:.4f}{suffix}"
 
             comp_avg_repr = (
-                "{"
-                + ", ".join(
-                    f"{k}={component_avg[k]:.4f}" for k in sorted(component_avg)
-                )
-                + "}"
+                "{" + ", ".join(f"{k}={component_avg[k]:.4f}" for k in sorted(component_avg)) + "}"
                 if component_avg
                 else "{}"
             )
@@ -1770,9 +1730,7 @@ class ServiceBacktest:
             try:
                 info_payload = getter()
             except Exception:
-                logger.debug(
-                    "service_backtest: failed to fetch fees expected info", exc_info=True
-                )
+                logger.debug("service_backtest: failed to fetch fees expected info", exc_info=True)
         if isinstance(info_payload, Mapping):
             expected_candidate = info_payload.get("expected")
             if isinstance(expected_candidate, Mapping):
@@ -1973,13 +1931,9 @@ def from_config(
     bt_kwargs = {k: v for k, v in params.items() if k in BacktestConfig.__annotations__}
 
     symbol = bt_kwargs.get("symbol") or (
-        cfg.data.symbols[0]
-        if getattr(getattr(cfg, "data", None), "symbols", [])
-        else None
+        cfg.data.symbols[0] if getattr(getattr(cfg, "data", None), "symbols", []) else None
     )
-    timeframe = bt_kwargs.get("timeframe") or getattr(
-        getattr(cfg, "data", None), "timeframe", None
-    )
+    timeframe = bt_kwargs.get("timeframe") or getattr(getattr(cfg, "data", None), "timeframe", None)
     if not symbol or not timeframe:
         raise ValueError("Config must provide symbols and data.timeframe")
 
@@ -1990,8 +1944,7 @@ def from_config(
         dynamic_spread_config=bt_kwargs.get("dynamic_spread_config"),
         guards_config=bt_kwargs.get("guards_config"),
         signal_cooldown_s=bt_kwargs.get("signal_cooldown_s", 0),
-        no_trade_config=bt_kwargs.get("no_trade_config")
-        or getattr(cfg, "no_trade", None),
+        no_trade_config=bt_kwargs.get("no_trade_config") or getattr(cfg, "no_trade", None),
         snapshot_config_path=snapshot_config_path,
         artifacts_dir=cfg.artifacts_dir,
         logs_dir=bt_kwargs.get("logs_dir") or cfg.logs_dir,
@@ -2017,7 +1970,9 @@ def from_config(
     price_col = params.get("price_col", "ref_price")
 
     exec_cfg_block = getattr(cfg, "execution", None)
-    exec_mode_value = getattr(exec_cfg_block, "mode", "bar") if exec_cfg_block is not None else "bar"
+    exec_mode_value = (
+        getattr(exec_cfg_block, "mode", "bar") if exec_cfg_block is not None else "bar"
+    )
     try:
         exec_mode = str(exec_mode_value or "bar").lower()
     except Exception:
@@ -2030,7 +1985,11 @@ def from_config(
             lat_cfg_dict = cfg.latency.dict(exclude_unset=False)
         except Exception:
             lat_cfg_dict = {}
-        if lat_cfg_dict and "ExecutionSimulator" in target and not exec_spec.params.get("latency_config"):
+        if (
+            lat_cfg_dict
+            and "ExecutionSimulator" in target
+            and not exec_spec.params.get("latency_config")
+        ):
             exec_spec.params["latency_config"] = dict(lat_cfg_dict)
 
     container = di_registry.build_graph(cfg.components, cfg)
@@ -2050,7 +2009,9 @@ def from_config(
 
         portfolio_cfg = getattr(cfg, "portfolio", None)
         try:
-            initial_equity = float(getattr(portfolio_cfg, "equity_usd", 0.0)) if portfolio_cfg else 0.0
+            initial_equity = (
+                float(getattr(portfolio_cfg, "equity_usd", 0.0)) if portfolio_cfg else 0.0
+            )
         except Exception:
             initial_equity = 0.0
 

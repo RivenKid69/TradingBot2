@@ -24,6 +24,7 @@ ExecutionSimulator = exec_mod.ExecutionSimulator
 LogWriter = log_mod.LogWriter
 LogConfig = log_mod.LogConfig
 
+
 def test_execution_profile_logging_and_metrics(tmp_path):
     trades_path = tmp_path / "trades.csv"
     reports_path = tmp_path / "reports.csv"
@@ -42,7 +43,9 @@ def test_execution_profile_logging_and_metrics(tmp_path):
     sim.submit(proto)
     sim.pop_ready(ref_price=100.5)
     rep = sim.pop_ready(ref_price=100.5)
-    log = LogWriter(LogConfig(trades_path=str(trades_path), reports_path=str(reports_path), flush_every=1))
+    log = LogWriter(
+        LogConfig(trades_path=str(trades_path), reports_path=str(reports_path), flush_every=1)
+    )
     log.append(rep, symbol="BTCUSDT", ts_ms=0)
     log.flush()
     df = pd.read_csv(trades_path)
@@ -51,18 +54,22 @@ def test_execution_profile_logging_and_metrics(tmp_path):
     assert "market_regime" in df.columns
     assert set(df["market_regime"].dropna()) == {"BULL"}
 
-    trades = pd.DataFrame({
-        "ts_ms": [1, 2, 3, 4],
-        "pnl": [1.0, -0.5, 2.0, -1.0],
-        "side": ["BUY", "SELL", "BUY", "SELL"],
-        "qty": [1, 1, 1, 1],
-        "execution_profile": ["A", "A", "B", "B"],
-    })
-    equity = pd.DataFrame({
-        "ts_ms": [1, 2, 3, 4],
-        "equity": [1.0, 0.5, 2.0, 1.0],
-        "execution_profile": ["A", "A", "B", "B"],
-    })
+    trades = pd.DataFrame(
+        {
+            "ts_ms": [1, 2, 3, 4],
+            "pnl": [1.0, -0.5, 2.0, -1.0],
+            "side": ["BUY", "SELL", "BUY", "SELL"],
+            "qty": [1, 1, 1, 1],
+            "execution_profile": ["A", "A", "B", "B"],
+        }
+    )
+    equity = pd.DataFrame(
+        {
+            "ts_ms": [1, 2, 3, 4],
+            "equity": [1.0, 0.5, 2.0, 1.0],
+            "execution_profile": ["A", "A", "B", "B"],
+        }
+    )
     metrics = calculate_metrics(trades, equity)
     assert set(metrics.keys()) == {"A", "B"}
     assert metrics["A"]["trades"]["n_trades"] == 2

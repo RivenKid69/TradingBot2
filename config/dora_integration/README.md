@@ -16,14 +16,17 @@ This directory contains configuration files for the DORA Integration Layer.
 Configuration files will be migrated from `config/dora/` during the respective phases.
 
 ### Files to Remain in `config/dora/`
+
 - `proportionality_assessment.yaml` - Internal toggle for provider proportionality
 
 ### Files to Move to Integration Layer
+
 - `third_party_management.yaml` - Phase 3
 - `information_sharing.yaml` - Phase 6
 - `digital_resilience_strategy.yaml` - Phase 6
 
 ### Files to Archive (Phase 7)
+
 - `entity_classification.yaml` -> `services/archive/dora_financial_entity/configs/`
 - `nca_identification.yaml` -> `services/archive/dora_financial_entity/configs/`
 

@@ -36,9 +36,11 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # =============================================================================
 
+
 @dataclass
 class AlpacaWSConfig:
     """Configuration for Alpaca WebSocket connection."""
+
     api_key: str = ""
     api_secret: str = ""
     paper: bool = True
@@ -51,6 +53,7 @@ class AlpacaWSConfig:
 # =============================================================================
 # TIMEFRAME UTILITIES
 # =============================================================================
+
 
 def timeframe_to_ms(tf: str) -> int:
     """Convert timeframe string to milliseconds."""
@@ -78,6 +81,7 @@ def timeframe_to_ms(tf: str) -> int:
 
     # Try parsing numeric format
     import re
+
     match = re.match(r"(\d+)([mhd])", tf_lower)
     if match:
         value = int(match.group(1))
@@ -103,6 +107,7 @@ def ensure_timeframe(tf: str) -> None:
 # =============================================================================
 # ALPACA BAR SOURCE
 # =============================================================================
+
 
 class AlpacaBarSource(MarketDataSource):
     """
@@ -356,8 +361,9 @@ class AlpacaBarSource(MarketDataSource):
                 low=Decimal(str(alpaca_bar.low)),
                 close=Decimal(str(alpaca_bar.close)),
                 volume_base=Decimal(str(alpaca_bar.volume)),
-                volume_quote=Decimal(str(alpaca_bar.vwap * alpaca_bar.volume))
-                    if alpaca_bar.vwap else None,
+                volume_quote=(
+                    Decimal(str(alpaca_bar.vwap * alpaca_bar.volume)) if alpaca_bar.vwap else None
+                ),
                 trades=getattr(alpaca_bar, "trade_count", None),
                 vwap=Decimal(str(alpaca_bar.vwap)) if alpaca_bar.vwap else None,
                 is_final=True,
@@ -402,6 +408,7 @@ class AlpacaBarSource(MarketDataSource):
 # OFFLINE BAR SOURCE FOR ALPACA
 # =============================================================================
 
+
 class AlpacaOfflineBarSource(MarketDataSource):
     """
     Offline bar source that loads historical data from Alpaca.
@@ -434,6 +441,7 @@ class AlpacaOfflineBarSource(MarketDataSource):
         """Lazy initialization of adapter."""
         if self._adapter is None:
             from adapters.alpaca import AlpacaMarketDataAdapter
+
             self._adapter = AlpacaMarketDataAdapter(config=self._config)
         return self._adapter
 
@@ -486,6 +494,7 @@ class AlpacaOfflineBarSource(MarketDataSource):
 # =============================================================================
 # FACTORY FUNCTION
 # =============================================================================
+
 
 def create_alpaca_bar_source(
     timeframe: str = "1h",

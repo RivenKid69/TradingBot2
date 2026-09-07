@@ -10,6 +10,7 @@ This ensures reward timing matches actual execution timing.
 
 Test count: 5 tests
 """
+
 from __future__ import annotations
 
 import math
@@ -24,8 +25,10 @@ from unittest.mock import patch, MagicMock
 # Minimal stub classes for testing without Cython dependencies
 # ============================================================================
 
+
 class _EnvState:
     """Minimal state stub for testing."""
+
     def __init__(self):
         self.cash = 1000.0
         self.units = 0.0
@@ -66,7 +69,7 @@ class _MediatorStub:
         obs = self._build_observation(
             row=self._env.df.iloc[state.step_idx] if len(self._env.df) > state.step_idx else None,
             state=state,
-            mark_price=100.0
+            mark_price=100.0,
         )
         state.step_idx += 1
         return obs, 0.0, False, False, {}
@@ -76,17 +79,20 @@ class _MediatorStub:
 # Test fixtures
 # ============================================================================
 
+
 def _create_test_df() -> pd.DataFrame:
     """Create test dataframe."""
-    return pd.DataFrame({
-        "ts_ms": [0, 60000, 120000, 180000, 240000],
-        "open": [100.0, 101.0, 102.0, 103.0, 104.0],
-        "high": [101.0, 102.0, 103.0, 104.0, 105.0],
-        "low": [99.0, 100.0, 101.0, 102.0, 103.0],
-        "close": [100.5, 101.5, 102.5, 103.5, 104.5],
-        "price": [100.5, 101.5, 102.5, 103.5, 104.5],
-        "quote_asset_volume": [1000.0, 1000.0, 1000.0, 1000.0, 1000.0],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [0, 60000, 120000, 180000, 240000],
+            "open": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "high": [101.0, 102.0, 103.0, 104.0, 105.0],
+            "low": [99.0, 100.0, 101.0, 102.0, 103.0],
+            "close": [100.5, 101.5, 102.5, 103.5, 104.5],
+            "price": [100.5, 101.5, 102.5, 103.5, 104.5],
+            "quote_asset_volume": [1000.0, 1000.0, 1000.0, 1000.0, 1000.0],
+        }
+    )
 
 
 def _setup_mock_env(df, decision_mode=None, signal_only=True):
@@ -96,7 +102,7 @@ def _setup_mock_env(df, decision_mode=None, signal_only=True):
     if decision_mode is None:
         decision_mode = DecisionTiming.CLOSE_TO_OPEN
 
-    with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+    with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
         env = TradingEnv.__new__(TradingEnv)
         env.df = df.copy()
         env.initial_cash = 1000.0
@@ -131,6 +137,7 @@ def _setup_mock_env(df, decision_mode=None, signal_only=True):
 # Tests for CLOSE_TO_OPEN + SIGNAL_ONLY timing
 # ============================================================================
 
+
 class TestCloseToOpenSignalOnlyTiming:
     """Tests verifying CLOSE_TO_OPEN respects delay even in SIGNAL_ONLY mode."""
 
@@ -163,9 +170,9 @@ class TestCloseToOpenSignalOnlyTiming:
 
         # Simulate the signal position computation
         from trading_patchnew import TradingEnv
+
         executed_signal_pos = env._signal_position_from_proto(
-            ActionProto(ActionType.HOLD, 0.0),  # proto is pending from previous
-            prev_signal_pos
+            ActionProto(ActionType.HOLD, 0.0), prev_signal_pos  # proto is pending from previous
         )
         agent_signal_pos = env._signal_position_from_proto(action_0, prev_signal_pos)
 
@@ -216,9 +223,9 @@ class TestCloseToOpenSignalOnlyTiming:
         proto_1 = env._pending_action  # The 50% action from step 0
 
         executed_1 = env._signal_position_from_proto(proto_1, env._last_signal_position)
-        assert executed_1 == pytest.approx(0.5, rel=0.1), (
-            f"Step 1: executed should be ~0.5, got {executed_1}"
-        )
+        assert executed_1 == pytest.approx(
+            0.5, rel=0.1
+        ), f"Step 1: executed should be ~0.5, got {executed_1}"
 
     def test_no_delay_in_default_mode_signal_only(self):
         """In default mode + SIGNAL_ONLY, signal position should update immediately."""
@@ -243,9 +250,9 @@ class TestCloseToOpenSignalOnlyTiming:
         else:
             next_signal_pos = agent_signal_pos if env._reward_signal_only else 0.0
 
-        assert next_signal_pos == pytest.approx(0.5), (
-            f"In default mode + SIGNAL_ONLY, expected immediate signal pos 0.5, got {next_signal_pos}"
-        )
+        assert next_signal_pos == pytest.approx(
+            0.5
+        ), f"In default mode + SIGNAL_ONLY, expected immediate signal pos 0.5, got {next_signal_pos}"
 
     def test_intra_hour_with_latency_uses_queue(self):
         """In INTRA_HOUR_WITH_LATENCY mode, actions should go through queue."""
@@ -253,15 +260,16 @@ class TestCloseToOpenSignalOnlyTiming:
         from action_proto import ActionProto, ActionType
 
         df = _create_test_df()
-        env = _setup_mock_env(df, decision_mode=DecisionTiming.INTRA_HOUR_WITH_LATENCY, signal_only=True)
+        env = _setup_mock_env(
+            df, decision_mode=DecisionTiming.INTRA_HOUR_WITH_LATENCY, signal_only=True
+        )
         env.latency_steps = 2
 
         env._init_state()
         # Initialize queue with HOLD actions
-        env._action_queue = deque([
-            ActionProto(ActionType.HOLD, 0.0)
-            for _ in range(env.latency_steps)
-        ])
+        env._action_queue = deque(
+            [ActionProto(ActionType.HOLD, 0.0) for _ in range(env.latency_steps)]
+        )
 
         # First action
         action_0 = ActionProto(ActionType.MARKET, 0.5)  # 50% position
@@ -284,9 +292,9 @@ class TestCloseToOpenSignalOnlyTiming:
         action_2 = ActionProto(ActionType.MARKET, 0.8)
         env._action_queue.append(action_2)
 
-        assert proto.action_type == ActionType.MARKET and proto.volume_frac == pytest.approx(0.5), (
-            f"After latency_steps={env.latency_steps}, action_0 (0.5) should be executed, got {proto}"
-        )
+        assert proto.action_type == ActionType.MARKET and proto.volume_frac == pytest.approx(
+            0.5
+        ), f"After latency_steps={env.latency_steps}, action_0 (0.5) should be executed, got {proto}"
 
 
 class TestCloseToOpenRewardConsistency:
@@ -324,9 +332,9 @@ class TestCloseToOpenRewardConsistency:
 
         # In CLOSE_TO_OPEN mode, the fix ensures next_signal_pos = executed_pos
         next_signal_pos = executed_pos  # As per fix
-        assert next_signal_pos == 0.0, (
-            "next_signal_pos should be 0.0 (from executed HOLD), not 1.0 (intended)"
-        )
+        assert (
+            next_signal_pos == 0.0
+        ), "next_signal_pos should be 0.0 (from executed HOLD), not 1.0 (intended)"
 
 
 if __name__ == "__main__":

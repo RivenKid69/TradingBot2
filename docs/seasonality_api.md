@@ -36,9 +36,9 @@ Rebuild the seasonality JSON using the helper script
 `scripts/build_hourly_seasonality.py` and return the generated data.  Two
 query parameters are available:
 
-* `data` - path to the historical trade or latency dataset; defaults to
+- `data` - path to the historical trade or latency dataset; defaults to
   `data/seasonality_source/latest.parquet`.
-* `out` - output JSON path; defaults to
+- `out` - output JSON path; defaults to
   `data/latency/liquidity_latency_seasonality.json`.
 
 ```bash

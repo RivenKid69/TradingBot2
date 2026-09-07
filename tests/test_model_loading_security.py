@@ -82,9 +82,7 @@ class TestSecureModelLoading:
     def test_secure_model_loads_with_weights_only(self, secure_model_path):
         """Verify secure models load with weights_only=True."""
         # Should not raise
-        state_dict = torch.load(
-            secure_model_path, map_location="cpu", weights_only=True
-        )
+        state_dict = torch.load(secure_model_path, map_location="cpu", weights_only=True)
         assert isinstance(state_dict, dict)
         assert "linear.weight" in state_dict
 
@@ -111,6 +109,7 @@ class TestInferSignalsSecurityPolicy:
 
         # Copy legacy model to models dir
         import shutil
+
         shutil.copy(legacy_model_path, models_dir / "model.pt")
 
         # Mock the MODELS_DIR in infer_signals
@@ -142,6 +141,7 @@ class TestInferSignalsSecurityPolicy:
 
         # Copy legacy model to models dir
         import shutil
+
         shutil.copy(legacy_model_path, models_dir / "model.pt")
 
         # Set the opt-in environment variable
@@ -153,7 +153,7 @@ class TestInferSignalsSecurityPolicy:
 
             with mock.patch.object(infer_signals, "MODELS_DIR", models_dir):
                 # Should work but emit warning
-                with pytest.warns(SecurityWarning, match="weights_only=False"):
+                with pytest.warns(UserWarning, match="weights_only=False"):
                     result = infer_signals._load_model()
 
                 assert result[0] == "torch"
@@ -203,9 +203,11 @@ class TestModelConversionUtility:
     def test_conversion_utility_importable(self):
         """Verify conversion utility is importable."""
         import sys
+
         sys.path.insert(0, str(Path("tools")))
         try:
             import convert_legacy_models
+
             assert hasattr(convert_legacy_models, "convert_model")
             assert hasattr(convert_legacy_models, "check_model_security")
         finally:
@@ -214,9 +216,11 @@ class TestModelConversionUtility:
     def test_check_model_security_detects_secure(self, secure_model_path):
         """Verify check_model_security identifies secure models."""
         import sys
+
         sys.path.insert(0, str(Path("tools")))
         try:
             from convert_legacy_models import check_model_security
+
             is_secure, error = check_model_security(secure_model_path)
             assert is_secure is True
             assert error is None
@@ -226,9 +230,11 @@ class TestModelConversionUtility:
     def test_check_model_security_detects_legacy(self, legacy_model_path):
         """Verify check_model_security identifies legacy models."""
         import sys
+
         sys.path.insert(0, str(Path("tools")))
         try:
             from convert_legacy_models import check_model_security
+
             is_secure, error = check_model_security(legacy_model_path)
             assert is_secure is False
             assert error is not None

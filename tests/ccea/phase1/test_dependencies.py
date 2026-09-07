@@ -39,6 +39,7 @@ class TestCCEAAgentDependencies:
         """Verify cryptography package is installed."""
         try:
             import cryptography
+
             assert cryptography.__version__ is not None
         except ImportError:
             pytest.fail(
@@ -110,11 +111,11 @@ class TestCCEACloudDependencies:
         """Verify asyncpg package is installed."""
         try:
             import asyncpg
+
             assert asyncpg.__version__ is not None
         except ImportError:
             pytest.fail(
-                "asyncpg package not installed. "
-                "Install with: pip install 'asyncpg>=0.29.0'"
+                "asyncpg package not installed. " "Install with: pip install 'asyncpg>=0.29.0'"
             )
 
     def test_asyncpg_version(self) -> None:
@@ -135,12 +136,10 @@ class TestCCEACloudDependencies:
         """Verify PyJWT package is installed."""
         try:
             import jwt
+
             assert jwt.__version__ is not None
         except ImportError:
-            pytest.fail(
-                "PyJWT package not installed. "
-                "Install with: pip install 'PyJWT>=2.8.0'"
-            )
+            pytest.fail("PyJWT package not installed. " "Install with: pip install 'PyJWT>=2.8.0'")
 
     def test_pyjwt_version(self) -> None:
         """Verify PyJWT is at minimum required version (2.8.0)."""
@@ -173,6 +172,7 @@ class TestCCEACloudDependencies:
         """Verify argon2-cffi package is installed."""
         try:
             import argon2
+
             assert hasattr(argon2, "PasswordHasher")
         except ImportError:
             pytest.fail(
@@ -217,11 +217,11 @@ class TestCCEACloudDependencies:
         """Verify aiosqlite is installed (dev/test database driver)."""
         try:
             import aiosqlite
+
             assert aiosqlite.__version__ is not None
         except ImportError:
             pytest.fail(
-                "aiosqlite package not installed. "
-                "Install with: pip install 'aiosqlite>=0.19.0'"
+                "aiosqlite package not installed. " "Install with: pip install 'aiosqlite>=0.19.0'"
             )
 
 
@@ -232,6 +232,7 @@ class TestCCEADatabaseConfiguration:
         """Verify database module can be imported."""
         try:
             from packages.cloud.control_plane import database
+
             assert hasattr(database, "create_engine")
             assert hasattr(database, "DATABASE_URL")
         except ImportError as e:
@@ -250,11 +251,12 @@ class TestCCEADatabaseConfiguration:
             # Re-import to get fresh default
             import importlib
             from packages.cloud.control_plane import database
+
             importlib.reload(database)
 
-            assert database._DEFAULT_DATABASE_URL.startswith("sqlite+aiosqlite"), (
-                "Default database URL should use SQLite for dev/test"
-            )
+            assert database._DEFAULT_DATABASE_URL.startswith(
+                "sqlite+aiosqlite"
+            ), "Default database URL should use SQLite for dev/test"
         finally:
             # Restore original value
             if original is not None:
@@ -282,6 +284,7 @@ class TestCCEACryptoModule:
         """Verify keys module can be imported."""
         try:
             from ccea.crypto import keys
+
             assert hasattr(keys, "generate_keypair")
             assert hasattr(keys, "KeyAlgorithm")
         except ImportError as e:
@@ -341,6 +344,7 @@ class TestCCEAVaultModule:
         """Verify local_vault module can be imported."""
         try:
             from packages.agent.vault import local_vault
+
             assert hasattr(local_vault, "LocalVault")
             assert hasattr(local_vault, "CRYPTO_AVAILABLE")
         except ImportError as e:
@@ -418,6 +422,7 @@ class TestCCEAJWTDependencies:
         """Verify dependencies module can be imported."""
         try:
             from packages.cloud.control_plane import dependencies
+
             assert hasattr(dependencies, "create_access_token")
             assert hasattr(dependencies, "decode_token")
         except ImportError as e:
@@ -548,9 +553,9 @@ class TestDependencyVersionMatrix:
         except AttributeError:
             pytest.skip(f"{package} does not expose __version__")
 
-        assert self._version_in_range(version, min_ver, max_ver), (
-            f"{package} version {version} is not in required range [{min_ver}, {max_ver})"
-        )
+        assert self._version_in_range(
+            version, min_ver, max_ver
+        ), f"{package} version {version} is not in required range [{min_ver}, {max_ver})"
 
 
 # =============================================================================
@@ -667,7 +672,8 @@ class TestCIAcceptance:
 
             # Filter for dependency-related deprecations
             dep_warnings = [
-                warning for warning in w
+                warning
+                for warning in w
                 if "deprecat" in str(warning.message).lower()
                 and any(
                     pkg in warning.filename
@@ -675,6 +681,6 @@ class TestCIAcceptance:
                 )
             ]
 
-            assert len(dep_warnings) == 0, (
-                f"Found deprecation warnings in dependencies: {dep_warnings}"
-            )
+            assert (
+                len(dep_warnings) == 0
+            ), f"Found deprecation warnings in dependencies: {dep_warnings}"

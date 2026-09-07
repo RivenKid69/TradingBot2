@@ -14,7 +14,9 @@ from typing import Optional
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
+import gymnasium as gym
 from gymnasium import spaces
 from stable_baselines3.common.vec_env import DummyVecEnv
 
@@ -28,9 +30,11 @@ from distributional_ppo import DistributionalPPO
 
 def _make_simple_env():
     """Create a simple dummy environment for testing."""
+
     def _init():
         # Use Pendulum-v1 which has Box action space
         return gym.make("Pendulum-v1")
+
     return DummyVecEnv([_init])
 
 
@@ -193,9 +197,11 @@ def test_vgs_state_restored():
 
     # Check VGS exists and has state
     assert model._variance_gradient_scaler is not None
-    original_vgs_step = model._variance_gradient_scaler.step_count if hasattr(
-        model._variance_gradient_scaler, 'step_count'
-    ) else 0
+    original_vgs_step = (
+        model._variance_gradient_scaler.step_count
+        if hasattr(model._variance_gradient_scaler, "step_count")
+        else 0
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         save_path = os.path.join(tmpdir, "model.zip")
@@ -310,7 +316,7 @@ def test_with_twin_critics():
         loaded_model = DistributionalPPO.load(save_path, env=env)
 
         # Verify twin critics are present
-        assert hasattr(loaded_model.policy, 'value_net')
+        assert hasattr(loaded_model.policy, "value_net")
 
         # Continue training
         loaded_model.learn(total_timesteps=256, progress_bar=False)

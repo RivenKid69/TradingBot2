@@ -52,13 +52,25 @@ def _wait_for_job(pid_file: Path, timeout: float = 10.0) -> dict:
 def test_frozen_worker_dispatches_all_lite_job_modules(monkeypatch):
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     expected = {
-        "ingest_orchestrator", "make_features", "make_costaware_targets",
-        "build_training_table", "apply_no_trade_mask", "make_walkforward_splits",
-        "train_model_multi_patch", "train_calibrator", "apply_calibrator",
-        "tune_threshold", "drift", "script_calibrate_tcost",
-        "script_calibrate_slippage", "tools.check_feature_parity",
-        "scripts.download_stock_data", "scripts.download_forex_data",
-        "scripts.download_options_data", "script_live", "script_futures_live",
+        "ingest_orchestrator",
+        "make_features",
+        "make_costaware_targets",
+        "build_training_table",
+        "apply_no_trade_mask",
+        "make_walkforward_splits",
+        "train_model_multi_patch",
+        "train_calibrator",
+        "apply_calibrator",
+        "tune_threshold",
+        "drift",
+        "script_calibrate_tcost",
+        "script_calibrate_slippage",
+        "tools.check_feature_parity",
+        "scripts.download_stock_data",
+        "scripts.download_forex_data",
+        "scripts.download_options_data",
+        "script_live",
+        "script_futures_live",
     }
     assert expected <= WORKER_MODULES
     for module in expected:
@@ -81,7 +93,8 @@ def test_background_job_persists_real_exit_status(tmp_path, exit_code, expected)
     log_file = tmp_path / f"job-{exit_code}.log"
     start_background(
         [sys.executable, "-c", f"import sys; print('worker'); sys.exit({exit_code})"],
-        pid_file=str(pid_file), log_file=str(log_file),
+        pid_file=str(pid_file),
+        log_file=str(log_file),
     )
     status = _wait_for_job(pid_file)
     assert status["state"] == expected
@@ -114,21 +127,28 @@ def test_rejected_broker_connection_cannot_submit_order():
     )
     assert connector.connect() is False
     assert connector.is_connected is False
-    result = connector.submit_order(OrderRequest(
-        client_order_id="must-not-submit", symbol="ES", side=OrderSide.BUY,
-        order_type=OrderType.MARKET, quantity=1,
-    ))
+    result = connector.submit_order(
+        OrderRequest(
+            client_order_id="must-not-submit",
+            symbol="ES",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+        )
+    )
     assert result.success is False
     assert result.error_message
 
 
 def test_auto_heal_repairs_atomically_and_reports_remaining_gaps(tmp_path):
     path = tmp_path / "prices.parquet"
-    pd.DataFrame({
-        "symbol": ["BTC", "BTC", "BTC", "BTC", "BTC"],
-        "ts": [1, 2, 2, 3, 4],
-        "close": [100.0, np.inf, 101.0, np.nan, np.nan],
-    }).to_parquet(path, index=False)
+    pd.DataFrame(
+        {
+            "symbol": ["BTC", "BTC", "BTC", "BTC", "BTC"],
+            "ts": [1, 2, 2, 3, 4],
+            "close": [100.0, np.inf, 101.0, np.nan, np.nan],
+        }
+    ).to_parquet(path, index=False)
     result = repair_prices_file(path, forward_fill_limit=1)
     repaired = pd.read_parquet(path)
     assert result["duplicates_removed"] == 1
@@ -143,9 +163,13 @@ def test_auto_heal_repairs_atomically_and_reports_remaining_gaps(tmp_path):
 def test_lite_ui_audit_handlers_are_unique_and_truthful():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     for name in (
-        "triggerLiteEmergencyHalt", "resetLiteEmergencyHalt",
-        "triggerProEmergencyHalt", "resetProEmergencyHalt",
-        "startQuantLabBacktest", "stopQuantLabBacktest", "closeLiteHistoryAuditor",
+        "triggerLiteEmergencyHalt",
+        "resetLiteEmergencyHalt",
+        "triggerProEmergencyHalt",
+        "resetProEmergencyHalt",
+        "startQuantLabBacktest",
+        "stopQuantLabBacktest",
+        "closeLiteHistoryAuditor",
     ):
         assert len(re.findall(rf"function\s+{name}\s*\(", html)) == 1, name
 
@@ -161,7 +185,11 @@ def test_lite_ui_audit_handlers_are_unique_and_truthful():
 
 def test_strategy_validation_endpoint_is_declared_read_only():
     source = (ROOT / "app.py").read_text(encoding="utf-8")
-    block = source[source.index('def api_validate_strategy'):source.index('@api.post("/api/strategy/params")')]
+    block = source[
+        source.index("def api_validate_strategy") : source.index(
+            '@api.post("/api/strategy/params")'
+        )
+    ]
     assert "ast.parse" in block and "compile(" in block
     assert "open(" not in block
     assert "atomic_write" not in block

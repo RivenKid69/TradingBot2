@@ -30,10 +30,21 @@ class TestRSIBugMarketSimulator:
         """
         # Simulate buggy RSI (MarketSimulator.cpp style)
         prices = [
-            100.0, 110.0,  # +10.0 gain (huge!)
-            110.5, 110.0, 110.5, 110.0, 110.5, 110.0,
-            110.5, 110.0, 110.5, 110.0, 110.5, 110.0,
-            110.5  # 15 prices total (14 changes)
+            100.0,
+            110.0,  # +10.0 gain (huge!)
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,  # 15 prices total (14 changes)
         ]
 
         # BUGGY implementation (matches MarketSimulator.cpp)
@@ -42,7 +53,7 @@ class TestRSIBugMarketSimulator:
         avg_loss = 0.0
 
         for i in range(1, len(prices)):
-            change = prices[i] - prices[i-1]
+            change = prices[i] - prices[i - 1]
             gain = max(change, 0.0)
             loss = max(-change, 0.0)
 
@@ -68,7 +79,7 @@ class TestRSIBugMarketSimulator:
         gains = []
         losses = []
         for i in range(1, len(prices)):
-            change = prices[i] - prices[i-1]
+            change = prices[i] - prices[i - 1]
             gains.append(max(change, 0.0))
             losses.append(max(-change, 0.0))
 
@@ -138,14 +149,14 @@ class TestRSIBugMarketSimulator:
             # Assert bias matches expectation
             if ">" in scenario["expected_bias"]:
                 threshold = float(scenario["expected_bias"].split(">")[1].strip())
-                assert bias > threshold, (
-                    f"{scenario['name']}: Bias {bias:.2f} should be > {threshold}"
-                )
+                assert (
+                    bias > threshold
+                ), f"{scenario['name']}: Bias {bias:.2f} should be > {threshold}"
             elif "<" in scenario["expected_bias"]:
                 threshold = float(scenario["expected_bias"].split("<")[1].strip())
-                assert bias < threshold, (
-                    f"{scenario['name']}: Bias {bias:.2f} should be < {threshold}"
-                )
+                assert (
+                    bias < threshold
+                ), f"{scenario['name']}: Bias {bias:.2f} should be < {threshold}"
 
     def _compute_rsi_buggy(self, prices):
         """Compute RSI with buggy single-value initialization."""
@@ -154,7 +165,7 @@ class TestRSIBugMarketSimulator:
         avg_loss = 0.0
 
         for i in range(1, len(prices)):
-            change = prices[i] - prices[i-1]
+            change = prices[i] - prices[i - 1]
             gain = max(change, 0.0)
             loss = max(-change, 0.0)
 
@@ -168,7 +179,7 @@ class TestRSIBugMarketSimulator:
                 avg_loss = (avg_loss * 13.0 + loss) / 14.0
 
         if not rsi_init:
-            return float('nan')
+            return float("nan")
 
         if avg_loss == 0.0:
             return 100.0
@@ -181,12 +192,12 @@ class TestRSIBugMarketSimulator:
         losses = []
 
         for i in range(1, len(prices)):
-            change = prices[i] - prices[i-1]
+            change = prices[i] - prices[i - 1]
             gains.append(max(change, 0.0))
             losses.append(max(-change, 0.0))
 
         if len(gains) < 14:
-            return float('nan')
+            return float("nan")
 
         # Correct: SMA of first 14
         avg_gain = sum(gains[:14]) / 14.0
@@ -212,10 +223,28 @@ class TestBollingerBandsPopulationVariance:
 
     def test_bb_population_vs_sample_variance(self):
         """Verify that population variance underestimates sample variance."""
-        prices = [100.0, 101.0, 99.0, 102.0, 98.0,
-                  101.5, 99.5, 102.5, 98.5, 101.0,
-                  100.5, 99.5, 101.5, 99.0, 102.0,
-                  98.5, 101.5, 99.5, 102.0, 98.0]  # 20 prices
+        prices = [
+            100.0,
+            101.0,
+            99.0,
+            102.0,
+            98.0,
+            101.5,
+            99.5,
+            102.5,
+            98.5,
+            101.0,
+            100.5,
+            99.5,
+            101.5,
+            99.0,
+            102.0,
+            98.5,
+            101.5,
+            99.5,
+            102.0,
+            98.0,
+        ]  # 20 prices
 
         assert len(prices) == 20, "Test requires exactly 20 prices for BB(20)"
 
@@ -257,17 +286,17 @@ class TestBollingerBandsPopulationVariance:
         expected_ratio = math.sqrt(19.0 / 20.0)  # ≈ 0.9747 (NOT 1.0264!)
 
         # Verify ratio matches theory
-        assert abs(ratio - expected_ratio) < 0.0001, (
-            f"Ratio {ratio:.4f} doesn't match expected {expected_ratio:.4f}"
-        )
+        assert (
+            abs(ratio - expected_ratio) < 0.0001
+        ), f"Ratio {ratio:.4f} doesn't match expected {expected_ratio:.4f}"
 
         # Verify bands are narrower (buggy)
         band_width_buggy = bb_upper_buggy - bb_lower_buggy
         band_width_correct = bb_upper_correct - bb_lower_correct
 
-        assert band_width_buggy < band_width_correct, (
-            "Buggy bands should be narrower than correct bands"
-        )
+        assert (
+            band_width_buggy < band_width_correct
+        ), "Buggy bands should be narrower than correct bands"
 
         # Verify 2.6% narrower
         width_ratio = band_width_buggy / band_width_correct
@@ -275,9 +304,9 @@ class TestBollingerBandsPopulationVariance:
 
         print(f"Band width ratio: {width_ratio:.4f} (expected: {expected_width_ratio:.4f})")
 
-        assert abs(width_ratio - expected_width_ratio) < 0.001, (
-            f"Width ratio {width_ratio:.4f} doesn't match expected {expected_width_ratio:.4f}"
-        )
+        assert (
+            abs(width_ratio - expected_width_ratio) < 0.001
+        ), f"Width ratio {width_ratio:.4f} doesn't match expected {expected_width_ratio:.4f}"
 
     def test_bb_false_breakout_probability(self):
         """Test that narrower bands lead to more false breakouts.
@@ -298,7 +327,7 @@ class TestBollingerBandsPopulationVariance:
         false_breakouts_correct = 0
 
         for i in range(20, len(prices)):
-            window = prices[i-20:i]
+            window = prices[i - 20 : i]
             current_price = prices[i]
 
             mean = sum(window) / 20.0
@@ -327,19 +356,23 @@ class TestBollingerBandsPopulationVariance:
         correct_rate = false_breakouts_correct / total_bars
 
         print(f"False breakouts (buggy):   {false_breakouts_buggy}/{total_bars} ({buggy_rate:.2%})")
-        print(f"False breakouts (correct): {false_breakouts_correct}/{total_bars} ({correct_rate:.2%})")
-        print(f"Difference: {false_breakouts_buggy - false_breakouts_correct} bars ({(buggy_rate - correct_rate):.2%})")
+        print(
+            f"False breakouts (correct): {false_breakouts_correct}/{total_bars} ({correct_rate:.2%})"
+        )
+        print(
+            f"Difference: {false_breakouts_buggy - false_breakouts_correct} bars ({(buggy_rate - correct_rate):.2%})"
+        )
 
         # Verify: buggy version has MORE breakouts (narrower bands)
-        assert false_breakouts_buggy > false_breakouts_correct, (
-            "Buggy (narrower) bands should have more breakouts"
-        )
+        assert (
+            false_breakouts_buggy > false_breakouts_correct
+        ), "Buggy (narrower) bands should have more breakouts"
 
         # Expected: ~2.5-3% more breakouts
         excess_rate = buggy_rate - correct_rate
-        assert 0.01 < excess_rate < 0.05, (
-            f"Excess breakout rate {excess_rate:.2%} outside expected range [1%, 5%]"
-        )
+        assert (
+            0.01 < excess_rate < 0.05
+        ), f"Excess breakout rate {excess_rate:.2%} outside expected range [1%, 5%]"
 
 
 class TestMACDMomentumOBV:
@@ -353,7 +386,7 @@ class TestMACDMomentumOBV:
         # Standard MACD: EMA(12), EMA(26), EMA(9)
         alpha12 = 2.0 / (12.0 + 1.0)  # = 2/13 ≈ 0.1538
         alpha26 = 2.0 / (26.0 + 1.0)  # = 2/27 ≈ 0.0741
-        alpha9 = 2.0 / (9.0 + 1.0)    # = 2/10 = 0.2
+        alpha9 = 2.0 / (9.0 + 1.0)  # = 2/10 = 0.2
 
         # Verify standard formulas
         assert abs(alpha12 - 0.1538) < 0.0001
@@ -380,8 +413,19 @@ class TestMACDMomentumOBV:
 
     def test_momentum_formula(self):
         """Verify Momentum(10) formula is correct."""
-        prices = [100.0, 101.0, 99.0, 102.0, 98.0,
-                  101.5, 99.5, 102.5, 98.5, 101.0, 100.5]  # 11 prices
+        prices = [
+            100.0,
+            101.0,
+            99.0,
+            102.0,
+            98.0,
+            101.5,
+            99.5,
+            102.5,
+            98.5,
+            101.0,
+            100.5,
+        ]  # 11 prices
 
         # Momentum(10) = close[t] - close[t-10]
         # IMPORTANT: deque of maxlen=10 stores LAST 10 elements, not first 10!
@@ -403,10 +447,12 @@ class TestMACDMomentumOBV:
                     # price = prices[10] = 100.5
                     # momentum = 100.5 - 101.0 = -0.5
                     expected_momentum = prices[10] - prices[1]  # 100.5 - 101.0 = -0.5
-                    assert abs(momentum - expected_momentum) < 1e-10, (
-                        f"Momentum {momentum} != expected {expected_momentum}"
+                    assert (
+                        abs(momentum - expected_momentum) < 1e-10
+                    ), f"Momentum {momentum} != expected {expected_momentum}"
+                    print(
+                        f"Momentum(10) = {momentum:.2f} (close[10] - close[1] = {prices[10]:.1f} - {prices[1]:.1f})"
                     )
-                    print(f"Momentum(10) = {momentum:.2f} (close[10] - close[1] = {prices[10]:.1f} - {prices[1]:.1f})")
 
     def test_obv_formula(self):
         """Verify OBV formula is correct."""
@@ -417,9 +463,9 @@ class TestMACDMomentumOBV:
         obv_values = [0.0]  # Initial
 
         for i in range(1, len(prices)):
-            if prices[i] > prices[i-1]:
+            if prices[i] > prices[i - 1]:
                 obv += volumes[i]
-            elif prices[i] < prices[i-1]:
+            elif prices[i] < prices[i - 1]:
                 obv -= volumes[i]
             # else: no change
 

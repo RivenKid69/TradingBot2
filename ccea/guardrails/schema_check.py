@@ -22,19 +22,21 @@ from typing import Any, Dict, Final, List, Optional, Set
 # ============================================================================
 
 # Fields that indicate order-like payload (PROHIBITED in protocol)
-PROHIBITED_FIELDS: Final[Set[str]] = frozenset({
-    "side",
-    "quantity",
-    "qty",
-    "price",
-    "order_type",
-    "target_position",
-    "execute_order",
-    "place_order",
-    "submit_order",
-    "intent",
-    "signal",
-})
+PROHIBITED_FIELDS: Final[Set[str]] = frozenset(
+    {
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "target_position",
+        "execute_order",
+        "place_order",
+        "submit_order",
+        "intent",
+        "signal",
+    }
+)
 
 # Values that indicate order-like context
 PROHIBITED_VALUES: Final[Dict[str, List[str]]] = {
@@ -55,9 +57,11 @@ ALLOWED_CONTEXTS: Final[Dict[str, Set[str]]] = {
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class SchemaViolation:
     """Represents a schema violation."""
+
     file_path: str
     json_path: str
     field_name: str
@@ -74,6 +78,7 @@ class SchemaViolation:
 @dataclass
 class SchemaCheckResult:
     """Result of schema validation."""
+
     violations: List[SchemaViolation] = field(default_factory=list)
     warnings: List[SchemaViolation] = field(default_factory=list)
     files_checked: int = 0
@@ -90,6 +95,7 @@ class SchemaCheckResult:
 # ============================================================================
 # Schema Validation
 # ============================================================================
+
 
 def check_prohibited_fields(
     schema: Dict[str, Any],
@@ -125,24 +131,28 @@ def check_prohibited_fields(
                 if context and field_name in ALLOWED_CONTEXTS.get(context, set()):
                     continue
 
-                violations.append(SchemaViolation(
-                    file_path=file_path,
-                    json_path=path,
-                    field_name=field_name,
-                    reason=f"order-like field '{field_name}' prohibited in protocol",
-                ))
+                violations.append(
+                    SchemaViolation(
+                        file_path=file_path,
+                        json_path=path,
+                        field_name=field_name,
+                        reason=f"order-like field '{field_name}' prohibited in protocol",
+                    )
+                )
 
             # Check for prohibited enum values
             if "enum" in field_spec:
                 if field_name in PROHIBITED_VALUES:
                     for val in field_spec["enum"]:
                         if val in PROHIBITED_VALUES[field_name]:
-                            violations.append(SchemaViolation(
-                                file_path=file_path,
-                                json_path=current_path,
-                                field_name=field_name,
-                                reason=f"order-like value '{val}' prohibited",
-                            ))
+                            violations.append(
+                                SchemaViolation(
+                                    file_path=file_path,
+                                    json_path=current_path,
+                                    field_name=field_name,
+                                    reason=f"order-like value '{val}' prohibited",
+                                )
+                            )
 
             # Recurse into nested schemas
             nested_context = field_name if field_name in ALLOWED_CONTEXTS else context
@@ -153,9 +163,7 @@ def check_prohibited_fields(
     # Check items (for arrays)
     if "items" in schema:
         items_path = f"{path}.items" if path else "items"
-        violations.extend(
-            check_prohibited_fields(schema["items"], items_path, file_path, context)
-        )
+        violations.extend(check_prohibited_fields(schema["items"], items_path, file_path, context))
 
     # Check allOf, anyOf, oneOf
     for combinator in ("allOf", "anyOf", "oneOf"):
@@ -173,9 +181,7 @@ def check_prohibited_fields(
             if "prohibited" in def_name.lower():
                 continue
             def_path = f"{path}.definitions.{def_name}" if path else f"definitions.{def_name}"
-            violations.extend(
-                check_prohibited_fields(def_spec, def_path, file_path, context)
-            )
+            violations.extend(check_prohibited_fields(def_spec, def_path, file_path, context))
 
     # Check $defs (JSON Schema draft-07+)
     if "$defs" in schema:
@@ -183,9 +189,7 @@ def check_prohibited_fields(
             if "prohibited" in def_name.lower():
                 continue
             def_path = f"{path}.$defs.{def_name}" if path else f"$defs.{def_name}"
-            violations.extend(
-                check_prohibited_fields(def_spec, def_path, file_path, context)
-            )
+            violations.extend(check_prohibited_fields(def_spec, def_path, file_path, context))
 
     return violations
 
@@ -206,12 +210,14 @@ def validate_manifest_schema(schema_path: Path) -> SchemaCheckResult:
         with open(schema_path, "r", encoding="utf-8") as f:
             schema = json.load(f)
     except (json.JSONDecodeError, FileNotFoundError) as e:
-        result.add_violation(SchemaViolation(
-            file_path=str(schema_path),
-            json_path="",
-            field_name="",
-            reason=f"Failed to load schema: {e}",
-        ))
+        result.add_violation(
+            SchemaViolation(
+                file_path=str(schema_path),
+                json_path="",
+                field_name="",
+                reason=f"Failed to load schema: {e}",
+            )
+        )
         return result
 
     # Check for prohibited fields
@@ -240,13 +246,15 @@ def validate_manifest_schema(schema_path: Path) -> SchemaCheckResult:
         schema_required = set(schema["required"])
         missing = required_fields - schema_required
         if missing:
-            result.add_violation(SchemaViolation(
-                file_path=str(schema_path),
-                json_path="required",
-                field_name="",
-                reason=f"Missing required fields: {missing}",
-                severity="WARNING",
-            ))
+            result.add_violation(
+                SchemaViolation(
+                    file_path=str(schema_path),
+                    json_path="required",
+                    field_name="",
+                    reason=f"Missing required fields: {missing}",
+                    severity="WARNING",
+                )
+            )
 
     return result
 
@@ -267,12 +275,14 @@ def validate_protocol_schema(schema_path: Path) -> SchemaCheckResult:
         with open(schema_path, "r", encoding="utf-8") as f:
             schema = json.load(f)
     except (json.JSONDecodeError, FileNotFoundError) as e:
-        result.add_violation(SchemaViolation(
-            file_path=str(schema_path),
-            json_path="",
-            field_name="",
-            reason=f"Failed to load schema: {e}",
-        ))
+        result.add_violation(
+            SchemaViolation(
+                file_path=str(schema_path),
+                json_path="",
+                field_name="",
+                reason=f"Failed to load schema: {e}",
+            )
+        )
         return result
 
     # Check for prohibited fields in message definitions
@@ -325,12 +335,14 @@ def validate_schema_file(schema_path: Path) -> SchemaCheckResult:
             for v in violations:
                 result.add_violation(v)
         except Exception as e:
-            result.add_violation(SchemaViolation(
-                file_path=str(schema_path),
-                json_path="",
-                field_name="",
-                reason=f"Failed to validate: {e}",
-            ))
+            result.add_violation(
+                SchemaViolation(
+                    file_path=str(schema_path),
+                    json_path="",
+                    field_name="",
+                    reason=f"Failed to validate: {e}",
+                )
+            )
         return result
 
 
@@ -363,13 +375,12 @@ def validate_schemas_directory(directory: Path) -> SchemaCheckResult:
 # CLI Interface
 # ============================================================================
 
+
 def main() -> int:
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Schema Validation"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Schema Validation")
     parser.add_argument(
         "path",
         type=Path,

@@ -25,8 +25,7 @@ class TestMA20Audit(unittest.TestCase):
         Ожидание: ma20 вычисляется ВКЛЮЧАЯ текущий закрытый бар
         """
         spec = FeatureSpec(
-            lookbacks_prices=[5040],  # 21 бар для 4h таймфрейма
-            bar_duration_minutes=240
+            lookbacks_prices=[5040], bar_duration_minutes=240  # 21 бар для 4h таймфрейма
         )
         transform = OnlineFeatureTransform(spec)
 
@@ -35,9 +34,7 @@ class TestMA20Audit(unittest.TestCase):
 
         for i, price in enumerate(prices):
             feats = transform.update(
-                symbol="BTCUSDT",
-                ts_ms=1000000 + i * 240 * 60 * 1000,  # 4h интервалы
-                close=price
+                symbol="BTCUSDT", ts_ms=1000000 + i * 240 * 60 * 1000, close=price  # 4h интервалы
             )
 
         # После 21 бара должен появиться sma_5040
@@ -51,7 +48,7 @@ class TestMA20Audit(unittest.TestCase):
             actual_sma21,
             expected_sma21,
             places=6,
-            msg=f"SMA_21 должен быть {expected_sma21}, получили {actual_sma21}"
+            msg=f"SMA_21 должен быть {expected_sma21}, получили {actual_sma21}",
         )
 
         print(f"✅ SMA_21 вычислен правильно: {actual_sma21:.6f}")
@@ -62,25 +59,16 @@ class TestMA20Audit(unittest.TestCase):
 
         Важно: Это НЕ look-ahead bias, а правильная семантика end-of-bar trading
         """
-        spec = FeatureSpec(
-            lookbacks_prices=[5040],  # 21 бар
-            bar_duration_minutes=240
-        )
+        spec = FeatureSpec(lookbacks_prices=[5040], bar_duration_minutes=240)  # 21 бар
         transform = OnlineFeatureTransform(spec)
 
         # Подаем 20 баров по 100.0
         for i in range(20):
-            transform.update(
-                symbol="BTCUSDT",
-                ts_ms=1000000 + i * 240 * 60 * 1000,
-                close=100.0
-            )
+            transform.update(symbol="BTCUSDT", ts_ms=1000000 + i * 240 * 60 * 1000, close=100.0)
 
         # 21-й бар = 200.0 (сильное изменение)
         feats = transform.update(
-            symbol="BTCUSDT",
-            ts_ms=1000000 + 20 * 240 * 60 * 1000,
-            close=200.0
+            symbol="BTCUSDT", ts_ms=1000000 + 20 * 240 * 60 * 1000, close=200.0
         )
 
         # SMA_21 = (20*100.0 + 1*200.0) / 21 = 2200/21 ≈ 104.76
@@ -88,18 +76,12 @@ class TestMA20Audit(unittest.TestCase):
         actual = feats["sma_5040"]
 
         self.assertAlmostEqual(
-            actual,
-            expected,
-            places=6,
-            msg=f"SMA_21 должен ВКЛЮЧАТЬ текущую цену 200.0"
+            actual, expected, places=6, msg=f"SMA_21 должен ВКЛЮЧАТЬ текущую цену 200.0"
         )
 
         # Проверка: если бы НЕ включалась текущая цена, было бы 100.0
         self.assertNotAlmostEqual(
-            actual,
-            100.0,
-            places=1,
-            msg="SMA_21 НЕ должен игнорировать текущую цену"
+            actual, 100.0, places=1, msg="SMA_21 НЕ должен игнорировать текущую цену"
         )
 
         print(f"✅ Текущий бар правильно включен в SMA_21: {actual:.6f} vs expected {expected:.6f}")
@@ -110,18 +92,13 @@ class TestMA20Audit(unittest.TestCase):
 
         Проверяем что SMA_21 на баре t использует только P_t, P_{t-1}, ..., P_{t-20}
         """
-        spec = FeatureSpec(
-            lookbacks_prices=[5040],
-            bar_duration_minutes=240
-        )
+        spec = FeatureSpec(lookbacks_prices=[5040], bar_duration_minutes=240)
         transform = OnlineFeatureTransform(spec)
 
         # Подаем 22 бара: [100, 101, 102, ..., 121]
         for i in range(22):
             feats = transform.update(
-                symbol="BTCUSDT",
-                ts_ms=1000000 + i * 240 * 60 * 1000,
-                close=100.0 + i
+                symbol="BTCUSDT", ts_ms=1000000 + i * 240 * 60 * 1000, close=100.0 + i
             )
 
             # После 21-го бара проверяем SMA_21
@@ -132,7 +109,7 @@ class TestMA20Audit(unittest.TestCase):
                     feats["sma_5040"],
                     expected,
                     places=6,
-                    msg="SMA_21 на баре 20 должен использовать только бары 0-20"
+                    msg="SMA_21 на баре 20 должен использовать только бары 0-20",
                 )
 
             elif i == 21:  # 22-й бар (индекс 21)
@@ -142,7 +119,7 @@ class TestMA20Audit(unittest.TestCase):
                     feats["sma_5040"],
                     expected,
                     places=6,
-                    msg="SMA_21 на баре 21 должен сдвинуться (rolling window)"
+                    msg="SMA_21 на баре 21 должен сдвинуться (rolling window)",
                 )
 
                 # КРИТИЧЕСКАЯ ПРОВЕРКА: SMA_21 НЕ должен быть 110.0
@@ -150,7 +127,7 @@ class TestMA20Audit(unittest.TestCase):
                     feats["sma_5040"],
                     110.0,
                     places=1,
-                    msg="SMA_21 должен обновиться, НЕ использовать старые данные"
+                    msg="SMA_21 должен обновиться, НЕ использовать старые данные",
                 )
 
         print("✅ Look-ahead bias ОТСУТСТВУЕТ - SMA_21 использует только прошлые + текущий бар")
@@ -159,47 +136,29 @@ class TestMA20Audit(unittest.TestCase):
         """
         Проверка: Обработка NaN при недостаточном количестве баров
         """
-        spec = FeatureSpec(
-            lookbacks_prices=[5040],  # Требуется 21 бар
-            bar_duration_minutes=240
-        )
+        spec = FeatureSpec(lookbacks_prices=[5040], bar_duration_minutes=240)  # Требуется 21 бар
         transform = OnlineFeatureTransform(spec)
 
         # Подаем только 10 баров (меньше чем 21)
         for i in range(10):
             feats = transform.update(
-                symbol="BTCUSDT",
-                ts_ms=1000000 + i * 240 * 60 * 1000,
-                close=100.0
+                symbol="BTCUSDT", ts_ms=1000000 + i * 240 * 60 * 1000, close=100.0
             )
 
         # sma_5040 НЕ должен появиться (недостаточно данных)
-        self.assertNotIn(
-            "sma_5040",
-            feats,
-            msg="sma_5040 НЕ должен появиться при < 21 баров"
-        )
+        self.assertNotIn("sma_5040", feats, msg="sma_5040 НЕ должен появиться при < 21 баров")
 
         # Подаем еще 11 баров (итого 21)
         for i in range(10, 21):
             feats = transform.update(
-                symbol="BTCUSDT",
-                ts_ms=1000000 + i * 240 * 60 * 1000,
-                close=100.0
+                symbol="BTCUSDT", ts_ms=1000000 + i * 240 * 60 * 1000, close=100.0
             )
 
         # Теперь sma_5040 должен появиться
-        self.assertIn(
-            "sma_5040",
-            feats,
-            msg="sma_5040 должен появиться после 21 бара"
-        )
+        self.assertIn("sma_5040", feats, msg="sma_5040 должен появиться после 21 бара")
 
         self.assertAlmostEqual(
-            feats["sma_5040"],
-            100.0,
-            places=6,
-            msg="SMA_21 всех 100.0 должен быть 100.0"
+            feats["sma_5040"], 100.0, places=6, msg="SMA_21 всех 100.0 должен быть 100.0"
         )
 
         print("✅ NaN handling корректен - sma_5040 появляется только после 21 бара")
@@ -211,19 +170,14 @@ class TestMA20Audit(unittest.TestCase):
         Примечание: Для 21 элемента простое суммирование обычно стабильно,
         но проверим на крайних значениях
         """
-        spec = FeatureSpec(
-            lookbacks_prices=[5040],
-            bar_duration_minutes=240
-        )
+        spec = FeatureSpec(lookbacks_prices=[5040], bar_duration_minutes=240)
         transform = OnlineFeatureTransform(spec)
 
         # Тест 1: Очень большие числа
         large_price = 1e8  # 100 миллионов
         for i in range(21):
             feats = transform.update(
-                symbol="BTCUSDT",
-                ts_ms=1000000 + i * 240 * 60 * 1000,
-                close=large_price + i
+                symbol="BTCUSDT", ts_ms=1000000 + i * 240 * 60 * 1000, close=large_price + i
             )
 
         expected = (21 * large_price + sum(range(21))) / 21.0
@@ -231,7 +185,7 @@ class TestMA20Audit(unittest.TestCase):
             feats["sma_5040"],
             expected,
             places=3,  # Допускаем небольшую погрешность для больших чисел
-            msg=f"SMA_21 должен работать с большими числами"
+            msg=f"SMA_21 должен работать с большими числами",
         )
 
         # Тест 2: Очень маленькие числа
@@ -239,9 +193,7 @@ class TestMA20Audit(unittest.TestCase):
         small_price = 1e-6  # микроскопические значения
         for i in range(21):
             feats2 = transform2.update(
-                symbol="BTCUSDT",
-                ts_ms=2000000 + i * 240 * 60 * 1000,
-                close=small_price * (i + 1)
+                symbol="BTCUSDT", ts_ms=2000000 + i * 240 * 60 * 1000, close=small_price * (i + 1)
             )
 
         expected2 = small_price * sum(range(1, 22)) / 21.0
@@ -249,7 +201,7 @@ class TestMA20Audit(unittest.TestCase):
             feats2["sma_5040"],
             expected2,
             delta=1e-9,  # Очень малая погрешность
-            msg="SMA_21 должен работать с малыми числами"
+            msg="SMA_21 должен работать с малыми числами",
         )
 
         print("✅ Численная стабильность достаточна для 21 элемента")
@@ -260,18 +212,13 @@ class TestMA20Audit(unittest.TestCase):
 
         Теоретический lag ≈ (N-1)/2 = (21-1)/2 = 10 баров
         """
-        spec = FeatureSpec(
-            lookbacks_prices=[5040],
-            bar_duration_minutes=240
-        )
+        spec = FeatureSpec(lookbacks_prices=[5040], bar_duration_minutes=240)
         transform = OnlineFeatureTransform(spec)
 
         for i in range(60):
             price = 100.0 if i < 30 else 200.0
             feats = transform.update(
-                symbol="BTCUSDT",
-                ts_ms=1000000 + i * 240 * 60 * 1000,
-                close=price
+                symbol="BTCUSDT", ts_ms=1000000 + i * 240 * 60 * 1000, close=price
             )
 
             # Bar 30: SMA starts moving but still lags far behind the jump
@@ -280,7 +227,7 @@ class TestMA20Audit(unittest.TestCase):
                 self.assertLess(
                     feats["sma_5040"],
                     150.0,
-                    msg="SMA_21 should lag behind the sharp move at bar 30"
+                    msg="SMA_21 should lag behind the sharp move at bar 30",
                 )
 
             # Bar 49: one old price remains in the window -> lag persists
@@ -289,12 +236,12 @@ class TestMA20Audit(unittest.TestCase):
                 self.assertGreater(
                     feats["sma_5040"],
                     180.0,
-                    msg="SMA_21 should have mostly caught up after 20 bars"
+                    msg="SMA_21 should have mostly caught up after 20 bars",
                 )
                 self.assertLess(
                     feats["sma_5040"],
                     200.0,
-                    msg="SMA_21 should retain some lag with one old value remaining"
+                    msg="SMA_21 should retain some lag with one old value remaining",
                 )
 
             # Bar 50: window fully refreshed with new level -> SMA reaches 200
@@ -303,10 +250,11 @@ class TestMA20Audit(unittest.TestCase):
                     feats["sma_5040"],
                     200.0,
                     places=6,
-                    msg="SMA_21 should reach the new price once the full window is updated"
+                    msg="SMA_21 should reach the new price once the full window is updated",
                 )
 
         print("Lag property for SMA_21 behaves as expected (~10 bars)")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

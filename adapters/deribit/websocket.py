@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 try:
     import websockets
     from websockets.client import WebSocketClientProtocol
+
     HAS_WEBSOCKETS = True
 except ImportError:
     HAS_WEBSOCKETS = False
@@ -84,8 +85,10 @@ DEFAULT_TRADES_INTERVAL = "100ms"
 # Enums
 # =============================================================================
 
+
 class DeribitChannelType(str, Enum):
     """Types of Deribit subscription channels."""
+
     TICKER = "ticker"
     BOOK = "book"
     TRADES = "trades"
@@ -99,6 +102,7 @@ class DeribitChannelType(str, Enum):
 
 class ConnectionState(str, Enum):
     """WebSocket connection states."""
+
     DISCONNECTED = "disconnected"
     CONNECTING = "connecting"
     CONNECTED = "connected"
@@ -111,11 +115,13 @@ class ConnectionState(str, Enum):
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class DeribitStreamConfig:
     """
     Configuration for Deribit WebSocket streaming.
     """
+
     testnet: bool = True
     client_id: Optional[str] = None
     client_secret: Optional[str] = None
@@ -141,7 +147,8 @@ class DeribitSubscription:
     """
     Represents a subscription to a Deribit channel.
     """
-    channel: str                    # Full channel name
+
+    channel: str  # Full channel name
     channel_type: DeribitChannelType
     instrument_name: Optional[str] = None
     interval: str = "100ms"
@@ -260,6 +267,7 @@ class DeribitMessage:
     """
     Parsed message from Deribit WebSocket.
     """
+
     channel: Optional[str]
     channel_type: Optional[DeribitChannelType]
     data: Dict[str, Any]
@@ -304,6 +312,7 @@ class DeribitMessage:
 # WebSocket Client
 # =============================================================================
 
+
 class DeribitWebSocketClient:
     """
     Production-grade WebSocket client for Deribit.
@@ -334,9 +343,7 @@ class DeribitWebSocketClient:
             config: Stream configuration
         """
         if not HAS_WEBSOCKETS:
-            raise ImportError(
-                "websockets library required. Install with: pip install websockets"
-            )
+            raise ImportError("websockets library required. Install with: pip install websockets")
 
         self._config = config
         self._ws: Optional[WebSocketClientProtocol] = None
@@ -508,7 +515,9 @@ class DeribitWebSocketClient:
             return False
 
         if subscription.is_private and not self.is_authenticated:
-            logger.error(f"Cannot subscribe to private channel {subscription.channel}: not authenticated")
+            logger.error(
+                f"Cannot subscribe to private channel {subscription.channel}: not authenticated"
+            )
             return False
 
         try:
@@ -735,6 +744,7 @@ class DeribitWebSocketClient:
 # =============================================================================
 # Factory Function
 # =============================================================================
+
 
 def create_deribit_websocket_client(
     testnet: bool = True,

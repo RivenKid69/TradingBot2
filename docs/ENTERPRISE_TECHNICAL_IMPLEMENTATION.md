@@ -1624,6 +1624,7 @@ cluster-node-timeout 15000
 This technical implementation guide provides the foundation for enterprise-grade deployments following the CCEA architecture. For specific customization or additional requirements, please contact our enterprise team.
 
 **Key CCEA Design Commitments for Enterprise** (enforced at architecture level):
+
 - Cloud **does not** store broker API keys or credentials (by design)
 - Cloud **does not** create, transmit, or execute orders (by design)
 - Agent deployed in customer infrastructure is the execution point
@@ -1631,6 +1632,7 @@ This technical implementation guide provides the foundation for enterprise-grade
 - Audit trail designed to support client governance reviews (MiFID II, DORA readiness)
 
 **Support Contacts**:
+
 - Technical Support: support@[company].com
 - Enterprise Sales: enterprise@[company].com
 - Security Team: security@[company].com

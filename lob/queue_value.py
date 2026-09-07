@@ -130,9 +130,7 @@ class QueueValueConfig:
     risk_aversion: float = 0.0
     opportunity_cost_rate: float = 0.02  # 2% annual
     min_profitable_value: float = 0.0
-    adverse_selection: AdverseSelectionParams = field(
-        default_factory=AdverseSelectionParams
-    )
+    adverse_selection: AdverseSelectionParams = field(default_factory=AdverseSelectionParams)
 
 
 # ==============================================================================
@@ -215,7 +213,9 @@ class QueueValueModel:
         # Spread capture profit (half spread)
         spread_bps = market_state.spread_bps if market_state.spread_bps > 0 else 2.0
         half_spread_bps = spread_bps / 2.0
-        notional = order.remaining_qty * market_state.mid_price if market_state.mid_price > 0 else 0.0
+        notional = (
+            order.remaining_qty * market_state.mid_price if market_state.mid_price > 0 else 0.0
+        )
         spread_profit = notional * half_spread_bps / 10000.0
 
         # Expected profit if filled
@@ -444,7 +444,7 @@ class DynamicQueueValueModel(QueueValueModel):
         if market_state.volatility > 0:
             vol_scale = market_state.volatility / reference_vol
             vol_scale = max(0.5, min(2.0, vol_scale))  # Bound
-            return base_cost * vol_scale ** self._volatility_adjustment
+            return base_cost * vol_scale**self._volatility_adjustment
 
         return base_cost
 
@@ -526,7 +526,9 @@ class SpreadDecompositionModel(QueueValueModel):
         revised_profit = result.fill_probability * notional * profit_spread_bps / 10000.0
 
         # Adjust queue value
-        result.queue_value = revised_profit - result.adverse_selection_cost - result.opportunity_cost
+        result.queue_value = (
+            revised_profit - result.adverse_selection_cost - result.opportunity_cost
+        )
 
         return result
 

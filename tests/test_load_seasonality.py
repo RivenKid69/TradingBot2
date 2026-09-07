@@ -19,6 +19,7 @@ HOURS_IN_WEEK = utils_time.HOURS_IN_WEEK
 SEASONALITY_MULT_MIN = utils_time.SEASONALITY_MULT_MIN
 SEASONALITY_MULT_MAX = utils_time.SEASONALITY_MULT_MAX
 
+
 def _arr(v):
     return [float(v)] * HOURS_IN_WEEK
 

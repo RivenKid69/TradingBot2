@@ -88,9 +88,9 @@ DEFAULT_ADVERSE_THRESHOLD_PIPS: float = 0.3
 class QuoteType(str, Enum):
     """Type of dealer quote."""
 
-    FIRM = "firm"              # Executable quote
+    FIRM = "firm"  # Executable quote
     INDICATIVE = "indicative"  # May be rejected
-    LAST_LOOK = "last_look"    # Subject to last-look window
+    LAST_LOOK = "last_look"  # Subject to last-look window
 
 
 class RejectReason(str, Enum):
@@ -141,6 +141,7 @@ class DealerProfile:
         is_primary: Whether this is a primary liquidity provider
         active_hours: Hours UTC when dealer is active (None = 24/7)
     """
+
     dealer_id: str
     tier: DealerTier = DealerTier.TIER2
     spread_factor: float = 1.0
@@ -187,6 +188,7 @@ class DealerQuote:
         last_look_ms: Last-look window for this quote
         sequence_num: Quote sequence number for staleness detection
     """
+
     dealer_id: str
     bid: float
     ask: float
@@ -254,6 +256,7 @@ class AggregatedQuote:
         timestamp_ns: Aggregation timestamp
         num_active_dealers: Number of dealers with active quotes
     """
+
     best_bid: float
     best_ask: float
     best_bid_dealer: str
@@ -296,13 +299,11 @@ class AggregatedQuote:
         """
         if is_bid:
             sorted_quotes = sorted(
-                [q for q in self.dealer_quotes if q.bid_size_usd > 0],
-                key=lambda q: -q.bid
+                [q for q in self.dealer_quotes if q.bid_size_usd > 0], key=lambda q: -q.bid
             )
         else:
             sorted_quotes = sorted(
-                [q for q in self.dealer_quotes if q.ask_size_usd > 0],
-                key=lambda q: q.ask
+                [q for q in self.dealer_quotes if q.ask_size_usd > 0], key=lambda q: q.ask
             )
 
         if level >= len(sorted_quotes):
@@ -335,6 +336,7 @@ class ExecutionResult:
         partial_fill: Whether this was a partial fill
         remaining_qty: Remaining quantity after partial fill
     """
+
     filled: bool
     fill_price: Optional[float] = None
     fill_qty: Optional[float] = None
@@ -394,6 +396,7 @@ class ForexDealerConfig:
         max_history_size: Maximum size of execution history
         adverse_selection_decay_ms: Decay constant for adverse selection memory
     """
+
     num_dealers: int = 5
     base_spread_pips: float = 1.0
     last_look_enabled: bool = True
@@ -434,6 +437,7 @@ class ExecutionStats:
 
     Tracks metrics for monitoring and analysis of execution quality.
     """
+
     total_attempts: int = 0
     total_fills: int = 0
     total_rejections: int = 0
@@ -548,18 +552,14 @@ class ForexDealerSimulator:
 
         # Create heterogeneous dealer pool
         self._dealers: List[DealerProfile] = self._create_dealers()
-        self._dealer_map: Dict[str, DealerProfile] = {
-            d.dealer_id: d for d in self._dealers
-        }
+        self._dealer_map: Dict[str, DealerProfile] = {d.dealer_id: d for d in self._dealers}
 
         # Quote state
         self._current_quotes: Dict[str, DealerQuote] = {}
         self._quote_sequence: int = 0
 
         # Execution history for adaptive behavior
-        self._execution_history: Deque[ExecutionResult] = deque(
-            maxlen=self.config.max_history_size
-        )
+        self._execution_history: Deque[ExecutionResult] = deque(maxlen=self.config.max_history_size)
         self._adverse_selection_memory: Dict[str, float] = {}
 
         # Statistics
@@ -615,18 +615,20 @@ class ForexDealerSimulator:
                 latency = 80 + self._rng.uniform(-20, 60)
                 is_primary = False
 
-            dealers.append(DealerProfile(
-                dealer_id=f"dealer_{i:02d}_{tier.value}",
-                tier=tier,
-                spread_factor=max(0.5, spread_factor),
-                max_size_usd=max(100_000, max_size),
-                last_look_window_ms=max(50, last_look_ms),
-                base_reject_prob=max(0.01, min(0.3, reject_prob)),
-                adverse_threshold_pips=max(0.1, adverse_thresh),
-                latency_ms=max(10, latency),
-                quote_flicker_prob=0.05 + self._rng.uniform(0, 0.15),
-                is_primary=is_primary,
-            ))
+            dealers.append(
+                DealerProfile(
+                    dealer_id=f"dealer_{i:02d}_{tier.value}",
+                    tier=tier,
+                    spread_factor=max(0.5, spread_factor),
+                    max_size_usd=max(100_000, max_size),
+                    last_look_window_ms=max(50, last_look_ms),
+                    base_reject_prob=max(0.01, min(0.3, reject_prob)),
+                    adverse_threshold_pips=max(0.1, adverse_thresh),
+                    latency_ms=max(10, latency),
+                    quote_flicker_prob=0.05 + self._rng.uniform(0, 0.15),
+                    is_primary=is_primary,
+                )
+            )
 
         return dealers
 
@@ -687,15 +689,11 @@ class ForexDealerSimulator:
             # Size impact (wider spreads for larger orders)
             if order_size_usd > self.config.size_impact_threshold_usd:
                 excess_usd = order_size_usd - self.config.size_impact_threshold_usd
-                size_widening = (
-                    (excess_usd / 1_000_000)
-                    * self.config.size_impact_factor
-                    * pip_size
-                )
+                size_widening = (excess_usd / 1_000_000) * self.config.size_impact_factor * pip_size
                 spread += size_widening
 
             # Add noise for quote heterogeneity
-            spread *= (1.0 + self._rng.uniform(-0.1, 0.1))
+            spread *= 1.0 + self._rng.uniform(-0.1, 0.1)
             spread = max(pip_size * 0.1, spread)  # Minimum spread
 
             half_spread = spread / 2.0
@@ -809,17 +807,11 @@ class ForexDealerSimulator:
         # Sort dealers by price (best first)
         if is_buy:
             # For buy: sort by ask (lowest first)
-            sorted_quotes = sorted(
-                quote.dealer_quotes,
-                key=lambda q: q.ask
-            )
+            sorted_quotes = sorted(quote.dealer_quotes, key=lambda q: q.ask)
             reference_price = quote.best_ask
         else:
             # For sell: sort by bid (highest first)
-            sorted_quotes = sorted(
-                quote.dealer_quotes,
-                key=lambda q: -q.bid
-            )
+            sorted_quotes = sorted(quote.dealer_quotes, key=lambda q: -q.bid)
             reference_price = quote.best_bid
 
         remaining_size = size_usd
@@ -837,10 +829,7 @@ class ForexDealerSimulator:
                 continue
 
             # Check size availability
-            available = (
-                dealer_quote.ask_size_usd if is_buy
-                else dealer_quote.bid_size_usd
-            )
+            available = dealer_quote.ask_size_usd if is_buy else dealer_quote.bid_size_usd
 
             if available < self.config.min_quote_size_usd:
                 continue
@@ -860,9 +849,8 @@ class ForexDealerSimulator:
                 price_move_pips = abs(price_move) / pip_size
 
                 # Adverse selection check
-                is_adverse = (
-                    (is_buy and current_mid > quote_mid) or
-                    (not is_buy and current_mid < quote_mid)
+                is_adverse = (is_buy and current_mid > quote_mid) or (
+                    not is_buy and current_mid < quote_mid
                 )
 
                 # Higher rejection probability for adverse moves
@@ -870,8 +858,7 @@ class ForexDealerSimulator:
                 if is_adverse and price_move_pips > dealer.adverse_threshold_pips:
                     # Scale rejection probability with price move
                     adverse_factor = min(
-                        0.9,
-                        0.5 + (price_move_pips - dealer.adverse_threshold_pips) * 0.1
+                        0.9, 0.5 + (price_move_pips - dealer.adverse_threshold_pips) * 0.1
                     )
                     reject_prob = max(reject_prob, adverse_factor)
 
@@ -936,8 +923,7 @@ class ForexDealerSimulator:
                 alpha * slippage + (1 - alpha) * self._stats.avg_slippage_pips
             )
             self._stats.avg_latency_ms = (
-                alpha * (total_latency_ns / 1_000_000)
-                + (1 - alpha) * self._stats.avg_latency_ms
+                alpha * (total_latency_ns / 1_000_000) + (1 - alpha) * self._stats.avg_latency_ms
             )
 
             partial = remaining_size > 0

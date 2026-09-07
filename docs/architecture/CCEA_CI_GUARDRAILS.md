@@ -773,6 +773,7 @@ repos:
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](./CCEA_OVERVIEW.md)
 - [Protocol](./CCEA_PROTOCOL.md)
 - [Security](../cloud/RESEARCH_JOB_ISOLATION.md)

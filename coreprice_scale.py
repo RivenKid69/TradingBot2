@@ -15,11 +15,12 @@ Functions:
 
 import math
 
+
 def to_ticks(price_float: float, price_scale: int) -> int:
     """Convert a float price to integer ticks using the given price scale.
 
     The result is the nearest integer number of ticks that represents the price.
-    This function avoids direct multiplication by large constants to reduce 
+    This function avoids direct multiplication by large constants to reduce
     floating-point error, using rounding for correct quantization to ticks.
 
     Args:
@@ -45,6 +46,7 @@ def to_ticks(price_float: float, price_scale: int) -> int:
         ticks = math.ceil(scaled - 0.5)
     return int(ticks)
 
+
 def to_price(ticks_int: int, price_scale: int) -> float:
     """Convert an integer tick price back to a float price using the given scale.
 
@@ -66,11 +68,12 @@ def to_price(ticks_int: int, price_scale: int) -> float:
     # Divide the integer ticks by the scale to get the original price.
     return ticks_int / price_scale
 
+
 def round_to_tick(price_float: float, price_scale: int) -> float:
     """Round a float price to the nearest tick price increment.
 
-    This function uses to_ticks to first convert the price to the nearest tick count, 
-    then converts it back to a float price. It ensures the returned price is aligned 
+    This function uses to_ticks to first convert the price to the nearest tick count,
+    then converts it back to a float price. It ensures the returned price is aligned
     to the discrete price grid defined by price_scale.
 
     Args:

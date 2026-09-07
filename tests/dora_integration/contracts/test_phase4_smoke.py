@@ -133,12 +133,8 @@ class TestPhase4IntegrationWorkflow:
     @pytest.fixture
     def full_setup(self, tmp_path):
         """Create all Phase 4 managers."""
-        contract_config = ContractualRequirementsConfig(
-            log_path=str(tmp_path / "contract_logs")
-        )
-        exit_config = ExitStrategiesConfig(
-            log_path=str(tmp_path / "exit_logs")
-        )
+        contract_config = ContractualRequirementsConfig(log_path=str(tmp_path / "contract_logs"))
+        exit_config = ExitStrategiesConfig(log_path=str(tmp_path / "exit_logs"))
         return {
             "contracts": DORAContractualRequirements(contract_config),
             "sla": SLAGuardrails(),
@@ -338,13 +334,19 @@ class TestPhase4DataModels:
     def test_all_ids_have_prefixes(self):
         """Test all IDs use standard prefixes."""
         from services.dora_integration.contracts.contractual_requirements import (
-            ICTContract, ContractAssessment, ContractGap, ContractAmendment,
+            ICTContract,
+            ContractAssessment,
+            ContractGap,
+            ContractAmendment,
         )
         from services.dora_integration.contracts.sla_guardrails import (
-            CapacityValidation, SLACommitmentRequest,
+            CapacityValidation,
+            SLACommitmentRequest,
         )
         from services.dora_integration.contracts.exit_strategies import (
-            ExitPlan, AlternativeProvider, TransitionTask,
+            ExitPlan,
+            AlternativeProvider,
+            TransitionTask,
         )
 
         # Test ID prefixes
@@ -425,12 +427,8 @@ class TestPhase4ReportingConsistency:
     @pytest.fixture
     def managers(self, tmp_path):
         """Create all managers with data."""
-        contract_config = ContractualRequirementsConfig(
-            log_path=str(tmp_path / "contract_logs")
-        )
-        exit_config = ExitStrategiesConfig(
-            log_path=str(tmp_path / "exit_logs")
-        )
+        contract_config = ContractualRequirementsConfig(log_path=str(tmp_path / "contract_logs"))
+        exit_config = ExitStrategiesConfig(log_path=str(tmp_path / "exit_logs"))
         contracts = DORAContractualRequirements(contract_config)
         sla = SLAGuardrails()
         exit_mgr = DORAExitStrategies(exit_config)

@@ -21,11 +21,11 @@ class PathsConfig(BaseModel):
     * ``PRICES_OUT`` – override ``prices_out``
     """
 
-    klines_dir: str = Field("data/klines_4h", description="Directory for klines output (4h timeframe)")
-    futures_dir: str = Field("data/futures", description="Directory for futures data")
-    prices_out: str = Field(
-        "data/prices.parquet", description="Output path for normalized prices"
+    klines_dir: str = Field(
+        "data/klines_4h", description="Directory for klines output (4h timeframe)"
     )
+    futures_dir: str = Field("data/futures", description="Directory for futures data")
+    prices_out: str = Field("data/prices.parquet", description="Output path for normalized prices")
 
     @classmethod
     def from_env(cls, **kwargs) -> "PathsConfig":
@@ -56,7 +56,9 @@ class SlownessConfig(BaseModel):
 class IngestConfig(BaseModel):
     symbols: List[str]
     market: str = "spot"
-    intervals: List[str] = Field(default_factory=lambda: ["4h"])  # Changed from 1m to 4h for 4-hour timeframe
+    intervals: List[str] = Field(
+        default_factory=lambda: ["4h"]
+    )  # Changed from 1m to 4h for 4-hour timeframe
     aggregate_to: List[str] = Field(default_factory=list)
     period: PeriodConfig
     paths: PathsConfig = PathsConfig()

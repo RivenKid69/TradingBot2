@@ -1,10 +1,10 @@
 """
-Tests documenting NOT BUGS #37-#44 from CLAUDE.md.
+Tests documenting NOT BUGS #37-#44 from docs/PLATFORM_REFERENCE.md.
 
 These tests verify that the investigated code patterns work as designed,
 confirming they are NOT bugs but intentional behavior.
 
-Reference: CLAUDE.md sections #37-#44
+Reference: docs/PLATFORM_REFERENCE.md sections #37-#44
 """
 
 import math
@@ -30,9 +30,9 @@ class TestNotBug37MarkForObsDifferentRows:
             next_price = prices[i + 1]
 
             # Different rows have different prices - this is why we compute both
-            assert current_price != next_price or i == 0, (
-                "Prices can be equal, but typically differ between rows"
-            )
+            assert (
+                current_price != next_price or i == 0
+            ), "Prices can be equal, but typically differ between rows"
 
 
 class TestNotBug38RatioClippedSignalOnly:
@@ -47,11 +47,11 @@ class TestNotBug38RatioClippedSignalOnly:
         """Verify ratio sanitization logic for signal_only mode."""
         # Simulating signal_only ratio handling
         test_cases = [
-            (1.05, 1.05),           # Normal ratio - passed through
-            (float('nan'), 1.0),   # NaN -> sanitized to 1.0
-            (float('inf'), 1.0),   # Infinity -> sanitized to 1.0
-            (-0.5, 1.0),           # Negative -> sanitized to 1.0
-            (0.0, 1.0),            # Zero -> sanitized to 1.0
+            (1.05, 1.05),  # Normal ratio - passed through
+            (float("nan"), 1.0),  # NaN -> sanitized to 1.0
+            (float("inf"), 1.0),  # Infinity -> sanitized to 1.0
+            (-0.5, 1.0),  # Negative -> sanitized to 1.0
+            (0.0, 1.0),  # Zero -> sanitized to 1.0
         ]
 
         for ratio_price, expected in test_cases:
@@ -60,9 +60,9 @@ class TestNotBug38RatioClippedSignalOnly:
                 ratio_price = 1.0
             ratio_clipped = float(ratio_price)  # No bounds clipping in signal_only!
 
-            assert ratio_clipped == expected, (
-                f"ratio_price={ratio_price} should sanitize to {expected}"
-            )
+            assert (
+                ratio_clipped == expected
+            ), f"ratio_price={ratio_price} should sanitize to {expected}"
 
     def test_api_consistency_variable_name(self):
         """ratio_clipped name maintained for API consistency with info dict."""
@@ -122,8 +122,7 @@ class TestNotBug41EntropySamples:
 
         # 4 samples gives ~25% relative error
         estimates_4 = [
-            np.mean(np.random.normal(true_entropy, true_entropy * 0.25, 4))
-            for _ in range(100)
+            np.mean(np.random.normal(true_entropy, true_entropy * 0.25, 4)) for _ in range(100)
         ]
         std_4 = np.std(estimates_4)
 
@@ -131,9 +130,9 @@ class TestNotBug41EntropySamples:
         loss_impact = ent_coef * std_4
 
         # With ent_coef=0.001 and ~25% variance, impact is tiny
-        assert loss_impact < 0.01, (
-            f"Loss impact {loss_impact} should be negligible with small ent_coef"
-        )
+        assert (
+            loss_impact < 0.01
+        ), f"Loss impact {loss_impact} should be negligible with small ent_coef"
 
 
 class TestNotBug42ReductionStrictMatching:
@@ -153,17 +152,15 @@ class TestNotBug42ReductionStrictMatching:
 
         # Invalid cases that should NOT be auto-corrected
         invalid_cases = [
-            "None",      # Wrong case
-            "MEAN",      # Wrong case
-            " sum",      # Leading space
-            "sum ",      # Trailing space
-            "average",   # Wrong name
+            "None",  # Wrong case
+            "MEAN",  # Wrong case
+            " sum",  # Leading space
+            "sum ",  # Trailing space
+            "average",  # Wrong name
         ]
 
         for invalid in invalid_cases:
-            assert invalid not in valid_reductions, (
-                f"'{invalid}' should NOT match valid reductions"
-            )
+            assert invalid not in valid_reductions, f"'{invalid}' should NOT match valid reductions"
 
 
 class TestNotBug43DefenseInDepth:
@@ -178,7 +175,7 @@ class TestNotBug43DefenseInDepth:
         """bb_valid can be True while bb_width is infinite."""
         # Simulating edge case where indicator was computed but overflowed
         bb_valid = True
-        bb_width = float('inf')  # From overflow in upstream calculation
+        bb_width = float("inf")  # From overflow in upstream calculation
 
         # Without defense-in-depth, this would cause problems
         if bb_valid and bb_width > 0.01:  # First check passes!
@@ -216,7 +213,7 @@ class TestNotBug44MA20NamingLegacy:
         feature_block = {
             "name": "ma20",  # Legacy name
             "size": 2,
-            "description": "ma20, is_ma20_valid"
+            "description": "ma20, is_ma20_valid",
         }
 
         # Name is 'ma20' for schema compatibility even though it's 21-bar

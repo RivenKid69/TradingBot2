@@ -35,6 +35,7 @@ from typing import Any, Dict, List, Optional
 # DISCLAIMER CONTENT
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class BacktestDisclaimer:
     """
@@ -104,6 +105,7 @@ BACKTEST_DISCLAIMER = BacktestDisclaimer(
 # RESULT WRAPPER
 # ============================================================================
 
+
 @dataclass
 class BacktestResultWithDisclaimer:
     """
@@ -151,20 +153,16 @@ class BacktestResultWithDisclaimer:
         return {
             # Disclaimer prominently at top
             "disclaimer": self.disclaimer.to_dict(),
-
             # Explicit simulation flags
             "is_simulation": True,
             "is_investment_advice": False,
-
             # Metadata
             "generated_at": self.generated_at.isoformat(),
             "strategy_name": self.strategy_name,
             "strategy_version": self.strategy_version,
             "data_period": self.data_period,
-
             # Actual results last (after disclaimers)
             "results": self.results,
-
             # Additional metadata
             "metadata": self.metadata,
         }
@@ -181,6 +179,7 @@ class BacktestResultWithDisclaimer:
 # ============================================================================
 # SERVICE CLASS
 # ============================================================================
+
 
 class BacktestDisclaimerService:
     """
@@ -226,7 +225,7 @@ class BacktestDisclaimerService:
         strategy_version: Optional[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> BacktestResultWithDisclaimer:
         """
         Wrap raw backtest results with disclaimers.
@@ -260,9 +259,7 @@ class BacktestDisclaimerService:
         )
 
     def inject_into_dict(
-        self,
-        results_dict: Dict[str, Any],
-        strategy_name: Optional[str] = None
+        self, results_dict: Dict[str, Any], strategy_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Inject disclaimers into an existing results dictionary.
@@ -282,10 +279,7 @@ class BacktestDisclaimerService:
         )
         return wrapped.to_dict()
 
-    def validate_result_has_disclaimer(
-        self,
-        result: Dict[str, Any]
-    ) -> bool:
+    def validate_result_has_disclaimer(self, result: Dict[str, Any]) -> bool:
         """
         Validate that a result dictionary contains required disclaimers.
 
@@ -303,8 +297,8 @@ class BacktestDisclaimerService:
         disclaimer = result.get("disclaimer", {})
 
         required_fields = ["warning", "legal", "version"]
-        for field in required_fields:
-            if field not in disclaimer:
+        for field_name in required_fields:
+            if field_name not in disclaimer:
                 return False
 
         # Check simulation flags
@@ -343,6 +337,7 @@ class BacktestDisclaimerService:
 # CONVENIENCE FUNCTIONS
 # ============================================================================
 
+
 def inject_disclaimer(backtest_result: Dict[str, Any]) -> Dict[str, Any]:
     """
     Convenience function to inject disclaimers into backtest results.
@@ -363,10 +358,7 @@ def inject_disclaimer(backtest_result: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def format_backtest_result(
-    results: Dict[str, Any],
-    strategy_name: str,
-    start_date: str,
-    end_date: str
+    results: Dict[str, Any], strategy_name: str, start_date: str, end_date: str
 ) -> Dict[str, Any]:
     """
     Format backtest results with full metadata and disclaimers.

@@ -420,9 +420,7 @@ class TestSIEMExportService:
         assert len(service._connections) == 0
         assert len(service._events) == 0
 
-    def test_add_connection(
-        self, service: SIEMExportService, splunk_config: SIEMConfig
-    ) -> None:
+    def test_add_connection(self, service: SIEMExportService, splunk_config: SIEMConfig) -> None:
         """Test adding a SIEM connection."""
         connection = service.add_connection(splunk_config)
         assert connection.connection_id is not None
@@ -441,9 +439,7 @@ class TestSIEMExportService:
         assert len(service._connections) == 2
         assert conn1.connection_id != conn2.connection_id
 
-    def test_remove_connection(
-        self, service: SIEMExportService, splunk_config: SIEMConfig
-    ) -> None:
+    def test_remove_connection(self, service: SIEMExportService, splunk_config: SIEMConfig) -> None:
         """Test removing a SIEM connection."""
         connection = service.add_connection(splunk_config)
         result = service.remove_connection(connection.connection_id)
@@ -455,9 +451,7 @@ class TestSIEMExportService:
         result = service.remove_connection("non-existent")
         assert result is False
 
-    def test_get_connection(
-        self, service: SIEMExportService, splunk_config: SIEMConfig
-    ) -> None:
+    def test_get_connection(self, service: SIEMExportService, splunk_config: SIEMConfig) -> None:
         """Test getting connection by ID."""
         connection = service.add_connection(splunk_config)
         retrieved = service.get_connection(connection.connection_id)
@@ -476,9 +470,7 @@ class TestSIEMExportService:
         connections = service.list_connections()
         assert len(connections) == 2
 
-    def test_test_connection(
-        self, service: SIEMExportService, splunk_config: SIEMConfig
-    ) -> None:
+    def test_test_connection(self, service: SIEMExportService, splunk_config: SIEMConfig) -> None:
         """Test testing a SIEM connection."""
         connection = service.add_connection(splunk_config)
         result = service.test_connection(connection.connection_id)
@@ -501,9 +493,7 @@ class TestSIEMExportService:
         assert event.category == EventCategory.AUTH_FAILURE
         assert len(service._events) == 1
 
-    def test_export_event(
-        self, service: SIEMExportService, splunk_config: SIEMConfig
-    ) -> None:
+    def test_export_event(self, service: SIEMExportService, splunk_config: SIEMConfig) -> None:
         """Test exporting a single event."""
         connection = service.add_connection(splunk_config)
         event = service.create_event(
@@ -533,9 +523,7 @@ class TestSIEMExportService:
         assert batch.batch_id is not None
         assert batch.size == 5
 
-    def test_export_batch(
-        self, service: SIEMExportService, splunk_config: SIEMConfig
-    ) -> None:
+    def test_export_batch(self, service: SIEMExportService, splunk_config: SIEMConfig) -> None:
         """Test exporting an event batch."""
         connection = service.add_connection(splunk_config)
         events = [
@@ -567,9 +555,7 @@ class TestSIEMExportService:
                 outcome="success",
                 message=f"Event {i}",
             )
-        result = service.export_pending_events(
-            connection.connection_id, batch_size=5
-        )
+        result = service.export_pending_events(connection.connection_id, batch_size=5)
         assert result is not None
         assert result.events_exported == 5
 

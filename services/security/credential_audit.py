@@ -140,7 +140,7 @@ class AuditStorageProtocol(Protocol):
         until: Optional[datetime] = None,
         access_types: Optional[List[CredentialAccessType]] = None,
         success_only: bool = False,
-        limit: int = 1000
+        limit: int = 1000,
     ) -> List[CredentialAccessEvent]:
         """Query stored events."""
         ...
@@ -174,7 +174,7 @@ class InMemoryAuditStorage:
 
         # Enforce max events limit (FIFO eviction)
         if len(self._events) > self._max_events:
-            self._events = self._events[-self._max_events:]
+            self._events = self._events[-self._max_events :]
 
     def query(
         self,
@@ -184,7 +184,7 @@ class InMemoryAuditStorage:
         until: Optional[datetime] = None,
         access_types: Optional[List[CredentialAccessType]] = None,
         success_only: bool = False,
-        limit: int = 1000
+        limit: int = 1000,
     ) -> List[CredentialAccessEvent]:
         """Query stored events with filters."""
         result = self._events
@@ -283,7 +283,7 @@ class CredentialAuditLogger:
     def __init__(
         self,
         storage: AuditStorageProtocol,
-        alert_callback: Optional[Callable[[AnomalyAlert], None]] = None
+        alert_callback: Optional[Callable[[AnomalyAlert], None]] = None,
     ):
         """
         Initialize the audit logger.
@@ -308,7 +308,7 @@ class CredentialAuditLogger:
         success: bool = True,
         error_message: Optional[str] = None,
         request_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> CredentialAccessEvent:
         """
         Log a credential access event.
@@ -370,11 +370,7 @@ class CredentialAuditLogger:
             if self._alert_callback:
                 self._alert_callback(alert)
 
-    def detect_anomalies(
-        self,
-        user_id: str,
-        check_window_hours: int = 24
-    ) -> List[AnomalyAlert]:
+    def detect_anomalies(self, user_id: str, check_window_hours: int = 24) -> List[AnomalyAlert]:
         """
         Detect suspicious access patterns for a user.
 
@@ -393,51 +389,65 @@ class CredentialAuditLogger:
         since_hour = now - timedelta(hours=1)
 
         # Use higher limit to accurately detect high volume anomalies
-        day_events = self._storage.query(user_id=user_id, since=since_day, limit=self.HIGH_VOLUME_THRESHOLD + 100)
-        hour_events = self._storage.query(user_id=user_id, since=since_hour, limit=self.HIGH_VOLUME_THRESHOLD + 100)
+        day_events = self._storage.query(
+            user_id=user_id, since=since_day, limit=self.HIGH_VOLUME_THRESHOLD + 100
+        )
+        hour_events = self._storage.query(
+            user_id=user_id, since=since_hour, limit=self.HIGH_VOLUME_THRESHOLD + 100
+        )
 
         # Check: High volume
         if len(day_events) > self.HIGH_VOLUME_THRESHOLD:
-            anomalies.append(AnomalyAlert(
-                alert_type="high_volume",
-                severity="medium",
-                user_id=user_id,
-                description=f"High access volume: {len(day_events)} accesses in 24h",
-                timestamp=now,
-                evidence={"access_count": len(day_events), "threshold": self.HIGH_VOLUME_THRESHOLD}
-            ))
+            anomalies.append(
+                AnomalyAlert(
+                    alert_type="high_volume",
+                    severity="medium",
+                    user_id=user_id,
+                    description=f"High access volume: {len(day_events)} accesses in 24h",
+                    timestamp=now,
+                    evidence={
+                        "access_count": len(day_events),
+                        "threshold": self.HIGH_VOLUME_THRESHOLD,
+                    },
+                )
+            )
 
         # Check: Multiple failures
         failures = [e for e in hour_events if not e.success]
         if len(failures) > self.FAILURE_THRESHOLD:
-            anomalies.append(AnomalyAlert(
-                alert_type="repeated_failures",
-                severity="high",
-                user_id=user_id,
-                description=f"Multiple access failures: {len(failures)} failures in 1h",
-                timestamp=now,
-                evidence={"failure_count": len(failures), "threshold": self.FAILURE_THRESHOLD}
-            ))
+            anomalies.append(
+                AnomalyAlert(
+                    alert_type="repeated_failures",
+                    severity="high",
+                    user_id=user_id,
+                    description=f"Multiple access failures: {len(failures)} failures in 1h",
+                    timestamp=now,
+                    evidence={"failure_count": len(failures), "threshold": self.FAILURE_THRESHOLD},
+                )
+            )
 
         # Check: Multiple IPs
         ips = set(e.source_ip for e in hour_events if e.source_ip)
         if len(ips) > self.MULTI_IP_THRESHOLD:
-            anomalies.append(AnomalyAlert(
-                alert_type="multiple_ips",
-                severity="medium",
-                user_id=user_id,
-                description=f"Access from multiple IPs: {len(ips)} distinct IPs in 1h",
-                timestamp=now,
-                evidence={"ip_count": len(ips), "ips": list(ips)[:10], "threshold": self.MULTI_IP_THRESHOLD}
-            ))
+            anomalies.append(
+                AnomalyAlert(
+                    alert_type="multiple_ips",
+                    severity="medium",
+                    user_id=user_id,
+                    description=f"Access from multiple IPs: {len(ips)} distinct IPs in 1h",
+                    timestamp=now,
+                    evidence={
+                        "ip_count": len(ips),
+                        "ips": list(ips)[:10],
+                        "threshold": self.MULTI_IP_THRESHOLD,
+                    },
+                )
+            )
 
         return anomalies
 
     def get_user_access_history(
-        self,
-        user_id: str,
-        days: int = 90,
-        limit: int = 1000
+        self, user_id: str, days: int = 90, limit: int = 1000
     ) -> List[CredentialAccessEvent]:
         """
         Get access history for a user (supports GDPR data subject requests).
@@ -451,17 +461,10 @@ class CredentialAuditLogger:
             List of access events for the user
         """
         since = datetime.now(timezone.utc) - timedelta(days=days)
-        return self._storage.query(
-            user_id=user_id,
-            since=since,
-            limit=limit
-        )
+        return self._storage.query(user_id=user_id, since=since, limit=limit)
 
     def get_credential_access_history(
-        self,
-        credential_id: str,
-        days: int = 90,
-        limit: int = 1000
+        self, credential_id: str, days: int = 90, limit: int = 1000
     ) -> List[CredentialAccessEvent]:
         """
         Get access history for a specific credential.
@@ -475,11 +478,7 @@ class CredentialAuditLogger:
             List of access events for the credential
         """
         since = datetime.now(timezone.utc) - timedelta(days=days)
-        return self._storage.query(
-            credential_id=credential_id,
-            since=since,
-            limit=limit
-        )
+        return self._storage.query(credential_id=credential_id, since=since, limit=limit)
 
     def apply_retention_policy(self, retention_days: int = 365) -> int:
         """
@@ -506,11 +505,7 @@ class CredentialAuditLogger:
 
         return deleted_count
 
-    def generate_access_report(
-        self,
-        user_id: str,
-        days: int = 30
-    ) -> Dict[str, Any]:
+    def generate_access_report(self, user_id: str, days: int = 30) -> Dict[str, Any]:
         """
         Generate an access report for a user.
 
@@ -549,7 +544,9 @@ class CredentialAuditLogger:
                 "total_accesses": total_accesses,
                 "successful": successful,
                 "failed": failed,
-                "success_rate": round(successful / total_accesses * 100, 2) if total_accesses else 0,
+                "success_rate": (
+                    round(successful / total_accesses * 100, 2) if total_accesses else 0
+                ),
                 "unique_ips": len(unique_ips),
             },
             "access_by_type": access_by_type,

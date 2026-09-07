@@ -40,8 +40,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class SubcontractorType(Enum):
     """Types of subcontractors."""
+
     CLOUD_INFRASTRUCTURE = "cloud_infrastructure"
     DATA_PROVIDER = "data_provider"
     SECURITY_SERVICES = "security_services"
@@ -56,6 +58,7 @@ class SubcontractorType(Enum):
 
 class SubcontractorStatus(Enum):
     """Subcontractor relationship status."""
+
     ACTIVE = "active"
     PENDING_APPROVAL = "pending_approval"
     UNDER_REVIEW = "under_review"
@@ -65,6 +68,7 @@ class SubcontractorStatus(Enum):
 
 class RiskLevel(Enum):
     """Subcontractor risk level."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -73,6 +77,7 @@ class RiskLevel(Enum):
 
 class ChangeType(Enum):
     """Types of subcontractor changes."""
+
     NEW_SUBCONTRACTOR = "new_subcontractor"
     TERMINATED = "terminated"
     SERVICE_CHANGE = "service_change"
@@ -84,6 +89,7 @@ class ChangeType(Enum):
 
 class NotificationStatus(Enum):
     """Client notification status for changes."""
+
     NOT_REQUIRED = "not_required"
     PENDING = "pending"
     SENT = "sent"
@@ -128,6 +134,7 @@ class ConsentMode(Enum):
         - Art. 30(3)(a): Notice periods and reporting
         - EBA Guidelines on Outsourcing: EBA/GL/2019/02 Section 13
     """
+
     NOTIFICATION_ONLY = "notification_only"
     NOTIFICATION_WITH_OBJECTION = "notification_with_objection"
     PRIOR_CONSENT = "prior_consent"
@@ -137,9 +144,11 @@ class ConsentMode(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class Subcontractor:
     """Subcontractor record."""
+
     subcontractor_id: str = ""
     subcontractor_name: str = ""
     legal_name: str = ""
@@ -216,6 +225,7 @@ class SubcontractorChange:
         NOTIFICATION_WITH_OBJECTION: Client can object within period (standard)
         PRIOR_CONSENT: Explicit approval required before proceeding (strict)
     """
+
     change_id: str = ""
     subcontractor_id: str = ""
     subcontractor_name: str = ""
@@ -267,7 +277,9 @@ class SubcontractorChange:
     objection_resolution_notes: str = ""
 
     # Change status
-    change_status: str = "pending"  # pending, pending_consent, approved, blocked, cancelled, implemented
+    change_status: str = (
+        "pending"  # pending, pending_consent, approved, blocked, cancelled, implemented
+    )
 
     # Approval
     approved_by: str = ""
@@ -296,7 +308,7 @@ class SubcontractorChange:
             return self.notification_status in [
                 NotificationStatus.SENT,
                 NotificationStatus.ACKNOWLEDGED,
-                NotificationStatus.APPROVED
+                NotificationStatus.APPROVED,
             ]
 
         # Mode 2: Notification with objection rights (standard DORA)
@@ -307,9 +319,7 @@ class SubcontractorChange:
 
             # Check if objection deadline passed
             if self.objection_deadline:
-                deadline = datetime.fromisoformat(
-                    self.objection_deadline.replace("Z", "+00:00")
-                )
+                deadline = datetime.fromisoformat(self.objection_deadline.replace("Z", "+00:00"))
                 if datetime.now(timezone.utc) < deadline:
                     # Still in objection period, can't proceed unless all notified approved
                     return self.notification_status == NotificationStatus.APPROVED
@@ -338,7 +348,10 @@ class SubcontractorChange:
             return True
 
         # Default: require approval
-        return self.requires_client_approval and self.notification_status == NotificationStatus.APPROVED
+        return (
+            self.requires_client_approval
+            and self.notification_status == NotificationStatus.APPROVED
+        )
 
     def get_blocking_clients(self) -> List[str]:
         """
@@ -391,6 +404,7 @@ class SubcontractorChange:
 @dataclass
 class ClientSubcontractorPreference:
     """Client preferences for subcontractor changes."""
+
     client_id: str = ""
     client_name: str = ""
 
@@ -416,6 +430,7 @@ class ClientSubcontractorPreference:
 @dataclass
 class SubcontractorRiskAssessment:
     """Risk assessment for a subcontractor."""
+
     assessment_id: str = ""
     subcontractor_id: str = ""
     assessment_date: str = ""
@@ -456,6 +471,7 @@ class SubcontractorRiskAssessment:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class SubcontractorConfig:
     """Configuration for subcontractor management."""
@@ -484,6 +500,7 @@ class SubcontractorConfig:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class DORASubcontractorManagement:
     """
@@ -564,7 +581,7 @@ class DORASubcontractorManagement:
                 "KMS (encryption)",
             ],
             service_description="Cloud infrastructure (IaaS) including compute, storage, "
-                               "networking, and managed services",
+            "networking, and managed services",
             headquarters_country="LU",
             data_processing_countries=["IE", "DE", "FR"],
             data_storage_countries=["IE", "DE"],
@@ -678,8 +695,10 @@ class DORASubcontractorManagement:
 
         # Set review date
         sub.next_review_date = (
-            datetime.now(timezone.utc) + timedelta(
-                days=30 * (
+            datetime.now(timezone.utc)
+            + timedelta(
+                days=30
+                * (
                     self.config.material_review_frequency_months
                     if is_material
                     else self.config.review_frequency_months
@@ -691,11 +710,14 @@ class DORASubcontractorManagement:
         self._changes_by_subcontractor[sub.subcontractor_id] = set()
         self._assessments_by_subcontractor[sub.subcontractor_id] = set()
 
-        self._log_event("subcontractor_registered", {
-            "subcontractor_id": sub.subcontractor_id,
-            "name": name,
-            "is_material": is_material,
-        })
+        self._log_event(
+            "subcontractor_registered",
+            {
+                "subcontractor_id": sub.subcontractor_id,
+                "name": name,
+                "is_material": is_material,
+            },
+        )
 
         return sub
 
@@ -725,9 +747,9 @@ class DORASubcontractorManagement:
     ) -> List[Subcontractor]:
         """Get subcontractors by type."""
         return [
-            s for s in self._subcontractors.values()
-            if s.subcontractor_type == subcontractor_type
-            and s.status == SubcontractorStatus.ACTIVE
+            s
+            for s in self._subcontractors.values()
+            if s.subcontractor_type == subcontractor_type and s.status == SubcontractorStatus.ACTIVE
         ]
 
     def get_subcontractor_chain(
@@ -839,7 +861,8 @@ class DORASubcontractorManagement:
             change_details=change_details,
             previous_value=previous_value,
             new_value=new_value,
-            affects_critical_functions=affects_critical_functions or sub.supports_critical_functions,
+            affects_critical_functions=affects_critical_functions
+            or sub.supports_critical_functions,
             affected_services=affected_services or sub.services_provided,
         )
 
@@ -870,12 +893,15 @@ class DORASubcontractorManagement:
         self._changes[change.change_id] = change
         self._changes_by_subcontractor[subcontractor_id].add(change.change_id)
 
-        self._log_event("change_recorded", {
-            "change_id": change.change_id,
-            "subcontractor_id": subcontractor_id,
-            "change_type": change_type.value,
-            "requires_notification": change.requires_client_notification,
-        })
+        self._log_event(
+            "change_recorded",
+            {
+                "change_id": change.change_id,
+                "subcontractor_id": subcontractor_id,
+                "change_type": change_type.value,
+                "requires_notification": change.requires_client_notification,
+            },
+        )
 
         return change
 
@@ -894,8 +920,7 @@ class DORASubcontractorManagement:
     def get_pending_notifications(self) -> List[SubcontractorChange]:
         """Get changes requiring client notification."""
         return [
-            c for c in self._changes.values()
-            if c.notification_status == NotificationStatus.PENDING
+            c for c in self._changes.values() if c.notification_status == NotificationStatus.PENDING
         ]
 
     # =========================================================================
@@ -968,9 +993,12 @@ class DORASubcontractorManagement:
         for client in clients:
             # Check if client wants this notification
             should_notify = (
-                client.notify_all_changes or
-                (change.affects_critical_functions and client.notify_critical_function_changes) or
-                (self._subcontractors[change.subcontractor_id].is_material and client.notify_material_changes)
+                client.notify_all_changes
+                or (change.affects_critical_functions and client.notify_critical_function_changes)
+                or (
+                    self._subcontractors[change.subcontractor_id].is_material
+                    and client.notify_material_changes
+                )
             )
 
             if not should_notify:
@@ -983,19 +1011,24 @@ class DORASubcontractorManagement:
                 results["clients_notified"].append(client.client_id)
                 change.clients_notified.append(client.client_id)
             except Exception as e:
-                results["errors"].append({
-                    "client_id": client.client_id,
-                    "error": str(e),
-                })
+                results["errors"].append(
+                    {
+                        "client_id": client.client_id,
+                        "error": str(e),
+                    }
+                )
 
         # Update status
         if results["clients_notified"]:
             change.notification_status = NotificationStatus.SENT
 
-        self._log_event("clients_notified", {
-            "change_id": change_id,
-            "notified_count": len(results["clients_notified"]),
-        })
+        self._log_event(
+            "clients_notified",
+            {
+                "change_id": change_id,
+                "notified_count": len(results["clients_notified"]),
+            },
+        )
 
         return results
 
@@ -1012,11 +1045,14 @@ class DORASubcontractorManagement:
         )
 
         if self.config.on_change_notification:
-            self.config.on_change_notification(change.change_id, {
-                "client_id": client.client_id,
-                "change_type": change.change_type.value,
-                "subcontractor": change.subcontractor_name,
-            })
+            self.config.on_change_notification(
+                change.change_id,
+                {
+                    "client_id": client.client_id,
+                    "change_type": change.change_type.value,
+                    "subcontractor": change.subcontractor_name,
+                },
+            )
 
         return True
 
@@ -1047,17 +1083,19 @@ class DORASubcontractorManagement:
             if change.requires_client_approval:
                 change.change_status = "blocked"
 
-            self._log_event("client_objection", {
-                "change_id": change_id,
-                "client_id": client_id,
-                "reason": objection_reason,
-                "change_blocked": change.change_status == "blocked",
-            })
+            self._log_event(
+                "client_objection",
+                {
+                    "change_id": change_id,
+                    "client_id": client_id,
+                    "reason": objection_reason,
+                    "change_blocked": change.change_status == "blocked",
+                },
+            )
         elif acknowledged:
             # Check if all notified clients have responded
             all_responded = all(
-                cid in change.clients_objected or acknowledged
-                for cid in change.clients_notified
+                cid in change.clients_objected or acknowledged for cid in change.clients_notified
             )
             if all_responded and not change.clients_objected:
                 change.notification_status = NotificationStatus.APPROVED
@@ -1107,13 +1145,16 @@ class DORASubcontractorManagement:
                 change.change_status = "approved"
             change.notification_status = NotificationStatus.APPROVED
 
-        self._log_event("objection_resolved", {
-            "change_id": change_id,
-            "client_id": client_id,
-            "resolution": resolution,
-            "resolved_by": resolved_by,
-            "all_resolved": change.objections_resolved,
-        })
+        self._log_event(
+            "objection_resolved",
+            {
+                "change_id": change_id,
+                "client_id": client_id,
+                "resolution": resolution,
+                "resolved_by": resolved_by,
+                "all_resolved": change.objections_resolved,
+            },
+        )
 
         return change
 
@@ -1145,9 +1186,7 @@ class DORASubcontractorManagement:
             if change.clients_objected and not change.objections_resolved:
                 blockers.append(f"Unresolved objections from: {change.clients_objected}")
             if change.objection_deadline:
-                deadline = datetime.fromisoformat(
-                    change.objection_deadline.replace("Z", "+00:00")
-                )
+                deadline = datetime.fromisoformat(change.objection_deadline.replace("Z", "+00:00"))
                 if datetime.now(timezone.utc) < deadline:
                     blockers.append(f"Objection period ends: {change.objection_deadline}")
 
@@ -1163,11 +1202,14 @@ class DORASubcontractorManagement:
         change.approved_by = implemented_by
         change.approval_date = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("change_implemented", {
-            "change_id": change_id,
-            "implemented_by": implemented_by,
-            "affects_critical": change.affects_critical_functions,
-        })
+        self._log_event(
+            "change_implemented",
+            {
+                "change_id": change_id,
+                "implemented_by": implemented_by,
+                "affects_critical": change.affects_critical_functions,
+            },
+        )
 
         return {
             "success": True,
@@ -1190,27 +1232,24 @@ class DORASubcontractorManagement:
         change.change_status = "cancelled"
         change.objection_resolution_notes += f"\nCancelled by {cancelled_by}: {reason}"
 
-        self._log_event("change_cancelled", {
-            "change_id": change_id,
-            "reason": reason,
-            "cancelled_by": cancelled_by,
-        })
+        self._log_event(
+            "change_cancelled",
+            {
+                "change_id": change_id,
+                "reason": reason,
+                "cancelled_by": cancelled_by,
+            },
+        )
 
         return change
 
     def get_blocked_changes(self) -> List[SubcontractorChange]:
         """Get all changes blocked by client objections."""
-        return [
-            c for c in self._changes.values()
-            if c.change_status == "blocked"
-        ]
+        return [c for c in self._changes.values() if c.change_status == "blocked"]
 
     def get_pending_approval_changes(self) -> List[SubcontractorChange]:
         """Get changes pending client approval (critical functions)."""
-        return [
-            c for c in self._changes.values()
-            if c.change_status == "pending_approval"
-        ]
+        return [c for c in self._changes.values() if c.change_status == "pending_approval"]
 
     # =========================================================================
     # Risk Assessment
@@ -1301,17 +1340,23 @@ class DORASubcontractorManagement:
         # Alert if high/critical
         if overall_risk in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
             if self.config.on_risk_alert:
-                self.config.on_risk_alert(assessment.assessment_id, {
-                    "subcontractor_id": subcontractor_id,
-                    "risk_level": overall_risk.value,
-                    "risk_score": risk_score,
-                })
+                self.config.on_risk_alert(
+                    assessment.assessment_id,
+                    {
+                        "subcontractor_id": subcontractor_id,
+                        "risk_level": overall_risk.value,
+                        "risk_score": risk_score,
+                    },
+                )
 
-        self._log_event("risk_assessment_completed", {
-            "assessment_id": assessment.assessment_id,
-            "subcontractor_id": subcontractor_id,
-            "overall_risk": overall_risk.value,
-        })
+        self._log_event(
+            "risk_assessment_completed",
+            {
+                "assessment_id": assessment.assessment_id,
+                "subcontractor_id": subcontractor_id,
+                "overall_risk": overall_risk.value,
+            },
+        )
 
         return assessment
 
@@ -1321,11 +1366,7 @@ class DORASubcontractorManagement:
     ) -> List[SubcontractorRiskAssessment]:
         """Get all assessments for a subcontractor."""
         assessment_ids = self._assessments_by_subcontractor.get(subcontractor_id, set())
-        return [
-            self._assessments[aid]
-            for aid in assessment_ids
-            if aid in self._assessments
-        ]
+        return [self._assessments[aid] for aid in assessment_ids if aid in self._assessments]
 
     def get_subcontractors_due_review(self) -> List[Subcontractor]:
         """Get subcontractors due for review."""
@@ -1337,9 +1378,7 @@ class DORASubcontractorManagement:
                 continue
 
             if sub.next_review_date:
-                review_date = datetime.fromisoformat(
-                    sub.next_review_date.replace("Z", "+00:00")
-                )
+                review_date = datetime.fromisoformat(sub.next_review_date.replace("Z", "+00:00"))
                 if now >= review_date:
                     due.append(sub)
 
@@ -1369,7 +1408,8 @@ class DORASubcontractorManagement:
             prefs = self._client_preferences[client_id]
             # Filter out prohibited countries
             active_subs = [
-                s for s in active_subs
+                s
+                for s in active_subs
                 if not any(
                     c in prefs.prohibited_countries
                     for c in s.data_processing_countries + s.data_storage_countries
@@ -1412,8 +1452,7 @@ class DORASubcontractorManagement:
                     for t in SubcontractorType
                 },
                 "by_risk": {
-                    r.value: sum(1 for s in active_subs if s.risk_level == r)
-                    for r in RiskLevel
+                    r.value: sum(1 for s in active_subs if s.risk_level == r) for r in RiskLevel
                 },
             },
             "changes": {
@@ -1424,10 +1463,13 @@ class DORASubcontractorManagement:
                 "due": len(self.get_subcontractors_due_review()),
             },
             "data_locations": {
-                "countries": list(set(
-                    c for s in active_subs
-                    for c in s.data_processing_countries + s.data_storage_countries
-                )),
+                "countries": list(
+                    set(
+                        c
+                        for s in active_subs
+                        for c in s.data_processing_countries + s.data_storage_countries
+                    )
+                ),
             },
         }
 
@@ -1454,6 +1496,7 @@ class DORASubcontractorManagement:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_subcontractor_management(
     config: Optional[SubcontractorConfig] = None,

@@ -6,6 +6,7 @@ shape handling, and integration scenarios.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional
@@ -14,6 +15,7 @@ from typing import Optional
 # =============================================================================
 # 1. VARIABLE SCOPE AND INITIALIZATION TESTS
 # =============================================================================
+
 
 def test_probs_variable_scope():
     """
@@ -67,6 +69,7 @@ def test_categorical_probs_variable_defined():
 # 2. BACKWARD COMPATIBILITY TESTS
 # =============================================================================
 
+
 def test_variance_calculation_with_none_old_quantiles():
     """
     Test that variance calculation falls back gracefully when old_quantiles is None.
@@ -89,11 +92,11 @@ def test_variance_calculation_with_none_old_quantiles():
         old_quantiles_norm = old_value_quantiles
         old_mean_norm = torch.zeros(batch_size, 1)  # Would come from rollout_data.old_values
         old_quantiles_centered = old_quantiles_norm - old_mean_norm
-        old_variance = (old_quantiles_centered ** 2).mean(dim=1, keepdim=True)
+        old_variance = (old_quantiles_centered**2).mean(dim=1, keepdim=True)
     else:
         # Fallback path: rough approximation
         old_quantiles_centered = current_quantiles - current_mean
-        old_variance = (old_quantiles_centered ** 2).mean(dim=1, keepdim=True)
+        old_variance = (old_quantiles_centered**2).mean(dim=1, keepdim=True)
 
     # Should work without error
     assert old_variance is not None
@@ -123,12 +126,12 @@ def test_variance_calculation_with_none_old_probs():
         old_probs_norm = old_value_probs
         old_mean_norm = torch.zeros(batch_size, 1)
         old_atoms_centered = atoms - old_mean_norm.squeeze(-1)
-        old_variance = ((old_atoms_centered ** 2) * old_probs_norm).sum(dim=1, keepdim=True)
+        old_variance = ((old_atoms_centered**2) * old_probs_norm).sum(dim=1, keepdim=True)
     else:
         # Fallback path: uniform approximation
         old_mean_norm = current_mean
         old_atoms_centered = atoms - old_mean_norm.squeeze(-1)
-        old_variance = (old_atoms_centered ** 2).mean(dim=1, keepdim=True)
+        old_variance = (old_atoms_centered**2).mean(dim=1, keepdim=True)
 
     # Should work without error
     assert old_variance is not None
@@ -141,6 +144,7 @@ def test_variance_calculation_with_none_old_probs():
 # =============================================================================
 # 3. SHAPE COMPATIBILITY TESTS
 # =============================================================================
+
 
 def test_shape_compatibility_quantiles():
     """
@@ -162,7 +166,7 @@ def test_shape_compatibility_quantiles():
 
     # Compute variance
     old_quantiles_centered = old_value_quantiles - old_values
-    old_variance = (old_quantiles_centered ** 2).mean(dim=1, keepdim=True)
+    old_variance = (old_quantiles_centered**2).mean(dim=1, keepdim=True)
 
     assert old_variance.shape == (batch_size, 1)
 
@@ -191,7 +195,7 @@ def test_shape_compatibility_probs():
 
     # Compute variance
     old_atoms_centered = atoms - old_values.squeeze(-1)
-    old_variance = ((old_atoms_centered ** 2) * old_value_probs).sum(dim=1, keepdim=True)
+    old_variance = ((old_atoms_centered**2) * old_value_probs).sum(dim=1, keepdim=True)
 
     assert old_variance.shape == (batch_size, 1)
 
@@ -224,6 +228,7 @@ def test_broadcasting_compatibility():
 # 4. DEVICE COMPATIBILITY TESTS
 # =============================================================================
 
+
 def test_device_compatibility():
     """
     Test that tensors on different devices are handled correctly.
@@ -244,7 +249,7 @@ def test_device_compatibility():
 
     # Compute variance
     old_quantiles_centered = old_quantiles_device - old_values_device
-    old_variance = (old_quantiles_centered ** 2).mean(dim=1, keepdim=True)
+    old_variance = (old_quantiles_centered**2).mean(dim=1, keepdim=True)
 
     assert old_variance.device == target_device
     assert old_variance.dtype == target_dtype
@@ -255,6 +260,7 @@ def test_device_compatibility():
 # =============================================================================
 # 5. NUMERICAL STABILITY TESTS
 # =============================================================================
+
 
 def test_variance_with_extreme_values():
     """
@@ -267,7 +273,7 @@ def test_variance_with_extreme_values():
     huge_quantiles = torch.randn(batch_size, n_quantiles) * 1e6
     huge_mean = huge_quantiles.mean(dim=1, keepdim=True)
     huge_centered = huge_quantiles - huge_mean
-    huge_variance = (huge_centered ** 2).mean(dim=1, keepdim=True)
+    huge_variance = (huge_centered**2).mean(dim=1, keepdim=True)
 
     assert torch.all(torch.isfinite(huge_variance))
 
@@ -275,7 +281,7 @@ def test_variance_with_extreme_values():
     tiny_quantiles = torch.randn(batch_size, n_quantiles) * 1e-6
     tiny_mean = tiny_quantiles.mean(dim=1, keepdim=True)
     tiny_centered = tiny_quantiles - tiny_mean
-    tiny_variance = (tiny_centered ** 2).mean(dim=1, keepdim=True)
+    tiny_variance = (tiny_centered**2).mean(dim=1, keepdim=True)
 
     assert torch.all(torch.isfinite(tiny_variance))
 
@@ -283,7 +289,7 @@ def test_variance_with_extreme_values():
     constant_quantiles = torch.ones(batch_size, n_quantiles) * 5.0
     constant_mean = constant_quantiles.mean(dim=1, keepdim=True)
     constant_centered = constant_quantiles - constant_mean
-    constant_variance = (constant_centered ** 2).mean(dim=1, keepdim=True)
+    constant_variance = (constant_centered**2).mean(dim=1, keepdim=True)
 
     assert torch.allclose(constant_variance, torch.zeros(batch_size, 1), atol=1e-6)
 
@@ -304,7 +310,7 @@ def test_variance_with_mixed_signs():
     assert torch.allclose(mean, torch.zeros(batch_size, 1), atol=1e-5)
 
     centered = quantiles - mean
-    variance = (centered ** 2).mean(dim=1, keepdim=True)
+    variance = (centered**2).mean(dim=1, keepdim=True)
 
     assert torch.all(variance > 0)  # Should have positive variance
     assert torch.all(torch.isfinite(variance))
@@ -315,6 +321,7 @@ def test_variance_with_mixed_signs():
 # =============================================================================
 # 6. PROBABILITY DISTRIBUTION TESTS
 # =============================================================================
+
 
 def test_categorical_weighted_variance_correctness():
     """
@@ -333,10 +340,10 @@ def test_categorical_weighted_variance_correctness():
 
     # Weighted variance
     atoms_centered = atoms - mean.squeeze(-1)
-    variance_weighted = ((atoms_centered ** 2) * probs).sum(dim=1, keepdim=True)
+    variance_weighted = ((atoms_centered**2) * probs).sum(dim=1, keepdim=True)
 
     # Uniform variance (incorrect)
-    variance_uniform = (atoms_centered ** 2).mean(dim=1, keepdim=True)
+    variance_uniform = (atoms_centered**2).mean(dim=1, keepdim=True)
 
     # They should be different
     assert not torch.allclose(variance_weighted, variance_uniform, rtol=0.1)
@@ -374,6 +381,7 @@ def test_probability_conservation():
 # 7. VARIANCE CONSTRAINT ENFORCEMENT TESTS
 # =============================================================================
 
+
 def test_variance_constraint_enforcement():
     """
     Test that variance constraint properly limits variance growth.
@@ -386,30 +394,30 @@ def test_variance_constraint_enforcement():
     old_quantiles = torch.linspace(-1.0, 1.0, n_quantiles).unsqueeze(0).expand(batch_size, -1)
     old_mean = old_quantiles.mean(dim=1, keepdim=True)
     old_centered = old_quantiles - old_mean
-    old_variance = (old_centered ** 2).mean(dim=1, keepdim=True)
+    old_variance = (old_centered**2).mean(dim=1, keepdim=True)
 
     # New distribution (wide - should be constrained)
     new_quantiles = torch.linspace(-5.0, 5.0, n_quantiles).unsqueeze(0).expand(batch_size, -1)
     new_mean = new_quantiles.mean(dim=1, keepdim=True)
     new_centered = new_quantiles - new_mean
-    new_variance = (new_centered ** 2).mean(dim=1, keepdim=True)
+    new_variance = (new_centered**2).mean(dim=1, keepdim=True)
 
     # Apply constraint
     variance_ratio = new_variance / (old_variance + 1e-8)
-    variance_ratio_constrained = torch.clamp(variance_ratio, max=variance_factor ** 2)
+    variance_ratio_constrained = torch.clamp(variance_ratio, max=variance_factor**2)
     std_ratio = torch.sqrt(variance_ratio_constrained)
 
     constrained_centered = new_centered * std_ratio
-    constrained_variance = (constrained_centered ** 2).mean(dim=1, keepdim=True)
+    constrained_variance = (constrained_centered**2).mean(dim=1, keepdim=True)
 
     # Check constraint is satisfied
-    max_allowed = old_variance * (variance_factor ** 2)
-    assert torch.all(constrained_variance <= max_allowed * 1.01), \
-        f"Variance {constrained_variance} exceeds max {max_allowed}"
+    max_allowed = old_variance * (variance_factor**2)
+    assert torch.all(
+        constrained_variance <= max_allowed * 1.01
+    ), f"Variance {constrained_variance} exceeds max {max_allowed}"
 
     # Check that original would have violated
-    assert torch.all(new_variance > max_allowed), \
-        "Test setup: new variance should exceed limit"
+    assert torch.all(new_variance > max_allowed), "Test setup: new variance should exceed limit"
 
     print("✓ Variance constraint enforcement test passed")
 
@@ -426,17 +434,17 @@ def test_variance_constraint_preserves_small_changes():
     old_quantiles = torch.randn(batch_size, n_quantiles)
     old_mean = old_quantiles.mean(dim=1, keepdim=True)
     old_centered = old_quantiles - old_mean
-    old_variance = (old_centered ** 2).mean(dim=1, keepdim=True)
+    old_variance = (old_centered**2).mean(dim=1, keepdim=True)
 
     # New distribution with small change (1.5x variance, within 2.0x limit)
     new_quantiles = old_quantiles * 1.224  # sqrt(1.5) to get 1.5x variance
     new_mean = new_quantiles.mean(dim=1, keepdim=True)
     new_centered = new_quantiles - new_mean
-    new_variance = (new_centered ** 2).mean(dim=1, keepdim=True)
+    new_variance = (new_centered**2).mean(dim=1, keepdim=True)
 
     # Apply constraint
     variance_ratio = new_variance / (old_variance + 1e-8)
-    variance_ratio_constrained = torch.clamp(variance_ratio, max=variance_factor ** 2)
+    variance_ratio_constrained = torch.clamp(variance_ratio, max=variance_factor**2)
 
     # Should not be constrained (ratio ~1.5 < 4.0)
     assert torch.allclose(variance_ratio, variance_ratio_constrained, rtol=1e-2)
@@ -448,6 +456,7 @@ def test_variance_constraint_preserves_small_changes():
 # 8. EDGE CASE TESTS
 # =============================================================================
 
+
 def test_single_sample_batch():
     """
     Test variance calculation with batch_size = 1.
@@ -458,7 +467,7 @@ def test_single_sample_batch():
     old_quantiles = torch.randn(batch_size, n_quantiles)
     old_mean = old_quantiles.mean(dim=1, keepdim=True)
     old_centered = old_quantiles - old_mean
-    old_variance = (old_centered ** 2).mean(dim=1, keepdim=True)
+    old_variance = (old_centered**2).mean(dim=1, keepdim=True)
 
     assert old_variance.shape == (1, 1)
     assert torch.all(torch.isfinite(old_variance))
@@ -474,13 +483,10 @@ def test_empty_like_scenario():
     batch_size = 2
     n_quantiles = 3  # Minimal number
 
-    old_quantiles = torch.tensor([
-        [0.0, 0.5, 1.0],
-        [-1.0, 0.0, 1.0]
-    ])
+    old_quantiles = torch.tensor([[0.0, 0.5, 1.0], [-1.0, 0.0, 1.0]])
     old_mean = old_quantiles.mean(dim=1, keepdim=True)
     old_centered = old_quantiles - old_mean
-    old_variance = (old_centered ** 2).mean(dim=1, keepdim=True)
+    old_variance = (old_centered**2).mean(dim=1, keepdim=True)
 
     assert old_variance.shape == (batch_size, 1)
     assert torch.all(torch.isfinite(old_variance))
@@ -492,6 +498,7 @@ def test_empty_like_scenario():
 # =============================================================================
 # 9. INTEGRATION TESTS
 # =============================================================================
+
 
 def test_full_pipeline_quantile():
     """
@@ -511,21 +518,21 @@ def test_full_pipeline_quantile():
 
     # Step 3: VF clipping variance calculation
     old_quantiles_centered = old_quantiles - old_values
-    old_variance = (old_quantiles_centered ** 2).mean(dim=1, keepdim=True)
+    old_variance = (old_quantiles_centered**2).mean(dim=1, keepdim=True)
 
     new_quantiles_centered = new_quantiles - new_mean
-    new_variance = (new_quantiles_centered ** 2).mean(dim=1, keepdim=True)
+    new_variance = (new_quantiles_centered**2).mean(dim=1, keepdim=True)
 
     # Step 4: Apply variance constraint
     variance_ratio = new_variance / (old_variance + 1e-8)
-    variance_ratio_constrained = torch.clamp(variance_ratio, max=variance_factor ** 2)
+    variance_ratio_constrained = torch.clamp(variance_ratio, max=variance_factor**2)
     std_ratio = torch.sqrt(variance_ratio_constrained)
 
     constrained_quantiles_centered = new_quantiles_centered * std_ratio
-    constrained_variance = (constrained_quantiles_centered ** 2).mean(dim=1, keepdim=True)
+    constrained_variance = (constrained_quantiles_centered**2).mean(dim=1, keepdim=True)
 
     # Verify
-    max_allowed = old_variance * (variance_factor ** 2)
+    max_allowed = old_variance * (variance_factor**2)
     assert torch.all(constrained_variance <= max_allowed * 1.01)
 
     print("✓ Full pipeline (quantile) integration test passed")
@@ -553,17 +560,17 @@ def test_full_pipeline_categorical():
 
     # Step 3: VF clipping variance calculation
     old_atoms_centered = atoms - old_values.squeeze(-1)
-    old_variance = ((old_atoms_centered ** 2) * old_probs).sum(dim=1, keepdim=True)
+    old_variance = ((old_atoms_centered**2) * old_probs).sum(dim=1, keepdim=True)
 
     new_atoms_centered = atoms - new_mean.squeeze(-1)
-    new_variance = ((new_atoms_centered ** 2) * new_probs).sum(dim=1, keepdim=True)
+    new_variance = ((new_atoms_centered**2) * new_probs).sum(dim=1, keepdim=True)
 
     # Step 4: Apply variance constraint
     variance_ratio = new_variance / (old_variance + 1e-8)
-    variance_ratio_constrained = torch.clamp(variance_ratio, max=variance_factor ** 2)
+    variance_ratio_constrained = torch.clamp(variance_ratio, max=variance_factor**2)
 
     # Verify
-    max_allowed = old_variance * (variance_factor ** 2)
+    max_allowed = old_variance * (variance_factor**2)
     constrained_variance = new_variance.clamp(max=max_allowed)
     assert torch.all(constrained_variance <= max_allowed * 1.01)
 

@@ -33,6 +33,7 @@ from ccea.crypto.digest import compute_file_digest
 @dataclass
 class SignatureInfo:
     """Signature information."""
+
     algorithm: str
     signature: str
     key_id: Optional[str] = None
@@ -272,6 +273,7 @@ class SignatureVerifier:
         # Verify digest if provided
         if signature_info.signed_digest:
             from ccea.crypto.digest import compute_digest
+
             actual_digest = compute_digest(data)
             if actual_digest != signature_info.signed_digest:
                 return False

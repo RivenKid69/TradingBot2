@@ -13,15 +13,16 @@ class AsofSpec:
     """
     Описание одной таблицы для asof-джойна.
     """
+
     name: str
     df: pd.DataFrame
     time_col: str = "ts_ms"
     keys: Sequence[str] = ()
     prefix: Optional[str] = None
     # поведение джойна
-    direction: str = "backward"        # "backward" | "forward" | "nearest"
-    tolerance_ms: Optional[int] = None # макс. разрыв во времени; если None — без ограничения
-    allow_exact_matches: bool = True   # разрешать совпадение по времени
+    direction: str = "backward"  # "backward" | "forward" | "nearest"
+    tolerance_ms: Optional[int] = None  # макс. разрыв во времени; если None — без ограничения
+    allow_exact_matches: bool = True  # разрешать совпадение по времени
 
     def normalized(self) -> "AsofSpec":
         d = self.df.copy()
@@ -71,6 +72,7 @@ class AsofMerger:
       - Колонка времени — int64 (миллисекунды unix).
       - Ключи и время должны быть отсортированы.
     """
+
     def __init__(self, *, base_df: pd.DataFrame, time_col: str = "ts_ms", keys: Sequence[str] = ()):
         if time_col not in base_df.columns:
             raise ValueError(f"base_df не содержит колонку времени '{time_col}'")
@@ -89,7 +91,9 @@ class AsofMerger:
             right_by = list(s.keys) if s.keys else None
             # pandas требует одинаковые множества ключей для merge_asof(by=...)
             if (left_by or []) != (right_by or []):
-                raise ValueError(f"[{s.name}] несовпадающий набор ключей: base={left_by}, right={right_by}")
+                raise ValueError(
+                    f"[{s.name}] несовпадающий набор ключей: base={left_by}, right={right_by}"
+                )
 
             # allow_exact_matches=False имитирует «решение позже источника» (исключить совпадание времени)
             allow = bool(s.allow_exact_matches)

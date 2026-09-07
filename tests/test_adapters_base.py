@@ -62,6 +62,7 @@ from core_models import Bar, Tick, Side, Liquidity
 # Model Tests
 # =========================
 
+
 class TestMarketType:
     """Test MarketType enum."""
 
@@ -181,7 +182,7 @@ class TestTradingSession:
         session = TradingSession(
             session_type=SessionType.REGULAR,
             start_minutes=570,  # 9:30 AM
-            end_minutes=960,    # 4:00 PM
+            end_minutes=960,  # 4:00 PM
             timezone="America/New_York",
         )
         assert session.session_type == SessionType.REGULAR
@@ -264,6 +265,7 @@ class TestPredefindSessions:
 # =========================
 # Registry Tests
 # =========================
+
 
 class TestAdapterRegistry:
     """Test adapter registry."""
@@ -355,6 +357,7 @@ class TestAdapterRegistration:
 # Base Adapter Tests
 # =========================
 
+
 class TestBaseAdapter:
     """Test BaseAdapter functionality."""
 
@@ -394,6 +397,7 @@ class TestBaseAdapter:
 # Order Result Tests
 # =========================
 
+
 class TestOrderResult:
     """Test OrderResult dataclass."""
 
@@ -430,6 +434,7 @@ class TestOrderResult:
 # Integration Tests
 # =========================
 
+
 class TestBinanceAdapterIntegration:
     """Integration tests for Binance adapters (mocked)."""
 
@@ -438,7 +443,18 @@ class TestBinanceAdapterIntegration:
         """Create mock Binance client."""
         mock = MagicMock()
         mock.get_klines.return_value = [
-            [1700000000000, "100.0", "101.0", "99.0", "100.5", "1000.0", 0, "100500.0", 500, "500.0"],
+            [
+                1700000000000,
+                "100.0",
+                "101.0",
+                "99.0",
+                "100.5",
+                "1000.0",
+                0,
+                "100500.0",
+                500,
+                "500.0",
+            ],
         ]
         mock.get_book_ticker.return_value = (Decimal("100.0"), Decimal("100.1"))
         mock.get_last_price.return_value = Decimal("100.05")
@@ -448,6 +464,7 @@ class TestBinanceAdapterIntegration:
         """Test that Binance market data adapter can be imported."""
         try:
             from adapters.binance import BinanceMarketDataAdapter
+
             assert BinanceMarketDataAdapter is not None
         except ImportError as e:
             pytest.skip(f"Binance adapter not available: {e}")
@@ -456,6 +473,7 @@ class TestBinanceAdapterIntegration:
         """Test that Binance fee adapter can be imported."""
         try:
             from adapters.binance import BinanceFeeAdapter
+
             assert BinanceFeeAdapter is not None
         except ImportError as e:
             pytest.skip(f"Binance adapter not available: {e}")
@@ -469,12 +487,15 @@ class TestAlpacaAdapterIntegration:
         try:
             from adapters.alpaca import AlpacaTradingHoursAdapter
 
-            adapter = AlpacaTradingHoursAdapter(config={
-                "allow_extended_hours": True,
-            })
+            adapter = AlpacaTradingHoursAdapter(
+                config={
+                    "allow_extended_hours": True,
+                }
+            )
 
             # Crypto-style timestamps for testing
             import time
+
             ts = int(time.time() * 1000)
 
             # These should not raise
@@ -489,9 +510,11 @@ class TestAlpacaAdapterIntegration:
         try:
             from adapters.alpaca import AlpacaFeeAdapter
 
-            adapter = AlpacaFeeAdapter(config={
-                "include_regulatory_fees": False,
-            })
+            adapter = AlpacaFeeAdapter(
+                config={
+                    "include_regulatory_fees": False,
+                }
+            )
 
             # Buy should be free
             fee = adapter.compute_fee(
@@ -508,6 +531,7 @@ class TestAlpacaAdapterIntegration:
 # =========================
 # Configuration Tests
 # =========================
+
 
 class TestAdapterConfig:
     """Test adapter configuration."""

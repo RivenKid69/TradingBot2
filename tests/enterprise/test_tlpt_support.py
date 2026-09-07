@@ -677,9 +677,7 @@ class TestAccessManagement:
         assert grant.access_level == AccessLevel.LIMITED
         assert grant.is_active is True
 
-    def test_grant_access_invalid_environment(
-        self, service: TLPTCooperationService
-    ) -> None:
+    def test_grant_access_invalid_environment(self, service: TLPTCooperationService) -> None:
         """Test granting access to invalid environment."""
         due_date = datetime.utcnow() + timedelta(days=7)
         request = service.create_request(
@@ -723,9 +721,7 @@ class TestAccessManagement:
             environments=["staging"],
             granted_by="admin@platform.com",
         )
-        result = service.revoke_access(
-            grant.grant_id, "admin@platform.com", "Testing complete"
-        )
+        result = service.revoke_access(grant.grant_id, "admin@platform.com", "Testing complete")
         assert result is True
         assert grant.revoked is True
 
@@ -830,9 +826,7 @@ class TestReporting:
         config = TLPTConfig(require_nca_reference=False)
         return TLPTCooperationService(config)
 
-    def test_generate_cooperation_report(
-        self, service: TLPTCooperationService
-    ) -> None:
+    def test_generate_cooperation_report(self, service: TLPTCooperationService) -> None:
         """Test generating cooperation report."""
         report = service.generate_cooperation_report(
             client_id="client-001",

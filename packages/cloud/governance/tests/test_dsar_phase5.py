@@ -65,6 +65,7 @@ from ..retention_service import LegalHoldService, LegalHold, LegalHoldStatus
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def export_dir():
     """Create temporary export directory."""
@@ -75,27 +76,33 @@ def export_dir():
 @pytest.fixture
 def mock_data_fetcher():
     """Mock data fetcher that returns sample data."""
+
     def fetcher(user_id: str, workspace_id: str, categories: Set[str]) -> List[Dict]:
         records = []
         for category in categories:
             for i in range(10):
-                records.append({
-                    "category": category,
-                    "user_id": user_id,
-                    "workspace_id": workspace_id,
-                    "record_id": f"{category}_{i}",
-                    "data": f"Sample data for {category}",
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                })
+                records.append(
+                    {
+                        "category": category,
+                        "user_id": user_id,
+                        "workspace_id": workspace_id,
+                        "record_id": f"{category}_{i}",
+                        "data": f"Sample data for {category}",
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
         return records
+
     return fetcher
 
 
 @pytest.fixture
 def mock_data_deleter():
     """Mock data deleter that returns count."""
+
     def deleter(user_id: str, workspace_id: str, categories: Set[str]) -> int:
         return len(categories) * 10  # 10 records per category
+
     return deleter
 
 
@@ -129,6 +136,7 @@ def service_no_fetcher(export_dir, legal_hold_service):
 # ============================================================================
 # Constants Tests
 # ============================================================================
+
 
 class TestConstants:
     """Tests for DSAR constants."""
@@ -209,6 +217,7 @@ class TestConstants:
 # Data Category Registry Tests
 # ============================================================================
 
+
 class TestDataCategoryRegistry:
     """Tests for data category registry."""
 
@@ -235,6 +244,7 @@ class TestDataCategoryRegistry:
 # ============================================================================
 # Request Creation Tests
 # ============================================================================
+
 
 class TestRequestCreation:
     """Tests for DSAR request creation."""
@@ -343,6 +353,7 @@ class TestRequestCreation:
 # ============================================================================
 # Identity Verification Tests
 # ============================================================================
+
 
 class TestIdentityVerification:
     """Tests for identity verification."""
@@ -495,6 +506,7 @@ class TestIdentityVerification:
 # Deadline Management Tests
 # ============================================================================
 
+
 class TestDeadlineManagement:
     """Tests for deadline management per GDPR Art. 12(3)."""
 
@@ -619,6 +631,7 @@ class TestDeadlineManagement:
 # ============================================================================
 # Request Processing Tests (ACCESS/PORTABILITY)
 # ============================================================================
+
 
 class TestAccessProcessing:
     """Tests for ACCESS and PORTABILITY request processing."""
@@ -759,6 +772,7 @@ class TestAccessProcessing:
 # Erasure Processing Tests
 # ============================================================================
 
+
 class TestErasureProcessing:
     """Tests for ERASURE request processing with legal hold."""
 
@@ -861,6 +875,7 @@ class TestErasureProcessing:
 # Request Management Tests
 # ============================================================================
 
+
 class TestRequestManagement:
     """Tests for request management operations."""
 
@@ -931,6 +946,7 @@ class TestRequestManagement:
 # ============================================================================
 # Query and Monitoring Tests
 # ============================================================================
+
 
 class TestQueryAndMonitoring:
     """Tests for query and monitoring methods."""
@@ -1053,6 +1069,7 @@ class TestQueryAndMonitoring:
 # Metrics Tests
 # ============================================================================
 
+
 class TestMetrics:
     """Tests for DSAR metrics and statistics."""
 
@@ -1122,6 +1139,7 @@ class TestMetrics:
 # ============================================================================
 # Audit Trail Tests
 # ============================================================================
+
 
 class TestAuditTrail:
     """Tests for audit trail."""
@@ -1235,6 +1253,7 @@ class TestAuditTrail:
 # CCEA Boundary Tests
 # ============================================================================
 
+
 class TestCCEABoundary:
     """Tests for CCEA boundary handling."""
 
@@ -1277,6 +1296,7 @@ class TestCCEABoundary:
 # ============================================================================
 # Data Class Tests
 # ============================================================================
+
 
 class TestDataClasses:
     """Tests for data class functionality."""
@@ -1359,6 +1379,7 @@ class TestDataClasses:
 # ============================================================================
 # End-to-End Tests (DoD Requirements)
 # ============================================================================
+
 
 class TestEndToEnd:
     """End-to-end tests per DoD requirements."""
@@ -1530,6 +1551,7 @@ class TestEndToEnd:
 # ============================================================================
 # Error Handling Tests
 # ============================================================================
+
 
 class TestErrorHandling:
     """Tests for error handling."""

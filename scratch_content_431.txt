@@ -1,1 +1,0 @@
-﻿I will insert the JavaScript helper functions, step arrays, and animation/transition handlers inside `index.html` at the end of the `runQuickAction` definition.

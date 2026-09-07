@@ -32,47 +32,45 @@ from typing import Any, Dict, Final, FrozenSet, List, Optional, Set
 # ============================================================================
 
 # Fields that indicate trading intent - STRICTLY PROHIBITED
-PROHIBITED_INTENT_FIELDS: Final[FrozenSet[str]] = frozenset({
-    # Order fields
-    "side",
-    "quantity",
-    "qty",
-    "price",
-    "order_type",
-    "order_size",
-    "fill_price",
-    "limit_price",
-    "stop_price",
-
-    # Intent fields
-    "intent",
-    "intent_type",
-    "order_intent",
-    "trading_intent",
-    "signal",
-    "signal_value",
-    "trade_signal",
-
-    # Target fields
-    "target_position",
-    "target_quantity",
-    "target_notional",
-    "target_qty",
-    "desired_position",
-    "target_size",
-
-    # Action fields
-    "execute_order",
-    "place_order",
-    "submit_order",
-    "create_order",
-    "send_order",
-
-    # Position change fields
-    "position_change",
-    "delta_position",
-    "adjustment",
-})
+PROHIBITED_INTENT_FIELDS: Final[FrozenSet[str]] = frozenset(
+    {
+        # Order fields
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "order_size",
+        "fill_price",
+        "limit_price",
+        "stop_price",
+        # Intent fields
+        "intent",
+        "intent_type",
+        "order_intent",
+        "trading_intent",
+        "signal",
+        "signal_value",
+        "trade_signal",
+        # Target fields
+        "target_position",
+        "target_quantity",
+        "target_notional",
+        "target_qty",
+        "desired_position",
+        "target_size",
+        # Action fields
+        "execute_order",
+        "place_order",
+        "submit_order",
+        "create_order",
+        "send_order",
+        # Position change fields
+        "position_change",
+        "delta_position",
+        "adjustment",
+    }
+)
 
 # Patterns that indicate intent/signal - checked via regex
 PROHIBITED_PATTERNS: Final[List[str]] = [
@@ -90,39 +88,44 @@ PROHIBITED_PATTERNS: Final[List[str]] = [
 ]
 
 # Message types that are allowed in Cloud -> Agent direction
-ALLOWED_CLOUD_TO_AGENT_TYPES: Final[FrozenSet[str]] = frozenset({
-    "COMMAND_BATCH",
-    "REQUEST_START_RUN",
-    "REQUEST_STOP_RUN",
-    "REQUEST_PAUSE_RUN",
-    "REQUEST_UPGRADE_ARTIFACT",
-    "REQUEST_UPDATE_CONFIG",
-    "REQUEST_ROTATE_AGENT_SESSION",
-    "REQUEST_EXPORT_LOGS",
-})
+ALLOWED_CLOUD_TO_AGENT_TYPES: Final[FrozenSet[str]] = frozenset(
+    {
+        "COMMAND_BATCH",
+        "REQUEST_START_RUN",
+        "REQUEST_STOP_RUN",
+        "REQUEST_PAUSE_RUN",
+        "REQUEST_UPGRADE_ARTIFACT",
+        "REQUEST_UPDATE_CONFIG",
+        "REQUEST_ROTATE_AGENT_SESSION",
+        "REQUEST_EXPORT_LOGS",
+    }
+)
 
 # Command types that would indicate intent injection
-PROHIBITED_COMMAND_TYPES: Final[FrozenSet[str]] = frozenset({
-    "PLACE_ORDER",
-    "SUBMIT_ORDER",
-    "EXECUTE_ORDER",
-    "SEND_ORDER",
-    "CREATE_ORDER",
-    "SET_TARGET",
-    "SET_POSITION",
-    "PUSH_INTENT",
-    "PUSH_SIGNAL",
-    "SEND_INTENT",
-    "SEND_SIGNAL",
-    "EXECUTE_INTENT",
-    "SET_TARGET_POSITION",
-    "ADJUST_POSITION",
-})
+PROHIBITED_COMMAND_TYPES: Final[FrozenSet[str]] = frozenset(
+    {
+        "PLACE_ORDER",
+        "SUBMIT_ORDER",
+        "EXECUTE_ORDER",
+        "SEND_ORDER",
+        "CREATE_ORDER",
+        "SET_TARGET",
+        "SET_POSITION",
+        "PUSH_INTENT",
+        "PUSH_SIGNAL",
+        "SEND_INTENT",
+        "SEND_SIGNAL",
+        "EXECUTE_INTENT",
+        "SET_TARGET_POSITION",
+        "ADJUST_POSITION",
+    }
+)
 
 
 # ============================================================================
 # Violation Classes
 # ============================================================================
+
 
 class ViolationSeverity(str, Enum):
     """Severity of intent prohibition violation."""
@@ -177,6 +180,7 @@ class IntentProhibitionResult:
 # Check Functions
 # ============================================================================
 
+
 def check_dict_for_prohibited_fields(
     data: Dict[str, Any],
     location: str = "",
@@ -201,13 +205,19 @@ def check_dict_for_prohibited_fields(
                 # Check key against prohibited fields
                 key_lower = key.lower()
                 if key_lower in PROHIBITED_INTENT_FIELDS:
-                    violations.append(IntentProhibitionViolation(
-                        severity=ViolationSeverity.CRITICAL if key_lower in {"side", "quantity", "price"} else ViolationSeverity.HIGH,
-                        message=f"Prohibited field '{key}' found in protocol message",
-                        location=f"{location}:{current_path}" if location else current_path,
-                        field_name=key,
-                        detected_value=str(value)[:100],
-                    ))
+                    violations.append(
+                        IntentProhibitionViolation(
+                            severity=(
+                                ViolationSeverity.CRITICAL
+                                if key_lower in {"side", "quantity", "price"}
+                                else ViolationSeverity.HIGH
+                            ),
+                            message=f"Prohibited field '{key}' found in protocol message",
+                            location=f"{location}:{current_path}" if location else current_path,
+                            field_name=key,
+                            detected_value=str(value)[:100],
+                        )
+                    )
 
                 # Recurse
                 _check_recursive(value, current_path)
@@ -239,12 +249,14 @@ def check_json_string_for_patterns(
     for pattern in PROHIBITED_PATTERNS:
         matches = re.findall(pattern, json_string, re.IGNORECASE)
         if matches:
-            violations.append(IntentProhibitionViolation(
-                severity=ViolationSeverity.MEDIUM,
-                message=f"Suspicious pattern found: '{pattern}'",
-                location=location,
-                detected_value=matches[0] if matches else None,
-            ))
+            violations.append(
+                IntentProhibitionViolation(
+                    severity=ViolationSeverity.MEDIUM,
+                    message=f"Suspicious pattern found: '{pattern}'",
+                    location=location,
+                    detected_value=matches[0] if matches else None,
+                )
+            )
 
     return violations
 
@@ -349,35 +361,41 @@ def check_python_source_for_intent_injection(
             for key in node.keys:
                 if isinstance(key, ast.Constant) and isinstance(key.value, str):
                     if key.value.lower() in PROHIBITED_INTENT_FIELDS:
-                        result.add_violation(IntentProhibitionViolation(
-                            severity=ViolationSeverity.HIGH,
-                            message=f"Prohibited field '{key.value}' in dict literal",
-                            location=f"{file_path}:{key.lineno}",
-                            field_name=key.value,
-                        ))
+                        result.add_violation(
+                            IntentProhibitionViolation(
+                                severity=ViolationSeverity.HIGH,
+                                message=f"Prohibited field '{key.value}' in dict literal",
+                                location=f"{file_path}:{key.lineno}",
+                                field_name=key.value,
+                            )
+                        )
             self.generic_visit(node)
 
         def visit_Subscript(self, node: ast.Subscript) -> None:
             if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str):
                 if node.slice.value.lower() in PROHIBITED_INTENT_FIELDS:
-                    result.add_violation(IntentProhibitionViolation(
-                        severity=ViolationSeverity.MEDIUM,
-                        message=f"Accessing prohibited field '{node.slice.value}'",
-                        location=f"{file_path}:{node.lineno}",
-                        field_name=node.slice.value,
-                    ))
+                    result.add_violation(
+                        IntentProhibitionViolation(
+                            severity=ViolationSeverity.MEDIUM,
+                            message=f"Accessing prohibited field '{node.slice.value}'",
+                            location=f"{file_path}:{node.lineno}",
+                            field_name=node.slice.value,
+                        )
+                    )
             self.generic_visit(node)
 
         def visit_Call(self, node: ast.Call) -> None:
             # Check for dict() calls with prohibited keys
             for keyword in node.keywords:
                 if keyword.arg and keyword.arg.lower() in PROHIBITED_INTENT_FIELDS:
-                    result.add_violation(IntentProhibitionViolation(
-                        severity=ViolationSeverity.HIGH,
-                        message=f"Prohibited keyword argument '{keyword.arg}'",
-                        location=f"{file_path}:{node.lineno}",
-                        field_name=keyword.arg,
-                    ))
+                    result.add_violation(
+                        IntentProhibitionViolation(
+                            severity=ViolationSeverity.HIGH,
+                            message=f"Prohibited keyword argument '{keyword.arg}'",
+                            location=f"{file_path}:{node.lineno}",
+                            field_name=keyword.arg,
+                        )
+                    )
             self.generic_visit(node)
 
     visitor = IntentInjectionVisitor()
@@ -503,6 +521,7 @@ def validate_cloud_api_endpoint(
 # CI Integration
 # ============================================================================
 
+
 def run_ci_check(cloud_package_path: Path) -> int:
     """
     Run CI check for intent prohibition.
@@ -540,6 +559,7 @@ def run_ci_check(cloud_package_path: Path) -> int:
 # ============================================================================
 # Runtime Validation Decorator
 # ============================================================================
+
 
 def prohibit_intent_fields(func):
     """
@@ -583,14 +603,13 @@ def prohibit_intent_fields(func):
 # CLI Entry Point
 # ============================================================================
 
+
 def main() -> int:
     """CLI entry point."""
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Intent Prohibition Check"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Intent Prohibition Check")
     parser.add_argument(
         "--cloud-path",
         type=Path,
@@ -628,4 +647,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

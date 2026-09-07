@@ -52,19 +52,27 @@ class BooksAndRecords:
         self.account_id = account_id
         d = Path(data_dir) if data_dir else None
         self.ledger = PnLLedger(
-            starting_cash=starting_cash, method=method, base_currency=base_currency,
+            starting_cash=starting_cash,
+            method=method,
+            base_currency=base_currency,
             db_path=(d / "pnl_ledger.db") if d else None,
-            account_id=account_id, strategy_id=strategy_id,
+            account_id=account_id,
+            strategy_id=strategy_id,
         )
         self.blotter = TradeBlotter(
-            db_path=(d / "trade_blotter.db") if d else None, hmac_key=hmac_key)
+            db_path=(d / "trade_blotter.db") if d else None, hmac_key=hmac_key
+        )
         self.cash = CashLedger(
             db_path=(d / "cash_ledger.db") if d else None,
-            opening_balance=starting_cash, currency=base_currency, hmac_key=hmac_key)
+            opening_balance=starting_cash,
+            currency=base_currency,
+            hmac_key=hmac_key,
+        )
         # instrument master (lazy default) + surveillance monitor (optional)
         if instrument_master is None:
             try:
                 from services.instrument_master import get_default_master
+
                 instrument_master = get_default_master()
             except Exception:
                 instrument_master = None
@@ -72,6 +80,7 @@ class BooksAndRecords:
         if surveillance is None:
             try:
                 from services.algo_integration.market_abuse import MarketAbuseMonitor
+
                 surveillance = MarketAbuseMonitor()
             except Exception:
                 surveillance = None
@@ -88,28 +97,54 @@ class BooksAndRecords:
 
     # ------------------------------------------------------------------ orders
     def on_order(
-        self, *, symbol: str, side: str, action: str, quantity: float, price: float,
-        order_id: str, account: Optional[str] = None, mid: Optional[float] = None,
+        self,
+        *,
+        symbol: str,
+        side: str,
+        action: str,
+        quantity: float,
+        price: float,
+        order_id: str,
+        account: Optional[str] = None,
+        mid: Optional[float] = None,
         ts_ms: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """Feed an order lifecycle event (NEW/CANCEL/MODIFY) to live surveillance."""
         if self.surveillance is None:
             return []
         from services.algo_integration.market_abuse import OrderEvent
+
         ev = OrderEvent(
-            ts_ms=ts_ms or _now_ms(), symbol=str(symbol), account=account or self.account_id,
-            side=str(side).upper(), action=str(action).upper(), qty=float(quantity),
-            price=float(price), order_id=str(order_id), mid=mid)
+            ts_ms=ts_ms or _now_ms(),
+            symbol=str(symbol),
+            account=account or self.account_id,
+            side=str(side).upper(),
+            action=str(action).upper(),
+            qty=float(quantity),
+            price=float(price),
+            order_id=str(order_id),
+            mid=mid,
+        )
         with self._lock:
             alerts = self.surveillance.record_order(ev)
         return [a.to_dict() for a in alerts]
 
     # ------------------------------------------------------------------ fills
     def on_fill(
-        self, *, symbol: str, side: str, quantity: Any, price: Any, fee: Any = 0,
-        financing: Any = 0, strategy_id: str = "", client_order_id: Optional[str] = None,
-        broker_order_id: Optional[str] = None, asset_class: Optional[str] = None,
-        is_aggressive: bool = True, account: Optional[str] = None,
+        self,
+        *,
+        symbol: str,
+        side: str,
+        quantity: Any,
+        price: Any,
+        fee: Any = 0,
+        financing: Any = 0,
+        strategy_id: str = "",
+        client_order_id: Optional[str] = None,
+        broker_order_id: Optional[str] = None,
+        asset_class: Optional[str] = None,
+        is_aggressive: bool = True,
+        account: Optional[str] = None,
         ts: Optional[datetime] = None,
     ) -> Dict[str, Any]:
         """Book a fill across ALL records + feed surveillance. Atomic under lock."""
@@ -118,41 +153,71 @@ class BooksAndRecords:
         asset_class = asset_class or ac
         with self._lock:
             # 1) P&L ledger (positions / realized / unrealized / cash)
-            led = self.ledger.on_fill(symbol, side, quantity, price, fee=fee, ts=ts,
-                                      client_order_id=client_order_id,
-                                      broker_order_id=broker_order_id)
-            qf = float(led["quantity"]); pf = float(led["price"]); fef = float(led["fee"])
+            led = self.ledger.on_fill(
+                symbol,
+                side,
+                quantity,
+                price,
+                fee=fee,
+                ts=ts,
+                client_order_id=client_order_id,
+                broker_order_id=broker_order_id,
+            )
+            qf = float(led["quantity"])
+            pf = float(led["price"])
+            fef = float(led["fee"])
             signed_notional = (qf if side == "buy" else -qf) * pf
 
             # 2) immutable trade blotter (books-and-records)
             tr = self.blotter.record_trade(
-                symbol=symbol, side=side, quantity=qf, price=pf, fee=fef, financing=financing,
-                figi=figi, currency=self.ledger.base_currency, asset_class=asset_class,
-                strategy_id=strategy_id, client_order_id=client_order_id,
-                broker_order_id=broker_order_id, ts=ts)
+                symbol=symbol,
+                side=side,
+                quantity=qf,
+                price=pf,
+                fee=fef,
+                financing=financing,
+                figi=figi,
+                currency=self.ledger.base_currency,
+                asset_class=asset_class,
+                strategy_id=strategy_id,
+                client_order_id=client_order_id,
+                broker_order_id=broker_order_id,
+                ts=ts,
+            )
 
             # 3) cash general-ledger movements (mirror the ledger cash math)
             self.cash.post("TRADE", -signed_notional, ref=client_order_id, symbol=symbol, ts=ts)
             if fef:
                 self.cash.post("FEE", -fef, ref=client_order_id, symbol=symbol, ts=ts)
             if float(financing or 0):
-                self.cash.post("FINANCING", -float(financing), ref=client_order_id, symbol=symbol, ts=ts)
+                self.cash.post(
+                    "FINANCING", -float(financing), ref=client_order_id, symbol=symbol, ts=ts
+                )
                 self.ledger.accrue_financing(symbol, float(financing))
 
             # 4) live MAR surveillance over the same fill
             alerts: List[Dict[str, Any]] = []
             if self.surveillance is not None:
                 from services.algo_integration.market_abuse import TradeEvent
+
                 tev = TradeEvent(
                     ts_ms=(int(ts.timestamp() * 1000) if ts else _now_ms()),
-                    symbol=str(symbol), account=account or self.account_id,
-                    side=side.upper(), qty=qf, price=pf, is_aggressive=is_aggressive,
-                    order_id=str(client_order_id or broker_order_id or ""))
+                    symbol=str(symbol),
+                    account=account or self.account_id,
+                    side=side.upper(),
+                    qty=qf,
+                    price=pf,
+                    is_aggressive=is_aggressive,
+                    order_id=str(client_order_id or broker_order_id or ""),
+                )
                 alerts = [a.to_dict() for a in self.surveillance.record_trade(tev)]
 
         return {
-            "ledger": led, "trade": tr.to_dict(), "figi": figi,
-            "cash_balance": self.cash.balance, "alerts": alerts,
+            "ledger": led,
+            "trade": tr.to_dict(),
+            "figi": figi,
+            "cash_balance": self.cash.balance,
+            "alerts": alerts,
         }
 
     # ------------------------------------------------------------------ marks / eod
@@ -172,7 +237,8 @@ class BooksAndRecords:
         # books reconcile: cash-ledger balance == P&L-ledger cash
         cash_match = abs(self.cash.balance - float(self.ledger.cash)) < 1e-6
         return {
-            "blotter": bl, "cash": ca,
+            "blotter": bl,
+            "cash": ca,
             "cash_ledger_matches_pnl_cash": cash_match,
             "all_valid": bool(bl["valid"] and ca["valid"] and cash_match),
         }
@@ -202,11 +268,13 @@ class BooksAndRecords:
         """Return a ``FillHandler.on_fill`` callback that books each INCREMENTAL fill
         across all records + surveillance (cumulative-aware, like ledger_fill_callback)."""
         from decimal import Decimal
+
         seen: Dict[str, Decimal] = {}
 
         def _cb(payload: Dict[str, Any]) -> None:
             coid = str(payload.get("client_order_id") or "")
-            symbol = payload.get("symbol"); side = payload.get("side")
+            symbol = payload.get("symbol")
+            side = payload.get("side")
             if not symbol or side not in ("buy", "sell"):
                 return
             price = payload.get("avg_fill_price")
@@ -221,9 +289,15 @@ class BooksAndRecords:
                 seen[coid] = cum
             if qty <= 0:
                 return
-            self.on_fill(symbol=symbol, side=side, quantity=qty, price=price,
-                         strategy_id=strategy_id, client_order_id=coid or None,
-                         broker_order_id=payload.get("broker_order_id"))
+            self.on_fill(
+                symbol=symbol,
+                side=side,
+                quantity=qty,
+                price=price,
+                strategy_id=strategy_id,
+                client_order_id=coid or None,
+                broker_order_id=payload.get("broker_order_id"),
+            )
 
         return _cb
 

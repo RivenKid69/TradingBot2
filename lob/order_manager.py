@@ -371,9 +371,7 @@ class OrderManager:
         # Validate order
         validation_error = self._validate_order(side, price, qty, order_type)
         if validation_error:
-            return self._create_rejected_order(
-                order_id, side, price, qty, validation_error
-            )
+            return self._create_rejected_order(order_id, side, price, qty, validation_error)
 
         # Create LimitOrder
         limit_order = LimitOrder(
@@ -446,11 +444,15 @@ class OrderManager:
             self._stats.filled_orders += 1
             self._stats.total_volume_cancelled += managed.cancelled_qty
 
-        self._emit_event(OrderEvent(
-            event_type=OrderEventType.FILLED if result.is_complete else OrderEventType.PARTIALLY_FILLED,
-            order_id=managed.order.order_id,
-            timestamp_ns=time.time_ns(),
-        ))
+        self._emit_event(
+            OrderEvent(
+                event_type=(
+                    OrderEventType.FILLED if result.is_complete else OrderEventType.PARTIALLY_FILLED
+                ),
+                order_id=managed.order.order_id,
+                timestamp_ns=time.time_ns(),
+            )
+        )
 
         return managed
 
@@ -528,21 +530,25 @@ class OrderManager:
                 level_qty_before=level_qty_before,
             )
 
-            self._emit_event(OrderEvent(
-                event_type=OrderEventType.ACCEPTED,
-                order_id=managed.order.order_id,
-                timestamp_ns=time.time_ns(),
-            ))
+            self._emit_event(
+                OrderEvent(
+                    event_type=OrderEventType.ACCEPTED,
+                    order_id=managed.order.order_id,
+                    timestamp_ns=time.time_ns(),
+                )
+            )
         else:
             # Fully filled
             managed.state = OrderLifecycleState.FILLED
             self._stats.filled_orders += 1
 
-            self._emit_event(OrderEvent(
-                event_type=OrderEventType.FILLED,
-                order_id=managed.order.order_id,
-                timestamp_ns=time.time_ns(),
-            ))
+            self._emit_event(
+                OrderEvent(
+                    event_type=OrderEventType.FILLED,
+                    order_id=managed.order.order_id,
+                    timestamp_ns=time.time_ns(),
+                )
+            )
 
         return managed
 
@@ -596,14 +602,16 @@ class OrderManager:
         if self._on_cancel:
             self._on_cancel(managed)
 
-        self._emit_event(OrderEvent(
-            event_type=OrderEventType.CANCELLED,
-            order_id=order_id,
-            timestamp_ns=time.time_ns(),
-            reason=reason,
-            old_state=old_state,
-            new_state=managed.state,
-        ))
+        self._emit_event(
+            OrderEvent(
+                event_type=OrderEventType.CANCELLED,
+                order_id=order_id,
+                timestamp_ns=time.time_ns(),
+                reason=reason,
+                old_state=old_state,
+                new_state=managed.state,
+            )
+        )
 
         return True
 
@@ -689,13 +697,15 @@ class OrderManager:
                     level_qty_before=level_qty - modified_order.remaining_qty,
                 )
 
-            self._emit_event(OrderEvent(
-                event_type=OrderEventType.MODIFIED,
-                order_id=order_id,
-                timestamp_ns=time.time_ns(),
-                old_state=old_state,
-                new_state=managed.state,
-            ))
+            self._emit_event(
+                OrderEvent(
+                    event_type=OrderEventType.MODIFIED,
+                    order_id=order_id,
+                    timestamp_ns=time.time_ns(),
+                    old_state=old_state,
+                    new_state=managed.state,
+                )
+            )
 
         return managed
 
@@ -897,12 +907,14 @@ class OrderManager:
         self._orders[order_id] = managed
         self._stats.rejected_orders += 1
 
-        self._emit_event(OrderEvent(
-            event_type=OrderEventType.REJECTED,
-            order_id=order_id,
-            timestamp_ns=time.time_ns(),
-            reason=reason,
-        ))
+        self._emit_event(
+            OrderEvent(
+                event_type=OrderEventType.REJECTED,
+                order_id=order_id,
+                timestamp_ns=time.time_ns(),
+                reason=reason,
+            )
+        )
 
         return managed
 
@@ -964,16 +976,12 @@ class OrderManager:
     def get_statistics(self) -> OrderManagerStats:
         """Get order manager statistics."""
         # Update active orders count
-        self._stats.active_orders = sum(
-            1 for m in self._orders.values() if m.is_active
-        )
+        self._stats.active_orders = sum(1 for m in self._orders.values() if m.is_active)
 
         # Calculate average fill rate
         filled_orders = [m for m in self._orders.values() if m.filled_qty > 0]
         if filled_orders:
-            self._stats.avg_fill_rate = sum(
-                m.fill_rate for m in filled_orders
-            ) / len(filled_orders)
+            self._stats.avg_fill_rate = sum(m.fill_rate for m in filled_orders) / len(filled_orders)
 
         return self._stats
 

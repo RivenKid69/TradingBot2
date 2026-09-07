@@ -11,9 +11,7 @@ def _load_execution_simulator():
     if existing is not None:
         return existing.ExecutionSimulator
 
-    spec = importlib.util.spec_from_file_location(
-        "execution_sim", BASE_DIR / "execution_sim.py"
-    )
+    spec = importlib.util.spec_from_file_location("execution_sim", BASE_DIR / "execution_sim.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules["execution_sim"] = module
     spec.loader.exec_module(module)

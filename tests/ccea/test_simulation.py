@@ -175,7 +175,7 @@ class TestSimExecutionEngine:
             engine.process_intent(intent)
 
         # Simulation engine should not have any live order methods
-        assert not hasattr(engine, 'submit_live_order')
+        assert not hasattr(engine, "submit_live_order")
 
 
 class TestSimulatedFill:

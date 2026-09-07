@@ -31,6 +31,8 @@ References:
 
 from __future__ import annotations
 
+from datetime import date
+
 import math
 import time
 from dataclasses import dataclass
@@ -58,15 +60,15 @@ from impl_greeks import compute_vega
 # =============================================================================
 
 # Volatility bounds
-_MIN_IV = 0.0001      # 0.01%
-_MAX_IV = 10.0        # 1000%
-_DEFAULT_IV = 0.20    # 20% starting guess
+_MIN_IV = 0.0001  # 0.01%
+_MAX_IV = 10.0  # 1000%
+_DEFAULT_IV = 0.20  # 20% starting guess
 
 # Convergence parameters
-_DEFAULT_TOL = 1e-8       # Price tolerance
-_DEFAULT_VOL_TOL = 1e-6   # Volatility tolerance
+_DEFAULT_TOL = 1e-8  # Price tolerance
+_DEFAULT_VOL_TOL = 1e-6  # Volatility tolerance
 _MAX_ITERATIONS = 100
-_NR_MAX_ITERATIONS = 50   # Max Newton-Raphson iterations
+_NR_MAX_ITERATIONS = 50  # Max Newton-Raphson iterations
 
 # Numerical constants
 _MIN_TIME = 1e-10
@@ -76,6 +78,7 @@ _MIN_PRICE = 1e-10
 # =============================================================================
 # Initial Guess Methods
 # =============================================================================
+
 
 def _brenner_subrahmanyam_guess(
     spot: float,
@@ -189,6 +192,7 @@ def _initial_guess(
 # Newton-Raphson Solver
 # =============================================================================
 
+
 def _newton_raphson_iv(
     target_price: float,
     spot: float,
@@ -231,9 +235,7 @@ def _newton_raphson_iv(
             price = black_scholes_price(
                 spot, strike, time_to_expiry, rate, dividend_yield, sigma, is_call
             )
-            vega = compute_vega(
-                spot, strike, time_to_expiry, rate, dividend_yield, sigma
-            )
+            vega = compute_vega(spot, strike, time_to_expiry, rate, dividend_yield, sigma)
         except (ValueError, PricingError):
             return sigma, iteration, False
 
@@ -264,6 +266,7 @@ def _newton_raphson_iv(
 # =============================================================================
 # Brent's Method Solver
 # =============================================================================
+
 
 def _brent_iv(
     target_price: float,
@@ -297,13 +300,17 @@ def _brent_iv(
     Returns:
         Tuple of (IV, iterations, converged)
     """
+
     def price_diff(sigma: float) -> float:
         try:
-            return black_scholes_price(
-                spot, strike, time_to_expiry, rate, dividend_yield, sigma, is_call
-            ) - target_price
+            return (
+                black_scholes_price(
+                    spot, strike, time_to_expiry, rate, dividend_yield, sigma, is_call
+                )
+                - target_price
+            )
         except (ValueError, PricingError):
-            return float('inf')
+            return float("inf")
 
     # Check if bracketing is valid
     try:
@@ -323,7 +330,9 @@ def _brent_iv(
             return _MAX_IV, 0, False
 
     try:
-        result = brentq(price_diff, vol_lo, vol_hi, xtol=tol, maxiter=_MAX_ITERATIONS, full_output=True)
+        result = brentq(
+            price_diff, vol_lo, vol_hi, xtol=tol, maxiter=_MAX_ITERATIONS, full_output=True
+        )
         sigma = result[0]
         info = result[1]
         iterations = info.iterations
@@ -335,6 +344,7 @@ def _brent_iv(
 # =============================================================================
 # Bisection Fallback
 # =============================================================================
+
 
 def _bisection_iv(
     target_price: float,
@@ -354,16 +364,22 @@ def _bisection_iv(
 
     Slow but guaranteed to converge if bracketed.
     """
+
     def price_diff(sigma: float) -> float:
         try:
-            return black_scholes_price(
-                spot, strike, time_to_expiry, rate, dividend_yield, sigma, is_call
-            ) - target_price
+            return (
+                black_scholes_price(
+                    spot, strike, time_to_expiry, rate, dividend_yield, sigma, is_call
+                )
+                - target_price
+            )
         except (ValueError, PricingError):
-            return float('inf')
+            return float("inf")
 
     try:
-        result = bisect(price_diff, vol_lo, vol_hi, xtol=tol, maxiter=max_iterations, full_output=True)
+        result = bisect(
+            price_diff, vol_lo, vol_hi, xtol=tol, maxiter=max_iterations, full_output=True
+        )
         sigma = result[0]
         info = result[1]
         iterations = info.iterations
@@ -375,6 +391,7 @@ def _bisection_iv(
 # =============================================================================
 # Hybrid IV Solver (Main)
 # =============================================================================
+
 
 def calculate_iv(
     market_price: float,
@@ -454,10 +471,14 @@ def calculate_iv(
                 market_price=market_price,
                 price_error=abs(market_price - intrinsic),
             )
-        raise IVConvergenceError("At expiry with non-intrinsic price", 0, 0.0, market_price, intrinsic)
+        raise IVConvergenceError(
+            "At expiry with non-intrinsic price", 0, 0.0, market_price, intrinsic
+        )
 
     # Get initial guess
-    initial = _initial_guess(spot, strike, time_to_expiry, rate, dividend_yield, market_price, is_call)
+    initial = _initial_guess(
+        spot, strike, time_to_expiry, rate, dividend_yield, market_price, is_call
+    )
 
     # Try Newton-Raphson first
     iv, iterations, converged = _newton_raphson_iv(
@@ -609,17 +630,35 @@ def calculate_iv_american(
     # For American calls without dividends, use European solver
     if is_call and dividend_yield <= 0:
         return calculate_iv(
-            market_price, spot, strike, time_to_expiry, rate, dividend_yield, is_call, tol, max_iterations
+            market_price,
+            spot,
+            strike,
+            time_to_expiry,
+            rate,
+            dividend_yield,
+            is_call,
+            tol,
+            max_iterations,
         )
 
     def price_diff(sigma: float) -> float:
         try:
-            return leisen_reimer_price(
-                spot, strike, time_to_expiry, rate, dividend_yield, sigma,
-                is_call, is_american=True, n_steps=n_tree_steps
-            ) - market_price
+            return (
+                leisen_reimer_price(
+                    spot,
+                    strike,
+                    time_to_expiry,
+                    rate,
+                    dividend_yield,
+                    sigma,
+                    is_call,
+                    is_american=True,
+                    n_steps=n_tree_steps,
+                )
+                - market_price
+            )
         except (ValueError, PricingError):
-            return float('inf')
+            return float("inf")
 
     # Use bisection for American options (more robust)
     try:
@@ -631,17 +670,25 @@ def calculate_iv_american(
 
         if f_lo * f_hi > 0:
             raise IVConvergenceError(
-                "Cannot bracket IV solution",
-                0, _DEFAULT_IV, market_price, 0.0
+                "Cannot bracket IV solution", 0, _DEFAULT_IV, market_price, 0.0
             )
 
-        result = brentq(price_diff, vol_lo, vol_hi, xtol=tol, maxiter=max_iterations, full_output=True)
+        result = brentq(
+            price_diff, vol_lo, vol_hi, xtol=tol, maxiter=max_iterations, full_output=True
+        )
         iv = result[0]
         iterations = result[1].iterations
 
         model_price = leisen_reimer_price(
-            spot, strike, time_to_expiry, rate, dividend_yield, iv,
-            is_call, is_american=True, n_steps=n_tree_steps
+            spot,
+            strike,
+            time_to_expiry,
+            rate,
+            dividend_yield,
+            iv,
+            is_call,
+            is_american=True,
+            n_steps=n_tree_steps,
         )
         price_error = abs(model_price - market_price)
 
@@ -658,14 +705,14 @@ def calculate_iv_american(
 
     except ValueError as e:
         raise IVConvergenceError(
-            f"American IV solver failed: {e}",
-            max_iterations, _DEFAULT_IV, market_price, 0.0
+            f"American IV solver failed: {e}", max_iterations, _DEFAULT_IV, market_price, 0.0
         )
 
 
 # =============================================================================
 # Vectorized IV Calculation
 # =============================================================================
+
 
 def calculate_iv_batch(
     market_prices: np.ndarray,
@@ -733,7 +780,7 @@ def calculate_iv_for_chain(
     spot: float,
     rate: float,
     dividend_yield: float = 0.0,
-    valuation_date: Optional['date'] = None,
+    valuation_date: Optional["date"] = None,
     tol: float = _DEFAULT_TOL,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -778,6 +825,7 @@ def calculate_iv_for_chain(
 # Convenience Functions
 # =============================================================================
 
+
 def iv_from_delta(
     delta: float,
     spot: float,
@@ -819,9 +867,7 @@ def iv_from_delta(
     target_delta = abs(delta) if is_call else -abs(delta)
 
     def delta_diff(k: float) -> float:
-        computed = compute_delta(
-            spot, k, time_to_expiry, rate, dividend_yield, vol_guess, is_call
-        )
+        computed = compute_delta(spot, k, time_to_expiry, rate, dividend_yield, vol_guess, is_call)
         return computed - target_delta
 
     # Find strike using bisection
@@ -845,11 +891,9 @@ __all__ = [
     # Main IV calculation
     "calculate_iv",
     "calculate_iv_american",
-
     # Batch processing
     "calculate_iv_batch",
     "calculate_iv_for_chain",
-
     # Utilities
     "iv_from_delta",
 ]

@@ -135,7 +135,9 @@ def test_parquet_fundamentals_pit_leakage_guard(tmp_path):
     # панель цен по AAA (3 бара)
     pf = pd.DataFrame(
         {
-            "timestamp": np.array([T0_SEC, T0_SEC + STEP_SEC, T0_SEC + 2 * STEP_SEC], dtype="int64"),
+            "timestamp": np.array(
+                [T0_SEC, T0_SEC + STEP_SEC, T0_SEC + 2 * STEP_SEC], dtype="int64"
+            ),
             "symbol": "AAA",
             "close": [100.0, 101.0, 102.0],
         }
@@ -144,9 +146,7 @@ def test_parquet_fundamentals_pit_leakage_guard(tmp_path):
     bar0, bar1, bar2 = T0_MS, T0_MS + H_MS, T0_MS + 2 * H_MS
 
     # фундаментал опубликован МЕЖДУ bar0 и bar1
-    fdf = pd.DataFrame(
-        {"publish_ts": [bar0 + 1_800_000], "symbol": ["AAA"], "ep": [0.05]}
-    )
+    fdf = pd.DataFrame({"publish_ts": [bar0 + 1_800_000], "symbol": ["AAA"], "ep": [0.05]})
     fpath = tmp_path / "fund.parquet"
     fdf.to_parquet(fpath)
 

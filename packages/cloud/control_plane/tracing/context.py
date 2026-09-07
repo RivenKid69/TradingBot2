@@ -43,6 +43,7 @@ class TraceContext:
 
     Contains trace ID, span ID, and custom baggage items.
     """
+
     trace_id: str = ""
     span_id: str = ""
     trace_flags: int = 0
@@ -238,6 +239,7 @@ def get_current_span() -> Any:
     """
     if not OPENTELEMETRY_AVAILABLE:
         from .tracer import _NoOpSpan
+
         return _NoOpSpan()
 
     return trace.get_current_span()

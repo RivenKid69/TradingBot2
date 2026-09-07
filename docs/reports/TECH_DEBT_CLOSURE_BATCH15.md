@@ -33,6 +33,7 @@ This batch closes 5 tech debt items identified during CTO due diligence audit, s
 **Type**: Docs/Drift (code fix + docs update)
 
 **Resolution**:
+
 1. Added `make test-coverage` target to Makefile with pytest-cov
 2. Added coverage tracking job to `.github/workflows/build-and-test.yml`:
    - Generates `coverage.xml` (Cobertura format)
@@ -45,6 +46,7 @@ This batch closes 5 tech debt items identified during CTO due diligence audit, s
    - Changed "Block PR until addressed" to "Review required (automated gate planned)"
 
 **Control Artifacts**:
+
 - `.github/workflows/build-and-test.yml` (lines 172-248)
 - `Makefile` (lines 125-136)
 - `docs/testing/TESTING_POLICY.md` (lines 110-123)
@@ -66,6 +68,7 @@ This batch closes 5 tech debt items identified during CTO due diligence audit, s
 Changed claim from "CI-verified; test output available on request" to "CI-tracked via `coverage.xml` artifact; test reports available on request; see `docs/testing/TESTING_POLICY.md` for coverage status"
 
 This provides:
+
 - Traceable artifact reference (`coverage.xml`)
 - Link to policy document for full status
 - Honest disclosure per Documentation Canon Section 4.5
@@ -83,6 +86,7 @@ This provides:
 **Type**: Docs/Drift
 
 **Resolution**:
+
 1. Changed header from "All Guardrails Implemented" to "Core Guardrails Implemented (PM-005 coverage gate: TRACKED, not enforced)"
 2. Updated version to 2.1.0 and date to 2025-12-22
 3. Updated PM-005 Implementation Note with:
@@ -151,6 +155,7 @@ Added fail-closed startup enforcement in production:
    - Example usage provided for metrics integration
 
 **Control Artifacts**:
+
 - `packages/cloud/control_plane/database.py:28-44` (requirements comment)
 - `packages/cloud/control_plane/database.py:343-425` (enhanced functions)
 - Telemetry: `db_backend` metric available via `get_db_backend_metric()`
@@ -187,11 +192,13 @@ Added fail-closed startup enforcement in production:
 ## Test Verification
 
 Tests were not executed as part of this batch because:
+
 1. Changes are primarily documentation updates and CI workflow additions
 2. Security enforcement changes are startup-time checks (require environment configuration)
 3. Coverage tracking will be verified on next CI run
 
 **Manual Verification Steps**:
+
 1. CI workflow runs will generate coverage artifacts
 2. Production startup with SQLite will fail with RuntimeError
 3. Production startup without migrations will fail with RuntimeError
@@ -212,6 +219,7 @@ Tests were not executed as part of this batch because:
 ## Registry Updates
 
 Updated entries in `docs/reports/TECH_DEBT_REGISTRY.md`:
+
 - `docs-ci-coverage-gate`: Status maintained as Controlled, updated with artifact references
 - `security-rls-migration-check`: NEW - Status Closed
 - `ops-database-production-check`: NEW - Status Closed
@@ -221,6 +229,7 @@ Updated entries in `docs/reports/TECH_DEBT_REGISTRY.md`:
 ## Sign-off
 
 All 5 tech debt items from this batch have been addressed with:
+
 - Technical controls where applicable (startup enforcement, telemetry)
 - Documentation updates per Documentation Canon
 - Control artifacts for verification

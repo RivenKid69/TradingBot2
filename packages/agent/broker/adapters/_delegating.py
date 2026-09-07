@@ -27,17 +27,34 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from packages.agent.broker.protocol import (
-    BaseBrokerConnector, BrokerCredentials, OrderRequest, OrderResult, OrderInfo,
-    CancelResult, BulkCancelResult, Position, AccountInfo, OrderSide, OrderType,
-    OrderStatus, PositionSide, TimeInForce,
+    BaseBrokerConnector,
+    BrokerCredentials,
+    OrderRequest,
+    OrderResult,
+    OrderInfo,
+    CancelResult,
+    BulkCancelResult,
+    Position,
+    AccountInfo,
+    OrderSide,
+    OrderType,
+    OrderStatus,
+    PositionSide,
+    TimeInForce,
 )
 
 _STATUS = {
-    "filled": OrderStatus.FILLED, "partially_filled": OrderStatus.PARTIALLY_FILLED,
-    "partial": OrderStatus.PARTIALLY_FILLED, "submitted": OrderStatus.SUBMITTED,
-    "accepted": OrderStatus.ACCEPTED, "pending": OrderStatus.PENDING,
-    "cancelled": OrderStatus.CANCELLED, "canceled": OrderStatus.CANCELLED,
-    "rejected": OrderStatus.REJECTED, "expired": OrderStatus.EXPIRED, "error": OrderStatus.ERROR,
+    "filled": OrderStatus.FILLED,
+    "partially_filled": OrderStatus.PARTIALLY_FILLED,
+    "partial": OrderStatus.PARTIALLY_FILLED,
+    "submitted": OrderStatus.SUBMITTED,
+    "accepted": OrderStatus.ACCEPTED,
+    "pending": OrderStatus.PENDING,
+    "cancelled": OrderStatus.CANCELLED,
+    "canceled": OrderStatus.CANCELLED,
+    "rejected": OrderStatus.REJECTED,
+    "expired": OrderStatus.EXPIRED,
+    "error": OrderStatus.ERROR,
 }
 
 
@@ -53,11 +70,17 @@ class DelegatingConnector(BaseBrokerConnector):
 
     _NAME = "delegating"
 
-    def __init__(self, credentials: BrokerCredentials, *, sandbox: bool = False,
-                 timeout_seconds: int = 30, backend: Any = None) -> None:
+    def __init__(
+        self,
+        credentials: BrokerCredentials,
+        *,
+        sandbox: bool = False,
+        timeout_seconds: int = 30,
+        backend: Any = None,
+    ) -> None:
         super().__init__(credentials, sandbox=sandbox, timeout_seconds=timeout_seconds)
         self._backend = backend
-        self._orders: Dict[str, OrderInfo] = {}   # broker_order_id -> info
+        self._orders: Dict[str, OrderInfo] = {}  # broker_order_id -> info
 
     # -- subclasses build the real adapter-backed Backend here --
     def _build_backend(self) -> Any:  # pragma: no cover - overridden
@@ -102,14 +125,21 @@ class DelegatingConnector(BaseBrokerConnector):
         if not self._connected:
             self.connect()
         if self._backend is None or not self._connected:
-            return OrderResult(success=False, client_order_id=request.client_order_id,
-                               status=OrderStatus.ERROR,
-                               error_message=getattr(self, "_connect_error", None) or "not connected")
+            return OrderResult(
+                success=False,
+                client_order_id=request.client_order_id,
+                status=OrderStatus.ERROR,
+                error_message=getattr(self, "_connect_error", None) or "not connected",
+            )
         res = self._backend.place(
             symbol=request.symbol,
             side=request.side.value if isinstance(request.side, OrderSide) else str(request.side),
             qty=float(request.quantity),
-            order_type=request.order_type.value if isinstance(request.order_type, OrderType) else str(request.order_type),
+            order_type=(
+                request.order_type.value
+                if isinstance(request.order_type, OrderType)
+                else str(request.order_type)
+            ),
             limit_price=float(request.limit_price) if request.limit_price is not None else None,
             stop_price=float(request.stop_price) if request.stop_price is not None else None,
             client_order_id=request.client_order_id,
@@ -117,41 +147,68 @@ class DelegatingConnector(BaseBrokerConnector):
         ok = bool(res.get("success", True))
         bid = res.get("broker_order_id")
         info = OrderInfo(
-            client_order_id=request.client_order_id, broker_order_id=bid,
-            symbol=request.symbol, side=request.side, order_type=request.order_type,
-            quantity=request.quantity, filled_quantity=_dec(res.get("filled_qty", 0)),
-            limit_price=request.limit_price, stop_price=request.stop_price,
+            client_order_id=request.client_order_id,
+            broker_order_id=bid,
+            symbol=request.symbol,
+            side=request.side,
+            order_type=request.order_type,
+            quantity=request.quantity,
+            filled_quantity=_dec(res.get("filled_qty", 0)),
+            limit_price=request.limit_price,
+            stop_price=request.stop_price,
             avg_fill_price=_dec(res["avg_price"]) if res.get("avg_price") else None,
             status=_STATUS.get(str(res.get("status", "submitted")).lower(), OrderStatus.SUBMITTED),
-            time_in_force=request.time_in_force, created_at=datetime.utcnow(),
+            time_in_force=request.time_in_force,
+            created_at=datetime.utcnow(),
         )
         if bid:
             self._orders[str(bid)] = info
         return OrderResult(
-            success=ok, client_order_id=request.client_order_id, broker_order_id=bid,
-            status=info.status, filled_quantity=info.filled_quantity,
-            avg_fill_price=info.avg_fill_price, error_message=res.get("error"))
+            success=ok,
+            client_order_id=request.client_order_id,
+            broker_order_id=bid,
+            status=info.status,
+            filled_quantity=info.filled_quantity,
+            avg_fill_price=info.avg_fill_price,
+            error_message=res.get("error"),
+        )
 
-    def cancel_order(self, client_order_id: Optional[str] = None,
-                     broker_order_id: Optional[str] = None) -> CancelResult:
+    def cancel_order(
+        self, client_order_id: Optional[str] = None, broker_order_id: Optional[str] = None
+    ) -> CancelResult:
         bid = broker_order_id or self._bid_for_client(client_order_id)
         if self._backend is None or not bid:
-            return CancelResult(success=False, client_order_id=client_order_id or "",
-                                error_message="not connected or unknown order")
+            return CancelResult(
+                success=False,
+                client_order_id=client_order_id or "",
+                error_message="not connected or unknown order",
+            )
         ok = bool(self._backend.cancel(bid))
-        return CancelResult(success=ok, client_order_id=client_order_id or "",
-                            broker_order_id=bid, cancelled_at=datetime.utcnow() if ok else None)
+        return CancelResult(
+            success=ok,
+            client_order_id=client_order_id or "",
+            broker_order_id=bid,
+            cancelled_at=datetime.utcnow() if ok else None,
+        )
 
     def cancel_all_orders(self, symbol: Optional[str] = None) -> BulkCancelResult:
         results = []
         for bid, info in list(self._orders.items()):
             if symbol and info.symbol != symbol:
                 continue
-            if info.status in (OrderStatus.SUBMITTED, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED):
+            if info.status in (
+                OrderStatus.SUBMITTED,
+                OrderStatus.ACCEPTED,
+                OrderStatus.PARTIALLY_FILLED,
+            ):
                 results.append(self.cancel_order(broker_order_id=bid))
         ok = sum(1 for r in results if r.success)
-        return BulkCancelResult(total_requested=len(results), total_cancelled=ok,
-                                total_failed=len(results) - ok, results=results)
+        return BulkCancelResult(
+            total_requested=len(results),
+            total_cancelled=ok,
+            total_failed=len(results) - ok,
+            results=results,
+        )
 
     def _bid_for_client(self, client_order_id: Optional[str]) -> Optional[str]:
         if not client_order_id:
@@ -161,8 +218,9 @@ class DelegatingConnector(BaseBrokerConnector):
                 return bid
         return None
 
-    def get_order(self, client_order_id: Optional[str] = None,
-                  broker_order_id: Optional[str] = None) -> Optional[OrderInfo]:
+    def get_order(
+        self, client_order_id: Optional[str] = None, broker_order_id: Optional[str] = None
+    ) -> Optional[OrderInfo]:
         bid = broker_order_id or self._bid_for_client(client_order_id)
         if bid is None:
             return None
@@ -181,18 +239,28 @@ class DelegatingConnector(BaseBrokerConnector):
         return info
 
     def get_open_orders(self, symbol: Optional[str] = None) -> List[OrderInfo]:
-        return [self.get_order(broker_order_id=bid) for bid, info in self._orders.items()
-                if (symbol is None or info.symbol == symbol)
-                and info.status in (OrderStatus.SUBMITTED, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED)]
+        return [
+            self.get_order(broker_order_id=bid)
+            for bid, info in self._orders.items()
+            if (symbol is None or info.symbol == symbol)
+            and info.status
+            in (OrderStatus.SUBMITTED, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED)
+        ]
 
     # -- positions ----------------------------------------------------------
     def _position_from_dict(self, d: Dict[str, Any]) -> Position:
         qty = _dec(d.get("qty", 0))
-        side = PositionSide.LONG if qty > 0 else (PositionSide.SHORT if qty < 0 else PositionSide.FLAT)
-        return Position(symbol=str(d.get("symbol", "")), side=side, quantity=qty,
-                        avg_entry_price=_dec(d.get("avg_price", 0)),
-                        current_price=_dec(d["price"]) if d.get("price") else None,
-                        market_value=_dec(d["market_value"]) if d.get("market_value") else None)
+        side = (
+            PositionSide.LONG if qty > 0 else (PositionSide.SHORT if qty < 0 else PositionSide.FLAT)
+        )
+        return Position(
+            symbol=str(d.get("symbol", "")),
+            side=side,
+            quantity=qty,
+            avg_entry_price=_dec(d.get("avg_price", 0)),
+            current_price=_dec(d["price"]) if d.get("price") else None,
+            market_value=_dec(d["market_value"]) if d.get("market_value") else None,
+        )
 
     def get_positions(self) -> List[Position]:
         if self._backend is None:
@@ -214,9 +282,15 @@ class DelegatingConnector(BaseBrokerConnector):
             return OrderResult(success=False, client_order_id="", error_message="no position")
         q = abs(pos.quantity) if quantity is None else Decimal(str(quantity))
         side = OrderSide.SELL if pos.quantity > 0 else OrderSide.BUY
-        return self.submit_order(OrderRequest(
-            client_order_id=f"close_{symbol}_{int(datetime.utcnow().timestamp())}",
-            symbol=symbol, side=side, order_type=OrderType.MARKET, quantity=q))
+        return self.submit_order(
+            OrderRequest(
+                client_order_id=f"close_{symbol}_{int(datetime.utcnow().timestamp())}",
+                symbol=symbol,
+                side=side,
+                order_type=OrderType.MARKET,
+                quantity=q,
+            )
+        )
 
     def close_all_positions(self) -> List[OrderResult]:
         return [self.close_position(p.symbol) for p in self.get_positions() if p.quantity != 0]
@@ -224,12 +298,19 @@ class DelegatingConnector(BaseBrokerConnector):
     # -- account / market data ---------------------------------------------
     def get_account(self) -> AccountInfo:
         if self._backend is None:
-            return AccountInfo(account_id=self._NAME, equity=Decimal("0"),
-                               cash=Decimal("0"), buying_power=Decimal("0"))
+            return AccountInfo(
+                account_id=self._NAME,
+                equity=Decimal("0"),
+                cash=Decimal("0"),
+                buying_power=Decimal("0"),
+            )
         a = self._backend.account() or {}
-        return AccountInfo(account_id=str(a.get("account_id", self._NAME)),
-                           equity=_dec(a.get("equity", 0)), cash=_dec(a.get("cash", 0)),
-                           buying_power=_dec(a.get("buying_power", a.get("equity", 0))))
+        return AccountInfo(
+            account_id=str(a.get("account_id", self._NAME)),
+            equity=_dec(a.get("equity", 0)),
+            cash=_dec(a.get("cash", 0)),
+            buying_power=_dec(a.get("buying_power", a.get("equity", 0))),
+        )
 
     def get_last_price(self, symbol: str) -> Optional[Decimal]:
         if self._backend is None:

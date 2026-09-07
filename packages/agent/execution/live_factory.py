@@ -24,13 +24,20 @@ from __future__ import annotations
 
 import logging
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from packages.agent.broker.protocol import (
-    BrokerConnector, OrderRequest, OrderSide, OrderType as BkOrderType, TimeInForce,
+    BrokerConnector,
+    OrderRequest,
+    OrderSide,
+    OrderType as BkOrderType,
+    TimeInForce,
 )
 from packages.agent.execution.engine import (
-    LiveExecutionEngine, Order, OrderType as EngOrderType, BrokerSubmitFn,
+    LiveExecutionEngine,
+    Order,
+    OrderType as EngOrderType,
+    BrokerSubmitFn,
 )
 from packages.agent.execution.agent_client import AgentClient
 from packages.agent.execution.fill_handler import FillHandler, PollingFillSource
@@ -47,8 +54,13 @@ _ENG_TO_BK_TYPE = {
 }
 
 _TIF = {
-    "GTC": TimeInForce.GTC, "DAY": TimeInForce.DAY, "IOC": TimeInForce.IOC,
-    "FOK": TimeInForce.FOK, "GTD": TimeInForce.GTD, "OPG": TimeInForce.OPG, "CLS": TimeInForce.CLS,
+    "GTC": TimeInForce.GTC,
+    "DAY": TimeInForce.DAY,
+    "IOC": TimeInForce.IOC,
+    "FOK": TimeInForce.FOK,
+    "GTD": TimeInForce.GTD,
+    "OPG": TimeInForce.OPG,
+    "CLS": TimeInForce.CLS,
 }
 
 
@@ -81,7 +93,9 @@ def make_broker_cancel(connector: BrokerConnector):
 
     def _cancel(client_order_id: str, broker_order_id: Optional[str]) -> bool:
         try:
-            res = connector.cancel_order(client_order_id=client_order_id, broker_order_id=broker_order_id)
+            res = connector.cancel_order(
+                client_order_id=client_order_id, broker_order_id=broker_order_id
+            )
             return bool(res.success)
         except Exception as exc:  # pragma: no cover
             logger.warning("cancel failed for %s: %s", client_order_id, exc)
@@ -169,7 +183,9 @@ def make_fill_fetch(connector: BrokerConnector):
             "broker_order_id": info.broker_order_id,
             "status": info.status.value,
             "filled_qty": str(info.filled_quantity),
-            "filled_avg_price": str(info.avg_fill_price) if info.avg_fill_price is not None else None,
+            "filled_avg_price": (
+                str(info.avg_fill_price) if info.avg_fill_price is not None else None
+            ),
             "cumulative": True,
         }
 
@@ -188,6 +204,7 @@ class BrokerLiquidityProvider:
 
     def get_quote(self, venue: str, symbol: str):
         from packages.agent.execution.smart_order_router import VenueQuote
+
         c = self._m.get(venue)
         if c is None:
             return None
@@ -200,9 +217,12 @@ class BrokerLiquidityProvider:
                     bid = float(getattr(ob, "best_bid", 0) or 0)
                     ask = float(getattr(ob, "best_ask", 0) or 0)
                     if bid > 0 and ask > 0:
-                        return VenueQuote(bid=bid, ask=ask,
-                                          bid_size=float(getattr(ob, "bid_size", 1e6 / ask) or 1e6 / ask),
-                                          ask_size=float(getattr(ob, "ask_size", 1e6 / ask) or 1e6 / ask))
+                        return VenueQuote(
+                            bid=bid,
+                            ask=ask,
+                            bid_size=float(getattr(ob, "bid_size", 1e6 / ask) or 1e6 / ask),
+                            ask_size=float(getattr(ob, "ask_size", 1e6 / ask) or 1e6 / ask),
+                        )
             except Exception:
                 pass
         try:
@@ -212,12 +232,13 @@ class BrokerLiquidityProvider:
         if px is None or float(px) <= 0:
             return None
         px = float(px)
-        return VenueQuote(bid=px * 0.99995, ask=px * 1.00005,
-                          bid_size=1e6 / px, ask_size=1e6 / px)
+        return VenueQuote(bid=px * 0.99995, ask=px * 1.00005, bid_size=1e6 / px, ask_size=1e6 / px)
 
 
-def make_venue_submit(connector_map: Dict[str, BrokerConnector],
-                      price_fn: Optional[Callable[[str], Optional[float]]] = None):
+def make_venue_submit(
+    connector_map: Dict[str, BrokerConnector],
+    price_fn: Optional[Callable[[str], Optional[float]]] = None,
+):
     """submit_fn(venue, symbol, side, notional) -> dict — dispatch a child order to a venue."""
     from decimal import Decimal as _D
 
@@ -236,22 +257,34 @@ def make_venue_submit(connector_map: Dict[str, BrokerConnector],
         qty = abs(float(notional)) / float(px)
         coid = f"sor_{venue}_{symbol}_{abs(hash((venue, symbol, round(notional, 2)))) % 10**8}"
         req = OrderRequest(
-            client_order_id=coid, symbol=symbol,
+            client_order_id=coid,
+            symbol=symbol,
             side=OrderSide.BUY if str(side).upper() == "BUY" else OrderSide.SELL,
-            order_type=BkOrderType.MARKET, quantity=_D(str(qty)))
+            order_type=BkOrderType.MARKET,
+            quantity=_D(str(qty)),
+        )
         try:
             res = c.submit_order(req)
-            return {"success": bool(res.success), "broker_order_id": res.broker_order_id,
-                    "venue": venue, "qty": qty}
+            return {
+                "success": bool(res.success),
+                "broker_order_id": res.broker_order_id,
+                "venue": venue,
+                "qty": qty,
+            }
         except Exception as exc:  # pragma: no cover
             return {"success": False, "error": str(exc), "venue": venue}
 
     return _submit
 
 
-def routed_broker_submit(sor, connector_map: Dict[str, BrokerConnector],
-                         price_fn: Optional[Callable[[str], Optional[float]]] = None,
-                         provider: Any = None, *, record: Optional[List[Dict[str, Any]]] = None):
+def routed_broker_submit(
+    sor,
+    connector_map: Dict[str, BrokerConnector],
+    price_fn: Optional[Callable[[str], Optional[float]]] = None,
+    provider: Any = None,
+    *,
+    record: Optional[List[Dict[str, Any]]] = None,
+):
     """A ``BrokerSubmitFn`` that routes the order's notional across venues via the
     SmartOrderRouter and DISPATCHES child orders — making SOR part of the live path.
 
@@ -260,7 +293,11 @@ def routed_broker_submit(sor, connector_map: Dict[str, BrokerConnector],
     venue_submit = make_venue_submit(connector_map, price_fn)
 
     def _submit(order: Order):
-        px = float(order.limit_price) if order.limit_price else (price_fn(order.symbol) if price_fn else None)
+        px = (
+            float(order.limit_price)
+            if order.limit_price
+            else (price_fn(order.symbol) if price_fn else None)
+        )
         if not px:
             for c in connector_map.values():
                 try:
@@ -272,14 +309,26 @@ def routed_broker_submit(sor, connector_map: Dict[str, BrokerConnector],
             return False, None, "no price for routing"
         notional = abs(float(order.quantity)) * float(px)
         side = "BUY" if order.side == "buy" else "SELL"
-        route = (sor.route_live(order.symbol, side, notional, provider)
-                 if provider is not None else sor.route(order.symbol, side, notional))
+        route = (
+            sor.route_live(order.symbol, side, notional, provider)
+            if provider is not None
+            else sor.route(order.symbol, side, notional)
+        )
         disp = sor.dispatch(route, venue_submit)
         if record is not None:
-            record.append({"client_order_id": order.client_order_id,
-                           "route": route.to_dict(), "dispatch": disp})
+            record.append(
+                {
+                    "client_order_id": order.client_order_id,
+                    "route": route.to_dict(),
+                    "dispatch": disp,
+                }
+            )
         broker_id = "routed:" + ",".join(a.venue for a in route.allocations) or "routed"
-        return bool(disp.get("all_ok")), broker_id, (None if disp.get("all_ok") else "some venue dispatches failed")
+        return (
+            bool(disp.get("all_ok")),
+            broker_id,
+            (None if disp.get("all_ok") else "some venue dispatches failed"),
+        )
 
     return _submit
 
@@ -328,7 +377,7 @@ def build_live_stack(
             # single-venue: route to this connector under its broker name
             vmap = {getattr(connector, "broker_name", "broker"): connector}
         provider = BrokerLiquidityProvider(vmap) if use_live_liquidity else None
-        _price_fn = lambda s: prices_provider.get_prices().get(s)   # noqa: E731
+        _price_fn = lambda s: prices_provider.get_prices().get(s)  # noqa: E731
         _submit = routed_broker_submit(sor, vmap, _price_fn, provider, record=sor_routes)
     else:
         _submit = make_broker_submit(connector)
@@ -346,10 +395,12 @@ def build_live_stack(
     child_executor = None
     if n_slices and int(n_slices) > 1:
         child_executor = ClockDrivenChildExecutor(
-            engine, prices_provider=prices_provider,
+            engine,
+            prices_provider=prices_provider,
             broker_cancel=make_broker_cancel(connector),
             strategy_id=strategy_id,
-            slice_interval_s=slice_interval_s, straggler_timeout_s=straggler_timeout_s,
+            slice_interval_s=slice_interval_s,
+            straggler_timeout_s=straggler_timeout_s,
             use_limit_orders=use_limit_orders,
         )
 
@@ -357,6 +408,7 @@ def build_live_stack(
     on_fill_cb = None
     if pnl_ledger is not None:
         from packages.agent.accounting.pnl_ledger import ledger_fill_callback
+
         on_fill_cb = ledger_fill_callback(pnl_ledger)
     fill_handler = FillHandler(
         engine,
@@ -386,7 +438,7 @@ def build_live_stack(
         "child_executor": child_executor,
         "broker": connector,
         "sor": sor,
-        "sor_routes": sor_routes,      # live routing+dispatch record (P1 #7)
+        "sor_routes": sor_routes,  # live routing+dispatch record (P1 #7)
     }
 
 

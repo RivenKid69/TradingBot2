@@ -4,15 +4,15 @@ Tests for execution provider fidelity levels (L2 vs L2+ vs L3).
 
 This test suite validates the documented design trade-offs between different
 execution simulation fidelity levels. These are NOT bugs - they are intentional
-design choices documented in CLAUDE.md sections #54-#59.
+design choices documented in docs/PLATFORM_REFERENCE.md sections #54-#59.
 
 References:
-    - CLAUDE.md #54: L2 ADV Intraday Seasonality (by design)
-    - CLAUDE.md #55: L2 Temp/Perm Impact (by design)
-    - CLAUDE.md #56: L2 Static Spread (by design)
-    - CLAUDE.md #57: L2 Deterministic Fills (by design)
-    - CLAUDE.md #58: Whale Threshold Configurable
-    - CLAUDE.md #59: Reward Clipping Not Stacked
+    - docs/PLATFORM_REFERENCE.md #54: L2 ADV Intraday Seasonality (by design)
+    - docs/PLATFORM_REFERENCE.md #55: L2 Temp/Perm Impact (by design)
+    - docs/PLATFORM_REFERENCE.md #56: L2 Static Spread (by design)
+    - docs/PLATFORM_REFERENCE.md #57: L2 Deterministic Fills (by design)
+    - docs/PLATFORM_REFERENCE.md #58: Whale Threshold Configurable
+    - docs/PLATFORM_REFERENCE.md #59: Reward Clipping Not Stacked
 """
 
 import pytest
@@ -26,9 +26,11 @@ from typing import Optional
 # Test Fixtures and Mock Classes
 # =============================================================================
 
+
 @dataclass
 class MockMarketState:
     """Mock market state for testing."""
+
     timestamp: int = 0
     bid: float = 100.0
     ask: float = 100.05
@@ -49,6 +51,7 @@ class MockMarketState:
 @dataclass
 class MockOrder:
     """Mock order for testing."""
+
     symbol: str = "BTCUSDT"
     side: str = "BUY"
     qty: float = 100.0
@@ -61,6 +64,7 @@ class MockOrder:
 @dataclass
 class MockBarData:
     """Mock bar data for testing."""
+
     open: float = 100.0
     high: float = 101.0
     low: float = 99.0
@@ -75,6 +79,7 @@ class MockBarData:
 # =============================================================================
 # Test L2 vs L2+ Fidelity Differences (Issues #6-#9)
 # =============================================================================
+
 
 class TestL2VsL2PlusFidelity:
     """
@@ -121,7 +126,7 @@ class TestL2VsL2PlusFidelity:
         config = CryptoParametricConfig()
 
         # L2+ should have tod_curve with 24 hours
-        assert hasattr(config, 'tod_curve'), "L2+ should have tod_curve"
+        assert hasattr(config, "tod_curve"), "L2+ should have tod_curve"
         assert len(config.tod_curve) == 24, "tod_curve should have 24 hourly values"
 
         # Asia session (low liquidity) should have lower factors
@@ -155,17 +160,13 @@ class TestL2VsL2PlusFidelity:
         participation = 0.01  # 1%
 
         # Compare slippage at different hours
-        slippage_asia = provider.compute_slippage_bps(
-            order, market, participation, hour_utc=3
-        )
-        slippage_peak = provider.compute_slippage_bps(
-            order, market, participation, hour_utc=16
-        )
+        slippage_asia = provider.compute_slippage_bps(order, market, participation, hour_utc=3)
+        slippage_peak = provider.compute_slippage_bps(order, market, participation, hour_utc=16)
 
         # Asia (low liquidity) should have HIGHER slippage
-        assert slippage_asia > slippage_peak, (
-            f"Asia slippage ({slippage_asia:.2f}) should be > peak ({slippage_peak:.2f})"
-        )
+        assert (
+            slippage_asia > slippage_peak
+        ), f"Asia slippage ({slippage_asia:.2f}) should be > peak ({slippage_peak:.2f})"
 
     def test_l2_single_impact_term_by_design(self):
         """
@@ -183,14 +184,11 @@ class TestL2VsL2PlusFidelity:
 
         # Test that slippage increases monotonically with participation
         participations = [0.0001, 0.001, 0.01, 0.1]  # 0.01%, 0.1%, 1%, 10%
-        slippages = [
-            provider.compute_slippage_bps(order, market, p)
-            for p in participations
-        ]
+        slippages = [provider.compute_slippage_bps(order, market, p) for p in participations]
 
         # Verify monotonically increasing
         for i in range(1, len(slippages)):
-            assert slippages[i] > slippages[i-1], (
+            assert slippages[i] > slippages[i - 1], (
                 f"Slippage should increase with participation: "
                 f"p={participations[i]} -> {slippages[i]:.2f}bps, "
                 f"p={participations[i-1]} -> {slippages[i-1]:.2f}bps"
@@ -199,9 +197,9 @@ class TestL2VsL2PlusFidelity:
         # Verify that L2 uses single-term model (no temp/perm separation)
         # by checking that compute_slippage_bps returns a single value, not dict
         result = provider.compute_slippage_bps(order, market, 0.01)
-        assert isinstance(result, (int, float)), (
-            "L2 should return single slippage value (no temp/perm separation)"
-        )
+        assert isinstance(
+            result, (int, float)
+        ), "L2 should return single slippage value (no temp/perm separation)"
 
     def test_l3_has_temp_perm_separation(self):
         """
@@ -223,8 +221,8 @@ class TestL2VsL2PlusFidelity:
         )
 
         # L3 should have separate temp and perm components
-        assert hasattr(result, 'temporary_impact_bps'), "L3 should have temporary_impact_bps"
-        assert hasattr(result, 'permanent_impact_bps'), "L3 should have permanent_impact_bps"
+        assert hasattr(result, "temporary_impact_bps"), "L3 should have temporary_impact_bps"
+        assert hasattr(result, "permanent_impact_bps"), "L3 should have permanent_impact_bps"
         assert result.temporary_impact_bps > 0, "Temporary impact should be positive"
         assert result.permanent_impact_bps > 0, "Permanent impact should be positive"
 
@@ -267,7 +265,9 @@ class TestWhaleThresholdConfigurable:
         for profile in profiles:
             provider = CryptoParametricSlippageProvider.from_profile(profile)
             assert provider is not None, f"Profile '{profile}' should exist"
-            assert provider.config.whale_threshold > 0, f"Profile '{profile}' should have positive whale_threshold"
+            assert (
+                provider.config.whale_threshold > 0
+            ), f"Profile '{profile}' should have positive whale_threshold"
 
     def test_altcoin_profile_lower_threshold(self):
         """Test altcoin profile has lower whale threshold."""
@@ -281,9 +281,9 @@ class TestWhaleThresholdConfigurable:
 
         # Altcoins should have stricter whale detection (lower threshold)
         # because low-liquidity assets are more sensitive to large orders
-        assert altcoin_provider.config.whale_threshold <= default_provider.config.whale_threshold, (
-            "Altcoin profile should have lower or equal whale threshold"
-        )
+        assert (
+            altcoin_provider.config.whale_threshold <= default_provider.config.whale_threshold
+        ), "Altcoin profile should have lower or equal whale threshold"
 
 
 class TestRewardClippingNotStacked:
@@ -301,12 +301,12 @@ class TestRewardClippingNotStacked:
 
         # Without clip: log(0) -> -inf -> NaN propagation
         # Note: Python's math.log(0) raises ValueError, but in numpy with errstate it returns -inf
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             ratio_bad = 0.0
             log_result = np.log(ratio_bad)
-            assert np.isinf(log_result) or np.isnan(log_result), (
-                "log(0) should be -inf or nan without clipping"
-            )
+            assert np.isinf(log_result) or np.isnan(
+                log_result
+            ), "log(0) should be -inf or nan without clipping"
 
         # With clip: log(1e-10) -> finite negative value
         ratio_clipped = np.clip(ratio_bad, 1e-10, 1e10)
@@ -423,7 +423,9 @@ class TestLongOnlyRewardSemantics:
         for position in [0.0, 0.25, 0.5, 0.75, 1.0]:
             reward = full_return * position
             expected = full_return * position
-            assert abs(reward - expected) < 1e-10, f"Position {position} should give proportional reward"
+            assert (
+                abs(reward - expected) < 1e-10
+            ), f"Position {position} should give proportional reward"
 
     def test_reward_correct_for_loss(self):
         """Test reward is negative for price drop with positive position."""
@@ -441,6 +443,7 @@ class TestLongOnlyRewardSemantics:
 # Integration Tests
 # =============================================================================
 
+
 class TestFidelityLevelSelection:
     """
     Test that users can select appropriate fidelity level for their use case.
@@ -449,7 +452,12 @@ class TestFidelityLevelSelection:
     def test_l2_is_fastest(self):
         """Test that L2 is faster than L2+ (simpler model)."""
         try:
-            from execution_providers import StatisticalSlippageProvider, CryptoParametricSlippageProvider, Order, MarketState
+            from execution_providers import (
+                StatisticalSlippageProvider,
+                CryptoParametricSlippageProvider,
+                Order,
+                MarketState,
+            )
         except ImportError:
             pytest.skip("execution_providers not available")
 
@@ -477,14 +485,19 @@ class TestFidelityLevelSelection:
 
         # L2 should be faster (simpler model)
         # Note: This might not always hold due to JIT/caching, so we use a generous ratio
-        assert l2_time <= l2_plus_time * 2, (
-            f"L2 ({l2_time:.4f}s) should be faster than L2+ ({l2_plus_time:.4f}s)"
-        )
+        assert (
+            l2_time <= l2_plus_time * 2
+        ), f"L2 ({l2_time:.4f}s) should be faster than L2+ ({l2_plus_time:.4f}s)"
 
     def test_l2_plus_more_accurate_for_intraday(self):
         """Test that L2+ captures intraday effects that L2 misses."""
         try:
-            from execution_providers import StatisticalSlippageProvider, CryptoParametricSlippageProvider, Order, MarketState
+            from execution_providers import (
+                StatisticalSlippageProvider,
+                CryptoParametricSlippageProvider,
+                Order,
+                MarketState,
+            )
         except ImportError:
             pytest.skip("execution_providers not available")
 

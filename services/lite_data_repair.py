@@ -33,12 +33,16 @@ def repair_prices_file(path: str | Path, *, forward_fill_limit: int = 5) -> Dict
     rows_before = len(frame)
     missing_before = int(frame.isna().sum().sum())
     numeric = list(frame.select_dtypes(include=[np.number]).columns)
-    infinite_before = int(np.isinf(frame[numeric].to_numpy(dtype=float, copy=True)).sum()) if numeric else 0
+    infinite_before = (
+        int(np.isinf(frame[numeric].to_numpy(dtype=float, copy=True)).sum()) if numeric else 0
+    )
     if numeric:
         frame[numeric] = frame[numeric].replace([np.inf, -np.inf], np.nan)
 
     symbol_col = next((c for c in ("symbol", "ticker", "instrument") if c in frame.columns), None)
-    time_col = next((c for c in ("ts", "ts_ms", "timestamp", "datetime", "date") if c in frame.columns), None)
+    time_col = next(
+        (c for c in ("ts", "ts_ms", "timestamp", "datetime", "date") if c in frame.columns), None
+    )
     sort_cols = [c for c in (symbol_col, time_col) if c]
     if sort_cols:
         frame = frame.sort_values(sort_cols, kind="stable")
@@ -52,9 +56,9 @@ def repair_prices_file(path: str | Path, *, forward_fill_limit: int = 5) -> Dict
     fillable_missing_before = int(frame[fill_columns].isna().sum().sum()) if fill_columns else 0
     if fill_columns:
         if symbol_col:
-            frame[fill_columns] = frame.groupby(symbol_col, sort=False, dropna=False)[fill_columns].ffill(
-                limit=max(1, int(forward_fill_limit))
-            )
+            frame[fill_columns] = frame.groupby(symbol_col, sort=False, dropna=False)[
+                fill_columns
+            ].ffill(limit=max(1, int(forward_fill_limit)))
         else:
             frame[fill_columns] = frame[fill_columns].ffill(limit=max(1, int(forward_fill_limit)))
 
@@ -64,7 +68,9 @@ def repair_prices_file(path: str | Path, *, forward_fill_limit: int = 5) -> Dict
 
     backup = target.with_suffix(target.suffix + ".preheal.bak")
     shutil.copy2(target, backup)
-    fd, tmp_name = tempfile.mkstemp(prefix=target.stem + ".heal-", suffix=target.suffix, dir=target.parent)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=target.stem + ".heal-", suffix=target.suffix, dir=target.parent
+    )
     os.close(fd)
     try:
         frame.to_parquet(tmp_name, index=False)
@@ -77,11 +83,14 @@ def repair_prices_file(path: str | Path, *, forward_fill_limit: int = 5) -> Dict
             pass
 
     return {
-        "path": str(target), "backup": str(backup),
-        "rows_before": rows_before, "rows_after": len(frame),
+        "path": str(target),
+        "backup": str(backup),
+        "rows_before": rows_before,
+        "rows_after": len(frame),
         "duplicates_removed": int(duplicates_removed),
         "infinite_values_replaced": infinite_before,
-        "missing_before": missing_before, "missing_after": missing_after,
+        "missing_before": missing_before,
+        "missing_after": missing_after,
         "cells_filled": cells_filled,
         "complete": missing_after == 0,
         "forward_fill_limit": max(1, int(forward_fill_limit)),

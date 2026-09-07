@@ -64,6 +64,7 @@ from distributional_ppo import (
 # Test Environments
 # =============================================================================
 
+
 class MinimalEnv(gymnasium.Env):
     """Minimal deterministic environment."""
 
@@ -74,9 +75,7 @@ class MinimalEnv(gymnasium.Env):
         self.observation_space = spaces.Box(
             low=-10.0, high=10.0, shape=(obs_dim,), dtype=np.float32
         )
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._step_count = 0
         self._max_steps = max_steps
@@ -92,13 +91,14 @@ class MinimalEnv(gymnasium.Env):
 
     def step(self, action):
         self._step_count += 1
-        action_scalar = float(action[0]) if hasattr(action, '__len__') else float(action)
+        action_scalar = float(action[0]) if hasattr(action, "__len__") else float(action)
         self._state = np.clip(
             self._state + 0.1 * action_scalar + 0.01 * self._rng.standard_normal(self._obs_dim),
-            -10.0, 10.0
+            -10.0,
+            10.0,
         ).astype(np.float32)
 
-        reward = float(-np.sum(self._state ** 2) * 0.01 + 0.1)
+        reward = float(-np.sum(self._state**2) * 0.01 + 0.1)
         terminated = self._step_count >= self._max_steps
         truncated = False
 
@@ -121,14 +121,17 @@ class MinimalEnv(gymnasium.Env):
 
 def make_vec_env(env_cls=MinimalEnv, n_envs=1, seed=42, **kwargs):
     """Create vectorized environment."""
+
     def make_env():
         return env_cls(seed=seed, **kwargs)
+
     return DummyVecEnv([make_env for _ in range(n_envs)])
 
 
 # =============================================================================
 # Mock Components
 # =============================================================================
+
 
 class MockLogger:
     """Mock logger that records all calls."""
@@ -154,6 +157,7 @@ class MockLogger:
 # =============================================================================
 # Test PopArtController
 # =============================================================================
+
 
 class TestPopArtControllerComprehensive:
     """Comprehensive tests for PopArtController."""
@@ -336,7 +340,9 @@ class TestPopArtControllerComprehensive:
             model=None,
         )
         # Empty returns may still produce metrics with blocked_reason
-        assert result is None or (hasattr(result, 'blocked_reason') and result.blocked_reason is not None)
+        assert result is None or (
+            hasattr(result, "blocked_reason") and result.blocked_reason is not None
+        )
 
     def test_evaluate_shadow_nan_returns(self):
         """Test evaluate_shadow with NaN returns."""
@@ -364,10 +370,7 @@ class TestPopArtControllerComprehensive:
             episode_starts=torch.zeros(10),
             lstm_states=None,
         )
-        controller = PopArtController(
-            enabled=True,
-            holdout_loader=lambda: mock_batch
-        )
+        controller = PopArtController(enabled=True, holdout_loader=lambda: mock_batch)
         result = controller._load_holdout()
         assert result is not None
         assert controller._holdout_cache is not None
@@ -375,6 +378,7 @@ class TestPopArtControllerComprehensive:
     def test_load_holdout_cached(self):
         """Test _load_holdout uses cache."""
         call_count = [0]
+
         def loader():
             call_count[0] += 1
             return PopArtHoldoutBatch(
@@ -393,6 +397,7 @@ class TestPopArtControllerComprehensive:
 # =============================================================================
 # Test Helper Functions
 # =============================================================================
+
 
 class TestHelperFunctions:
     """Test standalone helper functions."""
@@ -421,6 +426,7 @@ class TestHelperFunctions:
         """Test serialization of Path objects."""
         from pathlib import Path
         import os
+
         p = Path("/tmp/test")
         assert _popart_value_to_serializable(p) == os.fspath(p)
 
@@ -438,6 +444,7 @@ class TestHelperFunctions:
 
     def test_popart_value_to_serializable_unknown_type(self):
         """Test serialization of unknown types."""
+
         class CustomClass:
             def __str__(self):
                 return "custom"
@@ -474,6 +481,7 @@ class TestHelperFunctions:
 
     def test_cfg_get_object_config(self):
         """Test _cfg_get with object config."""
+
         @dataclass
         class Config:
             key: str = "value"
@@ -483,6 +491,7 @@ class TestHelperFunctions:
 
     def test_cfg_get_with_get_method(self):
         """Test _cfg_get with object that has get method."""
+
         class ConfigWithGet:
             def get(self, key, default=None):
                 if key == "key":
@@ -494,6 +503,7 @@ class TestHelperFunctions:
 
     def test_cfg_get_with_get_no_default(self):
         """Test _cfg_get with get method that doesn't accept default."""
+
         class ConfigWithGetNoDefault:
             def get(self, key):
                 if key == "key":
@@ -505,6 +515,7 @@ class TestHelperFunctions:
 
     def test_cfg_get_with_model_dump(self):
         """Test _cfg_get with pydantic-like model_dump."""
+
         class PydanticLike:
             def model_dump(self):
                 return {"key": "value"}
@@ -517,9 +528,7 @@ class TestHelperFunctions:
         episode_starts = np.array([True, False, False, True, False])
         env_change = np.zeros(5, dtype=bool)
 
-        indices, pad_fn, pad_flatten_fn = create_sequencers(
-            episode_starts, env_change, "cpu"
-        )
+        indices, pad_fn, pad_flatten_fn = create_sequencers(episode_starts, env_change, "cpu")
 
         assert len(indices) == 2  # Two sequences
 
@@ -528,9 +537,7 @@ class TestHelperFunctions:
         episode_starts = np.array([True, True, True])
         env_change = np.zeros(3, dtype=bool)
 
-        indices, pad_fn, pad_flatten_fn = create_sequencers(
-            episode_starts, env_change, "cpu"
-        )
+        indices, pad_fn, pad_flatten_fn = create_sequencers(episode_starts, env_change, "cpu")
 
         assert len(indices) == 3
 
@@ -539,9 +546,7 @@ class TestHelperFunctions:
         episode_starts = np.array([True, False, False, False])
         env_change = np.array([False, False, True, False])
 
-        indices, pad_fn, pad_flatten_fn = create_sequencers(
-            episode_starts, env_change, "cpu"
-        )
+        indices, pad_fn, pad_flatten_fn = create_sequencers(episode_starts, env_change, "cpu")
 
         assert len(indices) == 2
 
@@ -560,9 +565,7 @@ class TestHelperFunctions:
         episode_starts = np.array([True, False, True, False])
         env_change = np.zeros(4, dtype=bool)
 
-        indices, pad_fn, pad_flatten_fn = create_sequencers(
-            episode_starts, env_change, "cpu"
-        )
+        indices, pad_fn, pad_flatten_fn = create_sequencers(episode_starts, env_change, "cpu")
 
         # Create test array
         test_array = np.array([1.0, 2.0, 3.0, 4.0])
@@ -576,9 +579,7 @@ class TestHelperFunctions:
         episode_starts = np.array([True, False, True, False])
         env_change = np.zeros(4, dtype=bool)
 
-        indices, pad_fn, pad_flatten_fn = create_sequencers(
-            episode_starts, env_change, "cpu"
-        )
+        indices, pad_fn, pad_flatten_fn = create_sequencers(episode_starts, env_change, "cpu")
 
         test_array = np.array([1.0, 2.0, 3.0, 4.0])
         flattened = pad_flatten_fn(test_array)
@@ -591,9 +592,7 @@ class TestHelperFunctions:
         episode_starts = np.array([True, False, False])
         env_change = np.zeros(3, dtype=bool)
 
-        indices, pad_fn, pad_flatten_fn = create_sequencers(
-            episode_starts, env_change, "cpu"
-        )
+        indices, pad_fn, pad_flatten_fn = create_sequencers(episode_starts, env_change, "cpu")
 
         # Test with torch tensor
         test_tensor = torch.tensor([1.0, 2.0, 3.0])
@@ -613,6 +612,7 @@ class TestHelperFunctions:
 # =============================================================================
 # Test Variance and Explained Variance
 # =============================================================================
+
 
 class TestVarianceFunctions:
     """Test variance and explained variance functions."""
@@ -754,6 +754,7 @@ class TestVarianceFunctions:
 # Test compute_grouped_explained_variance
 # =============================================================================
 
+
 class TestGroupedExplainedVariance:
     """Test compute_grouped_explained_variance."""
 
@@ -836,6 +837,7 @@ class TestGroupedExplainedVariance:
 # =============================================================================
 # Test calculate_cvar
 # =============================================================================
+
 
 class TestCalculateCvar:
     """Test calculate_cvar function."""
@@ -931,6 +933,7 @@ class TestCalculateCvar:
 # =============================================================================
 # Test _compute_returns_with_time_limits
 # =============================================================================
+
 
 class TestComputeReturnsWithTimeLimits:
     """Test _compute_returns_with_time_limits."""
@@ -1136,6 +1139,7 @@ class TestComputeReturnsWithTimeLimits:
 # Test Static Methods
 # =============================================================================
 
+
 class TestDistributionalPPOStaticMethods:
     """Test static methods of DistributionalPPO."""
 
@@ -1214,6 +1218,7 @@ class TestDistributionalPPOStaticMethods:
 # Test DistributionalPPO learn() integration
 # =============================================================================
 
+
 class TestDistributionalPPOLearn:
     """Test DistributionalPPO.learn() method."""
 
@@ -1254,6 +1259,7 @@ class TestDistributionalPPOLearn:
 # =============================================================================
 # Cleanup
 # =============================================================================
+
 
 @pytest.fixture(autouse=True)
 def cleanup():

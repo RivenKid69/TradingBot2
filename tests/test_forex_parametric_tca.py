@@ -56,6 +56,7 @@ from execution_providers import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def default_provider() -> ForexParametricSlippageProvider:
     """Create a provider with default configuration."""
@@ -236,6 +237,7 @@ def jpy_order() -> Order:
 # Test Configuration Validation
 # =============================================================================
 
+
 class TestForexParametricConfig:
     """Tests for ForexParametricConfig validation."""
 
@@ -289,6 +291,7 @@ class TestForexParametricConfig:
 # Test Basic Slippage Calculation
 # =============================================================================
 
+
 class TestBasicSlippage:
     """Tests for basic slippage calculation."""
 
@@ -306,27 +309,19 @@ class TestBasicSlippage:
 
     def test_slippage_in_pips(self, default_provider, buy_order, basic_market):
         """Test slippage calculation returns pips."""
-        slippage_pips = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001
-        )
+        slippage_pips = default_provider.compute_slippage_pips(buy_order, basic_market, 0.001)
         assert slippage_pips > 0
         assert slippage_pips < 10.0  # Reasonable for major pair
 
     def test_slippage_in_bps(self, default_provider, buy_order, basic_market):
         """Test slippage in basis points."""
-        slippage_bps = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.001
-        )
+        slippage_bps = default_provider.compute_slippage_bps(buy_order, basic_market, 0.001)
         assert slippage_bps > 0
 
     def test_pips_to_bps_conversion(self, default_provider, buy_order, basic_market):
         """Test pips to bps conversion."""
-        slippage_pips = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001
-        )
-        slippage_bps = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.001
-        )
+        slippage_pips = default_provider.compute_slippage_pips(buy_order, basic_market, 0.001)
+        slippage_bps = default_provider.compute_slippage_bps(buy_order, basic_market, 0.001)
 
         # For EUR/USD: 1 pip = 0.0001 = 1 bps relative to quote
         # The conversion depends on price level
@@ -334,26 +329,20 @@ class TestBasicSlippage:
 
     def test_zero_participation(self, default_provider, buy_order, basic_market):
         """Test slippage at zero participation."""
-        slippage = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.0
-        )
+        slippage = default_provider.compute_slippage_pips(buy_order, basic_market, 0.0)
         # Should still have spread component
         assert slippage > 0
         assert slippage >= default_provider.config.min_slippage_pips
 
     def test_small_participation(self, default_provider, buy_order, basic_market):
         """Test slippage at small participation."""
-        slippage = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.0001
-        )
+        slippage = default_provider.compute_slippage_pips(buy_order, basic_market, 0.0001)
         assert slippage > 0
         assert slippage < 10.0  # Reasonable for forex
 
     def test_large_participation(self, default_provider, buy_order, basic_market):
         """Test slippage at large participation."""
-        slippage = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.01
-        )
+        slippage = default_provider.compute_slippage_pips(buy_order, basic_market, 0.01)
         # Should be higher for 1% participation (but forex is very liquid)
         assert slippage > 0.5
 
@@ -374,15 +363,14 @@ class TestBasicSlippage:
 
     def test_min_slippage_floor(self, default_provider, buy_order, basic_market):
         """Test minimum slippage floor is enforced."""
-        slippage = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 1e-10
-        )
+        slippage = default_provider.compute_slippage_pips(buy_order, basic_market, 1e-10)
         assert slippage >= default_provider.config.min_slippage_pips
 
 
 # =============================================================================
 # Test √Participation Factor (Almgren-Chriss)
 # =============================================================================
+
 
 class TestParticipationFactor:
     """Tests for √participation factor (Almgren-Chriss model)."""
@@ -428,6 +416,7 @@ class TestParticipationFactor:
 # Test Session Detection
 # =============================================================================
 
+
 class TestSessionDetection:
     """Tests for forex session detection."""
 
@@ -442,7 +431,11 @@ class TestSessionDetection:
         tokyo_ts = 1700028000000  # 2023-11-15 06:00 UTC (Wednesday)
         session = default_provider._detect_session(tokyo_ts)
         # 06:00 UTC could be Tokyo or overlap, both are acceptable
-        assert session in (ForexSession.TOKYO, ForexSession.TOKYO_LONDON_OVERLAP, ForexSession.SYDNEY)
+        assert session in (
+            ForexSession.TOKYO,
+            ForexSession.TOKYO_LONDON_OVERLAP,
+            ForexSession.SYDNEY,
+        )
 
     def test_london_session_detection(self, default_provider):
         """Test London session detection (08:00-16:00 UTC)."""
@@ -555,6 +548,7 @@ class TestSessionLiquidity:
 # Test Pair Type Classification
 # =============================================================================
 
+
 class TestPairClassification:
     """Tests for currency pair type classification."""
 
@@ -632,6 +626,7 @@ class TestPairTypeSlippage:
 # Test Volatility Regime Detection
 # =============================================================================
 
+
 class TestVolatilityRegime:
     """Tests for volatility regime detection."""
 
@@ -670,6 +665,7 @@ class TestVolatilityRegime:
 # Test Carry Trade (Interest Rate Differential)
 # =============================================================================
 
+
 class TestCarryTrade:
     """Tests for carry trade / interest rate differential factor."""
 
@@ -677,13 +673,17 @@ class TestCarryTrade:
         """Test that interest rate differential affects slippage."""
         # Base case: no carry
         slip_no_carry = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             interest_rate_diff=0.0,
         )
 
         # With large carry differential (e.g., EM currencies)
         slip_high_carry = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             interest_rate_diff=0.10,  # 10% differential
         )
 
@@ -694,7 +694,9 @@ class TestCarryTrade:
     def test_negative_interest_rate_diff(self, default_provider, buy_order, basic_market):
         """Test negative interest rate differential."""
         slip_neg_carry = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             interest_rate_diff=-0.08,
         )
 
@@ -706,6 +708,7 @@ class TestCarryTrade:
 # Test DXY Correlation Decay
 # =============================================================================
 
+
 class TestDXYCorrelation:
     """Tests for DXY correlation decay factor."""
 
@@ -713,13 +716,17 @@ class TestDXYCorrelation:
         """Test that DXY correlation parameter works."""
         # High correlation (like EUR/USD)
         slip_high_corr = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             dxy_correlation=0.95,
         )
 
         # Low correlation (less liquid)
         slip_low_corr = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             dxy_correlation=0.50,
         )
 
@@ -730,12 +737,16 @@ class TestDXYCorrelation:
     def test_extreme_dxy_correlations(self, default_provider, buy_order, basic_market):
         """Test extreme DXY correlation values."""
         slip_high = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             dxy_correlation=1.0,
         )
 
         slip_low = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             dxy_correlation=0.0,
         )
 
@@ -747,17 +758,22 @@ class TestDXYCorrelation:
 # Test News Events
 # =============================================================================
 
+
 class TestNewsEvents:
     """Tests for news event impact factor."""
 
     def test_nfp_event_increases_slippage(self, default_provider, buy_order, basic_market):
         """Test that NFP (Non-Farm Payrolls) increases slippage."""
         slip_normal = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
         )
 
         slip_nfp = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             upcoming_news="nfp",
         )
 
@@ -766,11 +782,15 @@ class TestNewsEvents:
     def test_fomc_event_increases_slippage(self, default_provider, buy_order, basic_market):
         """Test that FOMC increases slippage."""
         slip_normal = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
         )
 
         slip_fomc = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             upcoming_news="fomc",
         )
 
@@ -779,12 +799,16 @@ class TestNewsEvents:
     def test_ecb_event_increases_slippage(self, default_provider, buy_order, basic_market):
         """Test that ECB decision increases slippage."""
         slip_ecb = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
             upcoming_news="ecb",
         )
 
         slip_normal = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001,
+            buy_order,
+            basic_market,
+            0.001,
         )
 
         assert slip_ecb > slip_normal
@@ -793,6 +817,7 @@ class TestNewsEvents:
 # =============================================================================
 # Test Spread Regime
 # =============================================================================
+
 
 class TestSpreadRegime:
     """Tests for spread regime factor."""
@@ -825,6 +850,7 @@ class TestSpreadRegime:
 # Test Adaptive Impact Coefficient
 # =============================================================================
 
+
 class TestAdaptiveImpact:
     """Tests for adaptive impact coefficient learning."""
 
@@ -834,7 +860,9 @@ class TestAdaptiveImpact:
 
         # Report consistently higher actual slippage than predicted
         for _ in range(20):
-            default_provider.update_fill_quality(predicted_slippage_pips=1.0, actual_slippage_pips=2.0)
+            default_provider.update_fill_quality(
+                predicted_slippage_pips=1.0, actual_slippage_pips=2.0
+            )
 
         # k should increase to match higher actual slippage
         assert default_provider._adaptive_k > initial_k
@@ -845,7 +873,9 @@ class TestAdaptiveImpact:
 
         # Report consistently lower actual slippage than predicted
         for _ in range(20):
-            default_provider.update_fill_quality(predicted_slippage_pips=2.0, actual_slippage_pips=1.0)
+            default_provider.update_fill_quality(
+                predicted_slippage_pips=2.0, actual_slippage_pips=1.0
+            )
 
         # k should decrease
         assert default_provider._adaptive_k < initial_k
@@ -856,14 +886,18 @@ class TestAdaptiveImpact:
 
         # Try to push k very high
         for _ in range(100):
-            default_provider.update_fill_quality(predicted_slippage_pips=0.5, actual_slippage_pips=10.0)
+            default_provider.update_fill_quality(
+                predicted_slippage_pips=0.5, actual_slippage_pips=10.0
+            )
 
         assert default_provider._adaptive_k <= k_max
 
         # Reset and try to push k very low
         default_provider.reset_adaptive_state()
         for _ in range(100):
-            default_provider.update_fill_quality(predicted_slippage_pips=10.0, actual_slippage_pips=0.5)
+            default_provider.update_fill_quality(
+                predicted_slippage_pips=10.0, actual_slippage_pips=0.5
+            )
 
         assert default_provider._adaptive_k >= k_min
 
@@ -871,6 +905,7 @@ class TestAdaptiveImpact:
 # =============================================================================
 # Test Pre-Trade Cost Estimation
 # =============================================================================
+
 
 class TestPreTradeCostEstimation:
     """Tests for pre-trade impact cost estimation."""
@@ -919,6 +954,7 @@ class TestPreTradeCostEstimation:
 # Test Profiles
 # =============================================================================
 
+
 class TestProfiles:
     """Tests for configuration profiles."""
 
@@ -966,6 +1002,7 @@ class TestProfiles:
 # Test JPY Pairs (Different Pip Definition)
 # =============================================================================
 
+
 class TestJPYPairs:
     """Tests for JPY pairs which have different pip definition."""
 
@@ -990,9 +1027,7 @@ class TestJPYPairs:
             adv=500_000_000_000.0,
         )
 
-        slippage_pips = default_provider.compute_slippage_pips(
-            jpy_order, jpy_market, 0.001
-        )
+        slippage_pips = default_provider.compute_slippage_pips(jpy_order, jpy_market, 0.001)
 
         # Should be a reasonable number of pips
         assert 0.1 <= slippage_pips <= 20.0
@@ -1001,6 +1036,7 @@ class TestJPYPairs:
 # =============================================================================
 # Test Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
@@ -1037,7 +1073,7 @@ class TestEdgeCases:
         market = MarketState(
             timestamp=1700056800000,
             bid=1.08500,
-            ask=float('nan'),
+            ask=float("nan"),
             adv=500_000_000_000.0,
         )
 
@@ -1051,7 +1087,7 @@ class TestEdgeCases:
             timestamp=1700056800000,
             bid=1.08500,
             ask=1.08510,
-            adv=float('inf'),
+            adv=float("inf"),
         )
 
         slippage = default_provider.compute_slippage_pips(buy_order, market, 0.001)
@@ -1085,6 +1121,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Fee Provider
 # =============================================================================
+
 
 class TestForexFeeProvider:
     """Tests for ForexFeeProvider."""
@@ -1139,6 +1176,7 @@ class TestForexFeeProvider:
 # Test Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory function integration."""
 
@@ -1187,6 +1225,7 @@ class TestFactoryFunctions:
 # Test From Config
 # =============================================================================
 
+
 class TestFromConfig:
     """Tests for creating provider from config dict."""
 
@@ -1220,26 +1259,25 @@ class TestFromConfig:
 # Test Regression (Output Stability)
 # =============================================================================
 
+
 class TestRegression:
     """Regression tests for output stability."""
 
     def test_eurusd_baseline_slippage(self, default_provider, buy_order, basic_market):
         """Test baseline slippage for EUR/USD under normal conditions."""
-        slippage = default_provider.compute_slippage_pips(
-            buy_order, basic_market, 0.001
-        )
+        slippage = default_provider.compute_slippage_pips(buy_order, basic_market, 0.001)
         # Should be in reasonable range for 0.1% participation in EUR/USD
         assert 0.5 <= slippage <= 5.0
 
     def test_exotic_baseline_slippage(self, default_provider, exotic_order, basic_market):
         """Test baseline slippage for exotic pair."""
-        slippage = default_provider.compute_slippage_pips(
-            exotic_order, basic_market, 0.001
-        )
+        slippage = default_provider.compute_slippage_pips(exotic_order, basic_market, 0.001)
         # Exotic should have higher slippage
         assert slippage >= 1.0
 
-    def test_london_ny_overlap_best_liquidity(self, default_provider, buy_order, london_ny_overlap_market):
+    def test_london_ny_overlap_best_liquidity(
+        self, default_provider, buy_order, london_ny_overlap_market
+    ):
         """Test that London-NY overlap has best execution."""
         slippage = default_provider.compute_slippage_pips(
             buy_order, london_ny_overlap_market, 0.001
@@ -1251,6 +1289,7 @@ class TestRegression:
 # =============================================================================
 # Test Consistency with Crypto/Equity Providers
 # =============================================================================
+
 
 class TestConsistency:
     """Tests for API consistency with other parametric providers."""
@@ -1271,9 +1310,7 @@ class TestConsistency:
         forex_provider = ForexParametricSlippageProvider()
 
         # EUR/USD should have low slippage
-        slippage_bps = forex_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.001
-        )
+        slippage_bps = forex_provider.compute_slippage_bps(buy_order, basic_market, 0.001)
 
         # Forex majors should typically have < 10 bps slippage for small trades
         assert slippage_bps < 20.0

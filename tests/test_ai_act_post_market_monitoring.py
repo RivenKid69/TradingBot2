@@ -55,6 +55,7 @@ from services.ai_act.post_market_monitoring import (
 # Enum Tests
 # =============================================================================
 
+
 class TestMonitoringMetricType:
     """Tests for MonitoringMetricType enum."""
 
@@ -166,6 +167,7 @@ class TestAlertPriority:
 # =============================================================================
 # Data Structure Tests
 # =============================================================================
+
 
 class TestMonitoringMetric:
     """Tests for MonitoringMetric dataclass."""
@@ -458,6 +460,7 @@ class TestPeriodicReport:
 # Configuration Tests
 # =============================================================================
 
+
 class TestPostMarketConfig:
     """Tests for PostMarketConfig."""
 
@@ -499,6 +502,7 @@ class TestPostMarketConfig:
 # =============================================================================
 # PerformanceMonitor Tests
 # =============================================================================
+
 
 class TestPerformanceMonitor:
     """Tests for PerformanceMonitor component."""
@@ -740,6 +744,7 @@ class TestPerformanceMonitor:
 # =============================================================================
 # IncidentTracker Tests
 # =============================================================================
+
 
 class TestIncidentTracker:
     """Tests for IncidentTracker component."""
@@ -1010,6 +1015,7 @@ class TestIncidentTracker:
 
     def test_callback_error_handling(self):
         """Test callback error handling."""
+
         def failing_callback(event_type, data):
             raise Exception("Callback error")
 
@@ -1028,6 +1034,7 @@ class TestIncidentTracker:
 # =============================================================================
 # FeedbackCollector Tests
 # =============================================================================
+
 
 class TestFeedbackCollector:
     """Tests for FeedbackCollector component."""
@@ -1182,6 +1189,7 @@ class TestFeedbackCollector:
 # =============================================================================
 # PostMarketMonitoringSystem Tests
 # =============================================================================
+
 
 class TestPostMarketMonitoringSystem:
     """Tests for PostMarketMonitoringSystem main class."""
@@ -1827,6 +1835,7 @@ class TestPostMarketMonitoringSystem:
 
     def test_alert_callback_error_handling(self, tmp_path):
         """Test alert callback error handling."""
+
         def failing_callback(event_type, data):
             raise Exception("Callback error")
 
@@ -1848,6 +1857,7 @@ class TestPostMarketMonitoringSystem:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""
@@ -1906,6 +1916,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests for complete workflows."""
@@ -2103,14 +2114,16 @@ class TestIntegration:
             ("Latency", MonitoringMetricType.LATENCY, 50.0),
             ("Error Rate", MonitoringMetricType.ERROR_RATE, 0.01),
         ]:
-            metric = pmms.register_metric(
-                name=name, metric_type=mt, baseline_value=baseline
-            )
+            metric = pmms.register_metric(name=name, metric_type=mt, baseline_value=baseline)
             for i in range(15):
                 pmms.record_metric_value(metric.metric_id, baseline * 0.95)
 
         # Add incidents
-        for severity in [IncidentSeverity.MINOR, IncidentSeverity.MODERATE, IncidentSeverity.SERIOUS]:
+        for severity in [
+            IncidentSeverity.MINOR,
+            IncidentSeverity.MODERATE,
+            IncidentSeverity.SERIOUS,
+        ]:
             pmms.report_incident(
                 severity=severity,
                 title=f"{severity.name} Incident",
@@ -2181,6 +2194,7 @@ class TestIntegration:
 # =============================================================================
 # Thread Safety Tests
 # =============================================================================
+
 
 class TestThreadSafety:
     """Thread safety tests for the monitoring system."""

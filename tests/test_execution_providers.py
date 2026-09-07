@@ -15,6 +15,7 @@ Test coverage:
 
 import math
 import pytest
+
 pytest.importorskip("sortedcontainers")
 from typing import Optional
 
@@ -65,6 +66,7 @@ from execution_providers_l3 import (
 # =============================================================================
 # Test Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def basic_market_state() -> MarketState:
@@ -168,6 +170,7 @@ def equity_order() -> Order:
 # =============================================================================
 # Test Data Classes
 # =============================================================================
+
 
 class TestMarketState:
     """Tests for MarketState data class."""
@@ -354,6 +357,7 @@ class TestBarData:
 # Test L2 Slippage Provider
 # =============================================================================
 
+
 class TestStatisticalSlippageProvider:
     """Tests for StatisticalSlippageProvider."""
 
@@ -378,18 +382,14 @@ class TestStatisticalSlippageProvider:
     def test_zero_participation(self, buy_market_order, basic_market_state):
         """Test slippage at zero participation."""
         provider = StatisticalSlippageProvider()
-        slippage = provider.compute_slippage_bps(
-            buy_market_order, basic_market_state, 0.0
-        )
+        slippage = provider.compute_slippage_bps(buy_market_order, basic_market_state, 0.0)
         # Should still have half spread component
         assert slippage > 0
 
     def test_small_participation(self, buy_market_order, basic_market_state):
         """Test slippage at small participation."""
         provider = StatisticalSlippageProvider()
-        slippage = provider.compute_slippage_bps(
-            buy_market_order, basic_market_state, 0.001
-        )
+        slippage = provider.compute_slippage_bps(buy_market_order, basic_market_state, 0.001)
         # Half spread (~5 bps) + impact = k * sqrt(0.001) * 10000 ≈ 316 bps
         # But with default volatility_scale=1.0 and actual spread, expect ~30-40 bps
         assert slippage >= 4.0
@@ -398,9 +398,7 @@ class TestStatisticalSlippageProvider:
     def test_large_participation(self, buy_market_order, basic_market_state):
         """Test slippage at large participation."""
         provider = StatisticalSlippageProvider()
-        slippage = provider.compute_slippage_bps(
-            buy_market_order, basic_market_state, 0.10
-        )
+        slippage = provider.compute_slippage_bps(buy_market_order, basic_market_state, 0.10)
         # Should be significantly higher
         assert slippage > 100.0
 
@@ -408,15 +406,9 @@ class TestStatisticalSlippageProvider:
         """Test that slippage increases with participation."""
         provider = StatisticalSlippageProvider()
 
-        slippage_small = provider.compute_slippage_bps(
-            buy_market_order, basic_market_state, 0.001
-        )
-        slippage_medium = provider.compute_slippage_bps(
-            buy_market_order, basic_market_state, 0.01
-        )
-        slippage_large = provider.compute_slippage_bps(
-            buy_market_order, basic_market_state, 0.10
-        )
+        slippage_small = provider.compute_slippage_bps(buy_market_order, basic_market_state, 0.001)
+        slippage_medium = provider.compute_slippage_bps(buy_market_order, basic_market_state, 0.01)
+        slippage_large = provider.compute_slippage_bps(buy_market_order, basic_market_state, 0.10)
 
         assert slippage_small < slippage_medium < slippage_large
 
@@ -441,9 +433,7 @@ class TestStatisticalSlippageProvider:
     def test_min_slippage_floor(self, buy_market_order, basic_market_state):
         """Test minimum slippage floor."""
         provider = StatisticalSlippageProvider(min_slippage_bps=10.0)
-        slippage = provider.compute_slippage_bps(
-            buy_market_order, basic_market_state, 0.0
-        )
+        slippage = provider.compute_slippage_bps(buy_market_order, basic_market_state, 0.0)
         assert slippage >= 10.0
 
     def test_volatility_adjustment(self, buy_market_order):
@@ -476,6 +466,7 @@ class TestStatisticalSlippageProvider:
 # =============================================================================
 # Test L2 Fee Providers
 # =============================================================================
+
 
 class TestZeroFeeProvider:
     """Tests for ZeroFeeProvider."""
@@ -576,6 +567,7 @@ class TestEquityFeeProvider:
 # =============================================================================
 # Test L2 Fill Provider
 # =============================================================================
+
 
 class TestOHLCVFillProvider:
     """Tests for OHLCVFillProvider."""
@@ -693,6 +685,7 @@ class TestOHLCVFillProvider:
 # Test L2 Execution Provider
 # =============================================================================
 
+
 class TestL2ExecutionProvider:
     """Tests for L2ExecutionProvider."""
 
@@ -759,12 +752,14 @@ class TestL2ExecutionProvider:
 # Test L3 Stubs
 # =============================================================================
 
+
 class TestLOBSlippageProvider:
     """Tests for LOBSlippageProvider stub."""
 
     def test_stub_warning(self, caplog):
         """Test stub logs warning."""
         import logging
+
         with caplog.at_level(logging.WARNING):
             provider = LOBSlippageProvider()
         assert "stub" in caplog.text.lower()
@@ -782,6 +777,7 @@ class TestLOBFillProvider:
     def test_stub_warning(self, caplog):
         """Test stub logs warning."""
         import logging
+
         with caplog.at_level(logging.WARNING):
             provider = LOBFillProvider()
         assert "stub" in caplog.text.lower()
@@ -796,6 +792,7 @@ class TestLOBFillProvider:
 # =============================================================================
 # Test Factory Functions
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""
@@ -847,6 +844,7 @@ class TestFactoryFunctions:
 # Test Backward Compatibility
 # =============================================================================
 
+
 class TestBackwardCompatibility:
     """Tests for backward compatibility functions."""
 
@@ -864,6 +862,7 @@ class TestBackwardCompatibility:
 
     def test_wrap_legacy_slippage_config_object(self):
         """Test wrapping object config."""
+
         class LegacyConfig:
             k = 0.15
             default_spread_bps = 6.0
@@ -888,6 +887,7 @@ class TestBackwardCompatibility:
 # =============================================================================
 # Test Protocol Compliance
 # =============================================================================
+
 
 class TestProtocolCompliance:
     """Tests that implementations satisfy protocols."""
@@ -922,18 +922,19 @@ class TestProtocolCompliance:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
     def test_nan_prices_handling(self):
         """Test handling of NaN prices."""
-        state = MarketState(timestamp=0, bid=float('nan'), ask=float('nan'))
+        state = MarketState(timestamp=0, bid=float("nan"), ask=float("nan"))
         assert state.get_mid_price() is None
         assert state.get_spread_bps() is None
 
     def test_inf_prices_handling(self):
         """Test handling of infinite prices."""
-        state = MarketState(timestamp=0, bid=float('inf'), ask=float('inf'))
+        state = MarketState(timestamp=0, bid=float("inf"), ask=float("inf"))
         assert state.get_mid_price() is None
 
     def test_negative_participation(self, buy_market_order, basic_market_state):
@@ -985,6 +986,7 @@ class TestEdgeCases:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests combining multiple components."""

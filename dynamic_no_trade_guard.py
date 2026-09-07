@@ -101,7 +101,9 @@ class DynamicNoTradeGuard:
         vol_cfg = getattr(cfg, "volatility", None)
         spread_cfg = getattr(cfg, "spread", None)
 
-        sigma_window = int(getattr(vol_cfg, "window", None) or cfg.sigma_window or 42)  # 42 × 4h = 168h = 7 дней для 4h таймфрейма (было 120 для 1m)
+        sigma_window = int(
+            getattr(vol_cfg, "window", None) or cfg.sigma_window or 42
+        )  # 42 × 4h = 168h = 7 дней для 4h таймфрейма (было 120 для 1m)
         if sigma_window <= 1:
             sigma_window = 42  # 42 × 4h = 168h = 7 дней для 4h таймфрейма (было 120 для 1m)
         sigma_min = int(
@@ -113,9 +115,7 @@ class DynamicNoTradeGuard:
             sigma_min = min(sigma_window, max(2, sigma_window // 2))
 
         spread_window = int(
-            getattr(spread_cfg, "pctile_window", None)
-            or cfg.spread_pctile_window
-            or sigma_window
+            getattr(spread_cfg, "pctile_window", None) or cfg.spread_pctile_window or sigma_window
         )
         if spread_window <= 1:
             spread_window = max(2, sigma_window // 2)
@@ -339,9 +339,7 @@ class DynamicNoTradeGuard:
             release_ready = True
             if "vol_extreme" in state.last_trigger and self._sigma_upper is not None:
                 release_thr = (
-                    self._sigma_lower
-                    if self._sigma_lower is not None
-                    else self._sigma_upper
+                    self._sigma_lower if self._sigma_lower is not None else self._sigma_upper
                 )
                 if not (
                     math.isfinite(sigma_ratio)
@@ -351,9 +349,7 @@ class DynamicNoTradeGuard:
                     release_ready = False
             if "spread_wide" in state.last_trigger and self._spread_upper is not None:
                 release_thr = (
-                    self._spread_lower
-                    if self._spread_lower is not None
-                    else self._spread_upper
+                    self._spread_lower if self._spread_lower is not None else self._spread_upper
                 )
                 if not (
                     math.isfinite(spread_pct)
@@ -427,4 +423,3 @@ class DynamicNoTradeGuard:
             "ready": guard_ready,
         }
         state.last_snapshot = snapshot
-

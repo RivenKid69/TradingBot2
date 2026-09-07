@@ -52,6 +52,7 @@
 **Цель:** Cloud build не содержит order execution библиотек.
 
 **Реализация:**
+
 ```python
 # ccea/guardrails/import_check.py
 
@@ -87,6 +88,7 @@ def check_cloud_build(build_dir: str) -> list[str]:
 ```
 
 **CI Integration:**
+
 ```yaml
 # .github/workflows/ci.yml
 jobs:
@@ -105,6 +107,7 @@ jobs:
 **Цель:** JSON schemas не содержат order-like полей.
 
 **Реализация:**
+
 ```python
 # ccea/guardrails/schema_check.py
 
@@ -163,6 +166,7 @@ def validate_schema(schema_path: str) -> list[str]:
 **Цель:** Артефакты публикуются только с подписью.
 
 **Реализация:**
+
 ```python
 # ccea/guardrails/artifact_check.py
 
@@ -198,6 +202,7 @@ def pre_publish_check(artifact_path: str) -> None:
 **Цель:** Enforce architectural boundaries между слоями.
 
 **Реализация:**
+
 ```ini
 # importlinter.ini (расширение для CCEA)
 
@@ -240,6 +245,7 @@ forbidden_modules =
 **Цель:** Новые типы команд требуют security review.
 
 **Реализация:**
+
 ```python
 # ccea/guardrails/protocol_check.py
 
@@ -291,6 +297,7 @@ def check_protocol_changes(base_schema: dict, new_schema: dict) -> dict:
 **Цель:** Предотвращение коммита секретов.
 
 **Реализация:**
+
 ```yaml
 # .github/workflows/secret-scan.yml
 jobs:
@@ -308,6 +315,7 @@ jobs:
 ```
 
 **Patterns:**
+
 ```toml
 # .gitleaks.toml
 [extend]
@@ -329,6 +337,7 @@ tags = ["private", "key"]
 **Цель:** Agent проверяет подпись артефакта.
 
 **Реализация:**
+
 ```python
 # packages/agent/artifact_verifier.py
 
@@ -381,6 +390,7 @@ class ArtifactVerifier:
 **Цель:** Телеметрия всегда проходит redaction.
 
 **Реализация:**
+
 ```python
 # packages/agent/telemetry/redaction.py
 
@@ -578,6 +588,7 @@ repos:
 ### 5.1 Emergency Bypass
 
 В экстренных случаях возможен bypass с:
+
 1. Approval от 2+ Senior Engineers
 2. Security team sign-off
 3. Documented justification в issue
@@ -586,6 +597,7 @@ repos:
 ### 5.2 Bypass Log
 
 Все bypass логируются:
+
 ```json
 {
   "timestamp": "2025-12-13T10:00:00Z",
@@ -601,6 +613,7 @@ repos:
 ---
 
 **Document Control:**
+
 - Author: CCEA Platform Team
 - Reviewers: Security, DevOps
 - Approval: Engineering Lead

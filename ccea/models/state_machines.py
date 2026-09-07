@@ -34,8 +34,10 @@ logger = logging.getLogger(__name__)
 # Exceptions
 # ============================================================================
 
+
 class StateMachineError(Exception):
     """Base exception for state machine errors."""
+
     pass
 
 
@@ -59,6 +61,7 @@ class InvalidTransitionError(StateMachineError):
 
 class StateNotFoundError(StateMachineError):
     """Raised when a state is not found in the state machine."""
+
     pass
 
 
@@ -74,6 +77,7 @@ class GuardConditionFailedError(StateMachineError):
 # State Transition Types
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class StateTransition:
     """
@@ -88,6 +92,7 @@ class StateTransition:
         requires_approval: Whether this transition requires approval
         change_class: Classification of the change
     """
+
     from_state: Enum
     to_state: Enum
     event: str
@@ -111,6 +116,7 @@ class TransitionRecord:
         approved_by: Who approved (if required)
         idempotency_key: Key for dedup
     """
+
     from_state: str
     to_state: str
     event: str
@@ -123,6 +129,7 @@ class TransitionRecord:
 # ============================================================================
 # Abstract State Machine
 # ============================================================================
+
 
 class StateMachine(ABC):
     """
@@ -210,17 +217,12 @@ class StateMachine(ABC):
     def get_available_events(self) -> Set[str]:
         """Get all events available from current state."""
         return {
-            event
-            for (state, event) in self._transitions.keys()
-            if state == self._current_state
+            event for (state, event) in self._transitions.keys() if state == self._current_state
         }
 
     def get_valid_transitions(self) -> List[StateTransition]:
         """Get all valid transitions from current state."""
-        return [
-            t for (state, _), t in self._transitions.items()
-            if state == self._current_state
-        ]
+        return [t for (state, _), t in self._transitions.items() if state == self._current_state]
 
     def trigger(
         self,
@@ -257,7 +259,7 @@ class StateMachine(ABC):
                     "entity_id": self._entity_id,
                     "event": event,
                     "idempotency_key": idempotency_key,
-                }
+                },
             )
             return self._current_state
 
@@ -282,8 +284,10 @@ class StateMachine(ABC):
                     "event": event,
                     "from_state": transition.from_state.value,
                     "to_state": transition.to_state.value,
-                    "change_class": transition.change_class.value if transition.change_class else None,
-                }
+                    "change_class": (
+                        transition.change_class.value if transition.change_class else None
+                    ),
+                },
             )
             raise GuardConditionFailedError(
                 "Approval required for this transition",
@@ -331,7 +335,7 @@ class StateMachine(ABC):
                         "entity_id": self._entity_id,
                         "event": event,
                         "error": str(e),
-                    }
+                    },
                 )
                 # Don't revert - action failure is logged but transition proceeds
 
@@ -346,7 +350,7 @@ class StateMachine(ABC):
                 "event": event,
                 "from_state": from_state.value,
                 "to_state": to_state.value,
-            }
+            },
         )
 
         return self._current_state
@@ -381,21 +385,18 @@ class StateMachine(ABC):
                 "from_state": from_state.value,
                 "to_state": state.value,
                 "reason": reason,
-            }
+            },
         )
 
     def _add_history(self, record: TransitionRecord) -> None:
         """Add a record to history, enforcing max size."""
         self._history.append(record)
         if len(self._history) > self._max_history:
-            self._history = self._history[-self._max_history:]
+            self._history = self._history[-self._max_history :]
 
     def _is_duplicate(self, idempotency_key: str) -> bool:
         """Check if transition with this key was already processed."""
-        return any(
-            r.idempotency_key == idempotency_key
-            for r in self._history
-        )
+        return any(r.idempotency_key == idempotency_key for r in self._history)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize state machine to dictionary."""
@@ -411,6 +412,7 @@ class StateMachine(ABC):
 # ============================================================================
 # Deployment State Machine (Design Doc 11.1)
 # ============================================================================
+
 
 class DeploymentStateMachine(StateMachine):
     """
@@ -478,75 +480,93 @@ class DeploymentStateMachine(StateMachine):
         """Register all valid deployment state transitions."""
 
         # CREATED -> PENDING (enrollment initiated)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.CREATED,
-            to_state=DeploymentState.PENDING,
-            event="INITIATE_ENROLLMENT",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.CREATED,
+                to_state=DeploymentState.PENDING,
+                event="INITIATE_ENROLLMENT",
+            )
+        )
 
         # PENDING -> ENROLLED (enrollment completed)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.PENDING,
-            to_state=DeploymentState.ENROLLED,
-            event="COMPLETE_ENROLLMENT",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.PENDING,
+                to_state=DeploymentState.ENROLLED,
+                event="COMPLETE_ENROLLMENT",
+            )
+        )
 
         # PENDING -> CREATED (enrollment failed, retry)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.PENDING,
-            to_state=DeploymentState.CREATED,
-            event="ENROLLMENT_FAILED",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.PENDING,
+                to_state=DeploymentState.CREATED,
+                event="ENROLLMENT_FAILED",
+            )
+        )
 
         # ENROLLED -> RUNNING (first run started)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.ENROLLED,
-            to_state=DeploymentState.RUNNING,
-            event="START_RUN",
-            requires_approval=True,
-            change_class=ChangeClass.TRADING_IMPACTING,
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.ENROLLED,
+                to_state=DeploymentState.RUNNING,
+                event="START_RUN",
+                requires_approval=True,
+                change_class=ChangeClass.TRADING_IMPACTING,
+            )
+        )
 
         # RUNNING -> PAUSED (run paused)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.RUNNING,
-            to_state=DeploymentState.PAUSED,
-            event="PAUSE_RUN",
-            # No approval needed for pause (safety action)
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.RUNNING,
+                to_state=DeploymentState.PAUSED,
+                event="PAUSE_RUN",
+                # No approval needed for pause (safety action)
+            )
+        )
 
         # RUNNING -> STOPPED (run stopped)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.RUNNING,
-            to_state=DeploymentState.STOPPED,
-            event="STOP_RUN",
-            # No approval needed for stop (safety action)
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.RUNNING,
+                to_state=DeploymentState.STOPPED,
+                event="STOP_RUN",
+                # No approval needed for stop (safety action)
+            )
+        )
 
         # PAUSED -> RUNNING (run resumed)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.PAUSED,
-            to_state=DeploymentState.RUNNING,
-            event="RESUME_RUN",
-            requires_approval=True,
-            change_class=ChangeClass.TRADING_IMPACTING,
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.PAUSED,
+                to_state=DeploymentState.RUNNING,
+                event="RESUME_RUN",
+                requires_approval=True,
+                change_class=ChangeClass.TRADING_IMPACTING,
+            )
+        )
 
         # PAUSED -> STOPPED (stopped from paused)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.PAUSED,
-            to_state=DeploymentState.STOPPED,
-            event="STOP_RUN",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.PAUSED,
+                to_state=DeploymentState.STOPPED,
+                event="STOP_RUN",
+            )
+        )
 
         # STOPPED -> RUNNING (restart after stop)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.STOPPED,
-            to_state=DeploymentState.RUNNING,
-            event="START_RUN",
-            requires_approval=True,
-            change_class=ChangeClass.TRADING_IMPACTING,
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.STOPPED,
+                to_state=DeploymentState.RUNNING,
+                event="START_RUN",
+                requires_approval=True,
+                change_class=ChangeClass.TRADING_IMPACTING,
+            )
+        )
 
         # Revocation transitions (can happen from any operational state)
         for state in [
@@ -555,31 +575,38 @@ class DeploymentStateMachine(StateMachine):
             DeploymentState.PAUSED,
             DeploymentState.STOPPED,
         ]:
-            self._add_transition(StateTransition(
-                from_state=state,
-                to_state=DeploymentState.REVOKED,
-                event="REVOKE_CREDENTIALS",
-            ))
+            self._add_transition(
+                StateTransition(
+                    from_state=state,
+                    to_state=DeploymentState.REVOKED,
+                    event="REVOKE_CREDENTIALS",
+                )
+            )
 
         # REVOKED -> TERMINATED (final cleanup)
-        self._add_transition(StateTransition(
-            from_state=DeploymentState.REVOKED,
-            to_state=DeploymentState.TERMINATED,
-            event="TERMINATE",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=DeploymentState.REVOKED,
+                to_state=DeploymentState.TERMINATED,
+                event="TERMINATE",
+            )
+        )
 
         # Direct termination (from enrolled/stopped states)
         for state in [DeploymentState.ENROLLED, DeploymentState.STOPPED]:
-            self._add_transition(StateTransition(
-                from_state=state,
-                to_state=DeploymentState.TERMINATED,
-                event="TERMINATE",
-            ))
+            self._add_transition(
+                StateTransition(
+                    from_state=state,
+                    to_state=DeploymentState.TERMINATED,
+                    event="TERMINATE",
+                )
+            )
 
 
 # ============================================================================
 # Run State Machine (Design Doc 11.2)
 # ============================================================================
+
 
 class RunStateMachine(StateMachine):
     """
@@ -652,90 +679,113 @@ class RunStateMachine(StateMachine):
         """Register all valid run state transitions."""
 
         # INITIALIZING -> RUNNING (startup complete)
-        self._add_transition(StateTransition(
-            from_state=RunState.INITIALIZING,
-            to_state=RunState.RUNNING,
-            event="STARTUP_COMPLETE",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.INITIALIZING,
+                to_state=RunState.RUNNING,
+                event="STARTUP_COMPLETE",
+            )
+        )
 
         # INITIALIZING -> HALTED (startup failed)
-        self._add_transition(StateTransition(
-            from_state=RunState.INITIALIZING,
-            to_state=RunState.HALTED,
-            event="STARTUP_FAILED",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.INITIALIZING,
+                to_state=RunState.HALTED,
+                event="STARTUP_FAILED",
+            )
+        )
 
         # INITIALIZING -> STOPPED (cancelled during startup)
-        self._add_transition(StateTransition(
-            from_state=RunState.INITIALIZING,
-            to_state=RunState.STOPPED,
-            event="STOP",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.INITIALIZING,
+                to_state=RunState.STOPPED,
+                event="STOP",
+            )
+        )
 
         # RUNNING -> PAUSED (pause requested)
-        self._add_transition(StateTransition(
-            from_state=RunState.RUNNING,
-            to_state=RunState.PAUSED,
-            event="PAUSE",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.RUNNING,
+                to_state=RunState.PAUSED,
+                event="PAUSE",
+            )
+        )
 
         # RUNNING -> HALTED (error occurred)
-        self._add_transition(StateTransition(
-            from_state=RunState.RUNNING,
-            to_state=RunState.HALTED,
-            event="ERROR",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.RUNNING,
+                to_state=RunState.HALTED,
+                event="ERROR",
+            )
+        )
 
         # RUNNING -> STOPPED (clean stop)
-        self._add_transition(StateTransition(
-            from_state=RunState.RUNNING,
-            to_state=RunState.STOPPED,
-            event="STOP",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.RUNNING,
+                to_state=RunState.STOPPED,
+                event="STOP",
+            )
+        )
 
         # PAUSED -> RUNNING (resume)
-        self._add_transition(StateTransition(
-            from_state=RunState.PAUSED,
-            to_state=RunState.RUNNING,
-            event="RESUME",
-            requires_approval=True,
-            change_class=ChangeClass.TRADING_IMPACTING,
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.PAUSED,
+                to_state=RunState.RUNNING,
+                event="RESUME",
+                requires_approval=True,
+                change_class=ChangeClass.TRADING_IMPACTING,
+            )
+        )
 
         # PAUSED -> STOPPED (stop while paused)
-        self._add_transition(StateTransition(
-            from_state=RunState.PAUSED,
-            to_state=RunState.STOPPED,
-            event="STOP",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.PAUSED,
+                to_state=RunState.STOPPED,
+                event="STOP",
+            )
+        )
 
         # PAUSED -> HALTED (error while paused)
-        self._add_transition(StateTransition(
-            from_state=RunState.PAUSED,
-            to_state=RunState.HALTED,
-            event="ERROR",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.PAUSED,
+                to_state=RunState.HALTED,
+                event="ERROR",
+            )
+        )
 
         # HALTED -> RUNNING (recovery - resume from halt)
-        self._add_transition(StateTransition(
-            from_state=RunState.HALTED,
-            to_state=RunState.RUNNING,
-            event="RECOVER",
-            requires_approval=True,
-            change_class=ChangeClass.TRADING_IMPACTING,
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.HALTED,
+                to_state=RunState.RUNNING,
+                event="RECOVER",
+                requires_approval=True,
+                change_class=ChangeClass.TRADING_IMPACTING,
+            )
+        )
 
         # HALTED -> STOPPED (give up, stop the run)
-        self._add_transition(StateTransition(
-            from_state=RunState.HALTED,
-            to_state=RunState.STOPPED,
-            event="STOP",
-        ))
+        self._add_transition(
+            StateTransition(
+                from_state=RunState.HALTED,
+                to_state=RunState.STOPPED,
+                event="STOP",
+            )
+        )
 
 
 # ============================================================================
 # State Machine Manager
 # ============================================================================
+
 
 class StateMachineManager:
     """
@@ -784,7 +834,7 @@ class StateMachineManager:
             extra={
                 "deployment_id": deployment_id,
                 "initial_state": initial_state.value,
-            }
+            },
         )
 
         return sm
@@ -832,7 +882,7 @@ class StateMachineManager:
                 "run_id": run_id,
                 "deployment_id": deployment_id,
                 "initial_state": initial_state.value,
-            }
+            },
         )
 
         return sm
@@ -846,10 +896,7 @@ class StateMachineManager:
         deployment_id: str,
     ) -> List[RunStateMachine]:
         """Get all runs for a deployment."""
-        return [
-            r for r in self._runs.values()
-            if r.deployment_id == deployment_id
-        ]
+        return [r for r in self._runs.values() if r.deployment_id == deployment_id]
 
     def remove_deployment(self, deployment_id: str) -> bool:
         """
@@ -863,8 +910,7 @@ class StateMachineManager:
 
         # Remove associated runs
         run_ids_to_remove = [
-            r.run_id for r in self._runs.values()
-            if r.deployment_id == deployment_id
+            r.run_id for r in self._runs.values() if r.deployment_id == deployment_id
         ]
         for run_id in run_ids_to_remove:
             del self._runs[run_id]
@@ -876,7 +922,7 @@ class StateMachineManager:
             extra={
                 "deployment_id": deployment_id,
                 "runs_removed": len(run_ids_to_remove),
-            }
+            },
         )
 
         return True
@@ -907,22 +953,17 @@ class StateMachineManager:
         state: DeploymentState,
     ) -> List[DeploymentStateMachine]:
         """Get all deployments in a specific state."""
-        return [
-            d for d in self._deployments.values()
-            if d.current_state == state
-        ]
+        return [d for d in self._deployments.values() if d.current_state == state]
 
     def get_runs_in_state(self, state: RunState) -> List[RunStateMachine]:
         """Get all runs in a specific state."""
-        return [
-            r for r in self._runs.values()
-            if r.current_state == state
-        ]
+        return [r for r in self._runs.values() if r.current_state == state]
 
 
 # ============================================================================
 # Factory Functions
 # ============================================================================
+
 
 def create_deployment_state_machine(
     deployment_id: str,

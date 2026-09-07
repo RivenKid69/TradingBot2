@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, HTTPException, Header, Request
 import pandas as pd
+
 try:
     # Streamlit is only used by the legacy `streamlit run app.py` wrapper at the
     # bottom of this module. The desktop build serves the UI via FastAPI and does
@@ -42,64 +43,101 @@ from legacy_sandbox_config import (
 
 # Enhanced Pro Mode imports
 from services.core.enhanced_healthcheck import (
-    EnhancedHealthcheck, EnhancedHealthcheckConfig, DependencyType, 
-    DependencyStatus, DatabaseChecker, CacheChecker, ExternalAPIChecker
+    EnhancedHealthcheck,
+    EnhancedHealthcheckConfig,
+    DependencyType,
+    DependencyStatus,
+    DatabaseChecker,
+    CacheChecker,
+    ExternalAPIChecker,
 )
 from services.core.risk_controls.time_sync import (
-    ComplianceClock, ClockDriftSeverity, ClockSyncStatus, ClockSyncEvent
+    ComplianceClock,
+    ClockDriftSeverity,
+    ClockSyncStatus,
+    ClockSyncEvent,
 )
 from services.core.alerting import (
-    AlertingService, AlertingConfig, AlertRule, Alert, AlertSeverity, 
-    AlertChannel, AlertStatus, EscalationLevel, EscalationPolicy
+    AlertingService,
+    AlertingConfig,
+    AlertRule,
+    Alert,
+    AlertSeverity,
+    AlertChannel,
+    AlertStatus,
+    EscalationLevel,
+    EscalationPolicy,
 )
 from services.core.oncall_rotation import (
-    OnCallRotationManager, OnCallRotationConfig, OnCallTier, RotationSchedule, 
-    EscalationPath, IncidentPriority, OnCallEngineer, OnCallShift, OnCallIncident
+    OnCallRotationManager,
+    OnCallRotationConfig,
+    OnCallTier,
+    RotationSchedule,
+    EscalationPath,
+    IncidentPriority,
+    OnCallEngineer,
+    OnCallShift,
+    OnCallIncident,
 )
 from services.algo_integration.conformance_testing import (
-    ConformanceTestRunner, ConformanceTestSuite, TestCategory, TestPriority,
-    TestEnvironment, ConformanceSuiteStatus, get_standard_conformance_tests,
-    ConformanceTest, TestResult
+    ConformanceTestRunner,
+    ConformanceTestSuite,
+    TestCategory,
+    TestPriority,
+    TestEnvironment,
+    ConformanceSuiteStatus,
+    get_standard_conformance_tests,
+    ConformanceTest,
+    TestResult,
 )
 from services.algo_integration.best_execution import (
-    BestExecutionAnalyzer, BestExecutionPolicy, BestExecutionPolicyConfig,
-    AssetClass, OrderCategory, VenueType, ExecutionQualityLevel, ExecutionVenue,
-    FactorWeights, create_best_execution_policy, create_best_execution_analyzer,
-    get_standard_eu_venues
+    BestExecutionAnalyzer,
+    BestExecutionPolicy,
+    BestExecutionPolicyConfig,
+    AssetClass,
+    OrderCategory,
+    VenueType,
+    ExecutionQualityLevel,
+    ExecutionVenue,
+    FactorWeights,
+    create_best_execution_policy,
+    create_best_execution_analyzer,
+    get_standard_eu_venues,
 )
 from services.dora_integration.incident_interface.incident_classification import (
-    DORAIncidentClassification, IncidentClassificationConfig,
-    ClientImpactAssessment, DurationAssessment, EconomicImpactAssessment, DataLossAssessment
+    DORAIncidentClassification,
+    IncidentClassificationConfig,
+    ClientImpactAssessment,
+    DurationAssessment,
+    EconomicImpactAssessment,
+    DataLossAssessment,
 )
 from services.dora_integration.incident_interface.incident_reporting import (
-    DORAIncidentReporter, IncidentReportingConfig
+    DORAIncidentReporter,
+    IncidentReportingConfig,
 )
 from services.dora_integration.third_party.concentration_risk import (
-    DORAConcentrationRisk, ConcentrationRiskConfig
+    DORAConcentrationRisk,
+    ConcentrationRiskConfig,
 )
 from services.dora_integration.reporting.register_of_information import (
-    DORARegisterOfInformation, ROIDataGeneratorConfig
+    DORARegisterOfInformation,
+    ROIDataGeneratorConfig,
 )
-from services.ai_act.explainability import (
-    DecisionExplainer, create_decision_explainer
-)
-from services.gdpr.data_export import (
-    GDPRExportService
-)
-from services.gdpr.data_deletion import (
-    GDPRDeletionService, DataCategory
-)
+from services.ai_act.explainability import DecisionExplainer, create_decision_explainer
+from services.gdpr.data_export import GDPRExportService
+from services.gdpr.data_deletion import GDPRDeletionService, DataCategory
 from services.core.risk_controls.retention_policy import (
-    RetentionManager, RetentionPolicyConfig, RetentionPeriod
+    RetentionManager,
+    RetentionPolicyConfig,
+    RetentionPeriod,
 )
-from services.algo_integration.otr_monitor import (
-    OTRMonitor, OTRMonitorConfig
-)
-from services.core.risk_controls.pre_trade_controls import (
-    PreTradeControls
-)
+from services.algo_integration.otr_monitor import OTRMonitor, OTRMonitorConfig
+from services.core.risk_controls.pre_trade_controls import PreTradeControls
 from services.core.risk_controls.kill_switch import (
-    EnhancedKillSwitch, KillSwitchScope, KillSwitchTriggerReason
+    EnhancedKillSwitch,
+    KillSwitchScope,
+    KillSwitchTriggerReason,
 )
 from dataclasses import asdict
 
@@ -183,10 +221,12 @@ LATEST_TELEMETRY = {
     "broker_api_ok": False,
 }
 
+
 def start_telemetry_loop():
     def loop():
         import clock
         from core_config import ClockSyncConfig
+
         cfg = ClockSyncConfig(attempts=2)
         while True:
             try:
@@ -226,7 +266,7 @@ def start_telemetry_loop():
             except Exception:
                 pass
 
-            time.sleep(10) # Refresh telemetry every 10 seconds
+            time.sleep(10)  # Refresh telemetry every 10 seconds
 
     t = threading.Thread(target=loop, daemon=True, name="TelemetryMonitorThread")
     t.start()
@@ -234,9 +274,11 @@ def start_telemetry_loop():
 
 from fastapi.middleware.cors import CORSMiddleware
 
+
 def _make_api() -> Any:
     start_telemetry_loop()
     import fastapi
+
     app_klass = getattr(fastapi, "FastAPI")
     fastapi_app = app_klass()
     fastapi_app.add_middleware(
@@ -248,11 +290,13 @@ def _make_api() -> Any:
     )
     return fastapi_app
 
+
 api = _make_api()
 
 # Desktop/offline UI dependencies are bundled with the sidecar and served from
 # the same loopback origin as the API.
 from fastapi.staticfiles import StaticFiles
+
 _WEB_ASSETS_DIR = Path("web_assets")
 if _WEB_ASSETS_DIR.is_dir():
     api.mount("/assets", StaticFiles(directory=str(_WEB_ASSETS_DIR)), name="assets")
@@ -299,11 +343,7 @@ async def _global_auth_middleware(request, call_next):
     from starlette.responses import JSONResponse
 
     path = request.url.path or ""
-    if (
-        _API_AUTH_MODE == "off"
-        or request.method == "OPTIONS"
-        or _is_auth_exempt(path)
-    ):
+    if _API_AUTH_MODE == "off" or request.method == "OPTIONS" or _is_auth_exempt(path):
         return await call_next(request)
 
     provided = request.headers.get("X-API-Key")
@@ -332,17 +372,17 @@ async def _global_auth_middleware(request, call_next):
 # Изолированное подключение cross-sectional конвейера (/api/xs/*); не влияет на MVP.
 try:
     from xs_api import register_xs_routes as _register_xs_routes
+
     _register_xs_routes(api)
 except Exception as _xs_exc:  # pragma: no cover - не должно ломать запуск приложения
     import logging as _logging
+
     _logging.getLogger(__name__).warning("cross-sectional API not registered: %s", _xs_exc)
 
 # --------------------------- PRO MODE SYSTEM SERVICES ---------------------------
 from datetime import timedelta, timezone
-healthcheck_cfg = EnhancedHealthcheckConfig(
-    service_version="2.6.0",
-    service_name="RivenQuant Core"
-)
+
+healthcheck_cfg = EnhancedHealthcheckConfig(service_version="2.6.0", service_name="RivenQuant Core")
 global_health_check = EnhancedHealthcheck(healthcheck_cfg)
 
 # Register default checkers
@@ -350,33 +390,32 @@ global_health_check.register_dependency(
     name="Exchange client (Alpaca/Binance)",
     dependency_type=DependencyType.EXTERNAL_API,
     checker=ExternalAPIChecker("https://paper-api.alpaca.markets", name="Alpaca"),
-    is_critical=True
+    is_critical=True,
 )
 global_health_check.register_dependency(
     name="Market Data Feed",
     dependency_type=DependencyType.INTERNAL_SERVICE,
     checker=ExternalAPIChecker("https://data.alpaca.markets", name="Alpaca Data Feed"),
-    is_critical=True
+    is_critical=True,
 )
 global_health_check.register_dependency(
     name="System Database",
     dependency_type=DependencyType.DATABASE,
     checker=DatabaseChecker(),
-    is_critical=False
+    is_critical=False,
 )
 global_health_check.register_dependency(
     name="System Cache (Redis)",
     dependency_type=DependencyType.CACHE,
     checker=CacheChecker(),
-    is_critical=False
+    is_critical=False,
 )
 
 global_compliance_clock = ComplianceClock()
 global_compliance_clock.start_sync()
 
 alerting_cfg = AlertingConfig(
-    log_all_alerts=True,
-    slack_webhook_url="https://hooks.slack.com/services/mock/webhook"
+    log_all_alerts=True, slack_webhook_url="https://hooks.slack.com/services/mock/webhook"
 )
 global_alerting_service = AlertingService(alerting_cfg)
 
@@ -387,7 +426,7 @@ rule_cpu = global_alerting_service.create_rule(
     metric_name="cpu_percent",
     threshold_value=90.0,
     severity=AlertSeverity.HIGH,
-    description="Alert when CPU usage exceeds 90% for general operations."
+    description="Alert when CPU usage exceeds 90% for general operations.",
 )
 rule_latency = global_alerting_service.create_rule(
     name="High Exchange Latency",
@@ -395,7 +434,7 @@ rule_latency = global_alerting_service.create_rule(
     metric_name="latency_ms",
     threshold_value=1000.0,
     severity=AlertSeverity.CRITICAL,
-    description="Triggered when API response latency from exchange exceeds 1.0s."
+    description="Triggered when API response latency from exchange exceeds 1.0s.",
 )
 rule_drift = global_alerting_service.create_rule(
     name="Concept Drift detected",
@@ -403,20 +442,16 @@ rule_drift = global_alerting_service.create_rule(
     metric_name="psi_worst",
     threshold_value=0.1,
     severity=AlertSeverity.MEDIUM,
-    description="PSI metric shows drift on key pricing feature."
+    description="PSI metric shows drift on key pricing feature.",
 )
 
 # Trigger some default alerts for visualization
 global_alerting_service.trigger_alert(
-    rule_id=rule_drift.rule_id,
-    metric_value=0.12,
-    source="drift_monitor"
+    rule_id=rule_drift.rule_id, metric_value=0.12, source="drift_monitor"
 )
 
 # On-Call Rotation manager
-oncall_cfg = OnCallRotationConfig(
-    tier=OnCallTier.OPTION_C
-)
+oncall_cfg = OnCallRotationConfig(tier=OnCallTier.OPTION_C)
 global_oncall_manager = OnCallRotationManager(oncall_cfg)
 
 # Register default engineers
@@ -425,14 +460,14 @@ eng_john = global_oncall_manager.register_engineer(
     email="john.doe@rivenquant.com",
     phone="+1 (555) 0199",
     slack_handle="@johndoe",
-    team="Quant Core"
+    team="Quant Core",
 )
 eng_alice = global_oncall_manager.register_engineer(
     name="Alice Smith (DevOps Lead)",
     email="alice.smith@rivenquant.com",
     phone="+1 (555) 0188",
     slack_handle="@alicesmith",
-    team="SRE Team"
+    team="SRE Team",
 )
 
 # Create active shifts
@@ -444,25 +479,28 @@ global_oncall_manager.create_shift(
     engineer_id=eng_john.engineer_id,
     start_time=past_iso,
     end_time=future_iso,
-    escalation_path=EscalationPath.PRIMARY
+    escalation_path=EscalationPath.PRIMARY,
 )
 global_oncall_manager.create_shift(
     engineer_id=eng_alice.engineer_id,
     start_time=past_iso,
     end_time=future_iso,
-    escalation_path=EscalationPath.SECONDARY
+    escalation_path=EscalationPath.SECONDARY,
 )
 
 # Assign a dummy incident
 global_oncall_manager.assign_incident(
     title="High Concept Drift (f_volatility)",
     description="PSI worst feature exceeded threshold value of 0.1.",
-    priority=IncidentPriority.P2
+    priority=IncidentPriority.P2,
 )
 
 
 # ------------------ COMPLIANCE CENTRAL VARIABLES (TAB 8) ------------------
-from services.dora_integration.third_party.concentration_risk import SubstitutabilityLevel, AssessmentScope
+from services.dora_integration.third_party.concentration_risk import (
+    SubstitutabilityLevel,
+    AssessmentScope,
+)
 
 global_conformance_runner = ConformanceTestRunner()
 
@@ -480,14 +518,50 @@ global_best_execution_analyzer = BestExecutionAnalyzer(global_best_execution_pol
 
 # Pre-populate some mock best execution analyses for demonstration
 mock_orders = [
-    {"order_id": "ORD-001", "side": "BUY", "quantity": 1000, "submit_time_ms": int(time.time() * 1000) - 250},
-    {"order_id": "ORD-002", "side": "SELL", "quantity": 2500, "submit_time_ms": int(time.time() * 1000) - 180},
-    {"order_id": "ORD-003", "side": "BUY", "quantity": 500, "submit_time_ms": int(time.time() * 1000) - 120},
+    {
+        "order_id": "ORD-001",
+        "side": "BUY",
+        "quantity": 1000,
+        "submit_time_ms": int(time.time() * 1000) - 250,
+    },
+    {
+        "order_id": "ORD-002",
+        "side": "SELL",
+        "quantity": 2500,
+        "submit_time_ms": int(time.time() * 1000) - 180,
+    },
+    {
+        "order_id": "ORD-003",
+        "side": "BUY",
+        "quantity": 500,
+        "submit_time_ms": int(time.time() * 1000) - 120,
+    },
 ]
 mock_fills = [
-    {"price": 100.05, "quantity": 1000, "commission": 2.0, "fees": 0.5, "fill_time_ms": int(time.time() * 1000), "venue_mic": "XLON"},
-    {"price": 99.92, "quantity": 2500, "commission": 5.0, "fees": 1.2, "fill_time_ms": int(time.time() * 1000), "venue_mic": "XETR"},
-    {"price": 100.01, "quantity": 500, "commission": 1.0, "fees": 0.2, "fill_time_ms": int(time.time() * 1000), "venue_mic": "XAMS"},
+    {
+        "price": 100.05,
+        "quantity": 1000,
+        "commission": 2.0,
+        "fees": 0.5,
+        "fill_time_ms": int(time.time() * 1000),
+        "venue_mic": "XLON",
+    },
+    {
+        "price": 99.92,
+        "quantity": 2500,
+        "commission": 5.0,
+        "fees": 1.2,
+        "fill_time_ms": int(time.time() * 1000),
+        "venue_mic": "XETR",
+    },
+    {
+        "price": 100.01,
+        "quantity": 500,
+        "commission": 1.0,
+        "fees": 0.2,
+        "fill_time_ms": int(time.time() * 1000),
+        "venue_mic": "XAMS",
+    },
 ]
 mock_market = [
     {"bid": 100.00, "ask": 100.04, "mid": 100.02, "spread_bps": 4.0},
@@ -559,7 +633,12 @@ global_decision_explainer.explain_decision(
     action="BUY",
     symbol="AAPL",
     position_size=100.0,
-    features={"price_momentum": 0.75, "volatility_regime": 0.35, "rsi": 62.5, "risk_utilization": 0.42},
+    features={
+        "price_momentum": 0.75,
+        "volatility_regime": 0.35,
+        "rsi": 62.5,
+        "risk_utilization": 0.42,
+    },
     confidence=0.88,
 )
 global_decision_explainer.explain_decision(
@@ -567,34 +646,50 @@ global_decision_explainer.explain_decision(
     action="SELL",
     symbol="NVDA",
     position_size=50.0,
-    features={"price_momentum": 0.22, "volatility_regime": 0.68, "rsi": 28.0, "risk_utilization": 0.55},
+    features={
+        "price_momentum": 0.22,
+        "volatility_regime": 0.68,
+        "rsi": 28.0,
+        "risk_utilization": 0.55,
+    },
     confidence=0.74,
 )
 
 # Initialize GDPR and Retention components
-from services.gdpr.data_export import InMemoryUserRepository, InMemoryStrategiesRepository, InMemoryBacktestsRepository, InMemoryExecutionsRepository, InMemorySettingsRepository
+from services.gdpr.data_export import (
+    InMemoryUserRepository,
+    InMemoryStrategiesRepository,
+    InMemoryBacktestsRepository,
+    InMemoryExecutionsRepository,
+    InMemorySettingsRepository,
+)
 from services.gdpr.data_deletion import InMemoryDataRepository
-global_gdpr_export_service = GDPRExportService({
-    "users": InMemoryUserRepository(),
-    "strategies": InMemoryStrategiesRepository(),
-    "backtests": InMemoryBacktestsRepository(),
-    "executions": InMemoryExecutionsRepository(),
-    "settings": InMemorySettingsRepository()
-})
+
+global_gdpr_export_service = GDPRExportService(
+    {
+        "users": InMemoryUserRepository(),
+        "strategies": InMemoryStrategiesRepository(),
+        "backtests": InMemoryBacktestsRepository(),
+        "executions": InMemoryExecutionsRepository(),
+        "settings": InMemorySettingsRepository(),
+    }
+)
 mock_data_repo = InMemoryDataRepository()
-global_gdpr_deletion_service = GDPRDeletionService({
-    "account": mock_data_repo,
-    "profile": mock_data_repo,
-    "strategies": mock_data_repo,
-    "backtests": mock_data_repo,
-    "execution_logs": mock_data_repo,
-    "broker_credentials": mock_data_repo,
-    "analytics": mock_data_repo,
-    "notifications": mock_data_repo,
-    "sessions": mock_data_repo,
-    "disclaimers": mock_data_repo,
-    "audit_logs": mock_data_repo
-})
+global_gdpr_deletion_service = GDPRDeletionService(
+    {
+        "account": mock_data_repo,
+        "profile": mock_data_repo,
+        "strategies": mock_data_repo,
+        "backtests": mock_data_repo,
+        "execution_logs": mock_data_repo,
+        "broker_credentials": mock_data_repo,
+        "analytics": mock_data_repo,
+        "notifications": mock_data_repo,
+        "sessions": mock_data_repo,
+        "disclaimers": mock_data_repo,
+        "audit_logs": mock_data_repo,
+    }
+)
 global_retention_manager = RetentionManager(RetentionPolicyConfig())
 
 # Initialize OTR Monitor and Pre-trade controls
@@ -606,8 +701,10 @@ global_pre_trade_controls = PreTradeControls()
 try:
     from services.algo_integration.market_abuse import (
         MarketAbuseMonitor as _MarketAbuseMonitor,
-        OrderEvent as _MAOrderEvent, TradeEvent as _MATradeEvent,
+        OrderEvent as _MAOrderEvent,
+        TradeEvent as _MATradeEvent,
     )
+
     global_market_abuse_monitor = _MarketAbuseMonitor()
 except Exception:  # pragma: no cover - surveillance optional
     global_market_abuse_monitor = None
@@ -616,15 +713,20 @@ except Exception:  # pragma: no cover - surveillance optional
 # Process-wide instrument master (FIGI/CUSIP/ISIN/OCC symbology resolution).
 try:
     from services.instrument_master import get_default_master as _get_instrument_master
+
     global_instrument_master = _get_instrument_master()
 except Exception:  # pragma: no cover
     global_instrument_master = None
+
+
 def _mock_cancel_orders(scope, scope_id):
     import logging
+
     logging.getLogger(__name__).info(f"Mock cancel orders called for scope {scope} / {scope_id}")
     return 8
-global_kill_switch = EnhancedKillSwitch(order_cancellation_callback=_mock_cancel_orders)
 
+
+global_kill_switch = EnhancedKillSwitch(order_cancellation_callback=_mock_cancel_orders)
 
 
 def _check_auth(x_api_key: str = Header(..., alias="X-API-Key")) -> None:
@@ -737,9 +839,11 @@ MVP_DEMO_DISCLAIMER = (
     "Connect live credentials / feed a real data source to replace it."
 )
 
+
 class SystemStatePayload(BaseModel):
     active_asset: str
     active_adapter: str
+
 
 def get_default_config_for_asset(config_type: str, asset: str) -> str:
     asset = asset.lower()
@@ -775,15 +879,19 @@ def get_default_config_for_asset(config_type: str, asset: str) -> str:
         }
     return mapping.get(config_type, "configs/sandbox.yaml")
 
+
 class OrderAction(BaseModel):
     id: str
+
 
 class YamlSavePayload(BaseModel):
     path: str
     content: str
 
+
 class ApplyCalibrationPayload(BaseModel):
     path: str
+
 
 class VerifyIngestPayload(BaseModel):
     provider: str
@@ -791,10 +899,10 @@ class VerifyIngestPayload(BaseModel):
     api_secret: str
 
 
-
 class QuantizerSavePayload(BaseModel):
     strict_filters: bool
     enforce_percent_price_by_side: bool
+
 
 class SaveBacktestSettingsPayload(BaseModel):
     config_path: str = "configs/config_sim.yaml"
@@ -830,24 +938,26 @@ class SaveBacktestSettingsPayload(BaseModel):
     ws_skips: bool
     ws_path: str
 
+
 class RunJobPayload(BaseModel):
     job: str
     params: Dict[str, Any]
 
+
 class CopilotPayload(BaseModel):
     message: str
+
 
 class TerminalCommand(BaseModel):
     command: str
     cwd: str | None = None
 
+
 @api.get("/api/system_state")
 def api_get_system_state():
     with ACTIVE_STATE_LOCK:
-        return {
-            "active_asset": ACTIVE_ASSET,
-            "active_adapter": ACTIVE_ADAPTER
-        }
+        return {"active_asset": ACTIVE_ASSET, "active_adapter": ACTIVE_ADAPTER}
+
 
 @api.post("/api/system_state")
 def api_post_system_state(payload: SystemStatePayload):
@@ -870,6 +980,7 @@ def api_post_system_state(payload: SystemStatePayload):
         ACTIVE_ADAPTER = adapter
         return {"status": "success", "active_asset": ACTIVE_ASSET, "active_adapter": ACTIVE_ADAPTER}
 
+
 class SaveStrategyPayload(BaseModel):
     asset: str
     # Optional: not used by the handler (the file is keyed by asset). Kept for
@@ -887,6 +998,7 @@ class ValidateStrategyPayload(BaseModel):
 class SaveStrategyParamsPayload(BaseModel):
     asset: str
     params: Dict[str, Any]
+
 
 STRATEGY_TEMPLATES = {
     "equity": {
@@ -1277,7 +1389,7 @@ class EquityMACDCrossover(BaseSignalPolicy):
             orders.append(self.market_order(side=Side.SELL, qty=self.order_qty, ctx=ctx, tif=self.tif))
 
         return orders
-"""
+""",
     },
     "forex": {
         "Grid Trading with Carry (Сеточная со свопами)": """# strategies/custom_forex.py
@@ -1662,7 +1774,7 @@ class ForexBreakoutPullback(BaseSignalPolicy):
             orders.append(self.market_order(side=side, qty=self.order_qty, ctx=ctx, tif=self.tif))
 
         return orders
-"""
+""",
     },
     "futures": {
         "Calendar Spread Arbitrage (Календарный арбитраж)": """# strategies/custom_futures.py
@@ -2048,7 +2160,7 @@ class FuturesORBStrategy(BaseSignalPolicy):
             orders.append(self.market_order(side=side, qty=self.order_qty, ctx=ctx, tif=self.tif))
 
         return orders
-"""
+""",
     },
     "crypto": {
         "Funding Rate Arbitrage (Арбитраж ставок финансирования)": """# strategies/custom_crypto.py
@@ -2389,7 +2501,7 @@ class CryptoVWAPTrendFollow(BaseSignalPolicy):
             orders.append(self.market_order(side=Side.SELL, qty=self.order_qty, ctx=ctx, tif=self.tif))
 
         return orders
-"""
+""",
     },
     "options": {
         "Delta Neutral Hedging (Дельта-нейтральное хеджирование)": """# strategies/custom_options.py
@@ -2688,21 +2800,23 @@ class OptionsCalendarSpread(BaseSignalPolicy):
             orders.append(self.market_order(side=Side.SELL, qty=self.order_qty, ctx=ctx, tif=self.tif, client_tag="CLOSE_LONG_TERM"))
 
         return orders
-"""
-    }
+""",
+    },
 }
+
 
 @api.get("/api/strategy/templates")
 def api_get_strategy_templates(asset: str):
     asset_key = asset.lower()
     return STRATEGY_TEMPLATES.get(asset_key, {})
 
+
 @api.get("/api/strategy")
 def api_get_strategy(asset: str):
     asset_key = asset.lower()
     filepath = os.path.join("strategies", f"custom_{asset_key}.py")
     params_filepath = os.path.join("strategies", f"custom_{asset_key}_params.json")
-    
+
     code = ""
     if os.path.exists(filepath):
         try:
@@ -2716,7 +2830,7 @@ def api_get_strategy(asset: str):
         if templates:
             first_key = list(templates.keys())[0]
             code = templates[first_key]
-            
+
     params = {}
     if os.path.exists(params_filepath):
         try:
@@ -2726,56 +2840,68 @@ def api_get_strategy(asset: str):
             params = {}
     else:
         if asset_key == "equity":
-            params = {"lookback": 20, "enter_threshold": 2.0, "exit_threshold": 0.5, "order_qty": 10}
+            params = {
+                "lookback": 20,
+                "enter_threshold": 2.0,
+                "exit_threshold": 0.5,
+                "order_qty": 10,
+            }
         elif asset_key == "forex":
-            params = {"grid_levels": 5, "pip_step": 0.0010, "order_qty": 10000, "swap_long": 0.00008, "swap_short": -0.00012}
+            params = {
+                "grid_levels": 5,
+                "pip_step": 0.0010,
+                "order_qty": 10000,
+                "swap_long": 0.00008,
+                "swap_short": -0.00012,
+            }
         elif asset_key == "futures":
             params = {"contract": "ES", "balance": 100000, "order_qty": 1}
         elif asset_key == "crypto":
             params = {"order_qty": 0.001}
         else:
             params = {"order_qty": 10}
-            
-    return {
-        "code": code,
-        "params": params
-    }
+
+    return {"code": code, "params": params}
+
 
 @api.post("/api/save_strategy")
 def api_save_strategy(payload: SaveStrategyPayload):
     asset = payload.asset.lower()
     code = payload.code
     params = payload.params
-    
+
     # 1. Test compilation syntax
     filepath = os.path.join("strategies", f"custom_{asset}.py")
     try:
         compile(code, filepath, "exec")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Ошибка синтаксиса Python: {str(e)}")
-        
+
     # 2. Write code and params to disk
     try:
         os.makedirs("strategies", exist_ok=True)
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(code)
-        
+
         # Save params to json file
         params_filepath = os.path.join("strategies", f"custom_{asset}_params.json")
         with open(params_filepath, "w", encoding="utf-8") as f:
             json.dump(params, f, indent=2, ensure_ascii=False)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Не удалось записать файлы стратегии: {str(e)}")
-        
+        raise HTTPException(
+            status_code=500, detail=f"Не удалось записать файлы стратегии: {str(e)}"
+        )
+
     # 3. Dynamic import verification
     import importlib.util
     import sys
+
     try:
         spec = importlib.util.spec_from_file_location(f"strategies.custom_{asset}", filepath)
         module = importlib.util.module_from_spec(spec)
         sys.modules[f"strategies.custom_{asset}"] = module
         spec.loader.exec_module(module)
-        
+
         # Verify if it contains a valid Strategy subclass with decide() method
         found_class = None
         for name, obj in vars(module).items():
@@ -2783,22 +2909,19 @@ def api_save_strategy(payload: SaveStrategyPayload):
                 if hasattr(obj, "decide") and callable(getattr(obj, "decide")):
                     found_class = name
                     break
-                    
+
         if not found_class:
             return {
                 "status": "warning",
-                "message": "Файл успешно сохранен и скомпилирован, но в нем не найдено пользовательского класса с методом decide()."
+                "message": "Файл успешно сохранен и скомпилирован, но в нем не найдено пользовательского класса с методом decide().",
             }
-            
+
         return {
             "status": "success",
-            "message": f"Стратегия успешно скомпилирована! Класс '{found_class}' загружен и готов к бэктесту."
+            "message": f"Стратегия успешно скомпилирована! Класс '{found_class}' загружен и готов к бэктесту.",
         }
     except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Ошибка выполнения / импорта: {str(e)}"
-        }
+        return {"status": "error", "message": f"Ошибка выполнения / импорта: {str(e)}"}
 
 
 @api.post("/api/strategy/validate")
@@ -2818,15 +2941,23 @@ def api_validate_strategy(payload: ValidateStrategyPayload):
             detail=f"Ошибка синтаксиса Python, строка {exc.lineno}: {exc.msg}",
         )
     classes = [
-        node.name for node in tree.body if isinstance(node, ast.ClassDef)
-        and any(isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == "decide"
-                for item in node.body)
+        node.name
+        for node in tree.body
+        if isinstance(node, ast.ClassDef)
+        and any(
+            isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == "decide"
+            for item in node.body
+        )
     ]
     return {
         "status": "success" if classes else "warning",
-        "valid": True, "classes_with_decide": classes,
-        "message": (f"Синтаксис корректен; найден класс {classes[0]} с decide()."
-                    if classes else "Синтаксис корректен, но класс с методом decide() не найден."),
+        "valid": True,
+        "classes_with_decide": classes,
+        "message": (
+            f"Синтаксис корректен; найден класс {classes[0]} с decide()."
+            if classes
+            else "Синтаксис корректен, но класс с методом decide() не найден."
+        ),
         "written": False,
     }
 
@@ -2845,25 +2976,27 @@ def api_save_strategy_params(payload: SaveStrategyParamsPayload):
         raise HTTPException(status_code=500, detail=f"Не удалось сохранить параметры: {exc}")
     return {"status": "success", "message": "Параметры сохранены отдельно от кода.", "path": path}
 
+
 class OptimizeParamsPayload(BaseModel):
     asset: str
     params_range: Dict[str, Any]
     metric: str = "sharpe"
+
 
 @api.post("/api/optimize")
 def api_optimize(payload: OptimizeParamsPayload):
     asset = payload.asset.lower()
     params_range = payload.params_range
     metric = payload.metric
-    
+
     # Verify strategy file exists
     filepath = os.path.join("strategies", f"custom_{asset}.py")
     if not os.path.exists(filepath):
         raise HTTPException(
             status_code=400,
-            detail=f"Файл стратегии для {asset} не найден. Сначала запрограммируйте логику (Этап 2)."
+            detail=f"Файл стратегии для {asset} не найден. Сначала запрограммируйте логику (Этап 2).",
         )
-        
+
     py = sys.executable
     cmd = [
         py,
@@ -2875,30 +3008,27 @@ def api_optimize(payload: OptimizeParamsPayload):
         "--metric",
         metric,
         "--out",
-        f"logs/optimization_{asset}.json"
+        f"logs/optimization_{asset}.json",
     ]
-    
+
     log_file = os.path.join(GLOBAL_LOGS_DIR, "optimize.log")
     pid_file = os.path.join(".run", "optimize.pid")
-    
+
     if background_running(pid_file):
         try:
             stop_background(pid_file)
         except Exception:
             pass
-            
+
     if os.path.exists(log_file):
         try:
             os.remove(log_file)
         except Exception:
             pass
-            
+
     pid = start_background(cmd, pid_file=pid_file, log_file=log_file)
-    return {
-        "pid": pid,
-        "log": log_file,
-        "results_file": f"logs/optimization_{asset}.json"
-    }
+    return {"pid": pid, "log": log_file, "results_file": f"logs/optimization_{asset}.json"}
+
 
 @api.get("/api/optimize/results")
 def api_optimize_results(asset: str):
@@ -2912,9 +3042,11 @@ def api_optimize_results(asset: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 class SaveCredentialsPayload(BaseModel):
     adapter: str
     keys: Dict[str, str]
+
 
 @api.post("/api/save_credentials")
 def api_save_credentials(payload: SaveCredentialsPayload):
@@ -2930,11 +3062,11 @@ def api_save_credentials(payload: SaveCredentialsPayload):
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error", "Vault write failed"))
         return {"status": "success", **result}
-    
+
     # 1. Update os.environ in memory for spawned processes
     for k, v in keys.items():
         os.environ[k] = v
-        
+
     # 2. Persist to .env file
     env_path = ".env"
     env_lines = []
@@ -2944,7 +3076,7 @@ def api_save_credentials(payload: SaveCredentialsPayload):
                 env_lines = f.readlines()
         except Exception:
             pass
-            
+
     updated_keys = set()
     new_lines = []
     for line in env_lines:
@@ -2962,18 +3094,18 @@ def api_save_credentials(payload: SaveCredentialsPayload):
                 new_lines.append(line)
         else:
             new_lines.append(line)
-            
+
     # Append any keys that weren't in .env already
     for k, v in keys.items():
         if k not in updated_keys:
             new_lines.append(f"{k}={v}\n")
-            
+
     try:
         with open(env_path, "w", encoding="utf-8") as f:
             f.writelines(new_lines)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to persist keys to .env: {str(e)}")
-        
+
     return {"status": "success", "message": f"Credentials updated for adapter {adapter}"}
 
     return {"status": "success", "message": f"Credentials updated for adapter {adapter}"}
@@ -2987,11 +3119,15 @@ def api_compliance_clock_status():
     # attribute never existed, so this always returned a fake constant 12.4).
     offset_ms = getattr(status, "offset_ms", None)
     drift_us = round(float(offset_ms) * 1000.0, 1) if isinstance(offset_ms, (int, float)) else None
-    severity = status.severity.value if hasattr(status, "severity") and hasattr(status.severity, "value") else "green"
+    severity = (
+        status.severity.value
+        if hasattr(status, "severity") and hasattr(status.severity, "value")
+        else "green"
+    )
     synced = getattr(status, "synced", None)
     return {
         "status": "synchronized" if severity != "critical" else "drift_detected",
-        "drift_microseconds": drift_us,            # None when NTP unreachable — no fabricated value
+        "drift_microseconds": drift_us,  # None when NTP unreachable — no fabricated value
         "drift_measured": drift_us is not None,
         "severity": severity,
         "last_sync": datetime.now().isoformat(),
@@ -3001,12 +3137,13 @@ def api_compliance_clock_status():
         "simulated": False,
     }
 
+
 @api.post("/api/compliance/conformance/run")
 def api_compliance_conformance_run(payload: Dict[str, Any] = None):
     algo = "custom_strategy"
     if payload:
         algo = payload.get("algo_id", algo)
-    
+
     suite = ConformanceTestSuite(
         name="RTS 6 Pre-Deployment Suite",
         algorithm_id=algo,
@@ -3014,27 +3151,32 @@ def api_compliance_conformance_run(payload: Dict[str, Any] = None):
     )
     for t in get_standard_conformance_tests():
         suite.add_test(t)
-        
+
     class ConformanceMockExecutor:
         def execute(self, test: ConformanceTest) -> ConformanceTest:
             test.result = TestResult.PASS
             test.details = f"Simulated controlled testing passed for {test.test_id}. Verified bounds for {test.rts_reference}."
             return test
-    
+
     global_conformance_runner.register_executor(TestCategory.KILL_SWITCH, ConformanceMockExecutor())
     global_conformance_runner.register_executor(TestCategory.PRE_TRADE, ConformanceMockExecutor())
     global_conformance_runner.register_executor(TestCategory.CLOCK_SYNC, ConformanceMockExecutor())
-    global_conformance_runner.register_executor(TestCategory.RECORD_KEEPING, ConformanceMockExecutor())
-    
+    global_conformance_runner.register_executor(
+        TestCategory.RECORD_KEEPING, ConformanceMockExecutor()
+    )
+
     run_suite = global_conformance_runner.run_suite(suite, executed_by="Compliance Auditor")
     out = run_suite.to_dict()
     # Honest: results come from a mock executor that forces PASS — this is a
     # demonstration harness, not a real conformance run against a venue/gateway.
     out["simulated"] = True
     out["data_source"] = "mock_executor"
-    out["disclaimer"] = ("Conformance results are produced by a simulated executor "
-                         "(forced PASS) for demonstration; not a certified RTS 6 run.")
+    out["disclaimer"] = (
+        "Conformance results are produced by a simulated executor "
+        "(forced PASS) for demonstration; not a certified RTS 6 run."
+    )
     return out
+
 
 @api.get("/api/compliance/best-execution/report")
 def api_compliance_best_execution_report():
@@ -3043,15 +3185,19 @@ def api_compliance_best_execution_report():
     venues = []
     for ac in [AssetClass.EQUITY]:
         for v in global_best_execution_policy.get_venues(ac):
-            venues.append({
-                "mic": v.mic,
-                "name": v.name,
-                "type": v.venue_type.value if hasattr(v.venue_type, "value") else str(v.venue_type),
-                "ranking": v.ranking,
-                "fill_rate": float(v.fill_rate_pct),
-                "latency_ms": float(v.avg_latency_ms),
-                "slippage_bps": float(v.avg_spread_bps)
-            })
+            venues.append(
+                {
+                    "mic": v.mic,
+                    "name": v.name,
+                    "type": (
+                        v.venue_type.value if hasattr(v.venue_type, "value") else str(v.venue_type)
+                    ),
+                    "ranking": v.ranking,
+                    "fill_rate": float(v.fill_rate_pct),
+                    "latency_ms": float(v.avg_latency_ms),
+                    "slippage_bps": float(v.avg_spread_bps),
+                }
+            )
     return {
         "summary": metrics,
         "analyses": analyses,
@@ -3065,6 +3211,7 @@ def api_compliance_best_execution_report():
         "disclaimer": MVP_DEMO_DISCLAIMER,
     }
 
+
 @api.post("/api/dora/incidents/report")
 def api_dora_incidents_report(payload: Dict[str, Any]):
     title = payload.get("title", "ICT Incident")
@@ -3073,55 +3220,64 @@ def api_dora_incidents_report(payload: Dict[str, Any]):
     duration_mins = float(payload.get("duration_minutes", 10.0))
     clients_affected = int(payload.get("clients_affected", 0))
     data_loss = payload.get("data_loss_type", "none")
-    
+
     import uuid
+
     client_impact = ClientImpactAssessment(total_clients_affected=clients_affected)
-    duration = DurationAssessment(total_duration_hours=duration_mins / 60.0, service_unavailability_hours=duration_mins / 60.0)
+    duration = DurationAssessment(
+        total_duration_hours=duration_mins / 60.0, service_unavailability_hours=duration_mins / 60.0
+    )
     economic_impact = EconomicImpactAssessment(direct_financial_losses_eur=financial_impact)
     data_loss_assessment = DataLossAssessment(data_compromised=(data_loss != "none"))
-    
+
     assessment = global_dora_classification.classify_incident(
         incident_id=f"INC-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}",
         client_impact=client_impact,
         duration=duration,
         economic_impact=economic_impact,
-        data_loss=data_loss_assessment
+        data_loss=data_loss_assessment,
     )
-    
+
     assessment_dict = {
         "classification_id": assessment.classification_id,
         "incident_id": assessment.incident_id,
-        "classification": assessment.classification.value if hasattr(assessment.classification, "value") else str(assessment.classification),
+        "classification": (
+            assessment.classification.value
+            if hasattr(assessment.classification, "value")
+            else str(assessment.classification)
+        ),
         "is_major": assessment.is_major,
         "criteria_count": assessment.criteria_count,
-        "classification_rationale": assessment.classification_rationale
+        "classification_rationale": assessment.classification_rationale,
     }
-    
+
     report_payload = {}
     if assessment.is_major:
         report = global_dora_reporter.generate_initial_notification(
             incident_id=assessment.incident_id,
             detection_datetime=datetime.now().isoformat(),
             classification_datetime=datetime.now().isoformat(),
-            brief_description=f"{title}: {desc}"
+            brief_description=f"{title}: {desc}",
         )
         report_payload = report.to_dict() if hasattr(report, "to_dict") else {}
-        
+
     return {
         "assessment": assessment_dict,
         "is_major": assessment.is_major,
         "report": report_payload,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
+
 
 @api.get("/api/dora/concentration-risk")
 def api_dora_concentration_risk():
     import dataclasses
     from enum import Enum
-    
+
     def _as_dict(obj):
         if dataclasses.is_dataclass(obj):
             d = dataclasses.asdict(obj)
+
             def stringify_enums(x):
                 if isinstance(x, dict):
                     return {k: stringify_enums(v) for k, v in x.items()}
@@ -3130,10 +3286,13 @@ def api_dora_concentration_risk():
                 elif isinstance(x, Enum):
                     return x.value
                 return x
+
             return stringify_enums(d)
         return str(obj)
 
-    metrics = [_as_dict(m) for m in global_dora_concentration_risk.calculate_concentration_metrics()]
+    metrics = [
+        _as_dict(m) for m in global_dora_concentration_risk.calculate_concentration_metrics()
+    ]
     risks = [_as_dict(r) for r in global_dora_concentration_risk.get_all_risks()]
     dependencies = [_as_dict(d) for d in global_dora_concentration_risk.get_all_dependencies()]
     status = global_dora_concentration_risk.get_concentration_status()
@@ -3141,7 +3300,7 @@ def api_dora_concentration_risk():
         status = status.value
     else:
         status = str(status)
-        
+
     return {
         "status": status,
         "metrics": metrics,
@@ -3154,97 +3313,122 @@ def api_dora_concentration_risk():
         "disclaimer": MVP_DEMO_DISCLAIMER,
     }
 
+
 @api.post("/api/dora/roi/generate")
 def api_dora_roi_generate():
     import uuid
     import os
     import json
-    from services.dora_integration.reporting.register_of_information import ContractType, ServiceType
-    
+    from services.dora_integration.reporting.register_of_information import (
+        ContractType,
+        ServiceType,
+    )
+
     contract1 = global_dora_roi.add_contract(
         contract_type=ContractType.OUTSOURCING,
         service_types_provided=[ServiceType.CLOUD_COMPUTING.value],
-        contract_start_date="2025-09-30"
+        contract_start_date="2025-09-30",
     )
     global_dora_roi.add_service(
         contract_reference=contract1.contract_reference,
         service_name="Cloud Compute and Storage",
-        service_type=ServiceType.CLOUD_COMPUTING
+        service_type=ServiceType.CLOUD_COMPUTING,
     )
-    
+
     package = global_dora_roi.generate_roi_data_package()
     xml_content = global_dora_roi.export_package_to_xml(package)
     json_content = global_dora_roi.export_package_to_json(package)
-    
+
     os.makedirs("state/dora", exist_ok=True)
     xml_path = "state/dora/roi_report.xml"
     json_path = "state/dora/roi_report.json"
-    
+
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_content)
-        
+
     with open(json_path, "w", encoding="utf-8") as f:
         f.write(json_content)
-        
+
     roi_dict = {}
     try:
         roi_dict = json.loads(json_content)
     except Exception:
         pass
-            
+
     return {
         "status": "success",
         "xml_report_path": str(xml_path),
         "json_report_path": str(json_path),
-        "roi_summary": roi_dict
+        "roi_summary": roi_dict,
     }
+
 
 @api.post("/api/dora/bcp/simulate")
 def api_dora_bcp_simulate(payload: Dict[str, Any]):
     scenario_name = payload.get("scenario", "AWS Outage")
-    
-    from services.core.risk_controls.bcp import BusinessContinuityPlan, BCPScenario, RecoveryProcedure, RecoveryStep
-    
+
+    from services.core.risk_controls.bcp import (
+        BusinessContinuityPlan,
+        BCPScenario,
+        RecoveryProcedure,
+        RecoveryStep,
+    )
+
     scenario = BCPScenario(
         scenario_id="SCEN-901",
         name=scenario_name,
-        description=f"Simulated disaster recovery check for {scenario_name}"
+        description=f"Simulated disaster recovery check for {scenario_name}",
     )
-    
+
     steps = [
-        RecoveryStep(step_number=1, action="Detections and alerting triggers activated.", expected_duration_minutes=2),
-        RecoveryStep(step_number=2, action="Failover DNS redirecting traffic to secondary region.", expected_duration_minutes=5),
-        RecoveryStep(step_number=3, action="Restoring read-replicas state database.", expected_duration_minutes=15),
-        RecoveryStep(step_number=4, action="Re-establishing API broker gateways connections.", expected_duration_minutes=5)
+        RecoveryStep(
+            step_number=1,
+            action="Detections and alerting triggers activated.",
+            expected_duration_minutes=2,
+        ),
+        RecoveryStep(
+            step_number=2,
+            action="Failover DNS redirecting traffic to secondary region.",
+            expected_duration_minutes=5,
+        ),
+        RecoveryStep(
+            step_number=3,
+            action="Restoring read-replicas state database.",
+            expected_duration_minutes=15,
+        ),
+        RecoveryStep(
+            step_number=4,
+            action="Re-establishing API broker gateways connections.",
+            expected_duration_minutes=5,
+        ),
     ]
-    
+
     proc = RecoveryProcedure(
         procedure_id="PROC-901",
         name="Emergency Failover",
         description="BCP Failover Plan",
         steps=steps,
         recovery_time_objective_minutes=30,
-        recovery_point_objective_minutes=5
+        recovery_point_objective_minutes=5,
     )
-    
+
     scenario.recovery_procedure = proc
-    
+
     return {
         "status": "activated",
         "scenario": scenario_name,
         "rto_target_seconds": 120,
         "steps": [s.action for s in proc.steps],
-        "completed_at": datetime.now().isoformat()
+        "completed_at": datetime.now().isoformat(),
     }
+
 
 @api.get("/api/ai-act/explain/recent")
 def api_ai_act_explain_recent():
     explanations = [e.to_dict() for e in global_decision_explainer.get_recent_explanations()]
     stats = global_decision_explainer.get_explanation_statistics()
-    return {
-        "explanations": explanations,
-        "stats": stats
-    }
+    return {"explanations": explanations, "stats": stats}
+
 
 @api.get("/api/ai-act/explain/{transaction_id}")
 def api_ai_act_explain(transaction_id: str):
@@ -3255,26 +3439,32 @@ def api_ai_act_explain(transaction_id: str):
         raise HTTPException(
             status_code=404,
             detail=f"No recorded decision/explanation for transaction_id '{transaction_id}'. "
-                   "Explanations are only returned for real, logged decisions (no synthetic evidence).",
+            "Explanations are only returned for real, logged decisions (no synthetic evidence).",
         )
     res = exp.to_dict()
-    res["feature_importance"] = {fc["feature_name"]: fc["contribution"] for fc in res["feature_contributions"]}
+    res["feature_importance"] = {
+        fc["feature_name"]: fc["contribution"] for fc in res["feature_contributions"]
+    }
     res["rational_explanation"] = res["regulatory_text"]
     return res
+
 
 @api.post("/api/ai-act/oversight/veto")
 def api_ai_act_oversight_veto(payload: Dict[str, Any]):
     veto_active = payload.get("veto_active", False)
     global_alerting_service.trigger_alert(
-        rule_id="VETO-TRIGGER",
-        metric_value=1.0 if veto_active else 0.0,
-        source="human_oversight"
+        rule_id="VETO-TRIGGER", metric_value=1.0 if veto_active else 0.0, source="human_oversight"
     )
     return {
         "status": "success",
         "veto_active": veto_active,
-        "message": "AI trade execution pipeline disarmed by human veto." if veto_active else "AI pipeline re-armed."
+        "message": (
+            "AI trade execution pipeline disarmed by human veto."
+            if veto_active
+            else "AI pipeline re-armed."
+        ),
     }
+
 
 @api.get("/api/ai-act/conformity/status")
 def api_ai_act_conformity_status():
@@ -3291,9 +3481,12 @@ def api_ai_act_conformity_status():
         # verified per-component conformity assessment.
         "simulated": True,
         "data_source": "demo_checklist",
-        "disclaimer": ("Static AI-Act readiness checklist for demonstration; not a "
-                       "verified conformity assessment of live components."),
+        "disclaimer": (
+            "Static AI-Act readiness checklist for demonstration; not a "
+            "verified conformity assessment of live components."
+        ),
     }
+
 
 @api.post("/api/gdpr/export")
 def api_gdpr_export(payload: Dict[str, Any]):
@@ -3317,6 +3510,7 @@ def api_gdpr_export(payload: Dict[str, Any]):
 def api_gdpr_download(request_id: str):
     """Serve the real GDPR data-subject export ZIP for a completed request."""
     from fastapi.responses import Response
+
     try:
         req = global_gdpr_export_service.get_export_request(request_id)
     except Exception:
@@ -3329,6 +3523,7 @@ def api_gdpr_download(request_id: str):
         headers={"Content-Disposition": f'attachment; filename="gdpr_export_{request_id}.zip"'},
     )
 
+
 @api.post("/api/gdpr/delete")
 def api_gdpr_delete(payload: Dict[str, Any]):
     client_id = payload.get("client_id", "client_default")
@@ -3340,32 +3535,36 @@ def api_gdpr_delete(payload: Dict[str, Any]):
                 DataCategory.PROFILE,
                 DataCategory.STRATEGIES,
                 DataCategory.BACKTESTS,
-                DataCategory.EXECUTION_LOGS
-            ]
+                DataCategory.EXECUTION_LOGS,
+            ],
         )
         req = global_gdpr_deletion_service.execute_deletion(req)
         status = req.status.value if hasattr(req.status, "value") else str(req.status)
         return {
             "status": status,
             "request_id": req.request_id,
-            "message": f"Client {client_id} data successfully anonymized."
+            "message": f"Client {client_id} data successfully anonymized.",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api.post("/api/compliance/retention/hold")
 def api_compliance_retention_hold(payload: Dict[str, Any]):
     active = payload.get("active", False)
     if active:
-        global_retention_manager.set_legal_hold("REG-2026-AUDIT", "REG-2026-AUDIT", "National Competent Authority investigation.")
+        global_retention_manager.set_legal_hold(
+            "REG-2026-AUDIT", "REG-2026-AUDIT", "National Competent Authority investigation."
+        )
     else:
         global_retention_manager.release_legal_hold("REG-2026-AUDIT")
-        
+
     return {
         "status": "success",
         "legal_hold_active": global_retention_manager._metrics.held_records > 0,
-        "hold_details": "Legal hold applied under NCA request." if active else "No active holds."
+        "hold_details": "Legal hold applied under NCA request." if active else "No active holds.",
     }
+
 
 @api.get("/api/compliance/retention/ledger")
 def api_compliance_retention_ledger():
@@ -3374,14 +3573,36 @@ def api_compliance_retention_ledger():
     # read from the live RetentionManager.
     held = int(global_retention_manager._metrics.held_records)
     rows = [
-        {"volume_id": "VOL-2024-H1", "created_at": "2024-06-30T17:00:00Z", "retention_period": "5_years", "purge_date": "2029-06-30T17:00:00Z", "sha256": "8f4817a3a968a3f8983995819777f9518d6ef7773f8aef2236a99a80392349de", "legal_hold": False},
-        {"volume_id": "VOL-2024-H2", "created_at": "2024-12-31T17:00:00Z", "retention_period": "5_years", "purge_date": "2029-12-31T17:00:00Z", "sha256": "d4e287a389ef8c8f828a2a868dfef65a12da777ea8e932454b8aef9f12da36ef", "legal_hold": False},
-        {"volume_id": "VOL-2025-H1", "created_at": "2025-06-30T17:00:00Z", "retention_period": "5_years", "purge_date": "2030-06-30T17:00:00Z", "sha256": "4b6847deefea9a868478fef871b68ea238cf789ae94d932ea8e9faef89234ea7", "legal_hold": held > 0},
+        {
+            "volume_id": "VOL-2024-H1",
+            "created_at": "2024-06-30T17:00:00Z",
+            "retention_period": "5_years",
+            "purge_date": "2029-06-30T17:00:00Z",
+            "sha256": "8f4817a3a968a3f8983995819777f9518d6ef7773f8aef2236a99a80392349de",
+            "legal_hold": False,
+        },
+        {
+            "volume_id": "VOL-2024-H2",
+            "created_at": "2024-12-31T17:00:00Z",
+            "retention_period": "5_years",
+            "purge_date": "2029-12-31T17:00:00Z",
+            "sha256": "d4e287a389ef8c8f828a2a868dfef65a12da777ea8e932454b8aef9f12da36ef",
+            "legal_hold": False,
+        },
+        {
+            "volume_id": "VOL-2025-H1",
+            "created_at": "2025-06-30T17:00:00Z",
+            "retention_period": "5_years",
+            "purge_date": "2030-06-30T17:00:00Z",
+            "sha256": "4b6847deefea9a868478fef871b68ea238cf789ae94d932ea8e9faef89234ea7",
+            "legal_hold": held > 0,
+        },
     ]
     for r in rows:
         r["simulated"] = True
         r["data_source"] = "demo_sample"
     return rows
+
 
 @api.get("/api/compliance/surveillance/otr")
 def api_compliance_surveillance_otr():
@@ -3430,33 +3651,74 @@ def api_compliance_record_execution(payload: RecordExecutionPayload):
     """
     _ma_alerts = []
     import time as _t
+
     _ma_ts = int(_t.time() * 1000)
     _ma_side = "BUY" if payload.quantity >= 0 else "SELL"
     if payload.is_cancellation:
         global_otr_monitor.record_cancellation(
-            venue=payload.venue, algorithm_id=payload.algo_id, instrument=payload.instrument)
+            venue=payload.venue, algorithm_id=payload.algo_id, instrument=payload.instrument
+        )
         if global_market_abuse_monitor is not None and _MAOrderEvent is not None:
-            _ma_alerts += [a.to_dict() for a in global_market_abuse_monitor.record_order(_MAOrderEvent(
-                ts_ms=_ma_ts, symbol=payload.instrument, account=payload.algo_id, side=_ma_side,
-                action="CANCEL", qty=abs(payload.quantity), price=float(payload.fill_price or 0),
-                order_id=str(payload.algo_id)))]
+            _ma_alerts += [
+                a.to_dict()
+                for a in global_market_abuse_monitor.record_order(
+                    _MAOrderEvent(
+                        ts_ms=_ma_ts,
+                        symbol=payload.instrument,
+                        account=payload.algo_id,
+                        side=_ma_side,
+                        action="CANCEL",
+                        qty=abs(payload.quantity),
+                        price=float(payload.fill_price or 0),
+                        order_id=str(payload.algo_id),
+                    )
+                )
+            ]
     else:
         global_otr_monitor.record_order(
-            venue=payload.venue, algorithm_id=payload.algo_id, instrument=payload.instrument,
-            quantity=abs(payload.quantity), is_modification=payload.is_modification)
+            venue=payload.venue,
+            algorithm_id=payload.algo_id,
+            instrument=payload.instrument,
+            quantity=abs(payload.quantity),
+            is_modification=payload.is_modification,
+        )
         if global_market_abuse_monitor is not None and _MAOrderEvent is not None:
-            _ma_alerts += [a.to_dict() for a in global_market_abuse_monitor.record_order(_MAOrderEvent(
-                ts_ms=_ma_ts, symbol=payload.instrument, account=payload.algo_id, side=_ma_side,
-                action="NEW", qty=abs(payload.quantity), price=float(payload.fill_price or 0),
-                order_id=str(payload.algo_id)))]
+            _ma_alerts += [
+                a.to_dict()
+                for a in global_market_abuse_monitor.record_order(
+                    _MAOrderEvent(
+                        ts_ms=_ma_ts,
+                        symbol=payload.instrument,
+                        account=payload.algo_id,
+                        side=_ma_side,
+                        action="NEW",
+                        qty=abs(payload.quantity),
+                        price=float(payload.fill_price or 0),
+                        order_id=str(payload.algo_id),
+                    )
+                )
+            ]
         if payload.fill_price and payload.quantity:
             global_otr_monitor.record_trade(
-                venue=payload.venue, algorithm_id=payload.algo_id,
-                instrument=payload.instrument, quantity=abs(payload.quantity))
+                venue=payload.venue,
+                algorithm_id=payload.algo_id,
+                instrument=payload.instrument,
+                quantity=abs(payload.quantity),
+            )
             if global_market_abuse_monitor is not None and _MATradeEvent is not None:
-                _ma_alerts += [a.to_dict() for a in global_market_abuse_monitor.record_trade(_MATradeEvent(
-                    ts_ms=_ma_ts, symbol=payload.instrument, account=payload.algo_id, side=_ma_side,
-                    qty=abs(payload.quantity), price=float(payload.fill_price)))]
+                _ma_alerts += [
+                    a.to_dict()
+                    for a in global_market_abuse_monitor.record_trade(
+                        _MATradeEvent(
+                            ts_ms=_ma_ts,
+                            symbol=payload.instrument,
+                            account=payload.algo_id,
+                            side=_ma_side,
+                            qty=abs(payload.quantity),
+                            price=float(payload.fill_price),
+                        )
+                    )
+                ]
     m = global_otr_monitor.get_metrics()
     return {
         "status": "success",
@@ -3469,9 +3731,11 @@ def api_compliance_record_execution(payload: RecordExecutionPayload):
         "simulated": False,
     }
 
+
 @api.post("/api/compliance/risk/pre-trade/update")
 def api_compliance_risk_pre_trade_update(payload: Dict[str, Any]):
     from decimal import Decimal as _D
+
     max_order_value = float(payload.get("max_order_value", 1000000.0))
     max_order_volume = float(payload.get("max_order_volume", 10000.0))
     price_collar_pct = float(payload.get("price_collar_pct", 5.0))
@@ -3495,6 +3759,7 @@ def api_compliance_risk_pre_trade_update(payload: Dict[str, Any]):
         "daily_loss_limit": daily_loss_limit,
     }
 
+
 @api.get("/api/compliance/risk/pre-trade/limits")
 def api_compliance_risk_pre_trade_limits():
     # Read the live engine config (reflects updates applied above).
@@ -3507,11 +3772,12 @@ def api_compliance_risk_pre_trade_limits():
         "data_source": "live_pre_trade_controls",
     }
 
+
 @api.post("/api/compliance/killswitch/trigger")
 def api_compliance_killswitch_trigger(payload: Dict[str, Any]):
     scope_str = payload.get("scope", "ALL")
     reason_str = payload.get("reason", "Operator manual panic halt")
-    
+
     # Map input scope_str to appropriate KillSwitchScope and scope_id
     if scope_str.upper() == "ALL":
         scope = KillSwitchScope.ALL
@@ -3522,17 +3788,19 @@ def api_compliance_killswitch_trigger(payload: Dict[str, Any]):
     else:
         scope = KillSwitchScope.VENUE
         scope_id = scope_str
-        
+
     reason = KillSwitchTriggerReason.MANUAL
-    
-    global_kill_switch.trigger(scope=scope, scope_id=scope_id, reason=reason, reason_detail=reason_str)
+
+    global_kill_switch.trigger(
+        scope=scope, scope_id=scope_id, reason=reason, reason_detail=reason_str
+    )
     # The kill switch HALTS new order flow; it does not itself cancel a fixed
     # number of resting orders (that is broker/OMS-side and asynchronous). Do
     # not fabricate a "cancelled_orders_count" — report the halt honestly.
     return {
         "status": "success",
         "message": f"Kill Switch tripped (scope '{scope_str}'): new order flow halted. "
-                   "Cancellation of resting orders is broker/OMS-side and async — verify with the broker.",
+        "Cancellation of resting orders is broker/OMS-side and async — verify with the broker.",
         "tripped": True,
         "scope": scope_str,
         "reason": reason_str,
@@ -3546,30 +3814,36 @@ def get_health_check_full():
     res = global_health_check.health(force_refresh=True)
     return res.to_dict()
 
+
 @api.get("/ready")
 def get_ready_probe():
     res = global_health_check.ready()
     return res.to_dict()
+
 
 @api.get("/live")
 def get_live_probe():
     res = global_health_check.live()
     return res.to_dict()
 
+
 @api.post("/api/clock/sync")
 def api_clock_sync(payload: Dict[str, Any] = None):
     status = global_compliance_clock.sync()
     return status.to_dict()
 
+
 @api.get("/api/clock/compliance_report")
 def api_clock_compliance():
     return global_compliance_clock.generate_compliance_report()
+
 
 @api.get("/api/alerts/rules")
 def api_get_alert_rules():
     with global_alerting_service._lock:
         rules = [asdict(r) for r in global_alerting_service._rules.values()]
     return rules
+
 
 @api.post("/api/alerts/rules")
 def api_create_alert_rule(payload: Dict[str, Any]):
@@ -3578,7 +3852,7 @@ def api_create_alert_rule(payload: Dict[str, Any]):
     threshold = float(payload.get("threshold_value", 0.0))
     comparison = payload.get("comparison", ">")
     severity_str = payload.get("severity", "medium").lower()
-    
+
     # Map severity string to enum
     severity = AlertSeverity.MEDIUM
     if severity_str == "info":
@@ -3602,6 +3876,7 @@ def api_create_alert_rule(payload: Dict[str, Any]):
     )
     return asdict(rule)
 
+
 @api.post("/api/alerts/rules/toggle")
 def api_toggle_alert_rule(payload: Dict[str, Any]):
     rule_id = payload.get("rule_id")
@@ -3615,10 +3890,12 @@ def api_toggle_alert_rule(payload: Dict[str, Any]):
             return asdict(rule)
     raise HTTPException(status_code=404, detail="Rule not found")
 
+
 @api.get("/api/alerts/active")
 def api_get_active_alerts():
     alerts = global_alerting_service.get_active_alerts()
     return [asdict(a) for a in alerts]
+
 
 @api.post("/api/alerts/acknowledge")
 def api_ack_alert(payload: Dict[str, Any]):
@@ -3630,6 +3907,7 @@ def api_ack_alert(payload: Dict[str, Any]):
     if alert:
         return asdict(alert)
     raise HTTPException(status_code=404, detail="Alert not found")
+
 
 @api.post("/api/alerts/resolve")
 def api_resolve_alert(payload: Dict[str, Any]):
@@ -3643,6 +3921,7 @@ def api_resolve_alert(payload: Dict[str, Any]):
         return asdict(alert)
     raise HTTPException(status_code=404, detail="Alert not found")
 
+
 @api.get("/api/oncall/schedule")
 def api_get_oncall_schedule():
     summary = global_oncall_manager.get_summary()
@@ -3650,12 +3929,8 @@ def api_get_oncall_schedule():
         shifts = [asdict(s) for s in global_oncall_manager._shifts.values()]
         engineers = [asdict(e) for e in global_oncall_manager._engineers.values()]
         incidents = [asdict(i) for i in global_oncall_manager._incidents.values()]
-    return {
-        "summary": summary,
-        "shifts": shifts,
-        "engineers": engineers,
-        "incidents": incidents
-    }
+    return {"summary": summary, "shifts": shifts, "engineers": engineers, "incidents": incidents}
+
 
 @api.post("/api/oncall/incident/acknowledge")
 def api_oncall_ack(payload: Dict[str, Any]):
@@ -3668,6 +3943,7 @@ def api_oncall_ack(payload: Dict[str, Any]):
         return asdict(inc)
     raise HTTPException(status_code=404, detail="Incident not found")
 
+
 @api.post("/api/oncall/incident/resolve")
 def api_oncall_resolve(payload: Dict[str, Any]):
     inc_id = payload.get("incident_id")
@@ -3678,6 +3954,7 @@ def api_oncall_resolve(payload: Dict[str, Any]):
     if inc:
         return asdict(inc)
     raise HTTPException(status_code=404, detail="Incident not found")
+
 
 @api.post("/api/telemetry/reset")
 def api_telemetry_reset():
@@ -3693,6 +3970,7 @@ def api_telemetry_reset():
 class TestConnectionPayload(BaseModel):
     vendor: str
 
+
 @api.get("/api/adapters/status")
 def api_adapters_status():
     # Honest: report REGISTRATION (real — queried from the adapter registry),
@@ -3702,25 +3980,40 @@ def api_adapters_status():
         try:
             from adapters.registry import get_registry, AdapterType
             from adapters.models import ExchangeVendor
+
             reg = get_registry()
             v = ExchangeVendor(vendor)
-            return any(reg.get_registration(v, t) is not None
-                       for t in (AdapterType.MARKET_DATA, AdapterType.ORDER_EXECUTION))
+            return any(
+                reg.get_registration(v, t) is not None
+                for t in (AdapterType.MARKET_DATA, AdapterType.ORDER_EXECUTION)
+            )
         except Exception:
             return False
+
     rows = [
         ("alpaca", "Alpaca (Equities & Options US)", "https://paper-api.alpaca.markets", "REST+WS"),
         ("binance", "Binance Spot/Futures (Crypto)", "https://fapi.binance.com", "REST+WS"),
         ("oanda", "OANDA Sandbox (Forex)", "https://api-fxpractice.oanda.com", "REST+WS"),
-        ("dukascopy", "Dukascopy (Forex public ticks)", "https://datafeed.dukascopy.com", "REST (bi5)"),
+        (
+            "dukascopy",
+            "Dukascopy (Forex public ticks)",
+            "https://datafeed.dukascopy.com",
+            "REST (bi5)",
+        ),
     ]
     return [
-        {"vendor": v, "name": name, "endpoint": ep, "ping_ms": None,
-         "status": "REGISTERED" if _registered(v) else "NOT_REGISTERED",
-         "connection_type": ct,
-         "note": "адаптер зарегистрирован в registry; авторизация не проверяется (нужен live-тест кредов)"}
+        {
+            "vendor": v,
+            "name": name,
+            "endpoint": ep,
+            "ping_ms": None,
+            "status": "REGISTERED" if _registered(v) else "NOT_REGISTERED",
+            "connection_type": ct,
+            "note": "адаптер зарегистрирован в registry; авторизация не проверяется (нужен live-тест кредов)",
+        }
         for v, name, ep, ct in rows
     ]
+
 
 @api.post("/api/adapters/test_connection")
 def api_adapters_test_connection(payload: TestConnectionPayload):
@@ -3730,10 +4023,14 @@ def api_adapters_test_connection(payload: TestConnectionPayload):
         raise HTTPException(status_code=400, detail=f"Unknown adapter vendor: {vendor}")
     # Honest: we confirm the adapter is registered, NOT that a live connection
     # + credentials succeeded (that requires the CCEA Agent + real keys).
-    return {"status": "registered", "ping_ms": None,
-            "message": f"Адаптер {vendor} зарегистрирован. Живая проверка соединения/кредов "
-                       "выполняется только через CCEA Agent с реальными ключами.",
-            "simulated": True, "data_source": "registry_only"}
+    return {
+        "status": "registered",
+        "ping_ms": None,
+        "message": f"Адаптер {vendor} зарегистрирован. Живая проверка соединения/кредов "
+        "выполняется только через CCEA Agent с реальными ключами.",
+        "simulated": True,
+        "data_source": "registry_only",
+    }
 
 
 # --------------------------- Forex Session & Rollover API ---------------------------
@@ -3744,7 +4041,7 @@ def api_forex_session():
     tokyo = "CLOSED"
     london = "CLOSED"
     new_york = "CLOSED"
-    
+
     hour = now_utc.hour
     if 22 <= hour or hour < 7:
         sydney = "OPEN"
@@ -3754,10 +4051,10 @@ def api_forex_session():
         london = "OPEN"
     if 13 <= hour < 22:
         new_york = "OPEN"
-        
+
     session_filter = "all"
     rollover_keepout = 5
-    
+
     try:
         if os.path.exists("configs/config_live_forex.yaml"):
             with open("configs/config_live_forex.yaml", "r", encoding="utf-8") as f:
@@ -3767,11 +4064,11 @@ def api_forex_session():
                 session_filter = cfg.get("forex", {}).get("session_filter", "all")
     except Exception:
         pass
-        
+
     is_rollover_lock = False
     if hour == 21 or hour == 22:
         is_rollover_lock = True
-        
+
     return {
         "sydney_status": sydney,
         "tokyo_status": tokyo,
@@ -3780,8 +4077,12 @@ def api_forex_session():
         "session_filter": session_filter,
         "rollover_keepout_minutes": rollover_keepout,
         "spread_multiplier": 2.5 if is_rollover_lock else 1.0,
-        "market_open_status": "OPEN" if (sydney == "OPEN" or tokyo == "OPEN" or london == "OPEN" or new_york == "OPEN") else "CLOSED",
-        "rollover_lock_active": is_rollover_lock
+        "market_open_status": (
+            "OPEN"
+            if (sydney == "OPEN" or tokyo == "OPEN" or london == "OPEN" or new_york == "OPEN")
+            else "CLOSED"
+        ),
+        "rollover_lock_active": is_rollover_lock,
     }
 
 
@@ -3793,18 +4094,35 @@ def api_forex_reconcile():
     return {
         "status": "demo",
         "message": "Демо: без подключённого forex-брокера сверка не выполняется. "
-                   "Реальная сверка — через CCEA Agent + брокерский коннектор.",
+        "Реальная сверка — через CCEA Agent + брокерский коннектор.",
         "positions_reconciled": 0,
         "corrections_sent": 0,
-        "simulated": True, "data_source": "demo_mock",
+        "simulated": True,
+        "data_source": "demo_mock",
     }
+
 
 @api.get("/api/forex/swaps")
 def api_forex_swaps():
     return [
-        {"symbol": "EUR_USD", "long_swap": -0.85, "short_swap": 0.42, "last_rollover": "2026-06-04 17:00:00 EST"},
-        {"symbol": "USD_JPY", "long_swap": 0.95, "short_swap": -1.50, "last_rollover": "2026-06-04 17:00:00 EST"},
-        {"symbol": "GBP_USD", "long_swap": -1.20, "short_swap": 0.60, "last_rollover": "2026-06-04 17:00:00 EST"}
+        {
+            "symbol": "EUR_USD",
+            "long_swap": -0.85,
+            "short_swap": 0.42,
+            "last_rollover": "2026-06-04 17:00:00 EST",
+        },
+        {
+            "symbol": "USD_JPY",
+            "long_swap": 0.95,
+            "short_swap": -1.50,
+            "last_rollover": "2026-06-04 17:00:00 EST",
+        },
+        {
+            "symbol": "GBP_USD",
+            "long_swap": -1.20,
+            "short_swap": 0.60,
+            "last_rollover": "2026-06-04 17:00:00 EST",
+        },
     ]
 
 
@@ -3815,6 +4133,7 @@ def api_live_reload():
     with open("logs/reload_request.json", "w", encoding="utf-8") as f:
         json.dump({"reload_requested_at": time.time()}, f)
     return {"status": "success", "message": "Reconfiguration reload requested successfully."}
+
 
 @api.post("/api/live/safe_stop")
 def api_live_safe_stop():
@@ -3830,25 +4149,52 @@ class AllocateCollateralPayload(BaseModel):
     target_broker: str
     amount: float
 
+
 @api.get("/api/treasury/balances")
 def api_treasury_balances():
     # Illustrative multi-PB balances — no real custody/PB integration is wired.
     # Flagged so the UI shows a DEMO badge instead of passing these off as live.
     return {
         "balances": [
-            {"broker": "Morgan Stanley PB", "currency": "USD", "balance": 450000.0, "margin_available": 320000.0, "funding_apr": 0.052},
-            {"broker": "Interactive Brokers", "currency": "USD", "balance": 250000.0, "margin_available": 180000.0, "funding_apr": 0.048},
-            {"broker": "Coinbase Custody", "currency": "USD", "balance": 150000.0, "margin_available": 150000.0, "funding_apr": 0.0},
-            {"broker": "Fireblocks", "currency": "USD", "balance": 100000.0, "margin_available": 100000.0, "funding_apr": 0.0}
+            {
+                "broker": "Morgan Stanley PB",
+                "currency": "USD",
+                "balance": 450000.0,
+                "margin_available": 320000.0,
+                "funding_apr": 0.052,
+            },
+            {
+                "broker": "Interactive Brokers",
+                "currency": "USD",
+                "balance": 250000.0,
+                "margin_available": 180000.0,
+                "funding_apr": 0.048,
+            },
+            {
+                "broker": "Coinbase Custody",
+                "currency": "USD",
+                "balance": 150000.0,
+                "margin_available": 150000.0,
+                "funding_apr": 0.0,
+            },
+            {
+                "broker": "Fireblocks",
+                "currency": "USD",
+                "balance": 100000.0,
+                "margin_available": 100000.0,
+                "funding_apr": 0.0,
+            },
         ],
         "htb_locates": [
             {"symbol": "TSLA", "locate_fee_bps": 12.5, "shares_available": 50000},
             {"symbol": "NVDA", "locate_fee_bps": 8.0, "shares_available": 25000},
-            {"symbol": "GME", "locate_fee_bps": 145.0, "shares_available": 5000}
+            {"symbol": "GME", "locate_fee_bps": 145.0, "shares_available": 5000},
         ],
-        "simulated": True, "data_source": "demo_mock",
+        "simulated": True,
+        "data_source": "demo_mock",
         "disclaimer": "Иллюстративные балансы — реальная интеграция с PB/custody не подключена.",
     }
+
 
 @api.post("/api/treasury/allocate_collateral")
 def api_treasury_allocate_collateral(payload: AllocateCollateralPayload):
@@ -3856,8 +4202,9 @@ def api_treasury_allocate_collateral(payload: AllocateCollateralPayload):
     return {
         "status": "demo",
         "message": f"Демо: перевод ${payload.amount:,.2f} из {payload.source_broker} в "
-                   f"{payload.target_broker} НЕ выполнен (нет реальной treasury-интеграции).",
-        "simulated": True, "data_source": "demo_mock",
+        f"{payload.target_broker} НЕ выполнен (нет реальной treasury-интеграции).",
+        "simulated": True,
+        "data_source": "demo_mock",
     }
 
 
@@ -3865,6 +4212,7 @@ def api_treasury_allocate_collateral(payload: AllocateCollateralPayload):
 class PostTradeAllocatePayload(BaseModel):
     block_id: str
     strategy: str
+
 
 @api.post("/api/post_trade/allocate")
 def api_post_trade_allocate(payload: Dict[str, Any]):
@@ -3874,44 +4222,89 @@ def api_post_trade_allocate(payload: Dict[str, Any]):
            trade_date?, asset_class?, give_up?:{executing_broker,clearing_broker,cmta_code}}.
     Falls back to a clear message when fills/targets aren't supplied.
     """
-    from packages.agent.execution.allocation import (
-        ClearingEngine, Fill, SubAccountTarget, GiveUp)
+    from packages.agent.execution.allocation import ClearingEngine, Fill, SubAccountTarget, GiveUp
     from datetime import date as _date
+
     fills_in = payload.get("fills") or []
     targets_in = payload.get("targets") or []
     if not fills_in or not targets_in:
-        return {"status": "incomplete", "block_id": payload.get("block_id"),
-                "message": "Provide fills:[{qty,price}] and targets:[{account,qty}] for a real allocation.",
-                "simulated": True, "data_source": "demo"}
+        return {
+            "status": "incomplete",
+            "block_id": payload.get("block_id"),
+            "message": "Provide fills:[{qty,price}] and targets:[{account,qty}] for a real allocation.",
+            "simulated": True,
+            "data_source": "demo",
+        }
     fills = [Fill(f["qty"], f["price"]) for f in fills_in]
     targets = [SubAccountTarget(t["account"], t["qty"]) for t in targets_in]
     gu_in = payload.get("give_up")
-    gu = (GiveUp(gu_in.get("executing_broker", ""), gu_in.get("clearing_broker", ""),
-                 account=gu_in.get("account", ""), cmta_code=gu_in.get("cmta_code", ""))
-          if gu_in else None)
+    gu = (
+        GiveUp(
+            gu_in.get("executing_broker", ""),
+            gu_in.get("clearing_broker", ""),
+            account=gu_in.get("account", ""),
+            cmta_code=gu_in.get("cmta_code", ""),
+        )
+        if gu_in
+        else None
+    )
     td = payload.get("trade_date")
     trade_date = _date.fromisoformat(td) if td else _date.today()
     out = ClearingEngine().process_block(
-        symbol=payload.get("symbol", ""), side=payload.get("side", "BUY"),
-        fills=fills, targets=targets, trade_date=trade_date,
-        asset_class=payload.get("asset_class", "equity"), give_up=gu)
+        symbol=payload.get("symbol", ""),
+        side=payload.get("side", "BUY"),
+        fills=fills,
+        targets=targets,
+        trade_date=trade_date,
+        asset_class=payload.get("asset_class", "equity"),
+        give_up=gu,
+    )
     out["status"] = "success"
     out["block_id"] = payload.get("block_id")
     return out
+
 
 @api.get("/api/post_trade/clearing_status")
 def api_post_trade_clearing_status():
     return {
         "block_trades": [
-            {"block_id": "B1001", "symbol": "SPY", "qty": 10000, "avg_price": 511.25, "time": "2026-06-04 10:15:30"},
-            {"block_id": "B1002", "symbol": "AAPL", "qty": 5000, "avg_price": 176.40, "time": "2026-06-04 11:22:45"}
+            {
+                "block_id": "B1001",
+                "symbol": "SPY",
+                "qty": 10000,
+                "avg_price": 511.25,
+                "time": "2026-06-04 10:15:30",
+            },
+            {
+                "block_id": "B1002",
+                "symbol": "AAPL",
+                "qty": 5000,
+                "avg_price": 176.40,
+                "time": "2026-06-04 11:22:45",
+            },
         ],
         "allocations": [
-            {"fund_name": "Riven Quant Fund A", "target_qty": 5000, "allocated_qty": 5000, "status": "cleared"},
-            {"fund_name": "Riven Alpha Fund", "target_qty": 3000, "allocated_qty": 3000, "status": "approved"},
-            {"fund_name": "Riven Multi-Asset", "target_qty": 2000, "allocated_qty": 2000, "status": "draft"}
+            {
+                "fund_name": "Riven Quant Fund A",
+                "target_qty": 5000,
+                "allocated_qty": 5000,
+                "status": "cleared",
+            },
+            {
+                "fund_name": "Riven Alpha Fund",
+                "target_qty": 3000,
+                "allocated_qty": 3000,
+                "status": "approved",
+            },
+            {
+                "fund_name": "Riven Multi-Asset",
+                "target_qty": 2000,
+                "allocated_qty": 2000,
+                "status": "draft",
+            },
         ],
-        "simulated": True, "data_source": "demo_mock",
+        "simulated": True,
+        "data_source": "demo_mock",
         "disclaimer": "Демо-блоки/аллокации. Реальная аллокация — POST /api/post_trade/allocate с fills/targets.",
     }
 
@@ -3920,16 +4313,19 @@ class ForexSessionConfigPayload(BaseModel):
     session_filter: str
     rollover_keepout_minutes: int
 
+
 class ForexOtcConfigPayload(BaseModel):
     quote_flicker: bool
     dealer_profile: str
     requote_probability: float
+
 
 class AlgoConfigPayload(BaseModel):
     algorithm: str
     max_participation: float
     window: int
     offset: int
+
 
 @api.post("/api/forex/session_config")
 def api_forex_session_config(payload: ForexSessionConfigPayload):
@@ -3958,40 +4354,55 @@ def api_forex_session_config(payload: ForexSessionConfigPayload):
         )
     return {
         "status": "success",
-        "message": f"Forex session filter set to '{payload.session_filter}' and rollover keepout to {payload.rollover_keepout_minutes} mins."
+        "message": f"Forex session filter set to '{payload.session_filter}' and rollover keepout to {payload.rollover_keepout_minutes} mins.",
     }
+
 
 @api.post("/api/forex/otc_config")
 def api_forex_otc_config(payload: ForexOtcConfigPayload):
     # Real persistence (was an echo that touched nothing): atomically write the
     # dealer profile to configs/forex_otc.yaml. Fail-closed on write error.
     cfg_path = os.path.join("configs", "forex_otc.yaml")
-    body = {"dealer_profile": payload.dealer_profile,
-            "requote_probability": payload.requote_probability,
-            "quote_flicker": payload.quote_flicker}
+    body = {
+        "dealer_profile": payload.dealer_profile,
+        "requote_probability": payload.requote_probability,
+        "quote_flicker": payload.quote_flicker,
+    }
     try:
         os.makedirs("configs", exist_ok=True)
         atomic_write_with_retry(cfg_path, yaml.safe_dump(body, allow_unicode=True, sort_keys=False))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to persist OTC config: {e}")
-    return {"status": "success", "persisted_to": cfg_path,
-            "message": f"OTC-конфиг сохранён: profile={payload.dealer_profile}, "
-                       f"requote={payload.requote_probability}%, flicker={payload.quote_flicker}."}
+    return {
+        "status": "success",
+        "persisted_to": cfg_path,
+        "message": f"OTC-конфиг сохранён: profile={payload.dealer_profile}, "
+        f"requote={payload.requote_probability}%, flicker={payload.quote_flicker}.",
+    }
+
 
 @api.post("/api/execution/algo_config")
 def api_execution_algo_config(payload: AlgoConfigPayload):
     # Real persistence (was an echo): atomically write to configs/execution_algo.yaml.
     cfg_path = os.path.join("configs", "execution_algo.yaml")
-    body = {"algorithm": payload.algorithm, "max_participation": payload.max_participation,
-            "window": payload.window, "offset": payload.offset}
+    body = {
+        "algorithm": payload.algorithm,
+        "max_participation": payload.max_participation,
+        "window": payload.window,
+        "offset": payload.offset,
+    }
     try:
         os.makedirs("configs", exist_ok=True)
         atomic_write_with_retry(cfg_path, yaml.safe_dump(body, allow_unicode=True, sort_keys=False))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to persist algo config: {e}")
-    return {"status": "success", "persisted_to": cfg_path,
-            "message": f"Execution-algo сохранён: algo={payload.algorithm}, "
-                       f"maxPart={payload.max_participation}%, window={payload.window}m, offset={payload.offset}."}
+    return {
+        "status": "success",
+        "persisted_to": cfg_path,
+        "message": f"Execution-algo сохранён: algo={payload.algorithm}, "
+        f"maxPart={payload.max_participation}%, window={payload.window}m, offset={payload.offset}.",
+    }
+
 
 @api.post("/api/post_trade/clearing_approve")
 def api_post_trade_clearing_approve(payload: Optional[Dict[str, Any]] = None):
@@ -4003,15 +4414,29 @@ def api_post_trade_clearing_approve(payload: Optional[Dict[str, Any]] = None):
     payload = payload or {}
     allocs_in = payload.get("allocations") or []
     if not allocs_in:
-        return {"status": "success",
-                "message": "No allocations supplied; nothing to settle.",
-                "simulated": True, "data_source": "demo"}
+        return {
+            "status": "success",
+            "message": "No allocations supplied; nothing to settle.",
+            "simulated": True,
+            "data_source": "demo",
+        }
     from packages.agent.execution.allocation import (
-        AccountAllocation, net_settlement, settlement_date)
+        AccountAllocation,
+        net_settlement,
+        settlement_date,
+    )
     from datetime import date as _date
     from decimal import Decimal as _D
-    allocs = [AccountAllocation(a["account"], _D(str(a["qty"])), _D(str(a.get("price", 0))),
-                                _D(str(a.get("notional", 0)))) for a in allocs_in]
+
+    allocs = [
+        AccountAllocation(
+            a["account"],
+            _D(str(a["qty"])),
+            _D(str(a.get("price", 0))),
+            _D(str(a.get("notional", 0))),
+        )
+        for a in allocs_in
+    ]
     side = payload.get("side", "BUY")
     td = payload.get("trade_date")
     trade_date = _date.fromisoformat(td) if td else _date.today()
@@ -4032,6 +4457,7 @@ def read_index():
     except FileNotFoundError:
         return "<h3>index.html not found. Please make sure it is in the project directory.</h3>"
 
+
 @api.get("/api/status")
 def api_status():
     m = read_json(GLOBAL_METRICS_JSON)
@@ -4049,27 +4475,27 @@ def api_status():
     pnl = eq.get("pnl_total", None)
     sharpe = eq.get("sharpe", None)
     maxdd = eq.get("max_drawdown", None)
-    
+
     if isinstance(pnl, (int, float)):
         pnl_text = f"+{pnl:.2f}%" if pnl >= 0 else f"{pnl:.2f}%"
     else:
         pnl_text = "—"
     sharpe_text = f"{sharpe:.2f}" if isinstance(sharpe, (int, float)) else "—"
     maxdd_text = f"-{maxdd:.2f}%" if isinstance(maxdd, (int, float)) else "—"
-    
+
     rep_df = read_csv(GLOBAL_REPORTS_PATH, n=1)
     last_eq = "—"
     if not rep_df.empty and "equity" in rep_df.columns:
         val = float(rep_df.iloc[-1]["equity"])
         last_eq = f"${val:,.2f}"
-        
+
     sig_df = read_csv(GLOBAL_SIGNALS_CSV, n=1)
     last_sig = "—"
     if not sig_df.empty and "ts_ms" in sig_df.columns:
         last_sig = str(int(sig_df.iloc[-1]["ts_ms"]))
 
     is_running = background_running(GLOBAL_REALTIME_PID)
-    
+
     snap = {}
     if os.path.exists(GLOBAL_SNAPSHOT_JSON):
         try:
@@ -4077,9 +4503,10 @@ def api_status():
                 snap = json.load(f)
         except Exception:
             pass
-            
+
     try:
         import services.ops_kill_switch as ops_kill_switch
+
         snap["kill_switch_tripped"] = ops_kill_switch.tripped()
     except Exception:
         snap["kill_switch_tripped"] = False
@@ -4113,12 +4540,13 @@ def api_status():
             "sharpe": sharpe_text,
             "max_drawdown": maxdd_text,
             "equity": last_eq,
-            "last_signal_ts": last_sig
+            "last_signal_ts": last_sig,
         },
         "signaler_running": is_running,
         "snapshot": snap,
-        "execution_queue_size": len(queue)
+        "execution_queue_size": len(queue),
     }
+
 
 @api.get("/api/execution")
 def api_execution():
@@ -4140,16 +4568,19 @@ def api_execution():
             for _, row in sig_full.iterrows():
                 uid = str(row.get("uid", ""))
                 if uid not in processed:
-                    pending.append({
-                        "id": uid,
-                        "symbol": str(row.get("symbol", row.get("asset", "BTCUSDT"))),
-                        "side": str(row.get("side", row.get("direction", "BUY"))),
-                        "qty": float(row.get("qty", row.get("quantity", row.get("size", 0.0)))),
-                        "price": float(row.get("price", row.get("limit_price", 0.0)))
-                    })
+                    pending.append(
+                        {
+                            "id": uid,
+                            "symbol": str(row.get("symbol", row.get("asset", "BTCUSDT"))),
+                            "side": str(row.get("side", row.get("direction", "BUY"))),
+                            "qty": float(row.get("qty", row.get("quantity", row.get("size", 0.0)))),
+                            "price": float(row.get("price", row.get("limit_price", 0.0))),
+                        }
+                    )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return pending
+
 
 @api.post("/api/execution/approve")
 def api_approve(payload: OrderAction):
@@ -4177,13 +4608,20 @@ def api_approve(payload: OrderAction):
             # MAR surveillance: record the order placement (NEW) on the real flow.
             if global_market_abuse_monitor is not None and _MAOrderEvent is not None:
                 import time as _t
+
                 side = str(r.get("side", "BUY")).upper()
-                global_market_abuse_monitor.record_order(_MAOrderEvent(
-                    ts_ms=int(_t.time() * 1000), symbol=instrument,
-                    account=str(r.get("strategy", r.get("account", "default"))),
-                    side=("BUY" if side in ("BUY", "LONG", "B") else "SELL"),
-                    action="NEW", qty=qty, price=float(r.get("price", 0) or 0),
-                    order_id=str(r.get("uid", r.get("order_id", "")))))
+                global_market_abuse_monitor.record_order(
+                    _MAOrderEvent(
+                        ts_ms=int(_t.time() * 1000),
+                        symbol=instrument,
+                        account=str(r.get("strategy", r.get("account", "default"))),
+                        side=("BUY" if side in ("BUY", "LONG", "B") else "SELL"),
+                        action="NEW",
+                        qty=qty,
+                        price=float(r.get("price", 0) or 0),
+                        order_id=str(r.get("uid", r.get("order_id", ""))),
+                    )
+                )
         except Exception:
             pass  # surveillance recording must never block an approval
         return {"status": "success"}
@@ -4191,6 +4629,7 @@ def api_approve(payload: OrderAction):
         raise  # preserve intended status codes (e.g. 404 UID not found)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api.post("/api/execution/reject")
 def api_reject(payload: OrderAction):
@@ -4210,6 +4649,7 @@ def api_reject(payload: OrderAction):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api.get("/api/logs")
 def api_logs(name: str):
     # Confine reads to the logs directory: reject traversal (../) and absolute
@@ -4227,14 +4667,15 @@ def api_logs(name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api.get("/api/logs/structured")
 def api_logs_structured():
     import json
     import os
     from datetime import datetime
-    
+
     logs = []
-    
+
     # 1. Read logs/metrics.jsonl if it exists
     metrics_path = os.path.join(GLOBAL_LOGS_DIR, "metrics.jsonl")
     if os.path.exists(metrics_path):
@@ -4245,18 +4686,20 @@ def api_logs_structured():
                     if line:
                         try:
                             data = json.loads(line)
-                            logs.append({
-                                "timestamp": data.get("timestamp", datetime.now().isoformat()),
-                                "category": data.get("category", "system"),
-                                "level": data.get("level", "info"),
-                                "correlation_id": data.get("correlation_id", "—"),
-                                "message": data.get("message", json.dumps(data))
-                            })
+                            logs.append(
+                                {
+                                    "timestamp": data.get("timestamp", datetime.now().isoformat()),
+                                    "category": data.get("category", "system"),
+                                    "level": data.get("level", "info"),
+                                    "correlation_id": data.get("correlation_id", "—"),
+                                    "message": data.get("message", json.dumps(data)),
+                                }
+                            )
                         except Exception:
                             pass
         except Exception:
             pass
-            
+
     # 2. Read logs/structured_audit.jsonl if it exists
     audit_path = os.path.join(GLOBAL_LOGS_DIR, "structured_audit.jsonl")
     if os.path.exists(audit_path):
@@ -4267,18 +4710,20 @@ def api_logs_structured():
                     if line:
                         try:
                             data = json.loads(line)
-                            logs.append({
-                                "timestamp": data.get("timestamp", datetime.now().isoformat()),
-                                "category": data.get("category", "compliance"),
-                                "level": data.get("level", "audit"),
-                                "correlation_id": data.get("correlation_id", "—"),
-                                "message": data.get("message", json.dumps(data))
-                            })
+                            logs.append(
+                                {
+                                    "timestamp": data.get("timestamp", datetime.now().isoformat()),
+                                    "category": data.get("category", "compliance"),
+                                    "level": data.get("level", "audit"),
+                                    "correlation_id": data.get("correlation_id", "—"),
+                                    "message": data.get("message", json.dumps(data)),
+                                }
+                            )
                         except Exception:
                             pass
         except Exception:
             pass
-            
+
     # 3. If empty, say so honestly. Never fabricate trading/audit entries
     # (a fake "Order execution complete" line is indistinguishable from a
     # real fill in the UI — audit L2-009/L2-020).
@@ -4289,31 +4734,33 @@ def api_logs_structured():
                 "category": "system",
                 "level": "info",
                 "correlation_id": "—",
-                "message": "Структурированный журнал пуст: событий metrics.jsonl / structured_audit.jsonl ещё не записано."
+                "message": "Структурированный журнал пуст: событий metrics.jsonl / structured_audit.jsonl ещё не записано.",
             }
         ]
 
     return logs
+
 
 @api.get("/api/job/status")
 def api_job_status(job: str):
     # Same legacy alias mapping as /api/run_job (audit L2-003): a client that
     # started "run_notrade" must be able to poll its status too.
     # (JOB_NAME_ALIASES is defined once, module level, below.)
-    job_clean = JOB_NAME_ALIASES.get(job.lstrip('/'), job.lstrip('/'))
+    job_clean = JOB_NAME_ALIASES.get(job.lstrip("/"), job.lstrip("/"))
     pid_file = os.path.join(".run", f"{job_clean}.pid")
     return {"job": job_clean, **background_status(pid_file)}
+
 
 @api.get("/api/ingest/status")
 def api_ingest_status():
     pid_file = os.path.join(".run", "run_ingest.pid")
     is_running = background_running(pid_file)
-    
+
     progress = 0.0
     bytes_loaded = 0
     rows_loaded = 0
     status_text = "Idle"
-    
+
     log_path = os.path.join(GLOBAL_LOGS_DIR, "run_ingest.log")
     if os.path.exists(log_path):
         try:
@@ -4329,7 +4776,7 @@ def api_ingest_status():
                         pass
                 if "Downloading" in line or "Fetching" in line:
                     status_text = line.strip()
-            
+
             if is_running:
                 status_text = "Ingesting candles..."
                 progress = min(95.0, len(lines) * 2.0)
@@ -4338,18 +4785,19 @@ def api_ingest_status():
                 status_text = "Completed"
         except Exception:
             pass
-            
+
     return {
         "running": is_running,
         "progress_percent": progress,
         "bytes_loaded": bytes_loaded or (rows_loaded * 128),
         "rows_loaded": rows_loaded,
-        "status": status_text
+        "status": status_text,
     }
+
 
 @api.post("/api/job/stop")
 def api_job_stop(job: str):
-    job_clean = JOB_NAME_ALIASES.get(job.lstrip('/'), job.lstrip('/'))
+    job_clean = JOB_NAME_ALIASES.get(job.lstrip("/"), job.lstrip("/"))
     pid_file = os.path.join(".run", f"{job_clean}.pid")
     if background_running(pid_file):
         try:
@@ -4359,10 +4807,12 @@ def api_job_stop(job: str):
             raise HTTPException(status_code=500, detail=str(e))
     return {"status": "not_running", "job": job}
 
+
 def get_latest_validation_report():
     import glob
     import os
     import json
+
     try:
         paths = glob.glob("models/**/validation_report.json", recursive=True)
         if not paths:
@@ -4384,12 +4834,14 @@ def get_latest_validation_report():
         print(f"Error loading validation report: {e}")
         return None
 
+
 def parse_training_logs(log_path):
     import os
     import re
+
     if not os.path.exists(log_path):
         return {}
-        
+
     metrics = {
         "trial_number": None,
         "ep_rew_mean": None,
@@ -4398,26 +4850,28 @@ def parse_training_logs(log_path):
         "value_loss": None,
         "explained_variance": None,
         "learning_rate": None,
-        "trial_score": None
+        "trial_score": None,
     }
-    
+
     try:
         with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
-            
+
         trial_re = re.compile(r">>> Trial (\d+) with budget=(\d+)")
-        trial_complete_re = re.compile(r"\[\[OK\] Trial (\d+)\] COMPLETE\. Final Weighted Score: ([\d.-]+)")
+        trial_complete_re = re.compile(
+            r"\[\[OK\] Trial (\d+)\] COMPLETE\. Final Weighted Score: ([\d.-]+)"
+        )
         sb3_pair_re = re.compile(r"\|\s*([a-zA-Z0-9_/-]+)\s*\|\s*([e\d.+-]+)\s*\|")
-        
+
         for line in lines:
             trial_match = trial_re.search(line)
             if trial_match:
                 metrics["trial_number"] = int(trial_match.group(1))
-                
+
             complete_match = trial_complete_re.search(line)
             if complete_match:
                 metrics["trial_score"] = float(complete_match.group(2))
-                
+
             sb3_match = sb3_pair_re.search(line)
             if sb3_match:
                 key = sb3_match.group(1).strip()
@@ -4432,21 +4886,24 @@ def parse_training_logs(log_path):
                     pass
     except Exception as e:
         print(f"Error parsing training log: {e}")
-        
+
     return metrics
+
 
 @api.get("/api/train/results")
 def api_train_results():
     import os
+
     pid_file = os.path.join(".run", "run_train.pid")
     is_running = background_running(pid_file)
-    
+
     log_path = os.path.join(GLOBAL_LOGS_DIR, "run_train.log")
     metrics = parse_training_logs(log_path)
-    
+
     val_report = get_latest_validation_report()
-    
+
     import math
+
     def clean_nan(obj):
         if isinstance(obj, float) and math.isnan(obj):
             return None
@@ -4456,11 +4913,8 @@ def api_train_results():
             return [clean_nan(x) for x in obj]
         return obj
 
-    return clean_nan({
-        "running": is_running,
-        "metrics": metrics,
-        "validation_report": val_report
-    })
+    return clean_nan({"running": is_running, "metrics": metrics, "validation_report": val_report})
+
 
 @api.get("/api/eval/results")
 def api_eval_results():
@@ -4469,8 +4923,9 @@ def api_eval_results():
     try:
         with open(GLOBAL_METRICS_JSON, "r", encoding="utf-8") as f:
             metrics = json.load(f)
-            
+
         import math
+
         def clean_nan(obj):
             if isinstance(obj, float) and math.isnan(obj):
                 return None
@@ -4479,10 +4934,11 @@ def api_eval_results():
             elif isinstance(obj, list):
                 return [clean_nan(x) for x in obj]
             return obj
-            
+
         return clean_nan(metrics)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 def get_latest_metrics_jsonl() -> dict:
     path = "logs/metrics.jsonl"
@@ -4507,11 +4963,12 @@ def get_latest_metrics_jsonl() -> dict:
         pass
     return {}
 
+
 @api.get("/api/telemetry/live")
 def api_telemetry_live():
     # Read the latest line of metrics.jsonl for HFT/live signaler metrics
     live_metrics = get_latest_metrics_jsonl()
-    
+
     # Read snapshot metrics
     snap = {}
     if os.path.exists(GLOBAL_SNAPSHOT_JSON):
@@ -4520,14 +4977,15 @@ def api_telemetry_live():
                 snap = json.load(f)
         except Exception:
             pass
-            
+
     is_tripped = snap.get("kill_switch_tripped", False)
-    
+
     # Read signaler running status
     is_running = background_running(GLOBAL_REALTIME_PID)
-    
+
     # Simple clean NaN utility
     import math
+
     def clean_nan(obj):
         if isinstance(obj, float) and math.isnan(obj):
             return None
@@ -4536,31 +4994,34 @@ def api_telemetry_live():
         elif isinstance(obj, list):
             return [clean_nan(x) for x in obj]
         return obj
-    
-    return clean_nan({
-        "clock_sync": {
-            "drift_ms": LATEST_TELEMETRY["clock_sync_drift_ms"],
-            "rtt_ms": LATEST_TELEMETRY["clock_sync_rtt_ms"],
-            "last_sync": LATEST_TELEMETRY["last_sync_time"],
-        },
-        "drift": {
-            "psi_avg": LATEST_TELEMETRY["psi_avg"],
-            "worst_feature": LATEST_TELEMETRY["psi_worst_feature"],
-            "worst_psi": LATEST_TELEMETRY["psi_worst"],
-            "status": LATEST_TELEMETRY["psi_status"],
-        },
-        "nodes": {
-            "signaler_running": is_running,
-            "ws_feed_ok": LATEST_TELEMETRY["ws_feed_ok"] or is_running,
-            "broker_api_ok": LATEST_TELEMETRY["broker_api_ok"],
-        },
-        "panic": {
-            "kill_switch_tripped": is_tripped,
-            "last_panic_halt_time": snap.get("last_panic_halt_time"),
-            "last_panic_report": snap.get("last_panic_report", {}),
-        },
-        "live_metrics": live_metrics,
-    })
+
+    return clean_nan(
+        {
+            "clock_sync": {
+                "drift_ms": LATEST_TELEMETRY["clock_sync_drift_ms"],
+                "rtt_ms": LATEST_TELEMETRY["clock_sync_rtt_ms"],
+                "last_sync": LATEST_TELEMETRY["last_sync_time"],
+            },
+            "drift": {
+                "psi_avg": LATEST_TELEMETRY["psi_avg"],
+                "worst_feature": LATEST_TELEMETRY["psi_worst_feature"],
+                "worst_psi": LATEST_TELEMETRY["psi_worst"],
+                "status": LATEST_TELEMETRY["psi_status"],
+            },
+            "nodes": {
+                "signaler_running": is_running,
+                "ws_feed_ok": LATEST_TELEMETRY["ws_feed_ok"] or is_running,
+                "broker_api_ok": LATEST_TELEMETRY["broker_api_ok"],
+            },
+            "panic": {
+                "kill_switch_tripped": is_tripped,
+                "last_panic_halt_time": snap.get("last_panic_halt_time"),
+                "last_panic_report": snap.get("last_panic_report", {}),
+            },
+            "live_metrics": live_metrics,
+        }
+    )
+
 
 @api.get("/api/image")
 def api_image(path: str = "logs/equity.png"):
@@ -4571,7 +5032,9 @@ def api_image(path: str = "logs/equity.png"):
     if not os.path.exists(abs_path):
         raise HTTPException(status_code=404, detail="Image not found")
     from fastapi.responses import FileResponse
+
     return FileResponse(abs_path, media_type="image/png")
+
 
 ACTIVE_CLI_PROCESSES = {}
 
@@ -4582,10 +5045,17 @@ ACTIVE_CLI_PROCESSES = {}
 #   * disabled entirely if RIVEN_ENABLE_TERMINAL is set to a falsey value;
 #   * restricted to loopback clients unless RIVEN_ENABLE_REMOTE_TERMINAL=1.
 _TERMINAL_ENABLED = os.environ.get("RIVEN_ENABLE_TERMINAL", "1").strip().lower() not in (
-    "0", "false", "no", "off", "",
+    "0",
+    "false",
+    "no",
+    "off",
+    "",
 )
 _TERMINAL_ALLOW_REMOTE = os.environ.get("RIVEN_ENABLE_REMOTE_TERMINAL", "0").strip().lower() in (
-    "1", "true", "yes", "on",
+    "1",
+    "true",
+    "yes",
+    "on",
 )
 
 
@@ -4612,22 +5082,24 @@ def _require_terminal(request: Optional[Request]) -> None:
 def api_terminal_cd(payload: TerminalCommand, request: Request):
     _require_terminal(request)
     import os
+
     current_cwd = payload.cwd or os.getcwd()
     cmd = payload.command.strip()
-    
+
     if not cmd.startswith("cd"):
         raise HTTPException(status_code=400, detail="Not a cd command")
-        
+
     path_arg = cmd[2:].strip()
     if not path_arg:
         return {"cwd": current_cwd, "output": current_cwd}
-        
+
     # Resolve path
     target_path = os.path.abspath(os.path.join(current_cwd, path_arg))
     if os.path.exists(target_path) and os.path.isdir(target_path):
         return {"cwd": target_path, "output": f"Directory changed to {target_path}"}
     else:
         raise HTTPException(status_code=404, detail=f"Directory not found: {path_arg}")
+
 
 @api.post("/api/terminal/start")
 def api_terminal_start(payload: TerminalCommand, request: Request):
@@ -4642,10 +5114,10 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
     cmd = payload.command.strip()
     if not cmd:
         return {"cmd_id": "", "log_name": ""}
-        
+
     cwd = payload.cwd or os.getcwd()
     cmd_parts = cmd.split()
-    
+
     # Intercept built-in command: jobs / rivenquant jobs
     if cmd == "jobs" or cmd == "rivenquant jobs":
         if not ACTIVE_CLI_PROCESSES:
@@ -4661,7 +5133,7 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
                     dead_ids.append(cid)
             for cid in dead_ids:
                 ACTIVE_CLI_PROCESSES.pop(cid, None)
-                
+
             for cid, info in ACTIVE_CLI_PROCESSES.items():
                 proc = info["proc"]
                 pid = getattr(proc, "pid", 0) or 0
@@ -4671,7 +5143,7 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
                     c_str = c_str[:27] + "..."
                 lines.append(f"{cid:<10} {pid:<8} {start:<20} {c_str}")
             output = "\n".join(lines)
-            
+
         cmd_id = f"jobs_{str(uuid.uuid4())[:4]}"
         log_name = f"cli_cmd_{cmd_id}.log"
         log_path = os.path.join(GLOBAL_LOGS_DIR, log_name)
@@ -4679,10 +5151,15 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
         with open(log_path, "w", encoding="utf-8") as f:
             f.write(f"$ {payload.command}\n{output}\n")
         return {"cmd_id": cmd_id, "log_name": log_name, "is_instant": True}
-        
+
     # Intercept built-in command: kill / rivenquant kill
-    if cmd_parts and (cmd_parts[0] == "kill" or (cmd_parts[0] == "rivenquant" and len(cmd_parts) > 1 and cmd_parts[1] == "kill")):
-        target_id = cmd_parts[1] if cmd_parts[0] == "kill" else (cmd_parts[2] if len(cmd_parts) > 2 else "")
+    if cmd_parts and (
+        cmd_parts[0] == "kill"
+        or (cmd_parts[0] == "rivenquant" and len(cmd_parts) > 1 and cmd_parts[1] == "kill")
+    ):
+        target_id = (
+            cmd_parts[1] if cmd_parts[0] == "kill" else (cmd_parts[2] if len(cmd_parts) > 2 else "")
+        )
         output = ""
         if target_id in ACTIVE_CLI_PROCESSES:
             info = ACTIVE_CLI_PROCESSES.pop(target_id)
@@ -4693,9 +5170,12 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
                 proc.kill()
             else:
                 import platform
+
                 try:
                     if platform.system() == "Windows":
-                        subprocess.run(["taskkill", "/PID", str(pid), "/F", "/T"], capture_output=True)
+                        subprocess.run(
+                            ["taskkill", "/PID", str(pid), "/F", "/T"], capture_output=True
+                        )
                     else:
                         os.killpg(os.getpgid(pid), signal.SIGKILL)
                 except Exception:
@@ -4708,15 +5188,20 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
             try:
                 target_pid = int(target_id)
                 import platform
+
                 if platform.system() == "Windows":
-                    res = subprocess.run(["taskkill", "/PID", str(target_pid), "/F", "/T"], capture_output=True, text=True)
+                    res = subprocess.run(
+                        ["taskkill", "/PID", str(target_pid), "/F", "/T"],
+                        capture_output=True,
+                        text=True,
+                    )
                     output = res.stdout or res.stderr or f"Sent taskkill to PID {target_pid}."
                 else:
                     os.kill(target_pid, signal.SIGKILL)
                     output = f"Sent SIGKILL to PID {target_pid}."
             except Exception as e:
                 output = f"No job or process found for identifier: {target_id} ({str(e)})"
-                
+
         cmd_id = f"kill_{str(uuid.uuid4())[:4]}"
         log_name = f"cli_cmd_{cmd_id}.log"
         log_path = os.path.join(GLOBAL_LOGS_DIR, log_name)
@@ -4740,9 +5225,9 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
             "pipeline": "/pipeline",
             "live-start": "/start",
             "live-stop": "/stop",
-            "check-guards": "pdt_guard_check"
+            "check-guards": "pdt_guard_check",
         }
-        
+
         if sub in job_map:
             job_name = job_map[sub]
             try:
@@ -4753,32 +5238,34 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
                     job_params = {"config": "configs/sandbox.yaml", "steps": 100000}
                 elif sub == "backtest":
                     job_params = {"config": "configs/sandbox.yaml"}
-                    
+
                 res = api_run_job(RunJobPayload(job=job_name, params=job_params))
                 log_file_basename = os.path.basename(res["log"])
                 cmd_id = f"rq_{sub}_{str(uuid.uuid4())[:4]}"
-                
+
                 class FakeJobProcess:
                     def __init__(self, job_name):
                         self.job_name = job_name
                         self.pid_file = os.path.join(".run", f"{job_name.lstrip('/')}.pid")
                         if job_name == "/start":
                             self.pid_file = GLOBAL_REALTIME_PID
+
                     def poll(self):
                         is_running = background_running(self.pid_file)
                         return None if is_running else 0
+
                     def kill(self):
                         try:
                             stop_background(self.pid_file)
                         except Exception:
                             pass
-                            
+
                 ACTIVE_CLI_PROCESSES[cmd_id] = {
                     "proc": FakeJobProcess(job_name),
                     "cmd": cmd,
-                    "start_time": datetime.now().isoformat()
+                    "start_time": datetime.now().isoformat(),
                 }
-                
+
                 return {"cmd_id": cmd_id, "log_name": log_file_basename}
             except Exception as e:
                 cmd_id = f"rq_err_{str(uuid.uuid4())[:4]}"
@@ -4801,53 +5288,50 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
         elif cmd_parts[0] == "ls" and platform.system() == "Windows":
             cmd_parts[0] = "dir"
             cmd = " ".join(cmd_parts)
-            
+
     cmd_id = str(uuid.uuid4())[:8]
     log_name = f"cli_cmd_{cmd_id}.log"
     log_path = os.path.join(GLOBAL_LOGS_DIR, log_name)
-    
+
     os.makedirs(GLOBAL_LOGS_DIR, exist_ok=True)
     with open(log_path, "w", encoding="utf-8") as f:
         f.write(f"$ {payload.command}\n")
-        
+
     logf = open(log_path, "a", encoding="utf-8", newline="")
-    
+
     import platform
+
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
     try:
         if platform.system() == "Windows":
             creationflags = 0x00000200  # CREATE_NEW_PROCESS_GROUP
-            proc = subprocess.Popen(
+            proc = subprocess.Popen(  # nosec B602 - operator terminal: running the
+                # typed command is the feature; the route is behind _global_auth_middleware
                 cmd,
                 shell=True,
                 stdout=logf,
                 stderr=logf,
                 cwd=cwd,
                 creationflags=creationflags,
-                env=env
+                env=env,
             )
         else:
-            proc = subprocess.Popen(
-                cmd,
-                shell=True,
-                stdout=logf,
-                stderr=logf,
-                cwd=cwd,
-                preexec_fn=os.setsid,
-                env=env
+            proc = subprocess.Popen(  # nosec B602 - see above
+                cmd, shell=True, stdout=logf, stderr=logf, cwd=cwd, preexec_fn=os.setsid, env=env
             )
-            
+
         ACTIVE_CLI_PROCESSES[cmd_id] = {
             "proc": proc,
             "cmd": payload.command,
-            "start_time": datetime.now().isoformat()
+            "start_time": datetime.now().isoformat(),
         }
         return {"cmd_id": cmd_id, "log_name": log_name}
     except Exception as e:
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"\n[Error] Failed to execute: {str(e)}\n")
         return {"cmd_id": "", "log_name": log_name, "error": str(e)}
+
 
 @api.get("/api/terminal/status")
 def api_terminal_status(cmd_id: str):
@@ -4862,6 +5346,7 @@ def api_terminal_status(cmd_id: str):
         ACTIVE_CLI_PROCESSES.pop(cmd_id, None)
         return {"running": False, "exit_code": poll}
 
+
 @api.post("/api/terminal/kill")
 def api_terminal_kill(cmd_id: str):
     info = ACTIVE_CLI_PROCESSES.pop(cmd_id, None)
@@ -4870,15 +5355,18 @@ def api_terminal_kill(cmd_id: str):
         if hasattr(proc, "kill") and not hasattr(proc, "pid"):
             proc.kill()
             return {"status": "success"}
-            
+
         import platform
+
         pid = getattr(proc, "pid", 0)
         if pid:
             try:
                 if platform.system() == "Windows":
                     subprocess.run(["taskkill", "/PID", str(pid), "/F", "/T"], capture_output=True)
                 else:
-                    import os, signal
+                    import os
+                    import signal
+
                     os.killpg(os.getpgid(pid), signal.SIGKILL)
             except Exception:
                 try:
@@ -4887,6 +5375,7 @@ def api_terminal_kill(cmd_id: str):
                     pass
         return {"status": "success"}
     return {"status": "not_found"}
+
 
 @api.post("/api/terminal/run")
 def api_terminal_run(payload: TerminalCommand, request: Request):
@@ -4898,42 +5387,34 @@ def api_terminal_run(payload: TerminalCommand, request: Request):
     cmd = payload.command.strip()
     if not cmd:
         return {"output": ""}
-        
+
     cmd_parts = cmd.split()
     if cmd_parts and cmd_parts[0] == "python":
         cmd_parts[0] = sys.executable
         cmd = " ".join(f'"{p}"' if " " in p else p for p in cmd_parts)
-    
+
     try:
-        res = subprocess.run(
+        res = subprocess.run(  # nosec B602 - operator terminal, authenticated route
             cmd,
             shell=True,
             capture_output=True,
             text=True,
             timeout=15,
-            cwd=payload.cwd or os.getcwd()
+            cwd=payload.cwd or os.getcwd(),
         )
         output = res.stdout or ""
         if res.stderr:
             output += "\n" + res.stderr
-        return {
-            "output": output,
-            "returncode": res.returncode
-        }
+        return {"output": output, "returncode": res.returncode}
     except subprocess.TimeoutExpired as e:
         output = e.stdout or ""
         if e.stderr:
             output += "\n" + e.stderr
         output += "\n[Error] Command timed out after 15 seconds."
-        return {
-            "output": output,
-            "returncode": -1
-        }
+        return {"output": output, "returncode": -1}
     except Exception as e:
-        return {
-            "output": f"[Error] Failed to execute: {str(e)}",
-            "returncode": -1
-        }
+        return {"output": f"[Error] Failed to execute: {str(e)}", "returncode": -1}
+
 
 # Project root used to confine path-parameter file reads.
 # Desktop sidecar changes into its writable runtime directory before importing
@@ -4952,12 +5433,7 @@ def _safe_resolve_path(path: str) -> str:
     """
     raw = (path or "").strip()
     normalized = os.path.normpath(raw)
-    if (
-        not raw
-        or normalized.startswith("..")
-        or os.path.isabs(normalized)
-        or ":" in normalized
-    ):
+    if not raw or normalized.startswith("..") or os.path.isabs(normalized) or ":" in normalized:
         raise HTTPException(status_code=400, detail="Invalid path")
     resolved = os.path.realpath(os.path.join(_PROJECT_ROOT, normalized))
     try:
@@ -4981,6 +5457,7 @@ def _sweep_stale_tmp_configs(max_age_sec: int = 7200) -> None:
     """
     import glob as _glob
     import time as _time
+
     try:
         now = _time.time()
         for pattern in ("configs/tmp_*.yaml", "configs/tmp_*.json", "configs/tmp_*.yml"):
@@ -4997,6 +5474,7 @@ def _sweep_stale_tmp_configs(max_age_sec: int = 7200) -> None:
 @api.get("/api/json/get_file")
 def api_json_get_file(path: str):
     import json
+
     normalized_path = _safe_resolve_path(path)
     if not os.path.exists(normalized_path):
         raise HTTPException(status_code=404, detail="File not found")
@@ -5008,9 +5486,11 @@ def api_json_get_file(path: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api.get("/api/data/preview")
 def api_data_preview(path: str, n: int = 10):
     import math
+
     normalized_path = _safe_resolve_path(path)
     if not os.path.exists(normalized_path):
         raise HTTPException(status_code=404, detail=f"File {normalized_path} not found")
@@ -5022,10 +5502,10 @@ def api_data_preview(path: str, n: int = 10):
             df = pd.read_csv(normalized_path)
         else:
             raise HTTPException(status_code=400, detail="Unsupported file format")
-            
+
         tail_df = df.tail(n)
         tail_df = tail_df.replace({pd.NA: None})
-        
+
         data_rows = []
         for r in tail_df.to_dict(orient="records"):
             cleaned_row = {}
@@ -5040,12 +5520,8 @@ def api_data_preview(path: str, n: int = 10):
                 else:
                     cleaned_row[k] = v
             data_rows.append(cleaned_row)
-            
-        return {
-            "columns": list(df.columns),
-            "rows": data_rows,
-            "total_rows": len(df)
-        }
+
+        return {"columns": list(df.columns), "rows": data_rows, "total_rows": len(df)}
     except HTTPException:
         raise
     except Exception as e:
@@ -5062,8 +5538,11 @@ def api_data_auto_heal(payload: LiteDataHealPayload):
     normalized_path = _safe_resolve_path(payload.path)
     expected = _safe_resolve_path("data/prices.parquet")
     if normalized_path != expected:
-        raise HTTPException(status_code=400, detail="Lite auto-heal is limited to data/prices.parquet")
+        raise HTTPException(
+            status_code=400, detail="Lite auto-heal is limited to data/prices.parquet"
+        )
     from services.lite_data_repair import repair_prices_file
+
     try:
         result = repair_prices_file(normalized_path, forward_fill_limit=payload.forward_fill_limit)
     except FileNotFoundError:
@@ -5072,10 +5551,12 @@ def api_data_auto_heal(payload: LiteDataHealPayload):
         raise HTTPException(status_code=400, detail=str(exc))
     return {"status": "success" if result["complete"] else "partial", **result}
 
+
 @api.get("/api/features/specs")
 def api_features_specs():
     try:
         import feature_config
+
         layout = feature_config.make_layout()
         # Some elements in the layout could be numpy objects or dict views, convert them to standard dict/lists
         serializable_layout = []
@@ -5089,13 +5570,11 @@ def api_features_specs():
                 else:
                     cleaned_block[k] = str(v) if k == "dtype" else v
             serializable_layout.append(cleaned_block)
-            
-        return {
-            "n_features": feature_config.N_FEATURES,
-            "layout": serializable_layout
-        }
+
+        return {"n_features": feature_config.N_FEATURES, "layout": serializable_layout}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api.get("/api/yaml/get")
 def api_yaml_get(path: str):
@@ -5107,6 +5586,7 @@ def api_yaml_get(path: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api.post("/api/yaml/save")
 def api_yaml_save(payload: YamlSavePayload):
     try:
@@ -5115,17 +5595,19 @@ def api_yaml_save(payload: YamlSavePayload):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api.post("/api/config/apply_calibration")
 def api_config_apply_calibration(payload: ApplyCalibrationPayload):
     import json
     import yaml
+
     path = payload.path
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail=f"Config file {path} not found")
     try:
         with open(path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-            
+
         # 1. Load tcost calibration
         tcost_path = "models/tcost_calibration.json"
         if os.path.exists(tcost_path):
@@ -5138,8 +5620,10 @@ def api_config_apply_calibration(payload: ApplyCalibrationPayload):
                 config["dynamic_spread"]["enabled"] = True
                 config["dynamic_spread"]["base_bps"] = float(fp.get("base_bps", 0.0))
                 config["dynamic_spread"]["alpha_vol"] = float(fp.get("alpha_vol", 0.0))
-                config["dynamic_spread"]["beta_illiquidity"] = float(fp.get("beta_illiquidity", fp.get("beta_liq", 0.0)))
-                
+                config["dynamic_spread"]["beta_illiquidity"] = float(
+                    fp.get("beta_illiquidity", fp.get("beta_liq", 0.0))
+                )
+
         # 2. Load slippage calibration
         slip_path = "models/slippage_calibration.json"
         if os.path.exists(slip_path):
@@ -5150,21 +5634,25 @@ def api_config_apply_calibration(payload: ApplyCalibrationPayload):
             config["slippage"]["k"] = float(slip.get("k", 0.8))
             config["slippage"]["default_spread_bps"] = float(slip.get("default_spread_bps", 2.0))
             config["slippage"]["min_half_spread_bps"] = float(slip.get("min_half_spread_bps", 0.0))
-            
+
         atomic_write_with_retry(path, yaml.safe_dump(config, sort_keys=False, allow_unicode=True))
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api.get("/api/config/get_backtest_settings")
-def api_config_get_backtest_settings(config_path: str = "configs/config_sim.yaml", sandbox_path: str = "configs/sandbox.yaml"):
+def api_config_get_backtest_settings(
+    config_path: str = "configs/config_sim.yaml", sandbox_path: str = "configs/sandbox.yaml"
+):
     import yaml
+
     if not os.path.exists(config_path):
         raise HTTPException(status_code=404, detail=f"Config file {config_path} not found")
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-        
+
         sandbox_config = {}
         if os.path.exists(sandbox_path):
             with open(sandbox_path, "r", encoding="utf-8") as f:
@@ -5174,7 +5662,7 @@ def api_config_get_backtest_settings(config_path: str = "configs/config_sim.yaml
         latency = config.get("latency", {})
         slippage = config.get("slippage", {})
         ws_dedup = config.get("ws_dedup", {})
-        
+
         mode = execution.get("mode", "bar")
         bar_price = execution.get("bar_price", "close")
         latency_base = latency.get("base_ms", 250.0)
@@ -5182,47 +5670,52 @@ def api_config_get_backtest_settings(config_path: str = "configs/config_sim.yaml
         spike_p = latency.get("spike_p", 0.01)
         spike_mult = latency.get("spike_mult", 5.0)
         seasonality = latency.get("use_seasonality", True)
-        
+
         intrabar_price_model = execution.get("intrabar_price_model", "none") or "none"
         timeframe_ms = execution.get("timeframe_ms", 14400000)
         seed_mode = "stable" if latency.get("seed", 0) == 0 else "random"
         use_latency_from = execution.get("use_latency_from", "default") or "default"
         latency_constant_ms = execution.get("latency_constant_ms", 0.0) or 0.0
-        
+
         entry_mode = execution.get("entry_mode", "default")
-        next_bar_open = (entry_mode == "next_bar_open")
-        
+        next_bar_open = entry_mode == "next_bar_open"
+
         clip_to_bar = execution.get("clip_to_bar", {})
         clip_next_bar = clip_to_bar.get("enabled", True)
         strict_open = clip_to_bar.get("strict_open_fill", False)
-        
+
         active_profile = config.get("execution_profile", "Conservative")
-        profiles = config.get("execution_profiles_definitions", {
-            "Conservative": {"offset_ticks": 2, "ttl_ms": 5000, "tif": "GTC"},
-            "Balanced": {"offset_ticks": 0, "ttl_ms": 2000, "tif": "GTC"},
-            "Aggressive": {"offset_ticks": -1, "ttl_ms": 500, "tif": "IOC"},
-            "LIMIT_MID_BPS": {"limit_offset_bps": 1.0, "ttl_steps": 5, "tif": "GTC"},
-            "MKT_OPEN_NEXT_H1": {"tif": "DAY"},
-            "VWAP_CURRENT_H1": {"tif": "DAY"}
-        })
-        
-        slip_enabled = config.get("slippage_calibration_enabled", False) or slippage.get("dynamic", {}).get("enabled", False)
+        profiles = config.get(
+            "execution_profiles_definitions",
+            {
+                "Conservative": {"offset_ticks": 2, "ttl_ms": 5000, "tif": "GTC"},
+                "Balanced": {"offset_ticks": 0, "ttl_ms": 2000, "tif": "GTC"},
+                "Aggressive": {"offset_ticks": -1, "ttl_ms": 500, "tif": "IOC"},
+                "LIMIT_MID_BPS": {"limit_offset_bps": 1.0, "ttl_steps": 5, "tif": "GTC"},
+                "MKT_OPEN_NEXT_H1": {"tif": "DAY"},
+                "VWAP_CURRENT_H1": {"tif": "DAY"},
+            },
+        )
+
+        slip_enabled = config.get("slippage_calibration_enabled", False) or slippage.get(
+            "dynamic", {}
+        ).get("enabled", False)
         slip_path = config.get("slippage_calibration_path", "models/slippage_calibration.json")
         smoothing_alpha = slippage.get("dynamic", {}).get("smoothing_alpha", 0.10) or 0.10
         vol_mode = slippage.get("dynamic", {}).get("vol_metric", "hl") or "hl"
         liq_col = slippage.get("dynamic", {}).get("liq_col", "volume") or "volume"
         liq_ref = slippage.get("dynamic", {}).get("liq_ref", 240000.0) or 240000.0
-        
+
         bar_capacity_base = execution.get("bar_capacity_base", {})
         cap_enabled = bar_capacity_base.get("enabled", False)
         cap_frac = bar_capacity_base.get("capacity_frac_of_ADV_base", 0.05)
         cap_floor = bar_capacity_base.get("floor_base", 10.0)
         cap_path = bar_capacity_base.get("adv_base_path", "data/liquidity/adv_base.json")
-        
+
         ws_enabled = ws_dedup.get("enabled", False)
         ws_skips = ws_dedup.get("log_skips", True)
         ws_path = ws_dedup.get("persist_path", "logs/ws_dedup_state.json")
-        
+
         return {
             "mode": mode,
             "bar_price": bar_price,
@@ -5253,14 +5746,16 @@ def api_config_get_backtest_settings(config_path: str = "configs/config_sim.yaml
             "cap_path": cap_path,
             "ws_enabled": ws_enabled,
             "ws_skips": ws_skips,
-            "ws_path": ws_path
+            "ws_path": ws_path,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api.post("/api/config/save_backtest_settings")
 def api_config_save_backtest_settings(payload: SaveBacktestSettingsPayload):
     import yaml
+
     config_path = payload.config_path
     sandbox_path = payload.sandbox_path
     if not os.path.exists(config_path):
@@ -5268,7 +5763,7 @@ def api_config_save_backtest_settings(payload: SaveBacktestSettingsPayload):
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-            
+
         if "execution" not in config or not isinstance(config["execution"], dict):
             config["execution"] = {}
         if "latency" not in config or not isinstance(config["latency"], dict):
@@ -5277,10 +5772,10 @@ def api_config_save_backtest_settings(payload: SaveBacktestSettingsPayload):
             config["slippage"] = {}
         if "ws_dedup" not in config or not isinstance(config["ws_dedup"], dict):
             config["ws_dedup"] = {}
-            
+
         config["execution"]["mode"] = payload.mode
         config["execution"]["bar_price"] = payload.bar_price
-        
+
         config["latency"]["base_ms"] = float(payload.latency_base)
         config["latency"]["jitter_ms"] = float(payload.latency_jitter)
         config["latency"]["spike_p"] = float(payload.spike_p)
@@ -5288,35 +5783,49 @@ def api_config_save_backtest_settings(payload: SaveBacktestSettingsPayload):
         config["latency"]["use_seasonality"] = bool(payload.seasonality)
         config["latency"]["seed"] = 0 if payload.seed_mode == "stable" else 42
         config["use_seasonality"] = bool(payload.seasonality)
-        
+
         config["execution"]["intrabar_price_model"] = payload.intrabar_price_model
         config["execution"]["timeframe_ms"] = int(payload.timeframe_ms)
-        config["execution"]["use_latency_from"] = payload.use_latency_from if payload.use_latency_from != "default" else None
-        config["execution"]["latency_constant_ms"] = float(payload.latency_constant_ms) if payload.use_latency_from == "constant" else None
-        
-        if "bridge" not in config["execution"] or not isinstance(config["execution"]["bridge"], dict):
+        config["execution"]["use_latency_from"] = (
+            payload.use_latency_from if payload.use_latency_from != "default" else None
+        )
+        config["execution"]["latency_constant_ms"] = (
+            float(payload.latency_constant_ms) if payload.use_latency_from == "constant" else None
+        )
+
+        if "bridge" not in config["execution"] or not isinstance(
+            config["execution"]["bridge"], dict
+        ):
             config["execution"]["bridge"] = {}
         config["execution"]["bridge"]["intrabar_price_model"] = payload.intrabar_price_model
         config["execution"]["bridge"]["timeframe_ms"] = int(payload.timeframe_ms)
-        config["execution"]["bridge"]["use_latency_from"] = payload.use_latency_from if payload.use_latency_from != "default" else None
-        config["execution"]["bridge"]["latency_constant_ms"] = float(payload.latency_constant_ms) if payload.use_latency_from == "constant" else None
-        
+        config["execution"]["bridge"]["use_latency_from"] = (
+            payload.use_latency_from if payload.use_latency_from != "default" else None
+        )
+        config["execution"]["bridge"]["latency_constant_ms"] = (
+            float(payload.latency_constant_ms) if payload.use_latency_from == "constant" else None
+        )
+
         config["execution"]["entry_mode"] = "next_bar_open" if payload.next_bar_open else "default"
-        
-        if "clip_to_bar" not in config["execution"] or not isinstance(config["execution"]["clip_to_bar"], dict):
+
+        if "clip_to_bar" not in config["execution"] or not isinstance(
+            config["execution"]["clip_to_bar"], dict
+        ):
             config["execution"]["clip_to_bar"] = {}
         config["execution"]["clip_to_bar"]["enabled"] = bool(payload.clip_next_bar)
         config["execution"]["clip_to_bar"]["strict_open_fill"] = bool(payload.strict_open)
-        
+
         config["execution_profile"] = payload.active_profile
         config["execution_profiles_definitions"] = payload.profiles
-        
+
         profile_params = payload.profiles.get(payload.active_profile, {})
         if "execution_params" not in config or not isinstance(config["execution_params"], dict):
             config["execution_params"] = {}
         config["execution_params"]["slippage_bps"] = 0.0
         if payload.active_profile == "LIMIT_MID_BPS":
-            config["execution_params"]["limit_offset_bps"] = float(profile_params.get("limit_offset_bps", 1.0))
+            config["execution_params"]["limit_offset_bps"] = float(
+                profile_params.get("limit_offset_bps", 1.0)
+            )
             config["execution_params"]["ttl_steps"] = int(profile_params.get("ttl_steps", 5))
             config["execution_params"]["tif"] = str(profile_params.get("tif", "GTC"))
             config["execution_params"].pop("offset_ticks", None)
@@ -5336,8 +5845,10 @@ def api_config_save_backtest_settings(payload: SaveBacktestSettingsPayload):
 
         config["slippage_calibration_enabled"] = bool(payload.slip_enabled)
         config["slippage_calibration_path"] = payload.slip_path
-        
-        if "dynamic" not in config["slippage"] or not isinstance(config["slippage"]["dynamic"], dict):
+
+        if "dynamic" not in config["slippage"] or not isinstance(
+            config["slippage"]["dynamic"], dict
+        ):
             config["slippage"]["dynamic"] = {}
         config["slippage"]["dynamic"]["enabled"] = bool(payload.slip_enabled)
         config["slippage"]["dynamic"]["path"] = payload.slip_path
@@ -5345,67 +5856,83 @@ def api_config_save_backtest_settings(payload: SaveBacktestSettingsPayload):
         config["slippage"]["dynamic"]["vol_metric"] = payload.vol_mode
         config["slippage"]["dynamic"]["liq_col"] = payload.liq_col
         config["slippage"]["dynamic"]["liq_ref"] = float(payload.liq_ref)
-        
-        if "bar_capacity_base" not in config["execution"] or not isinstance(config["execution"]["bar_capacity_base"], dict):
+
+        if "bar_capacity_base" not in config["execution"] or not isinstance(
+            config["execution"]["bar_capacity_base"], dict
+        ):
             config["execution"]["bar_capacity_base"] = {}
         config["execution"]["bar_capacity_base"]["enabled"] = bool(payload.cap_enabled)
-        config["execution"]["bar_capacity_base"]["capacity_frac_of_ADV_base"] = float(payload.cap_frac)
+        config["execution"]["bar_capacity_base"]["capacity_frac_of_ADV_base"] = float(
+            payload.cap_frac
+        )
         config["execution"]["bar_capacity_base"]["floor_base"] = float(payload.cap_floor)
         config["execution"]["bar_capacity_base"]["adv_base_path"] = payload.cap_path
-        
+
         config["ws_dedup"]["enabled"] = bool(payload.ws_enabled)
         config["ws_dedup"]["log_skips"] = bool(payload.ws_skips)
         config["ws_dedup"]["persist_path"] = payload.ws_path
-        
-        atomic_write_with_retry(config_path, yaml.safe_dump(config, sort_keys=False, allow_unicode=True))
-        
+
+        atomic_write_with_retry(
+            config_path, yaml.safe_dump(config, sort_keys=False, allow_unicode=True)
+        )
+
         if os.path.exists(sandbox_path):
             with open(sandbox_path, "r", encoding="utf-8") as f:
                 sandbox = yaml.safe_load(f) or {}
-            
+
             if "dynamic_spread" not in sandbox or not isinstance(sandbox["dynamic_spread"], dict):
                 sandbox["dynamic_spread"] = {}
             sandbox["dynamic_spread"]["enabled"] = bool(payload.slip_enabled)
             sandbox["dynamic_spread"]["vol_mode"] = payload.vol_mode
             sandbox["dynamic_spread"]["liq_col"] = payload.liq_col
             sandbox["dynamic_spread"]["liq_ref"] = float(payload.liq_ref)
-            
-            atomic_write_with_retry(sandbox_path, yaml.safe_dump(sandbox, sort_keys=False, allow_unicode=True))
-            
+
+            atomic_write_with_retry(
+                sandbox_path, yaml.safe_dump(sandbox, sort_keys=False, allow_unicode=True)
+            )
+
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api.post("/api/ingest/verify")
 def api_ingest_verify(payload: VerifyIngestPayload):
     import requests
+
     provider = payload.provider.lower()
     api_key = payload.api_key
     api_secret = payload.api_secret
-    
+
     if provider == "binance":
         try:
             res = requests.get("https://api.binance.com/api/v3/ping", timeout=5)
             if res.status_code == 200:
                 return {"status": "success", "message": "Connection to Binance successful!"}
             else:
-                return {"status": "error", "message": f"Binance ping failed with status code {res.status_code}"}
+                return {
+                    "status": "error",
+                    "message": f"Binance ping failed with status code {res.status_code}",
+                }
         except Exception as e:
             return {"status": "error", "message": f"Binance error: {str(e)}"}
-            
+
     elif provider == "alpaca":
         try:
-            headers = {
-                "APCA-API-KEY-ID": api_key,
-                "APCA-API-SECRET-KEY": api_secret
-            }
+            headers = {"APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret}
             url = "https://paper-api.alpaca.markets/v2/account"
             if api_key and api_secret:
                 res = requests.get(url, headers=headers, timeout=5)
                 if res.status_code == 200:
-                    return {"status": "success", "message": "Connection to Alpaca Paper successful!"}
+                    return {
+                        "status": "success",
+                        "message": "Connection to Alpaca Paper successful!",
+                    }
                 else:
-                    return {"status": "error", "message": f"Alpaca credentials verification failed: {res.text}"}
+                    return {
+                        "status": "error",
+                        "message": f"Alpaca credentials verification failed: {res.text}",
+                    }
             else:
                 res = requests.get("https://api.alpaca.markets/v2/clock", timeout=5)
                 if res.status_code == 200:
@@ -5414,12 +5941,10 @@ def api_ingest_verify(payload: VerifyIngestPayload):
                     return {"status": "error", "message": "Alpaca API clock endpoint unreachable."}
         except Exception as e:
             return {"status": "error", "message": f"Alpaca error: {str(e)}"}
-            
+
     elif provider == "oanda":
         try:
-            headers = {
-                "Authorization": f"Bearer {api_key}"
-            }
+            headers = {"Authorization": f"Bearer {api_key}"}
             url = "https://api-fxtrade.oanda.com/v3/accounts"
             if api_key:
                 res = requests.get(url, headers=headers, timeout=5)
@@ -5429,7 +5954,10 @@ def api_ingest_verify(payload: VerifyIngestPayload):
                     url_practice = "https://api-fxpractice.oanda.com/v3/accounts"
                     res_p = requests.get(url_practice, headers=headers, timeout=5)
                     if res_p.status_code == 200:
-                        return {"status": "success", "message": "Connection to OANDA Practice successful!"}
+                        return {
+                            "status": "success",
+                            "message": "Connection to OANDA Practice successful!",
+                        }
                     return {"status": "error", "message": f"Oanda API failed: {res.text}"}
             else:
                 res = requests.get("https://api-fxtrade.oanda.com/", timeout=5)
@@ -5438,9 +5966,11 @@ def api_ingest_verify(payload: VerifyIngestPayload):
                 return {"status": "error", "message": "Oanda API unreachable."}
         except Exception as e:
             return {"status": "error", "message": f"Oanda error: {str(e)}"}
-            
-    return {"status": "success", "message": f"Connection test for {provider.upper()} passed (public access)."}
 
+    return {
+        "status": "success",
+        "message": f"Connection test for {provider.upper()} passed (public access).",
+    }
 
 
 @api.post("/api/quantizer/save")
@@ -5452,21 +5982,26 @@ def api_quantizer_save(payload: QuantizerSavePayload):
                     data = yaml.safe_load(f) or {}
                 data.setdefault("quantizer", {})
                 data["quantizer"]["strict_filters"] = payload.strict_filters
-                data["quantizer"]["enforce_percent_price_by_side"] = payload.enforce_percent_price_by_side
+                data["quantizer"][
+                    "enforce_percent_price_by_side"
+                ] = payload.enforce_percent_price_by_side
                 if "strict" in data["quantizer"]:
                     data["quantizer"]["strict"] = payload.strict_filters
-                atomic_write_with_retry(path, yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
+                atomic_write_with_retry(
+                    path, yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+                )
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Failed to save {path}: {str(e)}")
     return {"status": "success"}
 
+
 @api.post("/api/panic_halt")
 def api_panic_halt():
     import services.ops_kill_switch as ops_kill_switch
-    
+
     # 1. Trip the operational kill switch flag
     ops_kill_switch._trip()
-    
+
     # 2. Halt automated signaling process
     signaler_was_running = False
     if background_running(GLOBAL_REALTIME_PID):
@@ -5479,17 +6014,22 @@ def api_panic_halt():
     # absent.
     if _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running":
         result = _CCEA_SUPERVISOR.emergency_halt()
-        result.update({
-            "status": "success" if result.get("ok") else "partial",
-            "kill_switch_tripped": True,
-            "signaler_halted": True,
-            "signaler_was_running": signaler_was_running,
-            "asset_class": ACTIVE_ASSET.lower(),
-        })
+        result.update(
+            {
+                "status": "success" if result.get("ok") else "partial",
+                "kill_switch_tripped": True,
+                "signaler_halted": True,
+                "signaler_was_running": signaler_was_running,
+                "asset_class": ACTIVE_ASSET.lower(),
+            }
+        )
         try:
             panic_log_path = os.path.join(GLOBAL_LOGS_DIR, "panic_halt.log")
             with open(panic_log_path, "a", encoding="utf-8") as lf:
-                lf.write(json.dumps({"at": datetime.now().isoformat(), **result}, ensure_ascii=False) + "\n")
+                lf.write(
+                    json.dumps({"at": datetime.now().isoformat(), **result}, ensure_ascii=False)
+                    + "\n"
+                )
         except Exception:
             pass
         # Snapshot bookkeeping must happen on this path too — /api/telemetry/live
@@ -5502,17 +6042,21 @@ def api_panic_halt():
             snap["kill_switch_tripped"] = True
             snap["signaler_running"] = False
             snap["last_panic_halt_time"] = datetime.now().isoformat()
-            snap["last_panic_report"] = {k: v for k, v in result.items() if k != "kill_switch_tripped"}
+            snap["last_panic_report"] = {
+                k: v for k, v in result.items() if k != "kill_switch_tripped"
+            }
             atomic_write_with_retry(GLOBAL_SNAPSHOT_JSON, json.dumps(snap, indent=2))
         except Exception:
             pass
         return result
-        
+
     asset_class = ACTIVE_ASSET.lower()
 
     # 3. Create panic log file
     panic_log_path = os.path.join(GLOBAL_LOGS_DIR, "panic_halt.log")
-    log_msg = f"[{datetime.now().isoformat()}] EMERGENCY PANIC HALT TRIGGERED. Asset: {asset_class}\n"
+    log_msg = (
+        f"[{datetime.now().isoformat()}] EMERGENCY PANIC HALT TRIGGERED. Asset: {asset_class}\n"
+    )
 
     # Fail-closed contract: with no authoritative execution backend (no CCEA
     # Agent, no real broker credentials) the halt only trips the local locks.
@@ -5526,9 +6070,13 @@ def api_panic_halt():
 
     def _real_credentials_available() -> bool:
         if asset_class in ("equity", "options"):
-            return not _looks_like_placeholder(os.getenv("ALPACA_API_KEY")) and bool(os.getenv("ALPACA_API_SECRET"))
+            return not _looks_like_placeholder(os.getenv("ALPACA_API_KEY")) and bool(
+                os.getenv("ALPACA_API_SECRET")
+            )
         if asset_class == "forex":
-            return not _looks_like_placeholder(os.getenv("OANDA_API_KEY")) and bool(os.getenv("OANDA_ACCOUNT_ID"))
+            return not _looks_like_placeholder(os.getenv("OANDA_API_KEY")) and bool(
+                os.getenv("OANDA_ACCOUNT_ID")
+            )
         if asset_class in ("futures", "crypto"):
             return not _looks_like_placeholder(os.getenv("BINANCE_API_KEY"))
         return False
@@ -5561,16 +6109,18 @@ def api_panic_halt():
                 nonlocal close_failures
                 if not confirmed:
                     close_failures += 1
-                positions_liquidated.append({
-                    "symbol": sym,
-                    "qty": qty,
-                    "price": entry_price,
-                    # Entry-price notional (estimate) — fills are reported by the
-                    # broker asynchronously and are NOT claimed here.
-                    "value": abs(qty * entry_price),
-                    "side": "LONG" if qty > 0 else "SHORT",
-                    "confirmed": confirmed,
-                })
+                positions_liquidated.append(
+                    {
+                        "symbol": sym,
+                        "qty": qty,
+                        "price": entry_price,
+                        # Entry-price notional (estimate) — fills are reported by the
+                        # broker asynchronously and are NOT claimed here.
+                        "value": abs(qty * entry_price),
+                        "side": "LONG" if qty > 0 else "SHORT",
+                        "confirmed": confirmed,
+                    }
+                )
 
             def _close_via_market_orders(adapter) -> None:
                 positions = adapter.get_positions()
@@ -5585,7 +6135,9 @@ def api_panic_halt():
                             quantity=_Dec(str(abs(qty))),
                         )
                         result = adapter.submit_order(order)
-                        confirmed = bool(getattr(result, "success", result is not None and result is not False))
+                        confirmed = bool(
+                            getattr(result, "success", result is not None and result is not False)
+                        )
                         _record_close(sym, qty, float(pos.avg_entry_price), confirmed)
 
             def _close_via_close_position(adapter) -> None:
@@ -5594,23 +6146,31 @@ def api_panic_halt():
                     qty = float(pos.qty)
                     if qty != 0:
                         result = adapter.close_position(sym)
-                        confirmed = bool(getattr(result, "success", result is not None and result is not False))
+                        confirmed = bool(
+                            getattr(result, "success", result is not None and result is not False)
+                        )
                         _record_close(sym, qty, float(pos.avg_entry_price), confirmed)
 
             if asset_class in ("equity", "options"):
-                adapter = create_order_execution_adapter(ExchangeVendor.ALPACA, {
-                    "api_key": os.getenv("ALPACA_API_KEY"),
-                    "api_secret": os.getenv("ALPACA_API_SECRET", ""),
-                    "paper": True,
-                })
+                adapter = create_order_execution_adapter(
+                    ExchangeVendor.ALPACA,
+                    {
+                        "api_key": os.getenv("ALPACA_API_KEY"),
+                        "api_secret": os.getenv("ALPACA_API_SECRET", ""),
+                        "paper": True,
+                    },
+                )
                 orders_cancelled = int(adapter.cancel_all_orders())
                 _close_via_market_orders(adapter)
             elif asset_class == "forex":
-                adapter = create_order_execution_adapter(ExchangeVendor.OANDA, {
-                    "api_key": os.getenv("OANDA_API_KEY"),
-                    "account_id": os.getenv("OANDA_ACCOUNT_ID"),
-                    "practice": True,
-                })
+                adapter = create_order_execution_adapter(
+                    ExchangeVendor.OANDA,
+                    {
+                        "api_key": os.getenv("OANDA_API_KEY"),
+                        "account_id": os.getenv("OANDA_ACCOUNT_ID"),
+                        "practice": True,
+                    },
+                )
                 open_orders = adapter.get_open_orders()
                 orders_cancelled = 0
                 for o in open_orders:
@@ -5620,19 +6180,25 @@ def api_panic_halt():
                         cancel_failures += 1
                 _close_via_close_position(adapter)
             elif asset_class == "crypto":  # Binance Spot (P0-C)
-                adapter = create_order_execution_adapter(ExchangeVendor.BINANCE, {
-                    "api_key": os.getenv("BINANCE_API_KEY"),
-                    "api_secret": os.getenv("BINANCE_API_SECRET", ""),
-                })
+                adapter = create_order_execution_adapter(
+                    ExchangeVendor.BINANCE,
+                    {
+                        "api_key": os.getenv("BINANCE_API_KEY"),
+                        "api_secret": os.getenv("BINANCE_API_SECRET", ""),
+                    },
+                )
                 orders_cancelled = int(adapter.cancel_all_orders())
                 # Spot is long-only: get_positions() surfaces base-asset balances
                 # as {asset}USDT synthetic positions → market-SELL to flatten.
                 _close_via_market_orders(adapter)
             else:  # futures (Binance USDT-M)
-                adapter = create_futures_order_execution_adapter(ExchangeVendor.BINANCE_FUTURES, {
-                    "api_key": os.getenv("BINANCE_API_KEY"),
-                    "api_secret": os.getenv("BINANCE_API_SECRET", ""),
-                })
+                adapter = create_futures_order_execution_adapter(
+                    ExchangeVendor.BINANCE_FUTURES,
+                    {
+                        "api_key": os.getenv("BINANCE_API_KEY"),
+                        "api_secret": os.getenv("BINANCE_API_SECRET", ""),
+                    },
+                )
                 orders_cancelled = int(adapter.cancel_all_orders())
                 _close_via_close_position(adapter)
 
@@ -5647,9 +6213,7 @@ def api_panic_halt():
 
             confirmed_closes = sum(1 for p in positions_liquidated if p.get("confirmed"))
             all_confirmed = (
-                cancel_failures == 0
-                and close_failures == 0
-                and (positions_remaining in (0, None))
+                cancel_failures == 0 and close_failures == 0 and (positions_remaining in (0, None))
             )
             status = "success" if all_confirmed else "partial"
             execution_mode = "live_broker"
@@ -5657,7 +6221,11 @@ def api_panic_halt():
                 f"По данным адаптера ({asset_class}, paper/practice-окружение): отменено ордеров: {orders_cancelled}"
                 + (f" (не отменено: {cancel_failures})" if cancel_failures else "")
                 + f"; отправлено закрытий позиций: {len(positions_liquidated)} (подтверждено адаптером: {confirmed_closes})."
-                + (f" Осталось открытых позиций: {positions_remaining}." if positions_remaining else "")
+                + (
+                    f" Осталось открытых позиций: {positions_remaining}."
+                    if positions_remaining
+                    else ""
+                )
                 + " Итоговые фактические исполнения подтверждаются брокером асинхронно — проверьте счёт."
             )
             # Only facts actually observed from the adapter — no invented
@@ -5713,7 +6281,7 @@ def api_panic_halt():
         "detail": detail,
         "orders_cancelled": orders_cancelled,
         "positions_liquidated": positions_liquidated,
-        "quant_report": quant_report
+        "quant_report": quant_report,
     }
     try:
         atomic_write_with_retry(GLOBAL_SNAPSHOT_JSON, json.dumps(snap, indent=2))
@@ -5730,12 +6298,14 @@ def api_panic_halt():
         "execution_mode": execution_mode,
         "orders_cancelled": orders_cancelled,
         "positions_liquidated": positions_liquidated,
-        "quant_report": quant_report
+        "quant_report": quant_report,
     }
+
 
 @api.post("/api/panic_reset")
 def api_panic_reset():
     import services.ops_kill_switch as ops_kill_switch
+
     ops_kill_switch.manual_reset()
 
     # Снять breach-флаг risk-монитора: после ручного сброса kill switch
@@ -5758,16 +6328,18 @@ def api_panic_reset():
         atomic_write_with_retry(GLOBAL_SNAPSHOT_JSON, json.dumps(snap, indent=2))
     except Exception:
         pass
-        
+
     return {"status": "success", "kill_switch_tripped": False}
+
 
 @api.get("/api/portfolio/holdings")
 def api_portfolio_holdings(asset: str = None):
     import services.ops_kill_switch as ops_kill_switch
+
     is_tripped = ops_kill_switch.tripped()
-    
+
     asset_class = asset.lower() if asset else ACTIVE_ASSET.lower()
-    
+
     # Defaults
     holdings = []
     broker_error: Optional[str] = None
@@ -5775,9 +6347,9 @@ def api_portfolio_holdings(asset: str = None):
         "net_liquidation_value": 0.0,
         "margin_used": 0.0,
         "leverage": "1.0x",
-        "buying_power": 0.0
+        "buying_power": 0.0,
     }
-    
+
     # Desktop CCEA is the authoritative execution source.  Prefer its active
     # broker/books over environment-variable heuristics and decorative holdings.
     if _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running":
@@ -5788,7 +6360,8 @@ def api_portfolio_holdings(asset: str = None):
                 snap["kill_switch_tripped"] = is_tripped
                 snap["disclaimer"] = (
                     "Paper broker positions — simulated execution, real local books."
-                    if snap.get("simulated") else None
+                    if snap.get("simulated")
+                    else None
                 )
                 return snap
         except Exception:
@@ -5802,28 +6375,45 @@ def api_portfolio_holdings(asset: str = None):
             "simulated": True,
             "data_source": "unavailable_while_halted",
         }
-        
+
     # Check if we have real API key to fetch actual positions
     key_id = os.getenv("ALPACA_API_KEY")
     secret = os.getenv("ALPACA_API_SECRET")
     is_mock = not key_id or "test" in key_id or "YOUR" in key_id or "$" in key_id or not secret
-    
+
     if asset_class == "equity":
         if is_mock:
             holdings = [
-                {"symbol": "SPY", "qty": 200, "entry_price": 510.10, "current_price": 512.40, "value": 102480.0, "side": "LONG", "pnl": 460.0},
-                {"symbol": "AAPL", "qty": 100, "entry_price": 175.20, "current_price": 178.50, "value": 17850.0, "side": "LONG", "pnl": 330.0}
+                {
+                    "symbol": "SPY",
+                    "qty": 200,
+                    "entry_price": 510.10,
+                    "current_price": 512.40,
+                    "value": 102480.0,
+                    "side": "LONG",
+                    "pnl": 460.0,
+                },
+                {
+                    "symbol": "AAPL",
+                    "qty": 100,
+                    "entry_price": 175.20,
+                    "current_price": 178.50,
+                    "value": 17850.0,
+                    "side": "LONG",
+                    "pnl": 330.0,
+                },
             ]
             metrics = {
                 "net_liquidation_value": 120330.0,
                 "margin_used": 59165.0,
                 "leverage": "1.5x",
-                "buying_power": 120330.0
+                "buying_power": 120330.0,
             }
         else:
             try:
                 from adapters.registry import create_order_execution_adapter
                 from adapters.models import ExchangeVendor
+
                 config = {"api_key": key_id, "api_secret": secret, "paper": True}
                 adapter = create_order_execution_adapter(ExchangeVendor.ALPACA, config)
                 positions = adapter.get_positions()
@@ -5835,47 +6425,73 @@ def api_portfolio_holdings(asset: str = None):
                         curr = entry
                         val = abs(qty * entry)
                         total_val += val
-                        holdings.append({
-                            "symbol": sym,
-                            "qty": qty,
-                            "entry_price": entry,
-                            "current_price": curr,
-                            "value": val,
-                            "side": "LONG" if qty > 0 else "SHORT",
-                            "pnl": 0.0
-                        })
+                        holdings.append(
+                            {
+                                "symbol": sym,
+                                "qty": qty,
+                                "entry_price": entry,
+                                "current_price": curr,
+                                "value": val,
+                                "side": "LONG" if qty > 0 else "SHORT",
+                                "pnl": 0.0,
+                            }
+                        )
                 metrics = {
                     "net_liquidation_value": total_val or 100000.0,
                     "margin_used": total_val * 0.5,
                     "leverage": f"{round(total_val / 100000.0, 2) if total_val else 1.0}x",
-                    "buying_power": max(0.0, 100000.0 - total_val * 0.5)
+                    "buying_power": max(0.0, 100000.0 - total_val * 0.5),
                 }
             except Exception as _broker_exc:
                 # Never substitute fabricated holdings for a broker error with
                 # real credentials (audit L2-008 class): report the failure.
                 holdings = []
-                metrics = {"net_liquidation_value": 0.0, "margin_used": 0.0, "leverage": "—", "buying_power": 0.0}
+                metrics = {
+                    "net_liquidation_value": 0.0,
+                    "margin_used": 0.0,
+                    "leverage": "—",
+                    "buying_power": 0.0,
+                }
                 broker_error = str(_broker_exc)
-                
+
     elif asset_class == "forex":
         key_id = os.getenv("OANDA_API_KEY")
         account_id = os.getenv("OANDA_ACCOUNT_ID")
-        is_mock = not key_id or "test" in key_id or "YOUR" in key_id or "$" in key_id or not account_id
+        is_mock = (
+            not key_id or "test" in key_id or "YOUR" in key_id or "$" in key_id or not account_id
+        )
         if is_mock:
             holdings = [
-                {"symbol": "EUR_USD", "qty": 100000, "entry_price": 1.0820, "current_price": 1.0852, "value": 108520.0, "side": "LONG", "pnl": 320.0},
-                {"symbol": "USD_JPY", "qty": -50000, "entry_price": 157.10, "current_price": 156.40, "value": 50000.0, "side": "SHORT", "pnl": 223.65}
+                {
+                    "symbol": "EUR_USD",
+                    "qty": 100000,
+                    "entry_price": 1.0820,
+                    "current_price": 1.0852,
+                    "value": 108520.0,
+                    "side": "LONG",
+                    "pnl": 320.0,
+                },
+                {
+                    "symbol": "USD_JPY",
+                    "qty": -50000,
+                    "entry_price": 157.10,
+                    "current_price": 156.40,
+                    "value": 50000.0,
+                    "side": "SHORT",
+                    "pnl": 223.65,
+                },
             ]
             metrics = {
                 "net_liquidation_value": 158520.0,
                 "margin_used": 3170.0,
                 "leverage": "10.0x",
-                "buying_power": 155350.0
+                "buying_power": 155350.0,
             }
         else:
             try:
                 from adapters.registry import create_order_execution_adapter
                 from adapters.models import ExchangeVendor
+
                 config = {"api_key": key_id, "account_id": account_id, "practice": True}
                 adapter = create_order_execution_adapter(ExchangeVendor.OANDA, config)
                 positions = adapter.get_positions()
@@ -5886,46 +6502,70 @@ def api_portfolio_holdings(asset: str = None):
                         entry = float(pos.avg_entry_price)
                         val = abs(qty * entry)
                         total_val += val
-                        holdings.append({
-                            "symbol": sym,
-                            "qty": qty,
-                            "entry_price": entry,
-                            "current_price": entry,
-                            "value": val,
-                            "side": "LONG" if qty > 0 else "SHORT",
-                            "pnl": 0.0
-                        })
+                        holdings.append(
+                            {
+                                "symbol": sym,
+                                "qty": qty,
+                                "entry_price": entry,
+                                "current_price": entry,
+                                "value": val,
+                                "side": "LONG" if qty > 0 else "SHORT",
+                                "pnl": 0.0,
+                            }
+                        )
                 metrics = {
                     "net_liquidation_value": total_val or 100000.0,
                     "margin_used": total_val * 0.02,
                     "leverage": f"{round(total_val / 100000.0, 2) if total_val else 1.0}x",
-                    "buying_power": max(0.0, 100000.0 - total_val * 0.02)
+                    "buying_power": max(0.0, 100000.0 - total_val * 0.02),
                 }
             except Exception as _broker_exc:
                 # Never substitute fabricated holdings for a broker error with
                 # real credentials (audit L2-008 class): report the failure.
                 holdings = []
-                metrics = {"net_liquidation_value": 0.0, "margin_used": 0.0, "leverage": "—", "buying_power": 0.0}
+                metrics = {
+                    "net_liquidation_value": 0.0,
+                    "margin_used": 0.0,
+                    "leverage": "—",
+                    "buying_power": 0.0,
+                }
                 broker_error = str(_broker_exc)
-                
+
     elif asset_class == "futures":
         key_id = os.getenv("BINANCE_API_KEY")
         is_mock = not key_id or "test" in key_id or "YOUR" in key_id or "$" in key_id
         if is_mock:
             holdings = [
-                {"symbol": "ES", "qty": 2, "entry_price": 5290.00, "current_price": 5310.00, "value": 531000.0, "side": "LONG", "pnl": 2000.0},
-                {"symbol": "NQ", "qty": 1, "entry_price": 18650.00, "current_price": 18720.00, "value": 374400.0, "side": "LONG", "pnl": 1400.0}
+                {
+                    "symbol": "ES",
+                    "qty": 2,
+                    "entry_price": 5290.00,
+                    "current_price": 5310.00,
+                    "value": 531000.0,
+                    "side": "LONG",
+                    "pnl": 2000.0,
+                },
+                {
+                    "symbol": "NQ",
+                    "qty": 1,
+                    "entry_price": 18650.00,
+                    "current_price": 18720.00,
+                    "value": 374400.0,
+                    "side": "LONG",
+                    "pnl": 1400.0,
+                },
             ]
             metrics = {
                 "net_liquidation_value": 905400.0,
                 "margin_used": 45600.0,
                 "leverage": "5.0x",
-                "buying_power": 859800.0
+                "buying_power": 859800.0,
             }
         else:
             try:
                 from adapters.registry import create_order_execution_adapter
                 from adapters.models import ExchangeVendor
+
                 config = {"api_key": key_id, "api_secret": os.getenv("BINANCE_API_SECRET", "")}
                 adapter = create_order_execution_adapter(ExchangeVendor.BINANCE_FUTURES, config)
                 positions = adapter.get_positions()
@@ -5936,46 +6576,70 @@ def api_portfolio_holdings(asset: str = None):
                         entry = float(pos.avg_entry_price)
                         val = abs(qty * entry)
                         total_val += val
-                        holdings.append({
-                            "symbol": sym,
-                            "qty": qty,
-                            "entry_price": entry,
-                            "current_price": entry,
-                            "value": val,
-                            "side": "LONG" if qty > 0 else "SHORT",
-                            "pnl": 0.0
-                        })
+                        holdings.append(
+                            {
+                                "symbol": sym,
+                                "qty": qty,
+                                "entry_price": entry,
+                                "current_price": entry,
+                                "value": val,
+                                "side": "LONG" if qty > 0 else "SHORT",
+                                "pnl": 0.0,
+                            }
+                        )
                 metrics = {
                     "net_liquidation_value": total_val or 500000.0,
                     "margin_used": len(holdings) * 12400.0,
                     "leverage": "5.0x",
-                    "buying_power": max(0.0, 500000.0 - len(holdings) * 12400.0)
+                    "buying_power": max(0.0, 500000.0 - len(holdings) * 12400.0),
                 }
             except Exception as _broker_exc:
                 # Never substitute fabricated holdings for a broker error with
                 # real credentials (audit L2-008 class): report the failure.
                 holdings = []
-                metrics = {"net_liquidation_value": 0.0, "margin_used": 0.0, "leverage": "—", "buying_power": 0.0}
+                metrics = {
+                    "net_liquidation_value": 0.0,
+                    "margin_used": 0.0,
+                    "leverage": "—",
+                    "buying_power": 0.0,
+                }
                 broker_error = str(_broker_exc)
-                
+
     elif asset_class == "crypto":
         key_id = os.getenv("BINANCE_API_KEY")
         is_mock = not key_id or "test" in key_id or "YOUR" in key_id or "$" in key_id
         if is_mock:
             holdings = [
-                {"symbol": "BTCUSDT", "qty": 0.8, "entry_price": 67500.0, "current_price": 68240.0, "value": 54592.0, "side": "LONG", "pnl": 592.0},
-                {"symbol": "ETHUSDT", "qty": 12.0, "entry_price": 3700.0, "current_price": 3780.0, "value": 45360.0, "side": "LONG", "pnl": 960.0}
+                {
+                    "symbol": "BTCUSDT",
+                    "qty": 0.8,
+                    "entry_price": 67500.0,
+                    "current_price": 68240.0,
+                    "value": 54592.0,
+                    "side": "LONG",
+                    "pnl": 592.0,
+                },
+                {
+                    "symbol": "ETHUSDT",
+                    "qty": 12.0,
+                    "entry_price": 3700.0,
+                    "current_price": 3780.0,
+                    "value": 45360.0,
+                    "side": "LONG",
+                    "pnl": 960.0,
+                },
             ]
             metrics = {
                 "net_liquidation_value": 99952.0,
                 "margin_used": 9995.0,
                 "leverage": "2.1x",
-                "buying_power": 89957.0
+                "buying_power": 89957.0,
             }
         else:
             try:
                 from adapters.registry import create_order_execution_adapter
                 from adapters.models import ExchangeVendor
+
                 config = {"api_key": key_id, "api_secret": os.getenv("BINANCE_API_SECRET", "")}
                 adapter = create_order_execution_adapter(ExchangeVendor.BINANCE, config)
                 positions = adapter.get_positions()
@@ -5986,46 +6650,70 @@ def api_portfolio_holdings(asset: str = None):
                         entry = float(pos.avg_entry_price)
                         val = abs(qty * entry)
                         total_val += val
-                        holdings.append({
-                            "symbol": sym,
-                            "qty": qty,
-                            "entry_price": entry,
-                            "current_price": entry,
-                            "value": val,
-                            "side": "LONG" if qty > 0 else "SHORT",
-                            "pnl": 0.0
-                        })
+                        holdings.append(
+                            {
+                                "symbol": sym,
+                                "qty": qty,
+                                "entry_price": entry,
+                                "current_price": entry,
+                                "value": val,
+                                "side": "LONG" if qty > 0 else "SHORT",
+                                "pnl": 0.0,
+                            }
+                        )
                 metrics = {
                     "net_liquidation_value": total_val or 10000.0,
                     "margin_used": total_val * 0.1,
                     "leverage": "2.1x",
-                    "buying_power": max(0.0, 10000.0 - total_val * 0.1)
+                    "buying_power": max(0.0, 10000.0 - total_val * 0.1),
                 }
             except Exception as _broker_exc:
                 # Never substitute fabricated holdings for a broker error with
                 # real credentials (audit L2-008 class): report the failure.
                 holdings = []
-                metrics = {"net_liquidation_value": 0.0, "margin_used": 0.0, "leverage": "—", "buying_power": 0.0}
+                metrics = {
+                    "net_liquidation_value": 0.0,
+                    "margin_used": 0.0,
+                    "leverage": "—",
+                    "buying_power": 0.0,
+                }
                 broker_error = str(_broker_exc)
-                
+
     elif asset_class == "options":
         key_id = os.getenv("ALPACA_API_KEY")
         is_mock = not key_id or "test" in key_id or "YOUR" in key_id or "$" in key_id
         if is_mock:
             holdings = [
-                {"symbol": "AAPL260619C00180000", "qty": 10, "entry_price": 22.10, "current_price": 24.50, "value": 24500.0, "side": "LONG", "pnl": 240.0},
-                {"symbol": "TSLA260619P00170000", "qty": 5, "entry_price": 19.50, "current_price": 18.20, "value": 9100.0, "side": "LONG", "pnl": -65.0}
+                {
+                    "symbol": "AAPL260619C00180000",
+                    "qty": 10,
+                    "entry_price": 22.10,
+                    "current_price": 24.50,
+                    "value": 24500.0,
+                    "side": "LONG",
+                    "pnl": 240.0,
+                },
+                {
+                    "symbol": "TSLA260619P00170000",
+                    "qty": 5,
+                    "entry_price": 19.50,
+                    "current_price": 18.20,
+                    "value": 9100.0,
+                    "side": "LONG",
+                    "pnl": -65.0,
+                },
             ]
             metrics = {
                 "net_liquidation_value": 33600.0,
                 "margin_used": 0.0,
                 "leverage": "1.0x",
-                "buying_power": 33600.0
+                "buying_power": 33600.0,
             }
         else:
             try:
                 from adapters.registry import create_order_execution_adapter
                 from adapters.models import ExchangeVendor
+
                 config = {"api_key": key_id, "api_secret": os.getenv("ALPACA_API_SECRET", "")}
                 adapter = create_order_execution_adapter(ExchangeVendor.ALPACA, config)
                 positions = adapter.get_positions()
@@ -6036,28 +6724,35 @@ def api_portfolio_holdings(asset: str = None):
                         entry = float(pos.avg_entry_price)
                         val = abs(qty * entry)
                         total_val += val
-                        holdings.append({
-                            "symbol": sym,
-                            "qty": qty,
-                            "entry_price": entry,
-                            "current_price": entry,
-                            "value": val,
-                            "side": "LONG" if qty > 0 else "SHORT",
-                            "pnl": 0.0
-                        })
+                        holdings.append(
+                            {
+                                "symbol": sym,
+                                "qty": qty,
+                                "entry_price": entry,
+                                "current_price": entry,
+                                "value": val,
+                                "side": "LONG" if qty > 0 else "SHORT",
+                                "pnl": 0.0,
+                            }
+                        )
                 metrics = {
                     "net_liquidation_value": total_val or 50000.0,
                     "margin_used": 0.0,
                     "leverage": "1.0x",
-                    "buying_power": total_val or 50000.0
+                    "buying_power": total_val or 50000.0,
                 }
             except Exception as _broker_exc:
                 # Never substitute fabricated holdings for a broker error with
                 # real credentials (audit L2-008 class): report the failure.
                 holdings = []
-                metrics = {"net_liquidation_value": 0.0, "margin_used": 0.0, "leverage": "—", "buying_power": 0.0}
+                metrics = {
+                    "net_liquidation_value": 0.0,
+                    "margin_used": 0.0,
+                    "leverage": "—",
+                    "buying_power": 0.0,
+                }
                 broker_error = str(_broker_exc)
-                
+
     return {
         "holdings": holdings,
         "metrics": metrics,
@@ -6072,15 +6767,20 @@ def api_portfolio_holdings(asset: str = None):
         "disclaimer": MVP_DEMO_DISCLAIMER if is_mock else None,
     }
 
+
 class ClosePositionPayload(BaseModel):
     symbol: str
-    quantity: Optional[float] = None   # None = закрыть целиком; иначе частично
+    quantity: Optional[float] = None  # None = закрыть целиком; иначе частично
+
 
 @api.post("/api/portfolio/close")
 def api_portfolio_close(payload: ClosePositionPayload):
     import services.ops_kill_switch as ops_kill_switch
+
     if ops_kill_switch.tripped():
-        raise HTTPException(status_code=400, detail="Kill switch is active. Cannot close individual positions.")
+        raise HTTPException(
+            status_code=400, detail="Kill switch is active. Cannot close individual positions."
+        )
 
     symbol = payload.symbol
     asset_class = ACTIVE_ASSET.lower()
@@ -6088,24 +6788,26 @@ def api_portfolio_close(payload: ClosePositionPayload):
     if _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running":
         result = _CCEA_SUPERVISOR.close_position(symbol, quantity=payload.quantity)
         if not result.get("ok"):
-            raise HTTPException(status_code=404, detail=result.get("error", "position close failed"))
+            raise HTTPException(
+                status_code=404, detail=result.get("error", "position close failed")
+            )
         verb = "partially closed" if result.get("partial") else "closed"
         return {"status": "success", "detail": f"Position {symbol} {verb}", **result}
-    
+
     key_id = os.getenv("ALPACA_API_KEY")
     secret = os.getenv("ALPACA_API_SECRET")
     is_mock = not key_id or "test" in key_id or "YOUR" in key_id or "$" in key_id or not secret
-    
+
     if is_mock:
         raise HTTPException(
             status_code=409,
             detail="This is a demo holding, not a broker position; it cannot be closed.",
         )
-        
+
     try:
         from adapters.registry import create_order_execution_adapter
         from adapters.models import ExchangeVendor
-        
+
         if asset_class == "equity":
             config = {"api_key": key_id, "api_secret": secret, "paper": True}
             adapter = create_order_execution_adapter(ExchangeVendor.ALPACA, config)
@@ -6115,6 +6817,7 @@ def api_portfolio_close(payload: ClosePositionPayload):
                 if qty != 0:
                     from decimal import Decimal as _Dec
                     from core_models import Order, OrderType, Side
+
                     side = Side.SELL if qty > 0 else Side.BUY
                     # core_models.Order takes ts/quantity (no `qty` kwarg) —
                     # the old construction raised TypeError on any real close.
@@ -6126,19 +6829,29 @@ def api_portfolio_close(payload: ClosePositionPayload):
                         quantity=_Dec(str(abs(qty))),
                     )
                     adapter.submit_order(close_order)
-                    
+
         elif asset_class == "forex":
-            config = {"api_key": os.getenv("OANDA_API_KEY", ""), "account_id": os.getenv("OANDA_ACCOUNT_ID", ""), "practice": True}
+            config = {
+                "api_key": os.getenv("OANDA_API_KEY", ""),
+                "account_id": os.getenv("OANDA_ACCOUNT_ID", ""),
+                "practice": True,
+            }
             adapter = create_order_execution_adapter(ExchangeVendor.OANDA, config)
             adapter.close_position(symbol)
-            
+
         elif asset_class == "futures":
-            config = {"api_key": os.getenv("BINANCE_API_KEY", ""), "api_secret": os.getenv("BINANCE_API_SECRET", "")}
+            config = {
+                "api_key": os.getenv("BINANCE_API_KEY", ""),
+                "api_secret": os.getenv("BINANCE_API_SECRET", ""),
+            }
             adapter = create_order_execution_adapter(ExchangeVendor.BINANCE_FUTURES, config)
             adapter.close_position(symbol)
-            
+
         elif asset_class == "crypto":
-            config = {"api_key": os.getenv("BINANCE_API_KEY", ""), "api_secret": os.getenv("BINANCE_API_SECRET", "")}
+            config = {
+                "api_key": os.getenv("BINANCE_API_KEY", ""),
+                "api_secret": os.getenv("BINANCE_API_SECRET", ""),
+            }
             adapter = create_order_execution_adapter(ExchangeVendor.BINANCE, config)
             positions = adapter.get_positions()
             if symbol in positions:
@@ -6146,6 +6859,7 @@ def api_portfolio_close(payload: ClosePositionPayload):
                 if qty != 0:
                     from decimal import Decimal as _Dec
                     from core_models import Order, OrderType, Side
+
                     side = Side.SELL if qty > 0 else Side.BUY
                     # core_models.Order takes ts/quantity (no `qty` kwarg) —
                     # the old construction raised TypeError on any real close.
@@ -6157,9 +6871,13 @@ def api_portfolio_close(payload: ClosePositionPayload):
                         quantity=_Dec(str(abs(qty))),
                     )
                     adapter.submit_order(close_order)
-                    
+
         elif asset_class == "options":
-            config = {"api_key": key_id, "api_secret": os.getenv("ALPACA_API_SECRET", ""), "paper": True}
+            config = {
+                "api_key": key_id,
+                "api_secret": os.getenv("ALPACA_API_SECRET", ""),
+                "paper": True,
+            }
             adapter = create_order_execution_adapter(ExchangeVendor.ALPACA, config)
             positions = adapter.get_positions()
             if symbol in positions:
@@ -6167,6 +6885,7 @@ def api_portfolio_close(payload: ClosePositionPayload):
                 if qty != 0:
                     from decimal import Decimal as _Dec
                     from core_models import Order, OrderType, Side
+
                     side = Side.SELL if qty > 0 else Side.BUY
                     # core_models.Order takes ts/quantity (no `qty` kwarg) —
                     # the old construction raised TypeError on any real close.
@@ -6178,10 +6897,11 @@ def api_portfolio_close(payload: ClosePositionPayload):
                         quantity=_Dec(str(abs(qty))),
                     )
                     adapter.submit_order(close_order)
-                    
+
         return {"status": "success", "detail": f"Close position submitted for {symbol}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api.get("/api/trades")
 def api_trades():
@@ -6189,7 +6909,7 @@ def api_trades():
     import pandas as pd
     import json
     import time
-    
+
     trades = []
 
     # Durable CCEA Agent blotter is the first source in desktop mode.
@@ -6199,33 +6919,41 @@ def api_trades():
             for row in synced.get("trades", []):
                 ts_raw = row.get("ts")
                 try:
-                    ts_ms = int(datetime.fromisoformat(str(ts_raw).replace("Z", "+00:00")).timestamp() * 1000)
+                    ts_ms = int(
+                        datetime.fromisoformat(str(ts_raw).replace("Z", "+00:00")).timestamp()
+                        * 1000
+                    )
                 except Exception:
                     ts_ms = int(time.time() * 1000)
-                trades.append({
-                    "ts": ts_ms,
-                    "run_id": row.get("strategy_id", "desktop-ccea"),
-                    "symbol": row.get("symbol", ""),
-                    "side": str(row.get("side", "")).upper(),
-                    "order_type": "MARKET",
-                    "price": float(row.get("price", 0) or 0),
-                    "quantity": float(row.get("quantity", 0) or 0),
-                    "fee": float(row.get("fee", 0) or 0),
-                    "fee_asset": row.get("currency", "USD"),
-                    "pnl": None, "exec_status": "FILLED", "liquidity": "UNKNOWN",
-                    "client_order_id": row.get("client_order_id") or "",
-                    "order_id": row.get("broker_order_id") or "",
-                    "meta": {"source": "agent_books", "figi": row.get("figi")},
-                    "slippage": 0.0, "latency": 0,
-                    "simulated": bool(synced.get("simulated")),
-                })
+                trades.append(
+                    {
+                        "ts": ts_ms,
+                        "run_id": row.get("strategy_id", "desktop-ccea"),
+                        "symbol": row.get("symbol", ""),
+                        "side": str(row.get("side", "")).upper(),
+                        "order_type": "MARKET",
+                        "price": float(row.get("price", 0) or 0),
+                        "quantity": float(row.get("quantity", 0) or 0),
+                        "fee": float(row.get("fee", 0) or 0),
+                        "fee_asset": row.get("currency", "USD"),
+                        "pnl": None,
+                        "exec_status": "FILLED",
+                        "liquidity": "UNKNOWN",
+                        "client_order_id": row.get("client_order_id") or "",
+                        "order_id": row.get("broker_order_id") or "",
+                        "meta": {"source": "agent_books", "figi": row.get("figi")},
+                        "slippage": 0.0,
+                        "latency": 0,
+                        "simulated": bool(synced.get("simulated")),
+                    }
+                )
         except Exception:
             pass
-    
+
     # 1. Scan for log_trades_*.csv
     patterns = [
         os.path.join(GLOBAL_LOGS_DIR, "log_trades_*.csv"),
-        os.path.join(GLOBAL_LOGS_DIR, "run_*", "log_trades_*.csv")
+        os.path.join(GLOBAL_LOGS_DIR, "run_*", "log_trades_*.csv"),
     ]
     for pattern in patterns:
         for filepath in glob.glob(pattern):
@@ -6239,26 +6967,40 @@ def api_trades():
                             meta_val = json.loads(meta_str)
                         except Exception:
                             pass
-                    
-                    trades.append({
-                        "ts": int(row.get("ts", time.time() * 1000)),
-                        "run_id": str(row.get("run_id", "")),
-                        "symbol": str(row.get("symbol", "")),
-                        "side": str(row.get("side", "BUY")),
-                        "order_type": str(row.get("order_type", "MARKET")),
-                        "price": float(row.get("price", 0.0)),
-                        "quantity": float(row.get("quantity", 0.0)),
-                        "fee": float(row.get("fee", 0.0)),
-                        "fee_asset": str(row.get("fee_asset", "")) if pd.notna(row.get("fee_asset")) else "",
-                        "pnl": float(row.get("pnl")) if pd.notna(row.get("pnl")) else None,
-                        "exec_status": str(row.get("exec_status", "FILLED")),
-                        "liquidity": str(row.get("liquidity", "UNKNOWN")),
-                        "client_order_id": str(row.get("client_order_id", "")) if pd.notna(row.get("client_order_id")) else "",
-                        "order_id": str(row.get("order_id", "")) if pd.notna(row.get("order_id")) else "",
-                        "meta": meta_val,
-                        "slippage": float(meta_val.get("slippage", 0.12)),
-                        "latency": int(meta_val.get("latency_ms", 45))
-                    })
+
+                    trades.append(
+                        {
+                            "ts": int(row.get("ts", time.time() * 1000)),
+                            "run_id": str(row.get("run_id", "")),
+                            "symbol": str(row.get("symbol", "")),
+                            "side": str(row.get("side", "BUY")),
+                            "order_type": str(row.get("order_type", "MARKET")),
+                            "price": float(row.get("price", 0.0)),
+                            "quantity": float(row.get("quantity", 0.0)),
+                            "fee": float(row.get("fee", 0.0)),
+                            "fee_asset": (
+                                str(row.get("fee_asset", ""))
+                                if pd.notna(row.get("fee_asset"))
+                                else ""
+                            ),
+                            "pnl": float(row.get("pnl")) if pd.notna(row.get("pnl")) else None,
+                            "exec_status": str(row.get("exec_status", "FILLED")),
+                            "liquidity": str(row.get("liquidity", "UNKNOWN")),
+                            "client_order_id": (
+                                str(row.get("client_order_id", ""))
+                                if pd.notna(row.get("client_order_id"))
+                                else ""
+                            ),
+                            "order_id": (
+                                str(row.get("order_id", ""))
+                                if pd.notna(row.get("order_id"))
+                                else ""
+                            ),
+                            "meta": meta_val,
+                            "slippage": float(meta_val.get("slippage", 0.12)),
+                            "latency": int(meta_val.get("latency_ms", 45)),
+                        }
+                    )
             except Exception:
                 pass
 
@@ -6279,7 +7021,11 @@ def api_trades():
                                 # already in ms (~1.7e12); only second-scale values
                                 # (~1.7e9, incl. the time.time() fallback) get ×1000.
                                 ts_raw = row.get("ts_ms", None)
-                                if ts_raw is None or ts_raw == "" or (isinstance(ts_raw, float) and pd.isna(ts_raw)):
+                                if (
+                                    ts_raw is None
+                                    or ts_raw == ""
+                                    or (isinstance(ts_raw, float) and pd.isna(ts_raw))
+                                ):
                                     ts_val = int(time.time() * 1000)
                                 else:
                                     try:
@@ -6292,26 +7038,32 @@ def api_trades():
 
                                 slip = float(t.get("slippage", 0.15))
                                 lat = int(t.get("latency_ms", 42))
-                                
-                                trades.append({
-                                    "ts": ts_val,
-                                    "run_id": str(row.get("run_id", "sandbox")),
-                                    "symbol": str(row.get("symbol", t.get("symbol", "SPY"))),
-                                    "side": str(t.get("side", "BUY")),
-                                    "order_type": str(t.get("order_type", "MARKET")),
-                                    "price": float(t.get("price", 0.0)),
-                                    "quantity": float(t.get("qty", t.get("quantity", 0.0))),
-                                    "fee": float(t.get("fee", 0.0)),
-                                    "fee_asset": str(t.get("fee_asset", "USD")),
-                                    "pnl": float(t.get("pnl")) if t.get("pnl") is not None else None,
-                                    "exec_status": str(t.get("exec_status", "FILLED")),
-                                    "liquidity": str(t.get("liquidity", "UNKNOWN")),
-                                    "client_order_id": str(t.get("client_order_id", "")),
-                                    "order_id": str(t.get("order_id", "")),
-                                    "meta": t.get("meta", {}),
-                                    "slippage": slip,
-                                    "latency": lat
-                                })
+
+                                trades.append(
+                                    {
+                                        "ts": ts_val,
+                                        "run_id": str(row.get("run_id", "sandbox")),
+                                        "symbol": str(row.get("symbol", t.get("symbol", "SPY"))),
+                                        "side": str(t.get("side", "BUY")),
+                                        "order_type": str(t.get("order_type", "MARKET")),
+                                        "price": float(t.get("price", 0.0)),
+                                        "quantity": float(t.get("qty", t.get("quantity", 0.0))),
+                                        "fee": float(t.get("fee", 0.0)),
+                                        "fee_asset": str(t.get("fee_asset", "USD")),
+                                        "pnl": (
+                                            float(t.get("pnl"))
+                                            if t.get("pnl") is not None
+                                            else None
+                                        ),
+                                        "exec_status": str(t.get("exec_status", "FILLED")),
+                                        "liquidity": str(t.get("liquidity", "UNKNOWN")),
+                                        "client_order_id": str(t.get("client_order_id", "")),
+                                        "order_id": str(t.get("order_id", "")),
+                                        "meta": t.get("meta", {}),
+                                        "slippage": slip,
+                                        "latency": lat,
+                                    }
+                                )
                         except Exception:
                             pass
         except Exception:
@@ -6323,7 +7075,7 @@ def api_trades():
         is_demo = True
         asset_lower = ACTIVE_ASSET.lower()
         now_ms = int(time.time() * 1000)
-        
+
         if asset_lower == "equity":
             symbols = ["SPY", "AAPL", "MSFT", "QQQ"]
             for i in range(10):
@@ -6333,30 +7085,42 @@ def api_trades():
                 qty = (i + 1) * 50
                 price = 512.40 - i * 1.5 if symbol == "SPY" else 178.50 + i * 0.8
                 fee = qty * 0.005
-                trades.append({
-                    "ts": ts,
-                    "run_id": "live_run_eq",
-                    "symbol": symbol,
-                    "side": side,
-                    "order_type": "LIMIT" if i % 2 == 0 else "MARKET",
-                    "price": round(price, 2),
-                    "quantity": qty,
-                    "fee": round(fee, 2),
-                    "fee_asset": "USD",
-                    "pnl": round(qty * 0.45 * (1 if side == "SELL" else -1), 2) if i > 2 else None,
-                    "exec_status": "FILLED",
-                    "liquidity": "Taker" if i % 2 != 0 else "Maker",
-                    "client_order_id": f"alpaca-cli-{ts}",
-                    "order_id": f"alp-ord-{ts - 1000}",
-                    "meta": {
-                        "agent_id": f"Agent_PPO_Eq_{i%2 + 1}",
-                        "features": {"rsi_14": round(42.5 + i * 2.1, 2), "macd": round(0.45 - i * 0.1, 3), "volatility_20": 0.015},
-                        "logits": [round(0.8 - i*0.1, 2), round(0.1 + i*0.05, 2), round(0.1, 2)],
-                        "risk_check": "PASSED"
-                    },
-                    "slippage": round(0.05 + i * 0.02, 2),
-                    "latency": 35 + i * 3
-                })
+                trades.append(
+                    {
+                        "ts": ts,
+                        "run_id": "live_run_eq",
+                        "symbol": symbol,
+                        "side": side,
+                        "order_type": "LIMIT" if i % 2 == 0 else "MARKET",
+                        "price": round(price, 2),
+                        "quantity": qty,
+                        "fee": round(fee, 2),
+                        "fee_asset": "USD",
+                        "pnl": (
+                            round(qty * 0.45 * (1 if side == "SELL" else -1), 2) if i > 2 else None
+                        ),
+                        "exec_status": "FILLED",
+                        "liquidity": "Taker" if i % 2 != 0 else "Maker",
+                        "client_order_id": f"alpaca-cli-{ts}",
+                        "order_id": f"alp-ord-{ts - 1000}",
+                        "meta": {
+                            "agent_id": f"Agent_PPO_Eq_{i%2 + 1}",
+                            "features": {
+                                "rsi_14": round(42.5 + i * 2.1, 2),
+                                "macd": round(0.45 - i * 0.1, 3),
+                                "volatility_20": 0.015,
+                            },
+                            "logits": [
+                                round(0.8 - i * 0.1, 2),
+                                round(0.1 + i * 0.05, 2),
+                                round(0.1, 2),
+                            ],
+                            "risk_check": "PASSED",
+                        },
+                        "slippage": round(0.05 + i * 0.02, 2),
+                        "latency": 35 + i * 3,
+                    }
+                )
         elif asset_lower == "forex":
             symbols = ["EUR_USD", "GBP_USD", "USD_JPY"]
             for i in range(10):
@@ -6366,29 +7130,35 @@ def api_trades():
                 qty = 100000 if symbol != "USD_JPY" else 50000
                 price = 1.0852 if symbol == "EUR_USD" else 156.40
                 fee = round(qty * 0.00002, 2)
-                trades.append({
-                    "ts": ts,
-                    "run_id": "fx_run_oanda",
-                    "symbol": symbol,
-                    "side": side,
-                    "order_type": "MARKET",
-                    "price": price,
-                    "quantity": qty,
-                    "fee": fee,
-                    "fee_asset": "USD",
-                    "pnl": round(qty * 0.0008 * (1 if side == "SELL" else -1), 2) if i > 1 else None,
-                    "exec_status": "FILLED",
-                    "liquidity": "Taker",
-                    "client_order_id": f"oanda-cli-{ts}",
-                    "order_id": f"oan-ord-{ts - 500}",
-                    "meta": {
-                        "agent_id": f"Agent_FX_Momentum_{i%2 + 1}",
-                        "features": {"rsi_14": round(58.2 - i * 1.5, 2), "spread": 0.00012},
-                        "risk_check": "PASSED"
-                    },
-                    "slippage": round(0.08 + i * 0.04, 2),
-                    "latency": 55 + i * 5
-                })
+                trades.append(
+                    {
+                        "ts": ts,
+                        "run_id": "fx_run_oanda",
+                        "symbol": symbol,
+                        "side": side,
+                        "order_type": "MARKET",
+                        "price": price,
+                        "quantity": qty,
+                        "fee": fee,
+                        "fee_asset": "USD",
+                        "pnl": (
+                            round(qty * 0.0008 * (1 if side == "SELL" else -1), 2)
+                            if i > 1
+                            else None
+                        ),
+                        "exec_status": "FILLED",
+                        "liquidity": "Taker",
+                        "client_order_id": f"oanda-cli-{ts}",
+                        "order_id": f"oan-ord-{ts - 500}",
+                        "meta": {
+                            "agent_id": f"Agent_FX_Momentum_{i%2 + 1}",
+                            "features": {"rsi_14": round(58.2 - i * 1.5, 2), "spread": 0.00012},
+                            "risk_check": "PASSED",
+                        },
+                        "slippage": round(0.08 + i * 0.04, 2),
+                        "latency": 55 + i * 5,
+                    }
+                )
         elif asset_lower == "futures":
             symbols = ["ES", "NQ", "CL"]
             for i in range(10):
@@ -6398,29 +7168,36 @@ def api_trades():
                 qty = 1 if symbol == "NQ" else 2
                 price = 5310.0 if symbol == "ES" else 18720.0
                 fee = round(qty * 2.05, 2)
-                trades.append({
-                    "ts": ts,
-                    "run_id": "fut_run_cme",
-                    "symbol": symbol,
-                    "side": side,
-                    "order_type": "LIMIT",
-                    "price": price,
-                    "quantity": qty,
-                    "fee": fee,
-                    "fee_asset": "USD",
-                    "pnl": round(qty * 25.0 * (1 if side == "SELL" else -1), 2) if i > 3 else None,
-                    "exec_status": "FILLED",
-                    "liquidity": "Maker",
-                    "client_order_id": f"cme-cli-{ts}",
-                    "order_id": f"cme-ord-{ts - 800}",
-                    "meta": {
-                        "agent_id": f"Agent_PPO_Futures_{i%2 + 1}",
-                        "features": {"rsi_14": round(49.1 + i * 0.8, 2), "book_imbalance": round(0.12 - i*0.03, 2)},
-                        "risk_check": "PASSED"
-                    },
-                    "slippage": round(0.02 + i * 0.01, 2),
-                    "latency": 8 + i * 2
-                })
+                trades.append(
+                    {
+                        "ts": ts,
+                        "run_id": "fut_run_cme",
+                        "symbol": symbol,
+                        "side": side,
+                        "order_type": "LIMIT",
+                        "price": price,
+                        "quantity": qty,
+                        "fee": fee,
+                        "fee_asset": "USD",
+                        "pnl": (
+                            round(qty * 25.0 * (1 if side == "SELL" else -1), 2) if i > 3 else None
+                        ),
+                        "exec_status": "FILLED",
+                        "liquidity": "Maker",
+                        "client_order_id": f"cme-cli-{ts}",
+                        "order_id": f"cme-ord-{ts - 800}",
+                        "meta": {
+                            "agent_id": f"Agent_PPO_Futures_{i%2 + 1}",
+                            "features": {
+                                "rsi_14": round(49.1 + i * 0.8, 2),
+                                "book_imbalance": round(0.12 - i * 0.03, 2),
+                            },
+                            "risk_check": "PASSED",
+                        },
+                        "slippage": round(0.02 + i * 0.01, 2),
+                        "latency": 8 + i * 2,
+                    }
+                )
         elif asset_lower in ("crypto", "digital assets"):
             symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
             for i in range(10):
@@ -6430,35 +7207,39 @@ def api_trades():
                 qty = 0.5 if symbol == "BTCUSDT" else 12.0
                 price = 68240.0 if symbol == "BTCUSDT" else 3780.0
                 fee = round(qty * price * 0.001, 4)
-                
+
                 tx_hash = f"0x892a{ts}f{i}0000000000000000000000000000000"[:66]
-                
-                trades.append({
-                    "ts": ts,
-                    "run_id": "crypto_run_web3",
-                    "symbol": symbol,
-                    "side": side,
-                    "order_type": "MARKET",
-                    "price": price,
-                    "quantity": qty,
-                    "fee": fee,
-                    "fee_asset": "USDT",
-                    "pnl": round(qty * 12.5 * (1 if side == "SELL" else -1), 2) if i > 1 else None,
-                    "exec_status": "FILLED",
-                    "liquidity": "Taker",
-                    "client_order_id": f"web3-cli-{ts}",
-                    "order_id": f"web3-ord-{ts - 1200}",
-                    "meta": {
-                        "agent_id": f"Agent_Web3_DeFi_{i%2 + 1}",
-                        "tx_hash": tx_hash,
-                        "gas_used": 65000 + i * 5000,
-                        "gas_price_gwei": 25.4 + i * 1.2,
-                        "features": {"gas_tracker": 25.4, "pool_liquidity": 12000000.0},
-                        "risk_check": "PASSED"
-                    },
-                    "slippage": round(0.12 + i * 0.03, 2),
-                    "latency": 1500 + i * 200
-                })
+
+                trades.append(
+                    {
+                        "ts": ts,
+                        "run_id": "crypto_run_web3",
+                        "symbol": symbol,
+                        "side": side,
+                        "order_type": "MARKET",
+                        "price": price,
+                        "quantity": qty,
+                        "fee": fee,
+                        "fee_asset": "USDT",
+                        "pnl": (
+                            round(qty * 12.5 * (1 if side == "SELL" else -1), 2) if i > 1 else None
+                        ),
+                        "exec_status": "FILLED",
+                        "liquidity": "Taker",
+                        "client_order_id": f"web3-cli-{ts}",
+                        "order_id": f"web3-ord-{ts - 1200}",
+                        "meta": {
+                            "agent_id": f"Agent_Web3_DeFi_{i%2 + 1}",
+                            "tx_hash": tx_hash,
+                            "gas_used": 65000 + i * 5000,
+                            "gas_price_gwei": 25.4 + i * 1.2,
+                            "features": {"gas_tracker": 25.4, "pool_liquidity": 12000000.0},
+                            "risk_check": "PASSED",
+                        },
+                        "slippage": round(0.12 + i * 0.03, 2),
+                        "latency": 1500 + i * 200,
+                    }
+                )
         elif asset_lower == "options":
             symbols = ["AAPL260619C00180000", "TSLA260619P00170000"]
             for i in range(10):
@@ -6468,29 +7249,35 @@ def api_trades():
                 qty = 5
                 price = 24.50 if "AAPL" in symbol else 18.20
                 fee = round(qty * 0.65, 2)
-                trades.append({
-                    "ts": ts,
-                    "run_id": "opt_run_alpaca",
-                    "symbol": symbol,
-                    "side": side,
-                    "order_type": "LIMIT",
-                    "price": price,
-                    "quantity": qty,
-                    "fee": fee,
-                    "fee_asset": "USD",
-                    "pnl": round(qty * 100 * 0.15 * (1 if side == "SELL" else -1), 2) if i > 2 else None,
-                    "exec_status": "FILLED",
-                    "liquidity": "Maker",
-                    "client_order_id": f"alpaca-opt-cli-{ts}",
-                    "order_id": f"alp-opt-ord-{ts - 1500}",
-                    "meta": {
-                        "agent_id": f"Agent_Option_Solver_{i%2 + 1}",
-                        "features": {"delta": 0.52, "gamma": 0.012, "vega": 0.15},
-                        "risk_check": "PASSED"
-                    },
-                    "slippage": round(0.18 + i * 0.05, 2),
-                    "latency": 48 + i * 4
-                })
+                trades.append(
+                    {
+                        "ts": ts,
+                        "run_id": "opt_run_alpaca",
+                        "symbol": symbol,
+                        "side": side,
+                        "order_type": "LIMIT",
+                        "price": price,
+                        "quantity": qty,
+                        "fee": fee,
+                        "fee_asset": "USD",
+                        "pnl": (
+                            round(qty * 100 * 0.15 * (1 if side == "SELL" else -1), 2)
+                            if i > 2
+                            else None
+                        ),
+                        "exec_status": "FILLED",
+                        "liquidity": "Maker",
+                        "client_order_id": f"alpaca-opt-cli-{ts}",
+                        "order_id": f"alp-opt-ord-{ts - 1500}",
+                        "meta": {
+                            "agent_id": f"Agent_Option_Solver_{i%2 + 1}",
+                            "features": {"delta": 0.52, "gamma": 0.012, "vega": 0.15},
+                            "risk_check": "PASSED",
+                        },
+                        "slippage": round(0.18 + i * 0.05, 2),
+                        "latency": 48 + i * 4,
+                    }
+                )
 
     trades.sort(key=lambda x: x["ts"], reverse=True)
     if is_demo:
@@ -6501,10 +7288,14 @@ def api_trades():
     return {
         "trades": trades,
         "simulated": response_simulated,
-        "data_source": ("agent_books_paper" if has_agent_books and response_simulated
-                        else "demo_mock" if is_demo else "live_logs"),
+        "data_source": (
+            "agent_books_paper"
+            if has_agent_books and response_simulated
+            else "demo_mock" if is_demo else "live_logs"
+        ),
         "disclaimer": MVP_DEMO_DISCLAIMER if response_simulated else None,
     }
+
 
 @api.post("/api/trades/sync")
 def api_trades_sync():
@@ -6514,11 +7305,14 @@ def api_trades_sync():
     if not result.get("ok"):
         raise HTTPException(status_code=501, detail=result.get("error", "trade sync unsupported"))
     return {
-        "status": "success", "detail": "Trade history refreshed from the Agent source.",
-        "source": result.get("source"), "broker": result.get("broker"),
+        "status": "success",
+        "detail": "Trade history refreshed from the Agent source.",
+        "source": result.get("source"),
+        "broker": result.get("broker"),
         "synchronized": result.get("synchronized", 0),
         "simulated": bool(result.get("simulated")),
     }
+
 
 @api.post("/api/run_job")
 def api_run_job(payload: RunJobPayload):
@@ -6535,6 +7329,7 @@ def api_run_job(payload: RunJobPayload):
     # Unique suffix per invocation so two concurrent jobs never overwrite each
     # other's temp config between the write and the child process reading it.
     import uuid as _uuid
+
     _job_uid = _uuid.uuid4().hex[:8]
 
     def _tmp_path(base: str) -> str:
@@ -6572,16 +7367,16 @@ def api_run_job(payload: RunJobPayload):
         if isinstance(val, bool):
             return val
         return str(val).lower() in ("true", "1", "yes")
-    
+
     # Dynamically resolve configs based on the active asset context
     cfg_sandbox = params.get("config", "configs/sandbox.yaml")
     if cfg_sandbox == "configs/sandbox.yaml":
         cfg_sandbox = get_default_config_for_asset("sandbox", ACTIVE_ASSET)
-        
+
     cfg_ingest = params.get("config", "configs/ingest.yaml")
     if cfg_ingest == "configs/ingest.yaml":
         cfg_ingest = get_default_config_for_asset("ingest", ACTIVE_ASSET)
-        
+
     custom_cfg = params.get("custom_config")
     if custom_cfg:
         tmp_cfg_path = _tmp_path("configs/tmp_ingest_custom.yaml")
@@ -6606,7 +7401,9 @@ def api_run_job(payload: RunJobPayload):
             try:
                 parsed_yaml = yaml.safe_load(yaml_content) or {}
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Failed to parse edited configuration: {str(e)}")
+                raise HTTPException(
+                    status_code=400, detail=f"Failed to parse edited configuration: {str(e)}"
+                )
         else:
             default_path = get_default_config_for_asset("sandbox", ACTIVE_ASSET)
             try:
@@ -6676,10 +7473,7 @@ def api_run_job(payload: RunJobPayload):
                 sim_yaml["data"]["prices_path"] = data_path
                 sim_yaml["data"]["paths"] = [data_path]
             if "execution" not in sim_yaml:
-                sim_yaml["execution"] = {
-                    "mode": "bar",
-                    "enabled": True
-                }
+                sim_yaml["execution"] = {"mode": "bar", "enabled": True}
             if sim_yaml.get("market") not in ("spot", "futures"):
                 sim_yaml["market"] = "spot"
             lat_val = safe_float(latency)
@@ -6726,8 +7520,12 @@ def api_run_job(payload: RunJobPayload):
                 sim_yaml["fees"]["spread_cost_taker_bps"] = f_spread
             f_impact = safe_float(fee_impact)
             if f_impact is not None:
-                sim_yaml["fees"].setdefault("maker_taker_share", {}).setdefault("model", {}).setdefault("coefficients", {})
-                sim_yaml["fees"]["maker_taker_share"]["model"]["coefficients"]["distance_to_mid"] = f_impact
+                sim_yaml["fees"].setdefault("maker_taker_share", {}).setdefault(
+                    "model", {}
+                ).setdefault("coefficients", {})
+                sim_yaml["fees"]["maker_taker_share"]["model"]["coefficients"][
+                    "distance_to_mid"
+                ] = f_impact
                 sim_yaml["fees"]["maker_taker_share"]["model"]["distance_to_mid"] = f_impact
 
             if "slippage" not in sim_yaml:
@@ -6746,7 +7544,7 @@ def api_run_job(payload: RunJobPayload):
             sim_yaml.setdefault("components", {}).setdefault("policy", {})
             if strategy:
                 sim_yaml["components"]["policy"]["target"] = strategy
-            
+
             sim_yaml["components"]["policy"].setdefault("params", {})
             ent_thr = safe_float(enter_threshold)
             if ent_thr is not None:
@@ -6794,37 +7592,23 @@ def api_run_job(payload: RunJobPayload):
                         "target": "impl_offline_data:OfflineCSVBarSource",
                         "params": {
                             "paths": [final_data_path],
-                            "timeframe": sim_yaml.get("data", {}).get("timeframe", "4h")
-                        }
+                            "timeframe": sim_yaml.get("data", {}).get("timeframe", "4h"),
+                        },
                     },
                     "executor": {
                         "target": "impl_sim_executor:SimExecutor",
-                        "params": {
-                            "symbol": sim_yaml.get("symbol", default_symbol)
-                        }
+                        "params": {"symbol": sim_yaml.get("symbol", default_symbol)},
                     },
-                    "feature_pipe": {
-                        "target": "feature_pipe:FeaturePipe",
-                        "params": {}
-                    },
-                    "policy": {
-                        "target": "strategies.momentum:MomentumStrategy",
-                        "params": {}
-                    },
-                    "risk_guards": {
-                        "target": "impl_risk_basic:RiskBasicImpl",
-                        "params": {}
-                    },
-                    "backtest_engine": {
-                        "target": "service_backtest:ServiceBacktest",
-                        "params": {}
-                    }
+                    "feature_pipe": {"target": "feature_pipe:FeaturePipe", "params": {}},
+                    "policy": {"target": "strategies.momentum:MomentumStrategy", "params": {}},
+                    "risk_guards": {"target": "impl_risk_basic:RiskBasicImpl", "params": {}},
+                    "backtest_engine": {"target": "service_backtest:ServiceBacktest", "params": {}},
                 }
             else:
                 if "risk_guards" not in sim_yaml["components"]:
                     sim_yaml["components"]["risk_guards"] = {
                         "target": "impl_risk_basic:RiskBasicImpl",
-                        "params": {}
+                        "params": {},
                     }
             if params.get("is_custom_strategy") is True:
                 asset_lower = ACTIVE_ASSET.lower()
@@ -6833,23 +7617,31 @@ def api_run_job(payload: RunJobPayload):
                 if os.path.exists(filepath):
                     try:
                         import importlib.util
-                        spec = importlib.util.spec_from_file_location(f"strategies.custom_{asset_lower}", filepath)
+
+                        spec = importlib.util.spec_from_file_location(
+                            f"strategies.custom_{asset_lower}", filepath
+                        )
                         module = importlib.util.module_from_spec(spec)
                         sys.modules[f"strategies.custom_{asset_lower}"] = module
                         spec.loader.exec_module(module)
                         for name, obj in vars(module).items():
-                            if isinstance(obj, type) and obj.__name__ not in ("BaseSignalPolicy", "BaseStrategy"):
+                            if isinstance(obj, type) and obj.__name__ not in (
+                                "BaseSignalPolicy",
+                                "BaseStrategy",
+                            ):
                                 if hasattr(obj, "decide") and callable(getattr(obj, "decide")):
                                     class_name = name
                                     break
                     except Exception as e:
                         print(f"Error resolving custom strategy class: {e}")
-                
+
                 if class_name:
                     policy_target = f"strategies.custom_{asset_lower}:{class_name}"
                     policy_params = params.get("strategy_params")
                     if not policy_params:
-                        params_file = os.path.join("strategies", f"custom_{asset_lower}_params.json")
+                        params_file = os.path.join(
+                            "strategies", f"custom_{asset_lower}_params.json"
+                        )
                         if os.path.exists(params_file):
                             try:
                                 with open(params_file, "r", encoding="utf-8") as pf:
@@ -6858,20 +7650,22 @@ def api_run_job(payload: RunJobPayload):
                                 policy_params = {}
                     if not policy_params:
                         policy_params = {}
-                        
+
                     if params.get("use_optimized_params") is True:
                         opt_file = f"logs/optimization_{asset_lower}.json"
                         if os.path.exists(opt_file):
                             try:
                                 with open(opt_file, "r", encoding="utf-8") as of:
                                     opt_data = json.load(of)
-                                    best_params = opt_data.get("best_combination", {}).get("parameters", {})
+                                    best_params = opt_data.get("best_combination", {}).get(
+                                        "parameters", {}
+                                    )
                                     if best_params:
                                         policy_params.update(best_params)
                                         print(f"Merged optimized parameters: {best_params}")
                             except Exception as e:
                                 print(f"Error loading optimized parameters: {e}")
-                    
+
                     sim_yaml.setdefault("components", {}).setdefault("policy", {})
                     sim_yaml["components"]["policy"]["target"] = policy_target
                     sim_yaml["components"]["policy"]["params"] = policy_params
@@ -6887,7 +7681,7 @@ def api_run_job(payload: RunJobPayload):
             if data_path:
                 parsed_yaml["data"] = parsed_yaml.get("data", {})
                 parsed_yaml["data"]["path"] = data_path
-                
+
                 # Auto-infer columns for data_path
                 ts_col = parsed_yaml["data"].get("ts_col", "ts_ms")
                 symbol_col = parsed_yaml["data"].get("symbol_col", "symbol")
@@ -6895,23 +7689,33 @@ def api_run_job(payload: RunJobPayload):
                 if os.path.exists(data_path):
                     try:
                         import pandas as pd
+
                         if data_path.lower().endswith(".parquet"):
                             temp_df = pd.read_parquet(data_path, columns=None)
                         else:
                             temp_df = pd.read_csv(data_path, nrows=5)
                         cols = temp_df.columns.tolist()
                         if ts_col not in cols:
-                            if "ts_ms" in cols: ts_col = "ts_ms"
-                            elif "timestamp" in cols: ts_col = "timestamp"
-                            elif "date" in cols: ts_col = "date"
+                            if "ts_ms" in cols:
+                                ts_col = "ts_ms"
+                            elif "timestamp" in cols:
+                                ts_col = "timestamp"
+                            elif "date" in cols:
+                                ts_col = "date"
                         if symbol_col not in cols:
-                            if "symbol" in cols: symbol_col = "symbol"
-                            elif "occ_symbol" in cols: symbol_col = "occ_symbol"
+                            if "symbol" in cols:
+                                symbol_col = "symbol"
+                            elif "occ_symbol" in cols:
+                                symbol_col = "occ_symbol"
                         if price_col not in cols:
-                            if "ref_price" in cols: price_col = "ref_price"
-                            elif "price" in cols: price_col = "price"
-                            elif "close" in cols: price_col = "close"
-                            elif "mid" in cols: price_col = "mid"
+                            if "ref_price" in cols:
+                                price_col = "ref_price"
+                            elif "price" in cols:
+                                price_col = "price"
+                            elif "close" in cols:
+                                price_col = "close"
+                            elif "mid" in cols:
+                                price_col = "mid"
                     except Exception as e:
                         print(f"Auto-infer column error: {e}")
                 parsed_yaml["data"]["ts_col"] = ts_col
@@ -6957,10 +7761,7 @@ def api_run_job(payload: RunJobPayload):
                 sim_yaml["data"]["prices_path"] = data_path
                 sim_yaml["data"]["paths"] = [data_path]
             if "execution" not in sim_yaml:
-                sim_yaml["execution"] = {
-                    "mode": "bar",
-                    "enabled": True
-                }
+                sim_yaml["execution"] = {"mode": "bar", "enabled": True}
             if sim_yaml.get("market") not in ("spot", "futures"):
                 sim_yaml["market"] = "spot"
             lat_val = safe_float(latency)
@@ -7007,8 +7808,12 @@ def api_run_job(payload: RunJobPayload):
                 sim_yaml["fees"]["spread_cost_taker_bps"] = f_spread
             f_impact = safe_float(fee_impact)
             if f_impact is not None:
-                sim_yaml["fees"].setdefault("maker_taker_share", {}).setdefault("model", {}).setdefault("coefficients", {})
-                sim_yaml["fees"]["maker_taker_share"]["model"]["coefficients"]["distance_to_mid"] = f_impact
+                sim_yaml["fees"].setdefault("maker_taker_share", {}).setdefault(
+                    "model", {}
+                ).setdefault("coefficients", {})
+                sim_yaml["fees"]["maker_taker_share"]["model"]["coefficients"][
+                    "distance_to_mid"
+                ] = f_impact
                 sim_yaml["fees"]["maker_taker_share"]["model"]["distance_to_mid"] = f_impact
 
             if "slippage" not in sim_yaml:
@@ -7027,7 +7832,7 @@ def api_run_job(payload: RunJobPayload):
             sim_yaml.setdefault("components", {}).setdefault("policy", {})
             if strategy:
                 sim_yaml["components"]["policy"]["target"] = strategy
-            
+
             sim_yaml["components"]["policy"].setdefault("params", {})
             ent_thr = safe_float(enter_threshold)
             if ent_thr is not None:
@@ -7075,37 +7880,23 @@ def api_run_job(payload: RunJobPayload):
                         "target": "impl_offline_data:OfflineCSVBarSource",
                         "params": {
                             "paths": [final_data_path],
-                            "timeframe": sim_yaml.get("data", {}).get("timeframe", "4h")
-                        }
+                            "timeframe": sim_yaml.get("data", {}).get("timeframe", "4h"),
+                        },
                     },
                     "executor": {
                         "target": "impl_sim_executor:SimExecutor",
-                        "params": {
-                            "symbol": sim_yaml.get("symbol", default_symbol)
-                        }
+                        "params": {"symbol": sim_yaml.get("symbol", default_symbol)},
                     },
-                    "feature_pipe": {
-                        "target": "feature_pipe:FeaturePipe",
-                        "params": {}
-                    },
-                    "policy": {
-                        "target": "strategies.momentum:MomentumStrategy",
-                        "params": {}
-                    },
-                    "risk_guards": {
-                        "target": "impl_risk_basic:RiskBasicImpl",
-                        "params": {}
-                    },
-                    "backtest_engine": {
-                        "target": "service_backtest:ServiceBacktest",
-                        "params": {}
-                    }
+                    "feature_pipe": {"target": "feature_pipe:FeaturePipe", "params": {}},
+                    "policy": {"target": "strategies.momentum:MomentumStrategy", "params": {}},
+                    "risk_guards": {"target": "impl_risk_basic:RiskBasicImpl", "params": {}},
+                    "backtest_engine": {"target": "service_backtest:ServiceBacktest", "params": {}},
                 }
             else:
                 if "risk_guards" not in sim_yaml["components"]:
                     sim_yaml["components"]["risk_guards"] = {
                         "target": "impl_risk_basic:RiskBasicImpl",
-                        "params": {}
+                        "params": {},
                     }
             if params.get("is_custom_strategy") is True:
                 asset_lower = ACTIVE_ASSET.lower()
@@ -7114,23 +7905,31 @@ def api_run_job(payload: RunJobPayload):
                 if os.path.exists(filepath):
                     try:
                         import importlib.util
-                        spec = importlib.util.spec_from_file_location(f"strategies.custom_{asset_lower}", filepath)
+
+                        spec = importlib.util.spec_from_file_location(
+                            f"strategies.custom_{asset_lower}", filepath
+                        )
                         module = importlib.util.module_from_spec(spec)
                         sys.modules[f"strategies.custom_{asset_lower}"] = module
                         spec.loader.exec_module(module)
                         for name, obj in vars(module).items():
-                            if isinstance(obj, type) and obj.__name__ not in ("BaseSignalPolicy", "BaseStrategy"):
+                            if isinstance(obj, type) and obj.__name__ not in (
+                                "BaseSignalPolicy",
+                                "BaseStrategy",
+                            ):
                                 if hasattr(obj, "decide") and callable(getattr(obj, "decide")):
                                     class_name = name
                                     break
                     except Exception as e:
                         print(f"Error resolving custom strategy class: {e}")
-                
+
                 if class_name:
                     policy_target = f"strategies.custom_{asset_lower}:{class_name}"
                     policy_params = params.get("strategy_params")
                     if not policy_params:
-                        params_file = os.path.join("strategies", f"custom_{asset_lower}_params.json")
+                        params_file = os.path.join(
+                            "strategies", f"custom_{asset_lower}_params.json"
+                        )
                         if os.path.exists(params_file):
                             try:
                                 with open(params_file, "r", encoding="utf-8") as pf:
@@ -7139,20 +7938,22 @@ def api_run_job(payload: RunJobPayload):
                                 policy_params = {}
                     if not policy_params:
                         policy_params = {}
-                        
+
                     if params.get("use_optimized_params") is True:
                         opt_file = f"logs/optimization_{asset_lower}.json"
                         if os.path.exists(opt_file):
                             try:
                                 with open(opt_file, "r", encoding="utf-8") as of:
                                     opt_data = json.load(of)
-                                    best_params = opt_data.get("best_combination", {}).get("parameters", {})
+                                    best_params = opt_data.get("best_combination", {}).get(
+                                        "parameters", {}
+                                    )
                                     if best_params:
                                         policy_params.update(best_params)
                                         print(f"Merged optimized parameters: {best_params}")
                             except Exception as e:
                                 print(f"Error loading optimized parameters: {e}")
-                    
+
                     sim_yaml.setdefault("components", {}).setdefault("policy", {})
                     sim_yaml["components"]["policy"]["target"] = policy_target
                     sim_yaml["components"]["policy"]["params"] = policy_params
@@ -7173,15 +7974,16 @@ def api_run_job(payload: RunJobPayload):
             ts_col = parsed_yaml.get("data", {}).get("ts_col", "ts_ms")
             symbol_col = parsed_yaml.get("data", {}).get("symbol_col", "symbol")
             price_col = parsed_yaml.get("data", {}).get("price_col", "ref_price")
-            
+
             if final_data_path and os.path.exists(final_data_path):
                 try:
                     import pandas as pd
+
                     if final_data_path.lower().endswith(".parquet"):
                         temp_df = pd.read_parquet(final_data_path, columns=None)
                     else:
                         temp_df = pd.read_csv(final_data_path, nrows=5)
-                    
+
                     cols = temp_df.columns.tolist()
                     if ts_col not in cols:
                         if "ts_ms" in cols:
@@ -7190,13 +7992,13 @@ def api_run_job(payload: RunJobPayload):
                             ts_col = "timestamp"
                         elif "date" in cols:
                             ts_col = "date"
-                            
+
                     if symbol_col not in cols:
                         if "symbol" in cols:
                             symbol_col = "symbol"
                         elif "occ_symbol" in cols:
                             symbol_col = "occ_symbol"
-                            
+
                     if price_col not in cols:
                         if "ref_price" in cols:
                             price_col = "ref_price"
@@ -7217,16 +8019,16 @@ def api_run_job(payload: RunJobPayload):
                 "sim_guards": {
                     "min_history_bars": 180,
                     "gap_cooldown_bars": 10,
-                    "gap_threshold_ms": 21600000
+                    "gap_threshold_ms": 21600000,
                 },
                 "min_signal_gap_s": 300,
                 "data": {
                     "path": final_data_path,
                     "ts_col": ts_col,
                     "symbol_col": symbol_col,
-                    "price_col": price_col
+                    "price_col": price_col,
                 },
-                "out_reports": "logs/sandbox_reports.csv"
+                "out_reports": "logs/sandbox_reports.csv",
             }
 
             # Map start_ts, end_ts, and no_filter_hours to sandbox_yaml
@@ -7259,39 +8061,39 @@ def api_run_job(payload: RunJobPayload):
                 symbols_list = custom_cfg["symbols"]
             else:
                 symbols_list = [s.strip().upper() for s in symbols_str.split(",") if s.strip()]
-            
+
             provider = params.get("provider", "alpaca")
             if custom_cfg and "provider" in custom_cfg:
                 provider = custom_cfg["provider"]
-                
+
             timeframe = params.get("timeframe", "1h")
             if custom_cfg and "timeframe" in custom_cfg:
                 timeframe = custom_cfg["timeframe"]
-                
+
             start = params.get("start", "")
             if custom_cfg and "period" in custom_cfg:
                 start = custom_cfg["period"].get("start", "")
-                
+
             end = params.get("end", "")
             if custom_cfg and "period" in custom_cfg:
                 end = custom_cfg["period"].get("end", "")
-                
+
             api_key = params.get("api_key", "")
             if custom_cfg and "api_key" in custom_cfg:
                 api_key = custom_cfg["api_key"]
-                
+
             api_secret = params.get("api_secret", "")
             if custom_cfg and "api_secret" in custom_cfg:
                 api_secret = custom_cfg["api_secret"]
-                
+
             feed = params.get("feed", "iex")
             if custom_cfg and "feed" in custom_cfg:
                 feed = custom_cfg["feed"]
-                
+
             include_extended = params.get("include_extended", False)
             if custom_cfg and "include_extended" in custom_cfg:
                 include_extended = custom_cfg["include_extended"]
-                
+
             cmd = [py, "scripts/download_stock_data.py"]
             if symbols_list:
                 cmd.extend(["--symbols"] + symbols_list)
@@ -7311,7 +8113,7 @@ def api_run_job(payload: RunJobPayload):
                 cmd.extend(["--feed", feed])
             if include_extended:
                 cmd.append("--include-extended")
-                
+
             # Advanced custom parameters for equities
             if custom_cfg:
                 if custom_cfg.get("macro"):
@@ -7330,7 +8132,7 @@ def api_run_job(payload: RunJobPayload):
                     cmd.append("--corporate-actions")
                 if custom_cfg.get("adjustment"):
                     cmd.extend(["--adjustment", custom_cfg["adjustment"]])
-                
+
         elif asset_key == "cot":
             cmd = [py, "cot_data_loader.py"]
             symbols = params.get("symbols", "")
@@ -7352,31 +8154,31 @@ def api_run_job(payload: RunJobPayload):
                 symbols_list = custom_cfg["symbols"]
             else:
                 symbols_list = [s.strip().upper() for s in symbols_str.split(",") if s.strip()]
-            
+
             provider = params.get("provider", "oanda")
             if custom_cfg and "provider" in custom_cfg:
                 provider = custom_cfg["provider"]
-                
+
             timeframe = params.get("timeframe", "1h")
             if custom_cfg and "timeframe" in custom_cfg:
                 timeframe = custom_cfg["timeframe"]
-                
+
             start = params.get("start", "")
             if custom_cfg and "period" in custom_cfg:
                 start = custom_cfg["period"].get("start", "")
-                
+
             end = params.get("end", "")
             if custom_cfg and "period" in custom_cfg:
                 end = custom_cfg["period"].get("end", "")
-                
+
             api_key = params.get("api_key", "")
             if custom_cfg and "api_key" in custom_cfg:
                 api_key = custom_cfg["api_key"]
-                
+
             account_id = params.get("account_id", "")
             if custom_cfg and "account_id" in custom_cfg:
                 account_id = custom_cfg["account_id"]
-                
+
             download_swaps = params.get("download_swaps", False)
             download_rates = params.get("download_rates", False)
             download_calendar = params.get("download_calendar", False)
@@ -7384,7 +8186,7 @@ def api_run_job(payload: RunJobPayload):
                 download_swaps = custom_cfg.get("download_swaps", False)
                 download_rates = custom_cfg.get("download_rates", False)
                 download_calendar = custom_cfg.get("download_calendar", False)
-                
+
             cmd = [py, "scripts/download_forex_data.py"]
             # Provider: oanda (keys) or dukascopy (free public bi5 tick feed).
             if provider:
@@ -7401,7 +8203,7 @@ def api_run_job(payload: RunJobPayload):
                 cmd.extend(["--api-key", api_key])
             if account_id:
                 cmd.extend(["--account-id", account_id])
-                
+
             # Advanced custom parameters for forex
             if custom_cfg:
                 if custom_cfg.get("live"):
@@ -7418,7 +8220,7 @@ def api_run_job(payload: RunJobPayload):
                     cmd.extend(["--resample", custom_cfg["resample"]])
                 if custom_cfg.get("price_type"):
                     cmd.extend(["--price-type", custom_cfg["price_type"]])
-                
+
             if download_swaps or download_rates or download_calendar:
                 steps = [["=== Скачивание котировок Forex ===", cmd]]
 
@@ -7442,7 +8244,9 @@ def api_run_job(payload: RunJobPayload):
                         rates_cmd.extend(["--start", start])
                     if end:
                         rates_cmd.extend(["--end", end])
-                    steps.append(["=== Скачивание процентных ставок центральных банков ===", rates_cmd])
+                    steps.append(
+                        ["=== Скачивание процентных ставок центральных банков ===", rates_cmd]
+                    )
 
                 if download_calendar:
                     calendar_cmd = [py, "scripts/download_economic_calendar.py"]
@@ -7454,30 +8258,30 @@ def api_run_job(payload: RunJobPayload):
 
                 # Pass argv lists as JSON data — no interpolation into source.
                 cmd = _chain_argv_cmd(steps)
-                
+
         elif asset_key == "futures":
             symbols_str = params.get("symbols", "ES=F, NQ=F")
             if custom_cfg and "symbols" in custom_cfg:
                 symbols_list = custom_cfg["symbols"]
             else:
                 symbols_list = [s.strip().upper() for s in symbols_str.split(",") if s.strip()]
-                
+
             provider = params.get("provider", "yahoo")
             if custom_cfg and "provider" in custom_cfg:
                 provider = custom_cfg["provider"]
-                
+
             timeframe = params.get("timeframe", "1d")
             if custom_cfg and "timeframe" in custom_cfg:
                 timeframe = custom_cfg["timeframe"]
-                
+
             start = params.get("start", "")
             if custom_cfg and "period" in custom_cfg:
                 start = custom_cfg["period"].get("start", "")
-                
+
             end = params.get("end", "")
             if custom_cfg and "period" in custom_cfg:
                 end = custom_cfg["period"].get("end", "")
-                
+
             cmd = [py, "scripts/download_stock_data.py"]
             if symbols_list:
                 cmd.extend(["--symbols"] + symbols_list)
@@ -7489,7 +8293,7 @@ def api_run_job(payload: RunJobPayload):
                 cmd.extend(["--start", start])
             if end:
                 cmd.extend(["--end", end])
-                
+
             # Advanced custom parameters for futures (using stock data script)
             if custom_cfg:
                 if custom_cfg.get("resample"):
@@ -7502,46 +8306,46 @@ def api_run_job(payload: RunJobPayload):
                     cmd.extend(["--rollover", custom_cfg["rollover"]])
                 if custom_cfg.get("adjust"):
                     cmd.extend(["--adjust", custom_cfg["adjust"]])
-                
+
         elif asset_key == "options":
             symbols_str = params.get("symbols", "AAPL, MSFT")
             if custom_cfg and "symbols" in custom_cfg:
                 symbols_list = custom_cfg["symbols"]
             else:
                 symbols_list = [s.strip().upper() for s in symbols_str.split(",") if s.strip()]
-                
+
             provider = params.get("provider", "theta_data")
             if custom_cfg and "provider" in custom_cfg:
                 provider = custom_cfg["provider"]
-                
+
             start = params.get("start", "")
             if custom_cfg and "period" in custom_cfg:
                 start = custom_cfg["period"].get("start", "")
-                
+
             end = params.get("end", "")
             if custom_cfg and "period" in custom_cfg:
                 end = custom_cfg["period"].get("end", "")
-                
+
             strike_range = params.get("strike_range", "ATM +/- 10")
             if custom_cfg and "strike_range" in custom_cfg:
                 strike_range = custom_cfg["strike_range"]
-                
+
             include_greeks = params.get("include_greeks", True)
             if custom_cfg and "include_greeks" in custom_cfg:
                 include_greeks = custom_cfg["include_greeks"]
-                
+
             username = params.get("username", "")
             if custom_cfg and "username" in custom_cfg:
                 username = custom_cfg["username"]
-                
+
             password = params.get("password", "")
             if custom_cfg and "password" in custom_cfg:
                 password = custom_cfg["password"]
-                
+
             api_key = params.get("api_key", "")
             if custom_cfg and "api_key" in custom_cfg:
                 api_key = custom_cfg["api_key"]
-                
+
             cmd = [py, "scripts/download_options_data.py"]
             if symbols_list:
                 cmd.extend(["--underlyings"] + symbols_list)
@@ -7563,11 +8367,18 @@ def api_run_job(payload: RunJobPayload):
                 cmd.extend(["--api-key", api_key])
             if custom_cfg and custom_cfg.get("dte_range"):
                 cmd.extend(["--dte-range", custom_cfg["dte_range"]])
-                
+
     elif job == "run_ingest_dry":
         cmd = [py, "ingest_orchestrator.py", "--config", cfg_ingest, "--dry-run"]
     elif job == "run_features":
-        cmd = [py, "make_features.py", "--in", params.get("in", "data/prices.parquet"), "--out", params.get("out", "data/features.parquet")]
+        cmd = [
+            py,
+            "make_features.py",
+            "--in",
+            params.get("in", "data/prices.parquet"),
+            "--out",
+            params.get("out", "data/features.parquet"),
+        ]
         if "price_col" in params:
             cmd.extend(["--price-col", str(params["price_col"])])
         if "lookbacks" in params:
@@ -7626,7 +8437,16 @@ def api_run_job(payload: RunJobPayload):
         base_file = params.get("base", params.get("in", "data/features.parquet"))
         prices_file = params.get("prices", "data/prices.parquet")
         out_file = params.get("out", "data/training_table.parquet")
-        cmd = [py, "build_training_table.py", "--base", base_file, "--prices", prices_file, "--out", out_file]
+        cmd = [
+            py,
+            "build_training_table.py",
+            "--base",
+            base_file,
+            "--prices",
+            prices_file,
+            "--out",
+            out_file,
+        ]
         if "price_col" in params:
             cmd.extend(["--price-col", str(params["price_col"])])
         if "decision_delay_ms" in params:
@@ -7636,14 +8456,18 @@ def api_run_job(payload: RunJobPayload):
             try:
                 _delay_ms = int(float(params["decision_delay_ms"]))
             except (TypeError, ValueError):
-                raise HTTPException(status_code=400, detail="decision_delay_ms must be an integer (milliseconds)")
+                raise HTTPException(
+                    status_code=400, detail="decision_delay_ms must be an integer (milliseconds)"
+                )
             if _delay_ms < 8000:
                 # Strict truthiness: JSON strings like "false"/"0" must NOT
                 # count as an override.
                 _override_raw = params.get("unsafe_decision_delay_override")
-                _override = (
-                    _override_raw is True
-                    or str(_override_raw).strip().lower() in ("1", "true", "yes", "on")
+                _override = _override_raw is True or str(_override_raw).strip().lower() in (
+                    "1",
+                    "true",
+                    "yes",
+                    "on",
                 )
                 if not _override:
                     raise HTTPException(
@@ -7656,14 +8480,24 @@ def api_run_job(payload: RunJobPayload):
                     )
                 try:
                     os.makedirs(GLOBAL_LOGS_DIR, exist_ok=True)
-                    with open(os.path.join(GLOBAL_LOGS_DIR, "lite_unsafe_overrides.jsonl"), "a", encoding="utf-8") as _mf:
-                        _mf.write(json.dumps({
-                            "at": datetime.now().isoformat(),
-                            "job": "run_training_table",
-                            "override": "decision_delay_ms",
-                            "value": _delay_ms,
-                            "safe_minimum": 8000,
-                        }, ensure_ascii=False) + "\n")
+                    with open(
+                        os.path.join(GLOBAL_LOGS_DIR, "lite_unsafe_overrides.jsonl"),
+                        "a",
+                        encoding="utf-8",
+                    ) as _mf:
+                        _mf.write(
+                            json.dumps(
+                                {
+                                    "at": datetime.now().isoformat(),
+                                    "job": "run_training_table",
+                                    "override": "decision_delay_ms",
+                                    "value": _delay_ms,
+                                    "safe_minimum": 8000,
+                                },
+                                ensure_ascii=False,
+                            )
+                            + "\n"
+                        )
                 except Exception:
                     pass
             cmd.extend(["--decision-delay-ms", str(_delay_ms)])
@@ -7721,7 +8555,19 @@ def api_run_job(payload: RunJobPayload):
             except Exception as e:
                 print(f"Error building no-trade override config: {e}")
         # apply_no_trade_mask.py takes --sandbox_config (there is no --config flag).
-        cmd = [py, "apply_no_trade_mask.py", "--sandbox_config", cfg_sandbox, "--data", data_file, "--timeframe", timeframe, "--mode", mode, "--with-reasons"]
+        cmd = [
+            py,
+            "apply_no_trade_mask.py",
+            "--sandbox_config",
+            cfg_sandbox,
+            "--data",
+            data_file,
+            "--timeframe",
+            timeframe,
+            "--mode",
+            mode,
+            "--with-reasons",
+        ]
         if "out" in params and params["out"]:
             cmd.extend(["--out", str(params["out"])])
     elif job == "run_splits_diag":
@@ -7754,7 +8600,7 @@ def api_run_job(payload: RunJobPayload):
             cmd.extend(["--data", str(data_file)])
     elif job == "run_train":
         train_cfg = params.get("config", cfg_train)
-        
+
         # Check for inline edited training config content
         train_config_content = params.get("train_config_content")
         if train_config_content and train_config_content.strip():
@@ -7765,7 +8611,7 @@ def api_run_job(payload: RunJobPayload):
                 train_cfg = _train_tmp
             except Exception as e:
                 print(f"Error saving temp training config: {e}")
-                
+
         cmd = [py, "train_model_multi_patch.py", "--config", train_cfg]
 
         # P2-H: устройство обучения из UI (auto|cpu|cuda) — честный auto-детект
@@ -7828,21 +8674,45 @@ def api_run_job(payload: RunJobPayload):
             cmd.extend(["--tensorboard-log-dir", str(params["tensorboard_log_dir"])])
         if "n_envs" in params and params["n_envs"] is not None and str(params["n_envs"]).strip():
             cmd.extend(["--n-envs", str(params["n_envs"])])
-        if "total_timesteps" in params and params["total_timesteps"] is not None and str(params["total_timesteps"]).strip():
+        if (
+            "total_timesteps" in params
+            and params["total_timesteps"] is not None
+            and str(params["total_timesteps"]).strip()
+        ):
             cmd.extend(["--training.total_timesteps", str(params["total_timesteps"])])
-        if "learning_rate" in params and params["learning_rate"] is not None and str(params["learning_rate"]).strip():
+        if (
+            "learning_rate" in params
+            and params["learning_rate"] is not None
+            and str(params["learning_rate"]).strip()
+        ):
             cmd.extend(["--model.params.learning_rate", str(params["learning_rate"])])
 
         # Advanced training hyperparameters mapping as overrides
         if "gamma" in params and params["gamma"] is not None and str(params["gamma"]).strip():
             cmd.extend(["--model.params.gamma", str(params["gamma"])])
-        if "gae_lambda" in params and params["gae_lambda"] is not None and str(params["gae_lambda"]).strip():
+        if (
+            "gae_lambda" in params
+            and params["gae_lambda"] is not None
+            and str(params["gae_lambda"]).strip()
+        ):
             cmd.extend(["--model.params.gae_lambda", str(params["gae_lambda"])])
-        if "batch_size" in params and params["batch_size"] is not None and str(params["batch_size"]).strip():
+        if (
+            "batch_size" in params
+            and params["batch_size"] is not None
+            and str(params["batch_size"]).strip()
+        ):
             cmd.extend(["--model.params.batch_size", str(params["batch_size"])])
-        if "turnover_penalty" in params and params["turnover_penalty"] is not None and str(params["turnover_penalty"]).strip():
+        if (
+            "turnover_penalty" in params
+            and params["turnover_penalty"] is not None
+            and str(params["turnover_penalty"]).strip()
+        ):
             cmd.extend(["--model.params.turnover_penalty_coef", str(params["turnover_penalty"])])
-        if "calendar" in params and params["calendar"] is not None and str(params["calendar"]).strip():
+        if (
+            "calendar" in params
+            and params["calendar"] is not None
+            and str(params["calendar"]).strip()
+        ):
             cmd.extend(["--env.session.calendar", str(params["calendar"])])
         if "min_adv" in params and params["min_adv"] is not None and str(params["min_adv"]).strip():
             cmd.extend(["--env.liquidity.min_adv_usd", str(params["min_adv"])])
@@ -7864,12 +8734,18 @@ def api_run_job(payload: RunJobPayload):
         train_argv = [
             sys.executable,
             "train_calibrator.py",
-            "--data", str(data_path),
-            "--method", str(method),
-            "--score_col", str(score_col),
-            "--y_col", str(target_col),
-            "--out_model", str(out_model),
-            "--report_csv", str(report_csv),
+            "--data",
+            str(data_path),
+            "--method",
+            str(method),
+            "--score_col",
+            str(score_col),
+            "--y_col",
+            str(target_col),
+            "--out_model",
+            str(out_model),
+            "--report_csv",
+            str(report_csv),
         ]
         if filter_val:
             train_argv.append("--filter_val")
@@ -7877,11 +8753,16 @@ def api_run_job(payload: RunJobPayload):
         apply_argv = [
             sys.executable,
             "apply_calibrator.py",
-            "--data", str(data_path),
-            "--model", str(out_model),
-            "--score_col", str(score_col),
-            "--out_col", str(out_col),
-            "--out", str(out_data),
+            "--data",
+            str(data_path),
+            "--model",
+            str(out_model),
+            "--score_col",
+            str(score_col),
+            "--out_col",
+            str(out_col),
+            "--out",
+            str(out_data),
         ]
 
         # Chain train -> apply inside one background process. The command spec is
@@ -7946,7 +8827,20 @@ def api_run_job(payload: RunJobPayload):
         y_col = params.get("y_col", "y")
         score_col = params.get("score_col", "score")
 
-        cmd = [py, "run_conformal_calibration.py", "--config", conf_cfg, "--predictions_path", predictions_path, "--out_state", out_state, "--y_col", y_col, "--score_col", score_col]
+        cmd = [
+            py,
+            "run_conformal_calibration.py",
+            "--config",
+            conf_cfg,
+            "--predictions_path",
+            predictions_path,
+            "--out_state",
+            out_state,
+            "--y_col",
+            y_col,
+            "--score_col",
+            score_col,
+        ]
         if params.get("filter_val") is True:
             cmd.append("--filter_val")
     elif job == "run_offline_train":
@@ -7985,7 +8879,14 @@ def api_run_job(payload: RunJobPayload):
     elif job == "run_momentum":
         mom_window = params.get("window", 20)
         mom_out = params.get("out", "models/momentum_report.json")
-        cmd = [py, "services/sector_momentum.py", "--window", str(mom_window), "--out", str(mom_out)]
+        cmd = [
+            py,
+            "services/sector_momentum.py",
+            "--window",
+            str(mom_window),
+            "--out",
+            str(mom_out),
+        ]
     elif job == "run_corporate_actions":
         ca_out = params.get("out", "models/corporate_actions.json")
         cmd = [py, "services/corporate_actions.py", "--out", str(ca_out)]
@@ -8002,9 +8903,25 @@ def api_run_job(payload: RunJobPayload):
         quantiles = params.get("quantiles", 10)
         tolerance = params.get("tolerance", 5.0)
         plot_path = params.get("plot", "reports/slippage_comparison.png")
-        cmd = [py, "compare_slippage_curve.py", hist, sim, "--quantiles", str(quantiles), "--tolerance", str(tolerance), "--plot", plot_path]
+        cmd = [
+            py,
+            "compare_slippage_curve.py",
+            hist,
+            sim,
+            "--quantiles",
+            str(quantiles),
+            "--tolerance",
+            str(tolerance),
+            "--plot",
+            plot_path,
+        ]
     elif job == "run_parity":
-        cmd = [py, "tools/check_feature_parity.py", "--data", params.get("data", params.get("in_path", "data/prices.parquet"))]
+        cmd = [
+            py,
+            "tools/check_feature_parity.py",
+            "--data",
+            params.get("data", params.get("in_path", "data/prices.parquet")),
+        ]
         if "price_col" in params:
             cmd.extend(["--price-col", str(params["price_col"])])
         if "lookbacks" in params:
@@ -8013,10 +8930,24 @@ def api_run_job(payload: RunJobPayload):
             cmd.extend(["--rsi-period", str(params["rsi_period"])])
 
     elif job == "job_universe":
-        cmd = [py, "scripts/refresh_universe.py", "--config", "configs/offline.yaml", "--out", "data/universe/symbols.json"]
+        cmd = [
+            py,
+            "scripts/refresh_universe.py",
+            "--config",
+            "configs/offline.yaml",
+            "--out",
+            "data/universe/symbols.json",
+        ]
     elif job == "job_filters":
-        cmd = [py, "scripts/fetch_binance_filters.py", "--config", "configs/offline.yaml", "--out", "data/binance_filters.json"]
-    
+        cmd = [
+            py,
+            "scripts/fetch_binance_filters.py",
+            "--config",
+            "configs/offline.yaml",
+            "--out",
+            "data/binance_filters.json",
+        ]
+
     # Asset specific jobs
     elif job == "pdt_guard_check":
         position_value = params.get("position_value", 100000)
@@ -8038,13 +8969,23 @@ def api_run_job(payload: RunJobPayload):
             "print(f'Margin Call Status: {status.margin_call_type.value} (Amount: ${status.margin_call_amount:,.2f})')"
         )
         cmd = [
-            py, "-c", _pdt_runner,
+            py,
+            "-c",
+            _pdt_runner,
             json.dumps({"position_value": position_value, "account_equity": account_equity}),
         ]
     elif job == "forex_swaps_check":
-        cmd = [py, "-c", "import sys; sys.path.append('.'); import services.forex_realtime_swaps as f; print('Forex swaps OANDA data query:'); print('EUR_USD Long: -0.00008, Short: -0.00002\\nGBP_USD Long: -0.00010, Short: -0.00004')"]
+        cmd = [
+            py,
+            "-c",
+            "import sys; sys.path.append('.'); import services.forex_realtime_swaps as f; print('Forex swaps OANDA data query:'); print('EUR_USD Long: -0.00008, Short: -0.00002\\nGBP_USD Long: -0.00010, Short: -0.00004')",
+        ]
     elif job == "futures_span_check":
-        cmd = [py, "-c", "import sys; sys.path.append('.'); import services.unified_futures_risk as u; print('Futures SPAN check:\\nCME ES contract margin req: $12,400\\nInitial margin met: YES')"]
+        cmd = [
+            py,
+            "-c",
+            "import sys; sys.path.append('.'); import services.unified_futures_risk as u; print('Futures SPAN check:\\nCME ES contract margin req: $12,400\\nInitial margin met: YES')",
+        ]
     elif job == "options_greeks_calc":
         underlier = params.get("underlier", 180.0)
         strike = params.get("strike", 180.0)
@@ -8058,15 +8999,17 @@ def api_run_job(payload: RunJobPayload):
             "print('Delta: 0.521\\nGamma: 0.042\\nVega: 0.185\\nTheta: -0.054')"
         )
         cmd = [
-            py, "-c", _greeks_runner,
+            py,
+            "-c",
+            _greeks_runner,
             json.dumps({"underlier": underlier, "strike": strike, "dte": dte, "vol": vol}),
         ]
-        
+
     elif job == "/start":
         pid_file = GLOBAL_REALTIME_PID
         if background_running(pid_file):
             return {"pid": 0, "log": GLOBAL_REALTIME_LOG}
-            
+
         # Load and dynamically modify the base YAML config with overrides
         try:
             with open(cfg_realtime, "r", encoding="utf-8") as f:
@@ -8086,18 +9029,24 @@ def api_run_job(payload: RunJobPayload):
             if os.path.exists(filepath):
                 try:
                     import importlib.util
-                    spec = importlib.util.spec_from_file_location(f"strategies.custom_{asset_lower}", filepath)
+
+                    spec = importlib.util.spec_from_file_location(
+                        f"strategies.custom_{asset_lower}", filepath
+                    )
                     module = importlib.util.module_from_spec(spec)
                     sys.modules[f"strategies.custom_{asset_lower}"] = module
                     spec.loader.exec_module(module)
                     for name, obj in vars(module).items():
-                        if isinstance(obj, type) and obj.__name__ not in ("BaseSignalPolicy", "BaseStrategy"):
+                        if isinstance(obj, type) and obj.__name__ not in (
+                            "BaseSignalPolicy",
+                            "BaseStrategy",
+                        ):
                             if hasattr(obj, "decide") and callable(getattr(obj, "decide")):
                                 class_name = name
                                 break
                 except Exception as e:
                     print(f"Error resolving custom strategy class for realtime: {e}")
-            
+
             if class_name:
                 policy_target = f"strategies.custom_{asset_lower}:{class_name}"
                 policy_params = params.get("strategy_params")
@@ -8111,20 +9060,24 @@ def api_run_job(payload: RunJobPayload):
                             policy_params = {}
                 if not policy_params:
                     policy_params = {}
-                    
+
                 if params.get("use_optimized_params") is True:
                     opt_file = f"logs/optimization_{asset_lower}.json"
                     if os.path.exists(opt_file):
                         try:
                             with open(opt_file, "r", encoding="utf-8") as of:
                                 opt_data = json.load(of)
-                                best_params = opt_data.get("best_combination", {}).get("parameters", {})
+                                best_params = opt_data.get("best_combination", {}).get(
+                                    "parameters", {}
+                                )
                                 if best_params:
                                     policy_params.update(best_params)
-                                    print(f"Merged optimized parameters for realtime: {best_params}")
+                                    print(
+                                        f"Merged optimized parameters for realtime: {best_params}"
+                                    )
                         except Exception as e:
                             print(f"Error loading optimized parameters for realtime: {e}")
-                
+
                 cfg_data.setdefault("components", {}).setdefault("policy", {})
                 cfg_data["components"]["policy"]["target"] = policy_target
                 cfg_data["components"]["policy"]["params"] = policy_params
@@ -8135,10 +9088,12 @@ def api_run_job(payload: RunJobPayload):
             if "portfolio" not in cfg_data or not isinstance(cfg_data["portfolio"], dict):
                 cfg_data["portfolio"] = {}
             cfg_data["portfolio"]["equity_usd"] = equity
-            
+
             if "execution" not in cfg_data or not isinstance(cfg_data["execution"], dict):
                 cfg_data["execution"] = {}
-            if "portfolio" not in cfg_data["execution"] or not isinstance(cfg_data["execution"]["portfolio"], dict):
+            if "portfolio" not in cfg_data["execution"] or not isinstance(
+                cfg_data["execution"]["portfolio"], dict
+            ):
                 cfg_data["execution"]["portfolio"] = {}
             cfg_data["execution"]["portfolio"]["equity_usd"] = equity
 
@@ -8164,20 +9119,26 @@ def api_run_job(payload: RunJobPayload):
                 cfg_data["extended_hours"] = True
             elif params.get("extended_hours") is False:
                 cfg_data["extended_hours"] = False
-                
+
         elif ACTIVE_ASSET == "forex":
             if params.get("forex_max_leverage") is not None:
                 if "exchange" not in cfg_data or not isinstance(cfg_data["exchange"], dict):
                     cfg_data["exchange"] = {}
-                if "oanda" not in cfg_data["exchange"] or not isinstance(cfg_data["exchange"]["oanda"], dict):
+                if "oanda" not in cfg_data["exchange"] or not isinstance(
+                    cfg_data["exchange"]["oanda"], dict
+                ):
                     cfg_data["exchange"]["oanda"] = {}
                 cfg_data["exchange"]["oanda"]["max_leverage"] = int(params["forex_max_leverage"])
             if params.get("forex_rollover_keepout_minutes") is not None:
                 if "exchange" not in cfg_data or not isinstance(cfg_data["exchange"], dict):
                     cfg_data["exchange"] = {}
-                if "oanda" not in cfg_data["exchange"] or not isinstance(cfg_data["exchange"]["oanda"], dict):
+                if "oanda" not in cfg_data["exchange"] or not isinstance(
+                    cfg_data["exchange"]["oanda"], dict
+                ):
                     cfg_data["exchange"]["oanda"] = {}
-                cfg_data["exchange"]["oanda"]["rollover_time_utc"] = int(params["forex_rollover_keepout_minutes"])
+                cfg_data["exchange"]["oanda"]["rollover_time_utc"] = int(
+                    params["forex_rollover_keepout_minutes"]
+                )
             if params.get("forex_auto_reconcile") is not None:
                 if "forex" not in cfg_data or not isinstance(cfg_data["forex"], dict):
                     cfg_data["forex"] = {}
@@ -8187,7 +9148,9 @@ def api_run_job(payload: RunJobPayload):
             if params.get("futures_span_margin") is not None:
                 cfg_data["enable_margin_monitoring"] = bool(params["futures_span_margin"])
             if params.get("futures_auto_rollover") is not None:
-                if "position_sync" not in cfg_data or not isinstance(cfg_data["position_sync"], dict):
+                if "position_sync" not in cfg_data or not isinstance(
+                    cfg_data["position_sync"], dict
+                ):
                     cfg_data["position_sync"] = {}
                 cfg_data["position_sync"]["auto_reconcile"] = bool(params["futures_auto_rollover"])
             if params.get("crypto_vendor"):
@@ -8253,14 +9216,14 @@ def api_run_job(payload: RunJobPayload):
                 else:
                     # script_live.py accepts comma-separated symbols string
                     start_cmd.extend(["--symbols", syms])
-            
+
         # Equities Specific (script_live.py only)
         if ACTIVE_ASSET == "equity":
             if params.get("extended_hours") is True:
                 start_cmd.append("--extended-hours")
             elif params.get("no_extended_hours") is True:
                 start_cmd.append("--no-extended-hours")
-                
+
         # Forex Specific (script_live.py only)
         if ACTIVE_ASSET == "forex":
             if params.get("forex_sync_interval") is not None:
@@ -8274,8 +9237,13 @@ def api_run_job(payload: RunJobPayload):
             if params.get("forex_session_filter") is not None:
                 start_cmd.extend(["--forex-session-filter", str(params["forex_session_filter"])])
             if params.get("forex_rollover_keepout_minutes") is not None:
-                start_cmd.extend(["--forex-rollover-keepout-minutes", str(params["forex_rollover_keepout_minutes"])])
-                
+                start_cmd.extend(
+                    [
+                        "--forex-rollover-keepout-minutes",
+                        str(params["forex_rollover_keepout_minutes"]),
+                    ]
+                )
+
         # Futures Specific (script_futures_live.py only)
         if ACTIVE_ASSET == "futures":
             # Map vendor to cme/crypto for futures-type override if needed
@@ -8306,24 +9274,24 @@ def api_run_job(payload: RunJobPayload):
             reports_path = os.path.join(GLOBAL_LOGS_DIR, "sandbox_reports.csv")
             if not os.path.exists(reports_path):
                 reports_path = GLOBAL_REPORTS_PATH
-                
+
         trades_path = params.get("trades_path") or params.get("trades")
         if not trades_path:
             trades_path = os.path.join(GLOBAL_LOGS_DIR, "log_trades_*.csv")
-            
+
         capital_base = float(params.get("capital_base") or params.get("capital") or 100000.0)
         rf_annual = float(params.get("rf_annual") or 0.0)
-        
+
         out_json = params.get("out_json") or GLOBAL_METRICS_JSON
         out_md = params.get("out_md") or os.path.join(GLOBAL_LOGS_DIR, "report.md")
         equity_png = params.get("equity_png") or os.path.join(GLOBAL_LOGS_DIR, "equity.png")
-        
+
         reports_path = reports_path.replace("\\", "/")
         trades_path = trades_path.replace("\\", "/")
         out_json = out_json.replace("\\", "/")
         out_md = out_md.replace("\\", "/")
         equity_png = equity_png.replace("\\", "/")
-        
+
         # EvalConfig values are passed as JSON data (argv[1]) — no path/value is
         # interpolated into the program text, removing the injection vector.
         _eval_runner = (
@@ -8349,7 +9317,12 @@ def api_run_job(payload: RunJobPayload):
             "import sys, json, app; a = json.loads(sys.argv[1]); "
             "app.run_backtest_from_yaml(a[0], a[1], a[2])"
         )
-        cmd = [py, "-c", _bt_runner, json.dumps([cfg_sandbox, GLOBAL_REPORTS_PATH, GLOBAL_LOGS_DIR])]
+        cmd = [
+            py,
+            "-c",
+            _bt_runner,
+            json.dumps([cfg_sandbox, GLOBAL_REPORTS_PATH, GLOBAL_LOGS_DIR]),
+        ]
     elif job == "/pipeline":
         pid_file = os.path.join(".run", "pipeline.pid")
         _pipe_runner = "import sys, json, app; app.build_all_pipeline(**json.loads(sys.argv[1]))"
@@ -8383,9 +9356,12 @@ def api_run_job(payload: RunJobPayload):
     # Research CLI jobs (self-contained scripts in research/, run from repo root)
     elif job == "run_eda":
         cmd = [
-            py, "research/eda_profiler.py",
-            "--in", str(params.get("in_path", "data/training_table.parquet")),
-            "--out", "models/eda_report.json",
+            py,
+            "research/eda_profiler.py",
+            "--in",
+            str(params.get("in_path", "data/training_table.parquet")),
+            "--out",
+            "models/eda_report.json",
         ]
         if params.get("time_col"):
             cmd.extend(["--time-col", str(params["time_col"])])
@@ -8393,9 +9369,12 @@ def api_run_job(payload: RunJobPayload):
             cmd.extend(["--symbol-col", str(params["symbol_col"])])
     elif job == "run_feature_analytics":
         cmd = [
-            py, "research/feature_analytics.py",
-            "--in", str(params.get("in_path", "data/training_table.parquet")),
-            "--out", "models/feature_analytics.json",
+            py,
+            "research/feature_analytics.py",
+            "--in",
+            str(params.get("in_path", "data/training_table.parquet")),
+            "--out",
+            "models/feature_analytics.json",
         ]
         if params.get("target"):
             cmd.extend(["--target", str(params["target"])])
@@ -8405,9 +9384,12 @@ def api_run_job(payload: RunJobPayload):
             cmd.extend(["--time-col", str(params["time_col"])])
     elif job == "run_target_diagnostics":
         cmd = [
-            py, "research/target_diagnostics.py",
-            "--in", str(params.get("in_path", "data/training_table.parquet")),
-            "--out", "models/target_diagnostics.json",
+            py,
+            "research/target_diagnostics.py",
+            "--in",
+            str(params.get("in_path", "data/training_table.parquet")),
+            "--out",
+            "models/target_diagnostics.json",
         ]
         if params.get("target"):
             cmd.extend(["--target", str(params["target"])])
@@ -8417,8 +9399,10 @@ def api_run_job(payload: RunJobPayload):
             cmd.extend(["--symbol-col", str(params["symbol_col"])])
     elif job == "run_cv_overfitting":
         cmd = [
-            py, "research/cv_overfitting.py",
-            "--out", "models/cv_overfitting.json",
+            py,
+            "research/cv_overfitting.py",
+            "--out",
+            "models/cv_overfitting.json",
         ]
         if params.get("returns_matrix"):
             cmd.extend(["--returns-matrix", str(params["returns_matrix"])])
@@ -8440,16 +9424,21 @@ def api_run_job(payload: RunJobPayload):
             cmd.extend(["--embargo", str(params["embargo"])])
     elif job == "run_dataset_snapshot":
         cmd = [
-            py, "research/dataset_versioning.py", "register",
+            py,
+            "research/dataset_versioning.py",
+            "register",
             str(params.get("path", "data/training_table.parquet")),
         ]
         if params.get("parent"):
             cmd.extend(["--parent", str(params["parent"])])
     elif job == "run_advanced_features":
         cmd = [
-            py, "research/advanced_features.py",
-            "--in", str(params.get("in_path", "data/training_table.parquet")),
-            "--out", "models/advanced_features.json",
+            py,
+            "research/advanced_features.py",
+            "--in",
+            str(params.get("in_path", "data/training_table.parquet")),
+            "--out",
+            "models/advanced_features.json",
         ]
         if params.get("price_col"):
             cmd.extend(["--price-col", str(params["price_col"])])
@@ -8457,24 +9446,25 @@ def api_run_job(payload: RunJobPayload):
 
     if not cmd:
         raise HTTPException(status_code=400, detail="Invalid job name")
-        
+
     log_file = os.path.join(GLOBAL_LOGS_DIR, f"{job.lstrip('/')}.log")
     pid_file = os.path.join(".run", f"{job.lstrip('/')}.pid")
-    
+
     if background_running(pid_file):
         try:
             stop_background(pid_file)
         except Exception:
             pass
-            
+
     if os.path.exists(log_file):
         try:
             os.remove(log_file)
         except Exception:
             pass
-            
+
     pid = start_background(cmd, pid_file=pid_file, log_file=log_file)
     return {"pid": pid, "log": log_file}
+
 
 # ----------------------- Планировщик регулярных задач (P0-F gap closure) -----------------------
 # Ядро — services/scheduler.py (anacron catch-up, ретраи, fail-closed пайплайны,
@@ -8488,8 +9478,12 @@ def _sched_run_worker(job_name: str, params: Dict[str, Any], timeout_sec: int):
     """Запустить существующий фоновый job (та же машинерия, что /api/run_job)
     и дождаться его РЕАЛЬНОГО терминального статуса (exit code из pid-статуса)."""
     from services.scheduler import (
-        JobRunResult, STATUS_FAILED, STATUS_SUCCEEDED, STATUS_TIMEOUT,
+        JobRunResult,
+        STATUS_FAILED,
+        STATUS_SUCCEEDED,
+        STATUS_TIMEOUT,
     )
+
     try:
         api_run_job(RunJobPayload(job=job_name, params=params))
     except HTTPException as exc:
@@ -8514,12 +9508,15 @@ def _sched_run_worker(job_name: str, params: Dict[str, Any], timeout_sec: int):
         stop_background(pid_file)
     except Exception:
         pass
-    return JobRunResult(STATUS_TIMEOUT, f"{job_name}: превышен таймаут {timeout_sec}s (процесс остановлен)")
+    return JobRunResult(
+        STATUS_TIMEOUT, f"{job_name}: превышен таймаут {timeout_sec}s (процесс остановлен)"
+    )
 
 
 def _sched_parquet_rows(path: str) -> Optional[int]:
     try:
         import pyarrow.parquet as _pq
+
         return int(_pq.ParquetFile(path).metadata.num_rows)
     except Exception:
         return None
@@ -8527,13 +9524,19 @@ def _sched_parquet_rows(path: str) -> Optional[int]:
 
 def _build_scheduler_actions() -> Dict[str, Any]:
     from services.scheduler import (
-        JobRunResult, ScheduledJob, STATUS_FAILED, STATUS_SKIPPED, STATUS_SUCCEEDED,
+        JobRunResult,
+        ScheduledJob,
+        STATUS_FAILED,
+        STATUS_SKIPPED,
+        STATUS_SUCCEEDED,
     )
 
     def data_refresh(job: ScheduledJob) -> "JobRunResult":
         cfg = str(job.params.get("config", "configs/ingest.yaml"))
         if not os.path.exists(cfg):
-            return JobRunResult(STATUS_SKIPPED, f"нет конфига инжеста {cfg} — настройте и включите задачу")
+            return JobRunResult(
+                STATUS_SKIPPED, f"нет конфига инжеста {cfg} — настройте и включите задачу"
+            )
         started = time.time()
         res = _sched_run_worker("run_ingest", {"config": cfg}, job.timeout_sec)
         if res.status != STATUS_SUCCEEDED:
@@ -8541,41 +9544,74 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         # Контроль результата: файл цен реально обновился и не пуст.
         prices = "data/prices.parquet"
         if not os.path.exists(prices):
-            return JobRunResult(STATUS_FAILED, "ingest завершился, но data/prices.parquet не появился")
+            return JobRunResult(
+                STATUS_FAILED, "ingest завершился, но data/prices.parquet не появился"
+            )
         if os.path.getmtime(prices) < started - 60:
-            return JobRunResult(STATUS_FAILED, "ingest завершился, но data/prices.parquet не обновился (старый mtime)")
+            return JobRunResult(
+                STATUS_FAILED,
+                "ingest завершился, но data/prices.parquet не обновился (старый mtime)",
+            )
         rows = _sched_parquet_rows(prices)
         if rows is not None and rows <= 0:
             return JobRunResult(STATUS_FAILED, "data/prices.parquet пуст после ingest")
-        return JobRunResult(STATUS_SUCCEEDED, f"данные обновлены ({rows if rows is not None else '?'} строк)")
+        return JobRunResult(
+            STATUS_SUCCEEDED, f"данные обновлены ({rows if rows is not None else '?'} строк)"
+        )
 
     def research_nightly(job: ScheduledJob) -> "JobRunResult":
         if not os.path.exists("data/prices.parquet"):
             return JobRunResult(STATUS_SKIPPED, "нет data/prices.parquet — сначала data_refresh")
         p = job.params
-        delay = max(8000, int(p.get("decision_delay_ms", 8000)))  # LeakGuard-пол, не ослабляемый планировщиком
+        delay = max(
+            8000, int(p.get("decision_delay_ms", 8000))
+        )  # LeakGuard-пол, не ослабляемый планировщиком
         steps_spec = [
-            ("run_features", {
-                "in": "data/prices.parquet", "out": "data/features.parquet",
-                "lookbacks": str(p.get("lookbacks", "60,120")),
-                "rsi_period": int(p.get("rsi_period", 14)), "price_col": str(p.get("price_col", "close")),
-            }),
-            ("run_targets", {
-                "in": "data/features.parquet", "out": "data/targets.parquet",
-                "fees_bps_total": int(p.get("fees_bps_total", 10)),
-                "horizon_bars": int(p.get("horizon_bars", 5)),
-            }),
-            ("run_no_trade", {"data": "data/targets.parquet", "out": "data/targets_masked.parquet"}),
-            ("run_splits", {
-                "data": ("data/targets_masked.parquet" if os.path.exists("data/targets_masked.parquet")
-                         else "data/targets.parquet"),
-                "n_splits": int(p.get("n_splits", 5)), "train_size_pct": int(p.get("train_size_pct", 80)),
-            }),
-            ("run_training_table", {
-                "base": "data/features.parquet", "prices": "data/prices.parquet",
-                "out": "data/training_table.parquet",
-                "price_col": str(p.get("price_col", "close")), "decision_delay_ms": delay,
-            }),
+            (
+                "run_features",
+                {
+                    "in": "data/prices.parquet",
+                    "out": "data/features.parquet",
+                    "lookbacks": str(p.get("lookbacks", "60,120")),
+                    "rsi_period": int(p.get("rsi_period", 14)),
+                    "price_col": str(p.get("price_col", "close")),
+                },
+            ),
+            (
+                "run_targets",
+                {
+                    "in": "data/features.parquet",
+                    "out": "data/targets.parquet",
+                    "fees_bps_total": int(p.get("fees_bps_total", 10)),
+                    "horizon_bars": int(p.get("horizon_bars", 5)),
+                },
+            ),
+            (
+                "run_no_trade",
+                {"data": "data/targets.parquet", "out": "data/targets_masked.parquet"},
+            ),
+            (
+                "run_splits",
+                {
+                    "data": (
+                        "data/targets_masked.parquet"
+                        if os.path.exists("data/targets_masked.parquet")
+                        else "data/targets.parquet"
+                    ),
+                    "n_splits": int(p.get("n_splits", 5)),
+                    "train_size_pct": int(p.get("train_size_pct", 80)),
+                },
+            ),
+            (
+                "run_training_table",
+                {
+                    "base": "data/features.parquet",
+                    "prices": "data/prices.parquet",
+                    "out": "data/training_table.parquet",
+                    "price_col": str(p.get("price_col", "close")),
+                    "decision_delay_ms": delay,
+                },
+            ),
         ]
         steps: List[Dict[str, Any]] = []
         per_step_timeout = max(300, job.timeout_sec // len(steps_spec))
@@ -8587,19 +9623,28 @@ def _build_scheduler_actions() -> Dict[str, Any]:
             steps.append({"step": name, "status": res.status, "detail": res.detail})
             if res.status != STATUS_SUCCEEDED:
                 # fail-closed: не продолжаем пайплайн на битом шаге
-                return JobRunResult(res.status, f"остановлен на шаге {name}: {res.detail}", steps=steps)
+                return JobRunResult(
+                    res.status, f"остановлен на шаге {name}: {res.detail}", steps=steps
+                )
         return JobRunResult(STATUS_SUCCEEDED, "research-пайплайн прошёл целиком", steps=steps)
 
     def drift_and_retrain(job: ScheduledJob) -> "JobRunResult":
         from services.automation.drift_retrain import DriftRetrainScheduler
-        if not (os.path.exists("data/training_table.parquet") or os.path.exists("data/features.parquet")):
-            return JobRunResult(STATUS_SKIPPED, "нет данных для PSI (training_table/features отсутствуют)")
+
+        if not (
+            os.path.exists("data/training_table.parquet") or os.path.exists("data/features.parquet")
+        ):
+            return JobRunResult(
+                STATUS_SKIPPED, "нет данных для PSI (training_table/features отсутствуют)"
+            )
         res = _sched_run_worker("run_psi", {}, min(job.timeout_sec, 1800))
         if res.status != STATUS_SUCCEEDED:
             return JobRunResult(res.status, f"расчёт PSI не удался: {res.detail}")
         report = read_json("models/drift_report.json")
         if not report:
-            return JobRunResult(STATUS_FAILED, "run_psi прошёл, но models/drift_report.json не создан")
+            return JobRunResult(
+                STATUS_FAILED, "run_psi прошёл, но models/drift_report.json не создан"
+            )
 
         # Долговечный cooldown ретрейна — переживает рестарты приложения.
         marker_path = os.path.join("state", "drift_retrain_state.json")
@@ -8617,8 +9662,10 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         if not bool(job.params.get("auto_retrain", False)):
             if _SCHEDULER is not None:
                 _SCHEDULER.notify(
-                    "drift", f"⚠️ Обнаружен дрейф данных ({decision.reason}). "
-                             f"Фичи: {', '.join(decision.triggering_features[:5])}. Рекомендуется ретрейн.")
+                    "drift",
+                    f"⚠️ Обнаружен дрейф данных ({decision.reason}). "
+                    f"Фичи: {', '.join(decision.triggering_features[:5])}. Рекомендуется ретрейн.",
+                )
             return JobRunResult(
                 STATUS_SUCCEEDED,
                 f"ДРЕЙФ ОБНАРУЖЕН ({decision.reason}) — auto_retrain выключен, отправлена рекомендация",
@@ -8627,10 +9674,16 @@ def _build_scheduler_actions() -> Dict[str, Any]:
             "run_train", {}, int(job.params.get("retrain_timeout_sec", 21600))
         )
         if train_res.status == STATUS_SUCCEEDED:
-            atomic_write_with_retry(marker_path, json.dumps(
-                {"last_retrain_ts": time.time(), "reason": decision.reason}, ensure_ascii=False))
+            atomic_write_with_retry(
+                marker_path,
+                json.dumps(
+                    {"last_retrain_ts": time.time(), "reason": decision.reason}, ensure_ascii=False
+                ),
+            )
             return JobRunResult(STATUS_SUCCEEDED, f"дрейф → ретрейн выполнен ({decision.reason})")
-        return JobRunResult(train_res.status, f"дрейф обнаружен, но ретрейн упал: {train_res.detail}")
+        return JobRunResult(
+            train_res.status, f"дрейф обнаружен, но ретрейн упал: {train_res.detail}"
+        )
 
     def eod_close_and_report(job: ScheduledJob) -> "JobRunResult":
         reports_dir = str(job.params.get("reports_dir", "reports/daily"))
@@ -8645,6 +9698,7 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         }
         try:
             import services.ops_kill_switch as _oks
+
             report["kill_switch_tripped"] = bool(_oks.tripped())
         except Exception:
             pass
@@ -8655,7 +9709,9 @@ def _build_scheduler_actions() -> Dict[str, Any]:
             report["ccea"] = {
                 "eod": eod,
                 "nav": (eod.get("snapshot") or {}).get("nav") if isinstance(eod, dict) else None,
-                "day_pnl": (eod.get("snapshot") or {}).get("day_pnl") if isinstance(eod, dict) else None,
+                "day_pnl": (
+                    (eod.get("snapshot") or {}).get("day_pnl") if isinstance(eod, dict) else None
+                ),
                 "positions": (snap or {}).get("holdings"),
                 "trades_count": len((trades or {}).get("trades") or []),
                 "simulated": bool((snap or {}).get("simulated")),
@@ -8663,7 +9719,9 @@ def _build_scheduler_actions() -> Dict[str, Any]:
             if isinstance(eod, dict) and not eod.get("ok", True):
                 report["note"] = f"eod_close вернул ошибку: {eod.get('error')}"
         else:
-            report["note"] = "CCEA Agent не запущен — NAV не фиксировался, отчёт содержит только состояние процесса."
+            report["note"] = (
+                "CCEA Agent не запущен — NAV не фиксировался, отчёт содержит только состояние процесса."
+            )
         json_path = os.path.join(reports_dir, f"{day}.json")
         atomic_write_with_retry(json_path, json.dumps(report, ensure_ascii=False, indent=2))
         md_lines = [f"# Дневной отчёт {day}", ""]
@@ -8680,13 +9738,17 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         atomic_write_with_retry(os.path.join(reports_dir, f"{day}.md"), "\n".join(md_lines) + "\n")
         if _SCHEDULER is not None and report["ccea"]:
             c = report["ccea"]
-            _SCHEDULER.notify("eod", f"EOD {day}: NAV {c.get('nav')} · day PnL {c.get('day_pnl')}"
-                                     + (" (PAPER)" if c.get("simulated") else ""))
+            _SCHEDULER.notify(
+                "eod",
+                f"EOD {day}: NAV {c.get('nav')} · day PnL {c.get('day_pnl')}"
+                + (" (PAPER)" if c.get("simulated") else ""),
+            )
         detail = f"отчёт {json_path}" + ("" if report["ccea"] else " (CCEA off — без фиксации NAV)")
         return JobRunResult(STATUS_SUCCEEDED, detail)
 
     def tca_weekly(job: ScheduledJob) -> "JobRunResult":
         from services.automation.tca_reporter import TCAReporter
+
         payload = api_trades()
         raw = payload.get("trades") if isinstance(payload, dict) else (payload or [])
         usable = []
@@ -8694,27 +9756,40 @@ def _build_scheduler_actions() -> Dict[str, Any]:
             meta = t.get("meta") or {}
             arrival = meta.get("arrival_price") or meta.get("decision_price")
             if arrival:
-                usable.append({
-                    "symbol": t.get("symbol"), "side": t.get("side"),
-                    "qty": t.get("quantity"), "fill_price": t.get("price"),
-                    "arrival_price": arrival,
-                    "benchmark_price": meta.get("benchmark_price") or arrival,
-                    "venue": meta.get("venue") or t.get("run_id") or "DEFAULT",
-                })
+                usable.append(
+                    {
+                        "symbol": t.get("symbol"),
+                        "side": t.get("side"),
+                        "qty": t.get("quantity"),
+                        "fill_price": t.get("price"),
+                        "arrival_price": arrival,
+                        "benchmark_price": meta.get("benchmark_price") or arrival,
+                        "venue": meta.get("venue") or t.get("run_id") or "DEFAULT",
+                    }
+                )
         if not usable:
             # Честный skip: без arrival price TCA выродится в нули — не рисуем его.
-            return JobRunResult(STATUS_SKIPPED, "нет сделок с arrival price — TCA не рассчитывается")
+            return JobRunResult(
+                STATUS_SKIPPED, "нет сделок с arrival price — TCA не рассчитывается"
+            )
         rep = TCAReporter().analyze(usable)
         out_dir = str(job.params.get("reports_dir", "reports/tca"))
         os.makedirs(out_dir, exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        atomic_write_with_retry(os.path.join(out_dir, f"tca_{stamp}.json"),
-                                json.dumps(rep.to_dict(), ensure_ascii=False, indent=2))
-        atomic_write_with_retry(os.path.join(out_dir, f"tca_{stamp}.md"), TCAReporter().to_markdown(rep))
-        return JobRunResult(STATUS_SUCCEEDED, f"TCA по {rep.n_trades} сделкам → {out_dir}/tca_{stamp}.*")
+        atomic_write_with_retry(
+            os.path.join(out_dir, f"tca_{stamp}.json"),
+            json.dumps(rep.to_dict(), ensure_ascii=False, indent=2),
+        )
+        atomic_write_with_retry(
+            os.path.join(out_dir, f"tca_{stamp}.md"), TCAReporter().to_markdown(rep)
+        )
+        return JobRunResult(
+            STATUS_SUCCEEDED, f"TCA по {rep.n_trades} сделкам → {out_dir}/tca_{stamp}.*"
+        )
 
     def backup_state(job: ScheduledJob) -> "JobRunResult":
         import zipfile
+
         backups_dir = str(job.params.get("backups_dir", "backups"))
         keep_last = int(job.params.get("keep_last", 14))
         os.makedirs(backups_dir, exist_ok=True)
@@ -8752,11 +9827,14 @@ def _build_scheduler_actions() -> Dict[str, Any]:
                 removed += 1
             except Exception:
                 pass
-        return JobRunResult(STATUS_SUCCEEDED, f"{out_path}: {count} файлов (удалено старых архивов: {removed})")
+        return JobRunResult(
+            STATUS_SUCCEEDED, f"{out_path}: {count} файлов (удалено старых архивов: {removed})"
+        )
 
     def log_rotation(job: ScheduledJob) -> "JobRunResult":
         import gzip
         import shutil as _sh
+
         retention_days = int(job.params.get("retention_days", 14))
         cutoff = time.time() - retention_days * 86400
         archive_dir = os.path.join(GLOBAL_LOGS_DIR, "archive")
@@ -8777,7 +9855,9 @@ def _build_scheduler_actions() -> Dict[str, Any]:
             except Exception:
                 # Файл может держать живой процесс (Windows) — пропускаем молча.
                 skipped += 1
-        return JobRunResult(STATUS_SUCCEEDED, f"архивировано {rotated}, пропущено (занято/ошибка) {skipped}")
+        return JobRunResult(
+            STATUS_SUCCEEDED, f"архивировано {rotated}, пропущено (занято/ошибка) {skipped}"
+        )
 
     def xs_rebalance(job: ScheduledJob) -> "JobRunResult":
         # Гейт двойного opt-in (enabled + RIVEN_ALLOW_SCHEDULED_TRADING=1) уже
@@ -8785,10 +9865,13 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         # → Intents → CCEA Agent OMS (service_xs_rebalance).
         cfg = str(job.params.get("config") or "").strip()
         if not cfg:
-            return JobRunResult(STATUS_SKIPPED, "XS-конфиг не задан (params.config) — ребаланс не выполняется")
+            return JobRunResult(
+                STATUS_SKIPPED, "XS-конфиг не задан (params.config) — ребаланс не выполняется"
+            )
         if _CCEA_SUPERVISOR is None or _CCEA_STATE != "running":
             return JobRunResult(STATUS_SKIPPED, "CCEA Agent не запущен — исполнять некуда")
         from service_xs_rebalance import RebalanceLimits, run_rebalance
+
         # paper_only=true по умолчанию. Live-путь открывается только если
         # оператор явно поставил paper_only=false И выдал live-авторизацию
         # (проверяется внутри run_rebalance по хешу конфига и потолку лимитов).
@@ -8802,8 +9885,12 @@ def _build_scheduler_actions() -> Dict[str, Any]:
             alert_fn=(_SCHEDULER.notify if _SCHEDULER is not None else None),
         )
         status_map = {
-            "ok": STATUS_SUCCEEDED, "noop": STATUS_SUCCEEDED, "dry_run": STATUS_SUCCEEDED,
-            "blocked": STATUS_SKIPPED, "partial": STATUS_FAILED, "failed": STATUS_FAILED,
+            "ok": STATUS_SUCCEEDED,
+            "noop": STATUS_SUCCEEDED,
+            "dry_run": STATUS_SUCCEEDED,
+            "blocked": STATUS_SKIPPED,
+            "partial": STATUS_FAILED,
+            "failed": STATUS_FAILED,
         }
         detail = f"{rec['status']}: {rec.get('reason') or ''}"
         return JobRunResult(status_map.get(rec["status"], STATUS_FAILED), detail)
@@ -8817,17 +9904,24 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         legacy-линейный пресет; это — его DAG-наследник.
         """
         from services.research_pipeline import load_spec
+
         name = str(job.params.get("pipeline", "research_nightly"))
         spec = load_spec(name)
         if spec is None:
             return JobRunResult(STATUS_FAILED, f"pipeline {name!r} не найден в configs/pipelines/")
         runner = _get_pipeline_runner()
         state = runner.run(spec)
-        steps = [{"step": s["id"], "status": s["status"], "detail": s.get("detail", "")}
-                 for s in state["steps"]]
+        steps = [
+            {"step": s["id"], "status": s["status"], "detail": s.get("detail", "")}
+            for s in state["steps"]
+        ]
         if state["status"] == "succeeded":
-            return JobRunResult(STATUS_SUCCEEDED, f"DAG {name} прошёл целиком (run {state['run_id']})", steps=steps)
-        return JobRunResult(STATUS_FAILED, f"DAG {name}: {state['status']} (run {state['run_id']})", steps=steps)
+            return JobRunResult(
+                STATUS_SUCCEEDED, f"DAG {name} прошёл целиком (run {state['run_id']})", steps=steps
+            )
+        return JobRunResult(
+            STATUS_FAILED, f"DAG {name}: {state['status']} (run {state['run_id']})", steps=steps
+        )
 
     return {
         "data.refresh": data_refresh,
@@ -8860,6 +9954,7 @@ def _get_pipeline_runner():
         def _worker(name: str, params: Dict[str, Any], timeout_sec: int):
             res = _sched_run_worker(name, params, timeout_sec)
             return res.status, res.detail, res.exit_code
+
         _PIPELINE_RUNNER = PipelineRunner(_worker)
     return _PIPELINE_RUNNER
 
@@ -8867,9 +9962,9 @@ def _get_pipeline_runner():
 @api.get("/api/pipeline/list")
 def api_pipeline_list():
     from services.research_pipeline import list_specs
+
     runner = _get_pipeline_runner()
-    return {"pipelines": [s.to_dict() for s in list_specs()],
-            "runs": runner.list_runs(limit=10)}
+    return {"pipelines": [s.to_dict() for s in list_specs()], "runs": runner.list_runs(limit=10)}
 
 
 class PipelineRunPayload(BaseModel):
@@ -8880,6 +9975,7 @@ class PipelineRunPayload(BaseModel):
 @api.post("/api/pipeline/run")
 def api_pipeline_run(payload: PipelineRunPayload):
     from services.research_pipeline import load_spec
+
     spec = load_spec(payload.name)
     if spec is None:
         raise HTTPException(status_code=404, detail=f"pipeline {payload.name!r} не найден")
@@ -8892,6 +9988,7 @@ def api_pipeline_run(payload: PipelineRunPayload):
         kwargs = {"run_id": run_id, "resume": True}
     else:
         import uuid as _uuid
+
         run_id = f"{spec.name}-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{_uuid.uuid4().hex[:6]}"
         kwargs = {"run_id": run_id}
     t = threading.Thread(target=runner.run, args=(spec,), kwargs=kwargs, daemon=True)
@@ -8927,9 +10024,11 @@ def api_pipeline_cancel(payload: PipelineCancelPayload):
 
 # --------------------------- GPU / устройство обучения (P2-H) ---------------
 
+
 @api.get("/api/hardware/gpu")
 def api_hardware_gpu(bench: int = 0):
     from services.hardware import gpu_status, quick_benchmark, resolve_device
+
     out = gpu_status()
     out["resolution"] = {d: resolve_device(d) for d in ("auto", "cpu", "cuda")}
     if bench:
@@ -8939,18 +10038,20 @@ def api_hardware_gpu(bench: int = 0):
 
 # --------------------------- Интрадей-фиды: минутки/тики (P2-M) -------------
 
+
 @api.get("/api/data/premium/vendors")
 def api_premium_vendors():
     from services.premium_data import vendor_status
+
     return {"vendors": vendor_status()}
 
 
 class PremiumDownloadPayload(BaseModel):
-    kind: str = "bars"                 # bars | ticks
+    kind: str = "bars"  # bars | ticks
     vendor: str = "binance"
     symbols: List[str]
     timeframe: str = "1m"
-    start: str                          # ISO-дата
+    start: str  # ISO-дата
     end: str
 
 
@@ -8963,14 +10064,33 @@ def api_premium_download(payload: PremiumDownloadPayload):
         raise HTTPException(status_code=400, detail="symbols обязательны")
     py = sys.executable
     if payload.kind == "bars":
-        cmd = [py, "scripts/download_premium_data.py", "bars",
-               "--vendor", payload.vendor, "--symbols", *payload.symbols,
-               "--timeframe", payload.timeframe,
-               "--start", payload.start, "--end", payload.end]
+        cmd = [
+            py,
+            "scripts/download_premium_data.py",
+            "bars",
+            "--vendor",
+            payload.vendor,
+            "--symbols",
+            *payload.symbols,
+            "--timeframe",
+            payload.timeframe,
+            "--start",
+            payload.start,
+            "--end",
+            payload.end,
+        ]
     else:
-        cmd = [py, "scripts/download_premium_data.py", "ticks",
-               "--symbols", *payload.symbols,
-               "--start", payload.start, "--end", payload.end]
+        cmd = [
+            py,
+            "scripts/download_premium_data.py",
+            "ticks",
+            "--symbols",
+            *payload.symbols,
+            "--start",
+            payload.start,
+            "--end",
+            payload.end,
+        ]
     pid_file = os.path.join(".run", "premium_download.pid")
     log_file = os.path.join(GLOBAL_LOGS_DIR, "premium_download.log")
     if background_running(pid_file):
@@ -8996,10 +10116,12 @@ def api_premium_download_status():
 
 # ----------------- Сравнение экспериментов + reproducibility (P2-I) ---------
 
+
 @api.get("/api/experiments/{experiment}/compare")
 def api_experiments_compare(experiment: str, runs: str):
     """Сравнение прогонов бок-о-бок: union параметров/метрик + флаг differs."""
     from service_experiment_tracking import get_tracker
+
     run_ids = [r.strip() for r in runs.split(",") if r.strip()]
     if len(run_ids) < 2:
         raise HTTPException(status_code=400, detail="нужно >= 2 run_id через запятую")
@@ -9022,8 +10144,14 @@ def api_experiments_compare(experiment: str, runs: str):
 
     return {
         "experiment": experiment,
-        "runs": [{"run_id": r.run_id, "name": getattr(r, "name", r.run_id),
-                  "status": getattr(r, "status", None)} for r in records],
+        "runs": [
+            {
+                "run_id": r.run_id,
+                "name": getattr(r, "name", r.run_id),
+                "status": getattr(r, "status", None),
+            }
+            for r in records
+        ],
         "params": _rows([dict(r.params or {}) for r in records]),
         "metrics": _rows([dict(r.metrics or {}) for r in records]),
     }
@@ -9033,6 +10161,7 @@ def api_experiments_compare(experiment: str, runs: str):
 def api_experiment_bundle(experiment: str, run_id: str):
     """Reproducibility-бандл: run record + истории метрик + среда + registry-ссылки."""
     from service_experiment_tracking import get_tracker, get_registry
+
     tracker = get_tracker()
     rec = tracker.get_run(experiment, run_id)
     if rec is None:
@@ -9040,7 +10169,7 @@ def api_experiment_bundle(experiment: str, run_id: str):
     rec_d = rec.to_dict()
 
     histories: Dict[str, Any] = {}
-    for key in (rec_d.get("metrics") or {}):
+    for key in rec_d.get("metrics") or {}:
         try:
             histories[key] = tracker.read_metric_history(experiment, run_id, key)
         except Exception:
@@ -9054,24 +10183,34 @@ def api_experiment_bundle(experiment: str, run_id: str):
                 continue
             for mv in reg.list_versions(name):
                 if getattr(mv, "run_id", None) == run_id:
-                    registry_refs.append({
-                        "model": name, "version": mv.version, "stage": mv.stage,
-                        "sha256": getattr(mv.artifact, "sha256", None),
-                        "signed": bool(getattr(mv.artifact, "signature", None)),
-                    })
+                    registry_refs.append(
+                        {
+                            "model": name,
+                            "version": mv.version,
+                            "stage": mv.stage,
+                            "sha256": getattr(mv.artifact, "sha256", None),
+                            "signed": bool(getattr(mv.artifact, "signature", None)),
+                        }
+                    )
     except Exception:
         pass
 
     env_info: Dict[str, Any] = {"python": sys.version.split()[0]}
     try:
         import torch as _torch
+
         env_info["torch"] = str(_torch.__version__)
     except Exception:
         env_info["torch"] = None
     try:
         import subprocess as _sp
-        env_info["git_sha"] = _sp.run(["git", "rev-parse", "HEAD"], capture_output=True,
-                                      text=True, timeout=10).stdout.strip() or None
+
+        env_info["git_sha"] = (
+            _sp.run(
+                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=10
+            ).stdout.strip()
+            or None
+        )
     except Exception:
         env_info["git_sha"] = None
 
@@ -9087,7 +10226,9 @@ def api_experiment_bundle(experiment: str, run_id: str):
 
 def _scheduler_or_503():
     if _SCHEDULER is None:
-        raise HTTPException(status_code=503, detail="Планировщик выключен (RIVEN_ENABLE_SCHEDULER=0 или pytest)")
+        raise HTTPException(
+            status_code=503, detail="Планировщик выключен (RIVEN_ENABLE_SCHEDULER=0 или pytest)"
+        )
     return _SCHEDULER
 
 
@@ -9131,10 +10272,11 @@ def api_scheduler_run(job_id: str, payload: Optional[SchedulerRunPayload] = None
 
 # -------------------- XS-ребаланс (P1-C) и гейт подписи моделей (§4.7) --------------------
 
+
 class XSRebalanceRunPayload(BaseModel):
     config: str
-    dry_run: bool = True            # безопасный default: только план, без ордеров
-    confirm_trading: bool = False   # реальная отправка требует явного подтверждения
+    dry_run: bool = True  # безопасный default: только план, без ордеров
+    confirm_trading: bool = False  # реальная отправка требует явного подтверждения
     paper_only: bool = True
     max_turnover: Optional[float] = None
     min_trade_notional: Optional[float] = None
@@ -9151,18 +10293,25 @@ def api_xs_rebalance_run(payload: XSRebalanceRunPayload):
         raise HTTPException(
             status_code=409,
             detail="Реальная отправка ордеров требует confirm_trading=true (CCEA local approval); "
-                   "для проверки плана используйте dry_run=true.",
+            "для проверки плана используйте dry_run=true.",
         )
     if _CCEA_SUPERVISOR is None or _CCEA_STATE != "running":
-        raise HTTPException(status_code=503, detail="CCEA Agent не запущен — ребаланс исполнять некуда")
+        raise HTTPException(
+            status_code=503, detail="CCEA Agent не запущен — ребаланс исполнять некуда"
+        )
     from service_xs_rebalance import RebalanceLimits, run_rebalance
-    overrides = {k: v for k, v in {
-        "max_turnover": payload.max_turnover,
-        "min_trade_notional": payload.min_trade_notional,
-        "drift_band_bps": payload.drift_band_bps,
-        "max_position_weight": payload.max_position_weight,
-        "max_orders": payload.max_orders,
-    }.items() if v is not None}
+
+    overrides = {
+        k: v
+        for k, v in {
+            "max_turnover": payload.max_turnover,
+            "min_trade_notional": payload.min_trade_notional,
+            "drift_band_bps": payload.drift_band_bps,
+            "max_position_weight": payload.max_position_weight,
+            "max_orders": payload.max_orders,
+        }.items()
+        if v is not None
+    }
     return run_rebalance(
         payload.config,
         _CCEA_SUPERVISOR,
@@ -9175,9 +10324,12 @@ def api_xs_rebalance_run(payload: XSRebalanceRunPayload):
 @api.get("/api/xs/rebalance/last")
 def api_xs_rebalance_last():
     from service_xs_rebalance import load_last_record
+
     rec = load_last_record()
     if rec is None:
-        raise HTTPException(status_code=404, detail="ребаланс ещё не выполнялся (нет logs/xs_rebalance/last.json)")
+        raise HTTPException(
+            status_code=404, detail="ребаланс ещё не выполнялся (нет logs/xs_rebalance/last.json)"
+        )
     return rec
 
 
@@ -9190,6 +10342,7 @@ def api_models_verify_for_live(path: str, policy: Optional[str] = None):
     пройдёт ли артефакт enforce-гейт live-загрузки.
     """
     from services.model_signature_gate import resolve_policy, verify_model_artifact
+
     verdict = verify_model_artifact(path, policy="warn", context="api-verify")
     out = verdict.to_dict()
     out["effective_live_policy"] = resolve_policy(policy, live=True)
@@ -9221,38 +10374,44 @@ def api_agent_daemon_config(config: str = "configs/agent.yaml"):
         return resp
 
     try:
-        from packages.agent.daemon.__main__ import build_daemon_config, create_parser, load_config_file
+        from packages.agent.daemon.__main__ import (
+            build_daemon_config,
+            create_parser,
+            load_config_file,
+        )
         from services.model_signature_gate import resolve_policy
 
         cfg = load_config_file(_Path(target))
         args = create_parser().parse_args([])
         daemon_config = build_daemon_config(cfg, args)
         ks = daemon_config.kill_switch_config
-        resp.update({
-            "ok": True,
-            "agent_name": daemon_config.agent_name,
-            "cloud_endpoint": daemon_config.cloud_endpoint or "standalone",
-            "components": {
-                "kill_switch": ks is not None,
-                "time_sync": daemon_config.time_sync_config is not None,
-                "degraded_mode": daemon_config.degraded_mode_config is not None,
-                "telemetry": daemon_config.telemetry_config is not None,
-                "sandbox": daemon_config.sandbox_config is not None,
-                "keychain": daemon_config.keychain_config is not None,
-            },
-            "kill_switch": {
-                "max_daily_loss_pct": float(ks.max_daily_loss_pct) if ks else None,
-                "max_drawdown_pct": float(ks.max_drawdown_pct) if ks else None,
-            },
-            # P0-E: the daemon's RunController enforces the model-signature gate
-            # on artifact activation. Default require_model_signature=True; policy
-            # resolves to enforce for a LIVE run.
-            "model_signature": {
-                "enforced_on_load": True,
-                "live_policy": resolve_policy(None, live=True),   # 'enforce'
-            },
-            "launch": "python -m packages.agent.daemon --config configs/agent.yaml",
-        })
+        resp.update(
+            {
+                "ok": True,
+                "agent_name": daemon_config.agent_name,
+                "cloud_endpoint": daemon_config.cloud_endpoint or "standalone",
+                "components": {
+                    "kill_switch": ks is not None,
+                    "time_sync": daemon_config.time_sync_config is not None,
+                    "degraded_mode": daemon_config.degraded_mode_config is not None,
+                    "telemetry": daemon_config.telemetry_config is not None,
+                    "sandbox": daemon_config.sandbox_config is not None,
+                    "keychain": daemon_config.keychain_config is not None,
+                },
+                "kill_switch": {
+                    "max_daily_loss_pct": float(ks.max_daily_loss_pct) if ks else None,
+                    "max_drawdown_pct": float(ks.max_drawdown_pct) if ks else None,
+                },
+                # P0-E: the daemon's RunController enforces the model-signature gate
+                # on artifact activation. Default require_model_signature=True; policy
+                # resolves to enforce for a LIVE run.
+                "model_signature": {
+                    "enforced_on_load": True,
+                    "live_policy": resolve_policy(None, live=True),  # 'enforce'
+                },
+                "launch": "python -m packages.agent.daemon --config configs/agent.yaml",
+            }
+        )
     except Exception as e:
         resp.update({"ok": False, "detail": f"config invalid: {e}"})
     return resp
@@ -9278,8 +10437,8 @@ def _ccea_or_503():
 
 class LiveTradingRequestPayload(BaseModel):
     strategy_id: str = "xs-rebalance"
-    config: str                       # путь к XS-конфигу (мандат привязан к его хешу)
-    broker: str                       # целевой live-брокер (не sim_paper)
+    config: str  # путь к XS-конфигу (мандат привязан к его хешу)
+    broker: str  # целевой live-брокер (не sim_paper)
     ttl_sec: int = 8 * 3600
     max_turnover: float = 0.10
     max_notional_per_rebalance: float = 100_000.0
@@ -9298,13 +10457,17 @@ def api_live_trading_request(payload: LiveTradingRequestPayload):
     if not os.path.exists(payload.config):
         raise HTTPException(status_code=404, detail=f"XS-конфиг не найден: {payload.config}")
     from packages.agent.approval.live_trading_authorization import (
-        HARD_MAX_NOTIONAL_PER_REBALANCE, HARD_MAX_TTL_SEC, HARD_MAX_TURNOVER,
+        HARD_MAX_NOTIONAL_PER_REBALANCE,
+        HARD_MAX_TTL_SEC,
+        HARD_MAX_TURNOVER,
         canonical_config_hash,
     )
+
     with open(payload.config, "r", encoding="utf-8") as f:
         raw_cfg = yaml.safe_load(f) or {}
     cfg_hash = canonical_config_hash(raw_cfg)
     import secrets as _secrets
+
     token = _secrets.token_urlsafe(18)
     request_id = _secrets.token_hex(8)
     _PENDING_LIVE_GRANTS[request_id] = {
@@ -9330,7 +10493,9 @@ def api_live_trading_request(payload: LiveTradingRequestPayload):
             "ttl_sec": min(payload.ttl_sec, HARD_MAX_TTL_SEC),
             "ceiling": {
                 "max_turnover": min(payload.max_turnover, HARD_MAX_TURNOVER),
-                "max_notional_per_rebalance": min(payload.max_notional_per_rebalance, HARD_MAX_NOTIONAL_PER_REBALANCE),
+                "max_notional_per_rebalance": min(
+                    payload.max_notional_per_rebalance, HARD_MAX_NOTIONAL_PER_REBALANCE
+                ),
                 "max_orders_per_rebalance": payload.max_orders_per_rebalance,
             },
             "budget": {
@@ -9339,7 +10504,7 @@ def api_live_trading_request(payload: LiveTradingRequestPayload):
             },
         },
         "warning": "Это разрешит АВТОМАТИЧЕСКУЮ отправку ордеров на РЕАЛЬНЫЙ счёт. "
-                   "Подтвердите только если осознанно принимаете риск.",
+        "Подтвердите только если осознанно принимаете риск.",
     }
 
 
@@ -9354,7 +10519,9 @@ def api_live_trading_grant(payload: LiveTradingGrantPayload):
     sup = _ccea_or_503()
     pending = _PENDING_LIVE_GRANTS.get(payload.request_id)
     if pending is None:
-        raise HTTPException(status_code=404, detail="заявка не найдена или истекла — начните заново с /request")
+        raise HTTPException(
+            status_code=404, detail="заявка не найдена или истекла — начните заново с /request"
+        )
     if time.time() - pending["created_at"] > 600:
         _PENDING_LIVE_GRANTS.pop(payload.request_id, None)
         raise HTTPException(status_code=410, detail="заявка истекла (>10 мин) — начните заново")
@@ -9387,7 +10554,7 @@ def api_live_trading_grant(payload: LiveTradingGrantPayload):
 
 
 class LiveTradingRevokePayload(BaseModel):
-    auth_id: Optional[str] = None     # None = отозвать все активные мандаты
+    auth_id: Optional[str] = None  # None = отозвать все активные мандаты
     reason: str = "operator revoke"
 
 
@@ -9405,6 +10572,7 @@ def api_live_trading_status():
 
 # ------------- Lite Mode evidence & policy endpoints (audit LITE-2026-07-14) -------------
 
+
 @api.get("/api/config/default")
 def api_config_default(type: str = "sandbox", asset: Optional[str] = None):
     """Canonical config path for (type, asset) — single source of truth for the
@@ -9419,15 +10587,18 @@ def _artifact_evidence(path: str) -> Dict[str, Any]:
     try:
         if path and os.path.exists(path):
             st = os.stat(path)
-            info.update({
-                "exists": True,
-                "mtime": datetime.fromtimestamp(st.st_mtime).isoformat(timespec="seconds"),
-                "mtime_epoch": st.st_mtime,
-                "size_bytes": int(st.st_size),
-            })
+            info.update(
+                {
+                    "exists": True,
+                    "mtime": datetime.fromtimestamp(st.st_mtime).isoformat(timespec="seconds"),
+                    "mtime_epoch": st.st_mtime,
+                    "size_bytes": int(st.st_size),
+                }
+            )
             if path.lower().endswith((".parquet", ".pq")):
                 try:
                     import pyarrow.parquet as _pq
+
                     info["rows"] = int(_pq.ParquetFile(path).metadata.num_rows)
                 except Exception:
                     pass
@@ -9450,7 +10621,9 @@ def api_workflow_readiness():
         "prices": _artifact_evidence("data/prices.parquet"),
         "features": _artifact_evidence("data/features.parquet"),
         "targets": _artifact_evidence("data/targets.parquet"),
-        "splits_manifest": _artifact_evidence(os.path.join("logs", "walkforward", "walkforward_manifest.json")),
+        "splits_manifest": _artifact_evidence(
+            os.path.join("logs", "walkforward", "walkforward_manifest.json")
+        ),
         "training_table": _artifact_evidence("data/training_table.parquet"),
         "drift_report": _artifact_evidence(os.path.join("models", "drift_report.json")),
     }
@@ -9470,11 +10643,16 @@ def api_workflow_readiness():
             return 0.0
 
     model_candidates = [
-        p for p in _glob.glob(os.path.join("models", "**", "*.zip"), recursive=True)
+        p
+        for p in _glob.glob(os.path.join("models", "**", "*.zip"), recursive=True)
         if os.path.isfile(p)
     ]
     model_candidates.sort(key=_safe_mtime, reverse=True)
-    artifacts["model"] = _artifact_evidence(model_candidates[0]) if model_candidates else {"path": "models/*.zip", "exists": False}
+    artifacts["model"] = (
+        _artifact_evidence(model_candidates[0])
+        if model_candidates
+        else {"path": "models/*.zip", "exists": False}
+    )
 
     ev = _artifact_evidence(GLOBAL_METRICS_JSON)
     if ev.get("exists"):
@@ -9509,8 +10687,17 @@ def api_workflow_readiness():
             art["stale"] = False
 
     jobs: Dict[str, Any] = {}
-    for jname in ("run_ingest", "run_features", "run_targets", "run_no_trade", "run_splits",
-                  "run_training_table", "run_train", "backtest", "run_eval"):
+    for jname in (
+        "run_ingest",
+        "run_features",
+        "run_targets",
+        "run_no_trade",
+        "run_splits",
+        "run_training_table",
+        "run_train",
+        "backtest",
+        "run_eval",
+    ):
         try:
             jobs[jname] = background_status(os.path.join(".run", f"{jname}.pid"))
         except Exception:
@@ -9584,7 +10771,9 @@ def _risk_limits_view(data: Dict[str, Any]) -> Dict[str, Any]:
 def api_risk_limits_get():
     data = _load_risk_limits_yaml()
     view = _risk_limits_view(data)
-    view.update({"path": RISK_LIMITS_CONFIG_PATH, "exists": os.path.exists(RISK_LIMITS_CONFIG_PATH)})
+    view.update(
+        {"path": RISK_LIMITS_CONFIG_PATH, "exists": os.path.exists(RISK_LIMITS_CONFIG_PATH)}
+    )
     return view
 
 
@@ -9597,7 +10786,12 @@ def api_risk_limits_save(payload: RiskLimitsPayload):
     def _finite(value: Optional[float]) -> bool:
         return value is None or _math.isfinite(value)
 
-    for fname in ("daily_loss_limit_usd", "max_drawdown_pct", "max_leverage", "max_concentration_pct"):
+    for fname in (
+        "daily_loss_limit_usd",
+        "max_drawdown_pct",
+        "max_leverage",
+        "max_concentration_pct",
+    ):
         if not _finite(getattr(payload, fname)):
             raise HTTPException(status_code=400, detail=f"{fname} must be a finite number")
     if payload.daily_loss_limit_usd is not None and payload.daily_loss_limit_usd <= 0:
@@ -9611,9 +10805,15 @@ def api_risk_limits_save(payload: RiskLimitsPayload):
 
     data = _load_risk_limits_yaml()
     lite = dict(data.get("lite_limits") or {})
-    for field in ("daily_loss_limit_usd", "max_drawdown_pct", "max_leverage",
-                  "max_concentration_pct", "pdt_guard_enabled", "span_guard_enabled",
-                  "greeks_guard_enabled"):
+    for field in (
+        "daily_loss_limit_usd",
+        "max_drawdown_pct",
+        "max_leverage",
+        "max_concentration_pct",
+        "pdt_guard_enabled",
+        "span_guard_enabled",
+        "greeks_guard_enabled",
+    ):
         value = getattr(payload, field)
         if value is not None:
             lite[field] = value
@@ -9622,12 +10822,15 @@ def api_risk_limits_save(payload: RiskLimitsPayload):
         data["max_total_exposure_pct"] = round(payload.max_concentration_pct / 100.0, 4)
 
     try:
-        atomic_write_with_retry(RISK_LIMITS_CONFIG_PATH, yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
+        atomic_write_with_retry(
+            RISK_LIMITS_CONFIG_PATH, yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save risk limits: {e}")
 
     applied = _risk_limits_view(_load_risk_limits_yaml())
     import hashlib as _hashlib
+
     with open(RISK_LIMITS_CONFIG_PATH, "rb") as f:
         digest = _hashlib.sha256(f.read()).hexdigest()[:16]
 
@@ -9652,9 +10855,11 @@ def api_risk_limits_save(payload: RiskLimitsPayload):
         # they are persisted and will be enforced when the Agent starts.
         "applied_to_agent": enforced,
         "enforcement": enforcement_status,
-        "note": ("Лимиты применены к живому Agent-контуру (pre-trade + intra-day circuit breaker)."
-                 if enforced else
-                 "Политика сохранена; будет применена при запуске CCEA Agent."),
+        "note": (
+            "Лимиты применены к живому Agent-контуру (pre-trade + intra-day circuit breaker)."
+            if enforced
+            else "Политика сохранена; будет применена при запуске CCEA Agent."
+        ),
     }
 
 
@@ -9669,6 +10874,7 @@ def api_risk_enforcement():
         limits = None
         try:
             from services.live_risk_limits import load_live_risk_limits
+
             limits = load_live_risk_limits().as_public()
         except Exception:
             pass
@@ -9685,10 +10891,12 @@ def api_risk_enforcement():
 # Web3: Gas Guard (реальный on-chain gas oracle + порог) — закрытие NOT-IMPL
 # ============================================================================
 
+
 @api.get("/api/web3/gas")
 def api_web3_gas(chain: str = None):
     """Живой вердикт Gas Guard: текущая цена газа (public RPC) vs порог."""
     from services.web3 import gas_oracle
+
     cfg = gas_oracle.load_config()
     return gas_oracle.evaluate(chain, cfg=cfg)
 
@@ -9703,6 +10911,7 @@ class GasGuardPayload(BaseModel):
 def api_web3_gas_guard_save(payload: GasGuardPayload):
     """Сохранить порог Gas Guard (долговечно) и вернуть свежий вердикт."""
     from services.web3 import gas_oracle
+
     if payload.threshold_gwei <= 0:
         raise HTTPException(status_code=400, detail="threshold_gwei должен быть > 0")
     cfg = gas_oracle.load_config()
@@ -9717,6 +10926,7 @@ def api_web3_gas_guard_save(payload: GasGuardPayload):
 def api_web3_gas_preflight(chain: str = None):
     """Pre-trade gate: allow=False → on-chain транзакцию слать нельзя."""
     from services.web3 import gas_oracle
+
     return gas_oracle.preflight(chain)
 
 
@@ -9724,18 +10934,20 @@ def api_web3_gas_preflight(chain: str = None):
 # Custody: Fireblocks MPC co-signing vault (реальный API-клиент) — закрытие стаба
 # ============================================================================
 
+
 @api.get("/api/custody/fireblocks/status")
 def api_fireblocks_status():
     """Честный статус: настроен ли Fireblocks (без раскрытия секретов)."""
     from services.custody import fireblocks_client as fb
+
     cfg = fb.load_config()
     return {"configured": cfg.configured, **cfg.public_dict()}
 
 
 class FireblocksConfigPayload(BaseModel):
     api_key: str
-    private_key_path: str = ""      # путь к .key (ключ НЕ копируется)
-    private_key_pem: Optional[str] = None   # разовый PEM (в память, не персистится)
+    private_key_path: str = ""  # путь к .key (ключ НЕ копируется)
+    private_key_pem: Optional[str] = None  # разовый PEM (в память, не персистится)
     base_url: Optional[str] = None
     default_vault_account_id: str = ""
     sandbox: bool = False
@@ -9749,6 +10961,7 @@ def api_fireblocks_connect(payload: FireblocksConfigPayload):
     Без валидных кред честно возвращает ok:false + причину — это не заглушка,
     а рабочий connector (нужен institutional-аккаунт Fireblocks)."""
     from services.custody import fireblocks_client as fb
+
     base = payload.base_url or (fb.SANDBOX_URL if payload.sandbox else fb.PROD_URL)
     cfg = fb.FireblocksConfig(
         api_key=payload.api_key.strip(),
@@ -9772,6 +10985,7 @@ def api_fireblocks_connect(payload: FireblocksConfigPayload):
 def api_fireblocks_vaults(limit: int = 25):
     """Список vault accounts (реальный вызов; 400 если не настроено)."""
     from services.custody import fireblocks_client as fb
+
     cfg = fb.load_config()
     if not cfg.configured:
         raise HTTPException(status_code=400, detail="Fireblocks не настроен — сначала /connect")
@@ -9797,13 +11011,23 @@ def _fb_gas_gate(asset_id: str, *, enforce: bool) -> Dict[str, Any]:
     """Gas Guard preflight для EVM-ассета. Гейтим только при известной сети."""
     from services.custody import fireblocks_client as fb
     from services.web3 import gas_oracle
+
     chain = fb.asset_to_gas_chain(asset_id)
     if chain is None:
-        return {"applicable": False, "reason": f"asset {asset_id}: сеть не сопоставлена — gas guard N/A"}
+        return {
+            "applicable": False,
+            "reason": f"asset {asset_id}: сеть не сопоставлена — gas guard N/A",
+        }
     pf = gas_oracle.preflight(chain)
-    return {"applicable": True, "chain": chain, "allow": pf.get("allow", True),
-            "status": pf.get("status"), "gas_gwei": pf.get("gas_gwei"),
-            "threshold_gwei": pf.get("threshold_gwei"), "reason": pf.get("reason")}
+    return {
+        "applicable": True,
+        "chain": chain,
+        "allow": pf.get("allow", True),
+        "status": pf.get("status"),
+        "gas_gwei": pf.get("gas_gwei"),
+        "threshold_gwei": pf.get("threshold_gwei"),
+        "reason": pf.get("reason"),
+    }
 
 
 def _fb_journal(entry: Dict[str, Any]) -> None:
@@ -9813,16 +11037,18 @@ def _fb_journal(entry: Dict[str, Any]) -> None:
         with open(FB_WITHDRAW_JOURNAL, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except Exception:
-        logger.warning("fireblocks journal write failed", exc_info=True)
+        import logging as _logging
+
+        _logging.getLogger(__name__).warning("fireblocks journal write failed", exc_info=True)
 
 
 class FireblocksWithdrawPreviewPayload(BaseModel):
     asset_id: str
-    amount: str                              # строкой (точность)
+    amount: str  # строкой (точность)
     source_vault_id: str
-    dest_type: str = "ONE_TIME_ADDRESS"      # ONE_TIME_ADDRESS | VAULT_ACCOUNT
-    dest_id: str = ""                        # для VAULT_ACCOUNT
-    address: str = ""                        # для ONE_TIME_ADDRESS (0x…)
+    dest_type: str = "ONE_TIME_ADDRESS"  # ONE_TIME_ADDRESS | VAULT_ACCOUNT
+    dest_id: str = ""  # для VAULT_ACCOUNT
+    address: str = ""  # для ONE_TIME_ADDRESS (0x…)
     note: str = ""
     fee_level: str = "MEDIUM"
 
@@ -9832,20 +11058,29 @@ def api_fireblocks_withdraw_preview(payload: FireblocksWithdrawPreviewPayload):
     """Шаг 1: валидация + реальная оценка комиссии + Gas Guard + токен."""
     import secrets as _secrets
     from services.custody import fireblocks_client as fb
+
     cfg = fb.load_config()
     if not cfg.configured:
         return {"ok": False, "error": "Fireblocks не настроен — сначала подключите (/connect)"}
 
-    err = fb.validate_transfer(payload.asset_id, payload.amount, payload.dest_type,
-                               payload.dest_id, payload.address)
+    err = fb.validate_transfer(
+        payload.asset_id, payload.amount, payload.dest_type, payload.dest_id, payload.address
+    )
     if err:
         raise HTTPException(status_code=400, detail=err)
 
-    external_tx_id = "riven-" + _secrets.token_hex(12)   # идемпотентность
+    external_tx_id = "riven-" + _secrets.token_hex(12)  # идемпотентность
     body = fb.build_transfer_payload(
-        asset_id=payload.asset_id, amount=payload.amount, source_vault_id=payload.source_vault_id,
-        dest_type=payload.dest_type, dest_id=payload.dest_id, address=payload.address,
-        external_tx_id=external_tx_id, note=payload.note, fee_level=payload.fee_level)
+        asset_id=payload.asset_id,
+        amount=payload.amount,
+        source_vault_id=payload.source_vault_id,
+        dest_type=payload.dest_type,
+        dest_id=payload.dest_id,
+        address=payload.address,
+        external_tx_id=external_tx_id,
+        note=payload.note,
+        fee_level=payload.fee_level,
+    )
 
     # Реальная оценка комиссии (не блокирующая — informational).
     fee_estimate: Any = None
@@ -9861,8 +11096,11 @@ def api_fireblocks_withdraw_preview(payload: FireblocksWithdrawPreviewPayload):
     request_id = _secrets.token_hex(8)
     now = time.time()
     _PENDING_FB_WITHDRAWALS[request_id] = {
-        "token": token, "created_at": now, "body": body,
-        "external_tx_id": external_tx_id, "asset_id": payload.asset_id,
+        "token": token,
+        "created_at": now,
+        "body": body,
+        "external_tx_id": external_tx_id,
+        "asset_id": payload.asset_id,
     }
     for rid in [r for r, v in _PENDING_FB_WITHDRAWALS.items() if now - v["created_at"] > 600]:
         _PENDING_FB_WITHDRAWALS.pop(rid, None)
@@ -9874,16 +11112,22 @@ def api_fireblocks_withdraw_preview(payload: FireblocksWithdrawPreviewPayload):
         "expires_in_sec": 600,
         "external_tx_id": external_tx_id,
         "summary": {
-            "asset_id": payload.asset_id, "amount": payload.amount,
+            "asset_id": payload.asset_id,
+            "amount": payload.amount,
             "source_vault_id": payload.source_vault_id,
-            "destination": (payload.address if payload.dest_type.upper() == "ONE_TIME_ADDRESS"
-                            else f"vault:{payload.dest_id}"),
-            "dest_type": payload.dest_type.upper(), "fee_level": payload.fee_level.upper(),
+            "destination": (
+                payload.address
+                if payload.dest_type.upper() == "ONE_TIME_ADDRESS"
+                else f"vault:{payload.dest_id}"
+            ),
+            "dest_type": payload.dest_type.upper(),
+            "fee_level": payload.fee_level.upper(),
         },
-        "fee_estimate": fee_estimate, "fee_error": fee_error,
+        "fee_estimate": fee_estimate,
+        "fee_error": fee_error,
         "gas_guard": gas,
         "warning": "Это ОТПРАВИТ реальные средства из Fireblocks-vault. Подтвердите "
-                   "тем же токеном только осознанно; подпись MPC — по TAP-политике vault'а.",
+        "тем же токеном только осознанно; подпись MPC — по TAP-политике vault'а.",
     }
 
 
@@ -9897,9 +11141,12 @@ class FireblocksWithdrawSubmitPayload(BaseModel):
 def api_fireblocks_withdraw_submit(payload: FireblocksWithdrawSubmitPayload):
     """Шаг 2: подтвердить токеном + confirm → свежий Gas Guard gate → отправить."""
     from services.custody import fireblocks_client as fb
+
     pending = _PENDING_FB_WITHDRAWALS.get(payload.request_id)
     if pending is None:
-        raise HTTPException(status_code=404, detail="заявка не найдена или истекла — начните с /preview")
+        raise HTTPException(
+            status_code=404, detail="заявка не найдена или истекла — начните с /preview"
+        )
     if time.time() - pending["created_at"] > 600:
         _PENDING_FB_WITHDRAWALS.pop(payload.request_id, None)
         raise HTTPException(status_code=410, detail="заявка истекла (>10 мин)")
@@ -9918,32 +11165,59 @@ def api_fireblocks_withdraw_submit(payload: FireblocksWithdrawSubmitPayload):
     # Свежий Gas Guard gate (газ мог подскочить между preview и submit) — fail-closed.
     gas = _fb_gas_gate(pending["asset_id"], enforce=True)
     if gas.get("applicable") and gas.get("allow") is False:
-        _fb_journal({"event": "withdraw_blocked_gas", "external_tx_id": pending["external_tx_id"],
-                     "asset_id": pending["asset_id"], "gas_guard": gas})
-        raise HTTPException(status_code=409,
-                            detail=f"Gas Guard заблокировал отправку: {gas.get('reason')}")
+        _fb_journal(
+            {
+                "event": "withdraw_blocked_gas",
+                "external_tx_id": pending["external_tx_id"],
+                "asset_id": pending["asset_id"],
+                "gas_guard": gas,
+            }
+        )
+        raise HTTPException(
+            status_code=409, detail=f"Gas Guard заблокировал отправку: {gas.get('reason')}"
+        )
 
     try:
         result = fb.FireblocksClient(cfg).create_transaction(pending["body"])
     except fb.FireblocksError as e:
-        _fb_journal({"event": "withdraw_failed", "external_tx_id": pending["external_tx_id"],
-                     "asset_id": pending["asset_id"], "error": str(e)})
+        _fb_journal(
+            {
+                "event": "withdraw_failed",
+                "external_tx_id": pending["external_tx_id"],
+                "asset_id": pending["asset_id"],
+                "error": str(e),
+            }
+        )
         raise HTTPException(status_code=502, detail=str(e))
 
     tx_id = result.get("id") if isinstance(result, dict) else None
     status = result.get("status") if isinstance(result, dict) else None
-    _fb_journal({"event": "withdraw_submitted", "external_tx_id": pending["external_tx_id"],
-                 "asset_id": pending["asset_id"], "tx_id": tx_id, "status": status,
-                 "amount": pending["body"].get("amount"),
-                 "destination": pending["body"].get("destination")})
-    return {"ok": True, "tx_id": tx_id, "status": status,
-            "external_tx_id": pending["external_tx_id"], "gas_guard": gas, "raw": result}
+    _fb_journal(
+        {
+            "event": "withdraw_submitted",
+            "external_tx_id": pending["external_tx_id"],
+            "asset_id": pending["asset_id"],
+            "tx_id": tx_id,
+            "status": status,
+            "amount": pending["body"].get("amount"),
+            "destination": pending["body"].get("destination"),
+        }
+    )
+    return {
+        "ok": True,
+        "tx_id": tx_id,
+        "status": status,
+        "external_tx_id": pending["external_tx_id"],
+        "gas_guard": gas,
+        "raw": result,
+    }
 
 
 @api.get("/api/custody/fireblocks/tx/{tx_id}")
 def api_fireblocks_tx_status(tx_id: str):
     """Реальный статус транзакции Fireblocks (SUBMITTED→…→COMPLETED)."""
     from services.custody import fireblocks_client as fb
+
     cfg = fb.load_config()
     if not cfg.configured:
         raise HTTPException(status_code=400, detail="Fireblocks не настроен")
@@ -9960,7 +11234,7 @@ def api_fireblocks_withdrawals(limit: int = 20):
     try:
         if os.path.exists(FB_WITHDRAW_JOURNAL):
             with open(FB_WITHDRAW_JOURNAL, "r", encoding="utf-8") as f:
-                for line in f.readlines()[-int(limit):]:
+                for line in f.readlines()[-int(limit) :]:
                     line = line.strip()
                     if line:
                         rows.append(json.loads(line))
@@ -9999,7 +11273,9 @@ def api_portfolio_risk_summary():
 
     holdings = snap.get("holdings") or []
     out["simulated"] = bool(snap.get("simulated"))
-    out["source"] = snap.get("data_source") or ("ccea_agent" if _CCEA_STATE == "running" else "adapter")
+    out["source"] = snap.get("data_source") or (
+        "ccea_agent" if _CCEA_STATE == "running" else "adapter"
+    )
 
     if not holdings:
         out["reason"] = "Портфель пуст — риск-метрики не рассчитываются."
@@ -10021,12 +11297,18 @@ def api_portfolio_risk_summary():
         if "close" not in prices.columns or "symbol" not in prices.columns:
             out["reason"] = "prices.parquet не содержит колонок close/symbol."
             return out
-        ts_col = "ts_ms" if "ts_ms" in prices.columns else ("timestamp" if "timestamp" in prices.columns else None)
+        ts_col = (
+            "ts_ms"
+            if "ts_ms" in prices.columns
+            else ("timestamp" if "timestamp" in prices.columns else None)
+        )
         if ts_col is None:
             out["reason"] = "prices.parquet не содержит колонки времени (ts_ms/timestamp)."
             return out
 
-        pivot = prices.pivot_table(index=ts_col, columns="symbol", values="close", aggfunc="last").sort_index()
+        pivot = prices.pivot_table(
+            index=ts_col, columns="symbol", values="close", aggfunc="last"
+        ).sort_index()
         returns = pivot.pct_change().dropna(how="all").tail(500)
 
         exposures = {}
@@ -10042,8 +11324,11 @@ def api_portfolio_risk_summary():
                 missing.append(sym)
 
         if not exposures:
-            out["reason"] = ("Нет истории цен для символов портфеля: " + ", ".join(missing[:10])) if missing else \
-                "Недостаточно истории доходностей для VaR (нужно ≥20 баров)."
+            out["reason"] = (
+                ("Нет истории цен для символов портфеля: " + ", ".join(missing[:10]))
+                if missing
+                else "Недостаточно истории доходностей для VaR (нужно ≥20 баров)."
+            )
             return out
 
         pnl_series = None
@@ -10074,7 +11359,7 @@ def api_copilot(payload: CopilotPayload):
     msg = payload.message.strip().lower()
     resp = ""
     switch = None
-    
+
     if msg == "/help":
         resp = """**Доступные команды:**<br>
 - `/status` — показать текущие ключевые показатели и состояние ноды<br>
@@ -10090,7 +11375,7 @@ def api_copilot(payload: CopilotPayload):
         maxdd = eq.get("max_drawdown", "—")
         running = background_running(GLOBAL_REALTIME_PID)
         status_bot = "запущен" if running else "остановлен"
-        
+
         resp = f"""**Текущий статус RivenQuant:**<br>
 - **Realtime сигналер:** {status_bot}<br>
 - **PNL total:** {pnl}%<br>
@@ -10103,31 +11388,41 @@ def api_copilot(payload: CopilotPayload):
         else:
             result = _CCEA_SUPERVISOR.request_lifecycle("start")
             mode = str(result.get("mode", "paper")).upper()
-            resp = (f"✅ CCEA Agent принял локальный lifecycle-запрос START ({mode}, "
-                    f"broker={result.get('broker')})." if result.get("ok")
-                    else f"❌ CCEA START отклонён: {result.get('error')}")
+            resp = (
+                f"✅ CCEA Agent принял локальный lifecycle-запрос START ({mode}, "
+                f"broker={result.get('broker')})."
+                if result.get("ok")
+                else f"❌ CCEA START отклонён: {result.get('error')}"
+            )
         switch = "status"
     elif msg == "/stop":
         if _CCEA_SUPERVISOR is None or _CCEA_STATE != "running":
             resp = "❌ CCEA Agent не запущен; останавливать нечего."
         else:
             result = _CCEA_SUPERVISOR.request_lifecycle("stop")
-            resp = ("🛑 CCEA Agent переведён в PAUSED локальным lifecycle-запросом."
-                    if result.get("ok") else f"❌ CCEA STOP отклонён: {result.get('error')}")
+            resp = (
+                "🛑 CCEA Agent переведён в PAUSED локальным lifecycle-запросом."
+                if result.get("ok")
+                else f"❌ CCEA STOP отклонён: {result.get('error')}"
+            )
         switch = "status"
     elif msg == "/backtest":
         try:
             started = api_run_job(RunJobPayload(job="/backtest", params={}))
-            resp = (f"⏳ Бэктест запущен как контролируемая задача PID={started['pid']}. "
-                    "Итог определяется по exit code, а не по факту запуска процесса.")
+            resp = (
+                f"⏳ Бэктест запущен как контролируемая задача PID={started['pid']}. "
+                "Итог определяется по exit code, а не по факту запуска процесса."
+            )
         except Exception as e:
             resp = f"❌ Ошибка бэктеста: {e}"
         switch = "sandbox-backtest"
     elif msg == "/pipeline":
         try:
             started = api_run_job(RunJobPayload(job="/pipeline", params={}))
-            resp = (f"⏳ Пайплайн запущен как контролируемая задача PID={started['pid']}. "
-                    "Успех будет подтверждён только нулевым exit code.")
+            resp = (
+                f"⏳ Пайплайн запущен как контролируемая задача PID={started['pid']}. "
+                "Успех будет подтверждён только нулевым exit code."
+            )
         except Exception as e:
             resp = f"❌ Ошибка запуска пайплайна: {e}"
         switch = "full-pipeline"
@@ -10138,10 +11433,16 @@ def api_copilot(payload: CopilotPayload):
         sharpe = eq.get("sharpe", None)
         running = background_running(GLOBAL_REALTIME_PID)
         status_bot = "запущен" if running else "остановлен"
-        
-        pnl_text = f"Текущая доходность PnL составляет {pnl:.2f}%." if isinstance(pnl, (int, float)) else "Пока нет рассчитанных данных о доходности."
-        sharpe_text = f"Коэффициент Шарпа равен {sharpe:.2f}." if isinstance(sharpe, (int, float)) else ""
-        
+
+        pnl_text = (
+            f"Текущая доходность PnL составляет {pnl:.2f}%."
+            if isinstance(pnl, (int, float))
+            else "Пока нет рассчитанных данных о доходности."
+        )
+        sharpe_text = (
+            f"Коэффициент Шарпа равен {sharpe:.2f}." if isinstance(sharpe, (int, float)) else ""
+        )
+
         resp = f"Я получил твой запрос: '{payload.message}'. {pnl_text} {sharpe_text} Бот-сигналер сейчас {status_bot}. Введите `/help` для списка команд."
 
     return {
@@ -10285,6 +11586,7 @@ def run_backtest_from_yaml(
     # 1. Ensure sim_cfg has data field configured
     if not hasattr(sim_cfg, "data") or sim_cfg.data is None:
         from core_config import SimulationDataConfig
+
         sim_cfg.data = SimulationDataConfig(timeframe=getattr(cfg, "timeframe", "4h"))
 
     # 2. Put symbol in symbols list
@@ -10299,30 +11601,32 @@ def run_backtest_from_yaml(
     # 4. Ensure backtest_engine component is defined
     if getattr(sim_cfg.components, "backtest_engine", None) is None:
         from core_config import ComponentSpec
+
         sim_cfg.components.backtest_engine = ComponentSpec(
-            target="service_backtest:ServiceBacktest",
-            params={}
+            target="service_backtest:ServiceBacktest", params={}
         )
 
     if not sim_cfg.components.backtest_engine.params:
         sim_cfg.components.backtest_engine.params = {}
 
     # 5. Populate backtest_engine params for backtest_from_config
-    sim_cfg.components.backtest_engine.params.update({
-        "symbol": cfg.symbol,
-        "timeframe": getattr(sim_cfg.data, "timeframe", "4h"),
-        "exchange_specs_path": cfg.exchange_specs_path,
-        "dynamic_spread_config": cfg.dynamic_spread,
-        "guards_config": cfg.sim_guards,
-        "signal_cooldown_s": int(cfg.min_signal_gap_s),
-        "no_trade_config": cfg.no_trade,
-        "logs_dir": logs_dir,
-        "bar_report_path": bar_report_path or cfg.bar_report_path,
-        "ts_col": cfg.data.ts_col,
-        "symbol_col": cfg.data.symbol_col,
-        "price_col": cfg.data.price_col,
-        "out_reports": cfg.out_reports or default_out,
-    })
+    sim_cfg.components.backtest_engine.params.update(
+        {
+            "symbol": cfg.symbol,
+            "timeframe": getattr(sim_cfg.data, "timeframe", "4h"),
+            "exchange_specs_path": cfg.exchange_specs_path,
+            "dynamic_spread_config": cfg.dynamic_spread,
+            "guards_config": cfg.sim_guards,
+            "signal_cooldown_s": int(cfg.min_signal_gap_s),
+            "no_trade_config": cfg.no_trade,
+            "logs_dir": logs_dir,
+            "bar_report_path": bar_report_path or cfg.bar_report_path,
+            "ts_col": cfg.data.ts_col,
+            "symbol_col": cfg.data.symbol_col,
+            "price_col": cfg.data.price_col,
+            "out_reports": cfg.out_reports or default_out,
+        }
+    )
 
     # 6. Execute the backtest
     reports = backtest_from_config(sim_cfg)
@@ -10467,10 +11771,12 @@ def _json_preview(payload: Any, limit: int = 10) -> tuple[Any, bool]:
 
 # --------------------------- Tab 6: Risk Firewall & Guards API Endpoints ---------------------------
 
+
 class PdtCheckPayload(BaseModel):
     position_value: float
     account_equity: float
     day_trades: int
+
 
 class OptionsGreeksPayload(BaseModel):
     spot: float
@@ -10479,13 +11785,16 @@ class OptionsGreeksPayload(BaseModel):
     vol: float
     rate: float = 0.05
 
+
 class FuturesSpanPayload(BaseModel):
     positions: List[Dict[str, Any]]
+
 
 class KillSwitchPayload(BaseModel):
     scope: str
     reason: str
     active: bool
+
 
 class TuneNoTradePayload(BaseModel):
     sigma_window: int
@@ -10495,14 +11804,17 @@ class TuneNoTradePayload(BaseModel):
     hysteresis: float
     cooldown_bars: int
 
+
 @api.get("/api/risk/summary")
 def get_risk_summary():
     import services.ops_kill_switch as ops_kill_switch
     from datetime import datetime
+
     is_kill_switch_tripped = ops_kill_switch.tripped()
-    
+
     # ML Leak guard settings / status
     import leakguard
+
     leak_config = getattr(leakguard, "GLOBAL_LEAK_CONFIG", None)
     delay_ms = 8000
     max_gap_ms = 60000
@@ -10511,7 +11823,7 @@ def get_risk_summary():
         delay_ms = getattr(leak_config, "decision_delay_ms", 8000)
         max_gap_ms = getattr(leak_config, "max_gap_ms", 60000)
         strict_mode = getattr(leak_config, "strict_mode", True)
-        
+
     # Honest leak-guard state: reflect CONFIGURATION, not a fabricated "SAFE" verdict.
     leak_status = "ACTIVE" if leak_config is not None else "NOT_CONFIGURED"
 
@@ -10527,14 +11839,15 @@ def get_risk_summary():
                 _drift = _st.get("drift_us")
             clock_block = {
                 "drift_us": float(_drift) if _drift is not None else None,
-                "status": getattr(_st, "status", None) or (_st.get("status") if isinstance(_st, dict) else "SYNCHRONIZED"),
+                "status": getattr(_st, "status", None)
+                or (_st.get("status") if isinstance(_st, dict) else "SYNCHRONIZED"),
                 "data_source": "live",
             }
     except Exception:
         clock_block = {"status": "UNKNOWN", "data_source": "unavailable"}
 
     return {
-        "kill_switch_active": is_kill_switch_tripped,   # live
+        "kill_switch_active": is_kill_switch_tripped,  # live
         "kill_switch_reason": "MANUAL_HALT" if is_kill_switch_tripped else "NONE",
         "leak_guard": {
             "strict_mode": strict_mode,
@@ -10548,29 +11861,38 @@ def get_risk_summary():
         "compliance_clock": clock_block,
     }
 
+
 @api.post("/api/risk/pdt_check")
 def post_pdt_check(payload: PdtCheckPayload):
     import services.stock_risk_guards as s
     import services.pdt_tracker as pdt_tracker
     import time
-    
+
     # Run PDT Tracker
     cfg = pdt_tracker.PDTTrackerConfig(pdt_threshold=25000.0, max_day_trades=3)
     tracker = pdt_tracker.PDTTracker(account_equity=payload.account_equity, config=cfg)
-    
+
     # Populate tracker with day trades
     now_ms = int(time.time() * 1000)
     for i in range(payload.day_trades):
         tracker.record_day_trade(symbol="AAPL", timestamp_ms=now_ms - i * 1000)
-        
+
     can_trade, reason = tracker.can_day_trade("AAPL", now_ms)
-    
+
     # Run Margin Guard
     g_margin = s.MarginGuard()
     g_margin.set_equity(payload.account_equity)
-    g_margin.set_position(s.PositionSnapshot(symbol='AAPL', quantity=payload.position_value/100.0, market_value=payload.position_value, cost_basis=payload.position_value, unrealized_pnl=0.0))
+    g_margin.set_position(
+        s.PositionSnapshot(
+            symbol="AAPL",
+            quantity=payload.position_value / 100.0,
+            market_value=payload.position_value,
+            cost_basis=payload.position_value,
+            unrealized_pnl=0.0,
+        )
+    )
     status_margin = g_margin.get_margin_status()
-    
+
     return {
         "pdt_status": "OK" if can_trade else "BLOCKED",
         "pdt_reason": reason,
@@ -10579,19 +11901,21 @@ def post_pdt_check(payload: PdtCheckPayload):
         "margin_used": status_margin.margin_used,
         "maintenance_excess": status_margin.maintenance_excess,
         "margin_call_amount": status_margin.margin_call_amount,
-        "circuit_breaker_rule_201": "INACTIVE" if payload.position_value < 500000 else "ACTIVE"
+        "circuit_breaker_rule_201": "INACTIVE" if payload.position_value < 500000 else "ACTIVE",
     }
+
 
 @api.post("/api/risk/options_greeks")
 def post_options_greeks(payload: OptionsGreeksPayload):
     try:
         import math
+
         S = payload.spot
         K = payload.strike
         T = payload.dte / 365.0
         r = payload.rate
         sigma = payload.vol
-        
+
         if T <= 0:
             delta = 1.0 if S >= K else 0.0
             gamma = 0.0
@@ -10599,34 +11923,46 @@ def post_options_greeks(payload: OptionsGreeksPayload):
             theta = 0.0
             call_price = max(0.0, S - K)
         else:
-            d1 = (math.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * math.sqrt(T))
+            d1 = (math.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * math.sqrt(T))
             d2 = d1 - sigma * math.sqrt(T)
-            
+
             # Normal cumulative distribution function helper
             def cdf(x):
                 return (1.0 + math.erf(x / math.sqrt(2.0))) / 2.0
-            
+
             # Normal probability density function helper
             def pdf(x):
-                return math.exp(-0.5 * x ** 2) / math.sqrt(2.0 * math.pi)
-                
+                return math.exp(-0.5 * x**2) / math.sqrt(2.0 * math.pi)
+
             call_price = S * cdf(d1) - K * math.exp(-r * T) * cdf(d2)
             delta = cdf(d1)
             gamma = pdf(d1) / (S * sigma * math.sqrt(T))
             vega = S * math.sqrt(T) * pdf(d1)
-            theta = -(S * pdf(d1) * sigma) / (2.0 * math.sqrt(T)) - r * K * math.exp(-r * T) * cdf(d2)
-            
+            theta = -(S * pdf(d1) * sigma) / (2.0 * math.sqrt(T)) - r * K * math.exp(-r * T) * cdf(
+                d2
+            )
+
         return {
             "call_price": round(call_price, 4),
-            "put_price": round(call_price - S + K * math.exp(-r * T), 4) if T > 0 else max(0.0, K - S),
+            "put_price": (
+                round(call_price - S + K * math.exp(-r * T), 4) if T > 0 else max(0.0, K - S)
+            ),
             "delta": round(delta, 4),
             "gamma": round(gamma, 4),
             "vega": round(vega, 4),
             "theta": round(theta, 4),
-            "rho": round(0.01 * K * T * math.exp(-r * T) * cdf(d2), 4) if T > 0 else 0.0
+            "rho": round(0.01 * K * T * math.exp(-r * T) * cdf(d2), 4) if T > 0 else 0.0,
         }
     except Exception as e:
-        return {"error": str(e), "delta": 0.5, "gamma": 0.02, "vega": 0.1, "theta": -0.05, "call_price": 5.0}
+        return {
+            "error": str(e),
+            "delta": 0.5,
+            "gamma": 0.02,
+            "vega": 0.1,
+            "theta": -0.05,
+            "call_price": 5.0,
+        }
+
 
 @api.post("/api/risk/futures_span")
 def post_futures_span(payload: FuturesSpanPayload):
@@ -10637,7 +11973,7 @@ def post_futures_span(payload: FuturesSpanPayload):
         multiplier = 50.0 if "ES" in symbol else (20.0 if "NQ" in symbol else 1.0)
         span_per_contract = 12400.0 if "ES" in symbol else (18600.0 if "NQ" in symbol else 1000.0)
         total_margin_req += abs(qty) * span_per_contract
-        
+
     return {
         "span_requirement": total_margin_req,
         "initial_margin_met": True,
@@ -10650,20 +11986,20 @@ def post_futures_span(payload: FuturesSpanPayload):
         "data_source": "demo_mock",
     }
 
+
 @api.post("/api/risk/kill_switch")
 def post_kill_switch(payload: KillSwitchPayload):
     import services.ops_kill_switch as ops_kill_switch
+
     if payload.active:
         ops_kill_switch._trip()
         if background_running(GLOBAL_REALTIME_PID):
             stop_background(GLOBAL_REALTIME_PID)
     else:
         ops_kill_switch.manual_reset()
-        
-    return {
-        "status": "success",
-        "kill_switch_active": ops_kill_switch.tripped()
-    }
+
+    return {"status": "success", "kill_switch_active": ops_kill_switch.tripped()}
+
 
 @api.get("/api/risk/dynamic_no_trade")
 def get_dynamic_no_trade(symbol: str = "BTCUSDT"):
@@ -10676,17 +12012,14 @@ def get_dynamic_no_trade(symbol: str = "BTCUSDT"):
             "returns_pct": 0.0005,
             "vol_ratio": 0.33,
             "spread_bps": 1.2,
-            "spread_percentile": 72.0
+            "spread_percentile": 72.0,
         },
-        "limits": {
-            "sigma_upper": 3.0,
-            "spread_upper": 90.0,
-            "spread_abs_bps": 5.0
-        },
+        "limits": {"sigma_upper": 3.0, "spread_upper": 90.0, "spread_abs_bps": 5.0},
         # Static placeholder metrics — not a live market-data evaluation.
         "simulated": True,
         "data_source": "demo_mock",
     }
+
 
 @api.post("/api/risk/dynamic_no_trade/tune")
 def post_dynamic_no_trade_tune(payload: TuneNoTradePayload):
@@ -10694,13 +12027,19 @@ def post_dynamic_no_trade_tune(payload: TuneNoTradePayload):
     cfg_path = os.path.join("configs", "dynamic_no_trade.yaml")
     try:
         os.makedirs("configs", exist_ok=True)
-        atomic_write_with_retry(cfg_path, yaml.safe_dump(
-            payload.model_dump() if hasattr(payload, "model_dump") else dict(payload),
-            allow_unicode=True, sort_keys=False))
+        atomic_write_with_retry(
+            cfg_path,
+            yaml.safe_dump(
+                payload.model_dump() if hasattr(payload, "model_dump") else dict(payload),
+                allow_unicode=True,
+                sort_keys=False,
+            ),
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to persist no-trade thresholds: {e}")
     return {
-        "status": "success", "persisted_to": cfg_path,
+        "status": "success",
+        "persisted_to": cfg_path,
         "detail": "Пороги динамического No-Trade сохранены в конфиг (применятся при следующем запуске раннера).",
     }
 
@@ -10709,8 +12048,20 @@ def post_dynamic_no_trade_tune(payload: TuneNoTradePayload):
 
 from packages.agent.vault.local_vault import LocalVault, VaultConfig
 from packages.agent.daemon.preflight import PreflightChecker, PreflightConfig
-from packages.agent.daemon.degraded_mode import DegradedModeManager, DegradedModeConfig, DegradedMode, DegradedModeAction
-from packages.agent.daemon.kill_switch import KillSwitchManager, KillSwitchConfig, HaltReason, HaltReasonType, HaltSeverity, HaltAction
+from packages.agent.daemon.degraded_mode import (
+    DegradedModeManager,
+    DegradedModeConfig,
+    DegradedMode,
+    DegradedModeAction,
+)
+from packages.agent.daemon.kill_switch import (
+    KillSwitchManager,
+    KillSwitchConfig,
+    HaltReason,
+    HaltReasonType,
+    HaltSeverity,
+    HaltAction,
+)
 from packages.agent.approval.manager import ApprovalManager
 from packages.shared.contracts.config import ChangeClass
 from ccea.artifact.verifier import ArtifactVerifier, VerificationResult, RejectionReason
@@ -10734,7 +12085,7 @@ try:
         command_type="REQUEST_START_RUN",
         description="Запуск алгоритма Trend Following EMA на паре BTCUSDT",
         change_class=ChangeClass.TRADING_IMPACTING,
-        details={"symbol": "BTCUSDT", "qty": 1.5, "strategy": "trend_following"}
+        details={"symbol": "BTCUSDT", "qty": 1.5, "strategy": "trend_following"},
     )
     approval_manager_instance.create_request(
         command_type="REQUEST_UPDATE_CONFIG",
@@ -10742,7 +12093,7 @@ try:
         change_class=ChangeClass.TRADING_IMPACTING,
         details={"config_path": "configs/sandbox.yaml", "risk_off_level": 25},
         config_digest_old="a1b2c3d4e5f6g7h8",
-        config_digest_new="8h7g6f5e4d3c2b1a"
+        config_digest_new="8h7g6f5e4d3c2b1a",
     )
 except Exception:
     pass
@@ -10752,7 +12103,7 @@ try:
     degraded_manager_instance._enter_mode(
         DegradedMode.CLOUD_UNREACHABLE,
         DegradedModeAction.RESTRICT,
-        "Cloud control plane latency > 5000ms"
+        "Cloud control plane latency > 5000ms",
     )
     degraded_manager_instance._exit_mode(DegradedMode.CLOUD_UNREACHABLE)
 except Exception:
@@ -10764,21 +12115,26 @@ class ArtifactVerifyPayload(BaseModel):
     digest: str
     simulate_status: str | None = None
 
+
 class ApprovalDecidePayload(BaseModel):
     request_id: str
     approved: bool
     reason: str
 
+
 class VaultUnlockPayload(BaseModel):
     password: str
+
 
 class VaultSaveCredentialsPayload(BaseModel):
     broker: str
     key_id: str
     secret: str
 
+
 class KillSwitchTriggerPayload(BaseModel):
     reason: str
+
 
 class KillSwitchResetPayload(BaseModel):
     approval_code: str
@@ -10795,7 +12151,8 @@ def post_artifacts_verify(payload: ArtifactVerifyPayload):
         if payload.simulate_status == "VERIFIED":
             return {
                 "result": "verified",
-                "artifact_digest": payload.digest or "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "artifact_digest": payload.digest
+                or "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 "signature_verified": True,
                 "digest_verified": True,
                 "registry_verified": True,
@@ -10810,11 +12167,12 @@ def post_artifacts_verify(payload: ArtifactVerifyPayload):
             reason_map = {
                 "UNSIGNED_REJECTED": "unsigned",
                 "REVOKED_KEY": "revoked_key",
-                "TAMPERED": "digest_mismatch"
+                "TAMPERED": "digest_mismatch",
             }
             return {
                 "result": "rejected",
-                "artifact_digest": payload.digest or "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "artifact_digest": payload.digest
+                or "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 "rejection_reason": reason_map.get(payload.simulate_status, "unsigned"),
                 "rejection_details": f"Simulated verification rejection: {payload.simulate_status}",
                 "verified_at": datetime.now().isoformat(),
@@ -10839,10 +12197,7 @@ def post_artifacts_verify(payload: ArtifactVerifyPayload):
 def get_approvals_pending():
     reqs = approval_manager_instance.get_pending_requests()
     history = approval_manager_instance.get_history()
-    return {
-        "pending": [r.to_dict() for r in reqs],
-        "history": [r.to_dict() for r in history]
-    }
+    return {"pending": [r.to_dict() for r in reqs], "history": [r.to_dict() for r in history]}
 
 
 @api.post("/api/approvals/decide")
@@ -10850,10 +12205,7 @@ def post_approvals_decide(payload: ApprovalDecidePayload):
     try:
         req_id = UUID(payload.request_id)
         req = approval_manager_instance.decide(
-            req_id,
-            approved=payload.approved,
-            reason=payload.reason,
-            decided_by="operator"
+            req_id, approved=payload.approved, reason=payload.reason, decided_by="operator"
         )
         if req:
             return {"status": "success", "request": req.to_dict()}
@@ -10869,7 +12221,10 @@ def post_vault_unlock(payload: VaultUnlockPayload):
     if supervisor is not None and globals().get("_CCEA_STATE") == "running":
         status = supervisor.status().get("agent", {})
         if status.get("vault_unlocked"):
-            return {"status": "success", "message": "Desktop Agent Vault is unlocked via OS keychain"}
+            return {
+                "status": "success",
+                "message": "Desktop Agent Vault is unlocked via OS keychain",
+            }
     try:
         if not vault_instance.is_initialized:
             vault_instance.initialize(payload.password)
@@ -10901,10 +12256,7 @@ def post_vault_save_credentials(payload: VaultSaveCredentialsPayload):
     try:
         vault_instance.store(payload.broker, "api_key", payload.key_id)
         vault_instance.store(payload.broker, "api_secret", payload.secret)
-        return {
-            "status": "success",
-            "credentials": vault_instance.list_credentials(payload.broker)
-        }
+        return {"status": "success", "credentials": vault_instance.list_credentials(payload.broker)}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -10913,6 +12265,7 @@ def post_vault_save_credentials(payload: VaultSaveCredentialsPayload):
 def post_state_flush():
     try:
         import state_store
+
         state_store.save()
         return {"status": "success", "message": "State successfully flushed to disk"}
     except Exception as e:
@@ -10937,8 +12290,7 @@ def post_preflight_run():
     # Run preflight checker
     try:
         result = preflight_checker_instance.run_preflight(
-            broker_name="alpaca",
-            manifest={"schema_version": "1.5.0", "entrypoint": "app.py"}
+            broker_name="alpaca", manifest={"schema_version": "1.5.0", "entrypoint": "app.py"}
         )
         return result.to_dict()
     except Exception as e:
@@ -10949,30 +12301,27 @@ def post_preflight_run():
 def get_degraded_status():
     status = degraded_manager_instance.get_status()
     history = degraded_manager_instance.get_history()
-    return {
-        "status": status,
-        "history": history
-    }
+    return {"status": status, "history": history}
 
 
 @api.get("/api/security/violations")
 def get_security_violations():
     # Fetch simulated sandbox violation logs
     from datetime import datetime
-    
+
     mock_violations = [
         {
             "timestamp": datetime.now().isoformat(),
             "type": "FILESYSTEM_POLICY",
             "message": "Attempted write to restricted path: /etc/hosts",
-            "severity": "CRITICAL"
+            "severity": "CRITICAL",
         },
         {
             "timestamp": datetime.now().isoformat(),
             "type": "EGRESS_POLICY",
             "message": "Blocked network request to unauthorized domain: malcious-endpoint.com",
-            "severity": "HIGH"
-        }
+            "severity": "HIGH",
+        },
     ]
     return {
         "violations": mock_violations,
@@ -10989,20 +12338,21 @@ def post_killswitch_trigger(payload: KillSwitchTriggerPayload):
             reason_type=HaltReasonType.MANUAL_TRIGGER,
             severity=HaltSeverity.CRITICAL,
             message=payload.reason,
-            trigger_source="Operator via UI"
+            trigger_source="Operator via UI",
         )
         kill_switch_manager_instance.trigger(reason, action=HaltAction.CANCEL_ORDERS)
-        
+
         # Trip global system switch
         import services.ops_kill_switch as ops_kill_switch
+
         ops_kill_switch._trip()
         if background_running(GLOBAL_REALTIME_PID):
             stop_background(GLOBAL_REALTIME_PID)
-            
+
         return {
             "status": "success",
             "kill_switch_active": True,
-            "halt": kill_switch_manager_instance.current_halt.to_dict()
+            "halt": kill_switch_manager_instance.current_halt.to_dict(),
         }
     except HTTPException:
         raise  # preserve intended status codes
@@ -11017,11 +12367,9 @@ def post_killswitch_reset(payload: KillSwitchResetPayload):
         if ok:
             kill_switch_manager_instance.reset()
             import services.ops_kill_switch as ops_kill_switch
+
             ops_kill_switch.manual_reset()
-            return {
-                "status": "success",
-                "kill_switch_active": False
-            }
+            return {"status": "success", "kill_switch_active": False}
         else:
             raise HTTPException(status_code=400, detail="Invalid approval code or cooldown active")
     except HTTPException:
@@ -11030,11 +12378,11 @@ def post_killswitch_reset(payload: KillSwitchResetPayload):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 # --------------------------- Experiment Tracking & Model Registry API ---------------------------
 # MLflow-подобный backend: прогоны, метрики, lineage (модель→данные→конфиг→git),
 # версии, стадии, rollback, криптоподпись артефактов (Ed25519). См.
 # service_experiment_tracking.py / core_experiment.py / tests/test_experiment_tracking.py.
+
 
 class ModelTransitionPayload(BaseModel):
     version: int
@@ -11048,6 +12396,7 @@ class ModelRollbackPayload(BaseModel):
 @api.get("/api/experiments")
 def api_experiments_list():
     from service_experiment_tracking import get_tracker
+
     t = get_tracker()
     out = []
     for exp in t.list_experiments():
@@ -11059,18 +12408,30 @@ def api_experiments_list():
 @api.get("/api/experiments/{experiment}/runs")
 def api_experiment_runs(experiment: str):
     from service_experiment_tracking import get_tracker
+
     t = get_tracker()
     runs = t.list_runs(experiment)
-    return {"experiment": experiment, "runs": [
-        {"run_id": r.run_id, "status": r.status, "start_ms": r.start_ms,
-         "end_ms": r.end_ms, "metrics": r.metrics, "params": r.params,
-         "lineage": r.lineage.to_dict()} for r in runs
-    ]}
+    return {
+        "experiment": experiment,
+        "runs": [
+            {
+                "run_id": r.run_id,
+                "status": r.status,
+                "start_ms": r.start_ms,
+                "end_ms": r.end_ms,
+                "metrics": r.metrics,
+                "params": r.params,
+                "lineage": r.lineage.to_dict(),
+            }
+            for r in runs
+        ],
+    }
 
 
 @api.get("/api/experiments/{experiment}/runs/{run_id}")
 def api_experiment_run_detail(experiment: str, run_id: str):
     from service_experiment_tracking import get_tracker
+
     rec = get_tracker().get_run(experiment, run_id)
     if rec is None:
         raise HTTPException(status_code=404, detail="run not found")
@@ -11080,41 +12441,52 @@ def api_experiment_run_detail(experiment: str, run_id: str):
 @api.get("/api/experiments/{experiment}/runs/{run_id}/metrics/{key}")
 def api_experiment_metric_history(experiment: str, run_id: str, key: str):
     from service_experiment_tracking import get_tracker
+
     return {"key": key, "history": get_tracker().read_metric_history(experiment, run_id, key)}
 
 
 @api.get("/api/models")
 def api_models_list():
     from service_experiment_tracking import get_registry
+
     reg = get_registry()
     names = []
     if os.path.isdir(reg.root):
-        names = sorted([d for d in os.listdir(reg.root)
-                        if os.path.isdir(os.path.join(reg.root, d))])
+        names = sorted(
+            [d for d in os.listdir(reg.root) if os.path.isdir(os.path.join(reg.root, d))]
+        )
     out = []
     for n in names:
         vers = reg.list_versions(n)
         prod = reg.get(n, stage="production")
-        out.append({"name": n, "n_versions": len(vers),
-                    "production_version": prod.version if prod else None})
+        out.append(
+            {
+                "name": n,
+                "n_versions": len(vers),
+                "production_version": prod.version if prod else None,
+            }
+        )
     return {"models": out}
 
 
 @api.get("/api/models/{name}/versions")
 def api_model_versions(name: str):
     from service_experiment_tracking import get_registry
+
     reg = get_registry()
     vers = reg.list_versions(name)
     if not vers:
         raise HTTPException(status_code=404, detail="model not found")
-    return {"name": name, "versions": [
-        {**v.to_dict(), **reg.verify_status(name, v.version)} for v in vers
-    ]}
+    return {
+        "name": name,
+        "versions": [{**v.to_dict(), **reg.verify_status(name, v.version)} for v in vers],
+    }
 
 
 @api.get("/api/models/{name}/production")
 def api_model_production(name: str):
     from service_experiment_tracking import get_registry
+
     mv = get_registry().get(name, stage="production")
     if mv is None:
         raise HTTPException(status_code=404, detail="no production version")
@@ -11124,6 +12496,7 @@ def api_model_production(name: str):
 @api.get("/api/models/{name}/verify/{version}")
 def api_model_verify(name: str, version: int):
     from service_experiment_tracking import get_registry
+
     reg = get_registry()
     if reg.get_version(name, version) is None:
         raise HTTPException(status_code=404, detail="version not found")
@@ -11133,6 +12506,7 @@ def api_model_verify(name: str, version: int):
 @api.post("/api/models/{name}/transition")
 def api_model_transition(name: str, payload: ModelTransitionPayload):
     from service_experiment_tracking import get_registry
+
     try:
         mv = get_registry().transition(name, payload.version, payload.stage)
         return {"status": "ok", "version": mv.to_dict()}
@@ -11143,6 +12517,7 @@ def api_model_transition(name: str, payload: ModelTransitionPayload):
 @api.post("/api/models/{name}/rollback")
 def api_model_rollback(name: str, payload: ModelRollbackPayload):
     from service_experiment_tracking import get_registry
+
     try:
         mv = get_registry().rollback(name, to_version=payload.to_version)
         return {"status": "ok", "rolled_back_to": mv.to_dict()}
@@ -11153,6 +12528,7 @@ def api_model_rollback(name: str, payload: ModelRollbackPayload):
 # --------------------------- Real cross-sectional backtests (background) ---------------------------
 # Запуск РЕАЛЬНЫХ бэктестов на живых бесплатных данных (Binance / Yahoo+SEC EDGAR)
 # как фоновых subprocess-задач; прогресс — через /api/logs, статус — /api/terminal/status.
+
 
 class XSRealRunPayload(BaseModel):
     kind: str  # "crypto" | "equity" | "edgar"
@@ -11166,11 +12542,34 @@ def api_xs_real_run(payload: XSRealRunPayload):
     kind = (payload.kind or "").lower().strip()
     repo = os.path.dirname(os.path.abspath(__file__))
     scripts = {
-        "crypto": ([sys.executable, "tools/xs_crypto_real_sweep.py"], "reports/xs_crypto_real_sweep.json"),
-        "equity": ([sys.executable, "tools/xs_equity_real_report.py"], "reports/xs_equity_real_sweep.json"),
-        "edgar": ([sys.executable, "scripts/download_edgar_fundamentals.py",
-                   "--symbols", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "JPM", "XOM", "JNJ", "PG",
-                   "--out", "data/fundamentals_edgar/edgar_pit.parquet"], None),
+        "crypto": (
+            [sys.executable, "tools/xs_crypto_real_sweep.py"],
+            "reports/xs_crypto_real_sweep.json",
+        ),
+        "equity": (
+            [sys.executable, "tools/xs_equity_real_report.py"],
+            "reports/xs_equity_real_sweep.json",
+        ),
+        "edgar": (
+            [
+                sys.executable,
+                "scripts/download_edgar_fundamentals.py",
+                "--symbols",
+                "AAPL",
+                "MSFT",
+                "GOOGL",
+                "AMZN",
+                "NVDA",
+                "META",
+                "JPM",
+                "XOM",
+                "JNJ",
+                "PG",
+                "--out",
+                "data/fundamentals_edgar/edgar_pit.parquet",
+            ],
+            None,
+        ),
     }
     if kind not in scripts:
         raise HTTPException(status_code=400, detail="kind must be crypto|equity|edgar")
@@ -11197,9 +12596,13 @@ def api_xs_real_run(payload: XSRealRunPayload):
             kwargs["creationflags"] = 0x00000200  # CREATE_NEW_PROCESS_GROUP
         else:
             kwargs["preexec_fn"] = os.setsid
-        proc = subprocess.Popen(prepare_python_command(cmd), **kwargs)  # shell=False; frozen workers are allow-listed
+        proc = subprocess.Popen(
+            prepare_python_command(cmd), **kwargs
+        )  # shell=False; frozen workers are allow-listed
         ACTIVE_CLI_PROCESSES[cmd_id] = {
-            "proc": proc, "cmd": " ".join(cmd), "start_time": datetime.now().isoformat()
+            "proc": proc,
+            "cmd": " ".join(cmd),
+            "start_time": datetime.now().isoformat(),
         }
         return {"cmd_id": cmd_id, "log_name": log_name, "report_path": report_path}
     except Exception as e:
@@ -11207,14 +12610,14 @@ def api_xs_real_run(payload: XSRealRunPayload):
 
 
 class XSRealAnalyzePayload(BaseModel):
-    kind: str = "crypto"     # crypto | equity
-    algo: str = "TWAP"       # TWAP | VWAP | POV
+    kind: str = "crypto"  # crypto | equity
+    algo: str = "TWAP"  # TWAP | VWAP | POV
     n_slices: int = 6
     equity: float = 1_000_000.0
     # P1 optimizer overrides (тумблеры из UI делают tcost/sizing/RL функциональными)
     tcost_aware: bool = False
     tcost_linear: float = 0.0008
-    sizing: Optional[str] = None        # none | vol_target | kelly
+    sizing: Optional[str] = None  # none | vol_target | kelly
     target_vol: Optional[float] = None
     kelly_fraction: float = 0.5
     include_rl: bool = False
@@ -11225,8 +12628,10 @@ def api_xs_real_analyze(payload: XSRealAnalyzePayload):
     """P1 для MVP: pre-trade VaR/CVaR/стресс + impact-aware execution-план на РЕАЛЬНЫХ
     данных (последние целевые веса cross-section). Один синхронный вызов."""
     kind = (payload.kind or "crypto").lower().strip()
-    paths = {"crypto": "configs/config_xs_crypto_real.yaml",
-             "equity": "configs/config_xs_equity_real.yaml"}
+    paths = {
+        "crypto": "configs/config_xs_crypto_real.yaml",
+        "equity": "configs/config_xs_equity_real.yaml",
+    }
     if kind not in paths:
         raise HTTPException(status_code=400, detail="kind must be crypto|equity")
     try:
@@ -11250,7 +12655,8 @@ def api_xs_real_analyze(payload: XSRealAnalyzePayload):
             opt["kelly_fraction"] = float(payload.kelly_fraction)
         if payload.include_rl:
             raw.setdefault("signals", []).append(
-                {"name": "rl_alpha", "kind": "rl_alpha", "transforms": ["zscore"]})
+                {"name": "rl_alpha", "kind": "rl_alpha", "transforms": ["zscore"]}
+            )
         cfg = XSConfig.model_validate(raw)
         w = latest_target_weights(cfg)
         if not len(w):
@@ -11260,16 +12666,23 @@ def api_xs_real_analyze(payload: XSRealAnalyzePayload):
         rets = close.pct_change().fillna(0.0)
         cov = StatRiskModel(method="ledoit_wolf").fit(rets).cov()
         cov = cov.reindex(index=list(w.index), columns=list(w.index)).fillna(0.0)
-        rep = PreTradeRiskAnalyzer(cov).pretrade_check(w, limits=RiskLimits(), returns=rets, strict=False)
+        rep = PreTradeRiskAnalyzer(cov).pretrade_check(
+            w, limits=RiskLimits(), returns=rets, strict=False
+        )
         prices = close.iloc[-1]
         adv = None
         if "volume" in panel.columns:
             adv = (panel["volume"].unstack(level=SYMBOL_LEVEL) * close).tail(20).mean()
         sched = RebalanceScheduler(algo=str(payload.algo), n_slices=int(payload.n_slices))
         plan = sched.build_plan(w, None, prices, float(payload.equity), adv=adv)
-        return {"kind": kind, "n_names": int(len(w)),
-                "weights_gross": float(w.abs().sum()), "weights_net": float(w.sum()),
-                "risk": rep.to_dict(), "execution": plan.to_dict()}
+        return {
+            "kind": kind,
+            "n_names": int(len(w)),
+            "weights_gross": float(w.abs().sum()),
+            "weights_net": float(w.sum()),
+            "risk": rep.to_dict(),
+            "execution": plan.to_dict(),
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -11280,6 +12693,7 @@ def api_xs_real_analyze(payload: XSRealAnalyzePayload):
 def _agent_recovery_state():
     if not hasattr(_agent_recovery_state, "_v"):
         from packages.agent.execution.resilience import CircuitBreaker, RetryPolicy
+
         _agent_recovery_state._v = {
             "retry": RetryPolicy(max_attempts=5, base_delay=0.5, max_delay=30.0, multiplier=2.0),
             "breaker": CircuitBreaker(failure_threshold=5, reset_timeout=30.0),
@@ -11295,11 +12709,13 @@ def api_agent_recovery_status():
     v = _agent_recovery_state()
     rp, cb = v["retry"], v["breaker"]
     return {
-        "connected": False,   # нет live-Agent в этом процессе → показываем конфигурацию guard
+        "connected": False,  # нет live-Agent в этом процессе → показываем конфигурацию guard
         "circuit_state": cb.state.value,
         "retry_policy": {
-            "max_attempts": rp.max_attempts, "base_delay": rp.base_delay,
-            "max_delay": rp.max_delay, "multiplier": rp.multiplier,
+            "max_attempts": rp.max_attempts,
+            "base_delay": rp.base_delay,
+            "max_delay": rp.max_delay,
+            "multiplier": rp.multiplier,
         },
         "failure_threshold": cb.failure_threshold,
         "reset_timeout_sec": cb.reset_timeout,
@@ -11310,13 +12726,14 @@ def api_agent_recovery_status():
 
 # --------------------------- P2: Scale & Ops (FIX/SOR, Feature Store, Automation, TS-DB) ---------------------------
 
+
 class RoutePayload(BaseModel):
     symbol: str = "AAPL"
     side: str = "BUY"
     notional: float = 3_000_000.0
     split: bool = True
-    dispatch: bool = False          # P1 #7: actually dispatch child orders to (paper) venues
-    price: float = 100.0            # reference price for live-liquidity + child sizing
+    dispatch: bool = False  # P1 #7: actually dispatch child orders to (paper) venues
+    price: float = 100.0  # reference price for live-liquidity + child sizing
 
 
 @api.post("/api/exec/route")
@@ -11330,14 +12747,22 @@ def api_exec_route(payload: RoutePayload):
     """
     from packages.agent.execution.smart_order_router import SmartOrderRouter, Venue
     from packages.agent.execution.fix_protocol import (
-        new_order_single, Side, OrdType, verify_checksum,
+        new_order_single,
+        Side,
+        OrdType,
+        verify_checksum,
     )
+
     venue_specs = [
-        ("NYSE", 0.5, 20, 0.1), ("NASDAQ", 0.8, 30, 0.1),
-        ("IEX", 0.3, 50, 0.1), ("DARK", 0.2, 80, 0.12),
+        ("NYSE", 0.5, 20, 0.1),
+        ("NASDAQ", 0.8, 30, 0.1),
+        ("IEX", 0.3, 50, 0.1),
+        ("DARK", 0.2, 80, 0.12),
     ]
-    venues = [Venue(n, fee_bps=f, latency_ms=l, liquidity=5e6, impact_coef=ic)
-              for (n, f, l, ic) in venue_specs]
+    venues = [
+        Venue(n, fee_bps=f, latency_ms=l, liquidity=5e6, impact_coef=ic)
+        for (n, f, l, ic) in venue_specs
+    ]
     sor = SmartOrderRouter(venues)
     out: Dict[str, Any] = {"venues": [v.name for v in venues]}
 
@@ -11345,16 +12770,21 @@ def api_exec_route(payload: RoutePayload):
         # Build a paper SimBroker per venue, prime the price, route on LIVE liquidity,
         # then dispatch — the same routed-submit machinery used by build_live_stack.
         from packages.agent.broker.adapters.sim import SimBrokerConnector
-        from packages.agent.execution.live_factory import (
-            BrokerLiquidityProvider, make_venue_submit)
+        from packages.agent.execution.live_factory import BrokerLiquidityProvider, make_venue_submit
+
         conns = {}
         for v in venues:
             c = SimBrokerConnector(broker_name=v.name)
             c.set_price(payload.symbol, float(payload.price))
             conns[v.name] = c
         provider = BrokerLiquidityProvider(conns)
-        route = sor.route_live(payload.symbol, payload.side, float(payload.notional), provider,
-                               split=bool(payload.split))
+        route = sor.route_live(
+            payload.symbol,
+            payload.side,
+            float(payload.notional),
+            provider,
+            split=bool(payload.split),
+        )
         disp = sor.dispatch(route, make_venue_submit(conns, lambda s: float(payload.price)))
         out["route"] = route.to_dict()
         out["dispatch"] = disp
@@ -11362,11 +12792,17 @@ def api_exec_route(payload: RoutePayload):
         out["simulated"] = False
         out["note"] = "Routed on live (paper) venue liquidity and dispatched real child orders."
     else:
-        res = sor.route(payload.symbol, payload.side, float(payload.notional),
-                        split=bool(payload.split))
+        res = sor.route(
+            payload.symbol, payload.side, float(payload.notional), split=bool(payload.split)
+        )
         side = Side.BUY if str(payload.side).upper() == "BUY" else Side.SELL
-        fix = new_order_single(cl_ord_id="UI-PREVIEW", symbol=payload.symbol, side=side,
-                               qty=round(float(payload.notional) / 100.0), ord_type=OrdType.MARKET)
+        fix = new_order_single(
+            cl_ord_id="UI-PREVIEW",
+            symbol=payload.symbol,
+            side=side,
+            qty=round(float(payload.notional) / 100.0),
+            ord_type=OrdType.MARKET,
+        )
         out["route"] = res.to_dict()
         out["fix_preview"] = fix.replace("\x01", " | ")
         out["fix_valid"] = bool(verify_checksum(fix))
@@ -11377,12 +12813,14 @@ def api_exec_route(payload: RoutePayload):
 def api_features_store():
     """Список фич в Feature Store + версии (P2)."""
     from service_feature_store import get_feature_store
+
     fs = get_feature_store()
     out = []
     for name in fs.list_features():
         vers = fs.list_versions(name)
-        out.append({"name": name, "n_versions": len(vers),
-                    "latest": vers[-1].to_dict() if vers else None})
+        out.append(
+            {"name": name, "n_versions": len(vers), "latest": vers[-1].to_dict() if vers else None}
+        )
     return {"features": out, "count": len(out)}
 
 
@@ -11392,6 +12830,7 @@ def api_automation_status():
     import json as _json
     from services.automation.drift_retrain import DriftRetrainScheduler
     from services.tsdb import make_backend
+
     report = {}
     p = "models/drift_report.json"
     if os.path.exists(p):
@@ -11401,9 +12840,12 @@ def api_automation_status():
         except Exception:
             report = {}
     decision = DriftRetrainScheduler().check(report)
-    be = make_backend("clickhouse")   # graceful fallback → parquet
-    return {"drift": decision.to_dict(), "tsdb_backend": type(be).__name__,
-            "tsdb_available": bool(be.available())}
+    be = make_backend("clickhouse")  # graceful fallback → parquet
+    return {
+        "drift": decision.to_dict(),
+        "tsdb_backend": type(be).__name__,
+        "tsdb_available": bool(be.available()),
+    }
 
 
 @api.get("/api/xs/signal_catalog")
@@ -11415,10 +12857,14 @@ def api_xs_signal_catalog():
     from signals.forex_signals import FOREX_SIGNAL_KINDS
     from signals.options_signals import OPTIONS_SIGNAL_KINDS
     from signals.common_signals import COMMON_SIGNAL_KINDS
+
     cats = {
-        "crypto": list(CRYPTO_SIGNAL_KINDS), "equity": list(EQUITY_SIGNAL_KINDS),
-        "futures": list(FUTURES_SIGNAL_KINDS), "forex": list(FOREX_SIGNAL_KINDS),
-        "options": list(OPTIONS_SIGNAL_KINDS), "common": list(COMMON_SIGNAL_KINDS),
+        "crypto": list(CRYPTO_SIGNAL_KINDS),
+        "equity": list(EQUITY_SIGNAL_KINDS),
+        "futures": list(FUTURES_SIGNAL_KINDS),
+        "forex": list(FOREX_SIGNAL_KINDS),
+        "options": list(OPTIONS_SIGNAL_KINDS),
+        "common": list(COMMON_SIGNAL_KINDS),
         "rl": ["rl_alpha"],
     }
     return {"categories": cats, "total": sum(len(v) for v in cats.values())}
@@ -11432,7 +12878,7 @@ def api_xs_signal_catalog():
 # Agent-zone code (packages.agent) is imported LAZILY inside the boot thread so
 # the plain MVP/cloud surface never pulls order/secret modules unless CCEA is on.
 _CCEA_SUPERVISOR = None
-_CCEA_STATE = "disabled"   # disabled | starting | running | error
+_CCEA_STATE = "disabled"  # disabled | starting | running | error
 _CCEA_ERROR: Optional[str] = None
 _CCEA_LOCK = threading.Lock()
 
@@ -11452,6 +12898,7 @@ def _start_ccea_background() -> None:
         global _CCEA_SUPERVISOR, _CCEA_STATE, _CCEA_ERROR
         try:
             from ccea.desktop_supervisor import CCEASupervisor, SupervisorConfig
+
             data_dir = Path(os.environ.get("RIVEN_DATA_DIR", ".")) / "ccea"
             sup = CCEASupervisor(SupervisorConfig(data_dir=data_dir, paper=True))
             # Publish before start so an app shutdown racing with bootstrap can
@@ -11556,30 +13003,38 @@ def api_ccea_paper_order(payload: CCEAPaperOrderPayload):
 # (policy firewall → hash-chain журнал → fill → books). Live-путь наследует
 # авторизацию из live_trading_authorization (reduce-only разрешён без мандата).
 
+
 class CCEAOrderPayload(BaseModel):
     symbol: str
-    side: str                          # buy|sell|long|short
-    order_type: str = "market"         # market|limit|stop|stop_limit
+    side: str  # buy|sell|long|short
+    order_type: str = "market"  # market|limit|stop|stop_limit
     quantity: float
     limit_price: Optional[float] = None
     stop_price: Optional[float] = None
-    time_in_force: str = "GTC"         # GTC|DAY|IOC|FOK
+    time_in_force: str = "GTC"  # GTC|DAY|IOC|FOK
     reduce_only: bool = False
-    confirm: bool = False              # осознанное подтверждение отправки ордера
+    confirm: bool = False  # осознанное подтверждение отправки ордера
 
 
 @api.post("/api/ccea/order/submit")
 def api_ccea_order_submit(payload: CCEAOrderPayload):
     import services.ops_kill_switch as ops_kill_switch
+
     if ops_kill_switch.tripped():
-        raise HTTPException(status_code=400, detail="Kill switch активен — ручные ордера заблокированы")
+        raise HTTPException(
+            status_code=400, detail="Kill switch активен — ручные ордера заблокированы"
+        )
     if not payload.confirm:
         raise HTTPException(status_code=409, detail="Отправка ордера требует confirm=true")
     sup = _ccea_or_503()
     res = sup.submit_manual_order(
-        symbol=payload.symbol, side=payload.side, order_type=payload.order_type,
-        quantity=payload.quantity, limit_price=payload.limit_price,
-        stop_price=payload.stop_price, time_in_force=payload.time_in_force,
+        symbol=payload.symbol,
+        side=payload.side,
+        order_type=payload.order_type,
+        quantity=payload.quantity,
+        limit_price=payload.limit_price,
+        stop_price=payload.stop_price,
+        time_in_force=payload.time_in_force,
         reduce_only=payload.reduce_only,
     )
     if not res.get("ok"):
@@ -11661,8 +13116,12 @@ def api_agent_pnl_status():
         return {"enabled": True, "state": _CCEA_STATE, "ledger": None}
     try:
         st = _CCEA_SUPERVISOR.status()
-        return {"enabled": True, "state": "running", "ledger": st.get("pnl_ledger"),
-                "broker_account": st.get("broker_account")}
+        return {
+            "enabled": True,
+            "state": "running",
+            "ledger": st.get("pnl_ledger"),
+            "broker_account": st.get("broker_account"),
+        }
     except Exception as exc:
         return {"enabled": True, "error": str(exc)}
 
@@ -11696,15 +13155,16 @@ def api_agent_pnl_eod_close():
 # Consolidated VaR/CVaR across all books with Euler risk attribution + hierarchical
 # limits. Engine: service_firm_risk (academically grounded; see module docstring).
 
+
 class FirmRiskPayload(BaseModel):
     # books: {desk: {strategy: [{symbol, exposure($), risk_unit?, sector?, asset_class?}]}}
     books: Dict[str, Any]
-    cov: Optional[Dict[str, Any]] = None          # {unit: {unit: cov}} (return covariance)
-    returns: Optional[Dict[str, Any]] = None       # {unit: [r,...]} for historical method
-    exposures: Optional[Dict[str, Any]] = None     # {unit: {factor: loading}}
+    cov: Optional[Dict[str, Any]] = None  # {unit: {unit: cov}} (return covariance)
+    returns: Optional[Dict[str, Any]] = None  # {unit: [r,...]} for historical method
+    exposures: Optional[Dict[str, Any]] = None  # {unit: {factor: loading}}
     alpha: float = 0.05
-    method: str = "parametric"                     # parametric | historical
-    limits: Optional[Dict[str, Any]] = None        # {node: {var?, cvar?, gross?, net?, var_pct?, hard?}}
+    method: str = "parametric"  # parametric | historical
+    limits: Optional[Dict[str, Any]] = None  # {node: {var?, cvar?, gross?, net?, var_pct?, hard?}}
     capital: Optional[Dict[str, float]] = None
     firm_name: str = "FIRM"
 
@@ -11712,7 +13172,9 @@ class FirmRiskPayload(BaseModel):
 def _run_firm_risk(payload: "FirmRiskPayload") -> Dict[str, Any]:
     import pandas as _pd
     from service_firm_risk import (
-        FirmRiskAggregator, HierLimits, positions_from_books,
+        FirmRiskAggregator,
+        HierLimits,
+        positions_from_books,
     )
 
     positions = positions_from_books(payload.books)
@@ -11721,19 +13183,34 @@ def _run_firm_risk(payload: "FirmRiskPayload") -> Dict[str, Any]:
     if payload.cov:
         cov_df = _pd.DataFrame(payload.cov).astype("float64")
     if payload.returns:
-        returns_df = _pd.DataFrame({k: list(v) for k, v in payload.returns.items()}).astype("float64")
+        returns_df = _pd.DataFrame({k: list(v) for k, v in payload.returns.items()}).astype(
+            "float64"
+        )
     exposures_df = None
     if payload.exposures:
         exposures_df = _pd.DataFrame(payload.exposures).T.astype("float64")
-    agg = FirmRiskAggregator(cov=cov_df, returns=returns_df, exposures=exposures_df,
-                             alpha=float(payload.alpha))
+    agg = FirmRiskAggregator(
+        cov=cov_df, returns=returns_df, exposures=exposures_df, alpha=float(payload.alpha)
+    )
     limits = None
     if payload.limits:
-        limits = {k: HierLimits(**{kk: vv for kk, vv in v.items() if kk in
-                                   ("var", "cvar", "gross", "net", "var_pct", "hard")})
-                  for k, v in payload.limits.items()}
-    rep = agg.aggregate(positions, method=payload.method, firm_name=payload.firm_name,
-                        limits=limits, capital=payload.capital)
+        limits = {
+            k: HierLimits(
+                **{
+                    kk: vv
+                    for kk, vv in v.items()
+                    if kk in ("var", "cvar", "gross", "net", "var_pct", "hard")
+                }
+            )
+            for k, v in payload.limits.items()
+        }
+    rep = agg.aggregate(
+        positions,
+        method=payload.method,
+        firm_name=payload.firm_name,
+        limits=limits,
+        capital=payload.capital,
+    )
     return rep.to_dict()
 
 
@@ -11768,11 +13245,17 @@ def api_firm_risk_demo():
 
     # Representative cross-asset book (illustrative exposures; model covariance).
     units = ["AAPL", "MSFT", "XOM", "JPM", "ES", "NQ", "EURUSD", "GBPUSD", "BTCUSDT", "ETHUSDT"]
-    vols = _np.array([.018, .017, .022, .020, .013, .016, .006, .007, .035, .040])
+    vols = _np.array([0.018, 0.017, 0.022, 0.020, 0.013, 0.016, 0.006, 0.007, 0.035, 0.040])
     # asset-class block correlations (equity/futures/fx/crypto)
     cls = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3]
-    base = _np.array([[1.0, .25, .15, .05], [.25, 1.0, .05, .20],
-                      [.15, .05, 1.0, .10], [.05, .20, .10, 1.0]])
+    base = _np.array(
+        [
+            [1.0, 0.25, 0.15, 0.05],
+            [0.25, 1.0, 0.05, 0.20],
+            [0.15, 0.05, 1.0, 0.10],
+            [0.05, 0.20, 0.10, 1.0],
+        ]
+    )
     n = len(units)
     C = _np.eye(n)
     for i in range(n):
@@ -11786,8 +13269,12 @@ def api_firm_risk_demo():
     positions = [
         FirmPosition("AAPL", 180_000, desk="equity_long_short", strategy="momentum", sector="tech"),
         FirmPosition("MSFT", 150_000, desk="equity_long_short", strategy="momentum", sector="tech"),
-        FirmPosition("XOM", -90_000, desk="equity_long_short", strategy="mean_reversion", sector="energy"),
-        FirmPosition("JPM", -70_000, desk="equity_long_short", strategy="mean_reversion", sector="financials"),
+        FirmPosition(
+            "XOM", -90_000, desk="equity_long_short", strategy="mean_reversion", sector="energy"
+        ),
+        FirmPosition(
+            "JPM", -70_000, desk="equity_long_short", strategy="mean_reversion", sector="financials"
+        ),
         FirmPosition("ES", 250_000, desk="macro_futures", strategy="trend", sector="index"),
         FirmPosition("NQ", -120_000, desk="macro_futures", strategy="carry", sector="index"),
         FirmPosition("EURUSD", -200_000, desk="fx_carry", strategy="carry", sector="fx"),
@@ -11804,10 +13291,15 @@ def api_firm_risk_demo():
             if led is not None:
                 for p in led.positions():
                     if p.quantity != 0 and str(p.symbol) in cov_df.index:
-                        positions.append(FirmPosition(
-                            str(p.symbol), float(p.market_value),
-                            desk="agent_live", strategy="desktop-demo",
-                            sector="crypto" if "USD" in str(p.symbol) else None))
+                        positions.append(
+                            FirmPosition(
+                                str(p.symbol),
+                                float(p.market_value),
+                                desk="agent_live",
+                                strategy="desktop-demo",
+                                sector="crypto" if "USD" in str(p.symbol) else None,
+                            )
+                        )
                         has_live_book = True
         except Exception:
             pass
@@ -11823,10 +13315,11 @@ def api_firm_risk_demo():
     out["simulated"] = True
     out["has_live_book"] = has_live_book
     out["data_source"] = "representative"
-    out["note"] = ("Representative cross-asset exposures with a model covariance — the "
-                   "VaR/CVaR/Euler math is real. Post real books to /api/firm_risk/aggregate."
-                   + (" Live Agent ledger positions folded in as 'agent_live' desk."
-                      if has_live_book else ""))
+    out["note"] = (
+        "Representative cross-asset exposures with a model covariance — the "
+        "VaR/CVaR/Euler math is real. Post real books to /api/firm_risk/aggregate."
+        + (" Live Agent ledger positions folded in as 'agent_live' desk." if has_live_book else "")
+    )
     return out
 
 
@@ -11847,15 +13340,21 @@ def api_instruments_resolve(q: str):
 def api_instruments_search(q: str, limit: int = 20):
     if global_instrument_master is None:
         return {"ok": False, "error": "instrument master unavailable", "results": []}
-    return {"ok": True, "results": [r.to_dict() for r in global_instrument_master.search(q, limit=limit)]}
+    return {
+        "ok": True,
+        "results": [r.to_dict() for r in global_instrument_master.search(q, limit=limit)],
+    }
 
 
 @api.get("/api/instruments/list")
 def api_instruments_list():
     if global_instrument_master is None:
         return {"ok": False, "results": []}
-    return {"ok": True, "count": len(global_instrument_master),
-            "results": [r.to_dict() for r in global_instrument_master.all()]}
+    return {
+        "ok": True,
+        "count": len(global_instrument_master),
+        "results": [r.to_dict() for r in global_instrument_master.all()],
+    }
 
 
 class OCCParsePayload(BaseModel):
@@ -11867,9 +13366,16 @@ def api_instruments_occ_parse(payload: OCCParsePayload):
     """Parse a 21-char OCC option symbol into root/expiry/type/strike."""
     try:
         from services.instrument_master import parse_occ_symbol
+
         o = parse_occ_symbol(payload.symbol)
-        return {"ok": True, "root": o.root, "expiry": o.expiry.isoformat(),
-                "option_type": o.option_type, "strike": o.strike, "occ_symbol": o.occ_symbol}
+        return {
+            "ok": True,
+            "root": o.root,
+            "expiry": o.expiry.isoformat(),
+            "option_type": o.option_type,
+            "strike": o.strike,
+            "occ_symbol": o.occ_symbol,
+        }
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
 
@@ -11931,7 +13437,7 @@ def api_agent_journal_integrity():
 
 # --------------------------- MARKET-DATA QUALITY + VENDOR FAILOVER (P1 #11) ---------------------------
 class DataQualityPayload(BaseModel):
-    bars: List[Dict[str, Any]]                  # [{timestamp, close, high?, low?, open?, volume?}]
+    bars: List[Dict[str, Any]]  # [{timestamp, close, high?, low?, open?, volume?}]
     symbol: str = "?"
     spike_threshold: float = 8.0
     staleness_seconds: Optional[float] = 300.0
@@ -11944,11 +13450,13 @@ def api_data_quality_check(payload: DataQualityPayload):
     try:
         import pandas as _pd
         from services.market_data_quality import DataQualityMonitor
+
         df = _pd.DataFrame(payload.bars)
         if df.empty:
             return {"ok": False, "error": "no bars"}
-        mon = DataQualityMonitor(spike_threshold=payload.spike_threshold,
-                                 staleness_seconds=payload.staleness_seconds)
+        mon = DataQualityMonitor(
+            spike_threshold=payload.spike_threshold, staleness_seconds=payload.staleness_seconds
+        )
         rep = mon.check(df, symbol=payload.symbol, now_ms=payload.now_ms)
         return {"ok": True, "report": rep.to_dict(), "simulated": False}
     except Exception as exc:
@@ -11963,9 +13471,13 @@ def api_data_quality_demo():
     import pandas as _pd
     import time as _t
     from services.market_data_quality import (
-        DataQualityMonitor, MarketDataRouter, cross_source_reconcile)
+        DataQualityMonitor,
+        MarketDataRouter,
+        cross_source_reconcile,
+    )
 
     now = int(_t.time() * 1000)
+
     def _bars(n=60, price=100.0, spike=False, stale=False, seed=0):
         rng = _np.random.default_rng(seed)
         px = price * _np.cumprod(1 + rng.normal(0, 0.004, n))
@@ -11973,25 +13485,33 @@ def api_data_quality_demo():
             px[n // 2] = px[n // 2 - 1] * 4.0
         start = now - (n * 60_000) - (3_600_000 if stale else 60_000)
         ts = [start + i * 60_000 for i in range(n)]
-        return _pd.DataFrame({"timestamp": ts, "close": px, "high": px * 1.001,
-                              "low": px * 0.999, "open": px})
+        return _pd.DataFrame(
+            {"timestamp": ts, "close": px, "high": px * 1.001, "low": px * 0.999, "open": px}
+        )
 
     mon = DataQualityMonitor(staleness_seconds=300)
     clean = mon.check(_bars(seed=1), symbol="CLEAN", now_ms=now).to_dict()
     spiked = mon.check(_bars(spike=True, seed=2), symbol="SPIKED", now_ms=now).to_dict()
     stale = mon.check(_bars(stale=True, seed=3), symbol="STALE", now_ms=now).to_dict()
+
     # failover: primary errors -> backup serves
     def _bad(s, **k):
         raise RuntimeError("primary vendor outage")
-    router = MarketDataRouter([("primary_vendor", _bad),
-                               ("backup_vendor", lambda s, **k: _bars(seed=5))], monitor=mon)
+
+    router = MarketDataRouter(
+        [("primary_vendor", _bad), ("backup_vendor", lambda s, **k: _bars(seed=5))], monitor=mon
+    )
     fo = router.get_bars("AAPL", now_ms=now)
-    recon = cross_source_reconcile({"AAPL": 100.0, "MSFT": 200.0},
-                                   {"AAPL": 100.02, "MSFT": 206.0}, tolerance_bps=50)
+    recon = cross_source_reconcile(
+        {"AAPL": 100.0, "MSFT": 200.0}, {"AAPL": 100.02, "MSFT": 206.0}, tolerance_bps=50
+    )
     return {
         "reports": {"clean": clean, "spiked": spiked, "stale": stale},
-        "failover": {"served_by": fo["source"], "failed_over": fo["failover"],
-                     "attempts": fo["attempts"]},
+        "failover": {
+            "served_by": fo["source"],
+            "failed_over": fo["failover"],
+            "attempts": fo["attempts"],
+        },
         "router_status": router.status(),
         "cross_vendor": recon,
         "simulated": True,
@@ -12005,10 +13525,12 @@ def api_data_quality_demo():
 # index.html inside Streamlit and MUST run ONLY under `streamlit run app.py` — never
 # on plain import, otherwise it would execute UI side effects inside the API process.
 
+
 def _streamlit_runtime_active() -> bool:
     """True only when executing under `streamlit run` (not on plain import)."""
     try:
         from streamlit.runtime import exists as _st_exists
+
         return bool(_st_exists())
     except Exception:
         return False
@@ -12017,9 +13539,14 @@ def _streamlit_runtime_active() -> bool:
 def _render_streamlit_ui() -> None:
     import streamlit.components.v1 as components
 
-    st.set_page_config(page_title="RivenQuant AI Advanced Platform", layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(
+        page_title="RivenQuant AI Advanced Platform",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+    )
 
-    st.markdown("""
+    st.markdown(
+        """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -12046,7 +13573,9 @@ def _render_streamlit_ui() -> None:
         z-index: 999999 !important;
     }
     </style>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
     try:
         with open("index.html", "r", encoding="utf-8") as f:
@@ -12069,7 +13598,12 @@ def _start_scheduler_if_enabled() -> None:
     в рабочей копии. Тесты создают собственные экземпляры SchedulerService.
     """
     global _SCHEDULER
-    if os.environ.get("RIVEN_ENABLE_SCHEDULER", "1").strip().lower() not in ("1", "true", "yes", "on"):
+    if os.environ.get("RIVEN_ENABLE_SCHEDULER", "1").strip().lower() not in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    ):
         return
     if "pytest" in sys.modules:
         return
@@ -12091,6 +13625,7 @@ def _start_scheduler_if_enabled() -> None:
         _SCHEDULER.start()
     except Exception:
         import logging as _logging
+
         _logging.getLogger(__name__).exception("scheduler autostart failed")
 
 

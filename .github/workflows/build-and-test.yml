@@ -17,10 +17,15 @@ jobs:
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONDONTWRITEBYTECODE: "1"
+    defaults:
+      run:
+        # several steps use bash heredocs; on windows-latest the default shell is
+        # PowerShell, where `python - <<'PY'` is a parse error
+        shell: bash
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install make (Windows)
         if: matrix.os == 'windows-latest'
@@ -28,7 +33,7 @@ jobs:
         run: choco install make --yes
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -40,7 +45,9 @@ jobs:
           python -m pip install -r requirements-dev.lock.txt
 
       - name: Lint with ruff
-        run: python -m ruff check .
+        # --no-cache: ruff would otherwise leave .ruff_cache behind, and the
+        # generated-file policy check further down treats it as an artefact
+        run: python -m ruff check --no-cache .
 
       - name: Check formatting with black
         run: python -m black --check .
@@ -98,7 +105,9 @@ jobs:
         continue-on-error: true
         env:
           PYTHONUTF8: "1"
-        run: python -m detect_secrets scan --baseline .secrets.baseline --all-files --json > detect-secrets-scan.json
+        # `scan` already emits JSON on stdout; there is no --json flag, and passing
+        # one made the command exit 2 on argument parsing rather than on findings
+        run: python -m detect_secrets scan --baseline .secrets.baseline --all-files > detect-secrets-scan.json
 
       - name: Detect secrets (enforced)
         env:
@@ -115,7 +124,6 @@ jobs:
               "--baseline",
               ".secrets.baseline",
               "--all-files",
-              "--json",
           ]
           result = subprocess.run(cmd, capture_output=True, text=True)
           pathlib.Path("detect-secrets-scan.json").write_text(result.stdout, encoding="utf-8")
@@ -126,13 +134,21 @@ jobs:
 
           baseline = json.loads(pathlib.Path(".secrets.baseline").read_text(encoding="utf-8"))
           scan = json.loads(result.stdout or "{}")
-          baseline_hashes = {
-              fname: {finding["hashed_secret"] for finding in findings}
-              for fname, findings in baseline.get("results", {}).items()
-          }
+
+          # detect-secrets reports native separators, so on Windows every path is
+          # spelled with backslashes and matches nothing in a baseline recorded on
+          # Linux. Compare on a normalised key.
+          def key(name):
+              return name.replace("\\", "/")
+
+          baseline_hashes = {}
+          for fname, findings in baseline.get("results", {}).items():
+              baseline_hashes.setdefault(key(fname), set()).update(
+                  finding["hashed_secret"] for finding in findings
+              )
           new = []
           for fname, findings in scan.get("results", {}).items():
-              allowed = baseline_hashes.get(fname, set())
+              allowed = baseline_hashes.get(key(fname), set())
               for finding in findings:
                   if finding.get("hashed_secret") not in allowed:
                       new.append(f"{fname}:{finding.get('line_number')} ({finding.get('type')})")
@@ -236,7 +252,7 @@ jobs:
           PY
 
       - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always() && matrix.os == 'ubuntu-latest'
         with:
           name: coverage-report
@@ -308,7 +324,7 @@ jobs:
           PY
 
       - name: Upload skip report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: skip-report-${{ matrix.os }}
@@ -360,7 +376,7 @@ jobs:
           PY
 
       - name: Upload complexity report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: complexity-report-${{ matrix.os }}
@@ -463,7 +479,7 @@ jobs:
           PY
 
       - name: Upload lockfile freshness report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always() && matrix.os == 'ubuntu-latest'
         with:
           name: lockfile-freshness

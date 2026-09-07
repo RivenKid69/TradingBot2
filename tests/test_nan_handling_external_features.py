@@ -21,7 +21,7 @@ def test_get_safe_float_nan_handling():
     from mediator import Mediator
 
     # Mock row with NaN value
-    row = {"cvd_24h": float('nan'), "garch_14d": 0.5, "ret_12h": None}
+    row = {"cvd_24h": float("nan"), "garch_14d": 0.5, "ret_12h": None}
 
     # Test NaN conversion
     result_nan = Mediator._get_safe_float(row, "cvd_24h", default=0.0)
@@ -41,7 +41,7 @@ def test_get_safe_float_inf_handling():
     """Test that _get_safe_float converts Inf/-Inf to default value."""
     from mediator import Mediator
 
-    row = {"pos_inf": float('inf'), "neg_inf": float('-inf'), "valid": 42.0}
+    row = {"pos_inf": float("inf"), "neg_inf": float("-inf"), "valid": 42.0}
 
     # Positive infinity
     result_pos_inf = Mediator._get_safe_float(row, "pos_inf", default=0.0)
@@ -60,14 +60,12 @@ def test_get_safe_float_logging_enabled():
     """Test that NaN logging works when log_nan=True."""
     from mediator import Mediator
 
-    row = {"nan_feature": float('nan'), "inf_feature": float('inf')}
+    row = {"nan_feature": float("nan"), "inf_feature": float("inf")}
 
     # Capture logs
-    with patch('mediator.logger') as mock_logger:
+    with patch("mediator.logger") as mock_logger:
         # NaN with logging enabled
-        result = Mediator._get_safe_float(
-            row, "nan_feature", default=0.0, log_nan=True
-        )
+        result = Mediator._get_safe_float(row, "nan_feature", default=0.0, log_nan=True)
         assert result == 0.0
         # Check that warning was logged
         mock_logger.warning.assert_called_once()
@@ -80,13 +78,11 @@ def test_get_safe_float_logging_disabled():
     """Test that NaN conversion is silent when log_nan=False (default)."""
     from mediator import Mediator
 
-    row = {"nan_feature": float('nan')}
+    row = {"nan_feature": float("nan")}
 
-    with patch('mediator.logger') as mock_logger:
+    with patch("mediator.logger") as mock_logger:
         # NaN with logging disabled (default)
-        result = Mediator._get_safe_float(
-            row, "nan_feature", default=0.0, log_nan=False
-        )
+        result = Mediator._get_safe_float(row, "nan_feature", default=0.0, log_nan=False)
         assert result == 0.0
         # Should NOT log
         mock_logger.warning.assert_not_called()
@@ -99,21 +95,15 @@ def test_get_safe_float_range_validation():
     row = {"value": 150.0}
 
     # Within range
-    result_ok = Mediator._get_safe_float(
-        row, "value", default=0.0, min_value=0.0, max_value=200.0
-    )
+    result_ok = Mediator._get_safe_float(row, "value", default=0.0, min_value=0.0, max_value=200.0)
     assert result_ok == 150.0, "Value within range should pass"
 
     # Below min
-    result_low = Mediator._get_safe_float(
-        row, "value", default=0.0, min_value=200.0
-    )
+    result_low = Mediator._get_safe_float(row, "value", default=0.0, min_value=200.0)
     assert result_low == 0.0, "Value below min should return default"
 
     # Above max
-    result_high = Mediator._get_safe_float(
-        row, "value", default=0.0, max_value=100.0
-    )
+    result_high = Mediator._get_safe_float(row, "value", default=0.0, max_value=100.0)
     assert result_high == 0.0, "Value above max should return default"
 
 
@@ -123,11 +113,9 @@ def test_get_safe_float_range_validation_with_logging():
 
     row = {"value": 150.0}
 
-    with patch('mediator.logger') as mock_logger:
+    with patch("mediator.logger") as mock_logger:
         # Value above max with logging
-        result = Mediator._get_safe_float(
-            row, "value", default=0.0, max_value=100.0, log_nan=True
-        )
+        result = Mediator._get_safe_float(row, "value", default=0.0, max_value=100.0, log_nan=True)
         assert result == 0.0
         mock_logger.debug.assert_called()
         debug_message = mock_logger.debug.call_args[0][0]
@@ -143,17 +131,19 @@ def test_clipf_nan_conversion():
         pytest.skip("obs_builder Cython module not compiled")
 
     # Test NaN conversion
-    result_nan = _clipf(float('nan'), -1.0, 1.0)
+    result_nan = _clipf(float("nan"), -1.0, 1.0)
     assert result_nan == 0.0, "obs_builder._clipf should convert NaN to 0.0"
 
     # Test Inf/-Inf (may or may not be clipped depending on implementation)
-    result_pos_inf = _clipf(float('inf'), -1.0, 1.0)
-    assert -1.0 <= result_pos_inf <= 1.0 or result_pos_inf == 0.0, \
-        "Inf should be clipped or converted to 0.0"
+    result_pos_inf = _clipf(float("inf"), -1.0, 1.0)
+    assert (
+        -1.0 <= result_pos_inf <= 1.0 or result_pos_inf == 0.0
+    ), "Inf should be clipped or converted to 0.0"
 
-    result_neg_inf = _clipf(float('-inf'), -1.0, 1.0)
-    assert -1.0 <= result_neg_inf <= 1.0 or result_neg_inf == 0.0, \
-        "Neg inf should be clipped or converted to 0.0"
+    result_neg_inf = _clipf(float("-inf"), -1.0, 1.0)
+    assert (
+        -1.0 <= result_neg_inf <= 1.0 or result_neg_inf == 0.0
+    ), "Neg inf should be clipped or converted to 0.0"
 
     # Test normal clipping
     assert _clipf(2.0, -1.0, 1.0) == 1.0, "Should clip upper bound"
@@ -173,12 +163,13 @@ def test_semantic_ambiguity_documented():
     result_zero = Mediator._get_safe_float(row_zero, "cvd_24h", default=0.0)
 
     # Scenario 2: Feature is missing (NaN)
-    row_nan = {"cvd_24h": float('nan')}
+    row_nan = {"cvd_24h": float("nan")}
     result_nan = Mediator._get_safe_float(row_nan, "cvd_24h", default=0.0)
 
     # ISSUE #2: Both scenarios produce the same result!
-    assert result_zero == result_nan == 0.0, \
-        "Genuine zero and missing data are indistinguishable (documented issue)"
+    assert (
+        result_zero == result_nan == 0.0
+    ), "Genuine zero and missing data are indistinguishable (documented issue)"
 
     # This is the core problem: model cannot learn special handling for missing data
     # Future fix: Add validity flags like (value, is_valid) tuple
@@ -194,10 +185,10 @@ def test_extract_norm_cols_nan_handling():
     # Mock row with mix of valid and NaN values
     row = {
         "cvd_24h": 1.5,
-        "cvd_7d": float('nan'),  # Missing
+        "cvd_7d": float("nan"),  # Missing
         "yang_zhang_48h": 0.8,
-        "yang_zhang_7d": None,   # Missing
-        "garch_200h": float('inf'),  # Invalid (inf)
+        "yang_zhang_7d": None,  # Missing
+        "garch_200h": float("inf"),  # Invalid (inf)
         "garch_14d": 0.5,
         # ... other features would be default 0.0
     }
@@ -270,10 +261,9 @@ def test_future_enhancement_roadmap():
 
     # Verify tech debt is documented in registry
     import os
+
     registry_path = "docs/reports/TECH_DEBT_REGISTRY.md"
-    assert os.path.exists(registry_path), (
-        f"Tech debt registry should exist at {registry_path}"
-    )
+    assert os.path.exists(registry_path), f"Tech debt registry should exist at {registry_path}"
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ Tests for:
 4. ForexEnvWrapper new parameters
 5. ForexLeverageWrapper stop-out level
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 
@@ -23,9 +23,11 @@ from typing import Dict, Any
 from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
+
 gym = pytest.importorskip("gymnasium")
 import numpy as np
 import pytest
+
 pytest.importorskip("torch")
 from gymnasium import spaces
 
@@ -51,6 +53,7 @@ from wrappers.forex_env import (
 # =============================================================================
 # FIXTURES
 # =============================================================================
+
 
 @pytest.fixture
 def temp_swap_dir():
@@ -109,7 +112,9 @@ class MockForexEnv(gym.Env):
             False,
             {
                 "timestamp": self._step_timestamp,
-                "signal_pos_next": float(action[0]) if hasattr(action, '__getitem__') else float(action),
+                "signal_pos_next": (
+                    float(action[0]) if hasattr(action, "__getitem__") else float(action)
+                ),
                 "symbol": "EUR_USD",
             },
         )
@@ -124,6 +129,7 @@ def mock_env():
 # =============================================================================
 # DST-AWARE ROLLOVER TIME TESTS
 # =============================================================================
+
 
 class TestGetRolloverHourUtc:
     """Tests for get_rollover_hour_utc function."""
@@ -229,6 +235,7 @@ class TestIsDstInEffect:
 # OPTIMIZED ROLLOVER COUNTER TESTS
 # =============================================================================
 
+
 class TestCountRolloversOptimized:
     """Tests for count_rollovers_optimized function."""
 
@@ -312,7 +319,9 @@ class TestCountRolloversOptimized:
         """Test no rollover when staying before 5pm ET."""
         # Stay before rollover hour on same day
         prev = int(datetime(2024, 1, 15, 10, 0, tzinfo=timezone.utc).timestamp())
-        curr = int(datetime(2024, 1, 15, 21, 0, tzinfo=timezone.utc).timestamp())  # Just before 22:00
+        curr = int(
+            datetime(2024, 1, 15, 21, 0, tzinfo=timezone.utc).timestamp()
+        )  # Just before 22:00
         count = count_rollovers_optimized(prev, curr)
         # Rollover is at 22:00 UTC (winter), so 21:00 is before it
         assert count == 0, f"Expected 0 before rollover, got {count}"
@@ -328,6 +337,7 @@ class TestCountRolloversOptimized:
 # =============================================================================
 # SWAP RATE PROVIDER TESTS
 # =============================================================================
+
 
 class TestSwapRate:
     """Tests for SwapRate dataclass."""
@@ -499,6 +509,7 @@ class TestSwapRateProvider:
 # FOREX ENV WRAPPER TESTS
 # =============================================================================
 
+
 class TestForexEnvWrapper:
     """Tests for ForexEnvWrapper class."""
 
@@ -628,6 +639,7 @@ class TestForexEnvWrapper:
 # FOREX LEVERAGE WRAPPER TESTS
 # =============================================================================
 
+
 class MockForexEnvWithMargin(gym.Env):
     """Mock forex environment with margin tracking for leverage tests."""
 
@@ -672,7 +684,9 @@ class TestForexLeverageWrapper:
 
     def test_stop_out_forces_liquidation(self):
         """Test that stop-out level forces position to zero."""
-        env = MockForexEnvWithMargin(net_worth=40000.0, used_margin=100000.0)  # Margin level = 0.4 < 0.5
+        env = MockForexEnvWithMargin(
+            net_worth=40000.0, used_margin=100000.0
+        )  # Margin level = 0.4 < 0.5
 
         wrapper = ForexLeverageWrapper(
             env,
@@ -688,7 +702,9 @@ class TestForexLeverageWrapper:
 
     def test_margin_call_reduces_position(self):
         """Test that margin call reduces position by half."""
-        env = MockForexEnvWithMargin(net_worth=80000.0, used_margin=100000.0)  # Margin level = 0.8 < 1.0
+        env = MockForexEnvWithMargin(
+            net_worth=80000.0, used_margin=100000.0
+        )  # Margin level = 0.8 < 1.0
 
         wrapper = ForexLeverageWrapper(
             env,
@@ -703,7 +719,9 @@ class TestForexLeverageWrapper:
 
     def test_no_intervention_above_margin_levels(self):
         """Test no intervention when margin levels are healthy."""
-        env = MockForexEnvWithMargin(net_worth=150000.0, used_margin=100000.0)  # Margin level = 1.5 > 1.0
+        env = MockForexEnvWithMargin(
+            net_worth=150000.0, used_margin=100000.0
+        )  # Margin level = 1.5 > 1.0
 
         wrapper = ForexLeverageWrapper(env)
 
@@ -742,6 +760,7 @@ class TestForexLeverageWrapper:
 # =============================================================================
 # FACTORY FUNCTION TESTS
 # =============================================================================
+
 
 class TestCreateForexEnv:
     """Tests for create_forex_env factory function."""
@@ -803,6 +822,7 @@ class TestCreateForexEnv:
 # INTEGRATION TESTS
 # =============================================================================
 
+
 class MockForexEnvWithTimestamps(gym.Env):
     """Mock forex environment with configurable timestamps for integration tests."""
 
@@ -831,7 +851,9 @@ class MockForexEnvWithTimestamps(gym.Env):
             False,
             {
                 "timestamp": self._step_ts,
-                "signal_pos_next": float(action[0]) if hasattr(action, '__getitem__') else float(action),
+                "signal_pos_next": (
+                    float(action[0]) if hasattr(action, "__getitem__") else float(action)
+                ),
                 "symbol": "EUR_USD",
             },
         )
@@ -844,7 +866,7 @@ class TestForexIntegration:
         """Test complete trading cycle with swaps and sessions."""
         # Setup timestamps to cross a rollover
         reset_ts = 1705362000  # Jan 15, 2024 21:00 UTC
-        step_ts = 1705406400   # Jan 16, 2024 09:20 UTC
+        step_ts = 1705406400  # Jan 16, 2024 09:20 UTC
 
         env = MockForexEnvWithTimestamps(reset_ts, step_ts)
 
@@ -928,6 +950,7 @@ class TestForexIntegration:
 # =============================================================================
 # CONSTANTS VALIDATION TESTS
 # =============================================================================
+
 
 class TestConstants:
     """Tests for module constants."""

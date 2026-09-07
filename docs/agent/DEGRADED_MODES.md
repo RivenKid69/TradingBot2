@@ -49,6 +49,7 @@ Agent MUST:
 ```
 
 **Configuration:**
+
 ```yaml
 degraded_mode:
   cloud_unreachable:
@@ -58,6 +59,7 @@ degraded_mode:
 ```
 
 **Actions:**
+
 | Action | Behavior |
 |--------|----------|
 | `continue` | Keep trading using last known config |
@@ -94,6 +96,7 @@ degraded_mode:
 ```
 
 **Configuration:**
+
 ```yaml
 degraded_mode:
   data_feed_invalid:
@@ -135,6 +138,7 @@ degraded_mode:
 ```
 
 **Configuration:**
+
 ```yaml
 degraded_mode:
   broker_errors:
@@ -176,6 +180,7 @@ degraded_mode:
 ```
 
 **Configuration:**
+
 ```yaml
 degraded_mode:
   time_drift:
@@ -218,6 +223,7 @@ degraded_mode:
 ```
 
 **Configuration:**
+
 ```yaml
 degraded_mode:
   resource_exhaustion:
@@ -260,6 +266,7 @@ degraded_mode:
 ```
 
 **Configuration:**
+
 ```yaml
 degraded_mode:
   state_divergence:
@@ -380,6 +387,7 @@ telemetry:
 ```
 
 **Buffer Management:**
+
 ```bash
 # Check buffer status
 ccea-agent telemetry buffer-status
@@ -555,6 +563,7 @@ ccea-agent degraded-mode history --last 24h
 ---
 
 **Related Documentation:**
+
 - [Risk Controls](./RISK_CONTROLS.md)
 - [Kill Switch Runbook](../runbooks/KILL_SWITCH.md)
 - [Recovery Procedures](../runbooks/RECOVERY.md)

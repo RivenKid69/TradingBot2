@@ -112,6 +112,7 @@ CREATE TABLE roles (
 ```
 
 **Standard Permissions:**
+
 ```json
 {
   "permissions": [
@@ -217,6 +218,7 @@ CREATE TABLE builds (
 | `provenance` | JSONB | Full build provenance |
 
 **Provenance Schema:**
+
 ```json
 {
   "git_sha": "abc123...",
@@ -246,6 +248,7 @@ CREATE TABLE artifacts (
 ```
 
 **Manifest Schema (per Design Doc 8.2):**
+
 ```json
 {
   "schema_version": "1.0",
@@ -329,6 +332,7 @@ CREATE TABLE agents (
 | `capabilities` | JSONB | Agent capabilities |
 
 **Capabilities Schema:**
+
 ```json
 {
   "cpu": "x86_64",
@@ -464,6 +468,7 @@ CREATE TABLE commands (
 | `idempotency_key` | string | Unique key for idempotency |
 
 **Allowed Command Types:**
+
 - `REQUEST_START_RUN`
 - `REQUEST_STOP_RUN`
 - `REQUEST_PAUSE_RUN`
@@ -534,6 +539,7 @@ CREATE TABLE telemetry_events_2025_12 PARTITION OF telemetry_events
 | `metrics` | JSONB | Metrics payload (redacted) |
 
 **Metrics Schema (AGGREGATED):**
+
 ```json
 {
   "pnl": 12.34,
@@ -699,6 +705,7 @@ ALTER TABLE commands ADD CONSTRAINT valid_command_type
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](./CCEA_OVERVIEW.md)
 - [State Machine](./CCEA_STATE_MACHINE.md)
 - [Protocol Schema](../schemas/README.md)

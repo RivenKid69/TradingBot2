@@ -20,7 +20,7 @@ Test Categories:
 
 Total Tests: ~50
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 
@@ -43,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # =============================================================================
 # FIXTURES
 # =============================================================================
+
 
 @pytest.fixture
 def temp_dir():
@@ -75,16 +76,18 @@ def sample_forex_df():
         change = np.random.normal(0, 0.0010)  # ~10 pips std
         prices.append(prices[-1] + change)
 
-    df = pd.DataFrame({
-        "timestamp": timestamps[:len(prices)],
-        "open": prices,
-        "high": [p + abs(np.random.normal(0, 0.0005)) for p in prices],
-        "low": [p - abs(np.random.normal(0, 0.0005)) for p in prices],
-        "close": [p + np.random.normal(0, 0.0003) for p in prices],
-        "volume": np.random.randint(1000, 10000, len(prices)),
-        "spread_pips": np.random.uniform(0.8, 1.5, len(prices)),
-        "symbol": "EUR_USD",
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps[: len(prices)],
+            "open": prices,
+            "high": [p + abs(np.random.normal(0, 0.0005)) for p in prices],
+            "low": [p - abs(np.random.normal(0, 0.0005)) for p in prices],
+            "close": [p + np.random.normal(0, 0.0003) for p in prices],
+            "volume": np.random.randint(1000, 10000, len(prices)),
+            "spread_pips": np.random.uniform(0.8, 1.5, len(prices)),
+            "symbol": "EUR_USD",
+        }
+    )
 
     return df
 
@@ -93,51 +96,58 @@ def sample_forex_df():
 def sample_swap_df():
     """Create sample swap rate DataFrame."""
     dates = pd.date_range("2024-01-01", "2024-01-31", freq="D")
-    return pd.DataFrame({
-        "date": dates.strftime("%Y-%m-%d"),
-        "pair": "EUR_USD",
-        "long_swap": np.random.uniform(-0.8, -0.3, len(dates)),
-        "short_swap": np.random.uniform(-0.5, -0.2, len(dates)),
-        "source": "synthetic",
-    })
+    return pd.DataFrame(
+        {
+            "date": dates.strftime("%Y-%m-%d"),
+            "pair": "EUR_USD",
+            "long_swap": np.random.uniform(-0.8, -0.3, len(dates)),
+            "short_swap": np.random.uniform(-0.5, -0.2, len(dates)),
+            "source": "synthetic",
+        }
+    )
 
 
 @pytest.fixture
 def sample_rate_df():
     """Create sample interest rate DataFrame."""
     dates = pd.date_range("2024-01-01", "2024-01-31", freq="D")
-    return pd.DataFrame({
-        "date": dates.strftime("%Y-%m-%d"),
-        "rate": np.random.uniform(5.0, 5.5, len(dates)),
-        "currency": "USD",
-        "source": "fred",
-    })
+    return pd.DataFrame(
+        {
+            "date": dates.strftime("%Y-%m-%d"),
+            "rate": np.random.uniform(5.0, 5.5, len(dates)),
+            "currency": "USD",
+            "source": "fred",
+        }
+    )
 
 
 @pytest.fixture
 def sample_calendar_df():
     """Create sample economic calendar DataFrame."""
-    return pd.DataFrame({
-        "datetime": [
-            "2024-01-10 13:30:00",
-            "2024-01-12 19:00:00",
-            "2024-01-15 08:30:00",
-        ],
-        "date": ["2024-01-10", "2024-01-12", "2024-01-15"],
-        "time": ["13:30", "19:00", "08:30"],
-        "currency": ["USD", "USD", "EUR"],
-        "event": ["Non-Farm Payrolls", "Fed Speech", "CPI"],
-        "impact": ["high", "medium", "high"],
-        "actual": [200, None, 2.5],
-        "forecast": [180, None, 2.4],
-        "previous": [190, None, 2.3],
-        "source": "synthetic",
-    })
+    return pd.DataFrame(
+        {
+            "datetime": [
+                "2024-01-10 13:30:00",
+                "2024-01-12 19:00:00",
+                "2024-01-15 08:30:00",
+            ],
+            "date": ["2024-01-10", "2024-01-12", "2024-01-15"],
+            "time": ["13:30", "19:00", "08:30"],
+            "currency": ["USD", "USD", "EUR"],
+            "event": ["Non-Farm Payrolls", "Fed Speech", "CPI"],
+            "impact": ["high", "medium", "high"],
+            "actual": [200, None, 2.5],
+            "forecast": [180, None, 2.4],
+            "previous": [190, None, 2.3],
+            "source": "synthetic",
+        }
+    )
 
 
 # =============================================================================
 # TEST: download_forex_data.py
 # =============================================================================
+
 
 class TestDownloadForexData:
     """Tests for scripts/download_forex_data.py"""
@@ -274,6 +284,7 @@ class TestDownloadForexData:
 # TEST: download_swap_rates.py
 # =============================================================================
 
+
 class TestDownloadSwapRates:
     """Tests for scripts/download_swap_rates.py"""
 
@@ -332,6 +343,7 @@ class TestDownloadSwapRates:
 # =============================================================================
 # TEST: download_economic_calendar.py
 # =============================================================================
+
 
 class TestDownloadEconomicCalendar:
     """Tests for scripts/download_economic_calendar.py"""
@@ -412,6 +424,7 @@ class TestDownloadEconomicCalendar:
 # TEST: download_interest_rates.py
 # =============================================================================
 
+
 class TestDownloadInterestRates:
     """Tests for scripts/download_interest_rates.py"""
 
@@ -458,15 +471,19 @@ class TestDownloadInterestRates:
 
         dates = pd.date_range("2024-01-01", "2024-01-10", freq="D")
 
-        usd_rates = pd.DataFrame({
-            "date": dates,
-            "rate": 5.25,
-        }).set_index("date")
+        usd_rates = pd.DataFrame(
+            {
+                "date": dates,
+                "rate": 5.25,
+            }
+        ).set_index("date")
 
-        eur_rates = pd.DataFrame({
-            "date": dates,
-            "rate": 4.50,
-        }).set_index("date")
+        eur_rates = pd.DataFrame(
+            {
+                "date": dates,
+                "rate": 4.50,
+            }
+        ).set_index("date")
 
         rate_dfs = {
             "USD": usd_rates.reset_index(),
@@ -485,6 +502,7 @@ class TestDownloadInterestRates:
 # =============================================================================
 # TEST: data_loader_forex.py
 # =============================================================================
+
 
 class TestDataLoaderForex:
     """Tests for data_loader_forex.py"""
@@ -544,10 +562,10 @@ class TestDataLoaderForex:
         # Add weekend timestamp
         weekend_ts = int(datetime(2024, 1, 6, 12, 0, tzinfo=timezone.utc).timestamp())
         df = sample_forex_df.copy()
-        df = pd.concat([
-            df,
-            pd.DataFrame([{"timestamp": weekend_ts, "close": 1.1, "symbol": "EUR_USD"}])
-        ], ignore_index=True)
+        df = pd.concat(
+            [df, pd.DataFrame([{"timestamp": weekend_ts, "close": 1.1, "symbol": "EUR_USD"}])],
+            ignore_index=True,
+        )
 
         filtered = _filter_forex_weekends(df)
         assert weekend_ts not in filtered["timestamp"].values
@@ -636,10 +654,13 @@ class TestDataLoaderForex:
 # INTEGRATION TESTS
 # =============================================================================
 
+
 class TestPhase7Integration:
     """Integration tests for Phase 7 components."""
 
-    def test_full_data_pipeline(self, sample_forex_df, sample_swap_df, sample_rate_df, sample_calendar_df, temp_dir):
+    def test_full_data_pipeline(
+        self, sample_forex_df, sample_swap_df, sample_rate_df, sample_calendar_df, temp_dir
+    ):
         """Test complete data loading pipeline."""
         from data_loader_forex import load_forex_data
 
@@ -712,6 +733,7 @@ class TestPhase7Integration:
 # EDGE CASES & ERROR HANDLING
 # =============================================================================
 
+
 class TestEdgeCases:
     """Edge case and error handling tests."""
 
@@ -783,6 +805,7 @@ class TestEdgeCases:
 # API MOCK TESTS (Recommendation #1)
 # =============================================================================
 
+
 class TestOandaAPIMock:
     """
     Mock tests for OANDA API interactions.
@@ -808,7 +831,7 @@ class TestOandaAPIMock:
             mock_bar.volume_quote = 1.2  # spread in pips
             mock_bars.append(mock_bar)
 
-        with patch('adapters.oanda.market_data.OandaMarketDataAdapter') as mock_adapter_class:
+        with patch("adapters.oanda.market_data.OandaMarketDataAdapter") as mock_adapter_class:
             mock_adapter = MagicMock()
             mock_adapter.get_bars.return_value = mock_bars
             mock_adapter_class.return_value = mock_adapter
@@ -834,7 +857,7 @@ class TestOandaAPIMock:
         """Test handling of OANDA API errors."""
         from scripts.download_forex_data import download_pair_oanda, ForexDownloadConfig
 
-        with patch('adapters.oanda.market_data.OandaMarketDataAdapter') as mock_adapter_class:
+        with patch("adapters.oanda.market_data.OandaMarketDataAdapter") as mock_adapter_class:
             mock_adapter = MagicMock()
             mock_adapter.get_bars.side_effect = Exception("API rate limit exceeded")
             mock_adapter_class.return_value = mock_adapter
@@ -856,7 +879,7 @@ class TestOandaAPIMock:
         """Test handling of empty API response."""
         from scripts.download_forex_data import download_pair_oanda, ForexDownloadConfig
 
-        with patch('adapters.oanda.market_data.OandaMarketDataAdapter') as mock_adapter_class:
+        with patch("adapters.oanda.market_data.OandaMarketDataAdapter") as mock_adapter_class:
             mock_adapter = MagicMock()
             mock_adapter.get_bars.return_value = []  # Empty response
             mock_adapter_class.return_value = mock_adapter
@@ -880,15 +903,17 @@ class TestOandaAPIMock:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "instruments": [{
-                "financing": {
-                    "longRate": -0.0001,  # Daily rate
-                    "shortRate": -0.00005,
+            "instruments": [
+                {
+                    "financing": {
+                        "longRate": -0.0001,  # Daily rate
+                        "shortRate": -0.00005,
+                    }
                 }
-            }]
+            ]
         }
 
-        with patch('requests.get', return_value=mock_response):
+        with patch("requests.get", return_value=mock_response):
             result = fetch_current_swaps_oanda(
                 pair="EUR_USD",
                 api_key="test_key",
@@ -923,7 +948,7 @@ class TestFredAPIMock:
             ]
         }
 
-        with patch('requests.get', return_value=mock_response):
+        with patch("requests.get", return_value=mock_response):
             df = fetch_fred_series(
                 series_id="FEDFUNDS",
                 start_date="2024-01-01",
@@ -945,14 +970,14 @@ class TestFredAPIMock:
             MagicMock(status_code=429),
             MagicMock(
                 status_code=200,
-                json=MagicMock(return_value={
-                    "observations": [{"date": "2024-01-01", "value": "5.33"}]
-                })
+                json=MagicMock(
+                    return_value={"observations": [{"date": "2024-01-01", "value": "5.33"}]}
+                ),
             ),
         ]
 
-        with patch('requests.get', side_effect=mock_responses):
-            with patch('time.sleep'):  # Skip actual sleep
+        with patch("requests.get", side_effect=mock_responses):
+            with patch("time.sleep"):  # Skip actual sleep
                 df = fetch_fred_series(
                     series_id="FEDFUNDS",
                     start_date="2024-01-01",
@@ -977,7 +1002,7 @@ class TestFredAPIMock:
             ]
         }
 
-        with patch('requests.get', return_value=mock_response):
+        with patch("requests.get", return_value=mock_response):
             df = fetch_fred_series(
                 series_id="FEDFUNDS",
                 start_date="2024-01-01",
@@ -1016,21 +1041,24 @@ class TestStressScenarios:
 
         prices = [1.1 + np.random.normal(0, 0.001) for _ in timestamps]
 
-        large_df = pd.DataFrame({
-            "timestamp": timestamps,
-            "open": prices,
-            "high": [p + 0.001 for p in prices],
-            "low": [p - 0.001 for p in prices],
-            "close": prices,
-            "volume": [1000] * len(timestamps),
-            "symbol": "EUR_USD",
-        })
+        large_df = pd.DataFrame(
+            {
+                "timestamp": timestamps,
+                "open": prices,
+                "high": [p + 0.001 for p in prices],
+                "low": [p - 0.001 for p in prices],
+                "close": prices,
+                "volume": [1000] * len(timestamps),
+                "symbol": "EUR_USD",
+            }
+        )
 
         filepath = Path(temp_dir) / "EUR_USD.parquet"
         large_df.to_parquet(filepath, index=False)
 
         # Should handle large dataset efficiently
         import time
+
         start_time = time.time()
 
         dfs, shapes = load_forex_data(
@@ -1077,15 +1105,17 @@ class TestStressScenarios:
         timestamps = [base_ts + i * 60 for i in range(n_bars)]
         prices = [1.1 + np.random.normal(0, 0.0001) for _ in timestamps]
 
-        hf_df = pd.DataFrame({
-            "timestamp": timestamps,
-            "open": prices,
-            "high": [p + 0.0001 for p in prices],
-            "low": [p - 0.0001 for p in prices],
-            "close": prices,
-            "volume": [100] * n_bars,
-            "symbol": "EUR_USD",
-        })
+        hf_df = pd.DataFrame(
+            {
+                "timestamp": timestamps,
+                "open": prices,
+                "high": [p + 0.0001 for p in prices],
+                "low": [p - 0.0001 for p in prices],
+                "close": prices,
+                "volume": [100] * n_bars,
+                "symbol": "EUR_USD",
+            }
+        )
 
         filepath = Path(temp_dir) / "EUR_USD_1m.parquet"
         hf_df.to_parquet(filepath, index=False)
@@ -1102,6 +1132,7 @@ class TestStressScenarios:
 # =============================================================================
 # FOREXFACTORY SCRAPER TESTS
 # =============================================================================
+
 
 class TestForexFactoryScraper:
     """Tests for ForexFactory calendar scraper (backup source)."""
@@ -1149,6 +1180,7 @@ class TestForexFactoryScraper:
     def test_parse_forexfactory_impact_high(self):
         """Test parsing high impact events from ForexFactory HTML."""
         from scripts.download_economic_calendar import _parse_forexfactory_impact
+
         try:
             from bs4 import BeautifulSoup
         except ImportError:
@@ -1165,6 +1197,7 @@ class TestForexFactoryScraper:
     def test_parse_forexfactory_impact_medium(self):
         """Test parsing medium impact events."""
         from scripts.download_economic_calendar import _parse_forexfactory_impact
+
         try:
             from bs4 import BeautifulSoup
         except ImportError:
@@ -1180,6 +1213,7 @@ class TestForexFactoryScraper:
     def test_parse_forexfactory_impact_low(self):
         """Test parsing low impact events."""
         from scripts.download_economic_calendar import _parse_forexfactory_impact
+
         try:
             from bs4 import BeautifulSoup
         except ImportError:
@@ -1195,6 +1229,7 @@ class TestForexFactoryScraper:
     def test_parse_forexfactory_value(self):
         """Test parsing actual/forecast/previous values."""
         from scripts.download_economic_calendar import _parse_forexfactory_value
+
         try:
             from bs4 import BeautifulSoup
         except ImportError:
@@ -1218,6 +1253,7 @@ class TestForexFactoryScraper:
     def test_parse_forexfactory_page_mock(self):
         """Test parsing a mock ForexFactory calendar page."""
         from scripts.download_economic_calendar import _parse_forexfactory_page
+
         try:
             from bs4 import BeautifulSoup
         except ImportError:
@@ -1271,6 +1307,7 @@ class TestForexFactoryScraper:
     def test_parse_forexfactory_high_impact_filter(self):
         """Test high impact only filtering."""
         from scripts.download_economic_calendar import _parse_forexfactory_page
+
         try:
             from bs4 import BeautifulSoup
         except ImportError:
@@ -1331,18 +1368,20 @@ class TestForexFactoryIntegration:
         mock_oanda.return_value = None
 
         # ForexFactory returns data
-        mock_ff.return_value = pd.DataFrame({
-            "datetime": [datetime.now(timezone.utc).isoformat()],
-            "date": ["2024-01-15"],
-            "time": ["13:30"],
-            "currency": ["USD"],
-            "event": ["CPI"],
-            "impact": ["high"],
-            "actual": ["0.3%"],
-            "forecast": ["0.2%"],
-            "previous": ["0.1%"],
-            "source": ["forexfactory"],
-        })
+        mock_ff.return_value = pd.DataFrame(
+            {
+                "datetime": [datetime.now(timezone.utc).isoformat()],
+                "date": ["2024-01-15"],
+                "time": ["13:30"],
+                "currency": ["USD"],
+                "event": ["CPI"],
+                "impact": ["high"],
+                "actual": ["0.3%"],
+                "forecast": ["0.2%"],
+                "previous": ["0.1%"],
+                "source": ["forexfactory"],
+            }
+        )
 
         config = CalendarDownloadConfig(
             currencies=["USD"],
@@ -1394,18 +1433,20 @@ class TestForexFactoryIntegration:
         )
 
         # OANDA returns data
-        mock_oanda.return_value = pd.DataFrame({
-            "datetime": [datetime.now(timezone.utc).isoformat()],
-            "date": ["2024-01-15"],
-            "time": ["13:30"],
-            "currency": ["USD"],
-            "event": ["NFP"],
-            "impact": ["high"],
-            "actual": ["200K"],
-            "forecast": ["180K"],
-            "previous": ["150K"],
-            "source": ["oanda"],
-        })
+        mock_oanda.return_value = pd.DataFrame(
+            {
+                "datetime": [datetime.now(timezone.utc).isoformat()],
+                "date": ["2024-01-15"],
+                "time": ["13:30"],
+                "currency": ["USD"],
+                "event": ["NFP"],
+                "impact": ["high"],
+                "actual": ["200K"],
+                "forecast": ["180K"],
+                "previous": ["150K"],
+                "source": ["oanda"],
+            }
+        )
 
         config = CalendarDownloadConfig(
             currencies=["USD"],
@@ -1422,6 +1463,7 @@ class TestForexFactoryIntegration:
 # =============================================================================
 # CIP DEVIATION MODEL TESTS
 # =============================================================================
+
 
 class TestCIPDeviationModel:
     """Tests for Covered Interest Parity deviation model."""
@@ -1466,7 +1508,7 @@ class TestCIPDeviationModel:
         # Without CIP
         swap_no_cip = estimate_swap_from_interest_rates(
             pair="EUR_USD",
-            base_rate=4.5,   # EUR rate
+            base_rate=4.5,  # EUR rate
             quote_rate=5.5,  # USD rate
             spot_price=1.10,
             include_cip_deviation=False,
@@ -1517,6 +1559,7 @@ class TestCIPDeviationModel:
 # =============================================================================
 # BACKWARD COMPATIBILITY TESTS
 # =============================================================================
+
 
 class TestBackwardCompatibility:
     """Tests to ensure Phase 7 doesn't break existing functionality."""

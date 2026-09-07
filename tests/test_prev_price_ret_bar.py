@@ -23,6 +23,7 @@ import math
 
 try:
     from obs_builder import build_observation_vector
+
     HAVE_OBS_BUILDER = True
 except ImportError:
     HAVE_OBS_BUILDER = False
@@ -90,8 +91,9 @@ class TestPrevPriceRetBarValidation:
         error_msg = str(exc_info.value)
         assert "NaN" in error_msg, "Error should mention NaN"
         assert "prev_price" in error_msg.lower(), "Error should identify prev_price"
-        assert "corrupted" in error_msg.lower() or "missing" in error_msg.lower(), \
-            "Error should explain data corruption cause"
+        assert (
+            "corrupted" in error_msg.lower() or "missing" in error_msg.lower()
+        ), "Error should explain data corruption cause"
 
     def test_inf_prev_price_rejected_at_entry(self, valid_params):
         """
@@ -345,8 +347,9 @@ class TestPrevPriceRetBarValidation:
         out_features = params["out_features"]
         nan_indices = np.where(np.isnan(out_features))[0]
 
-        assert len(nan_indices) == 0, \
-            f"No NaN values should be in observation vector. Found at indices: {nan_indices}"
+        assert (
+            len(nan_indices) == 0
+        ), f"No NaN values should be in observation vector. Found at indices: {nan_indices}"
 
     def test_ret_bar_index_20_is_correct(self, valid_params):
         """
@@ -367,9 +370,10 @@ class TestPrevPriceRetBarValidation:
         # Check index 20 (was 14 in v56)
         actual_ret_bar = params["out_features"][20]
 
-        assert abs(actual_ret_bar - expected_ret_bar) < 1e-6, \
-            f"ret_bar at index 20 should be {expected_ret_bar}, got {actual_ret_bar}. " \
+        assert abs(actual_ret_bar - expected_ret_bar) < 1e-6, (
+            f"ret_bar at index 20 should be {expected_ret_bar}, got {actual_ret_bar}. "
             f"Feature ordering may have changed - update tests!"
+        )
 
     def test_both_price_and_prev_price_invalid(self, valid_params):
         """
@@ -412,10 +416,8 @@ class TestPrevPriceRetBarValidation:
 
         # Verify error message is informative
         error_msg = str(exc_info.value)
-        assert "prev_price" in error_msg.lower(), \
-            "Error must identify prev_price parameter"
-        assert "NaN" in error_msg or "nan" in error_msg.lower(), \
-            "Error must mention NaN"
+        assert "prev_price" in error_msg.lower(), "Error must identify prev_price parameter"
+        assert "NaN" in error_msg or "nan" in error_msg.lower(), "Error must mention NaN"
 
         # CRITICAL: If this test passes, we have fail-fast behavior (correct)
         # If this test fails (no exception), we have silent failure (WRONG)
@@ -439,8 +441,7 @@ class TestPrevPriceRetBarValidation:
         ret_bar = params["out_features"][14]
 
         assert not math.isnan(ret_bar), "ret_bar should not be NaN"
-        assert 0.0 < ret_bar < 0.02, \
-            f"ret_bar should be small positive for 1% gain, got {ret_bar}"
+        assert 0.0 < ret_bar < 0.02, f"ret_bar should be small positive for 1% gain, got {ret_bar}"
 
     def test_ret_bar_flash_crash_scenario(self, valid_params):
         """
@@ -475,8 +476,9 @@ class TestPrevPriceRetBarValidation:
         ret_bar = params["out_features"][14]
 
         assert not math.isnan(ret_bar), "ret_bar should not be NaN in sideways market"
-        assert abs(ret_bar) < 0.001, \
-            f"ret_bar should be near zero for sideways market, got {ret_bar}"
+        assert (
+            abs(ret_bar) < 0.001
+        ), f"ret_bar should be near zero for sideways market, got {ret_bar}"
 
 
 if __name__ == "__main__":

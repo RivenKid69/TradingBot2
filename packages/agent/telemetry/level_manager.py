@@ -38,6 +38,7 @@ from uuid import uuid4
 # Enums and Constants
 # ============================================================================
 
+
 class TelemetryLevel(Enum):
     """
     Telemetry detail level.
@@ -47,6 +48,7 @@ class TelemetryLevel(Enum):
     - DETAILED_NON_SENSITIVE: More detail, still safe
     - RAW_ORDER_EVENTS: Enterprise only, explicit opt-in required
     """
+
     AGGREGATED = "aggregated"
     DETAILED_NON_SENSITIVE = "detailed_non_sensitive"
     RAW_ORDER_EVENTS = "raw_order_events"
@@ -54,7 +56,8 @@ class TelemetryLevel(Enum):
 
 class TelemetryMode(Enum):
     """Deployment mode affecting telemetry defaults."""
-    RETAIL = auto()      # Consumer/individual use
+
+    RETAIL = auto()  # Consumer/individual use
     PROFESSIONAL = auto()  # Professional traders
     ENTERPRISE = auto()  # Enterprise/institutional
 
@@ -85,6 +88,7 @@ LEVEL_HIERARCHY: Final[List[TelemetryLevel]] = [
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class TelemetryLevelConfig:
     """
@@ -97,6 +101,7 @@ class TelemetryLevelConfig:
         raw_events_opt_in: Explicit opt-in for RAW_ORDER_EVENTS
         level_change_requires_approval: Require approval for level changes
     """
+
     mode: TelemetryMode = TelemetryMode.RETAIL
     current_level: TelemetryLevel = TelemetryLevel.AGGREGATED
     max_allowed_level: TelemetryLevel = TelemetryLevel.DETAILED_NON_SENSITIVE
@@ -132,6 +137,7 @@ class TelemetryLevelConfig:
 @dataclass
 class LevelChangeRequest:
     """Request to change telemetry level."""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     requested_level: TelemetryLevel = TelemetryLevel.AGGREGATED
     requested_by: str = ""
@@ -145,6 +151,7 @@ class LevelChangeRequest:
 @dataclass
 class LevelChangeResult:
     """Result of level change operation."""
+
     success: bool
     previous_level: TelemetryLevel
     new_level: TelemetryLevel
@@ -160,6 +167,7 @@ class TelemetryFilter:
 
     Defines what data is included at each level.
     """
+
     level: TelemetryLevel
 
     # Fields to include at this level
@@ -194,7 +202,15 @@ LEVEL_FILTERS: Final[Dict[TelemetryLevel, TelemetryFilter]] = {
     ),
     TelemetryLevel.DETAILED_NON_SENSITIVE: TelemetryFilter(
         level=TelemetryLevel.DETAILED_NON_SENSITIVE,
-        include_fields={"status", "pnl_summary", "error_count", "health", "metrics", "events", "positions"},
+        include_fields={
+            "status",
+            "pnl_summary",
+            "error_count",
+            "health",
+            "metrics",
+            "events",
+            "positions",
+        },
         exclude_fields={"raw_orders", "raw_fills", "account_balance"},
         include_order_events=False,
         include_position_details=True,
@@ -291,8 +307,7 @@ class TelemetryLevelManager:
     def get_filter(self) -> TelemetryFilter:
         """Get filter configuration for current level."""
         return LEVEL_FILTERS.get(
-            self.config.current_level,
-            LEVEL_FILTERS[TelemetryLevel.AGGREGATED]
+            self.config.current_level, LEVEL_FILTERS[TelemetryLevel.AGGREGATED]
         )
 
     def can_change_to(self, level: TelemetryLevel) -> tuple[bool, str]:
@@ -543,18 +558,23 @@ class TelemetryLevelManager:
 # Convenience Functions
 # ============================================================================
 
+
 def create_retail_manager() -> TelemetryLevelManager:
     """Create manager for retail deployment."""
-    return TelemetryLevelManager(TelemetryLevelConfig(
-        mode=TelemetryMode.RETAIL,
-        current_level=TelemetryLevel.AGGREGATED,
-    ))
+    return TelemetryLevelManager(
+        TelemetryLevelConfig(
+            mode=TelemetryMode.RETAIL,
+            current_level=TelemetryLevel.AGGREGATED,
+        )
+    )
 
 
 def create_enterprise_manager(raw_opt_in: bool = False) -> TelemetryLevelManager:
     """Create manager for enterprise deployment."""
-    return TelemetryLevelManager(TelemetryLevelConfig(
-        mode=TelemetryMode.ENTERPRISE,
-        current_level=TelemetryLevel.DETAILED_NON_SENSITIVE,
-        raw_events_opt_in=raw_opt_in,
-    ))
+    return TelemetryLevelManager(
+        TelemetryLevelConfig(
+            mode=TelemetryMode.ENTERPRISE,
+            current_level=TelemetryLevel.DETAILED_NON_SENSITIVE,
+            raw_events_opt_in=raw_opt_in,
+        )
+    )

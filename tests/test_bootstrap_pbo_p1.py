@@ -16,19 +16,19 @@ def _series(mu, sd, n, seed=0):
 
 # --------------------------------------------------------------------------- bootstrap
 def test_block_bootstrap_positive_edge_ci_excludes_zero():
-    r = _series(0.0015, 0.01, 1500, seed=1)   # strong positive drift
+    r = _series(0.0015, 0.01, 1500, seed=1)  # strong positive drift
     bs = block_bootstrap(r, lambda x: sharpe(x, 252.0), n_boot=1500)
-    assert bs["ci_low"] > 0.0           # significant edge
-    assert bs["p_value"] < 0.05         # P[sharpe<=0] small
+    assert bs["ci_low"] > 0.0  # significant edge
+    assert bs["p_value"] < 0.05  # P[sharpe<=0] small
     assert bs["ci_low"] < bs["point"] < bs["ci_high"]
 
 
 def test_block_bootstrap_noise_not_significant():
-    r = _series(0.0, 0.01, 1500, seed=2)      # zero drift
+    r = _series(0.0, 0.01, 1500, seed=2)  # zero drift
     bs = block_bootstrap(r, lambda x: sharpe(x, 252.0), n_boot=1500)
     # noise must NOT register a significant POSITIVE edge (lower CI bound not > 0)
     assert bs["ci_low"] <= 0.0
-    assert bs["p_value"] > 0.05               # not significantly positive
+    assert bs["p_value"] > 0.05  # not significantly positive
 
 
 def test_bootstrap_report_keys():
@@ -64,7 +64,7 @@ def test_trust_report_pbo_from_matrix():
     rng = np.random.default_rng(7)
     T, N = 600, 8
     mat = rng.normal(0.0, 0.01, (T, N))
-    mat[:, 0] += 0.0015   # variant 0 has a real edge
+    mat[:, 0] += 0.0015  # variant 0 has a real edge
     rep = trust_report(list(mat[:, 0]), n_trials=N, trial_performance=mat, bootstrap=False)
     assert rep["pbo"] is not None and 0.0 <= rep["pbo"] <= 1.0
 

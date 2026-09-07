@@ -1,4 +1,5 @@
 """Spot signal transport models and signing helpers."""
+
 from __future__ import annotations
 
 import hashlib

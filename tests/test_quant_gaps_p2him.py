@@ -30,9 +30,11 @@ client = TestClient(api, headers={"X-API-Key": app_module.API_TOKEN})
 
 # ============================================================= GPU (P2-H)
 
+
 class TestHardware:
     def test_gpu_status_honest_shape(self):
         from services.hardware import gpu_status
+
         st = gpu_status()
         assert isinstance(st["torch_available"], bool)
         assert isinstance(st["cuda_available"], bool)
@@ -43,25 +45,31 @@ class TestHardware:
 
     def test_resolve_cpu_explicit(self):
         from services.hardware import resolve_device
+
         r = resolve_device("cpu")
         assert r["effective"] == "cpu" and r["requested"] == "cpu"
 
     def test_resolve_cuda_degrades_honestly_without_gpu(self, monkeypatch):
         import services.hardware as hw
-        monkeypatch.setattr(hw, "gpu_status", lambda: {
-            "cuda_available": False, "reason": "torch собран без CUDA"})
+
+        monkeypatch.setattr(
+            hw, "gpu_status", lambda: {"cuda_available": False, "reason": "torch собран без CUDA"}
+        )
         r = hw.resolve_device("cuda")
         assert r["effective"] == "cpu"
         assert "cuda" in r["requested"] and "CUDA" in r["reason"] or "cuda" in r["reason"]
 
     def test_resolve_auto_uses_cuda_when_available(self, monkeypatch):
         import services.hardware as hw
-        monkeypatch.setattr(hw, "gpu_status", lambda: {
-            "cuda_available": True, "reason": "CUDA доступна: Test GPU"})
+
+        monkeypatch.setattr(
+            hw, "gpu_status", lambda: {"cuda_available": True, "reason": "CUDA доступна: Test GPU"}
+        )
         assert hw.resolve_device("auto")["effective"] == "cuda"
 
     def test_resolve_env_override(self, monkeypatch):
         from services.hardware import resolve_device
+
         monkeypatch.setenv("RIVEN_TRAIN_DEVICE", "cpu")
         assert resolve_device(None)["effective"] == "cpu"
 
@@ -85,6 +93,7 @@ class TestHardware:
         def fake_start(cmd, *a, **k):
             captured["cmd"] = [str(c) for c in cmd]
             return 4242
+
         monkeypatch.setattr(app_module, "start_background", fake_start)
         monkeypatch.setattr(app_module, "background_running", lambda _p: False)
         res = client.post("/api/run_job", json={"job": "run_train", "params": {"device": "cuda"}})
@@ -93,6 +102,7 @@ class TestHardware:
 
 
 # ==================================================== premium data (P2-M)
+
 
 class _FakeBar:
     def __init__(self, ts, o, h, l, c, v):
@@ -116,13 +126,19 @@ class _FakeAdapter:
 
 class TestPremiumData:
     def test_vendor_status_honest(self, monkeypatch):
-        for k in ("POLYGON_API_KEY", "ALPACA_API_KEY", "ALPACA_API_SECRET",
-                  "OANDA_API_KEY", "OANDA_ACCOUNT_ID"):
+        for k in (
+            "POLYGON_API_KEY",
+            "ALPACA_API_KEY",
+            "ALPACA_API_SECRET",
+            "OANDA_API_KEY",
+            "OANDA_ACCOUNT_ID",
+        ):
             monkeypatch.delenv(k, raising=False)
         from services.premium_data import vendor_status
+
         by = {v["vendor"]: v for v in vendor_status()}
-        assert by["binance"]["ready"] is True          # публичный API без ключей
-        assert by["binance"]["ticks"] == "history"     # aggTrades-бэкфилл реален
+        assert by["binance"]["ready"] is True  # публичный API без ключей
+        assert by["binance"]["ticks"] == "history"  # aggTrades-бэкфилл реален
         assert by["polygon"]["ready"] is False and by["polygon"]["paid"] is True
         assert by["alpaca"]["keys_present"] is False
         # ticks честно unavailable там, где адаптер не умеет историю
@@ -131,37 +147,54 @@ class TestPremiumData:
     def test_download_minute_bars_schema_and_manifest(self, tmp_path):
         from services.premium_data import download_minute_bars
         import pandas as pd
+
         fake = _FakeAdapter()
         res = download_minute_bars(
-            "binance", ["BTCUSDT"], timeframe="1m",
-            start_ts_ms=1_700_000_000_000, end_ts_ms=1_700_000_000_000 + 2 * 24 * 3600 * 1000,
-            out_dir=str(tmp_path), adapter=fake,
+            "binance",
+            ["BTCUSDT"],
+            timeframe="1m",
+            start_ts_ms=1_700_000_000_000,
+            end_ts_ms=1_700_000_000_000 + 2 * 24 * 3600 * 1000,
+            out_dir=str(tmp_path),
+            adapter=fake,
         )[0]
         assert res.ok, res.error
         df = pd.read_parquet(res.path)
         assert list(df.columns) == ["timestamp", "open", "high", "low", "close", "volume", "symbol"]
         assert df["timestamp"].is_monotonic_increasing
-        assert (df["timestamp"] < 10**12).all()        # секунды, не мс
+        assert (df["timestamp"] < 10**12).all()  # секунды, не мс
         manifest = json.loads(Path(res.manifest_path).read_text(encoding="utf-8"))
         assert manifest["sha256"] and manifest["rows"] == len(df) == res.rows
-        assert len(fake.calls) == 2                    # окно по chunk_ms
+        assert len(fake.calls) == 2  # окно по chunk_ms
 
     def test_download_unknown_vendor_and_bad_timeframe(self, tmp_path):
         from services.premium_data import download_minute_bars
-        bad = download_minute_bars("nope", ["X"], start_ts_ms=0, end_ts_ms=1,
-                                   out_dir=str(tmp_path))[0]
+
+        bad = download_minute_bars(
+            "nope", ["X"], start_ts_ms=0, end_ts_ms=1, out_dir=str(tmp_path)
+        )[0]
         assert not bad.ok and "неизвестный" in bad.error
-        bad_tf = download_minute_bars("binance", ["X"], timeframe="3s",
-                                      start_ts_ms=0, end_ts_ms=1, out_dir=str(tmp_path),
-                                      adapter=_FakeAdapter())[0]
+        bad_tf = download_minute_bars(
+            "binance",
+            ["X"],
+            timeframe="3s",
+            start_ts_ms=0,
+            end_ts_ms=1,
+            out_dir=str(tmp_path),
+            adapter=_FakeAdapter(),
+        )[0]
         assert not bad_tf.ok and "таймфрейм" in bad_tf.error
 
     def test_agg_trades_pagination(self, tmp_path):
         from services.premium_data import download_binance_agg_trades
         import pandas as pd
+
         pages = [
             [{"a": i, "p": "100.0", "q": "0.1", "T": 1000 + i, "m": False} for i in range(1000)],
-            [{"a": 1000 + i, "p": "100.5", "q": "0.2", "T": 2000 + i, "m": True} for i in range(10)],
+            [
+                {"a": 1000 + i, "p": "100.5", "q": "0.2", "T": 2000 + i, "m": True}
+                for i in range(10)
+            ],
         ]
         calls = []
 
@@ -170,27 +203,45 @@ class TestPremiumData:
             return pages[len(calls) - 1] if len(calls) <= len(pages) else []
 
         res = download_binance_agg_trades(
-            ["BTCUSDT"], start_ts_ms=1000, end_ts_ms=999_999,
-            out_dir=str(tmp_path), fetch_fn=fetch)[0]
+            ["BTCUSDT"], start_ts_ms=1000, end_ts_ms=999_999, out_dir=str(tmp_path), fetch_fn=fetch
+        )[0]
         assert res.ok and res.rows == 1010
-        assert calls[1].get("fromId") == 1000           # canonical fromId-пагинация
+        assert calls[1].get("fromId") == 1000  # canonical fromId-пагинация
         df = pd.read_parquet(res.path)
         assert set(df.columns) == {"ts_ms", "price", "qty", "agg_id", "is_buyer_maker", "symbol"}
 
     def test_api_vendors_and_download_validation(self, monkeypatch):
         res = client.get("/api/data/premium/vendors")
         assert res.status_code == 200 and res.json()["vendors"]
-        res = client.post("/api/data/premium/download", json={
-            "kind": "bars", "vendor": "binance", "symbols": [],
-            "start": "2026-07-01", "end": "2026-07-02"})
+        res = client.post(
+            "/api/data/premium/download",
+            json={
+                "kind": "bars",
+                "vendor": "binance",
+                "symbols": [],
+                "start": "2026-07-01",
+                "end": "2026-07-02",
+            },
+        )
         assert res.status_code in (400, 422)
         captured = {}
-        monkeypatch.setattr(app_module, "start_background",
-                            lambda cmd, pid, log: captured.update(cmd=[str(c) for c in cmd]) or 777)
+        monkeypatch.setattr(
+            app_module,
+            "start_background",
+            lambda cmd, pid, log: captured.update(cmd=[str(c) for c in cmd]) or 777,
+        )
         monkeypatch.setattr(app_module, "background_running", lambda _p: False)
-        res = client.post("/api/data/premium/download", json={
-            "kind": "bars", "vendor": "binance", "symbols": ["BTCUSDT"],
-            "timeframe": "1m", "start": "2026-07-01", "end": "2026-07-02"})
+        res = client.post(
+            "/api/data/premium/download",
+            json={
+                "kind": "bars",
+                "vendor": "binance",
+                "symbols": ["BTCUSDT"],
+                "timeframe": "1m",
+                "start": "2026-07-01",
+                "end": "2026-07-02",
+            },
+        )
         assert res.status_code == 200, res.text
         assert any(c.endswith("download_premium_data.py") for c in captured["cmd"])
         assert "--vendor" in captured["cmd"] and "binance" in captured["cmd"]
@@ -198,9 +249,11 @@ class TestPremiumData:
 
 # ============================================ experiment compare (P2-I)
 
+
 @pytest.fixture
 def temp_tracker(tmp_path, monkeypatch):
     import service_experiment_tracking as et
+
     tracker = et.ExperimentTracker(root=str(tmp_path / "exp"))
     monkeypatch.setattr(et, "get_tracker", lambda: tracker)
     return tracker
@@ -219,8 +272,12 @@ def _mk_run(tracker, exp, params, metrics):
 
 class TestExperimentCompare:
     def test_compare_params_diff_and_metrics(self, temp_tracker):
-        r1 = _mk_run(temp_tracker, "cmp", {"lr": 0.001, "gamma": 0.99}, {"sharpe": 1.2, "loss": 0.5})
-        r2 = _mk_run(temp_tracker, "cmp", {"lr": 0.0005, "gamma": 0.99}, {"sharpe": 1.5, "loss": 0.4})
+        r1 = _mk_run(
+            temp_tracker, "cmp", {"lr": 0.001, "gamma": 0.99}, {"sharpe": 1.2, "loss": 0.5}
+        )
+        r2 = _mk_run(
+            temp_tracker, "cmp", {"lr": 0.0005, "gamma": 0.99}, {"sharpe": 1.5, "loss": 0.4}
+        )
         res = client.get(f"/api/experiments/cmp/compare?runs={r1},{r2}")
         assert res.status_code == 200, res.text
         d = res.json()
@@ -251,22 +308,25 @@ class TestExperimentCompare:
 
 # ============================================ DAG pipeline (§5.21+)
 
+
 def _fake_worker(log, fail_on=()):
     def worker(name, params, timeout):
         log.append((name, dict(params)))
         if name in fail_on:
             return "failed", f"{name} упал (тест)", 1
         return "succeeded", f"{name} ok", 0
+
     return worker
 
 
 def _spec(tmp_path, extra_step=None):
     from services.research_pipeline import PipelineSpec, StepSpec
+
     steps = [
         StepSpec(id="a", worker="w_a"),
         StepSpec(id="b", worker="w_b", depends_on=["a"]),
         StepSpec(id="c", worker="w_c", depends_on=["b"]),
-        StepSpec(id="d", worker="w_d", depends_on=["a"]),   # параллельная ветка
+        StepSpec(id="d", worker="w_d", depends_on=["a"]),  # параллельная ветка
     ]
     if extra_step:
         steps.append(extra_step)
@@ -276,25 +336,41 @@ def _spec(tmp_path, extra_step=None):
 class TestResearchPipelineDAG:
     def test_spec_validation(self):
         from services.research_pipeline import PipelineSpec, StepSpec
+
         with pytest.raises(ValueError):
-            PipelineSpec(name="dup", steps=[StepSpec(id="x", worker="w"),
-                                            StepSpec(id="x", worker="w")]).validate()
+            PipelineSpec(
+                name="dup", steps=[StepSpec(id="x", worker="w"), StepSpec(id="x", worker="w")]
+            ).validate()
         with pytest.raises(ValueError):
-            PipelineSpec(name="dep", steps=[StepSpec(id="x", worker="w", depends_on=["nope"])]).validate()
+            PipelineSpec(
+                name="dep", steps=[StepSpec(id="x", worker="w", depends_on=["nope"])]
+            ).validate()
         with pytest.raises(ValueError):
-            PipelineSpec(name="cyc", steps=[StepSpec(id="x", worker="w", depends_on=["y"]),
-                                            StepSpec(id="y", worker="w", depends_on=["x"])]).validate()
+            PipelineSpec(
+                name="cyc",
+                steps=[
+                    StepSpec(id="x", worker="w", depends_on=["y"]),
+                    StepSpec(id="y", worker="w", depends_on=["x"]),
+                ],
+            ).validate()
 
     def test_reference_spec_loads_and_topo(self):
         from services.research_pipeline import load_spec
+
         spec = load_spec("research_nightly")
         assert spec is not None
         order = spec.topo_order()
-        assert order.index("features") < order.index("targets") < order.index("no_trade") < order.index("splits")
+        assert (
+            order.index("features")
+            < order.index("targets")
+            < order.index("no_trade")
+            < order.index("splits")
+        )
         assert order.index("features") < order.index("training_table")
 
     def test_run_success_and_order(self, tmp_path):
         from services.research_pipeline import PipelineRunner
+
         log = []
         runner = PipelineRunner(_fake_worker(log), runs_dir=str(tmp_path))
         state = runner.run(_spec(tmp_path))
@@ -306,17 +382,19 @@ class TestResearchPipelineDAG:
 
     def test_failure_blocks_dependents_fail_closed(self, tmp_path):
         from services.research_pipeline import PipelineRunner
+
         log = []
         runner = PipelineRunner(_fake_worker(log, fail_on=("w_b",)), runs_dir=str(tmp_path))
         state = runner.run(_spec(tmp_path))
         st = {s["id"]: s["status"] for s in state["steps"]}
         assert state["status"] == "failed"
-        assert st["b"] == "failed" and st["c"] == "blocked"   # c не выполнялся
+        assert st["b"] == "failed" and st["c"] == "blocked"  # c не выполнялся
         assert st["a"] == "succeeded" and st["d"] == "succeeded"
         assert all(n != "w_c" for n, _ in log)
 
     def test_resume_skips_succeeded(self, tmp_path):
         from services.research_pipeline import PipelineRunner
+
         log1 = []
         runner = PipelineRunner(_fake_worker(log1, fail_on=("w_b",)), runs_dir=str(tmp_path))
         state = runner.run(_spec(tmp_path))
@@ -326,19 +404,26 @@ class TestResearchPipelineDAG:
         runner._worker = _fake_worker(log2)
         state2 = runner.run(_spec(tmp_path), run_id=run_id, resume=True)
         assert state2["status"] == "succeeded" and state2["resumed"] is True
-        assert [n for n, _ in log2] == ["w_b", "w_c"]         # a и d не повторялись
+        assert [n for n, _ in log2] == ["w_b", "w_c"]  # a и d не повторялись
 
     def test_leakguard_floor_clamped_by_engine(self, tmp_path):
         from services.research_pipeline import PipelineRunner, StepSpec
+
         log = []
         runner = PipelineRunner(_fake_worker(log), runs_dir=str(tmp_path))
-        spec = _spec(tmp_path, StepSpec(id="tt", worker="run_training_table",
-                                        depends_on=["a"],
-                                        params={"decision_delay_ms": 100}))   # попытка ослабить
+        spec = _spec(
+            tmp_path,
+            StepSpec(
+                id="tt",
+                worker="run_training_table",
+                depends_on=["a"],
+                params={"decision_delay_ms": 100},
+            ),
+        )  # попытка ослабить
         state = runner.run(spec)
         assert state["status"] == "succeeded"
         tt_params = [p for n, p in log if n == "run_training_table"][0]
-        assert tt_params["decision_delay_ms"] == 8000          # пол не ослабляется
+        assert tt_params["decision_delay_ms"] == 8000  # пол не ослабляется
 
     def test_api_pipeline_list_and_unknown_run(self):
         res = client.get("/api/pipeline/list")

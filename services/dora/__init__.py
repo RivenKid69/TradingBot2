@@ -776,6 +776,7 @@ RiskLevel_Exit = RiskLevel  # Alias from exit strategies
 # Deprecation Warning Handler
 # =============================================================================
 
+
 def __getattr__(name: str) -> Any:
     """
     Handle deprecated attribute access.
@@ -794,7 +795,7 @@ def __getattr__(name: str) -> Any:
         warnings.warn(
             f"'{name}' is deprecated. Use {deprecated_mappings[name]} instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         # Try to return the attribute if available
         try:
@@ -813,7 +814,6 @@ __all__ = [
     # Version info
     "__version__",
     "__dora_compliance_phase__",
-
     # =========================================================================
     # Phase 1: Due Diligence & Audit Layer
     # =========================================================================
@@ -887,7 +887,6 @@ __all__ = [
     "ComplianceStatus",
     "DORAComplianceReport",
     "DORAComplianceDashboard",
-
     # =========================================================================
     # Phase 2: Incident Interface Layer
     # =========================================================================
@@ -983,7 +982,6 @@ __all__ = [
     "get_communication_channels",
     "get_stakeholder_types",
     "get_crisis_phases",
-
     # =========================================================================
     # Phase 3: Third-Party Risk Interface
     # =========================================================================
@@ -1074,7 +1072,6 @@ __all__ = [
     "ClientSubcontractorPreference",
     "SubcontractorRiskAssessment",
     "create_subcontractor_management",
-
     # =========================================================================
     # Phase 4: Contracts & SLA Layer
     # =========================================================================
@@ -1135,7 +1132,6 @@ __all__ = [
     "get_exit_triggers",
     "get_exit_phases",
     "get_transition_types",
-
     # =========================================================================
     # Phase 5: Unified Reporting Layer
     # =========================================================================
@@ -1190,7 +1186,6 @@ __all__ = [
     "get_subcontracting_levels",
     "get_its_templates_provided",
     "get_its_templates_client_provides",
-
     # =========================================================================
     # Phase 6: Information Sharing Layer
     # =========================================================================
@@ -1222,7 +1217,6 @@ __all__ = [
     "create_sharing_community",
     "create_cyber_threat",
     "create_sharing_policy",
-
     # =========================================================================
     # Archived Financial Entity Modules (for backward compatibility)
     # =========================================================================

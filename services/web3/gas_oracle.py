@@ -102,8 +102,13 @@ def _rpc_url(chain: str, cfg: Optional[GasGuardConfig] = None) -> Optional[str]:
     return DEFAULT_RPC.get(chain)
 
 
-def get_gas_price_gwei(chain: str = "ethereum", *, cfg: Optional[GasGuardConfig] = None,
-                       timeout: int = 12, fetch_fn: Any = None) -> Dict[str, Any]:
+def get_gas_price_gwei(
+    chain: str = "ethereum",
+    *,
+    cfg: Optional[GasGuardConfig] = None,
+    timeout: int = 12,
+    fetch_fn: Any = None,
+) -> Dict[str, Any]:
     """Прочитать текущую цену газа (gwei) с публичного RPC.
 
     ``fetch_fn(url, payload)->dict`` инжектируется в тестах; в проде — requests.
@@ -111,8 +116,13 @@ def get_gas_price_gwei(chain: str = "ethereum", *, cfg: Optional[GasGuardConfig]
     """
     url = _rpc_url(chain, cfg)
     if not url:
-        return {"ok": False, "chain": chain, "gas_gwei": None, "rpc": None,
-                "error": f"нет RPC-узла для сети {chain!r}"}
+        return {
+            "ok": False,
+            "chain": chain,
+            "gas_gwei": None,
+            "rpc": None,
+            "error": f"нет RPC-узла для сети {chain!r}",
+        }
 
     payload = {"jsonrpc": "2.0", "id": 1, "method": "eth_gasPrice", "params": []}
 
@@ -120,28 +130,33 @@ def get_gas_price_gwei(chain: str = "ethereum", *, cfg: Optional[GasGuardConfig]
         import requests
 
         def fetch_fn(u, p):  # type: ignore[misc]
-            r = requests.post(u, json=p, timeout=timeout,
-                              headers={"Content-Type": "application/json"})
+            r = requests.post(
+                u, json=p, timeout=timeout, headers={"Content-Type": "application/json"}
+            )
             r.raise_for_status()
             return r.json()
 
     try:
         data = fetch_fn(url, payload)
         if not isinstance(data, dict) or "result" not in data:
-            return {"ok": False, "chain": chain, "gas_gwei": None, "rpc": url,
-                    "error": f"RPC вернул неожиданный ответ: {str(data)[:120]}"}
+            return {
+                "ok": False,
+                "chain": chain,
+                "gas_gwei": None,
+                "rpc": url,
+                "error": f"RPC вернул неожиданный ответ: {str(data)[:120]}",
+            }
         wei = int(str(data["result"]), 16)
         gwei = wei / 1e9
-        return {"ok": True, "chain": chain, "gas_gwei": round(gwei, 3), "rpc": url,
-                "at": _now()}
+        return {"ok": True, "chain": chain, "gas_gwei": round(gwei, 3), "rpc": url, "at": _now()}
     except Exception as exc:
         logger.warning("gas-guard: RPC %s недоступен: %s", url, exc)
-        return {"ok": False, "chain": chain, "gas_gwei": None, "rpc": url,
-                "error": str(exc)}
+        return {"ok": False, "chain": chain, "gas_gwei": None, "rpc": url, "error": str(exc)}
 
 
-def evaluate(chain: Optional[str] = None, *, cfg: Optional[GasGuardConfig] = None,
-             fetch_fn: Any = None) -> Dict[str, Any]:
+def evaluate(
+    chain: Optional[str] = None, *, cfg: Optional[GasGuardConfig] = None, fetch_fn: Any = None
+) -> Dict[str, Any]:
     """Живой вердикт guard'а: армирован ли, пробит ли порог текущим газом."""
     cfg = cfg or load_config()
     chain = chain or cfg.chain
@@ -155,9 +170,14 @@ def evaluate(chain: Optional[str] = None, *, cfg: Optional[GasGuardConfig] = Non
         "gas_ok": gas.get("ok", False),
     }
     if not gas.get("ok"):
-        out.update({"status": "gas_unavailable", "blocked": False,
-                    "reason": gas.get("error", "цена газа недоступна"),
-                    "usage_pct": None})
+        out.update(
+            {
+                "status": "gas_unavailable",
+                "blocked": False,
+                "reason": gas.get("error", "цена газа недоступна"),
+                "usage_pct": None,
+            }
+        )
         return out
 
     over = gas["gas_gwei"] > cfg.threshold_gwei
@@ -166,19 +186,27 @@ def evaluate(chain: Optional[str] = None, *, cfg: Optional[GasGuardConfig] = Non
         status, blocked, reason = "disabled", False, "guard выключен (порог не применяется)"
     elif over:
         status, blocked = "breached", True
-        reason = (f"цена газа {gas['gas_gwei']:.1f} Gwei > порога "
-                  f"{cfg.threshold_gwei:.0f} Gwei — on-chain транзакции блокируются")
+        reason = (
+            f"цена газа {gas['gas_gwei']:.1f} Gwei > порога "
+            f"{cfg.threshold_gwei:.0f} Gwei — on-chain транзакции блокируются"
+        )
     else:
         status, blocked = "armed", False
-        reason = (f"цена газа {gas['gas_gwei']:.1f} Gwei ≤ порога "
-                  f"{cfg.threshold_gwei:.0f} Gwei")
-    out.update({"status": status, "blocked": blocked, "reason": reason,
-                "usage_pct": round(usage, 1) if usage is not None else None})
+        reason = f"цена газа {gas['gas_gwei']:.1f} Gwei ≤ порога " f"{cfg.threshold_gwei:.0f} Gwei"
+    out.update(
+        {
+            "status": status,
+            "blocked": blocked,
+            "reason": reason,
+            "usage_pct": round(usage, 1) if usage is not None else None,
+        }
+    )
     return out
 
 
-def preflight(chain: Optional[str] = None, *, cfg: Optional[GasGuardConfig] = None,
-              fetch_fn: Any = None) -> Dict[str, Any]:
+def preflight(
+    chain: Optional[str] = None, *, cfg: Optional[GasGuardConfig] = None, fetch_fn: Any = None
+) -> Dict[str, Any]:
     """Pre-trade gate: любая on-chain транзакция обязана его пройти.
 
     ``allow=False`` → транзакцию слать нельзя (газ дороже порога при включённом
@@ -190,8 +218,11 @@ def preflight(chain: Optional[str] = None, *, cfg: Optional[GasGuardConfig] = No
         return {"allow": True, **v}
     if not v["gas_ok"]:
         # enabled + цену не знаем → fail-closed (безопасно не отправлять)
-        return {"allow": False, **v,
-                "reason": "guard включён, но цена газа недоступна — fail-closed"}
+        return {
+            "allow": False,
+            **v,
+            "reason": "guard включён, но цена газа недоступна — fail-closed",
+        }
     return {"allow": not v["blocked"], **v}
 
 
@@ -200,7 +231,13 @@ def _now() -> float:
 
 
 __all__ = [
-    "CONFIG_PATH", "DEFAULT_RPC", "DEFAULT_THRESHOLD_GWEI",
-    "GasGuardConfig", "evaluate", "get_gas_price_gwei", "load_config",
-    "preflight", "save_config",
+    "CONFIG_PATH",
+    "DEFAULT_RPC",
+    "DEFAULT_THRESHOLD_GWEI",
+    "GasGuardConfig",
+    "evaluate",
+    "get_gas_price_gwei",
+    "load_config",
+    "preflight",
+    "save_config",
 ]

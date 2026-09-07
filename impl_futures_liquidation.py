@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 # ENUMS
 # ============================================================================
 
+
 class LiquidationPriority(str, Enum):
     """
     Liquidation priority for cross-margin accounts.
@@ -69,24 +70,27 @@ class LiquidationPriority(str, Enum):
     References:
     - Binance Cross-Margin: https://www.binance.com/en/support/faq/360038685551
     """
-    HIGHEST_LOSS_FIRST = "highest_loss"      # Binance default - close losers first
-    LOWEST_MARGIN_RATIO = "lowest_ratio"     # Most risky positions first
-    OLDEST_POSITION = "oldest"               # FIFO - oldest positions first
-    LARGEST_POSITION = "largest"             # Biggest notional first
-    HIGHEST_LEVERAGE = "highest_leverage"    # Most leveraged first
+
+    HIGHEST_LOSS_FIRST = "highest_loss"  # Binance default - close losers first
+    LOWEST_MARGIN_RATIO = "lowest_ratio"  # Most risky positions first
+    OLDEST_POSITION = "oldest"  # FIFO - oldest positions first
+    LARGEST_POSITION = "largest"  # Biggest notional first
+    HIGHEST_LEVERAGE = "highest_leverage"  # Most leveraged first
 
 
 class LiquidationType(str, Enum):
     """Type of liquidation event."""
-    PARTIAL = "partial"          # Only part of position liquidated
-    FULL = "full"                # Entire position liquidated
-    ADL = "adl"                  # Auto-deleveraging (counterparty liquidation)
+
+    PARTIAL = "partial"  # Only part of position liquidated
+    FULL = "full"  # Entire position liquidated
+    ADL = "adl"  # Auto-deleveraging (counterparty liquidation)
     MARGIN_CALL = "margin_call"  # CME-style margin call
 
 
 # ============================================================================
 # DATA MODELS
 # ============================================================================
+
 
 @dataclass(frozen=True)
 class ADLQueuePosition:
@@ -112,6 +116,7 @@ class ADLQueuePosition:
     Reference:
         https://www.binance.com/en/support/faq/360033525711
     """
+
     symbol: str
     side: Literal["LONG", "SHORT"]
     rank: int  # 1-5, where 5 = highest risk of ADL
@@ -152,6 +157,7 @@ class LiquidationResult:
         remaining_positions: Positions after liquidation
         total_loss: Total loss from liquidation
     """
+
     triggered: bool
     events: List[LiquidationEvent] = field(default_factory=list)
     insurance_fund_change: Decimal = Decimal("0")
@@ -171,6 +177,7 @@ class InsuranceFundState:
         total_payouts: Historical payouts
         last_update_ms: Last update timestamp
     """
+
     balance: Decimal
     total_contributions: Decimal = Decimal("0")
     total_payouts: Decimal = Decimal("0")
@@ -180,6 +187,7 @@ class InsuranceFundState:
 # ============================================================================
 # CROSS-MARGIN LIQUIDATION ORDERING
 # ============================================================================
+
 
 class CrossMarginLiquidationOrdering:
     """
@@ -301,8 +309,7 @@ class CrossMarginLiquidationOrdering:
             )
 
             total_upnl = sum(
-                self._calculate_pnl(p, mark_prices.get(p.symbol, p.entry_price))
-                for p in remaining
+                self._calculate_pnl(p, mark_prices.get(p.symbol, p.entry_price)) for p in remaining
             )
 
             current_ratio = (
@@ -331,6 +338,7 @@ class CrossMarginLiquidationOrdering:
 # ============================================================================
 # LIQUIDATION ENGINE
 # ============================================================================
+
 
 class LiquidationEngine:
     """
@@ -564,7 +572,8 @@ class LiquidationEngine:
                     self._insurance_fund = InsuranceFundState(
                         balance=Decimal("0"),
                         total_contributions=self._insurance_fund.total_contributions,
-                        total_payouts=self._insurance_fund.total_payouts + self._insurance_fund.balance,
+                        total_payouts=self._insurance_fund.total_payouts
+                        + self._insurance_fund.balance,
                         last_update_ms=timestamp_ms,
                     )
 
@@ -592,7 +601,9 @@ class LiquidationEngine:
             price=fill_price,
             liquidation_type="full",
             loss_amount=max(Decimal("0"), total_loss),
-            insurance_fund_contribution=abs(insurance_change) if insurance_change > 0 else Decimal("0"),
+            insurance_fund_contribution=(
+                abs(insurance_change) if insurance_change > 0 else Decimal("0")
+            ),
         )
 
         self._liquidation_history.append(event)
@@ -741,6 +752,7 @@ class LiquidationEngine:
 # ADL SIMULATOR
 # ============================================================================
 
+
 class ADLSimulator:
     """
     Simulates Auto-Deleveraging events.
@@ -785,10 +797,11 @@ class ADLSimulator:
         # Filter positions on opposite side
         opposite_side = "SHORT" if side == "LONG" else "LONG"
         candidates = [
-            p for p in positions
-            if p.symbol == symbol and (
-                (opposite_side == "LONG" and p.qty > 0) or
-                (opposite_side == "SHORT" and p.qty < 0)
+            p
+            for p in positions
+            if p.symbol == symbol
+            and (
+                (opposite_side == "LONG" and p.qty > 0) or (opposite_side == "SHORT" and p.qty < 0)
             )
         ]
 
@@ -837,14 +850,16 @@ class ADLSimulator:
             else:
                 rank = 1
 
-            queue.append(ADLQueuePosition(
-                symbol=pos.symbol,
-                side=opposite_side,
-                rank=rank,
-                percentile=score * 100,
-                margin_ratio=Decimal("0"),  # Would need to calculate
-                pnl_ratio=Decimal(str(pnl_pct)),
-            ))
+            queue.append(
+                ADLQueuePosition(
+                    symbol=pos.symbol,
+                    side=opposite_side,
+                    rank=rank,
+                    percentile=score * 100,
+                    margin_ratio=Decimal("0"),  # Would need to calculate
+                    pnl_ratio=Decimal(str(pnl_pct)),
+                )
+            )
 
         # Sort by rank descending (highest risk first)
         queue.sort(key=lambda x: (-x.rank, -x.percentile))
@@ -897,10 +912,12 @@ class ADLSimulator:
 
             # Find actual position matching queue entry
             matching = [
-                p for p in positions
-                if p.symbol == symbol and (
-                    (adl_pos.side == "LONG" and p.qty > 0) or
-                    (adl_pos.side == "SHORT" and p.qty < 0)
+                p
+                for p in positions
+                if p.symbol == symbol
+                and (
+                    (adl_pos.side == "LONG" and p.qty > 0)
+                    or (adl_pos.side == "SHORT" and p.qty < 0)
                 )
             ]
 
@@ -958,6 +975,7 @@ class ADLSimulator:
 # ============================================================================
 # FACTORY FUNCTIONS
 # ============================================================================
+
 
 def create_liquidation_engine(
     futures_type: FuturesType,

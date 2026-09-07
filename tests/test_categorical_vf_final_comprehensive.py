@@ -8,19 +8,19 @@ import sys
 
 def test_import_and_basic_structure():
     """Test that distributional_ppo can be imported and has required functions."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 1: Import and basic structure")
-    print("="*70)
+    print("=" * 70)
 
     try:
         import distributional_ppo
         from distributional_ppo import DistributionalPPO
 
         # Check that the class exists
-        assert hasattr(DistributionalPPO, '_project_categorical_distribution'), \
-            "Missing _project_categorical_distribution method"
-        assert hasattr(DistributionalPPO, '_train_step'), \
-            "Missing _train_step method"
+        assert hasattr(
+            DistributionalPPO, "_project_categorical_distribution"
+        ), "Missing _project_categorical_distribution method"
+        assert hasattr(DistributionalPPO, "_train_step"), "Missing _train_step method"
 
         print("✓ Module imports successfully")
         print("✓ Required methods exist")
@@ -28,15 +28,16 @@ def test_import_and_basic_structure():
     except Exception as e:
         print(f"✗ FAIL: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def test_code_structure_vf_clipping():
     """Verify VF clipping code structure is correct."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 2: VF clipping code structure")
-    print("="*70)
+    print("=" * 70)
 
     try:
         import inspect
@@ -48,10 +49,16 @@ def test_code_structure_vf_clipping():
         checks = [
             ("Unclipped loss computed", "critic_loss_unclipped = -("),
             ("Clipped loss computed", "critic_loss_clipped = -("),
-            ("Max(unclipped, clipped) used", "torch.max(critic_loss_unclipped, critic_loss_clipped)"),
+            (
+                "Max(unclipped, clipped) used",
+                "torch.max(critic_loss_unclipped, critic_loss_clipped)",
+            ),
             ("Projection function called", "_project_categorical_distribution"),
             ("PPO VF clipping comment present", "PPO VF clipping"),
-            ("Clips in raw space", "mean_values_raw_clipped" in source or "mean_values_unscaled_clipped" in source),
+            (
+                "Clips in raw space",
+                "mean_values_raw_clipped" in source or "mean_values_unscaled_clipped" in source,
+            ),
             ("Target distribution unclipped", "target_distribution_selected"),
         ]
 
@@ -77,15 +84,16 @@ def test_code_structure_vf_clipping():
     except Exception as e:
         print(f"✗ EXCEPTION: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def test_same_bounds_bug_fix():
     """Verify that the same_bounds bug fix is present."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 3: Same bounds bug fix verification")
-    print("="*70)
+    print("=" * 70)
 
     try:
         import inspect
@@ -100,8 +108,10 @@ def test_same_bounds_bug_fix():
             ("Handles multiple same_bounds atoms", "rows_with_same_bounds"),
             ("Iterates over batch indices to fix", "batch_indices_to_fix"),
             ("Rebuilds corrected row", "corrected_row"),
-            ("Uses tensor operations not .item() for probs",
-             "+ probs[batch_idx, atom_idx]" in source),
+            (
+                "Uses tensor operations not .item() for probs",
+                "+ probs[batch_idx, atom_idx]" in source,
+            ),
             ("Normalizes corrected row", "row_sum"),
             ("Replaces row once", "projected_probs[batch_idx] = corrected_row"),
         ]
@@ -128,15 +138,16 @@ def test_same_bounds_bug_fix():
     except Exception as e:
         print(f"✗ EXCEPTION: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def test_no_gradient_breaking_operations():
     """Verify no operations that would break gradients."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 4: No gradient-breaking operations")
-    print("="*70)
+    print("=" * 70)
 
     try:
         import inspect
@@ -145,9 +156,7 @@ def test_no_gradient_breaking_operations():
         proj_source = inspect.getsource(
             distributional_ppo.DistributionalPPO._project_categorical_distribution
         )
-        train_source = inspect.getsource(
-            distributional_ppo.DistributionalPPO._train_step
-        )
+        train_source = inspect.getsource(distributional_ppo.DistributionalPPO._train_step)
 
         # In projection function, check that tensor ops are used for values (not .item())
         # .item() is OK for indices but not for probability values
@@ -180,7 +189,7 @@ def test_no_gradient_breaking_operations():
             gradient_safe = False
 
         # Check that we don't use .detach() on pred_probs_clipped before computing loss
-        if ".detach()" in train_source[proj_call_idx:proj_call_idx+1000]:
+        if ".detach()" in train_source[proj_call_idx : proj_call_idx + 1000]:
             detach_idx = train_source.find(".detach()", proj_call_idx)
             loss_clipped_idx = train_source.find("critic_loss_clipped", proj_call_idx)
 
@@ -202,15 +211,16 @@ def test_no_gradient_breaking_operations():
     except Exception as e:
         print(f"✗ EXCEPTION: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def test_consistency_with_quantile():
     """Verify categorical VF clipping is consistent with quantile approach."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 5: Consistency with quantile VF clipping")
-    print("="*70)
+    print("=" * 70)
 
     try:
         import inspect
@@ -229,21 +239,29 @@ def test_consistency_with_quantile():
         quantile_section = source[quantile_section_start:quantile_section_end]
 
         # Find categorical section (the else block)
-        categorical_section = source[quantile_section_end:quantile_section_end + 10000]
+        categorical_section = source[quantile_section_end : quantile_section_end + 10000]
 
         # Check both use same pattern
         checks = [
-            ("Both compute unclipped loss",
-             "critic_loss_unclipped" in quantile_section and
-             "critic_loss_unclipped" in categorical_section),
-            ("Both compute clipped loss when VF clipping enabled",
-             "critic_loss_clipped" in quantile_section and
-             "critic_loss_clipped" in categorical_section),
-            ("Both use max(unclipped, clipped)",
-             "torch.max(critic_loss_unclipped, critic_loss_clipped)" in quantile_section and
-             "torch.max(critic_loss_unclipped, critic_loss_clipped)" in categorical_section),
-            ("Both clip in raw space",
-             "clip_delta" in quantile_section and "clip_delta" in categorical_section),
+            (
+                "Both compute unclipped loss",
+                "critic_loss_unclipped" in quantile_section
+                and "critic_loss_unclipped" in categorical_section,
+            ),
+            (
+                "Both compute clipped loss when VF clipping enabled",
+                "critic_loss_clipped" in quantile_section
+                and "critic_loss_clipped" in categorical_section,
+            ),
+            (
+                "Both use max(unclipped, clipped)",
+                "torch.max(critic_loss_unclipped, critic_loss_clipped)" in quantile_section
+                and "torch.max(critic_loss_unclipped, critic_loss_clipped)" in categorical_section,
+            ),
+            (
+                "Both clip in raw space",
+                "clip_delta" in quantile_section and "clip_delta" in categorical_section,
+            ),
         ]
 
         all_pass = True
@@ -263,15 +281,16 @@ def test_consistency_with_quantile():
     except Exception as e:
         print(f"✗ EXCEPTION: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def test_edge_case_handling():
     """Test that edge cases are handled in projection function."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 6: Edge case handling in projection")
-    print("="*70)
+    print("=" * 70)
 
     try:
         import inspect
@@ -308,15 +327,16 @@ def test_edge_case_handling():
     except Exception as e:
         print(f"✗ EXCEPTION: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def test_documentation_completeness():
     """Test that documentation is complete."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 7: Documentation completeness")
-    print("="*70)
+    print("=" * 70)
 
     try:
         import distributional_ppo
@@ -330,14 +350,13 @@ def test_documentation_completeness():
             return False
 
         doc_checks = [
-            ("Mentions C51 or categorical",
-             "c51" in proj_doc.lower() or "categorical" in proj_doc.lower()),
-            ("Describes purpose",
-             "project" in proj_doc.lower()),
-            ("Documents parameters",
-             "probs" in proj_doc.lower() and "atoms" in proj_doc.lower()),
-            ("Documents return value",
-             "return" in proj_doc.lower()),
+            (
+                "Mentions C51 or categorical",
+                "c51" in proj_doc.lower() or "categorical" in proj_doc.lower(),
+            ),
+            ("Describes purpose", "project" in proj_doc.lower()),
+            ("Documents parameters", "probs" in proj_doc.lower() and "atoms" in proj_doc.lower()),
+            ("Documents return value", "return" in proj_doc.lower()),
         ]
 
         all_pass = True
@@ -349,14 +368,17 @@ def test_documentation_completeness():
 
         # Check for explanatory comments in VF clipping code
         import inspect
+
         train_source = inspect.getsource(distributional_ppo.DistributionalPPO._train_step)
 
         comment_checks = [
             ("Has CRITICAL FIX comment", "CRITICAL FIX" in train_source),
             ("Explains PPO VF clipping", "PPO VF clipping" in train_source),
-            ("Mentions max(loss_unclipped, loss_clipped)",
-             "max(loss_unclipped, loss_clipped)" in train_source.lower() or
-             "max(loss(pred, target), loss(clip(pred), target))" in train_source.lower()),
+            (
+                "Mentions max(loss_unclipped, loss_clipped)",
+                "max(loss_unclipped, loss_clipped)" in train_source.lower()
+                or "max(loss(pred, target), loss(clip(pred), target))" in train_source.lower(),
+            ),
         ]
 
         for check_name, passed in comment_checks:
@@ -375,15 +397,16 @@ def test_documentation_completeness():
     except Exception as e:
         print(f"✗ EXCEPTION: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def main():
     """Run all comprehensive tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("CATEGORICAL VF CLIPPING - FINAL COMPREHENSIVE TEST SUITE")
-    print("="*70)
+    print("=" * 70)
 
     tests = [
         ("Import and basic structure", test_import_and_basic_structure),
@@ -403,13 +426,14 @@ def main():
         except Exception as e:
             print(f"\n✗ EXCEPTION in {test_name}: {e}")
             import traceback
+
             traceback.print_exc()
             results.append((test_name, False, str(e)))
 
     # Summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("FINAL SUMMARY")
-    print("="*70)
+    print("=" * 70)
 
     passed_count = sum(1 for _, p, _ in results if p)
     total_count = len(results)
@@ -424,9 +448,9 @@ def main():
     print(f"Coverage: {passed_count/total_count*100:.1f}%")
 
     if passed_count == total_count:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("✓✓✓ ALL COMPREHENSIVE TESTS PASSED ✓✓✓")
-        print("="*70)
+        print("=" * 70)
         print("\nThe implementation is:")
         print("  ✓ Structurally correct")
         print("  ✓ Bug-free (same_bounds fixed)")
@@ -436,9 +460,9 @@ def main():
         print("  ✓ Well-documented")
         return 0
     else:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print(f"✗✗✗ {total_count - passed_count} TESTS FAILED ✗✗✗")
-        print("="*70)
+        print("=" * 70)
         return 1
 
 

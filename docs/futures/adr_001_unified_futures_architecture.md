@@ -2,18 +2,20 @@
 
 ## Status
 
-**PROPOSED** | Date: 2025-11-30 | Author: AI Assistant
+**PROPOSED** | Date: 2025-11-30 | Author: Sultan Suyunbayev
 
 ---
 
 ## Context
 
 The trading platform currently supports:
+
 - Crypto spot (Binance)
 - US Equities (Alpaca, Polygon)
 - Forex (OANDA)
 
 We need to add support for futures trading across multiple asset classes:
+
 - **Crypto Perpetuals** - Binance USDT-M perpetual futures
 - **Crypto Quarterly** - Binance quarterly delivery futures
 - **Equity Index Futures** - CME ES, NQ, YM, RTY
@@ -21,6 +23,7 @@ We need to add support for futures trading across multiple asset classes:
 - **Currency Futures** - CME 6E, 6J, 6B
 
 The key challenge is creating a unified architecture that:
+
 1. Handles diverse settlement mechanisms (perpetual funding vs daily settlement)
 2. Supports different margin systems (tiered vs SPAN)
 3. Manages contract expiration and rollover
@@ -223,6 +226,7 @@ class FuturesRiskGuard:
 **Description**: Create independent implementations for each futures type.
 
 **Rejected Because**:
+
 - Massive code duplication
 - Inconsistent APIs
 - Maintenance nightmare
@@ -232,6 +236,7 @@ class FuturesRiskGuard:
 **Description**: One large module handling all futures types with conditionals.
 
 **Rejected Because**:
+
 - Violates Single Responsibility Principle
 - Difficult to test
 - Hard to extend
@@ -241,6 +246,7 @@ class FuturesRiskGuard:
 **Description**: Use third-party library like `zipline-reloaded` or `backtrader`.
 
 **Rejected Because**:
+
 - Different architectural patterns
 - Integration complexity
 - Loss of control over execution simulation

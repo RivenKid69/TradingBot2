@@ -58,30 +58,32 @@ def test_mediator_norm_cols():
     mediator = Mediator(mock_env, event_level=0)
 
     # Создаем mock row с всеми 21 признаками (обновлено для 4h таймфрейма)
-    mock_row = pd.Series({
-        "cvd_24h": 1000.0,
-        "cvd_7d": 5000.0,  # было cvd_168h
-        "yang_zhang_48h": 0.05,  # было yang_zhang_24h
-        "yang_zhang_7d": 0.08,  # было yang_zhang_168h
-        "garch_200h": 0.03,  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
-        "garch_14d": 0.04,  # было garch_24h
-        "ret_12h": 0.001,  # было ret_15m
-        "ret_24h": 0.005,  # было ret_60m
-        "ret_4h": 0.0005,  # было ret_5m
-        "sma_12000": 50000.0,  # было sma_60 (50 баров = 12000 минут = 200h для 4h)
-        "yang_zhang_30d": 0.12,  # было yang_zhang_720h
-        "parkinson_48h": 0.06,  # было parkinson_24h
-        "parkinson_7d": 0.09,  # было parkinson_168h
-        "garch_30d": 0.025,  # было garch_500m
-        "taker_buy_ratio": 0.52,
-        "taker_buy_ratio_sma_24h": 0.51,
-        # НОВЫЕ 5 признаков (обновлено для 4h)
-        "taker_buy_ratio_sma_8h": 0.53,  # было 6h
-        "taker_buy_ratio_sma_16h": 0.52,  # было 12h
-        "taker_buy_ratio_momentum_4h": 0.01,  # было 1h
-        "taker_buy_ratio_momentum_8h": 0.02,  # было 6h
-        "taker_buy_ratio_momentum_12h": 0.015,  # без изменений
-    })
+    mock_row = pd.Series(
+        {
+            "cvd_24h": 1000.0,
+            "cvd_7d": 5000.0,  # было cvd_168h
+            "yang_zhang_48h": 0.05,  # было yang_zhang_24h
+            "yang_zhang_7d": 0.08,  # было yang_zhang_168h
+            "garch_200h": 0.03,  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
+            "garch_14d": 0.04,  # было garch_24h
+            "ret_12h": 0.001,  # было ret_15m
+            "ret_24h": 0.005,  # было ret_60m
+            "ret_4h": 0.0005,  # было ret_5m
+            "sma_12000": 50000.0,  # было sma_60 (50 баров = 12000 минут = 200h для 4h)
+            "yang_zhang_30d": 0.12,  # было yang_zhang_720h
+            "parkinson_48h": 0.06,  # было parkinson_24h
+            "parkinson_7d": 0.09,  # было parkinson_168h
+            "garch_30d": 0.025,  # было garch_500m
+            "taker_buy_ratio": 0.52,
+            "taker_buy_ratio_sma_24h": 0.51,
+            # НОВЫЕ 5 признаков (обновлено для 4h)
+            "taker_buy_ratio_sma_8h": 0.53,  # было 6h
+            "taker_buy_ratio_sma_16h": 0.52,  # было 12h
+            "taker_buy_ratio_momentum_4h": 0.01,  # было 1h
+            "taker_buy_ratio_momentum_8h": 0.02,  # было 6h
+            "taker_buy_ratio_momentum_12h": 0.015,  # без изменений
+        }
+    )
 
     norm_cols = mediator._extract_norm_cols(mock_row)
 
@@ -97,8 +99,9 @@ def test_mediator_norm_cols():
     print("✓ Все значения конечные (no NaN/Inf)")
 
     # Проверка что НЕ применен tanh (значения должны быть большими)
-    assert norm_cols[0] > 10.0, \
-        f"❌ norm_cols[0]={norm_cols[0]}, похоже что tanh уже применен (должно быть ~1000)"
+    assert (
+        norm_cols[0] > 10.0
+    ), f"❌ norm_cols[0]={norm_cols[0]}, похоже что tanh уже применен (должно быть ~1000)"
     print(f"✓ Нет двойной нормализации (norm_cols[0]={norm_cols[0]:.1f}, ожидалось ~1000)")
 
     print(f"\nПервые 5 значений norm_cols:")
@@ -180,8 +183,7 @@ def test_obs_builder():
     assert np.all(external <= 1.0), f"❌ Некоторые external > 1.0"
     print("✓ External features в диапазоне [-1, 1] (после tanh)")
 
-    assert np.all(external > 0.99), \
-        f"❌ Expected ~1.0 after tanh(1000), got min={external.min()}"
+    assert np.all(external > 0.99), f"❌ Expected ~1.0 after tanh(1000), got min={external.min()}"
     print(f"✓ tanh(1000) ≈ 1.0 применен корректно (min={external.min():.6f})")
 
     print("\n✅ obs_builder работает корректно!\n")
@@ -238,9 +240,9 @@ def test_column_names():
 
 def main():
     """Запуск всех проверок"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print(" ВЕРИФИКАЦИЯ СИСТЕМЫ 63 ПРИЗНАКОВ")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     tests = [
         ("Конфигурация", test_feature_config),
@@ -264,6 +266,7 @@ def main():
             print(f"\n❌ ОШИБКА в тесте '{name}':")
             print(f"   {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
             continue

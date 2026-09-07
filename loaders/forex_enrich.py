@@ -50,17 +50,26 @@ def parse_pair(symbol: str) -> Tuple[str, str]:
 class RateDiffEnricher:
     """rate_base/rate_quote/rate_diff из ставок по валютам (static approx ИЛИ history PIT)."""
 
-    def __init__(self, rates: Optional[Mapping[str, float]] = None, *,
-                 history_fn: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None,
-                 publish_lag_ms: int = 0, vendor: str = "static") -> None:
+    def __init__(
+        self,
+        rates: Optional[Mapping[str, float]] = None,
+        *,
+        history_fn: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None,
+        publish_lag_ms: int = 0,
+        vendor: str = "static",
+    ) -> None:
         self._rates = {str(k).upper(): float(v) for k, v in (rates or {}).items()}
         self._history_fn = history_fn
         self._publish_lag_ms = int(publish_lag_ms)
         pit = PIT_TRUE if history_fn is not None else PIT_APPROX
-        notes = ("Interest-rate differential (PIT history)." if history_fn is not None
-                 else "Policy-rate snapshot (no history → approx).")
-        self.meta = DataSourceMeta(name="rates", vendor=vendor, kind="enrich",
-                                   pit_quality=pit, notes=notes)
+        notes = (
+            "Interest-rate differential (PIT history)."
+            if history_fn is not None
+            else "Policy-rate snapshot (no history → approx)."
+        )
+        self.meta = DataSourceMeta(
+            name="rates", vendor=vendor, kind="enrich", pit_quality=pit, notes=notes
+        )
 
     def columns(self) -> List[str]:
         return ["rate_base", "rate_quote", "rate_diff"]
@@ -97,18 +106,39 @@ class RateDiffEnricher:
         base_rows, quote_rows = [], []
         for s, (b, q) in pairs.items():
             for _, r in rates_long[rates_long["currency"] == b].iterrows():
-                base_rows.append({"publish_ts": int(r["publish_ts"]), "symbol": s, "rate_base": float(r["rate"])})
+                base_rows.append(
+                    {"publish_ts": int(r["publish_ts"]), "symbol": s, "rate_base": float(r["rate"])}
+                )
             for _, r in rates_long[rates_long["currency"] == q].iterrows():
-                quote_rows.append({"publish_ts": int(r["publish_ts"]), "symbol": s, "rate_quote": float(r["rate"])})
+                quote_rows.append(
+                    {
+                        "publish_ts": int(r["publish_ts"]),
+                        "symbol": s,
+                        "rate_quote": float(r["rate"]),
+                    }
+                )
         out = panel
         if base_rows:
-            out = PanelBuilder.asof_join(out, pd.DataFrame(base_rows), value_cols=["rate_base"],
-                                         ts_col="publish_ts", symbol_col="symbol", publish_lag_ms=self._publish_lag_ms)
+            out = PanelBuilder.asof_join(
+                out,
+                pd.DataFrame(base_rows),
+                value_cols=["rate_base"],
+                ts_col="publish_ts",
+                symbol_col="symbol",
+                publish_lag_ms=self._publish_lag_ms,
+            )
         else:
-            out = out.copy(); out["rate_base"] = np.nan
+            out = out.copy()
+            out["rate_base"] = np.nan
         if quote_rows:
-            out = PanelBuilder.asof_join(out, pd.DataFrame(quote_rows), value_cols=["rate_quote"],
-                                         ts_col="publish_ts", symbol_col="symbol", publish_lag_ms=self._publish_lag_ms)
+            out = PanelBuilder.asof_join(
+                out,
+                pd.DataFrame(quote_rows),
+                value_cols=["rate_quote"],
+                ts_col="publish_ts",
+                symbol_col="symbol",
+                publish_lag_ms=self._publish_lag_ms,
+            )
         else:
             out["rate_quote"] = np.nan
         out["rate_diff"] = out["rate_base"].astype("float64") - out["rate_quote"].astype("float64")
@@ -132,6 +162,9 @@ def build_forex_enricher(name: str, cfg: Any) -> Optional[Any]:
 
 
 __all__ = [
-    "oanda_price_source", "parse_pair", "RateDiffEnricher",
-    "FOREX_ENRICHERS", "build_forex_enricher",
+    "oanda_price_source",
+    "parse_pair",
+    "RateDiffEnricher",
+    "FOREX_ENRICHERS",
+    "build_forex_enricher",
 ]

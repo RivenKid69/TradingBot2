@@ -27,6 +27,7 @@ import pandas as pd
 # Hashing helpers
 # ---------------------------------------------------------------------------
 
+
 def _file_sha256(path: str, chunk_size: int = 8192) -> str:
     """Chunked SHA-256 of the raw file bytes."""
     h = hashlib.sha256()
@@ -65,10 +66,7 @@ _TIME_COL_CANDIDATES = ("ts", "ts_ms", "timestamp", "time")
 
 
 def _extract_schema(df: pd.DataFrame) -> List[Dict[str, str]]:
-    return [
-        {"name": str(name), "dtype": str(df[name].dtype)}
-        for name in sorted(df.columns)
-    ]
+    return [{"name": str(name), "dtype": str(df[name].dtype)} for name in sorted(df.columns)]
 
 
 def _to_jsonable(value: Any) -> Any:
@@ -108,6 +106,7 @@ def _extract_time_range(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
 # Registry I/O
 # ---------------------------------------------------------------------------
 
+
 def _load_registry(registry_path: str) -> Dict[str, Any]:
     if not os.path.exists(registry_path):
         return {"datasets": []}
@@ -136,6 +135,7 @@ def _atomic_write_registry(registry_path: str, data: Dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def snapshot_dataset(
     path: str,
@@ -171,7 +171,7 @@ def snapshot_dataset(
     except Exception as exc:  # pragma: no cover - depends on bad input
         load_error = f"{type(exc).__name__}: {exc}"
 
-    entry_id = (content_hash[:12] if content_hash else file_sha256[:12])
+    entry_id = content_hash[:12] if content_hash else file_sha256[:12]
     created_at = datetime.utcnow().isoformat() + "Z"
 
     entry: Dict[str, Any] = {
@@ -253,9 +253,8 @@ def diff_datasets(
     n2 = e2.get("n_rows")
     n_rows_delta = (n2 - n1) if (n1 is not None and n2 is not None) else None
 
-    hash_equal = (
-        e1.get("content_hash") is not None
-        and e1.get("content_hash") == e2.get("content_hash")
+    hash_equal = e1.get("content_hash") is not None and e1.get("content_hash") == e2.get(
+        "content_hash"
     )
 
     return {
@@ -270,6 +269,7 @@ def diff_datasets(
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def _cmd_register(args: argparse.Namespace) -> int:
     config = None
@@ -332,9 +332,7 @@ def _selftest() -> int:
         df_b.to_parquet(path_b)
 
         entry_a = snapshot_dataset(path_a, registry_path=registry_path)
-        entry_b = snapshot_dataset(
-            path_b, parent_id=entry_a["id"], registry_path=registry_path
-        )
+        entry_b = snapshot_dataset(path_b, parent_id=entry_a["id"], registry_path=registry_path)
 
         id_a = entry_a["id"]
         id_b = entry_b["id"]

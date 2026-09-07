@@ -8,6 +8,7 @@ Tests verify that:
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 import pytest
 from unittest.mock import MagicMock, patch
@@ -89,7 +90,9 @@ class TestEVBugFixes:
         ev_no_eps = 1.0 - (var_res / var_y)
 
         # Difference should be negligible (< 1e-10)
-        assert abs(ev - ev_no_eps) < 1e-10, f"Epsilon should have negligible effect, diff={abs(ev - ev_no_eps)}"
+        assert (
+            abs(ev - ev_no_eps) < 1e-10
+        ), f"Epsilon should have negligible effect, diff={abs(ev - ev_no_eps)}"
 
     def test_ev_very_large_variance(self):
         """Test EV with very large variance values"""
@@ -132,7 +135,7 @@ class TestEVBugFixes:
             quantiles_clipped = torch.clamp(
                 quantiles_unclipped,
                 min=quantiles_unclipped.mean() - 0.5,
-                max=quantiles_unclipped.mean() + 0.5
+                max=quantiles_unclipped.mean() + 0.5,
             )
         else:
             quantiles_clipped = quantiles_unclipped.clone()
@@ -150,17 +153,21 @@ class TestEVBugFixes:
         if use_vf_clipping:
             # After fix, EV should use unclipped predictions
             # So the values should match mean_unclipped, NOT mean_clipped
-            assert not torch.allclose(mean_unclipped, mean_clipped), \
-                "Test setup error: clipped and unclipped should differ"
+            assert not torch.allclose(
+                mean_unclipped, mean_clipped
+            ), "Test setup error: clipped and unclipped should differ"
 
             # This test verifies the fix conceptually
             # In the actual code, we verify that quantiles_for_ev = quantiles_for_loss (unclipped)
             # rather than quantiles_for_ev = quantiles_norm_clipped_for_loss (clipped)
-            print(f"VF clipping enabled: mean diff = {(mean_unclipped - mean_clipped).abs().mean().item():.6f}")
+            print(
+                f"VF clipping enabled: mean diff = {(mean_unclipped - mean_clipped).abs().mean().item():.6f}"
+            )
         else:
             # Without VF clipping, they should be identical
-            assert torch.allclose(mean_unclipped, mean_clipped), \
-                "Without VF clipping, clipped and unclipped should be identical"
+            assert torch.allclose(
+                mean_unclipped, mean_clipped
+            ), "Without VF clipping, clipped and unclipped should be identical"
 
     # =========================================================================
     # Bug #1.2: Categorical Mode EV uses CLIPPED predictions
@@ -184,7 +191,7 @@ class TestEVBugFixes:
             mean_values_clipped = torch.clamp(
                 mean_values_unclipped,
                 min=mean_values_unclipped.mean() - 0.5,
-                max=mean_values_unclipped.mean() + 0.5
+                max=mean_values_unclipped.mean() + 0.5,
             )
         else:
             mean_values_clipped = mean_values_unclipped.clone()
@@ -194,17 +201,21 @@ class TestEVBugFixes:
 
         if use_vf_clipping:
             # After fix, EV should use unclipped predictions
-            assert not torch.allclose(mean_values_unclipped, mean_values_clipped), \
-                "Test setup error: clipped and unclipped should differ"
+            assert not torch.allclose(
+                mean_values_unclipped, mean_values_clipped
+            ), "Test setup error: clipped and unclipped should differ"
 
             # This test verifies the fix conceptually
             # In the actual code, we verify that value_pred_norm_for_ev uses mean_values_norm_selected (unclipped)
             # rather than mean_values_norm_clipped_selected (clipped)
-            print(f"VF clipping enabled: mean diff = {(mean_values_unclipped - mean_values_clipped).abs().mean().item():.6f}")
+            print(
+                f"VF clipping enabled: mean diff = {(mean_values_unclipped - mean_values_clipped).abs().mean().item():.6f}"
+            )
         else:
             # Without VF clipping, they should be identical
-            assert torch.allclose(mean_values_unclipped, mean_values_clipped), \
-                "Without VF clipping, clipped and unclipped should be identical"
+            assert torch.allclose(
+                mean_values_unclipped, mean_values_clipped
+            ), "Without VF clipping, clipped and unclipped should be identical"
 
     # =========================================================================
     # Integration Tests: EV should be consistent with/without VF clipping
@@ -327,8 +338,9 @@ class TestEVBugFixes:
         ev_weighted_uniform = safe_explained_variance(y_true, y_pred, weights_uniform)
 
         # Should be very close (not exactly equal due to Bessel's correction)
-        assert abs(ev_unweighted - ev_weighted_uniform) < 0.01, \
-            f"Uniform weights should give similar EV: {ev_unweighted:.6f} vs {ev_weighted_uniform:.6f}"
+        assert (
+            abs(ev_unweighted - ev_weighted_uniform) < 0.01
+        ), f"Uniform weights should give similar EV: {ev_unweighted:.6f} vs {ev_weighted_uniform:.6f}"
 
         # Weighted with non-uniform weights (should be different, but maybe only slightly)
         weights_nonuniform = np.array([1.0, 1.0, 1.0, 1.0, 10.0])  # High weight on last sample
@@ -336,8 +348,9 @@ class TestEVBugFixes:
 
         # Should be different from unweighted (but difference might be small depending on data)
         # Relax threshold to > 0.0001 (just need to be measurably different)
-        assert abs(ev_unweighted - ev_weighted_nonuniform) > 0.0001, \
-            f"Non-uniform weights should give different EV: {ev_unweighted:.6f} vs {ev_weighted_nonuniform:.6f}"
+        assert (
+            abs(ev_unweighted - ev_weighted_nonuniform) > 0.0001
+        ), f"Non-uniform weights should give different EV: {ev_unweighted:.6f} vs {ev_weighted_nonuniform:.6f}"
 
     # =========================================================================
     # Edge Cases

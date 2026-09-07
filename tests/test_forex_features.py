@@ -12,7 +12,7 @@ Covers:
 
 Total: ~90 tests
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 
@@ -27,6 +27,7 @@ import pytest
 # =============================================================================
 # FOREX FEATURES TESTS
 # =============================================================================
+
 
 class TestCarryFeatures:
     """Test interest rate differential (carry) features."""
@@ -99,11 +100,13 @@ class TestCarryFeatures:
         """Test carry calculation with DataFrame rates."""
         from forex_features import calculate_carry_features
 
-        rates_df = pd.DataFrame({
-            "timestamp": [1000, 2000, 3000],
-            "EUR_RATE": [3.5, 3.75, 4.0],
-            "USD_RATE": [4.5, 4.75, 5.25],
-        })
+        rates_df = pd.DataFrame(
+            {
+                "timestamp": [1000, 2000, 3000],
+                "EUR_RATE": [3.5, 3.75, 4.0],
+                "USD_RATE": [4.5, 4.75, 5.25],
+            }
+        )
 
         base_rate, quote_rate, diff, diff_norm, valid = calculate_carry_features(
             base_currency="EUR",
@@ -209,7 +212,9 @@ class TestSessionFeatures:
         from forex_features import get_session_features, ForexSession
 
         dt = datetime(2024, 1, 15, 14, 0, 0, tzinfo=timezone.utc)
-        is_sydney, is_tokyo, is_london, is_ny, is_overlap, liquidity, session = get_session_features(dt)
+        is_sydney, is_tokyo, is_london, is_ny, is_overlap, liquidity, session = (
+            get_session_features(dt)
+        )
 
         assert is_sydney is False
         assert is_tokyo is False
@@ -381,14 +386,14 @@ class TestCOTFeatures:
         """Test basic COT feature calculation."""
         from forex_features import calculate_cot_features, COTPositioning
 
-        cot_df = pd.DataFrame({
-            "EUR_NET": [10000, 15000, 20000, 18000, 22000],
-            "EUR_OI": [100000, 100000, 100000, 100000, 100000],
-        })
-
-        net_pct, zscore, change, positioning, valid = calculate_cot_features(
-            "EUR", cot_df
+        cot_df = pd.DataFrame(
+            {
+                "EUR_NET": [10000, 15000, 20000, 18000, 22000],
+                "EUR_OI": [100000, 100000, 100000, 100000, 100000],
+            }
         )
+
+        net_pct, zscore, change, positioning, valid = calculate_cot_features("EUR", cot_df)
 
         assert valid is True
         assert 0.0 <= net_pct <= 1.0
@@ -537,15 +542,20 @@ class TestDataFrameIntegration:
 
         # Create sample DataFrame
         n = 50
-        timestamps = [int((datetime(2024, 1, 1, tzinfo=timezone.utc) + timedelta(hours=i)).timestamp() * 1000) for i in range(n)]
-        df = pd.DataFrame({
-            "timestamp": timestamps,
-            "open": np.random.randn(n) * 0.01 + 1.10,
-            "high": np.random.randn(n) * 0.01 + 1.11,
-            "low": np.random.randn(n) * 0.01 + 1.09,
-            "close": np.random.randn(n) * 0.01 + 1.10,
-            "volume": np.random.randint(1000, 10000, n),
-        })
+        timestamps = [
+            int((datetime(2024, 1, 1, tzinfo=timezone.utc) + timedelta(hours=i)).timestamp() * 1000)
+            for i in range(n)
+        ]
+        df = pd.DataFrame(
+            {
+                "timestamp": timestamps,
+                "open": np.random.randn(n) * 0.01 + 1.10,
+                "high": np.random.randn(n) * 0.01 + 1.11,
+                "low": np.random.randn(n) * 0.01 + 1.09,
+                "close": np.random.randn(n) * 0.01 + 1.10,
+                "volume": np.random.randint(1000, 10000, n),
+            }
+        )
 
         result_df = add_forex_features_to_dataframe(df, "EUR_USD")
 
@@ -559,6 +569,7 @@ class TestDataFrameIntegration:
 # =============================================================================
 # ECONOMIC CALENDAR TESTS
 # =============================================================================
+
 
 class TestEconomicEvent:
     """Test EconomicEvent dataclass."""
@@ -617,7 +628,10 @@ class TestCachedCalendarProvider:
     def test_cached_provider_add_and_get(self):
         """Test adding and retrieving events."""
         from economic_calendar import (
-            CachedCalendarProvider, EconomicEvent, ImpactLevel, CalendarConfig
+            CachedCalendarProvider,
+            EconomicEvent,
+            ImpactLevel,
+            CalendarConfig,
         )
 
         provider = CachedCalendarProvider(CalendarConfig(cache_dir="/tmp/test_cal"))
@@ -692,6 +706,7 @@ class TestEconomicCalendar:
 # SWAP RATES PROVIDER TESTS
 # =============================================================================
 
+
 class TestSwapRates:
     """Test SwapRates dataclass."""
 
@@ -735,9 +750,7 @@ class TestInterestRateSwapProvider:
         """Test swap rate calculation from interest rates."""
         from swap_rates_provider import InterestRateSwapProvider, SwapProviderConfig
 
-        provider = InterestRateSwapProvider(
-            rates={"EUR": 4.0, "USD": 5.25}
-        )
+        provider = InterestRateSwapProvider(rates={"EUR": 4.0, "USD": 5.25})
 
         swaps = provider.calculate_swap_rates("EUR_USD")
 
@@ -811,6 +824,7 @@ class TestSwapUtilities:
 # COT DATA LOADER TESTS
 # =============================================================================
 
+
 class TestCOTPosition:
     """Test COTPosition dataclass."""
 
@@ -859,18 +873,20 @@ class TestCOTDataLoader:
         """Test loading COT data from DataFrame."""
         from cot_data_loader import COTDataLoader
 
-        df = pd.DataFrame({
-            "currency": ["EUR", "EUR", "EUR", "GBP", "GBP"],
-            "report_date": [
-                datetime(2024, 1, 2, tzinfo=timezone.utc),
-                datetime(2024, 1, 9, tzinfo=timezone.utc),
-                datetime(2024, 1, 16, tzinfo=timezone.utc),
-                datetime(2024, 1, 2, tzinfo=timezone.utc),
-                datetime(2024, 1, 9, tzinfo=timezone.utc),
-            ],
-            "net_long": [10000, 15000, 20000, 5000, 8000],
-            "open_interest": [100000, 105000, 110000, 50000, 52000],
-        })
+        df = pd.DataFrame(
+            {
+                "currency": ["EUR", "EUR", "EUR", "GBP", "GBP"],
+                "report_date": [
+                    datetime(2024, 1, 2, tzinfo=timezone.utc),
+                    datetime(2024, 1, 9, tzinfo=timezone.utc),
+                    datetime(2024, 1, 16, tzinfo=timezone.utc),
+                    datetime(2024, 1, 2, tzinfo=timezone.utc),
+                    datetime(2024, 1, 9, tzinfo=timezone.utc),
+                ],
+                "net_long": [10000, 15000, 20000, 5000, 8000],
+                "open_interest": [100000, 105000, 110000, 50000, 52000],
+            }
+        )
 
         loader = COTDataLoader()
         loader.load_from_dataframe(df)
@@ -882,14 +898,16 @@ class TestCOTDataLoader:
         """Test getting current position."""
         from cot_data_loader import COTDataLoader
 
-        df = pd.DataFrame({
-            "currency": ["EUR", "EUR"],
-            "report_date": [
-                datetime(2024, 1, 2, tzinfo=timezone.utc),
-                datetime(2024, 1, 9, tzinfo=timezone.utc),
-            ],
-            "net_long": [10000, 15000],
-        })
+        df = pd.DataFrame(
+            {
+                "currency": ["EUR", "EUR"],
+                "report_date": [
+                    datetime(2024, 1, 2, tzinfo=timezone.utc),
+                    datetime(2024, 1, 9, tzinfo=timezone.utc),
+                ],
+                "net_long": [10000, 15000],
+            }
+        )
 
         loader = COTDataLoader()
         loader.load_from_dataframe(df)
@@ -904,11 +922,16 @@ class TestCOTDataLoader:
 
         # Create data with known properties
         net_longs = list(np.random.randn(52) * 10000 + 50000)
-        df = pd.DataFrame({
-            "currency": ["EUR"] * 52,
-            "report_date": [datetime(2024, 1, 2, tzinfo=timezone.utc) + timedelta(weeks=i) for i in range(52)],
-            "net_long": net_longs,
-        })
+        df = pd.DataFrame(
+            {
+                "currency": ["EUR"] * 52,
+                "report_date": [
+                    datetime(2024, 1, 2, tzinfo=timezone.utc) + timedelta(weeks=i)
+                    for i in range(52)
+                ],
+                "net_long": net_longs,
+            }
+        )
 
         loader = COTDataLoader()
         loader.load_from_dataframe(df)
@@ -969,6 +992,7 @@ class TestCOTForPair:
 # FEATURES PIPELINE INTEGRATION TESTS
 # =============================================================================
 
+
 class TestFeaturesPipelineForexIntegration:
     """Test features_pipeline.py forex integration."""
 
@@ -1018,16 +1042,21 @@ class TestFeaturesPipelineForexIntegration:
 
         # Create sample data
         n = 50
-        timestamps = [int((datetime(2024, 1, 1, tzinfo=timezone.utc) + timedelta(hours=i)).timestamp() * 1000) for i in range(n)]
-        df = pd.DataFrame({
-            "timestamp": timestamps,
-            "symbol": ["EUR_USD"] * n,
-            "close": np.random.randn(n) * 0.01 + 1.10,
-            "open": np.random.randn(n) * 0.01 + 1.10,
-            "high": np.random.randn(n) * 0.01 + 1.11,
-            "low": np.random.randn(n) * 0.01 + 1.09,
-            "volume": np.random.randint(1000, 10000, n),
-        })
+        timestamps = [
+            int((datetime(2024, 1, 1, tzinfo=timezone.utc) + timedelta(hours=i)).timestamp() * 1000)
+            for i in range(n)
+        ]
+        df = pd.DataFrame(
+            {
+                "timestamp": timestamps,
+                "symbol": ["EUR_USD"] * n,
+                "close": np.random.randn(n) * 0.01 + 1.10,
+                "open": np.random.randn(n) * 0.01 + 1.10,
+                "high": np.random.randn(n) * 0.01 + 1.11,
+                "low": np.random.randn(n) * 0.01 + 1.09,
+                "volume": np.random.randint(1000, 10000, n),
+            }
+        )
 
         # Fit pipeline
         pipeline = FeaturePipeline(
@@ -1053,7 +1082,10 @@ class TestBackwardCompatibility:
 
         pipeline = FeaturePipeline(asset_class="crypto")
         assert pipeline.asset_class == "crypto"
-        assert not hasattr(pipeline, "_add_forex_features_internal") or pipeline.auto_forex_features is True
+        assert (
+            not hasattr(pipeline, "_add_forex_features_internal")
+            or pipeline.auto_forex_features is True
+        )
 
     def test_none_asset_class_unchanged(self):
         """Test that None asset class is unchanged."""
@@ -1074,6 +1106,7 @@ class TestBackwardCompatibility:
 # =============================================================================
 # IMPLIED VOLATILITY FEATURES TESTS
 # =============================================================================
+
 
 class TestImpliedVolFeatures:
     """Test FX implied volatility features (EVZ, CBOE indices)."""
@@ -1186,12 +1219,8 @@ class TestImpliedVolFeatures:
         # GBP_USD has higher typical vol (10%) than EUR_USD (8%)
         implied_vol_prices = [10.0]  # Same value for both
 
-        _, _, _, valid_gbp = calculate_implied_vol_features(
-            implied_vol_prices, symbol="GBP_USD"
-        )
-        _, _, _, valid_eur = calculate_implied_vol_features(
-            implied_vol_prices, symbol="EUR_USD"
-        )
+        _, _, _, valid_gbp = calculate_implied_vol_features(implied_vol_prices, symbol="GBP_USD")
+        _, _, _, valid_eur = calculate_implied_vol_features(implied_vol_prices, symbol="EUR_USD")
 
         assert valid_gbp is True
         assert valid_eur is True
@@ -1231,23 +1260,28 @@ class TestImpliedVolFeatures:
         from forex_features import add_forex_features_to_dataframe
 
         # Create simple price DataFrame
-        df = pd.DataFrame({
-            "timestamp": [1700000000000 + i * 3600000 for i in range(10)],
-            "close": [1.05 + i * 0.001 for i in range(10)],
-            "open": [1.05 + i * 0.001 for i in range(10)],
-            "high": [1.055 + i * 0.001 for i in range(10)],
-            "low": [1.045 + i * 0.001 for i in range(10)],
-            "volume": [1000000] * 10,
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [1700000000000 + i * 3600000 for i in range(10)],
+                "close": [1.05 + i * 0.001 for i in range(10)],
+                "open": [1.05 + i * 0.001 for i in range(10)],
+                "high": [1.055 + i * 0.001 for i in range(10)],
+                "low": [1.045 + i * 0.001 for i in range(10)],
+                "volume": [1000000] * 10,
+            }
+        )
 
         # Create implied vol DataFrame
-        implied_vol_df = pd.DataFrame({
-            "timestamp": [1700000000000 + i * 3600000 for i in range(10)],
-            "close": [8.0 + i * 0.1 for i in range(10)],  # EVZ prices
-        })
+        implied_vol_df = pd.DataFrame(
+            {
+                "timestamp": [1700000000000 + i * 3600000 for i in range(10)],
+                "close": [8.0 + i * 0.1 for i in range(10)],  # EVZ prices
+            }
+        )
 
         result = add_forex_features_to_dataframe(
-            df, "EUR_USD",
+            df,
+            "EUR_USD",
             implied_vol_df=implied_vol_df,
         )
 
@@ -1259,6 +1293,7 @@ class TestImpliedVolFeatures:
 # =============================================================================
 # EDGE CASES AND ERROR HANDLING
 # =============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and error handling."""
@@ -1305,10 +1340,12 @@ class TestEdgeCases:
         """Test handling of zero open interest in COT data."""
         from forex_features import calculate_cot_features
 
-        cot_df = pd.DataFrame({
-            "EUR_NET": [10000],
-            "EUR_OI": [0],  # Zero OI
-        })
+        cot_df = pd.DataFrame(
+            {
+                "EUR_NET": [10000],
+                "EUR_OI": [0],  # Zero OI
+            }
+        )
 
         net_pct, zscore, change, positioning, valid = calculate_cot_features("EUR", cot_df)
         # Should handle gracefully
@@ -1318,7 +1355,7 @@ class TestEdgeCases:
         """Test handling of NaN in implied vol prices."""
         from forex_features import calculate_implied_vol_features
 
-        implied_vol_prices = [8.0, 9.0, float('nan')]
+        implied_vol_prices = [8.0, 9.0, float("nan")]
 
         normalized_vol, percentile, regime, valid = calculate_implied_vol_features(
             implied_vol_prices, symbol="EUR_USD"

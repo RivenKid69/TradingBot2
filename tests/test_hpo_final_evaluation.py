@@ -54,11 +54,13 @@ _install_sb3_stub()
 def mock_val_data():
     """Create mock validation data (timestamps 100-149)."""
     return {
-        "BTCUSDT": pd.DataFrame({
-            "timestamp": range(100, 150),
-            "close": np.random.randn(50) + 100,
-            "volume": np.random.randn(50) * 1000,
-        })
+        "BTCUSDT": pd.DataFrame(
+            {
+                "timestamp": range(100, 150),
+                "close": np.random.randn(50) + 100,
+                "volume": np.random.randn(50) * 1000,
+            }
+        )
     }
 
 
@@ -66,11 +68,13 @@ def mock_val_data():
 def mock_test_data():
     """Create mock test data (timestamps 150-199)."""
     return {
-        "BTCUSDT": pd.DataFrame({
-            "timestamp": range(150, 200),
-            "close": np.random.randn(50) + 100,
-            "volume": np.random.randn(50) * 1000,
-        })
+        "BTCUSDT": pd.DataFrame(
+            {
+                "timestamp": range(150, 200),
+                "close": np.random.randn(50) + 100,
+                "volume": np.random.randn(50) * 1000,
+            }
+        )
     }
 
 
@@ -98,9 +102,7 @@ class TestFinalEvaluationAfterHPO:
 
         pass  # This is integration-level test - would need full setup
 
-    def test_final_evaluation_falls_back_to_val_when_no_test(
-        self, mock_val_data, capsys
-    ):
+    def test_final_evaluation_falls_back_to_val_when_no_test(self, mock_val_data, capsys):
         """
         Test that final evaluation uses validation data as fallback
         when test data is not configured.
@@ -146,10 +148,12 @@ class TestConfigurationValidation:
         data_config = config.get("data", {})
 
         # Check that all three splits are defined
-        assert "train_start_ts" in data_config or "start_ts" in data_config, \
-            "Train split start not defined"
-        assert "train_end_ts" in data_config or "end_ts" in data_config, \
-            "Train split end not defined"
+        assert (
+            "train_start_ts" in data_config or "start_ts" in data_config
+        ), "Train split start not defined"
+        assert (
+            "train_end_ts" in data_config or "end_ts" in data_config
+        ), "Train split end not defined"
         assert "val_start_ts" in data_config, "Validation split start not defined"
         assert "val_end_ts" in data_config, "Validation split end not defined"
         assert "test_start_ts" in data_config, "Test split start not defined"
@@ -194,8 +198,9 @@ class TestConfigurationValidation:
         if val_start and val_end:
             duration = val_end - val_start
             # Should be at least 1 day (86400 seconds)
-            assert duration >= 86400, \
-                f"Validation split too short: {duration} seconds (need at least 1 day)"
+            assert (
+                duration >= 86400
+            ), f"Validation split too short: {duration} seconds (need at least 1 day)"
 
 
 class TestDocumentationAndComments:
@@ -212,12 +217,11 @@ class TestDocumentationAndComments:
         source = inspect.getsource(train_module.objective)
 
         # Check for critical documentation
-        assert "CRITICAL" in source or "critical" in source.lower(), \
-            "Objective function should have CRITICAL comment about data usage"
-        assert "validation" in source.lower(), \
-            "Objective function should mention validation data"
-        assert "test" in source.lower(), \
-            "Objective function should mention test data"
+        assert (
+            "CRITICAL" in source or "critical" in source.lower()
+        ), "Objective function should have CRITICAL comment about data usage"
+        assert "validation" in source.lower(), "Objective function should mention validation data"
+        assert "test" in source.lower(), "Objective function should mention test data"
 
     def test_code_references_ml_best_practices(self):
         """
@@ -230,23 +234,22 @@ class TestDocumentationAndComments:
         source = inspect.getsource(train_module.objective)
 
         # Check for references to ML literature or best practices
-        has_reference = any([
-            "Hastie" in source,
-            "Elements of Statistical Learning" in source,
-            "best practice" in source.lower(),
-            "ML best practice" in source,
-        ])
+        has_reference = any(
+            [
+                "Hastie" in source,
+                "Elements of Statistical Learning" in source,
+                "best practice" in source.lower(),
+                "ML best practice" in source,
+            ]
+        )
 
-        assert has_reference, \
-            "Code should reference ML best practices or literature"
+        assert has_reference, "Code should reference ML best practices or literature"
 
 
 class TestBackwardsCompatibility:
     """Tests for backwards compatibility with existing configs."""
 
-    def test_objective_handles_missing_test_split_gracefully(
-        self, mock_val_data
-    ):
+    def test_objective_handles_missing_test_split_gracefully(self, mock_val_data):
         """
         Test that objective function works when test split is not configured.
         This ensures backwards compatibility.

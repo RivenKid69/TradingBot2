@@ -71,11 +71,7 @@ class TestNotebookService:
         session = await service.create_session(workspace_id, user_id)
 
         # Add code cell
-        cell = await service.add_cell(
-            session.session_id,
-            CellType.CODE,
-            "print('hello world')"
-        )
+        cell = await service.add_cell(session.session_id, CellType.CODE, "print('hello world')")
 
         assert cell is not None
         assert cell.cell_type == CellType.CODE
@@ -88,9 +84,7 @@ class TestNotebookService:
         session = await service.create_session(workspace_id, user_id)
 
         cell = await service.add_cell(
-            session.session_id,
-            CellType.MARKDOWN,
-            "# Header\n\nSome text"
+            session.session_id, CellType.MARKDOWN, "# Header\n\nSome text"
         )
 
         assert cell.cell_type == CellType.MARKDOWN
@@ -100,9 +94,7 @@ class TestNotebookService:
         """Test executing a simple code cell."""
         session = await service.create_session(workspace_id, user_id)
         cell = await service.add_cell(
-            session.session_id,
-            CellType.CODE,
-            "result = 2 + 2\nprint(result)"
+            session.session_id, CellType.CODE, "result = 2 + 2\nprint(result)"
         )
 
         output = await service.execute_cell(session.session_id, cell.id)
@@ -115,9 +107,7 @@ class TestNotebookService:
         """Test execution with prohibited import (os module)."""
         session = await service.create_session(workspace_id, user_id)
         cell = await service.add_cell(
-            session.session_id,
-            CellType.CODE,
-            "import os\nos.system('ls')"
+            session.session_id, CellType.CODE, "import os\nos.system('ls')"
         )
 
         output = await service.execute_cell(session.session_id, cell.id)
@@ -129,17 +119,9 @@ class TestNotebookService:
     async def test_update_cell(self, service, workspace_id, user_id):
         """Test updating cell content."""
         session = await service.create_session(workspace_id, user_id)
-        cell = await service.add_cell(
-            session.session_id,
-            CellType.CODE,
-            "original code"
-        )
+        cell = await service.add_cell(session.session_id, CellType.CODE, "original code")
 
-        updated_cell = await service.update_cell(
-            session.session_id,
-            cell.id,
-            "updated code"
-        )
+        updated_cell = await service.update_cell(session.session_id, cell.id, "updated code")
 
         # update_cell returns the updated cell object
         assert updated_cell is not None
@@ -149,11 +131,7 @@ class TestNotebookService:
     async def test_delete_cell(self, service, workspace_id, user_id):
         """Test deleting a cell."""
         session = await service.create_session(workspace_id, user_id)
-        cell = await service.add_cell(
-            session.session_id,
-            CellType.CODE,
-            "some code"
-        )
+        cell = await service.add_cell(session.session_id, CellType.CODE, "some code")
 
         deleted = await service.delete_cell(session.session_id, cell.id)
 
@@ -212,10 +190,7 @@ class TestCodeEditorService:
     async def test_create_session(self, service, workspace_id, user_id):
         """Test creating editor session."""
         session = await service.create_session(
-            workspace_id,
-            user_id,
-            "strategy.py",
-            "def run():\n    pass"
+            workspace_id, user_id, "strategy.py", "def run():\n    pass"
         )
 
         assert session is not None
@@ -225,17 +200,9 @@ class TestCodeEditorService:
     @pytest.mark.asyncio
     async def test_set_content(self, service, workspace_id, user_id):
         """Test updating editor content."""
-        session = await service.create_session(
-            workspace_id,
-            user_id,
-            "test.py",
-            "original"
-        )
+        session = await service.create_session(workspace_id, user_id, "test.py", "original")
 
-        updated_session = await service.set_content(
-            session.session_id,
-            "updated content"
-        )
+        updated_session = await service.set_content(session.session_id, "updated content")
 
         assert updated_session is not None
         assert updated_session.content == "updated content"
@@ -244,16 +211,13 @@ class TestCodeEditorService:
     async def test_get_completions(self, service, workspace_id, user_id):
         """Test getting code completions."""
         from packages.cloud.ide.code_editor import Position
+
         session = await service.create_session(
-            workspace_id,
-            user_id,
-            "test.py",
-            "import pandas as pd\npd."
+            workspace_id, user_id, "test.py", "import pandas as pd\npd."
         )
 
         completions = await service.get_completions(
-            session.session_id,
-            Position(line=1, character=3)
+            session.session_id, Position(line=1, character=3)
         )
 
         assert isinstance(completions, list)
@@ -262,10 +226,7 @@ class TestCodeEditorService:
     async def test_get_diagnostics(self, service, workspace_id, user_id):
         """Test getting diagnostics."""
         session = await service.create_session(
-            workspace_id,
-            user_id,
-            "test.py",
-            "def broken(\n    pass"  # Syntax error
+            workspace_id, user_id, "test.py", "def broken(\n    pass"  # Syntax error
         )
 
         diagnostics = await service.get_diagnostics(session.session_id)
@@ -275,12 +236,7 @@ class TestCodeEditorService:
     @pytest.mark.asyncio
     async def test_close_session(self, service, workspace_id, user_id):
         """Test closing editor session."""
-        session = await service.create_session(
-            workspace_id,
-            user_id,
-            "test.py",
-            "content"
-        )
+        session = await service.create_session(workspace_id, user_id, "test.py", "content")
 
         closed = await service.close_session(session.session_id)
 
@@ -308,11 +264,7 @@ class TestVirtualFileSystem:
     @pytest.mark.asyncio
     async def test_write_file(self, vfs, workspace_id):
         """Test writing a file."""
-        file = await vfs.write_file(
-            workspace_id,
-            "strategy.py",
-            b"# Strategy code"
-        )
+        file = await vfs.write_file(workspace_id, "strategy.py", b"# Strategy code")
 
         assert file is not None
         assert file.name == "strategy.py"
@@ -321,11 +273,7 @@ class TestVirtualFileSystem:
     @pytest.mark.asyncio
     async def test_read_file(self, vfs, workspace_id):
         """Test reading file content."""
-        await vfs.write_file(
-            workspace_id,
-            "test.py",
-            b"test content"
-        )
+        await vfs.write_file(workspace_id, "test.py", b"test content")
 
         content = await vfs.read_file(workspace_id, "test.py")
 
@@ -334,18 +282,9 @@ class TestVirtualFileSystem:
     @pytest.mark.asyncio
     async def test_overwrite_file(self, vfs, workspace_id):
         """Test overwriting a file."""
-        await vfs.write_file(
-            workspace_id,
-            "test.py",
-            b"original"
-        )
+        await vfs.write_file(workspace_id, "test.py", b"original")
 
-        file = await vfs.write_file(
-            workspace_id,
-            "test.py",
-            b"updated",
-            overwrite=True
-        )
+        file = await vfs.write_file(workspace_id, "test.py", b"updated", overwrite=True)
 
         assert file is not None
         content = await vfs.read_file(workspace_id, "test.py")
@@ -354,11 +293,7 @@ class TestVirtualFileSystem:
     @pytest.mark.asyncio
     async def test_delete_file(self, vfs, workspace_id):
         """Test deleting a file."""
-        await vfs.write_file(
-            workspace_id,
-            "test.py",
-            b"content"
-        )
+        await vfs.write_file(workspace_id, "test.py", b"content")
 
         deleted = await vfs.delete_file(workspace_id, "test.py")
 
@@ -393,11 +328,7 @@ class TestVirtualFileSystem:
     async def test_path_traversal_normalized(self, vfs, workspace_id):
         """Test that path traversal attempts are normalized safely."""
         # Path traversal attempts are normalized (.. removed), not errored
-        file = await vfs.write_file(
-            workspace_id,
-            "../../../etc/passwd",
-            b"safe content"
-        )
+        file = await vfs.write_file(workspace_id, "../../../etc/passwd", b"safe content")
         # The path should be normalized to just "etc/passwd"
         assert file.path == "etc/passwd"
         assert ".." not in file.path

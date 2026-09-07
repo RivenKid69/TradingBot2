@@ -308,7 +308,7 @@ class TestArtifactVerifier:
             "order": {  # Prohibited!
                 "side": "BUY",
                 "quantity": 100,
-            }
+            },
         }
         manifest_path = tmp_path / "manifest.json"
         manifest_path.write_text(json.dumps(manifest))

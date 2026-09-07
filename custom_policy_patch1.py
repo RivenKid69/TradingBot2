@@ -6,7 +6,7 @@
 # 3. CustomMlpExtractor радикально упрощен. Теперь это не сложный анализатор
 #    окон, а простой MLP-кодировщик признаков ОДНОГО временного шага.
 # 4. Все неиспользуемые более классы (Attention, Conv блоки и т.д.) удалены.
-# 
+#
 # --- ИСПРАВЛЕНИЕ IndexError ---
 # Применены точечные исправления к CustomActorCriticPolicy, чтобы она
 # корректно работала с новой GRU-архитектурой, не затрагивая остальной код.
@@ -134,7 +134,6 @@ class QuantileValueHead(nn.Module):
         return quantiles
 
 
-
 class CustomMlpExtractor(nn.Module):
     """
     Преобразует латенты RNN (GRU/LSTM) в общее представление для акторной и
@@ -226,7 +225,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             lr_schedule = lr_scheduler
 
         arch_params = arch_params or {}
-        hidden_dim = arch_params.get('hidden_dim', 64)
+        hidden_dim = arch_params.get("hidden_dim", 64)
         # SB3 ожидает, что lstm_hidden_size задаёт фактическую размерность скрытого
         # состояния. Если мы не пробросим это значение, политика внутри базового
         # класса создаст LSTM размером по умолчанию (256), а дальнейшие головы,
@@ -248,9 +247,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 f"Score policy requires Box action space, got {type(action_space)!r}"
             )
         if int(np.prod(action_space.shape)) != 1:
-            raise ValueError(
-                "Score policy expects a single-dimensional Box action space"
-            )
+            raise ValueError("Score policy expects a single-dimensional Box action space")
         self.action_dim = 1
         self._multi_discrete_nvec = None
         self._multi_head_sizes: Tuple[int, ...] = tuple()
@@ -263,31 +260,33 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self._include_heads_bool: Optional[Dict[str, bool]] = None
         self._execution_mode = "score"
         self._loss_head_weights_tensor: Optional[torch.Tensor] = None
-        self._score_clip_eps: float = 5e-3  # используется только как fallback при logit() вне train-path
+        self._score_clip_eps: float = (
+            5e-3  # используется только как fallback при logit() вне train-path
+        )
 
-        act_str = arch_params.get('activation', 'silu').lower()
+        act_str = arch_params.get("activation", "silu").lower()
         activation_map: Dict[str, Type[nn.Module]] = {
-            'relu': nn.ReLU,
-            'tanh': nn.Tanh,
-            'leakyrelu': nn.LeakyReLU,
-            'leaky_relu': nn.LeakyReLU,
-            'elu': nn.ELU,
-            'gelu': nn.GELU,
-            'silu': nn.SiLU,
+            "relu": nn.ReLU,
+            "tanh": nn.Tanh,
+            "leakyrelu": nn.LeakyReLU,
+            "leaky_relu": nn.LeakyReLU,
+            "elu": nn.ELU,
+            "gelu": nn.GELU,
+            "silu": nn.SiLU,
         }
         try:
             self.activation = activation_map[act_str]
         except KeyError as err:
-            canonical_options = sorted({
-                'leakyrelu' if key.startswith('leaky') else key for key in activation_map
-            })
+            canonical_options = sorted(
+                {"leakyrelu" if key.startswith("leaky") else key for key in activation_map}
+            )
             raise ValueError(
                 f"Unsupported activation '{act_str}' for CustomActorCriticPolicy."
                 f" Supported options: {canonical_options}"
             ) from err
 
         # Параметры n_res_blocks, n_attn_blocks, attn_heads больше не нужны
-        
+
         self.use_memory = True  # Память обеспечивается рекуррентными слоями SB3
 
         def _coerce_arch_float(value: Optional[float], fallback: float, key: str) -> float:
@@ -339,12 +338,14 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                         f"Invalid '{key}' string value in policy arch params: {value}. "
                         f"Expected 'true'/'false', 'yes'/'no', '1'/'0', or 'on'/'off'"
                     )
-            raise ValueError(f"Invalid '{key}' value type in policy arch params: {type(value).__name__}")
+            raise ValueError(
+                f"Invalid '{key}' value type in policy arch params: {type(value).__name__}"
+            )
 
         critic_cfg_raw = arch_params.get("critic") if arch_params else None
-        self._critic_cfg: Mapping[str, Any] | None = critic_cfg_raw if isinstance(
-            critic_cfg_raw, Mapping
-        ) else None
+        self._critic_cfg: Mapping[str, Any] | None = (
+            critic_cfg_raw if isinstance(critic_cfg_raw, Mapping) else None
+        )
         critic_cfg = self._critic_cfg or {}
 
         distributional_flag = critic_cfg.get("distributional")
@@ -367,7 +368,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 critic_cfg.get("num_quantiles"), 32, "critic.num_quantiles"
             )
             if self.num_quantiles < 1:
-                raise ValueError("'critic.num_quantiles' must be >= 1 when distributional critic is enabled")
+                raise ValueError(
+                    "'critic.num_quantiles' must be >= 1 when distributional critic is enabled"
+                )
             self.quantile_huber_kappa = _coerce_arch_float(
                 critic_cfg.get("huber_kappa"), 1.0, "critic.huber_kappa"
             )
@@ -416,9 +419,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # with lr_schedule in base class __init__. The 'lr' will be restored and used
         # in _setup_custom_optimizer().
         temp_lr_for_init = None
-        if optimizer_kwargs and 'lr' in optimizer_kwargs:
+        if optimizer_kwargs and "lr" in optimizer_kwargs:
             optimizer_kwargs = dict(optimizer_kwargs)  # Make a copy
-            temp_lr_for_init = optimizer_kwargs.pop('lr')
+            temp_lr_for_init = optimizer_kwargs.pop("lr")
 
         # dist_head создаётся позже в _build, но атрибут инициализируем заранее,
         # чтобы на него можно было безопасно ссылаться до сборки модели.
@@ -479,14 +482,13 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if not self._use_quantile_value_head:
             self.value_net = self.dist_head
 
-        
-
         if isinstance(self.action_space, spaces.Box):
             self.unconstrained_log_std = nn.Parameter(torch.zeros(self.action_dim))
             param = getattr(self, "unconstrained_log_std", None)
             assert isinstance(param, torch.nn.Parameter), "missing unconstrained_log_std parameter"
-            assert tuple(param.shape) == (self.action_dim,), \
-                f"bad log_std shape {tuple(param.shape)} != ({self.action_dim},)"
+            assert tuple(param.shape) == (
+                self.action_dim,
+            ), f"bad log_std shape {tuple(param.shape)} != ({self.action_dim},)"
 
             # CRITICAL FIX (2025-11-25): Detect action space bounds and use appropriate activation
             # - action_space = [0, 1]: use sigmoid (outputs [0, 1])
@@ -605,9 +607,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         return resolved
 
-    def _register_active_heads(
-        self, payload: Optional[Mapping[str, Any] | Sequence[Any]]
-    ) -> None:
+    def _register_active_heads(self, payload: Optional[Mapping[str, Any] | Sequence[Any]]) -> None:
         resolved = self._resolve_include_heads(payload)
         if resolved is None:
             return
@@ -659,10 +659,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         self.v_min = v_min
         self.v_max = v_max
-        
+
         # Создаем временный тензор с новыми значениями
         new_atoms = torch.linspace(v_min, v_max, self.num_atoms, device=self.atoms.device)
-        
+
         # Копируем данные "in-place" в существующий буфер.
         # Это сохраняет регистрацию и гарантирует правильное сохранение/загрузку.
         self.atoms.copy_(new_atoms)
@@ -670,10 +670,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     def _build_mlp_extractor(self) -> None:
         # Теперь создается простой MLP экстрактор
         self.mlp_extractor = CustomMlpExtractor(
-            rnn_latent_dim=self.hidden_dim,
-            hidden_dim=self.hidden_dim,
-            activation=self.activation
+            rnn_latent_dim=self.hidden_dim, hidden_dim=self.hidden_dim, activation=self.activation
         )
+
     def _build(self, lr_schedule) -> None:
         """
         Создаёт архитектуру сети, используя базовую реализацию SB3, а затем
@@ -686,14 +685,14 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # with lr_schedule in base class _build(). The lr will be applied later in
         # _setup_custom_optimizer().
         temp_lr = None
-        if self.optimizer_kwargs and 'lr' in self.optimizer_kwargs:
-            temp_lr = self.optimizer_kwargs.pop('lr')
+        if self.optimizer_kwargs and "lr" in self.optimizer_kwargs:
+            temp_lr = self.optimizer_kwargs.pop("lr")
 
         super()._build(lr_schedule)
 
         # Restore 'lr' to optimizer_kwargs for later use in _setup_custom_optimizer()
         if temp_lr is not None:
-            self.optimizer_kwargs['lr'] = temp_lr
+            self.optimizer_kwargs["lr"] = temp_lr
 
         if self._use_quantile_value_head:
             # Pass enforce_monotonicity parameter to QuantileValueHead
@@ -788,14 +787,14 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # Use _pending_optimizer_kwargs which contains the original
         # user-provided values (including 'lr' if specified), not self.optimizer_kwargs
         # which may have been filtered by the base class.
-        optimizer_kwargs = getattr(self, '_pending_optimizer_kwargs', self.optimizer_kwargs) or {}
-        optimizer_class = getattr(self, '_pending_optimizer_class', self.optimizer_class)
+        optimizer_kwargs = getattr(self, "_pending_optimizer_kwargs", self.optimizer_kwargs) or {}
+        optimizer_class = getattr(self, "_pending_optimizer_class", self.optimizer_class)
 
         # Recreate the optimizer so the new parameter set (including feature
         # extractors) participates in training.
         # IMPORTANT: Check if 'lr' is in optimizer_kwargs to allow user override
         # If user explicitly sets lr in optimizer_kwargs, respect it; otherwise use lr_schedule
-        if 'lr' in optimizer_kwargs:
+        if "lr" in optimizer_kwargs:
             # User provided explicit lr in optimizer_kwargs - use it directly
             self.optimizer = optimizer_class(params, **optimizer_kwargs)
         else:
@@ -815,6 +814,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         # После настройки оптимизатора ссылка на lr_schedule больше не нужна.
         self._pending_lr_schedule = None
+
     # --- ИСПРАВЛЕНИЕ: Метод переименован с forward_rnn на _forward_recurrent ---
 
     @staticmethod
@@ -901,9 +901,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 vf_states = tuple(t.clone() for t in self.recurrent_initial_state.vf)
             return RNNStates(pi=actor_states, vf=vf_states)
 
-        if (
-            len(lstm_states) == 2
-            and (self.lstm_critic is not None or not getattr(self, "shared_lstm", False))
+        if len(lstm_states) == 2 and (
+            self.lstm_critic is not None or not getattr(self, "shared_lstm", False)
         ):
             pi_raw, vf_raw = lstm_states
             pi_states = self._align_state_tuple(
@@ -934,9 +933,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             )
             return RNNStates(pi=pi_states, vf=vf_states)
 
-        raise ValueError(
-            "Неподдерживаемый формат tuple для отдельных состояний актёра/критика"
-        )
+        raise ValueError("Неподдерживаемый формат tuple для отдельных состояний актёра/критика")
 
     @staticmethod
     def _process_sequence(
@@ -951,11 +948,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             target_device = features.device
         else:
             target_device = next(
-                (
-                    tensor.device
-                    for tensor in features
-                    if isinstance(tensor, torch.Tensor)
-                ),
+                (tensor.device for tensor in features if isinstance(tensor, torch.Tensor)),
                 episode_starts.device,
             )
 
@@ -983,7 +976,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # Оба пути корректно обрабатывают episode boundaries (episode_starts).
         # Production код протестирован и работает для обоих типов recurrent modules.
         #
-        # Reference: CLAUDE.md → "НЕ БАГИ" → #27
+        # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #27
         # ═══════════════════════════════════════════════════════════════════════════════
         if isinstance(recurrent_module, nn.GRU):
             if not lstm_states:
@@ -993,7 +986,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             # если вдруг пришли (h, c) от LSTM, просто игнорируем c
             n_seq = hidden_state.shape[1]
 
-            features_sequence = features.reshape((n_seq, -1, recurrent_module.input_size)).swapaxes(0, 1)
+            features_sequence = features.reshape((n_seq, -1, recurrent_module.input_size)).swapaxes(
+                0, 1
+            )
             episode_starts = episode_starts.reshape((n_seq, -1)).swapaxes(0, 1)
 
             if torch.all(episode_starts == 0.0):
@@ -1004,7 +999,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             outputs: list[torch.Tensor] = []
             for step_features, episode_start in zip_strict(features_sequence, episode_starts):
                 hidden_state = (1.0 - episode_start).view(1, n_seq, 1) * hidden_state
-                step_output, hidden_state = recurrent_module(step_features.unsqueeze(dim=0), hidden_state)
+                step_output, hidden_state = recurrent_module(
+                    step_features.unsqueeze(dim=0), hidden_state
+                )
                 outputs.append(step_output)
 
             output = torch.flatten(torch.cat(outputs).transpose(0, 1), start_dim=0, end_dim=1)
@@ -1064,8 +1061,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 new_vf_states = new_pi_states
             else:
                 new_vf_states = tuple(
-                    self._modulate_critic_gradient(state, grad_scale)
-                    for state in new_pi_states
+                    self._modulate_critic_gradient(state, grad_scale) for state in new_pi_states
                 )
         else:
             latent_vf = self.critic(vf_features)
@@ -1177,9 +1173,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # Take minimum to reduce overestimation bias
         return torch.min(value_1, value_2)
 
-    def _loss_head_weights_for_device(
-        self, device: torch.device
-    ) -> Optional[torch.Tensor]:
+    def _loss_head_weights_for_device(self, device: torch.device) -> Optional[torch.Tensor]:
         if self._loss_head_weights_tensor is None:
             return None
         if self._loss_head_weights_tensor.device != device:
@@ -1192,9 +1186,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if isinstance(payload, tuple):
             return tuple(self._modulate_critic_gradient(item, scale) for item in payload)
         if not isinstance(payload, torch.Tensor):
-            raise TypeError(
-                "Critic gradient modulation expects a tensor or tuple of tensors"
-            )
+            raise TypeError("Critic gradient modulation expects a tensor or tuple of tensors")
 
         clamped = float(min(max(scale, 0.0), 1.0))
         if clamped >= 1.0:
@@ -1262,9 +1254,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             return
 
         device = getattr(self, "device", torch.device("cpu"))
-        self._loss_head_weights_tensor = torch.as_tensor(
-            values, dtype=torch.float32, device=device
-        )
+        self._loss_head_weights_tensor = torch.as_tensor(values, dtype=torch.float32, device=device)
         self._register_active_heads(weights)
 
     def _iter_multi_heads(
@@ -1389,9 +1379,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             if not torch.isfinite(raw_tensor).all():
                 raise RuntimeError("Received non-finite raw action when computing log_prob")
 
-            assert (
-                scores.shape == raw_tensor.shape
-            ), "scores/raw shape mismatch"
+            assert scores.shape == raw_tensor.shape, "scores/raw shape mismatch"
             log_prob_raw = self._log_prob_raw_only(distribution, raw_tensor)
             log_det = self._log_sigmoid_jacobian_from_raw(raw_tensor)
             if log_det.ndim > 1:
@@ -1400,9 +1388,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             return log_prob_raw - log_det
         return distribution.log_prob(actions)
 
-    def weighted_entropy(
-        self, distribution: torch.distributions.Distribution
-    ) -> torch.Tensor:
+    def weighted_entropy(self, distribution: torch.distributions.Distribution) -> torch.Tensor:
         if not isinstance(self.action_space, spaces.Box):
             entropy = distribution.entropy()
             if entropy.ndim > 1:
@@ -1430,7 +1416,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         #
         # For ent_coef > 0.01: consider increasing samples to 8-16
         #
-        # Reference: CLAUDE.md → "НЕ БАГИ" → #41
+        # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #41
         # ═══════════════════════════════════════════════════════════════════════════
         samples = 4
         entropy_accum: Optional[torch.Tensor] = None
@@ -1579,7 +1565,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             lstm_states = self.recurrent_initial_state
 
         features = self.extract_features(obs)
-        latent_pi, latent_vf, new_states = self._forward_recurrent(features, lstm_states, episode_starts)
+        latent_pi, latent_vf, new_states = self._forward_recurrent(
+            features, lstm_states, episode_starts
+        )
 
         latent_pi = self.mlp_extractor.forward_actor(latent_pi)
         latent_vf = self.mlp_extractor.forward_critic(latent_vf)
@@ -1589,7 +1577,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # CRITICAL FIX: Cache second critic's quantiles/logits for Twin Critics VF clipping
         # This ensures last_value_quantiles_min can access both critics' outputs
         if self._use_twin_critics:
-            _ = self._get_value_logits_2(latent_vf)  # Caches _last_value_quantiles_2 or _last_value_logits_2
+            _ = self._get_value_logits_2(
+                latent_vf
+            )  # Caches _last_value_quantiles_2 or _last_value_logits_2
 
         # Cache latent_vf for Twin Critics loss computation
         self._last_latent_vf = latent_vf.detach()
@@ -1655,7 +1645,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             if state is None:
                 lstm_states: RNNStates | tuple[torch.Tensor, ...] = self.recurrent_initial_state
             elif hasattr(state, "pi") and hasattr(state, "vf"):
-                lstm_states = RNNStates(pi=_to_tensor_tuple(state.pi), vf=_to_tensor_tuple(state.vf))
+                lstm_states = RNNStates(
+                    pi=_to_tensor_tuple(state.pi), vf=_to_tensor_tuple(state.vf)
+                )
             else:
                 lstm_states = _to_tensor_tuple(state)
 
@@ -1759,9 +1751,13 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             actor_states = coerced_states.pi
 
         if self.lstm_critic is not None:
-            latent_vf, _ = self._process_sequence(features, critic_states, episode_starts, self.lstm_critic)
+            latent_vf, _ = self._process_sequence(
+                features, critic_states, episode_starts, self.lstm_critic
+            )
         elif self.shared_lstm:
-            latent_pi, _ = self._process_sequence(features, actor_states, episode_starts, self.lstm_actor)
+            latent_pi, _ = self._process_sequence(
+                features, actor_states, episode_starts, self.lstm_actor
+            )
             latent_vf = latent_pi
         else:
             latent_vf = self.critic(features)
@@ -1837,10 +1833,16 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             bias_key = "action_net.bias"
             expected_weight_shape = tuple(action_head.weight.shape)
             expected_bias_shape = tuple(action_head.bias.shape)
-            if weight_key in filtered_state and tuple(filtered_state[weight_key].shape) != expected_weight_shape:
+            if (
+                weight_key in filtered_state
+                and tuple(filtered_state[weight_key].shape) != expected_weight_shape
+            ):
                 removed_action_keys.append(weight_key)
                 filtered_state.pop(weight_key, None)
-            if bias_key in filtered_state and tuple(filtered_state[bias_key].shape) != expected_bias_shape:
+            if (
+                bias_key in filtered_state
+                and tuple(filtered_state[bias_key].shape) != expected_bias_shape
+            ):
                 removed_action_keys.append(bias_key)
                 filtered_state.pop(bias_key, None)
         if removed_action_keys:

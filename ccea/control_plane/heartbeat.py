@@ -39,8 +39,10 @@ logger = logging.getLogger(__name__)
 # Agent Status
 # ============================================================================
 
+
 class AgentStatus(str, Enum):
     """Agent online status."""
+
     ONLINE = "ONLINE"
     DEGRADED = "DEGRADED"
     OFFLINE = "OFFLINE"
@@ -50,6 +52,7 @@ class AgentStatus(str, Enum):
 @dataclass
 class AgentStatusInfo:
     """Agent status information."""
+
     agent_id: str
     status: AgentStatus
     last_heartbeat: Optional[datetime] = None
@@ -65,6 +68,7 @@ class AgentStatusInfo:
 # ============================================================================
 # Heartbeat Store Interface
 # ============================================================================
+
 
 class HeartbeatStore(ABC):
     """Abstract heartbeat store interface."""
@@ -108,10 +112,13 @@ class InMemoryHeartbeatStore(HeartbeatStore):
 
     def get_status(self, agent_id: str) -> AgentStatusInfo:
         with self._lock:
-            return self._statuses.get(agent_id, AgentStatusInfo(
-                agent_id=agent_id,
-                status=AgentStatus.UNKNOWN,
-            ))
+            return self._statuses.get(
+                agent_id,
+                AgentStatusInfo(
+                    agent_id=agent_id,
+                    status=AgentStatus.UNKNOWN,
+                ),
+            )
 
     def set_status(self, status: AgentStatusInfo) -> None:
         with self._lock:
@@ -125,6 +132,7 @@ class InMemoryHeartbeatStore(HeartbeatStore):
 # ============================================================================
 # Heartbeat Service
 # ============================================================================
+
 
 class HeartbeatService:
     """
@@ -204,7 +212,7 @@ class HeartbeatService:
                 "agent_id": agent_id,
                 "status": status.status.value,
                 "alerts": status.alerts,
-            }
+            },
         )
 
         return status
@@ -245,7 +253,9 @@ class HeartbeatService:
             agent_id=agent_id,
             status=status,
             last_heartbeat=last_time,
-            deployment_state=last_heartbeat.state.deployment_state if last_heartbeat.state else None,
+            deployment_state=(
+                last_heartbeat.state.deployment_state if last_heartbeat.state else None
+            ),
             run_state=last_heartbeat.state.run_state if last_heartbeat.state else None,
             agent_version=last_heartbeat.state.agent_version if last_heartbeat.state else None,
             uptime_seconds=last_heartbeat.state.uptime_seconds if last_heartbeat.state else None,
@@ -294,6 +304,7 @@ class HeartbeatService:
 # ============================================================================
 # Heartbeat Monitor (Background Task)
 # ============================================================================
+
 
 class HeartbeatMonitor:
     """
@@ -354,12 +365,18 @@ class HeartbeatMonitor:
 
                 if offline and self._alerts_callback:
                     for agent in offline:
-                        self._alerts_callback({
-                            "type": "agent_offline",
-                            "agent_id": agent.agent_id,
-                            "last_heartbeat": agent.last_heartbeat.isoformat() if agent.last_heartbeat else None,
-                            "missed_count": agent.consecutive_missed,
-                        })
+                        self._alerts_callback(
+                            {
+                                "type": "agent_offline",
+                                "agent_id": agent.agent_id,
+                                "last_heartbeat": (
+                                    agent.last_heartbeat.isoformat()
+                                    if agent.last_heartbeat
+                                    else None
+                                ),
+                                "missed_count": agent.consecutive_missed,
+                            }
+                        )
 
             except Exception as e:
                 logger.exception("Error in heartbeat monitor")

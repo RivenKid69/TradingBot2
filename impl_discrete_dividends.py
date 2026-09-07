@@ -69,8 +69,10 @@ _DEFAULT_BINOMIAL_STEPS = 201
 # Enums and Data Classes
 # =============================================================================
 
+
 class DividendModel(Enum):
     """Dividend handling model selection."""
+
     ESCROWED = "escrowed"  # PV-adjusted spot
     PIECEWISE_LOGNORMAL = "piecewise_lognormal"  # Lognormal between dividends
     PROPORTIONAL = "proportional"  # Dividend as % of spot
@@ -88,6 +90,7 @@ class DividendSchedule:
         payment_dates: Optional payment dates (usually T+2 after ex-date)
         is_percentage: If True, amounts are % of spot (e.g., 0.02 for 2%)
     """
+
     ex_dates: List[Union[datetime, float]]
     amounts: List[float]
     payment_dates: Optional[List[Union[datetime, float]]] = None
@@ -116,8 +119,10 @@ class DividendSchedule:
                     delta = ex_date
                 times.append(max(0.0, delta))
         else:
-            times = [max(0.0, float(t) - valuation_date) if isinstance(t, (int, float)) else t
-                     for t in self.ex_dates]
+            times = [
+                max(0.0, float(t) - valuation_date) if isinstance(t, (int, float)) else t
+                for t in self.ex_dates
+            ]
 
         return np.array(times, dtype=np.float64), np.array(self.amounts, dtype=np.float64)
 
@@ -125,6 +130,7 @@ class DividendSchedule:
 @dataclass
 class DividendAdjustedResult:
     """Result of dividend-adjusted pricing."""
+
     price: float
     adjusted_spot: float
     pv_dividends: float
@@ -136,6 +142,7 @@ class DividendAdjustedResult:
 # =============================================================================
 # Present Value of Dividends
 # =============================================================================
+
 
 def compute_pv_dividends(
     dividend_schedule: DividendSchedule,
@@ -175,6 +182,7 @@ def compute_pv_dividends(
 # =============================================================================
 # Escrowed Dividend Model
 # =============================================================================
+
 
 def adjust_spot_for_dividends(
     spot: float,
@@ -277,6 +285,7 @@ def price_with_escrowed_dividends(
 # =============================================================================
 # Piecewise Lognormal Model
 # =============================================================================
+
 
 def price_with_piecewise_lognormal(
     spot: float,
@@ -397,6 +406,7 @@ def price_with_piecewise_lognormal(
 # Binomial Tree with Explicit Dividends
 # =============================================================================
 
+
 def price_american_with_dividends(
     spot: float,
     strike: float,
@@ -475,8 +485,8 @@ def price_american_with_dividends(
     if p < 0 or p > 1:
         # Fallback to stable parameters
         p = 0.5
-        u = math.exp(volatility * math.sqrt(dt) + (rate - 0.5 * volatility ** 2) * dt)
-        d = math.exp(-volatility * math.sqrt(dt) + (rate - 0.5 * volatility ** 2) * dt)
+        u = math.exp(volatility * math.sqrt(dt) + (rate - 0.5 * volatility**2) * dt)
+        d = math.exp(-volatility * math.sqrt(dt) + (rate - 0.5 * volatility**2) * dt)
 
     # Find dividend steps (which tree step each dividend falls on)
     div_steps = []
@@ -494,14 +504,14 @@ def price_american_with_dividends(
     for i in range(n_steps + 1):
         for j in range(i + 1):
             # Base price from up/down moves
-            price = spot * (u ** j) * (d ** (i - j))
+            price = spot * (u**j) * (d ** (i - j))
 
             # Apply dividends that have occurred by step i
             for k, div_step in enumerate(div_steps):
                 if div_step != -1 and div_step < i:
                     if dividend_schedule.is_percentage:
                         # Multiplicative reduction
-                        price *= (1.0 - div_amounts[k])
+                        price *= 1.0 - div_amounts[k]
                     else:
                         # Absolute reduction (with floor at 0)
                         price = max(0.0, price - div_amounts[k])
@@ -559,6 +569,7 @@ def price_american_with_dividends(
 # =============================================================================
 # Dividend Estimation / Projection
 # =============================================================================
+
 
 def estimate_future_dividends(
     historical_dividends: List[Dividend],
@@ -692,6 +703,7 @@ def yield_to_discrete_dividends(
 # Internal Black-Scholes (for dividend-adjusted pricing)
 # =============================================================================
 
+
 def _black_scholes_internal(
     spot: float,
     strike: float,
@@ -736,6 +748,7 @@ def _black_scholes_internal(
 # =============================================================================
 # High-Level Interface
 # =============================================================================
+
 
 def price_with_dividends(
     spot: float,
@@ -829,6 +842,7 @@ def price_with_dividends(
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_dividend_schedule(
     ex_dates: List[Union[datetime, float]],

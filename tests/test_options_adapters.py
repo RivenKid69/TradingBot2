@@ -32,6 +32,7 @@ pytest.importorskip("pytest")
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_option_contract():
     """Sample OCC option contract data."""
@@ -79,24 +80,28 @@ def sample_option_chain():
 # IB Options Rate Limiter Tests (25 tests)
 # =============================================================================
 
+
 class TestIBOptionsRateLimiter:
     """Tests for IB options-specific rate limiting."""
 
     def test_import_rate_limiter(self):
         """Test rate limiter can be imported."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         assert limiter is not None
 
     def test_import_backward_compat_alias(self):
         """Test backward compatibility alias OptionsRateLimiter."""
         from adapters.ib.options_rate_limiter import OptionsRateLimiter
+
         limiter = OptionsRateLimiter()
         assert limiter is not None
 
     def test_rate_limiter_initial_state(self):
         """Test rate limiter starts with correct initial state."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         stats = limiter.get_stats()
         assert stats["chains_requested"] == 0
@@ -105,6 +110,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_chain_request_tracking(self):
         """Test chain request is tracked."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         limiter.record_chain_request()
         stats = limiter.get_stats()
@@ -113,6 +119,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_can_request_chain_initially(self):
         """Test can request chain initially."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         can_request = limiter.can_request_chain()
         assert can_request is True
@@ -120,6 +127,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_respects_chain_limit(self):
         """Test chain rate limit is enforced."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager(chain_limit_per_min=3)
         # Fill up requests
         for _ in range(3):
@@ -130,6 +138,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_quote_request_tracking(self):
         """Test quote request tracking."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         limiter.record_quote_request()
         stats = limiter.get_stats()
@@ -138,6 +147,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_can_request_quote_initially(self):
         """Test can request quote initially."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         can_request = limiter.can_request_quote()
         assert can_request is True
@@ -145,6 +155,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_respects_quote_limit(self):
         """Test quote rate limit is enforced."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager(quote_limit_per_sec=5)
         for _ in range(5):
             limiter.record_quote_request()
@@ -154,17 +165,19 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_order_request_tracking(self):
         """Test order request tracking."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         initial_count = limiter._order_requests_this_second
         limiter.record_order_request()
         # Verify order request was recorded (counter incremented)
-        assert limiter._order_requests_this_second == initial_count + 1, (
-            "Order request counter should increment after record_order_request()"
-        )
+        assert (
+            limiter._order_requests_this_second == initial_count + 1
+        ), "Order request counter should increment after record_order_request()"
 
     def test_rate_limiter_can_submit_order_initially(self):
         """Test can submit order initially."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         can_submit = limiter.can_submit_order()
         assert can_submit is True
@@ -172,6 +185,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_cache_chain(self):
         """Test caching chain data."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         test_data = {"strikes": [200, 210]}
         limiter.cache_chain("AAPL", date(2024, 12, 20), test_data)
@@ -181,6 +195,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_cache_miss(self):
         """Test cache miss returns None."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         cached = limiter.get_cached_chain("AAPL", date(2024, 12, 20))
         assert cached is None
@@ -188,6 +203,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_cache_invalidation(self):
         """Test cache invalidation."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         limiter.cache_chain("AAPL", date(2024, 12, 20), {"test": True})
         count = limiter.invalidate_cache("AAPL", date(2024, 12, 20))
@@ -198,6 +214,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_cache_invalidate_all_for_underlying(self):
         """Test invalidating all cache entries for an underlying."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         limiter.cache_chain("AAPL", date(2024, 12, 20), {"test": 1})
         limiter.cache_chain("AAPL", date(2024, 11, 15), {"test": 2})
@@ -207,6 +224,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_stats(self):
         """Test comprehensive statistics."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         stats = limiter.get_stats()
         assert "queue_size" in stats
@@ -218,6 +236,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_subscription_add(self):
         """Test adding market data subscription."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         added = limiter.add_subscription("AAPL241220C00200000")
         assert added is True
@@ -226,6 +245,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_subscription_remove(self):
         """Test removing market data subscription."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         limiter.add_subscription("AAPL241220C00200000")
         removed = limiter.remove_subscription("AAPL241220C00200000")
@@ -235,6 +255,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_subscription_limit(self):
         """Test subscription limit enforcement."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         # Add up to max
         for i in range(limiter.MAX_MARKET_DATA_LINES):
@@ -246,12 +267,14 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_queue_size(self):
         """Test queue size property."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         assert limiter.queue_size == 0
 
     def test_rate_limiter_cache_hit_rate(self):
         """Test cache hit rate calculation."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         # Initially no hits or misses
         assert limiter.cache_hit_rate == 0.0
@@ -259,6 +282,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_wait_for_chain_slot(self):
         """Test waiting for chain slot."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         # Should return immediately when under limit
         result = limiter.wait_for_chain_slot(timeout=0.1)
@@ -267,6 +291,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_wait_for_quote_slot(self):
         """Test waiting for quote slot."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         result = limiter.wait_for_quote_slot(timeout=0.1)
         assert result is True
@@ -274,6 +299,7 @@ class TestIBOptionsRateLimiter:
     def test_rate_limiter_constants(self):
         """Test rate limiter constants are defined."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         assert IBOptionsRateLimitManager.CHAIN_LIMIT_PER_MIN == 8
         assert IBOptionsRateLimitManager.QUOTE_LIMIT_PER_SEC == 80
         assert IBOptionsRateLimitManager.ORDER_LIMIT_PER_SEC == 40
@@ -282,6 +308,7 @@ class TestIBOptionsRateLimiter:
     def test_create_options_rate_limiter_factory(self):
         """Test factory function for rate limiter."""
         from adapters.ib.options_rate_limiter import create_options_rate_limiter
+
         limiter = create_options_rate_limiter("default")
         assert limiter is not None
         # Conservative profile should have lower limits
@@ -293,12 +320,14 @@ class TestIBOptionsRateLimiter:
 # OCC Symbology Tests (15 tests)
 # =============================================================================
 
+
 class TestOCCSymbology:
     """Tests for OCC option symbol parsing and generation."""
 
     def test_parse_occ_symbol_call(self):
         """Test parsing OCC call symbol."""
         from adapters.ib.options import parse_occ_symbol
+
         result = parse_occ_symbol("AAPL  241220C00200000")
         assert result["symbol"] == "AAPL"
         assert result["expiration"] == date(2024, 12, 20)
@@ -308,6 +337,7 @@ class TestOCCSymbology:
     def test_parse_occ_symbol_put(self):
         """Test parsing OCC put symbol."""
         from adapters.ib.options import parse_occ_symbol
+
         result = parse_occ_symbol("MSFT  240621P00400000")
         assert result["symbol"] == "MSFT"
         assert result["expiration"] == date(2024, 6, 21)
@@ -317,18 +347,21 @@ class TestOCCSymbology:
     def test_parse_occ_symbol_fractional_strike(self):
         """Test parsing OCC symbol with fractional strike."""
         from adapters.ib.options import parse_occ_symbol
+
         result = parse_occ_symbol("SPY   241220C00550500")
         assert result["strike"] == Decimal("550.50")
 
     def test_parse_occ_symbol_invalid_length(self):
         """Test parsing invalid OCC symbol raises error."""
         from adapters.ib.options import parse_occ_symbol
+
         with pytest.raises(ValueError, match="length"):
             parse_occ_symbol("INVALID")
 
     def test_create_occ_symbol_call(self):
         """Test creating OCC call symbol."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol(
             underlying="AAPL",
             expiration=date(2024, 12, 20),
@@ -340,6 +373,7 @@ class TestOCCSymbology:
     def test_create_occ_symbol_put(self):
         """Test creating OCC put symbol."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol(
             underlying="MSFT",
             expiration=date(2024, 6, 21),
@@ -351,6 +385,7 @@ class TestOCCSymbology:
     def test_create_occ_symbol_fractional_strike(self):
         """Test creating OCC symbol with fractional strike."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol(
             underlying="SPY",
             expiration=date(2024, 12, 20),
@@ -362,6 +397,7 @@ class TestOCCSymbology:
     def test_create_occ_symbol_long_underlying(self):
         """Test creating OCC symbol with 6-char underlying."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol(
             underlying="GOOGL",
             expiration=date(2024, 12, 20),
@@ -374,6 +410,7 @@ class TestOCCSymbology:
     def test_create_occ_symbol_short_underlying(self):
         """Test creating OCC symbol with short underlying pads correctly."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol(
             underlying="IBM",
             expiration=date(2024, 12, 20),
@@ -386,6 +423,7 @@ class TestOCCSymbology:
     def test_occ_roundtrip(self):
         """Test OCC symbol roundtrip (create -> parse)."""
         from adapters.ib.options import create_occ_symbol, parse_occ_symbol
+
         original = create_occ_symbol(
             underlying="AAPL",
             expiration=date(2024, 12, 20),
@@ -404,6 +442,7 @@ class TestOCCSymbology:
     def test_occ_symbol_with_low_strike(self):
         """Test OCC symbol with low strike price."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol(
             underlying="F",
             expiration=date(2024, 12, 20),
@@ -415,6 +454,7 @@ class TestOCCSymbology:
     def test_occ_symbol_with_high_strike(self):
         """Test OCC symbol with high strike price."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol(
             underlying="BRK",
             expiration=date(2024, 12, 20),
@@ -426,6 +466,7 @@ class TestOCCSymbology:
     def test_occ_symbol_format_consistency(self):
         """Test OCC symbol format is consistent."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol(
             underlying="AAPL",
             expiration=date(2024, 12, 20),
@@ -441,6 +482,7 @@ class TestOCCSymbology:
     def test_occ_parse_different_years(self):
         """Test parsing OCC symbols from different years."""
         from adapters.ib.options import parse_occ_symbol
+
         # 2025
         result = parse_occ_symbol("AAPL  250117C00200000")
         assert result["expiration"].year == 2025
@@ -451,6 +493,7 @@ class TestOCCSymbology:
     def test_occ_symbol_standardization(self):
         """Test that OCC symbols follow standard format."""
         from adapters.ib.options import create_occ_symbol, parse_occ_symbol
+
         # Verify the format matches exchange conventions
         symbol = create_occ_symbol("AAPL", date(2024, 12, 20), "C", Decimal("200"))
         assert symbol[6:12].isdigit()  # Date portion is numeric
@@ -461,6 +504,7 @@ class TestOCCSymbology:
 # =============================================================================
 # Options Data Classes Tests (25 tests)
 # =============================================================================
+
 
 class TestOptionsDataClasses:
     """Tests for options data classes."""
@@ -588,6 +632,7 @@ class TestOptionsDataClasses:
     def test_options_chain_data_creation(self):
         """Test OptionsChainData creation."""
         from adapters.ib.options import OptionsChainData
+
         chain = OptionsChainData(
             underlying="AAPL",
             expiration=date(2024, 12, 20),
@@ -775,6 +820,7 @@ class TestOptionsDataClasses:
     def test_options_order_result_creation(self):
         """Test OptionsOrderResult creation."""
         from adapters.ib.options import OptionsOrderResult
+
         result = OptionsOrderResult(
             success=True,
             order_id="12345",
@@ -786,6 +832,7 @@ class TestOptionsDataClasses:
     def test_options_order_result_filled(self):
         """Test OptionsOrderResult filled state."""
         from adapters.ib.options import OptionsOrderResult
+
         result = OptionsOrderResult(
             success=True,
             order_id="12345",
@@ -799,6 +846,7 @@ class TestOptionsDataClasses:
     def test_options_order_result_to_dict(self):
         """Test OptionsOrderResult to_dict method."""
         from adapters.ib.options import OptionsOrderResult
+
         result = OptionsOrderResult(
             success=True,
             order_id="12345",
@@ -812,6 +860,7 @@ class TestOptionsDataClasses:
     def test_margin_requirement_creation(self):
         """Test MarginRequirement creation."""
         from adapters.ib.options import MarginRequirement
+
         margin = MarginRequirement(
             initial_margin=Decimal("5000"),
             maintenance_margin=Decimal("4000"),
@@ -822,6 +871,7 @@ class TestOptionsDataClasses:
     def test_margin_requirement_to_dict(self):
         """Test MarginRequirement to_dict method."""
         from adapters.ib.options import MarginRequirement
+
         margin = MarginRequirement(
             initial_margin=Decimal("5000"),
             maintenance_margin=Decimal("4000"),
@@ -839,6 +889,7 @@ class TestOptionsDataClasses:
             IBOptionGreeks,
             IBOptionOrderResult,
         )
+
         assert IBOptionsAdapter is not None
         assert IBOptionContract is not None
         assert IBOptionQuote is not None
@@ -848,6 +899,7 @@ class TestOptionsDataClasses:
     def test_request_priority_enum(self):
         """Test RequestPriority enum."""
         from adapters.ib.options_rate_limiter import RequestPriority
+
         assert RequestPriority.ORDER_EXECUTION < RequestPriority.BACKFILL
         assert RequestPriority.FRONT_MONTH < RequestPriority.BACKGROUND_REFRESH
 
@@ -855,6 +907,7 @@ class TestOptionsDataClasses:
         """Test CachedChain creation."""
         from adapters.ib.options_rate_limiter import CachedChain
         import time
+
         cached = CachedChain(
             underlying="AAPL",
             expiration=date(2024, 12, 20),
@@ -869,6 +922,7 @@ class TestOptionsDataClasses:
         """Test CachedChain expiry."""
         from adapters.ib.options_rate_limiter import CachedChain
         import time
+
         cached = CachedChain(
             underlying="AAPL",
             expiration=date(2024, 12, 20),
@@ -882,6 +936,7 @@ class TestOptionsDataClasses:
         """Test CachedChain touch method."""
         from adapters.ib.options_rate_limiter import CachedChain
         import time
+
         cached = CachedChain(
             underlying="AAPL",
             expiration=date(2024, 12, 20),
@@ -897,21 +952,23 @@ class TestOptionsDataClasses:
 # IB Options Market Data Adapter Tests (45 tests)
 # =============================================================================
 
+
 class TestIBOptionsMarketDataAdapter:
     """Tests for IB Options market data adapter."""
 
     def test_import_adapter(self):
         """Test adapter can be imported."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
+
         assert IBOptionsMarketDataAdapter is not None
 
     def test_adapter_initialization(self):
         """Test adapter initializes correctly."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(
-            vendor=ExchangeVendor.IB,
-            config={"host": "127.0.0.1", "port": 7497, "client_id": 1}
+            vendor=ExchangeVendor.IB, config={"host": "127.0.0.1", "port": 7497, "client_id": 1}
         )
         assert adapter is not None
 
@@ -919,20 +976,16 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter has rate limiter."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
-        adapter = IBOptionsMarketDataAdapter(
-            vendor=ExchangeVendor.IB,
-            config={}
-        )
+
+        adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         assert adapter.options_rate_limiter is not None
 
     def test_adapter_get_rate_limit_stats(self):
         """Test adapter can get rate limit stats."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
-        adapter = IBOptionsMarketDataAdapter(
-            vendor=ExchangeVendor.IB,
-            config={}
-        )
+
+        adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         stats = adapter.get_rate_limit_stats()
         assert isinstance(stats, dict)
 
@@ -940,6 +993,7 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter has get_option_chain method."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "get_option_chain")
         assert callable(adapter.get_option_chain)
@@ -948,6 +1002,7 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter has get_option_quote method."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "get_option_quote")
         assert callable(adapter.get_option_quote)
@@ -956,6 +1011,7 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter has get_option_quotes_batch method."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "get_option_quotes_batch")
         assert callable(adapter.get_option_quotes_batch)
@@ -964,6 +1020,7 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter has stream_option_quotes method."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "stream_option_quotes")
         assert callable(adapter.stream_option_quotes)
@@ -972,6 +1029,7 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter has get_underlying_price method."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "get_underlying_price")
         assert callable(adapter.get_underlying_price)
@@ -980,6 +1038,7 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter has subscribe_underlying method."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "subscribe_underlying")
         assert callable(adapter.subscribe_underlying)
@@ -988,6 +1047,7 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter has unsubscribe_underlying method."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "unsubscribe_underlying")
         assert callable(adapter.unsubscribe_underlying)
@@ -996,9 +1056,9 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter default exchange configuration."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(
-            vendor=ExchangeVendor.IB,
-            config={"default_exchange": "CBOE"}
+            vendor=ExchangeVendor.IB, config={"default_exchange": "CBOE"}
         )
         assert adapter._default_options_exchange == "CBOE"
 
@@ -1006,9 +1066,9 @@ class TestIBOptionsMarketDataAdapter:
         """Test adapter rate limiter profile configuration."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsMarketDataAdapter(
-            vendor=ExchangeVendor.IB,
-            config={"rate_limiter_profile": "conservative"}
+            vendor=ExchangeVendor.IB, config={"rate_limiter_profile": "conservative"}
         )
         # Conservative profile should have lower chain limit
         assert adapter._options_rate_limiter._chain_limit == 5
@@ -1016,15 +1076,15 @@ class TestIBOptionsMarketDataAdapter:
     def test_factory_function_market_data(self):
         """Test factory function for market data adapter."""
         from adapters.ib.options import create_ib_options_market_data_adapter
+
         adapter = create_ib_options_market_data_adapter()
         assert adapter is not None
 
     def test_factory_function_with_config(self):
         """Test factory function with config."""
         from adapters.ib.options import create_ib_options_market_data_adapter
-        adapter = create_ib_options_market_data_adapter(
-            config={"default_exchange": "ISE"}
-        )
+
+        adapter = create_ib_options_market_data_adapter(config={"default_exchange": "ISE"})
         assert adapter._default_options_exchange == "ISE"
 
 
@@ -1032,21 +1092,23 @@ class TestIBOptionsMarketDataAdapter:
 # IB Options Order Execution Adapter Tests (25 tests)
 # =============================================================================
 
+
 class TestIBOptionsOrderExecutionAdapter:
     """Tests for IB Options order execution adapter."""
 
     def test_import_adapter(self):
         """Test adapter can be imported."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
+
         assert IBOptionsOrderExecutionAdapter is not None
 
     def test_adapter_initialization(self):
         """Test adapter initializes correctly."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsOrderExecutionAdapter(
-            vendor=ExchangeVendor.IB,
-            config={"host": "127.0.0.1", "port": 7497}
+            vendor=ExchangeVendor.IB, config={"host": "127.0.0.1", "port": 7497}
         )
         assert adapter is not None
 
@@ -1054,16 +1116,15 @@ class TestIBOptionsOrderExecutionAdapter:
         """Test adapter has rate limiter."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
         from adapters.models import ExchangeVendor
-        adapter = IBOptionsOrderExecutionAdapter(
-            vendor=ExchangeVendor.IB,
-            config={}
-        )
+
+        adapter = IBOptionsOrderExecutionAdapter(vendor=ExchangeVendor.IB, config={})
         assert adapter.options_rate_limiter is not None
 
     def test_adapter_has_submit_option_order(self):
         """Test adapter has submit_option_order method."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsOrderExecutionAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "submit_option_order")
         assert callable(adapter.submit_option_order)
@@ -1072,6 +1133,7 @@ class TestIBOptionsOrderExecutionAdapter:
         """Test adapter has submit_option_market_order method."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsOrderExecutionAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "submit_option_market_order")
         assert callable(adapter.submit_option_market_order)
@@ -1080,6 +1142,7 @@ class TestIBOptionsOrderExecutionAdapter:
         """Test adapter has submit_option_limit_order method."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsOrderExecutionAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "submit_option_limit_order")
         assert callable(adapter.submit_option_limit_order)
@@ -1088,6 +1151,7 @@ class TestIBOptionsOrderExecutionAdapter:
         """Test adapter has get_option_margin_requirement method."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsOrderExecutionAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "get_option_margin_requirement")
         assert callable(adapter.get_option_margin_requirement)
@@ -1096,6 +1160,7 @@ class TestIBOptionsOrderExecutionAdapter:
         """Test adapter has get_option_positions method."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsOrderExecutionAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "get_option_positions")
         assert callable(adapter.get_option_positions)
@@ -1104,6 +1169,7 @@ class TestIBOptionsOrderExecutionAdapter:
         """Test adapter has cancel_option_order method."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
         from adapters.models import ExchangeVendor
+
         adapter = IBOptionsOrderExecutionAdapter(vendor=ExchangeVendor.IB, config={})
         assert hasattr(adapter, "cancel_option_order")
         assert callable(adapter.cancel_option_order)
@@ -1111,15 +1177,15 @@ class TestIBOptionsOrderExecutionAdapter:
     def test_factory_function_execution(self):
         """Test factory function for execution adapter."""
         from adapters.ib.options import create_ib_options_execution_adapter
+
         adapter = create_ib_options_execution_adapter()
         assert adapter is not None
 
     def test_factory_function_execution_with_config(self):
         """Test factory function for execution adapter with config."""
         from adapters.ib.options import create_ib_options_execution_adapter
-        adapter = create_ib_options_execution_adapter(
-            config={"default_exchange": "BOX"}
-        )
+
+        adapter = create_ib_options_execution_adapter(config={"default_exchange": "BOX"})
         assert adapter._default_options_exchange == "BOX"
 
 
@@ -1127,23 +1193,27 @@ class TestIBOptionsOrderExecutionAdapter:
 # Polygon Options Adapter Tests (20 tests)
 # =============================================================================
 
+
 class TestPolygonOptionsAdapter:
     """Tests for Polygon options historical data adapter."""
 
     def test_import_adapter(self):
         """Test adapter can be imported."""
         from adapters.polygon.options import PolygonOptionsAdapter
+
         assert PolygonOptionsAdapter is not None
 
     def test_adapter_initialization(self):
         """Test adapter initialization."""
         from adapters.polygon.options import PolygonOptionsAdapter
+
         adapter = PolygonOptionsAdapter(config={"api_key": "test"})
         assert adapter is not None
 
     def test_polygon_contract_creation(self):
         """Test PolygonOptionsContract creation."""
         from adapters.polygon.options import PolygonOptionsContract
+
         contract = PolygonOptionsContract(
             ticker="O:AAPL241220C00200000",
             underlying="AAPL",
@@ -1202,6 +1272,7 @@ class TestPolygonOptionsAdapter:
         """Test Polygon ticker parsing."""
         from adapters.polygon.options import parse_polygon_ticker
         from core_options import OptionType
+
         # Returns tuple: (underlying, expiration, option_type, strike)
         underlying, expiration, option_type, strike = parse_polygon_ticker("O:AAPL241220C00200000")
         assert underlying == "AAPL"
@@ -1212,24 +1283,28 @@ class TestPolygonOptionsAdapter:
     def test_polygon_ticker_generation(self):
         """Test Polygon ticker generation."""
         from adapters.polygon.options import occ_to_polygon_ticker
+
         ticker = occ_to_polygon_ticker("AAPL  241220C00200000")
         assert ticker == "O:AAPL241220C00200000"
 
     def test_polygon_to_occ_conversion(self):
         """Test Polygon to OCC conversion."""
         from adapters.polygon.options import polygon_ticker_to_occ
+
         occ = polygon_ticker_to_occ("O:AAPL241220C00200000")
         assert occ == "AAPL  241220C00200000"
 
     def test_adapter_has_get_historical_chain(self):
         """Test adapter has get_historical_chain method."""
         from adapters.polygon.options import PolygonOptionsAdapter
+
         adapter = PolygonOptionsAdapter(config={})
         assert hasattr(adapter, "get_historical_chain")
 
     def test_snapshot_creation(self):
         """Test PolygonOptionsSnapshot creation."""
         from adapters.polygon.options import PolygonOptionsSnapshot
+
         snapshot = PolygonOptionsSnapshot(
             underlying="AAPL",
             snapshot_date=date(2024, 1, 15),
@@ -1241,6 +1316,7 @@ class TestPolygonOptionsAdapter:
     def test_factory_function(self):
         """Test factory function."""
         from adapters.polygon.options import create_polygon_options_adapter
+
         adapter = create_polygon_options_adapter(config={"api_key": "test"})
         assert adapter is not None
 
@@ -1256,21 +1332,25 @@ class TestPolygonOptionsAdapter:
             occ_to_polygon_ticker,
             parse_polygon_ticker,
         )
-        assert all([
-            PolygonOptionsAdapter,
-            PolygonOptionsContract,
-            PolygonOptionsQuote,
-            PolygonOptionsSnapshot,
-            create_polygon_options_adapter,
-            polygon_ticker_to_occ,
-            occ_to_polygon_ticker,
-            parse_polygon_ticker,
-        ])
+
+        assert all(
+            [
+                PolygonOptionsAdapter,
+                PolygonOptionsContract,
+                PolygonOptionsQuote,
+                PolygonOptionsSnapshot,
+                create_polygon_options_adapter,
+                polygon_ticker_to_occ,
+                occ_to_polygon_ticker,
+                parse_polygon_ticker,
+            ]
+        )
 
 
 # =============================================================================
 # Options Chain Cache Tests (10 tests)
 # =============================================================================
+
 
 class TestOptionsChainCache:
     """Tests for OptionsChainCache."""
@@ -1278,6 +1358,7 @@ class TestOptionsChainCache:
     def test_cache_creation(self):
         """Test cache creation."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache(max_chains=10)
         assert cache is not None
         assert cache.size == 0
@@ -1285,6 +1366,7 @@ class TestOptionsChainCache:
     def test_cache_put_get(self):
         """Test cache put and get."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache()
         cache.put("AAPL", date(2024, 12, 20), {"test": True})
         result = cache.get("AAPL", date(2024, 12, 20))
@@ -1293,6 +1375,7 @@ class TestOptionsChainCache:
     def test_cache_miss(self):
         """Test cache miss returns None."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache()
         result = cache.get("AAPL", date(2024, 12, 20))
         assert result is None
@@ -1300,6 +1383,7 @@ class TestOptionsChainCache:
     def test_cache_expiry(self):
         """Test cache entry expiry."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache(default_ttl_sec=0.01)  # Very short TTL
         cache.put("AAPL", date(2024, 12, 20), {"test": True})
         time.sleep(0.05)  # Wait for expiry
@@ -1309,6 +1393,7 @@ class TestOptionsChainCache:
     def test_cache_invalidate_single(self):
         """Test invalidating single entry."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache()
         cache.put("AAPL", date(2024, 12, 20), {"test": True})
         count = cache.invalidate("AAPL", date(2024, 12, 20))
@@ -1318,6 +1403,7 @@ class TestOptionsChainCache:
     def test_cache_invalidate_all(self):
         """Test invalidating all entries for underlying."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache()
         cache.put("AAPL", date(2024, 12, 20), {"test": 1})
         cache.put("AAPL", date(2024, 11, 15), {"test": 2})
@@ -1327,6 +1413,7 @@ class TestOptionsChainCache:
     def test_cache_clear(self):
         """Test clearing all cache entries."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache()
         cache.put("AAPL", date(2024, 12, 20), {"test": True})
         cache.put("MSFT", date(2024, 12, 20), {"test": True})
@@ -1336,6 +1423,7 @@ class TestOptionsChainCache:
     def test_cache_lru_eviction(self):
         """Test LRU eviction when at capacity."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache(max_chains=2)
         cache.put("AAPL", date(2024, 12, 20), {"test": "first"})
         cache.put("MSFT", date(2024, 12, 20), {"test": "second"})
@@ -1347,6 +1435,7 @@ class TestOptionsChainCache:
     def test_cache_hit_rate(self):
         """Test cache hit rate calculation."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache()
         cache.put("AAPL", date(2024, 12, 20), {"test": True})
         cache.get("AAPL", date(2024, 12, 20))  # Hit
@@ -1356,6 +1445,7 @@ class TestOptionsChainCache:
     def test_cache_stats(self):
         """Test cache statistics."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache()
         stats = cache.get_stats()
         assert "size" in stats
@@ -1369,6 +1459,7 @@ class TestOptionsChainCache:
 # Registry Integration Tests (10 tests)
 # =============================================================================
 
+
 class TestRegistryIntegration:
     """Tests for adapter registry integration."""
 
@@ -1380,6 +1471,7 @@ class TestRegistryIntegration:
             PolygonOptionsQuote,
             PolygonOptionsSnapshot,
         )
+
         assert PolygonOptionsAdapter is not None
         assert PolygonOptionsContract is not None
         assert PolygonOptionsQuote is not None
@@ -1388,6 +1480,7 @@ class TestRegistryIntegration:
     def test_polygon_exports_in_init(self):
         """Test Polygon exports in __init__."""
         from adapters.polygon import __all__
+
         expected = [
             "PolygonOptionsAdapter",
             "PolygonOptionsContract",
@@ -1404,6 +1497,7 @@ class TestRegistryIntegration:
     def test_ib_options_rate_limiter_exports(self):
         """Test IB options rate limiter exports."""
         from adapters.ib.options_rate_limiter import __all__
+
         expected = [
             "RequestPriority",
             "CachedChain",
@@ -1419,6 +1513,7 @@ class TestRegistryIntegration:
     def test_ib_options_exports(self):
         """Test IB options exports."""
         from adapters.ib.options import __all__
+
         expected = [
             "OptionsQuote",
             "OptionsChainData",
@@ -1444,6 +1539,7 @@ class TestRegistryIntegration:
             GreeksResult,
         )
         from adapters.ib.options import IBOptionsMarketDataAdapter
+
         # These imports should work together
         assert OptionsContractSpec is not None
         assert IBOptionsMarketDataAdapter is not None
@@ -1451,11 +1547,13 @@ class TestRegistryIntegration:
     def test_exchange_vendor_ib(self):
         """Test ExchangeVendor.IB exists."""
         from adapters.models import ExchangeVendor
+
         assert hasattr(ExchangeVendor, "IB")
 
     def test_exchange_vendor_polygon(self):
         """Test ExchangeVendor.POLYGON exists."""
         from adapters.models import ExchangeVendor
+
         assert hasattr(ExchangeVendor, "POLYGON")
 
 
@@ -1463,12 +1561,14 @@ class TestRegistryIntegration:
 # Additional Edge Case Tests (10 tests)
 # =============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
     def test_occ_symbol_empty_underlying(self):
         """Test OCC symbol with empty underlying raises error."""
         from adapters.ib.options import create_occ_symbol
+
         # Empty underlying should still produce valid symbol (padded)
         symbol = create_occ_symbol(
             underlying="",
@@ -1482,6 +1582,7 @@ class TestEdgeCases:
         """Test rate limiter is thread-safe."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
         import threading
+
         limiter = IBOptionsRateLimitManager()
         errors = []
 
@@ -1503,6 +1604,7 @@ class TestEdgeCases:
     def test_cache_max_age_override(self):
         """Test cache max age override."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache(default_ttl_sec=300)
         cache.put("AAPL", date(2024, 12, 20), {"test": True})
         # Should return data (within max_age)
@@ -1680,12 +1782,14 @@ class TestEdgeCases:
 # Additional Coverage Tests (35 tests)
 # =============================================================================
 
+
 class TestAdditionalRateLimiter:
     """Additional rate limiter tests for comprehensive coverage."""
 
     def test_rate_limiter_multiple_expirations(self):
         """Test caching multiple expirations for same underlying."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         limiter.cache_chain("AAPL", date(2024, 12, 20), {"exp": 1})
         limiter.cache_chain("AAPL", date(2025, 1, 17), {"exp": 2})
@@ -1695,6 +1799,7 @@ class TestAdditionalRateLimiter:
     def test_rate_limiter_multiple_underlyings(self):
         """Test caching multiple underlyings."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         limiter.cache_chain("AAPL", date(2024, 12, 20), {"sym": "AAPL"})
         limiter.cache_chain("MSFT", date(2024, 12, 20), {"sym": "MSFT"})
@@ -1704,6 +1809,7 @@ class TestAdditionalRateLimiter:
     def test_rate_limiter_reset_counters(self):
         """Test resetting rate limit counters."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         limiter.record_chain_request()
         limiter.record_quote_request()
@@ -1712,6 +1818,7 @@ class TestAdditionalRateLimiter:
     def test_rate_limiter_order_limit_respects_cap(self):
         """Test order rate limit is respected."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         # Should be able to submit many orders initially
         for _ in range(20):
@@ -1722,6 +1829,7 @@ class TestAdditionalRateLimiter:
     def test_rate_limiter_chain_window_sliding(self):
         """Test chain request window slides correctly."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         # Record several requests
         for _ in range(3):
@@ -1736,6 +1844,7 @@ class TestAdditionalOCC:
     def test_occ_symbol_single_char_underlying(self):
         """Test OCC with single character underlying."""
         from adapters.ib.options import parse_occ_symbol, create_occ_symbol
+
         # Create symbol - option_type is string "C" or "P"
         symbol = create_occ_symbol("X", date(2024, 12, 20), "C", Decimal("50"))
         # Verify format (X padded to 6 chars)
@@ -1744,18 +1853,21 @@ class TestAdditionalOCC:
     def test_occ_symbol_five_char_underlying(self):
         """Test OCC with five character underlying."""
         from adapters.ib.options import parse_occ_symbol, create_occ_symbol
+
         symbol = create_occ_symbol("GOOGL", date(2024, 12, 20), "C", Decimal("150"))
         assert symbol.startswith("GOOGL ")
 
     def test_occ_symbol_put_option(self):
         """Test OCC PUT symbol."""
         from adapters.ib.options import create_occ_symbol
+
         symbol = create_occ_symbol("AAPL", date(2024, 12, 20), "P", Decimal("200"))
         assert "P" in symbol
 
     def test_occ_roundtrip_fractional_strike(self):
         """Test OCC roundtrip with fractional strike."""
         from adapters.ib.options import parse_occ_symbol, create_occ_symbol
+
         original_strike = Decimal("150.50")
         symbol = create_occ_symbol("AAPL", date(2024, 12, 20), "C", original_strike)
         # IB parse_occ_symbol requires 21 chars
@@ -1766,6 +1878,7 @@ class TestAdditionalOCC:
     def test_occ_symbol_year_2025(self):
         """Test OCC symbol for 2025 expiration."""
         from adapters.ib.options import create_occ_symbol, parse_occ_symbol
+
         symbol = create_occ_symbol("AAPL", date(2025, 6, 20), "C", Decimal("200"))
         # IB parse_occ_symbol requires 21 chars
         assert len(symbol) == 21
@@ -1780,6 +1893,7 @@ class TestAdditionalDataClasses:
         """Test OptionsQuote with volume."""
         from adapters.ib.options import OptionsQuote
         from core_options import OptionsContractSpec, OptionType
+
         contract = OptionsContractSpec(
             symbol="AAPL  241220C00200000",
             underlying="AAPL",
@@ -1799,6 +1913,7 @@ class TestAdditionalDataClasses:
         """Test OptionsQuote with open interest."""
         from adapters.ib.options import OptionsQuote
         from core_options import OptionsContractSpec, OptionType
+
         contract = OptionsContractSpec(
             symbol="AAPL  241220C00200000",
             underlying="AAPL",
@@ -1818,6 +1933,7 @@ class TestAdditionalDataClasses:
         """Test OptionsChainData strikes property."""
         from adapters.ib.options import OptionsChainData
         from core_options import OptionsContractSpec, OptionType
+
         calls = [
             OptionsContractSpec(
                 symbol=f"AAPL  241220C00{s}000",
@@ -1842,6 +1958,7 @@ class TestAdditionalDataClasses:
     def test_options_order_result_partial_fill(self):
         """Test OptionsOrderResult with partial fill."""
         from adapters.ib.options import OptionsOrderResult
+
         # OptionsOrderResult requires 'success' and uses 'avg_fill_price' not 'avg_price'
         result = OptionsOrderResult(
             success=True,
@@ -1857,6 +1974,7 @@ class TestAdditionalDataClasses:
     def test_margin_requirement_with_impact(self):
         """Test MarginRequirement with equity impact."""
         from adapters.ib.options import MarginRequirement
+
         # MarginRequirement has: initial_margin, maintenance_margin, commission, equity_impact
         margin = MarginRequirement(
             initial_margin=Decimal("5000"),
@@ -1874,36 +1992,32 @@ class TestAdditionalAdapterConfig:
     def test_adapter_custom_options_exchange(self):
         """Test adapter with custom options exchange."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
-        adapter = IBOptionsMarketDataAdapter(
-            config={"default_exchange": "CBOE"}
-        )
+
+        adapter = IBOptionsMarketDataAdapter(config={"default_exchange": "CBOE"})
         # The attribute is _default_options_exchange (not _default_exchange)
         assert adapter._default_options_exchange == "CBOE"
 
     def test_adapter_config_preservation(self):
         """Test adapter preserves config values."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
-        adapter = IBOptionsMarketDataAdapter(
-            config={"use_local_greeks": True}
-        )
+
+        adapter = IBOptionsMarketDataAdapter(config={"use_local_greeks": True})
         # Verify config value preserved
         assert adapter._use_local_greeks is True
 
     def test_execution_adapter_creation(self):
         """Test execution adapter creation."""
         from adapters.ib.options import IBOptionsOrderExecutionAdapter
-        adapter = IBOptionsOrderExecutionAdapter(
-            config={"default_exchange": "SMART"}
-        )
+
+        adapter = IBOptionsOrderExecutionAdapter(config={"default_exchange": "SMART"})
         # Just verify it creates without error
         assert adapter is not None
 
     def test_polygon_adapter_api_key_config(self):
         """Test Polygon adapter with API key config."""
         from adapters.polygon.options import PolygonOptionsAdapter
-        adapter = PolygonOptionsAdapter(
-            config={"api_key": "test_key"}
-        )
+
+        adapter = PolygonOptionsAdapter(config={"api_key": "test_key"})
         # Just verify it creates without error
         assert adapter is not None
 
@@ -1915,6 +2029,7 @@ class TestAdditionalPolygon:
         """Test PolygonOptionsContract to OCC symbol."""
         from adapters.polygon.options import PolygonOptionsContract
         from core_options import OptionType
+
         contract = PolygonOptionsContract(
             ticker="O:AAPL241220C00200000",
             underlying="AAPL",
@@ -1929,6 +2044,7 @@ class TestAdditionalPolygon:
         """Test PolygonOptionsContract to OptionsContractSpec."""
         from adapters.polygon.options import PolygonOptionsContract
         from core_options import OptionType, OptionsContractSpec
+
         contract = PolygonOptionsContract(
             ticker="O:AAPL241220C00200000",
             underlying="AAPL",
@@ -1948,6 +2064,7 @@ class TestAdditionalPolygon:
     def test_polygon_snapshot_to_dataframe(self):
         """Test PolygonOptionsSnapshot to DataFrame."""
         from adapters.polygon.options import PolygonOptionsSnapshot
+
         snapshot = PolygonOptionsSnapshot(
             underlying="AAPL",
             snapshot_date=date(2024, 1, 15),
@@ -1963,6 +2080,7 @@ class TestAdditionalCache:
     def test_cache_custom_ttl_per_entry(self):
         """Test cache with custom TTL per entry."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         cache = OptionsChainCache(default_ttl_sec=300)
         cache.put("AAPL", date(2024, 12, 20), {"test": True}, ttl_sec=1)
         assert cache.get("AAPL", date(2024, 12, 20)) is not None
@@ -1972,6 +2090,7 @@ class TestAdditionalCache:
     def test_cache_get_updates_access(self):
         """Test cache get updates access count (LRU behavior)."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         # Note: touch() is internal method on CachedChain, not OptionsChainCache
         # get() internally calls touch() on the cached entry
         cache = OptionsChainCache(max_chains=2, default_ttl_sec=60)
@@ -1987,6 +2106,7 @@ class TestAdditionalCache:
     def test_cache_max_chains_limit(self):
         """Test cache respects max_chains limit."""
         from adapters.ib.options_rate_limiter import OptionsChainCache
+
         # Constructor param is max_chains, not max_size
         cache = OptionsChainCache(max_chains=2)
         cache.put("AAPL", date(2024, 12, 20), {"test": 1})
@@ -2001,6 +2121,7 @@ class TestAdditionalIntegration:
     def test_end_to_end_rate_limit_flow(self):
         """Test end-to-end rate limit flow."""
         from adapters.ib.options import IBOptionsMarketDataAdapter
+
         adapter = IBOptionsMarketDataAdapter(config={})
         # Verify adapter has options rate limiter (not _rate_limiter)
         assert adapter._options_rate_limiter is not None
@@ -2011,6 +2132,7 @@ class TestAdditionalIntegration:
     def test_end_to_end_cache_flow(self):
         """Test end-to-end cache flow."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         # Store in cache
         limiter.cache_chain("AAPL", date(2024, 12, 20), {"calls": [], "puts": []})
@@ -2027,6 +2149,7 @@ class TestAdditionalIntegration:
     def test_occ_to_polygon_roundtrip(self):
         """Test OCC to Polygon ticker roundtrip."""
         from adapters.polygon.options import occ_to_polygon_ticker, polygon_ticker_to_occ
+
         occ = "AAPL  241220C00200000"
         polygon = occ_to_polygon_ticker(occ)
         back_to_occ = polygon_ticker_to_occ(polygon)
@@ -2036,6 +2159,7 @@ class TestAdditionalIntegration:
         """Test ATM strike calculation."""
         from adapters.ib.options import OptionsChainData
         from core_options import OptionsContractSpec, OptionType
+
         calls = [
             OptionsContractSpec(
                 symbol=f"AAPL  241220C00{s}000",
@@ -2058,6 +2182,7 @@ class TestAdditionalIntegration:
     def test_subscription_lifecycle(self):
         """Test subscription add/remove lifecycle."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
+
         limiter = IBOptionsRateLimitManager()
         # Add subscription
         assert limiter.add_subscription("AAPL  241220C00200000")

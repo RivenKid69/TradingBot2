@@ -80,6 +80,7 @@ from adapters.models import (
 # Fixtures
 # =========================
 
+
 @pytest.fixture
 def mock_config() -> Dict[str, Any]:
     """Standard mock configuration for testing."""
@@ -124,6 +125,7 @@ def order_execution_adapter(mock_config) -> OandaOrderExecutionAdapter:
 # Rate Limiter Tests
 # =========================
 
+
 class TestRateLimiter:
     """Tests for the RateLimiter class."""
 
@@ -154,6 +156,7 @@ class TestRateLimiter:
     def test_acquire_sync_no_block_with_tokens(self):
         """Test that acquire_sync doesn't block when tokens available."""
         import time
+
         limiter = RateLimiter(rate=120.0, burst=200)
         start = time.monotonic()
         limiter.acquire_sync()
@@ -164,6 +167,7 @@ class TestRateLimiter:
 # =========================
 # Market Data Adapter Tests
 # =========================
+
 
 class TestOandaMarketDataAdapter:
     """Tests for OandaMarketDataAdapter."""
@@ -271,6 +275,7 @@ class TestOandaMarketDataAdapter:
 # =========================
 # Trading Hours Adapter Tests
 # =========================
+
 
 class TestOandaTradingHoursAdapter:
     """Tests for OandaTradingHoursAdapter."""
@@ -381,7 +386,7 @@ class TestOandaTradingHoursAdapter:
 
         assert session == ForexSessionType.WEEKEND
         assert liquidity == 0.0
-        assert spread == float('inf')
+        assert spread == float("inf")
 
     def test_rollover_time_winter(self, trading_hours_adapter):
         """Test rollover time in winter (standard time)."""
@@ -456,6 +461,7 @@ class TestOandaTradingHoursAdapter:
 # =========================
 # Fee Adapter Tests
 # =========================
+
 
 class TestOandaFeeAdapter:
     """Tests for OandaFeeAdapter."""
@@ -591,6 +597,7 @@ class TestOandaFeeAdapter:
 # Exchange Info Adapter Tests
 # =========================
 
+
 class TestOandaExchangeInfoAdapter:
     """Tests for OandaExchangeInfoAdapter."""
 
@@ -711,6 +718,7 @@ class TestOandaExchangeInfoAdapter:
 # =========================
 # Order Execution Adapter Tests
 # =========================
+
 
 class TestOandaOrderExecutionAdapter:
     """Tests for OandaOrderExecutionAdapter."""
@@ -834,6 +842,7 @@ class TestOandaOrderExecutionAdapter:
 # Integration Tests
 # =========================
 
+
 class TestOandaAdapterIntegration:
     """Integration tests for OANDA adapters."""
 
@@ -854,11 +863,14 @@ class TestOandaAdapterIntegration:
         """Test creating adapter via registry."""
         from adapters.registry import create_market_data_adapter
 
-        adapter = create_market_data_adapter("oanda", {
-            "api_key": "test_key",
-            "account_id": "test_account",
-            "practice": True,
-        })
+        adapter = create_market_data_adapter(
+            "oanda",
+            {
+                "api_key": "test_key",
+                "account_id": "test_account",
+                "practice": True,
+            },
+        )
 
         assert adapter is not None
         assert isinstance(adapter, OandaMarketDataAdapter)
@@ -905,6 +917,7 @@ class TestOandaAdapterIntegration:
 # =========================
 # Edge Case Tests
 # =========================
+
 
 class TestOandaEdgeCases:
     """Edge case tests for OANDA adapters."""
@@ -972,7 +985,7 @@ class TestOandaEdgeCases:
 
     def test_empty_positions_response(self, order_execution_adapter):
         """Test handling of empty positions response."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.json.return_value = {"positions": []}
             mock_response.raise_for_status = Mock()
@@ -985,6 +998,7 @@ class TestOandaEdgeCases:
 # =========================
 # Backward Compatibility Tests
 # =========================
+
 
 class TestOandaBackwardCompatibility:
     """Backward compatibility tests."""
@@ -1017,15 +1031,14 @@ class TestOandaBackwardCompatibility:
 # API Error Handling Tests
 # =========================
 
+
 class TestOandaApiErrorHandling:
     """Tests for OANDA API error handling."""
 
     def test_market_data_network_timeout(self, market_data_adapter):
         """Test handling of network timeout."""
-        with patch.object(market_data_adapter, '_ensure_session') as mock_session:
-            mock_session.return_value.get.side_effect = RequestsTimeout(
-                "Connection timed out"
-            )
+        with patch.object(market_data_adapter, "_ensure_session") as mock_session:
+            mock_session.return_value.get.side_effect = RequestsTimeout("Connection timed out")
 
             # Adapter wraps exceptions in ConnectionError
             with pytest.raises(ConnectionError) as exc_info:
@@ -1034,7 +1047,7 @@ class TestOandaApiErrorHandling:
 
     def test_market_data_connection_error(self, market_data_adapter):
         """Test handling of connection error."""
-        with patch.object(market_data_adapter, '_ensure_session') as mock_session:
+        with patch.object(market_data_adapter, "_ensure_session") as mock_session:
             mock_session.return_value.get.side_effect = RequestsConnectionError(
                 "Failed to establish connection"
             )
@@ -1046,12 +1059,10 @@ class TestOandaApiErrorHandling:
 
     def test_order_execution_rate_limit_exceeded(self, order_execution_adapter):
         """Test handling of rate limit exceeded (HTTP 429)."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.status_code = 429
-            mock_response.raise_for_status.side_effect = RequestsHTTPError(
-                "429 Too Many Requests"
-            )
+            mock_response.raise_for_status.side_effect = RequestsHTTPError("429 Too Many Requests")
             mock_session.return_value.post.return_value = mock_response
 
             order = Order(
@@ -1068,7 +1079,7 @@ class TestOandaApiErrorHandling:
 
     def test_order_execution_server_error(self, order_execution_adapter):
         """Test handling of server error (HTTP 500)."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.status_code = 500
             mock_response.raise_for_status.side_effect = RequestsHTTPError(
@@ -1089,7 +1100,7 @@ class TestOandaApiErrorHandling:
 
     def test_order_execution_api_maintenance(self, order_execution_adapter):
         """Test handling of API maintenance (HTTP 503)."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.status_code = 503
             mock_response.raise_for_status.side_effect = RequestsHTTPError(
@@ -1110,7 +1121,7 @@ class TestOandaApiErrorHandling:
 
     def test_market_data_invalid_json_response(self, market_data_adapter):
         """Test handling of invalid JSON response."""
-        with patch.object(market_data_adapter, '_ensure_session') as mock_session:
+        with patch.object(market_data_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
             mock_response.json.side_effect = ValueError("Invalid JSON")
@@ -1122,12 +1133,10 @@ class TestOandaApiErrorHandling:
 
     def test_order_execution_unauthorized(self, order_execution_adapter):
         """Test handling of unauthorized request (HTTP 401)."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.status_code = 401
-            mock_response.raise_for_status.side_effect = RequestsHTTPError(
-                "401 Unauthorized"
-            )
+            mock_response.raise_for_status.side_effect = RequestsHTTPError("401 Unauthorized")
             mock_session.return_value.post.return_value = mock_response
 
             order = Order(
@@ -1143,20 +1152,16 @@ class TestOandaApiErrorHandling:
 
     def test_get_positions_with_api_error(self, order_execution_adapter):
         """Test get_positions handles API errors gracefully."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
-            mock_session.return_value.get.side_effect = RequestException(
-                "Network error"
-            )
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
+            mock_session.return_value.get.side_effect = RequestException("Network error")
 
             positions = order_execution_adapter.get_positions()
             assert positions == {}
 
     def test_get_account_info_with_error(self, order_execution_adapter):
         """Test get_account_info handles errors gracefully."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
-            mock_session.return_value.get.side_effect = RequestException(
-                "Network error"
-            )
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
+            mock_session.return_value.get.side_effect = RequestException("Network error")
 
             account_info = order_execution_adapter.get_account_info()
             # AccountInfo uses cash_balance, not balance
@@ -1166,6 +1171,7 @@ class TestOandaApiErrorHandling:
 # =========================
 # Async Streaming Tests
 # =========================
+
 
 class TestOandaAsyncStreaming:
     """Tests for OANDA async streaming functionality."""
@@ -1177,6 +1183,7 @@ class TestOandaAsyncStreaming:
 
         # Should not block with available tokens
         import asyncio
+
         start = asyncio.get_event_loop().time()
         await limiter.acquire()
         elapsed = asyncio.get_event_loop().time() - start
@@ -1194,6 +1201,7 @@ class TestOandaAsyncStreaming:
 
         # Wait for partial replenishment
         import asyncio
+
         await asyncio.sleep(0.1)  # Should add ~12 tokens (120 * 0.1)
 
         # Should be able to acquire again without long wait
@@ -1207,20 +1215,20 @@ class TestOandaAsyncStreaming:
     async def test_market_data_streaming_mock(self, market_data_adapter):
         """Test that streaming method signatures are correct."""
         # The adapter should have stream_ticks_async method
-        assert hasattr(market_data_adapter, 'stream_ticks_async')
+        assert hasattr(market_data_adapter, "stream_ticks_async")
         assert callable(market_data_adapter.stream_ticks_async)
 
         # Check that stream_bars_async also exists
-        assert hasattr(market_data_adapter, 'stream_bars_async')
+        assert hasattr(market_data_adapter, "stream_bars_async")
         assert callable(market_data_adapter.stream_bars_async)
 
     def test_market_data_has_streaming_methods(self, market_data_adapter):
         """Test that market data adapter has streaming method signatures."""
         # Check that async streaming methods exist
-        assert hasattr(market_data_adapter, 'stream_ticks_async')
-        assert hasattr(market_data_adapter, 'stream_bars_async')
-        assert hasattr(market_data_adapter, 'stream_ticks')
-        assert hasattr(market_data_adapter, 'stream_bars')
+        assert hasattr(market_data_adapter, "stream_ticks_async")
+        assert hasattr(market_data_adapter, "stream_bars_async")
+        assert hasattr(market_data_adapter, "stream_ticks")
+        assert hasattr(market_data_adapter, "stream_bars")
 
     def test_rate_limiter_available_tokens_property(self):
         """Test rate limiter available_tokens property."""
@@ -1239,6 +1247,7 @@ class TestOandaAsyncStreaming:
 # Last-Look Rejection Tests
 # =========================
 
+
 class TestOandaLastLookRejection:
     """Tests for OANDA last-look order rejection handling."""
 
@@ -1254,7 +1263,10 @@ class TestOandaLastLookRejection:
 
         assert result.success is False
         assert result.error_code == "LAST_LOOK_REJECTED"
-        assert "MARKET_ORDER_FILL_TIMEOUT" in result.error_message or "cancelled" in result.error_message.lower()
+        assert (
+            "MARKET_ORDER_FILL_TIMEOUT" in result.error_message
+            or "cancelled" in result.error_message.lower()
+        )
 
     def test_parse_insufficient_liquidity(self, order_execution_adapter):
         """Test parsing of insufficient liquidity rejection."""
@@ -1297,27 +1309,30 @@ class TestOandaLastLookRejection:
 # Position Management Tests
 # =========================
 
+
 class TestOandaPositionManagement:
     """Tests for OANDA position management."""
 
     def test_get_positions_with_long_position(self, order_execution_adapter):
         """Test parsing positions with long position."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.json.return_value = {
-                "positions": [{
-                    "instrument": "EUR_USD",
-                    "long": {
-                        "units": "100000",
-                        "averagePrice": "1.10500",
-                        "unrealizedPL": "250.00",
-                    },
-                    "short": {
-                        "units": "0",
-                        "averagePrice": "0.0",
-                        "unrealizedPL": "0.0",
+                "positions": [
+                    {
+                        "instrument": "EUR_USD",
+                        "long": {
+                            "units": "100000",
+                            "averagePrice": "1.10500",
+                            "unrealizedPL": "250.00",
+                        },
+                        "short": {
+                            "units": "0",
+                            "averagePrice": "0.0",
+                            "unrealizedPL": "0.0",
+                        },
                     }
-                }]
+                ]
             }
             mock_response.raise_for_status = Mock()
             mock_session.return_value.get.return_value = mock_response
@@ -1334,22 +1349,24 @@ class TestOandaPositionManagement:
 
     def test_get_positions_with_short_position(self, order_execution_adapter):
         """Test parsing positions with short position."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.json.return_value = {
-                "positions": [{
-                    "instrument": "GBP_USD",
-                    "long": {
-                        "units": "0",
-                        "averagePrice": "0.0",
-                        "unrealizedPL": "0.0",
-                    },
-                    "short": {
-                        "units": "-50000",
-                        "averagePrice": "1.25000",
-                        "unrealizedPL": "-125.00",
+                "positions": [
+                    {
+                        "instrument": "GBP_USD",
+                        "long": {
+                            "units": "0",
+                            "averagePrice": "0.0",
+                            "unrealizedPL": "0.0",
+                        },
+                        "short": {
+                            "units": "-50000",
+                            "averagePrice": "1.25000",
+                            "unrealizedPL": "-125.00",
+                        },
                     }
-                }]
+                ]
             }
             mock_response.raise_for_status = Mock()
             mock_session.return_value.get.return_value = mock_response
@@ -1365,22 +1382,24 @@ class TestOandaPositionManagement:
 
     def test_get_positions_with_hedged_position(self, order_execution_adapter):
         """Test parsing hedged positions (net zero)."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.json.return_value = {
-                "positions": [{
-                    "instrument": "USD_JPY",
-                    "long": {
-                        "units": "50000",
-                        "averagePrice": "140.00",
-                        "unrealizedPL": "100.00",
-                    },
-                    "short": {
-                        "units": "-50000",
-                        "averagePrice": "140.50",
-                        "unrealizedPL": "-50.00",
+                "positions": [
+                    {
+                        "instrument": "USD_JPY",
+                        "long": {
+                            "units": "50000",
+                            "averagePrice": "140.00",
+                            "unrealizedPL": "100.00",
+                        },
+                        "short": {
+                            "units": "-50000",
+                            "averagePrice": "140.50",
+                            "unrealizedPL": "-50.00",
+                        },
                     }
-                }]
+                ]
             }
             mock_response.raise_for_status = Mock()
             mock_session.return_value.get.return_value = mock_response
@@ -1392,7 +1411,7 @@ class TestOandaPositionManagement:
 
     def test_close_position_success(self, order_execution_adapter):
         """Test successful position close."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.json.return_value = {
                 "longOrderFillTransaction": {
@@ -1411,7 +1430,7 @@ class TestOandaPositionManagement:
 
     def test_close_position_no_position(self, order_execution_adapter):
         """Test closing non-existent position."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.json.return_value = {}
             mock_response.raise_for_status = Mock()
@@ -1427,12 +1446,13 @@ class TestOandaPositionManagement:
 # Account Info Tests
 # =========================
 
+
 class TestOandaAccountInfo:
     """Tests for OANDA account information."""
 
     def test_get_account_info_success(self, order_execution_adapter):
         """Test successful account info retrieval."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.json.return_value = {
                 "account": {
@@ -1458,7 +1478,7 @@ class TestOandaAccountInfo:
 
     def test_get_account_info_with_leverage(self, order_execution_adapter):
         """Test account info with high margin usage."""
-        with patch.object(order_execution_adapter, '_ensure_session') as mock_session:
+        with patch.object(order_execution_adapter, "_ensure_session") as mock_session:
             mock_response = Mock()
             mock_response.json.return_value = {
                 "account": {

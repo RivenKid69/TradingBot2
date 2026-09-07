@@ -23,7 +23,7 @@ Test Categories:
 16. _SimpleMarketSim tests
 
 References:
-- CLAUDE.md critical bugs section
+- docs/PLATFORM_REFERENCE.md critical bugs section
 - Best practices from existing test files
 """
 
@@ -75,6 +75,7 @@ except ImportError:
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def sample_df():
     """Create a sample DataFrame for testing."""
@@ -84,32 +85,36 @@ def sample_df():
     base_price = 100.0
     prices = base_price + np.cumsum(np.random.randn(n_rows) * 0.5)
 
-    df = pd.DataFrame({
-        'open': prices + np.random.randn(n_rows) * 0.1,
-        'high': prices + np.abs(np.random.randn(n_rows) * 0.5),
-        'low': prices - np.abs(np.random.randn(n_rows) * 0.5),
-        'close': prices,
-        'volume': np.random.randint(1000, 10000, n_rows),
-        'timestamp_ms': np.arange(n_rows) * 60000,
-        'decision_ts': np.arange(n_rows) * 60000,
-        'atr_pct': np.random.uniform(0.01, 0.03, n_rows),
-        'liq_roll': np.random.uniform(0.5, 1.5, n_rows),
-    })
+    df = pd.DataFrame(
+        {
+            "open": prices + np.random.randn(n_rows) * 0.1,
+            "high": prices + np.abs(np.random.randn(n_rows) * 0.5),
+            "low": prices - np.abs(np.random.randn(n_rows) * 0.5),
+            "close": prices,
+            "volume": np.random.randint(1000, 10000, n_rows),
+            "timestamp_ms": np.arange(n_rows) * 60000,
+            "decision_ts": np.arange(n_rows) * 60000,
+            "atr_pct": np.random.uniform(0.01, 0.03, n_rows),
+            "liq_roll": np.random.uniform(0.5, 1.5, n_rows),
+        }
+    )
     return df
 
 
 @pytest.fixture
 def sample_df_small():
     """Create a small sample DataFrame (5 rows)."""
-    return pd.DataFrame({
-        'open': [100.0, 101.0, 102.0, 103.0, 104.0],
-        'high': [100.5, 101.5, 102.5, 103.5, 104.5],
-        'low': [99.5, 100.5, 101.5, 102.5, 103.5],
-        'close': [100.0, 101.0, 102.0, 103.0, 104.0],
-        'volume': [1000, 1100, 1200, 1300, 1400],
-        'timestamp_ms': [0, 60000, 120000, 180000, 240000],
-        'decision_ts': [0, 60000, 120000, 180000, 240000],
-    })
+    return pd.DataFrame(
+        {
+            "open": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "high": [100.5, 101.5, 102.5, 103.5, 104.5],
+            "low": [99.5, 100.5, 101.5, 102.5, 103.5],
+            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "volume": [1000, 1100, 1200, 1300, 1400],
+            "timestamp_ms": [0, 60000, 120000, 180000, 240000],
+            "decision_ts": [0, 60000, 120000, 180000, 240000],
+        }
+    )
 
 
 @pytest.fixture
@@ -122,13 +127,15 @@ def empty_df():
 def mock_mediator():
     """Create a mock mediator."""
     mediator = MagicMock()
-    mediator.step = MagicMock(return_value=(
-        np.zeros(10, dtype=np.float32),
-        0.0,
-        False,
-        False,
-        {'mark_price': 100.0, 'trades': [], 'cash': 10000.0, 'units': 0.0}
-    ))
+    mediator.step = MagicMock(
+        return_value=(
+            np.zeros(10, dtype=np.float32),
+            0.0,
+            False,
+            False,
+            {"mark_price": 100.0, "trades": [], "cash": 10000.0, "units": 0.0},
+        )
+    )
     mediator._build_observation = MagicMock(return_value=np.zeros(10, dtype=np.float32))
     mediator.reset = MagicMock()
     mediator._last_signal_position = 0.0
@@ -145,6 +152,7 @@ def dyn_spread_cfg():
 # =============================================================================
 # 1. _dynamic_spread_bps() FUNCTION TESTS
 # =============================================================================
+
 
 class TestDynamicSpreadBps:
     """Tests for _dynamic_spread_bps() function."""
@@ -169,7 +177,9 @@ class TestDynamicSpreadBps:
 
     def test_spread_with_low_liquidity(self):
         """Test spread increases with low liquidity."""
-        cfg = DynSpreadCfg(base_bps=10.0, beta_illiquidity=5.0)  # Use beta_illiquidity instead of liq_mult
+        cfg = DynSpreadCfg(
+            base_bps=10.0, beta_illiquidity=5.0
+        )  # Use beta_illiquidity instead of liq_mult
         result_high_liq = _dynamic_spread_bps(vol_factor=0.0, liquidity=cfg.liq_ref, cfg=cfg)
         result_low_liq = _dynamic_spread_bps(vol_factor=0.0, liquidity=cfg.liq_ref * 0.1, cfg=cfg)
         assert result_low_liq >= result_high_liq
@@ -189,13 +199,13 @@ class TestDynamicSpreadBps:
     def test_spread_nan_volatility(self):
         """Test spread handles NaN volatility."""
         cfg = DynSpreadCfg()
-        result = _dynamic_spread_bps(vol_factor=float('nan'), liquidity=1.0, cfg=cfg)
+        result = _dynamic_spread_bps(vol_factor=float("nan"), liquidity=1.0, cfg=cfg)
         assert math.isfinite(result)
 
     def test_spread_inf_volatility(self):
         """Test spread handles infinite volatility."""
         cfg = DynSpreadCfg()
-        result = _dynamic_spread_bps(vol_factor=float('inf'), liquidity=1.0, cfg=cfg)
+        result = _dynamic_spread_bps(vol_factor=float("inf"), liquidity=1.0, cfg=cfg)
         assert math.isfinite(result)
         assert result <= cfg.max_bps
 
@@ -209,6 +219,7 @@ class TestDynamicSpreadBps:
 # =============================================================================
 # 2. DynSpreadCfg DATACLASS TESTS
 # =============================================================================
+
 
 class TestDynSpreadCfg:
     """Tests for DynSpreadCfg dataclass."""
@@ -224,10 +235,10 @@ class TestDynSpreadCfg:
         """Test custom configuration values."""
         cfg = DynSpreadCfg(
             base_bps=15.0,
-            alpha_vol=50.0,           # Correct field name
-            beta_illiquidity=10.0,    # Correct field name
+            alpha_vol=50.0,  # Correct field name
+            beta_illiquidity=10.0,  # Correct field name
             min_bps=5.0,
-            max_bps=100.0
+            max_bps=100.0,
         )
         assert cfg.base_bps == 15.0
         assert cfg.alpha_vol == 50.0
@@ -248,15 +259,16 @@ class TestDynSpreadCfg:
 # 3. MarketRegime ENUM TESTS
 # =============================================================================
 
+
 class TestMarketRegime:
     """Tests for MarketRegime enum."""
 
     def test_all_values_exist(self):
         """Test all expected market regime values exist."""
-        assert hasattr(MarketRegime, 'NORMAL')
-        assert hasattr(MarketRegime, 'CHOPPY_FLAT')
-        assert hasattr(MarketRegime, 'STRONG_TREND')
-        assert hasattr(MarketRegime, 'ILLIQUID')
+        assert hasattr(MarketRegime, "NORMAL")
+        assert hasattr(MarketRegime, "CHOPPY_FLAT")
+        assert hasattr(MarketRegime, "STRONG_TREND")
+        assert hasattr(MarketRegime, "ILLIQUID")
 
     def test_value_indices(self):
         """Test regime values are sequential integers."""
@@ -282,13 +294,14 @@ class TestMarketRegime:
 # 4. DecisionTiming ENUM TESTS
 # =============================================================================
 
+
 class TestDecisionTiming:
     """Tests for DecisionTiming enum."""
 
     def test_all_timings_exist(self):
         """Test all decision timing modes exist."""
-        assert hasattr(DecisionTiming, 'CLOSE_TO_OPEN')
-        assert hasattr(DecisionTiming, 'INTRA_HOUR_WITH_LATENCY')
+        assert hasattr(DecisionTiming, "CLOSE_TO_OPEN")
+        assert hasattr(DecisionTiming, "INTRA_HOUR_WITH_LATENCY")
         # Check for other modes if they exist
 
     def test_timing_values(self):
@@ -300,6 +313,7 @@ class TestDecisionTiming:
 # =============================================================================
 # 5. _SimpleMarketSim TESTS
 # =============================================================================
+
 
 class TestSimpleMarketSim:
     """Tests for _SimpleMarketSim class."""
@@ -390,6 +404,7 @@ class TestSimpleMarketSim:
 # 6. TradingEnv INITIALIZATION TESTS
 # =============================================================================
 
+
 class TestTradingEnvInit:
     """Tests for TradingEnv initialization."""
 
@@ -430,6 +445,7 @@ class TestTradingEnvInit:
 # 7. TradingEnv._safe_float() TESTS
 # =============================================================================
 
+
 class TestSafeFloat:
     """Tests for TradingEnv._safe_float() method."""
 
@@ -452,12 +468,12 @@ class TestSafeFloat:
 
     def test_safe_float_nan(self, env):
         """Test _safe_float with NaN."""
-        assert env._safe_float(float('nan')) is None
+        assert env._safe_float(float("nan")) is None
 
     def test_safe_float_inf(self, env):
         """Test _safe_float with infinity."""
-        assert env._safe_float(float('inf')) is None
-        assert env._safe_float(float('-inf')) is None
+        assert env._safe_float(float("inf")) is None
+        assert env._safe_float(float("-inf")) is None
 
     def test_safe_float_list(self, env):
         """Test _safe_float with list."""
@@ -465,7 +481,7 @@ class TestSafeFloat:
 
     def test_safe_float_dict(self, env):
         """Test _safe_float with dict."""
-        assert env._safe_float({'a': 1}) is None
+        assert env._safe_float({"a": 1}) is None
 
     def test_safe_float_string_number(self, env):
         """Test _safe_float with string number."""
@@ -488,6 +504,7 @@ class TestSafeFloat:
 # =============================================================================
 # 8. TradingEnv._signal_position_from_proto() TESTS
 # =============================================================================
+
 
 class TestSignalPositionFromProto:
     """Tests for TradingEnv._signal_position_from_proto() method."""
@@ -546,13 +563,14 @@ class TestSignalPositionFromProto:
 # 9. TradingEnv._to_proto() TESTS
 # =============================================================================
 
+
 class TestToProto:
     """Tests for TradingEnv._to_proto() method."""
 
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create a TradingEnv instance for testing."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             return TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -589,12 +607,12 @@ class TestToProto:
     def test_nan_raises_error(self, env):
         """Test NaN raises ValueError."""
         with pytest.raises(ValueError, match="non-finite"):
-            env._to_proto(float('nan'))
+            env._to_proto(float("nan"))
 
     def test_inf_raises_error(self, env):
         """Test infinity raises ValueError."""
         with pytest.raises(ValueError, match="non-finite"):
-            env._to_proto(float('inf'))
+            env._to_proto(float("inf"))
 
     def test_empty_array_raises_error(self, env):
         """Test empty array raises ValueError."""
@@ -603,13 +621,13 @@ class TestToProto:
 
     def test_dict_with_score(self, env):
         """Test dict with 'score' key."""
-        action = {'score': 0.5}
+        action = {"score": 0.5}
         result = env._to_proto(action)
         assert result.volume_frac == 0.5
 
     def test_dict_with_volume_frac(self, env):
         """Test dict with 'volume_frac' key."""
-        action = {'volume_frac': 0.5}
+        action = {"volume_frac": 0.5}
         result = env._to_proto(action)
         assert result.volume_frac == 0.5
 
@@ -618,13 +636,14 @@ class TestToProto:
 # 10. TradingEnv.reset() TESTS
 # =============================================================================
 
+
 class TestReset:
     """Tests for TradingEnv.reset() method."""
 
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create a TradingEnv instance for testing."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -635,7 +654,7 @@ class TestReset:
 
     def test_reset_returns_obs_and_info(self, env):
         """Test reset returns observation and info dict."""
-        with patch.object(env, '_init_state', return_value=(np.zeros(10), {'step_idx': 0})):
+        with patch.object(env, "_init_state", return_value=(np.zeros(10), {"step_idx": 0})):
             obs, info = env.reset()
             assert isinstance(obs, np.ndarray)
             assert isinstance(info, dict)
@@ -644,13 +663,13 @@ class TestReset:
         """Test reset calls mediator.reset()."""
         env = TradingEnv(df=sample_df)
         # Patch the mediator's reset method after env creation
-        with patch.object(env._mediator, 'reset') as mock_reset:
+        with patch.object(env._mediator, "reset") as mock_reset:
             env.reset()
             mock_reset.assert_called()
 
     def test_reset_close_to_open_pending_action(self, sample_df, mock_mediator):
         """Test reset sets pending action in CLOSE_TO_OPEN mode."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -659,14 +678,14 @@ class TestReset:
             )
             env.market_sim = _SimpleMarketSim()
 
-            with patch.object(env, '_init_state', return_value=(np.zeros(10), {})):
+            with patch.object(env, "_init_state", return_value=(np.zeros(10), {})):
                 env.reset()
                 assert env._pending_action is not None
                 assert env._pending_action.action_type == ActionType.HOLD
 
     def test_reset_sets_regime(self, env):
         """Test reset sets market regime."""
-        with patch.object(env, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(env, "_init_state", return_value=(np.zeros(10), {})):
             env.reset()
             # Regime should be set (one of the 4 valid regimes)
             assert env.market_sim._current_regime in list(MarketRegime)
@@ -676,13 +695,14 @@ class TestReset:
 # 11. TradingEnv.step() TESTS
 # =============================================================================
 
+
 class TestStep:
     """Tests for TradingEnv.step() method."""
 
     @pytest.fixture
     def env(self, sample_df_small, mock_mediator):
         """Create a TradingEnv instance for testing."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df_small,
                 mediator=mock_mediator,
@@ -724,14 +744,14 @@ class TestStep:
             env.reward_clip_adaptive = False
             env.reward_clip_hard_cap_fraction = 0.1
             env.reward_robust_clip_fraction = 0.0
-            env.reward_return_clip = float('inf')
+            env.reward_return_clip = float("inf")
             env._reward_clip_bound_last = 0.0
             env._reward_clip_atr_fraction_last = 0.0
             env.decision_mode = DecisionTiming.CLOSE_TO_OPEN
             env._pending_action = ActionProto(ActionType.HOLD, 0.0)
             env._action_queue = deque()
             env._signal_long_only = False
-            env._close_actual = sample_df_small['close'].copy()
+            env._close_actual = sample_df_small["close"].copy()
             env._dividend_adjust_enabled = False
             env._dividend_col = None
             env._asset_class = "crypto"
@@ -763,7 +783,7 @@ class TestStep:
 
     def test_step_empty_df_terminates(self, empty_df, mock_mediator):
         """Test step with empty DataFrame terminates immediately."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=empty_df,
                 mediator=mock_mediator,
@@ -799,13 +819,14 @@ class TestStep:
 # 12. TradingEnv._signal_only_step() TESTS
 # =============================================================================
 
+
 class TestSignalOnlyStep:
     """Tests for TradingEnv._signal_only_step() method."""
 
     @pytest.fixture
     def env(self, sample_df_small, mock_mediator):
         """Create a TradingEnv instance with signal_only=True."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df_small,
                 mediator=mock_mediator,
@@ -862,9 +883,7 @@ class TestSignalOnlyStep:
         proto = ActionProto(ActionType.MARKET, volume_frac=0.5)
         row = sample_df_small.iloc[0]
 
-        _, _, _, _, info = env._signal_only_step(
-            proto, 0, row, 100.0, next_signal_pos=0.5
-        )
+        _, _, _, _, info = env._signal_only_step(proto, 0, row, 100.0, next_signal_pos=0.5)
         assert "signal_pos_next" in info
         assert info["signal_pos_next"] == 0.5
 
@@ -873,13 +892,14 @@ class TestSignalOnlyStep:
 # 13. TradingEnv._estimate_reward_robust_clip_fraction() TESTS
 # =============================================================================
 
+
 class TestEstimateRewardRobustClipFraction:
     """Tests for _estimate_reward_robust_clip_fraction method."""
 
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create a TradingEnv instance."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             return TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -894,8 +914,8 @@ class TestEstimateRewardRobustClipFraction:
 
     def test_returns_default_for_small_df(self, mock_mediator):
         """Test returns default 0.1 for very small DataFrame."""
-        small_df = pd.DataFrame({'close': [100.0]})
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        small_df = pd.DataFrame({"close": [100.0]})
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=small_df,
                 mediator=mock_mediator,
@@ -906,8 +926,8 @@ class TestEstimateRewardRobustClipFraction:
 
     def test_returns_default_for_no_close_column(self, mock_mediator):
         """Test returns default when no close column exists."""
-        df = pd.DataFrame({'other': [1, 2, 3, 4, 5]})
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        df = pd.DataFrame({"other": [1, 2, 3, 4, 5]})
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=df,
                 mediator=mock_mediator,
@@ -921,13 +941,14 @@ class TestEstimateRewardRobustClipFraction:
 # 14. TradingEnv.seed() TESTS
 # =============================================================================
 
+
 class TestSeed:
     """Tests for TradingEnv.seed() method."""
 
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create a TradingEnv instance."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -961,13 +982,14 @@ class TestSeed:
 # 15. TradingEnv PROPERTIES TESTS
 # =============================================================================
 
+
 class TestProperties:
     """Tests for TradingEnv property methods."""
 
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create a TradingEnv instance."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1017,13 +1039,14 @@ class TestProperties:
 # 16. TradingEnv.get_bar_interval_seconds() TESTS
 # =============================================================================
 
+
 class TestGetBarIntervalSeconds:
     """Tests for get_bar_interval_seconds method."""
 
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create a TradingEnv instance."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             return TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1050,13 +1073,14 @@ class TestGetBarIntervalSeconds:
 # 17. TradingEnv.get_no_trade_stats() TESTS
 # =============================================================================
 
+
 class TestGetNoTradeStats:
     """Tests for get_no_trade_stats method."""
 
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create a TradingEnv instance."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1083,13 +1107,14 @@ class TestGetNoTradeStats:
 # 18. TradingEnv.close() TESTS
 # =============================================================================
 
+
 class TestClose:
     """Tests for TradingEnv.close() method."""
 
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create a TradingEnv instance."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1115,12 +1140,13 @@ class TestClose:
 # 19. EDGE CASES AND ERROR HANDLING
 # =============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
     def test_assert_finite_valid(self, sample_df, mock_mediator):
         """Test _assert_finite with valid value."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1131,19 +1157,19 @@ class TestEdgeCases:
 
     def test_assert_finite_nan_returns_zero(self, sample_df, mock_mediator):
         """Test _assert_finite with NaN returns 0."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
                 observation_space=MagicMock(shape=(10,)),
             )
             env.debug_asserts = False
-            result = env._assert_finite("test", float('nan'))
+            result = env._assert_finite("test", float("nan"))
             assert result == 0.0
 
     def test_assert_finite_nan_raises_with_debug(self, sample_df, mock_mediator):
         """Test _assert_finite raises when debug_asserts is True."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1151,11 +1177,11 @@ class TestEdgeCases:
             )
             env.debug_asserts = True
             with pytest.raises(AssertionError):
-                env._assert_finite("test", float('nan'))
+                env._assert_finite("test", float("nan"))
 
     def test_coerce_timestamp_valid(self, sample_df, mock_mediator):
         """Test _coerce_timestamp with valid timestamp."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1166,7 +1192,7 @@ class TestEdgeCases:
 
     def test_coerce_timestamp_converts_seconds(self, sample_df, mock_mediator):
         """Test _coerce_timestamp converts seconds to ms."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1177,7 +1203,7 @@ class TestEdgeCases:
 
     def test_coerce_timestamp_none(self, sample_df, mock_mediator):
         """Test _coerce_timestamp returns None for None."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1191,13 +1217,16 @@ class TestEdgeCases:
 # 20. GYMNASIUM SEMANTICS TESTS
 # =============================================================================
 
+
 class TestGymnasiumSemantics:
     """Tests verifying Gymnasium API compliance."""
 
     @pytest.fixture
     def env(self, sample_df_small, mock_mediator):
         """Create a TradingEnv for testing."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {'step_idx': 0})):
+        with patch.object(
+            tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {"step_idx": 0})
+        ):
             env = TradingEnv(
                 df=sample_df_small,
                 mediator=mock_mediator,
@@ -1209,7 +1238,7 @@ class TestGymnasiumSemantics:
 
     def test_reset_returns_obs_info_tuple(self, env):
         """Test reset returns (observation, info) tuple per Gymnasium API."""
-        with patch.object(env, '_init_state', return_value=(np.zeros(10), {'test': True})):
+        with patch.object(env, "_init_state", return_value=(np.zeros(10), {"test": True})):
             result = env.reset()
             assert len(result) == 2
             obs, info = result
@@ -1219,7 +1248,7 @@ class TestGymnasiumSemantics:
     def test_step_returns_five_tuple(self, env, sample_df_small, mock_mediator):
         """Test step returns (obs, reward, terminated, truncated, info) per Gymnasium API."""
         # Set up env for step
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df_small,
                 mediator=mock_mediator,
@@ -1234,13 +1263,14 @@ class TestGymnasiumSemantics:
 # 21. CLOSE_TO_OPEN MODE SPECIFIC TESTS
 # =============================================================================
 
+
 class TestCloseToOpenMode:
     """Tests specific to CLOSE_TO_OPEN decision timing mode."""
 
     @pytest.fixture
     def env(self, sample_df_small, mock_mediator):
         """Create env in CLOSE_TO_OPEN mode."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df_small,
                 mediator=mock_mediator,
@@ -1254,7 +1284,7 @@ class TestCloseToOpenMode:
 
     def test_pending_action_set_on_reset(self, env):
         """Test pending action is set to HOLD on reset."""
-        with patch.object(env, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(env, "_init_state", return_value=(np.zeros(10), {})):
             env.reset()
             assert env._pending_action is not None
             assert env._pending_action.action_type == ActionType.HOLD
@@ -1270,13 +1300,14 @@ class TestCloseToOpenMode:
 # 22. SIGNAL-ONLY MODE SPECIFIC TESTS
 # =============================================================================
 
+
 class TestSignalOnlyMode:
     """Tests specific to signal-only reward mode."""
 
     @pytest.fixture
     def env(self, sample_df_small, mock_mediator):
         """Create env in signal-only mode."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df_small,
                 mediator=mock_mediator,
@@ -1316,19 +1347,20 @@ class TestSignalOnlyMode:
 # 23. RESOLVE REWARD PRICE TESTS
 # =============================================================================
 
+
 class TestResolveRewardPrice:
     """Tests for _resolve_reward_price method."""
 
     @pytest.fixture
     def env(self, sample_df_small, mock_mediator):
         """Create env for testing."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             env = TradingEnv(
                 df=sample_df_small,
                 mediator=mock_mediator,
                 observation_space=MagicMock(shape=(10,)),
             )
-            env._close_actual = sample_df_small['close'].copy()
+            env._close_actual = sample_df_small["close"].copy()
             env.last_mtm_price = 100.0
             return env
 
@@ -1343,12 +1375,13 @@ class TestResolveRewardPrice:
         env._close_actual = None
         row = sample_df_small.iloc[0]
         price = env._resolve_reward_price(0, row)
-        assert price == sample_df_small.iloc[0]['close']
+        assert price == sample_df_small.iloc[0]["close"]
 
 
 # =============================================================================
 # 24. INTRABAR PATH HANDLING TESTS
 # =============================================================================
+
 
 class TestIntrabarPathHandling:
     """Tests for intrabar path normalization and forwarding."""
@@ -1356,7 +1389,7 @@ class TestIntrabarPathHandling:
     @pytest.fixture
     def env(self, sample_df, mock_mediator):
         """Create env for testing."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             return TradingEnv(
                 df=sample_df,
                 mediator=mock_mediator,
@@ -1386,13 +1419,14 @@ class TestIntrabarPathHandling:
 
     def test_normalize_filters_nan(self, env):
         """Test NaN values are filtered out."""
-        result = env._normalize_intrabar_path_payload([1.0, float('nan'), 3.0])
+        result = env._normalize_intrabar_path_payload([1.0, float("nan"), 3.0])
         assert result == [1.0, 3.0]
 
 
 # =============================================================================
 # 25. BAR INTERVAL INFERENCE TESTS
 # =============================================================================
+
 
 class TestBarIntervalInference:
     """Tests for bar interval inference."""
@@ -1401,7 +1435,7 @@ class TestBarIntervalInference:
         """Test inference from timestamp differences."""
         # Add bar_interval_ms column to dataframe
         sample_df = sample_df.copy()
-        sample_df['bar_interval_ms'] = 60000  # 1 minute bars
+        sample_df["bar_interval_ms"] = 60000  # 1 minute bars
         env = TradingEnv(df=sample_df)
         env.reset()
         result = env._infer_bar_interval_from_dataframe()
@@ -1413,13 +1447,14 @@ class TestBarIntervalInference:
 # 26. TRADING HOURS CHECK TESTS
 # =============================================================================
 
+
 class TestCheckTradingHours:
     """Tests for _check_trading_hours method."""
 
     @pytest.fixture
     def env(self, sample_df_small, mock_mediator):
         """Create env for testing."""
-        with patch.object(tp.TradingEnv, '_init_state', return_value=(np.zeros(10), {})):
+        with patch.object(tp.TradingEnv, "_init_state", return_value=(np.zeros(10), {})):
             return TradingEnv(
                 df=sample_df_small,
                 mediator=mock_mediator,

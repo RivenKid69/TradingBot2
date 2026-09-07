@@ -273,9 +273,7 @@ class DisclaimerStorageProtocol(Protocol):
         ...
 
     def get_latest(
-        self,
-        user_id: str,
-        disclaimer_type: DisclaimerType
+        self, user_id: str, disclaimer_type: DisclaimerType
     ) -> Optional[DisclaimerAcknowledgment]:
         """Get the latest acknowledgment for a user and disclaimer type."""
         ...
@@ -304,13 +302,12 @@ class InMemoryDisclaimerStorage:
         self._acknowledgments.append(acknowledgment)
 
     def get_latest(
-        self,
-        user_id: str,
-        disclaimer_type: DisclaimerType
+        self, user_id: str, disclaimer_type: DisclaimerType
     ) -> Optional[DisclaimerAcknowledgment]:
         """Get the latest acknowledgment for a user and disclaimer type."""
         matching = [
-            a for a in self._acknowledgments
+            a
+            for a in self._acknowledgments
             if a.user_id == user_id and a.disclaimer_type == disclaimer_type
         ]
         if not matching:
@@ -402,7 +399,7 @@ class DisclaimerService:
         disclaimer_type: DisclaimerType,
         ip_address: str,
         user_agent: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> DisclaimerAcknowledgment:
         """
         Record a user's acknowledgment of a disclaimer.
@@ -440,11 +437,7 @@ class DisclaimerService:
         self._storage.save(ack)
         return ack
 
-    def has_valid_acknowledgment(
-        self,
-        user_id: str,
-        disclaimer_type: DisclaimerType
-    ) -> bool:
+    def has_valid_acknowledgment(self, user_id: str, disclaimer_type: DisclaimerType) -> bool:
         """
         Check if user has a valid (current version) acknowledgment.
 
@@ -464,11 +457,7 @@ class DisclaimerService:
         current_version = self._current_versions.get(disclaimer_type, "1.0.0")
         return latest.disclaimer_version == current_version
 
-    def require_acknowledgment(
-        self,
-        user_id: str,
-        disclaimer_type: DisclaimerType
-    ) -> None:
+    def require_acknowledgment(self, user_id: str, disclaimer_type: DisclaimerType) -> None:
         """
         Require that a user has acknowledged a disclaimer.
 
@@ -486,13 +475,11 @@ class DisclaimerService:
             raise DisclaimerNotAcknowledgedError(
                 disclaimer_type,
                 f"User must acknowledge {disclaimer_type.value} disclaimer (version "
-                f"{self._current_versions.get(disclaimer_type, '1.0.0')}) before proceeding"
+                f"{self._current_versions.get(disclaimer_type, '1.0.0')}) before proceeding",
             )
 
     def get_pending_disclaimers(
-        self,
-        user_id: str,
-        required_types: Optional[List[DisclaimerType]] = None
+        self, user_id: str, required_types: Optional[List[DisclaimerType]] = None
     ) -> List[DisclaimerType]:
         """
         Get list of disclaimers the user needs to acknowledge.
@@ -513,10 +500,7 @@ class DisclaimerService:
 
         return pending
 
-    def get_user_acknowledgments(
-        self,
-        user_id: str
-    ) -> List[DisclaimerAcknowledgment]:
+    def get_user_acknowledgments(self, user_id: str) -> List[DisclaimerAcknowledgment]:
         """
         Get all acknowledgments for a user.
 
@@ -544,11 +528,7 @@ class DisclaimerService:
         """
         return self._storage.delete_for_user(user_id)
 
-    def update_disclaimer_version(
-        self,
-        disclaimer_type: DisclaimerType,
-        new_version: str
-    ) -> None:
+    def update_disclaimer_version(self, disclaimer_type: DisclaimerType, new_version: str) -> None:
         """
         Update the version of a disclaimer.
 
@@ -560,10 +540,7 @@ class DisclaimerService:
         """
         self._current_versions[disclaimer_type] = new_version
 
-    def get_acknowledgment_report(
-        self,
-        user_id: str
-    ) -> Dict[str, Any]:
+    def get_acknowledgment_report(self, user_id: str) -> Dict[str, Any]:
         """
         Generate a report of user's acknowledgment status.
 
@@ -610,9 +587,9 @@ class DisclaimerService:
 # INTEGRATION HELPERS
 # ============================================================================
 
+
 def require_live_trading_acknowledgment(
-    disclaimer_service: DisclaimerService,
-    user_id: str
+    disclaimer_service: DisclaimerService, user_id: str
 ) -> None:
     """
     Helper function to enforce live trading disclaimer.
@@ -626,15 +603,11 @@ def require_live_trading_acknowledgment(
     Raises:
         DisclaimerNotAcknowledgedError: If not acknowledged
     """
-    disclaimer_service.require_acknowledgment(
-        user_id,
-        DisclaimerType.PRE_LIVE_TRADING
-    )
+    disclaimer_service.require_acknowledgment(user_id, DisclaimerType.PRE_LIVE_TRADING)
 
 
 def require_strategy_deployment_acknowledgment(
-    disclaimer_service: DisclaimerService,
-    user_id: str
+    disclaimer_service: DisclaimerService, user_id: str
 ) -> None:
     """
     Helper function to enforce strategy deployment disclaimer.
@@ -648,7 +621,4 @@ def require_strategy_deployment_acknowledgment(
     Raises:
         DisclaimerNotAcknowledgedError: If not acknowledged
     """
-    disclaimer_service.require_acknowledgment(
-        user_id,
-        DisclaimerType.STRATEGY_DEPLOYMENT
-    )
+    disclaimer_service.require_acknowledgment(user_id, DisclaimerType.STRATEGY_DEPLOYMENT)

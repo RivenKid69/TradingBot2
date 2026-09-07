@@ -100,11 +100,13 @@ class AlpacaTradingHoursAdapter(TradingHoursAdapter):
                 if day.close.hour < 16:
                     self._half_days_cache.add(day_date)
 
-                self._alpaca_calendar.append({
-                    "date": day_date,
-                    "open": day.open,
-                    "close": day.close,
-                })
+                self._alpaca_calendar.append(
+                    {
+                        "date": day_date,
+                        "open": day.open,
+                        "close": day.close,
+                    }
+                )
 
             logger.info(f"Loaded Alpaca calendar: {len(self._alpaca_calendar)} trading days")
 
@@ -152,9 +154,8 @@ class AlpacaTradingHoursAdapter(TradingHoursAdapter):
             return self._in_after_hours(current_minutes, dt.date())
 
         elif session_type == SessionType.EXTENDED:
-            return (
-                self._in_pre_market(current_minutes)
-                or self._in_after_hours(current_minutes, dt.date())
+            return self._in_pre_market(current_minutes) or self._in_after_hours(
+                current_minutes, dt.date()
             )
 
         # None = any tradable session
@@ -236,31 +237,26 @@ class AlpacaTradingHoursAdapter(TradingHoursAdapter):
         # Determine open time based on session type
         if session_type == SessionType.PRE_MARKET:
             open_time = datetime(
-                target_date.year, target_date.month, target_date.day,
-                4, 0, 0, tzinfo=ET
+                target_date.year, target_date.month, target_date.day, 4, 0, 0, tzinfo=ET
             )
         elif session_type == SessionType.REGULAR:
             open_time = datetime(
-                target_date.year, target_date.month, target_date.day,
-                9, 30, 0, tzinfo=ET
+                target_date.year, target_date.month, target_date.day, 9, 30, 0, tzinfo=ET
             )
         elif session_type in (SessionType.AFTER_HOURS, SessionType.EXTENDED):
             # After hours starts after regular close
             open_time = datetime(
-                target_date.year, target_date.month, target_date.day,
-                16, 0, 0, tzinfo=ET
+                target_date.year, target_date.month, target_date.day, 16, 0, 0, tzinfo=ET
             )
         else:
             # Default: pre-market if extended allowed, else regular
             if self._allow_extended:
                 open_time = datetime(
-                    target_date.year, target_date.month, target_date.day,
-                    4, 0, 0, tzinfo=ET
+                    target_date.year, target_date.month, target_date.day, 4, 0, 0, tzinfo=ET
                 )
             else:
                 open_time = datetime(
-                    target_date.year, target_date.month, target_date.day,
-                    9, 30, 0, tzinfo=ET
+                    target_date.year, target_date.month, target_date.day, 9, 30, 0, tzinfo=ET
                 )
 
         return int(open_time.timestamp() * 1000)
@@ -294,32 +290,33 @@ class AlpacaTradingHoursAdapter(TradingHoursAdapter):
         # Determine close time
         if session_type == SessionType.PRE_MARKET:
             close_time = datetime(
-                target_date.year, target_date.month, target_date.day,
-                9, 30, 0, tzinfo=ET
+                target_date.year, target_date.month, target_date.day, 9, 30, 0, tzinfo=ET
             )
         elif session_type == SessionType.REGULAR:
             close_hour = 13 if target_date in self._half_days_cache else 16
             close_time = datetime(
-                target_date.year, target_date.month, target_date.day,
-                close_hour, 0, 0, tzinfo=ET
+                target_date.year, target_date.month, target_date.day, close_hour, 0, 0, tzinfo=ET
             )
         elif session_type in (SessionType.AFTER_HOURS, SessionType.EXTENDED):
             close_time = datetime(
-                target_date.year, target_date.month, target_date.day,
-                20, 0, 0, tzinfo=ET
+                target_date.year, target_date.month, target_date.day, 20, 0, 0, tzinfo=ET
             )
         else:
             # Default: end of after-hours if extended allowed, else regular close
             if self._allow_extended:
                 close_time = datetime(
-                    target_date.year, target_date.month, target_date.day,
-                    20, 0, 0, tzinfo=ET
+                    target_date.year, target_date.month, target_date.day, 20, 0, 0, tzinfo=ET
                 )
             else:
                 close_hour = 13 if target_date in self._half_days_cache else 16
                 close_time = datetime(
-                    target_date.year, target_date.month, target_date.day,
-                    close_hour, 0, 0, tzinfo=ET
+                    target_date.year,
+                    target_date.month,
+                    target_date.day,
+                    close_hour,
+                    0,
+                    0,
+                    tzinfo=ET,
                 )
 
         return int(close_time.timestamp() * 1000)

@@ -34,8 +34,16 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from packages.agent.execution.fix_protocol import (
-    SOH, BEGIN_STRING, Tag, MsgType, Side, OrdType, encode_message, parse_message,
-    verify_checksum, _num,
+    SOH,
+    BEGIN_STRING,
+    Tag,
+    MsgType,
+    Side,
+    OrdType,
+    encode_message,
+    parse_message,
+    verify_checksum,
+    _num,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,9 +92,11 @@ class Transport:
 class TCPTransport(Transport):
     def __init__(self, host: str, port: int, *, tls: bool = False, timeout: float = 1.0) -> None:
         import socket
+
         self._sock = socket.create_connection((host, port), timeout=timeout)
         if tls:
             import ssl
+
             ctx = ssl.create_default_context()
             self._sock = ctx.wrap_socket(self._sock, server_hostname=host)
         self._sock.settimeout(timeout)
@@ -96,6 +106,7 @@ class TCPTransport(Transport):
 
     def recv(self, n: int = 4096) -> bytes:
         import socket
+
         try:
             return self._sock.recv(n)
         except socket.timeout:
@@ -113,8 +124,9 @@ class PairedTransport(Transport):
 
     def __init__(self, inbound, outbound) -> None:
         import queue
-        self._in = inbound      # queue we read from
-        self._out = outbound    # queue we write to
+
+        self._in = inbound  # queue we read from
+        self._out = outbound  # queue we write to
         self._buf = b""
         self._q = queue
         self._closed = False
@@ -122,6 +134,7 @@ class PairedTransport(Transport):
     @classmethod
     def pair(cls) -> Tuple["PairedTransport", "PairedTransport"]:
         import queue
+
         a, b = queue.Queue(), queue.Queue()
         return cls(a, b), cls(b, a)
 
@@ -153,6 +166,7 @@ class SeqStore:
         if self.path and os.path.exists(self.path):
             try:
                 import json
+
                 with open(self.path, "r", encoding="utf-8") as fh:
                     d = json.load(fh)
                 self.out_seq = int(d.get("out", 1))
@@ -165,6 +179,7 @@ class SeqStore:
             return
         try:
             import json
+
             os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
             with open(self.path, "w", encoding="utf-8") as fh:
                 json.dump({"out": self.out_seq, "in": self.in_seq}, fh)
@@ -218,7 +233,7 @@ class FixSessionEngine:
         self._lock = threading.RLock()
         self._last_recv = time.time()
         self._last_sent = time.time()
-        self._sent_messages: Dict[int, str] = {}     # seq -> raw (for resend)
+        self._sent_messages: Dict[int, str] = {}  # seq -> raw (for resend)
         self.logged_on = threading.Event()
 
     # -- lifecycle ----------------------------------------------------------
@@ -277,23 +292,51 @@ class FixSessionEngine:
             fields.append((STag.ResetSeqNumFlag, "Y"))
         self._send(MsgType.LOGON.value, fields)
 
-    def send_new_order(self, *, cl_ord_id: str, symbol: str, side: str, qty: float,
-                       ord_type: str = "MARKET", price: Optional[float] = None,
-                       tif: str = "0") -> int:
-        sd = side if side in ("1", "2") else (Side.BUY.value if side.upper() == "BUY" else Side.SELL.value)
+    def send_new_order(
+        self,
+        *,
+        cl_ord_id: str,
+        symbol: str,
+        side: str,
+        qty: float,
+        ord_type: str = "MARKET",
+        price: Optional[float] = None,
+        tif: str = "0",
+    ) -> int:
+        sd = (
+            side
+            if side in ("1", "2")
+            else (Side.BUY.value if side.upper() == "BUY" else Side.SELL.value)
+        )
         ot = OrdType.LIMIT.value if str(ord_type).upper() == "LIMIT" else OrdType.MARKET.value
-        fields = [(Tag.ClOrdID, cl_ord_id), (Tag.Symbol, symbol), (Tag.Side, sd),
-                  (Tag.OrderQty, _num(qty)), (Tag.OrdType, ot)]
+        fields = [
+            (Tag.ClOrdID, cl_ord_id),
+            (Tag.Symbol, symbol),
+            (Tag.Side, sd),
+            (Tag.OrderQty, _num(qty)),
+            (Tag.OrdType, ot),
+        ]
         if price is not None:
             fields.append((Tag.Price, _num(price)))
         fields += [(Tag.TimeInForce, tif), (Tag.TransactTime, _now())]
         return self._send(MsgType.NEW_ORDER_SINGLE.value, fields)
 
     def send_cancel(self, *, orig_cl_ord_id: str, cl_ord_id: str, symbol: str, side: str) -> int:
-        sd = side if side in ("1", "2") else (Side.BUY.value if side.upper() == "BUY" else Side.SELL.value)
-        return self._send(MsgType.ORDER_CANCEL_REQUEST.value, [
-            (Tag.OrigClOrdID, orig_cl_ord_id), (Tag.ClOrdID, cl_ord_id),
-            (Tag.Symbol, symbol), (Tag.Side, sd), (Tag.TransactTime, _now())])
+        sd = (
+            side
+            if side in ("1", "2")
+            else (Side.BUY.value if side.upper() == "BUY" else Side.SELL.value)
+        )
+        return self._send(
+            MsgType.ORDER_CANCEL_REQUEST.value,
+            [
+                (Tag.OrigClOrdID, orig_cl_ord_id),
+                (Tag.ClOrdID, cl_ord_id),
+                (Tag.Symbol, symbol),
+                (Tag.Side, sd),
+                (Tag.TransactTime, _now()),
+            ],
+        )
 
     # -- receiving ----------------------------------------------------------
     def _read_loop(self) -> None:
@@ -326,7 +369,7 @@ class FixSessionEngine:
             try:
                 body_len = int(text[blval_start:soh_after_bl])
             except ValueError:
-                self._buf = self._buf[start + 1:]
+                self._buf = self._buf[start + 1 :]
                 continue
             body_start = soh_after_bl + 1
             # message = header(up to body_start) + body(body_len) + checksum field (10=NNN<SOH>)
@@ -334,8 +377,8 @@ class FixSessionEngine:
             cs_end = text.find(SOH, cs_start)
             if cs_end < 0 or cs_end + 1 > len(text):
                 return
-            msg = text[start:cs_end + 1]
-            self._buf = self._buf[len(text[:cs_end + 1].encode("latin-1")):]
+            msg = text[start : cs_end + 1]
+            self._buf = self._buf[len(text[: cs_end + 1].encode("latin-1")) :]
             self._handle_message(msg)
 
     def _handle_message(self, raw: str) -> None:
@@ -357,9 +400,15 @@ class FixSessionEngine:
             self._seq.in_seq = new_seq
             self._seq.save()
             return
-        if seq > expected and not poss_dup and self.state in (SessionState.ACTIVE, SessionState.LOGON_SENT):
+        if (
+            seq > expected
+            and not poss_dup
+            and self.state in (SessionState.ACTIVE, SessionState.LOGON_SENT)
+        ):
             # gap: request resend of missing range
-            self._send(SMsg.RESEND_REQUEST, [(STag.BeginSeqNo, str(expected)), (STag.EndSeqNo, "0")])
+            self._send(
+                SMsg.RESEND_REQUEST, [(STag.BeginSeqNo, str(expected)), (STag.EndSeqNo, "0")]
+            )
             return
         if seq < expected and not poss_dup:
             return  # already processed
@@ -394,7 +443,10 @@ class FixSessionEngine:
         self.logged_on.set()
 
     def _send_logon_ack(self, fields: Dict[str, str]) -> None:
-        f = [(STag.EncryptMethod, "0"), (STag.HeartBtInt, fields.get(STag.HeartBtInt, str(self.heartbeat_int)))]
+        f = [
+            (STag.EncryptMethod, "0"),
+            (STag.HeartBtInt, fields.get(STag.HeartBtInt, str(self.heartbeat_int))),
+        ]
         if fields.get(STag.ResetSeqNumFlag) == "Y":
             self._seq.reset()
             f.append((STag.ResetSeqNumFlag, "Y"))
@@ -405,9 +457,10 @@ class FixSessionEngine:
         end = int(fields.get(STag.EndSeqNo, "0"))
         end = end if end > 0 else (self._seq.out_seq - 1)
         # gap-fill: reset sequence forward with PossDup (we don't replay app msgs here)
-        self._send(SMsg.SEQUENCE_RESET, [(STag.GapFillFlag, "Y"),
-                                         (STag.PossDupFlag, "Y"),
-                                         (STag.NewSeqNo, str(end + 1))])
+        self._send(
+            SMsg.SEQUENCE_RESET,
+            [(STag.GapFillFlag, "Y"), (STag.PossDupFlag, "Y"), (STag.NewSeqNo, str(end + 1))],
+        )
 
     # -- heartbeat ----------------------------------------------------------
     def _heartbeat_loop(self) -> None:
@@ -424,10 +477,23 @@ class FixSessionEngine:
 
     # -- introspection ------------------------------------------------------
     def status(self) -> Dict[str, Any]:
-        return {"state": self.state.value, "out_seq": self._seq.out_seq,
-                "in_seq": self._seq.in_seq, "logged_on": self.logged_on.is_set(),
-                "sender": self.sender, "target": self.target}
+        return {
+            "state": self.state.value,
+            "out_seq": self._seq.out_seq,
+            "in_seq": self._seq.in_seq,
+            "logged_on": self.logged_on.is_set(),
+            "sender": self.sender,
+            "target": self.target,
+        }
 
 
-__all__ = ["FixSessionEngine", "SessionState", "Transport", "TCPTransport",
-           "PairedTransport", "SeqStore", "STag", "SMsg"]
+__all__ = [
+    "FixSessionEngine",
+    "SessionState",
+    "Transport",
+    "TCPTransport",
+    "PairedTransport",
+    "SeqStore",
+    "STag",
+    "SMsg",
+]

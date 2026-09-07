@@ -103,15 +103,17 @@ class ServiceEval:
         reports = _ensure_equity_frame(reports)
 
         def _normalize(tr: pd.DataFrame) -> pd.DataFrame:
-            if set([
-                "ts",
-                "run_id",
-                "symbol",
-                "side",
-                "order_type",
-                "price",
-                "quantity",
-            ]).issubset(set(tr.columns)):
+            if set(
+                [
+                    "ts",
+                    "run_id",
+                    "symbol",
+                    "side",
+                    "order_type",
+                    "price",
+                    "quantity",
+                ]
+            ).issubset(set(tr.columns)):
                 tr = tr.rename(columns={"quantity": "qty"})
             if "side" in tr.columns:
                 tr["side"] = tr["side"].astype(str).str.upper()
@@ -133,7 +135,9 @@ class ServiceEval:
                 enriched[name] = synthetic if not synthetic.empty else tdf
             trades = enriched
         else:
-            needs_synth = not isinstance(trades, pd.DataFrame) or trades.empty or "pnl" not in trades.columns
+            needs_synth = (
+                not isinstance(trades, pd.DataFrame) or trades.empty or "pnl" not in trades.columns
+            )
             if needs_synth:
                 if isinstance(reports, dict):
                     first_report = next(iter(reports.values()), pd.DataFrame())
@@ -266,7 +270,11 @@ def from_config(
         base_trades = cfg.input.trades_path
         base_reports = getattr(cfg.input, "equity_path", "")
         for prof in ExecutionProfile:
-            tp = _apply_profile(base_trades, prof.value) if isinstance(base_trades, str) else base_trades.get(prof.value, "")
+            tp = (
+                _apply_profile(base_trades, prof.value)
+                if isinstance(base_trades, str)
+                else base_trades.get(prof.value, "")
+            )
             rp: str = ""
             if base_reports:
                 if isinstance(base_reports, str):
@@ -336,4 +344,3 @@ def from_config(
 
 
 __all__ = ["EvalConfig", "ServiceEval", "from_config"]
-

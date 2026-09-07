@@ -30,8 +30,8 @@ def calculate_close_to_close_volatility(close_prices, n):
     try:
         log_returns = []
         for i in range(1, len(prices)):
-            if prices[i-1] > 0 and prices[i] > 0:
-                log_returns.append(math.log(prices[i] / prices[i-1]))
+            if prices[i - 1] > 0 and prices[i] > 0:
+                log_returns.append(math.log(prices[i] / prices[i - 1]))
 
         if len(log_returns) < 2:
             return None
@@ -192,11 +192,13 @@ def run_all_tests():
     except AssertionError as e:
         print(f"\n❌ ТЕСТ ПРОВАЛЕН: {e}")
         import traceback
+
         traceback.print_exc()
         return False
     except Exception as e:
         print(f"\n❌ ОШИБКА: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

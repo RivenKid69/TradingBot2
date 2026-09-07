@@ -11,6 +11,7 @@ This ensures proper asymmetric penalties:
 - Overestimation (Q ≥ T): penalty (1 - τ)
 """
 import pytest
+
 torch = pytest.importorskip("torch")
 import pytest
 import numpy as np
@@ -28,6 +29,7 @@ def test_quantile_loss_code_uses_correct_default():
 
     class MockPolicy:
         """Mock policy without the flag set."""
+
         pass
 
     mock_policy = MockPolicy()
@@ -35,16 +37,17 @@ def test_quantile_loss_code_uses_correct_default():
     # This mimics the code at line 5707
     result = bool(getattr(mock_policy, "use_fixed_quantile_loss_asymmetry", True))
 
-    assert result is True, \
-        "Default value should be True for use_fixed_quantile_loss_asymmetry"
+    assert result is True, "Default value should be True for use_fixed_quantile_loss_asymmetry"
 
 
 def test_quantile_loss_explicit_override():
     """
     Verify that we can override the default to False if needed.
     """
+
     class MockPolicy:
         """Mock policy with flag explicitly set to False."""
+
         use_fixed_quantile_loss_asymmetry = False
 
     mock_policy = MockPolicy()
@@ -52,16 +55,17 @@ def test_quantile_loss_explicit_override():
     # This mimics the code at line 5707
     result = bool(getattr(mock_policy, "use_fixed_quantile_loss_asymmetry", True))
 
-    assert result is False, \
-        "Should respect explicit False value"
+    assert result is False, "Should respect explicit False value"
 
 
 def test_quantile_loss_with_explicit_true():
     """
     Verify that explicitly setting to True works correctly.
     """
+
     class MockPolicy:
         """Mock policy with flag explicitly set to True."""
+
         use_fixed_quantile_loss_asymmetry = True
 
     mock_policy = MockPolicy()
@@ -69,8 +73,7 @@ def test_quantile_loss_with_explicit_true():
     # This mimics the code at line 5707
     result = bool(getattr(mock_policy, "use_fixed_quantile_loss_asymmetry", True))
 
-    assert result is True, \
-        "Should respect explicit True value"
+    assert result is True, "Should respect explicit True value"
 
 
 if __name__ == "__main__":

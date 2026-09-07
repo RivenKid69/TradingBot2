@@ -457,9 +457,7 @@ class TestAlternativeProviderManagement:
             plan_id=plan.plan_id,
             provider_name="Alternative",
         )
-        manager.evaluate_alternative(
-            alt.alternative_id, 80.0, 80.0, 80.0
-        )
+        manager.evaluate_alternative(alt.alternative_id, 80.0, 80.0, 80.0)
         qualified = manager.qualify_alternative(alt.alternative_id)
         assert qualified.status == AlternativeProviderStatus.QUALIFIED
 
@@ -582,13 +580,9 @@ class TestDataMigrationPlanning:
         """Test getting migrations for plan."""
         manager, plan = manager_with_plan
         manager.add_data_migration(
-            plan.plan_id, "transactional", "confidential",
-            100.0, "export_import", 24
+            plan.plan_id, "transactional", "confidential", 100.0, "export_import", 24
         )
-        manager.add_data_migration(
-            plan.plan_id, "historical", "internal",
-            1000.0, "api_sync", 72
-        )
+        manager.add_data_migration(plan.plan_id, "historical", "internal", 1000.0, "api_sync", 72)
         migrations = manager.get_migrations_for_plan(plan.plan_id)
         assert len(migrations) == 2
 
@@ -622,12 +616,8 @@ class TestRiskManagement:
     def test_get_risks_for_plan(self, manager_with_plan):
         """Test getting risks for plan."""
         manager, plan = manager_with_plan
-        manager.add_exit_risk(
-            plan.plan_id, "Risk 1", "Desc", "technical", 2, 2
-        )
-        manager.add_exit_risk(
-            plan.plan_id, "Risk 2", "Desc", "operational", 3, 3
-        )
+        manager.add_exit_risk(plan.plan_id, "Risk 1", "Desc", "technical", 2, 2)
+        manager.add_exit_risk(plan.plan_id, "Risk 2", "Desc", "operational", 3, 3)
         risks = manager.get_risks_for_plan(plan.plan_id)
         assert len(risks) == 2
 
@@ -668,12 +658,8 @@ class TestCostEstimation:
     def test_cost_updates_plan_total(self, manager_with_plan):
         """Test cost updates plan total with contingency."""
         manager, plan = manager_with_plan
-        manager.add_cost_estimate(
-            plan.plan_id, "transition", 100000.0, "Transition"
-        )
-        manager.add_cost_estimate(
-            plan.plan_id, "resources", 50000.0, "Resources"
-        )
+        manager.add_cost_estimate(plan.plan_id, "transition", 100000.0, "Transition")
+        manager.add_cost_estimate(plan.plan_id, "resources", 50000.0, "Resources")
         updated_plan = manager.get_exit_plan(plan.plan_id)
         # Total = 150000 + 20% contingency = 180000
         assert updated_plan.total_estimated_cost_eur == 180000.0
@@ -776,17 +762,13 @@ class TestExitExecution:
         manager = DORAExitStrategies(config)
         plan = manager.create_exit_plan("PRV-001", "Provider", ["service"])
         # Don't approve
-        execution = manager.trigger_exit(
-            plan.plan_id, ExitTrigger.PLANNED_TERMINATION, "Reason"
-        )
+        execution = manager.trigger_exit(plan.plan_id, ExitTrigger.PLANNED_TERMINATION, "Reason")
         assert execution is None
 
     def test_update_execution_progress(self, manager_with_approved_plan):
         """Test updating execution progress."""
         manager, plan = manager_with_approved_plan
-        execution = manager.trigger_exit(
-            plan.plan_id, ExitTrigger.PLANNED_TERMINATION, "Reason"
-        )
+        execution = manager.trigger_exit(plan.plan_id, ExitTrigger.PLANNED_TERMINATION, "Reason")
         updated = manager.update_execution_progress(
             execution_id=execution.execution_id,
             phase=ExitPhase.TRANSITION,
@@ -799,9 +781,7 @@ class TestExitExecution:
     def test_complete_exit(self, manager_with_approved_plan):
         """Test completing exit."""
         manager, plan = manager_with_approved_plan
-        execution = manager.trigger_exit(
-            plan.plan_id, ExitTrigger.PLANNED_TERMINATION, "Reason"
-        )
+        execution = manager.trigger_exit(plan.plan_id, ExitTrigger.PLANNED_TERMINATION, "Reason")
         completed = manager.complete_exit(execution.execution_id)
         assert completed.status == "completed"
         assert completed.current_phase == ExitPhase.COMPLETED
@@ -812,9 +792,7 @@ class TestExitExecution:
     def test_get_active_executions(self, manager_with_approved_plan):
         """Test getting active executions."""
         manager, plan = manager_with_approved_plan
-        execution = manager.trigger_exit(
-            plan.plan_id, ExitTrigger.PLANNED_TERMINATION, "Reason"
-        )
+        execution = manager.trigger_exit(plan.plan_id, ExitTrigger.PLANNED_TERMINATION, "Reason")
         active = manager.get_active_executions()
         assert execution.execution_id in [e.execution_id for e in active]
 

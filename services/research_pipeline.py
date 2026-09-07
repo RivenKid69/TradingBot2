@@ -47,7 +47,7 @@ STEP_PENDING = "pending"
 STEP_RUNNING = "running"
 STEP_SUCCEEDED = "succeeded"
 STEP_FAILED = "failed"
-STEP_BLOCKED = "blocked"     # зависимость упала — шаг не выполнялся (fail-closed)
+STEP_BLOCKED = "blocked"  # зависимость упала — шаг не выполнялся (fail-closed)
 STEP_CANCELLED = "cancelled"
 
 RUN_RUNNING = "running"
@@ -111,7 +111,9 @@ class PipelineSpec:
         for s in self.steps:
             for dep in s.depends_on:
                 if dep not in known:
-                    raise ValueError(f"pipeline {self.name}: шаг {s.id} зависит от неизвестного {dep!r}")
+                    raise ValueError(
+                        f"pipeline {self.name}: шаг {s.id} зависит от неизвестного {dep!r}"
+                    )
         self.topo_order()  # бросит на цикле
 
     def topo_order(self) -> List[str]:
@@ -137,12 +139,22 @@ class PipelineSpec:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "name": self.name, "title": self.title, "description": self.description,
+            "name": self.name,
+            "title": self.title,
+            "description": self.description,
             "path": self.path,
-            "steps": [{
-                "id": s.id, "worker": s.worker, "title": s.title, "params": s.params,
-                "depends_on": s.depends_on, "timeout_sec": s.timeout_sec, "retries": s.retries,
-            } for s in self.steps],
+            "steps": [
+                {
+                    "id": s.id,
+                    "worker": s.worker,
+                    "title": s.title,
+                    "params": s.params,
+                    "depends_on": s.depends_on,
+                    "timeout_sec": s.timeout_sec,
+                    "retries": s.retries,
+                }
+                for s in self.steps
+            ],
         }
 
 
@@ -178,7 +190,9 @@ def _apply_leakguard_floor(step: StepSpec) -> StepSpec:
         if requested < LEAKGUARD_MIN_DELAY_MS:
             logger.warning(
                 "pipeline: шаг %s запросил decision_delay_ms=%s < пола %s — клампим",
-                step.id, requested, LEAKGUARD_MIN_DELAY_MS,
+                step.id,
+                requested,
+                LEAKGUARD_MIN_DELAY_MS,
             )
         step.params["decision_delay_ms"] = max(requested, LEAKGUARD_MIN_DELAY_MS)
     return step
@@ -227,8 +241,12 @@ class PipelineRunner:
         for f in files:
             st = self.load_run(f[:-5])
             if st:
-                out.append({k: st.get(k) for k in
-                            ("run_id", "pipeline", "status", "started_utc", "finished_utc")})
+                out.append(
+                    {
+                        k: st.get(k)
+                        for k in ("run_id", "pipeline", "status", "started_utc", "finished_utc")
+                    }
+                )
         return out
 
     def cancel(self, run_id: str) -> None:
@@ -267,9 +285,15 @@ class PipelineRunner:
         for s in spec.steps:
             carried = prev.get(s.id, {})
             st = {
-                "id": s.id, "worker": s.worker, "title": s.title,
-                "status": STEP_SUCCEEDED if carried.get("status") == STEP_SUCCEEDED else STEP_PENDING,
-                "detail": carried.get("detail", "") if carried.get("status") == STEP_SUCCEEDED else "",
+                "id": s.id,
+                "worker": s.worker,
+                "title": s.title,
+                "status": (
+                    STEP_SUCCEEDED if carried.get("status") == STEP_SUCCEEDED else STEP_PENDING
+                ),
+                "detail": (
+                    carried.get("detail", "") if carried.get("status") == STEP_SUCCEEDED else ""
+                ),
                 "attempts": 0,
             }
             step_state[s.id] = st
@@ -295,8 +319,7 @@ class PipelineRunner:
             sspec = _apply_leakguard_floor(specs_by_id[step_id])
 
             # fail-closed: зависимость не succeeded → blocked, не выполняем
-            broken = [d for d in sspec.depends_on
-                      if step_state[d]["status"] != STEP_SUCCEEDED]
+            broken = [d for d in sspec.depends_on if step_state[d]["status"] != STEP_SUCCEEDED]
             if broken:
                 st["status"] = STEP_BLOCKED
                 st["detail"] = f"зависимости не выполнены: {', '.join(broken)}"
@@ -311,7 +334,8 @@ class PipelineRunner:
                 st["attempts"] = attempt + 1
                 try:
                     status, detail, exit_code = self._worker(
-                        sspec.worker, dict(sspec.params), sspec.timeout_sec)
+                        sspec.worker, dict(sspec.params), sspec.timeout_sec
+                    )
                 except Exception as exc:
                     status, detail, exit_code = "failed", f"worker exception: {exc}", None
                 if status == "succeeded":
@@ -331,10 +355,22 @@ class PipelineRunner:
 
 
 __all__ = [
-    "LEAKGUARD_MIN_DELAY_MS", "PIPELINES_DIR", "RUNS_DIR",
-    "PipelineRunner", "PipelineSpec", "StepSpec",
-    "list_specs", "load_spec",
-    "STEP_BLOCKED", "STEP_CANCELLED", "STEP_FAILED", "STEP_PENDING",
-    "STEP_RUNNING", "STEP_SUCCEEDED",
-    "RUN_CANCELLED", "RUN_FAILED", "RUN_RUNNING", "RUN_SUCCEEDED",
+    "LEAKGUARD_MIN_DELAY_MS",
+    "PIPELINES_DIR",
+    "RUNS_DIR",
+    "PipelineRunner",
+    "PipelineSpec",
+    "StepSpec",
+    "list_specs",
+    "load_spec",
+    "STEP_BLOCKED",
+    "STEP_CANCELLED",
+    "STEP_FAILED",
+    "STEP_PENDING",
+    "STEP_RUNNING",
+    "STEP_SUCCEEDED",
+    "RUN_CANCELLED",
+    "RUN_FAILED",
+    "RUN_RUNNING",
+    "RUN_SUCCEEDED",
 ]

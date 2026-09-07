@@ -25,6 +25,7 @@ from unittest.mock import Mock, MagicMock, patch, AsyncMock
 # A) Live Runs in Agent Tests
 # ============================================================================
 
+
 class TestRunController:
     """Tests for RunController component (Design Doc 4.2/5.1/9.3)."""
 
@@ -119,6 +120,7 @@ class TestReconciliationMandatory:
 # ============================================================================
 # B) Agent↔Cloud Protocol Tests
 # ============================================================================
+
 
 class TestSignatureSchemeUnification:
     """Tests for unified Agent→Cloud signature scheme (Design Doc 10.2)."""
@@ -299,12 +301,14 @@ class TestVersionNegotiationMandatory:
 # C) Cloud Control Plane Tests
 # ============================================================================
 
+
 class TestMiddlewareIntegration:
     """Tests for middleware integration in Cloud app."""
 
     def test_security_middleware_function_exists(self):
         """Test _add_security_middleware function exists."""
         from packages.cloud.control_plane.app import _add_security_middleware
+
         assert callable(_add_security_middleware)
 
     def test_audit_middleware_config(self):
@@ -344,6 +348,7 @@ class TestTelemetryValidationMiddleware:
         from packages.cloud.control_plane.middleware.telemetry_validation import (
             TelemetryValidationMiddleware,
         )
+
         assert TelemetryValidationMiddleware is not None
 
     def test_telemetry_validator_blocks_order_fields(self):
@@ -401,6 +406,7 @@ class TestCloudCommandSigning:
         from packages.cloud.control_plane.services.command_signer import (
             CloudCommandSigner,
         )
+
         assert CloudCommandSigner is not None
 
     def test_command_signing_adds_signature(self):
@@ -442,6 +448,7 @@ class TestCloudCommandSigning:
 # D) Telemetry Tests
 # ============================================================================
 
+
 class TestTelemetryRedactionMandatory:
     """Tests for mandatory telemetry redaction (Design Doc 13/14)."""
 
@@ -450,6 +457,7 @@ class TestTelemetryRedactionMandatory:
         from packages.cloud.control_plane.middleware.telemetry_validation import (
             RedactionEnforcer,
         )
+
         assert RedactionEnforcer is not None
 
     def test_validator_requires_redaction_for_detailed(self):
@@ -475,6 +483,7 @@ class TestTelemetryRedactionMandatory:
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestAgentDaemonIntegration:
     """Integration tests for AgentDaemon with new components."""
@@ -512,6 +521,7 @@ class TestAgentDaemonIntegration:
 # ============================================================================
 # Summary Test
 # ============================================================================
+
 
 class TestDesignDocComplianceSummary:
     """Summary tests to verify all Design Doc requirements are met."""

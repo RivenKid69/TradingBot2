@@ -199,7 +199,7 @@ class TestPortfolioState:
         state = PortfolioState(
             positions={
                 "AAPL": (100, 150.0),  # $15,000
-                "MSFT": (50, 300.0),   # $15,000
+                "MSFT": (50, 300.0),  # $15,000
             },
             cash=20000.0,
         )
@@ -216,8 +216,8 @@ class TestPortfolioState:
         state = PortfolioState(
             positions={
                 "AAPL": (100, 150.0),  # Technology
-                "MSFT": (50, 300.0),   # Technology
-                "JPM": (100, 100.0),   # Financials
+                "MSFT": (50, 300.0),  # Technology
+                "JPM": (100, 100.0),  # Financials
             },
             cash=0.0,
         )
@@ -388,7 +388,7 @@ class TestRebalanceEngine:
         result = engine.rebalance_to_equal_weight(symbols, current)
 
         for symbol in symbols:
-            assert result.target_weights[symbol] == pytest.approx(1/3, rel=0.01)
+            assert result.target_weights[symbol] == pytest.approx(1 / 3, rel=0.01)
 
     def test_rebalance_actions(self) -> None:
         """Test rebalance action computation."""

@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob.calibration_pipeline import (
@@ -895,7 +896,9 @@ class TestBugFixes:
 
         # Should have impact_eta and impact_gamma CIs
         ci = result.confidence_intervals
-        assert any("impact_eta" in k for k in ci.keys()) or any("impact_gamma" in k for k in ci.keys())
+        assert any("impact_eta" in k for k in ci.keys()) or any(
+            "impact_gamma" in k for k in ci.keys()
+        )
 
 
 # ==============================================================================
@@ -1007,7 +1010,9 @@ class TestEquityCalibrationFunctions:
             )
 
         assert isinstance(config, L3ExecutionConfig)
-        mock_adapter.to_calibration_pipeline_data.assert_called_once_with("AAPL", "2025-01-01", "2025-01-31")
+        mock_adapter.to_calibration_pipeline_data.assert_called_once_with(
+            "AAPL", "2025-01-01", "2025-01-31"
+        )
 
     def test_calibrate_from_alpaca_with_error(self) -> None:
         """Test calibrate_from_alpaca handles errors gracefully."""

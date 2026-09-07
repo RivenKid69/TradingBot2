@@ -3,6 +3,7 @@ import pathlib
 import sys
 import logging
 
+
 def _load_lat_module():
     BASE = pathlib.Path(__file__).resolve().parents[1]
     sys.path.append(str(BASE))

@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class SecurityControlCategory(Enum):
     """Security control categories per ISO 27001/NIST."""
+
     ACCESS_CONTROL = "access_control"
     CRYPTOGRAPHY = "cryptography"
     PHYSICAL_SECURITY = "physical_security"
@@ -58,6 +60,7 @@ class SecurityControlCategory(Enum):
 
 class AccessControlType(Enum):
     """Access control types."""
+
     ROLE_BASED = "role_based"  # RBAC
     ATTRIBUTE_BASED = "attribute_based"  # ABAC
     MANDATORY = "mandatory"  # MAC
@@ -66,6 +69,7 @@ class AccessControlType(Enum):
 
 class AuthenticationType(Enum):
     """Authentication types."""
+
     PASSWORD = "password"
     MFA = "mfa"
     CERTIFICATE = "certificate"
@@ -76,6 +80,7 @@ class AuthenticationType(Enum):
 
 class EncryptionType(Enum):
     """Encryption types."""
+
     AT_REST = "at_rest"
     IN_TRANSIT = "in_transit"
     END_TO_END = "end_to_end"
@@ -83,6 +88,7 @@ class EncryptionType(Enum):
 
 class NetworkZone(Enum):
     """Network security zones."""
+
     PUBLIC = "public"
     DMZ = "dmz"
     INTERNAL = "internal"
@@ -92,6 +98,7 @@ class NetworkZone(Enum):
 
 class ControlStatus(Enum):
     """Security control implementation status."""
+
     NOT_IMPLEMENTED = "not_implemented"
     PARTIALLY_IMPLEMENTED = "partially_implemented"
     FULLY_IMPLEMENTED = "fully_implemented"
@@ -100,6 +107,7 @@ class ControlStatus(Enum):
 
 class DataClassification(Enum):
     """Data classification levels."""
+
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
@@ -111,6 +119,7 @@ class DataClassification(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class SecurityControl:
     """
@@ -118,6 +127,7 @@ class SecurityControl:
 
     Documents security controls that protect ICT systems.
     """
+
     control_id: str = ""
     name: str = ""
     description: str = ""
@@ -162,6 +172,7 @@ class AccessPolicy:
 
     Defines access control rules and requirements.
     """
+
     policy_id: str = ""
     name: str = ""
     description: str = ""
@@ -208,6 +219,7 @@ class EncryptionStandard:
 
     Defines encryption requirements for data protection.
     """
+
     standard_id: str = ""
     name: str = ""
     description: str = ""
@@ -246,6 +258,7 @@ class NetworkSecurityRule:
 
     Defines network security controls.
     """
+
     rule_id: str = ""
     name: str = ""
     description: str = ""
@@ -287,6 +300,7 @@ class DataProtectionPolicy:
 
     Defines data protection requirements.
     """
+
     policy_id: str = ""
     name: str = ""
     description: str = ""
@@ -332,6 +346,7 @@ class SecurityEvent:
 
     Documents security-related events for monitoring.
     """
+
     event_id: str = ""
     event_type: str = ""
     event_source: str = ""
@@ -367,9 +382,11 @@ class SecurityEvent:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ProtectionConfig:
     """Configuration for DORA Protection module."""
+
     # Access control
     default_mfa_required: bool = True
     default_session_timeout_minutes: int = 30
@@ -405,6 +422,7 @@ class ProtectionConfig:
 # =============================================================================
 # Main Protection Class
 # =============================================================================
+
 
 class DORAProtection:
     """
@@ -497,11 +515,14 @@ class DORAProtection:
         with self._lock:
             self._controls[control.control_id] = control
 
-        self._log_event("control_created", {
-            "control_id": control.control_id,
-            "name": name,
-            "category": category.value,
-        })
+        self._log_event(
+            "control_created",
+            {
+                "control_id": control.control_id,
+                "name": name,
+                "category": category.value,
+            },
+        )
 
         return control
 
@@ -519,7 +540,8 @@ class DORAProtection:
 
             control = self._controls[control_id]
             control.status = (
-                ControlStatus.FULLY_IMPLEMENTED if fully_implemented
+                ControlStatus.FULLY_IMPLEMENTED
+                if fully_implemented
                 else ControlStatus.PARTIALLY_IMPLEMENTED
             )
             control.implementation_details = implementation_details
@@ -562,10 +584,7 @@ class DORAProtection:
     def get_ineffective_controls(self) -> List[SecurityControl]:
         """Get controls that tested as ineffective."""
         with self._lock:
-            return [
-                c for c in self._controls.values()
-                if c.effectiveness_rating == "ineffective"
-            ]
+            return [c for c in self._controls.values() if c.effectiveness_rating == "ineffective"]
 
     # =========================================================================
     # Access Control (Article 9(4)(b))
@@ -604,10 +623,13 @@ class DORAProtection:
             name=name,
             description=description,
             access_control_type=access_control_type,
-            mfa_required=mfa_required if mfa_required is not None else self.config.default_mfa_required,
+            mfa_required=(
+                mfa_required if mfa_required is not None else self.config.default_mfa_required
+            ),
             roles=roles or [],
             permissions=permissions or [],
-            session_timeout_minutes=session_timeout_minutes or self.config.default_session_timeout_minutes,
+            session_timeout_minutes=session_timeout_minutes
+            or self.config.default_session_timeout_minutes,
             privileged_access_management=privileged_access_management,
             effective_date=datetime.now(timezone.utc).isoformat(),
         )
@@ -618,11 +640,14 @@ class DORAProtection:
         with self._lock:
             self._access_policies[policy.policy_id] = policy
 
-        self._log_event("access_policy_created", {
-            "policy_id": policy.policy_id,
-            "name": name,
-            "mfa_required": policy.mfa_required,
-        })
+        self._log_event(
+            "access_policy_created",
+            {
+                "policy_id": policy.policy_id,
+                "name": name,
+                "mfa_required": policy.mfa_required,
+            },
+        )
 
         return policy
 
@@ -665,15 +690,18 @@ class DORAProtection:
             # Check for brute force
             if not success:
                 recent_failures = sum(
-                    1 for e in self._events[-100:]
-                    if e.user_id == user_id and not e.success
-                    and e.event_type == "access_attempt"
+                    1
+                    for e in self._events[-100:]
+                    if e.user_id == user_id and not e.success and e.event_type == "access_attempt"
                 )
                 if recent_failures >= self.config.alert_threshold_failed_logins:
-                    self._alert_security_issue("multiple_failed_logins", {
-                        "user_id": user_id,
-                        "failure_count": recent_failures,
-                    })
+                    self._alert_security_issue(
+                        "multiple_failed_logins",
+                        {
+                            "user_id": user_id,
+                            "failure_count": recent_failures,
+                        },
+                    )
 
         return event
 
@@ -739,7 +767,8 @@ class DORAProtection:
         """Get encryption standards for a data classification."""
         with self._lock:
             return [
-                s for s in self._encryption_standards.values()
+                s
+                for s in self._encryption_standards.values()
                 if data_class in s.applies_to_data_classes and s.is_active
             ]
 
@@ -805,10 +834,7 @@ class DORAProtection:
             rules = list(self._network_rules.values())
 
             if zone:
-                rules = [
-                    r for r in rules
-                    if r.source_zone == zone or r.destination_zone == zone
-                ]
+                rules = [r for r in rules if r.source_zone == zone or r.destination_zone == zone]
 
             # Sort by priority
             rules.sort(key=lambda r: r.priority)
@@ -879,7 +905,8 @@ class DORAProtection:
         """Get policies for a data classification."""
         with self._lock:
             return [
-                p for p in self._data_policies.values()
+                p
+                for p in self._data_policies.values()
                 if p.data_classification == classification and p.is_active
             ]
 
@@ -971,18 +998,13 @@ class DORAProtection:
         """Get protection status summary."""
         with self._lock:
             implemented_controls = [
-                c for c in self._controls.values()
-                if c.status == ControlStatus.FULLY_IMPLEMENTED
+                c for c in self._controls.values() if c.status == ControlStatus.FULLY_IMPLEMENTED
             ]
             effective_controls = [
-                c for c in self._controls.values()
-                if c.effectiveness_rating == "effective"
+                c for c in self._controls.values() if c.effectiveness_rating == "effective"
             ]
 
-            recent_violations = [
-                e for e in self._events
-                if e.is_security_violation
-            ][-50:]
+            recent_violations = [e for e in self._events if e.is_security_violation][-50:]
 
             return {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -1058,6 +1080,7 @@ class DORAProtection:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_protection(
     config: Optional[ProtectionConfig] = None,

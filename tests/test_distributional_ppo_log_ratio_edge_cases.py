@@ -37,20 +37,19 @@ def test_conservative_clipping_does_not_activate_in_healthy_training() -> None:
 
     # Check that NO values are even close to ±20
     max_abs = torch.max(torch.abs(log_ratios)).item()
-    assert max_abs < 0.5, \
-        f"Healthy training should have max_abs < 0.5, got {max_abs}"
+    assert max_abs < 0.5, f"Healthy training should have max_abs < 0.5, got {max_abs}"
 
     # Apply ±20 clipping
     log_ratios_clamped = torch.clamp(log_ratios, min=-20.0, max=20.0)
 
     # Verify that clamping changed NOTHING
-    assert torch.allclose(log_ratios, log_ratios_clamped), \
-        "In healthy training, ±20 clipping should be inactive"
+    assert torch.allclose(
+        log_ratios, log_ratios_clamped
+    ), "In healthy training, ±20 clipping should be inactive"
 
     # Count how many values changed
     changed = torch.sum(log_ratios != log_ratios_clamped).item()
-    assert changed == 0, \
-        f"Expected 0 values to be clamped, but {changed} were clamped"
+    assert changed == 0, f"Expected 0 values to be clamped, but {changed} were clamped"
 
 
 def test_clipping_at_exact_boundary() -> None:
@@ -58,29 +57,36 @@ def test_clipping_at_exact_boundary() -> None:
     torch = pytest.importorskip("torch")
 
     # Test values exactly at, above, and below boundary
-    log_ratios = torch.tensor([
-        -20.0 - 1e-6,  # Just below lower bound
-        -20.0,          # Exactly at lower bound
-        -20.0 + 1e-6,  # Just above lower bound
-        20.0 - 1e-6,   # Just below upper bound
-        20.0,           # Exactly at upper bound
-        20.0 + 1e-6,   # Just above upper bound
-    ], dtype=torch.float32)
+    log_ratios = torch.tensor(
+        [
+            -20.0 - 1e-6,  # Just below lower bound
+            -20.0,  # Exactly at lower bound
+            -20.0 + 1e-6,  # Just above lower bound
+            20.0 - 1e-6,  # Just below upper bound
+            20.0,  # Exactly at upper bound
+            20.0 + 1e-6,  # Just above upper bound
+        ],
+        dtype=torch.float32,
+    )
 
     log_ratios_clamped = torch.clamp(log_ratios, min=-20.0, max=20.0)
 
     # Verify clamping behavior
-    expected = torch.tensor([
-        -20.0,  # Clamped to -20.0
-        -20.0,  # Unchanged
-        -20.0 + 1e-6,  # Unchanged (within bounds)
-        20.0 - 1e-6,   # Unchanged (within bounds)
-        20.0,   # Unchanged
-        20.0,   # Clamped to 20.0
-    ], dtype=torch.float32)
+    expected = torch.tensor(
+        [
+            -20.0,  # Clamped to -20.0
+            -20.0,  # Unchanged
+            -20.0 + 1e-6,  # Unchanged (within bounds)
+            20.0 - 1e-6,  # Unchanged (within bounds)
+            20.0,  # Unchanged
+            20.0,  # Clamped to 20.0
+        ],
+        dtype=torch.float32,
+    )
 
-    assert torch.allclose(log_ratios_clamped, expected, atol=1e-7), \
-        f"Boundary clamping mismatch: got {log_ratios_clamped.tolist()}"
+    assert torch.allclose(
+        log_ratios_clamped, expected, atol=1e-7
+    ), f"Boundary clamping mismatch: got {log_ratios_clamped.tolist()}"
 
 
 def test_exp_overflow_at_boundary() -> None:
@@ -90,8 +96,9 @@ def test_exp_overflow_at_boundary() -> None:
     # Safe: ±20
     log_ratios_safe = torch.tensor([-20.0, 20.0], dtype=torch.float32)
     ratios_safe = torch.exp(log_ratios_safe)
-    assert torch.all(torch.isfinite(ratios_safe)), \
-        f"exp(±20) should be finite: {ratios_safe.tolist()}"
+    assert torch.all(
+        torch.isfinite(ratios_safe)
+    ), f"exp(±20) should be finite: {ratios_safe.tolist()}"
 
     # Verify exact values
     assert abs(ratios_safe[0].item() - 2.06e-9) < 1e-10, "exp(-20) mismatch"
@@ -128,16 +135,16 @@ def test_monitoring_captures_pre_clamp_values() -> None:
     extreme_count_after = extreme_mask_after.sum().item()
 
     # Before clamp: captures true values
-    assert max_abs_before == 25.0, \
-        f"Pre-clamp monitoring should capture 25.0, got {max_abs_before}"
-    assert extreme_count_before == 4, \
-        f"Pre-clamp should detect 4 extreme values, got {extreme_count_before}"
+    assert max_abs_before == 25.0, f"Pre-clamp monitoring should capture 25.0, got {max_abs_before}"
+    assert (
+        extreme_count_before == 4
+    ), f"Pre-clamp should detect 4 extreme values, got {extreme_count_before}"
 
     # After clamp: values are clamped
-    assert max_abs_after == 20.0, \
-        f"Post-clamp max should be 20.0, got {max_abs_after}"
-    assert extreme_count_after == 4, \
-        f"Post-clamp should still have 4 values > 10, got {extreme_count_after}"
+    assert max_abs_after == 20.0, f"Post-clamp max should be 20.0, got {max_abs_after}"
+    assert (
+        extreme_count_after == 4
+    ), f"Post-clamp should still have 4 values > 10, got {extreme_count_after}"
 
 
 def test_non_finite_values_handling() -> None:
@@ -145,7 +152,7 @@ def test_non_finite_values_handling() -> None:
     torch = pytest.importorskip("torch")
 
     # Test with inf
-    log_ratios_inf = torch.tensor([float('inf'), float('-inf'), 0.0], dtype=torch.float32)
+    log_ratios_inf = torch.tensor([float("inf"), float("-inf"), 0.0], dtype=torch.float32)
 
     # Check if all finite
     all_finite = torch.isfinite(log_ratios_inf).all().item()
@@ -156,7 +163,7 @@ def test_non_finite_values_handling() -> None:
     assert finite_mask.tolist() == [False, False, True], "Finite mask mismatch"
 
     # Test with nan
-    log_ratios_nan = torch.tensor([float('nan'), 1.0, 2.0], dtype=torch.float32)
+    log_ratios_nan = torch.tensor([float("nan"), 1.0, 2.0], dtype=torch.float32)
     all_finite_nan = torch.isfinite(log_ratios_nan).all().item()
     assert not all_finite_nan, "Should detect nan"
 
@@ -186,12 +193,11 @@ def test_statistics_accumulation_correctness() -> None:
     expected_std = torch.std(log_ratios, unbiased=True).item()
     expected_max_abs = 0.5
 
-    assert abs(mean - expected_mean) < 1e-6, \
-        f"Mean mismatch: got {mean}, expected {expected_mean}"
-    assert abs(std - expected_std) < 1e-6, \
-        f"Std mismatch: got {std}, expected {expected_std}"
-    assert abs(max_abs - expected_max_abs) < 1e-6, \
-        f"Max abs mismatch: got {max_abs}, expected {expected_max_abs}"
+    assert abs(mean - expected_mean) < 1e-6, f"Mean mismatch: got {mean}, expected {expected_mean}"
+    assert abs(std - expected_std) < 1e-6, f"Std mismatch: got {std}, expected {expected_std}"
+    assert (
+        abs(max_abs - expected_max_abs) < 1e-6
+    ), f"Max abs mismatch: got {max_abs}, expected {expected_max_abs}"
 
 
 def test_extreme_count_threshold_sensitivity() -> None:
@@ -199,24 +205,29 @@ def test_extreme_count_threshold_sensitivity() -> None:
     torch = pytest.importorskip("torch")
 
     # Values around threshold
-    log_ratios = torch.tensor([
-        9.9, 9.99, 9.999,     # Just below 10.0
-        10.0,                  # Exactly 10.0
-        10.001, 10.01, 10.1,  # Just above 10.0
-    ], dtype=torch.float32)
+    log_ratios = torch.tensor(
+        [
+            9.9,
+            9.99,
+            9.999,  # Just below 10.0
+            10.0,  # Exactly 10.0
+            10.001,
+            10.01,
+            10.1,  # Just above 10.0
+        ],
+        dtype=torch.float32,
+    )
 
     extreme_mask = torch.abs(log_ratios) > 10.0
     extreme_count = extreme_mask.sum().item()
 
     # Only values STRICTLY greater than 10.0 should be flagged
     # 10.001, 10.01, 10.1 = 3 values
-    assert extreme_count == 3, \
-        f"Expected 3 extreme values (>10.0), got {extreme_count}"
+    assert extreme_count == 3, f"Expected 3 extreme values (>10.0), got {extreme_count}"
 
     # Verify individual detections
     expected_mask = [False, False, False, False, True, True, True]
-    assert extreme_mask.tolist() == expected_mask, \
-        f"Extreme mask mismatch: {extreme_mask.tolist()}"
+    assert extreme_mask.tolist() == expected_mask, f"Extreme mask mismatch: {extreme_mask.tolist()}"
 
 
 def test_negative_values_abs_handling() -> None:
@@ -235,8 +246,7 @@ def test_negative_values_abs_handling() -> None:
     extreme_count = extreme_mask.sum().item()
 
     # -15.0, -10.5, 10.5, 15.0 = 4 values
-    assert extreme_count == 4, \
-        f"Expected 4 extreme values, got {extreme_count}"
+    assert extreme_count == 4, f"Expected 4 extreme values, got {extreme_count}"
 
 
 def test_warning_level_thresholds() -> None:
@@ -245,13 +255,13 @@ def test_warning_level_thresholds() -> None:
 
     # Test each warning level
     test_cases = [
-        (0.5, None),           # No warning
-        (1.0, None),           # Exactly at threshold, no warning yet
+        (0.5, None),  # No warning
+        (1.0, None),  # Exactly at threshold, no warning yet
         (1.01, "concerning"),  # Just above 1.0
-        (5.0, "concerning"),   # Well above 1.0, but below 10.0
+        (5.0, "concerning"),  # Well above 1.0, but below 10.0
         (10.0, "concerning"),  # Exactly at 10.0 threshold
-        (10.01, "severe"),     # Just above 10.0
-        (19.99, "severe"),     # High but below clipping
+        (10.01, "severe"),  # Just above 10.0
+        (19.99, "severe"),  # High but below clipping
     ]
 
     for max_abs, expected_level in test_cases:
@@ -263,8 +273,9 @@ def test_warning_level_thresholds() -> None:
         else:
             level = None
 
-        assert level == expected_level, \
-            f"For max_abs={max_abs}: expected {expected_level}, got {level}"
+        assert (
+            level == expected_level
+        ), f"For max_abs={max_abs}: expected {expected_level}, got {level}"
 
 
 def test_variance_calculation_numerical_stability() -> None:
@@ -284,8 +295,9 @@ def test_variance_calculation_numerical_stability() -> None:
     raw_var = (sq_sum - count * mean_manual**2) / (count - 1.0)
     var_manual = max(raw_var, 0.0)
 
-    assert abs(var_small_torch - var_manual) < 1e-15, \
-        "Variance calculation should be accurate for small values"
+    assert (
+        abs(var_small_torch - var_manual) < 1e-15
+    ), "Variance calculation should be accurate for small values"
 
     # Case 2: Large values (potential overflow)
     large_values = torch.tensor([1e6, 2e6, 3e6], dtype=torch.float32)
@@ -300,8 +312,9 @@ def test_variance_calculation_numerical_stability() -> None:
 
     # Allow larger tolerance for large values due to floating point precision
     rel_error = abs(var_large_torch - var_large) / var_large_torch
-    assert rel_error < 1e-4, \
-        f"Variance calculation should be accurate for large values, rel_error={rel_error}"
+    assert (
+        rel_error < 1e-4
+    ), f"Variance calculation should be accurate for large values, rel_error={rel_error}"
 
 
 def test_zero_variance_case() -> None:
@@ -322,8 +335,7 @@ def test_zero_variance_case() -> None:
     raw_var = (sq_sum - count * mean**2) / (count - 1.0)
     var_manual = max(raw_var, 0.0)
 
-    assert var_manual == 0.0, \
-        f"Manual variance should also be 0, got {var_manual}"
+    assert var_manual == 0.0, f"Manual variance should also be 0, got {var_manual}"
 
 
 def test_single_value_statistics() -> None:
@@ -341,8 +353,7 @@ def test_single_value_statistics() -> None:
     else:
         var = 0.0  # Set to 0 as in implementation
 
-    assert var == 0.0, \
-        f"Variance with single value should be 0, got {var}"
+    assert var == 0.0, f"Variance with single value should be 0, got {var}"
 
 
 def test_extreme_fraction_calculation_precision() -> None:
@@ -365,8 +376,9 @@ def test_extreme_fraction_calculation_precision() -> None:
     extreme_fraction = float(extreme_count) / float(total_count)
 
     assert extreme_count == 7, f"Should have exactly 7 extreme values, got {extreme_count}"
-    assert abs(extreme_fraction - 0.07) < 1e-9, \
-        f"Extreme fraction should be 0.07, got {extreme_fraction}"
+    assert (
+        abs(extreme_fraction - 0.07) < 1e-9
+    ), f"Extreme fraction should be 0.07, got {extreme_fraction}"
 
 
 def test_clipping_preserves_sign() -> None:
@@ -381,13 +393,15 @@ def test_clipping_preserves_sign() -> None:
     signs_original = torch.sign(log_ratios)
     signs_clamped = torch.sign(log_ratios_clamped)
 
-    assert torch.all(signs_original == signs_clamped), \
-        f"Clamping should preserve signs: original={signs_original.tolist()}, clamped={signs_clamped.tolist()}"
+    assert torch.all(
+        signs_original == signs_clamped
+    ), f"Clamping should preserve signs: original={signs_original.tolist()}, clamped={signs_clamped.tolist()}"
 
     # Verify exact values
     expected = torch.tensor([-20.0, -20.0, 20.0, 20.0], dtype=torch.float32)
-    assert torch.allclose(log_ratios_clamped, expected), \
-        f"Clamped values mismatch: got {log_ratios_clamped.tolist()}"
+    assert torch.allclose(
+        log_ratios_clamped, expected
+    ), f"Clamped values mismatch: got {log_ratios_clamped.tolist()}"
 
 
 def test_batch_accumulation_over_multiple_minibatches() -> None:
@@ -424,12 +438,15 @@ def test_batch_accumulation_over_multiple_minibatches() -> None:
     expected_std = all_values.std(unbiased=True).item()
     expected_max = 0.9
 
-    assert abs(mean - expected_mean) < 1e-6, \
-        f"Accumulated mean mismatch: got {mean}, expected {expected_mean}"
-    assert abs(std - expected_std) < 1e-6, \
-        f"Accumulated std mismatch: got {std}, expected {expected_std}"
-    assert abs(max_abs_global - expected_max) < 1e-6, \
-        f"Accumulated max mismatch: got {max_abs_global}, expected {expected_max}"
+    assert (
+        abs(mean - expected_mean) < 1e-6
+    ), f"Accumulated mean mismatch: got {mean}, expected {expected_mean}"
+    assert (
+        abs(std - expected_std) < 1e-6
+    ), f"Accumulated std mismatch: got {std}, expected {expected_std}"
+    assert (
+        abs(max_abs_global - expected_max) < 1e-6
+    ), f"Accumulated max mismatch: got {max_abs_global}, expected {expected_max}"
 
 
 def test_comparison_old_vs_new_clipping() -> None:
@@ -448,20 +465,23 @@ def test_comparison_old_vs_new_clipping() -> None:
     ratio_new = torch.exp(log_ratio_new)
 
     # Old: exp(50) ≈ 5.2e21 (astronomically large, but allowed)
-    assert ratio_old[0].item() > 1e20, \
-        f"Old clipping allows exp(50) ≈ 5e21, got {ratio_old[0].item():.2e}"
+    assert (
+        ratio_old[0].item() > 1e20
+    ), f"Old clipping allows exp(50) ≈ 5e21, got {ratio_old[0].item():.2e}"
 
     # New: exp(20) ≈ 4.85e8 (clamped at 20)
-    assert abs(ratio_new[0].item() - 4.85e8) < 1e6, \
-        f"New clipping caps at exp(20) ≈ 4.85e8, got {ratio_new[0].item():.2e}"
+    assert (
+        abs(ratio_new[0].item() - 4.85e8) < 1e6
+    ), f"New clipping caps at exp(20) ≈ 4.85e8, got {ratio_new[0].item():.2e}"
 
     # The difference is 13 orders of magnitude!
     ratio_old_val = ratio_old[0].item()
     ratio_new_val = ratio_new[0].item()
     magnitude_diff = math.log10(ratio_old_val / ratio_new_val)
 
-    assert magnitude_diff > 12, \
-        f"Old vs new clipping differ by {magnitude_diff:.1f} orders of magnitude"
+    assert (
+        magnitude_diff > 12
+    ), f"Old vs new clipping differ by {magnitude_diff:.1f} orders of magnitude"
 
 
 if __name__ == "__main__":

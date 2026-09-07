@@ -53,6 +53,7 @@ Agent → Cloud:
 | **Post-Enrollment** | Device key + signed JWT or mTLS |
 
 **Every message includes:**
+
 - `agent_id` - Agent identifier
 - `signature` - Message signature (Ed25519 or equivalent)
 - `timestamp` - ISO 8601 timestamp (checked for drift)
@@ -228,6 +229,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 ```
 
 **Status Values:**
+
 - `ACKED` - Command received, processing started
 - `REJECTED` - Command rejected (invalid, unsupported, etc.)
 
@@ -236,6 +238,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 **Direction:** Agent → Cloud (after local approval)
 
 **Approved:**
+
 ```json
 {
   "schema_version": "1.0",
@@ -250,6 +253,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 ```
 
 **Rejected:**
+
 ```json
 {
   "schema_version": "1.0",
@@ -268,6 +272,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 **Direction:** Agent → Cloud
 
 **Success:**
+
 ```json
 {
   "schema_version": "1.0",
@@ -284,6 +289,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 ```
 
 **Failure:**
+
 ```json
 {
   "schema_version": "1.0",
@@ -304,6 +310,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 ```
 
 **Result Status Values:**
+
 - `APPLIED` - Command executed successfully
 - `FAILED` - Execution failed (with error details)
 - `EXPIRED` - Command expired before execution
@@ -314,6 +321,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 **Direction:** Agent → Cloud
 
 **AGGREGATED level (default):**
+
 ```json
 {
   "schema_version": "1.0",
@@ -336,6 +344,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 ```
 
 **DETAILED level (opt-in, enterprise):**
+
 ```json
 {
   "schema_version": "1.0",
@@ -362,6 +371,7 @@ During enrollment, Agent and Cloud agree on protocol version:
 ```
 
 **Halt Event:**
+
 ```json
 {
   "schema_version": "1.0",
@@ -465,6 +475,7 @@ Example: dep_777:REQUEST_START:sha256:abc123
 ### 6.3 Command Expiration
 
 Commands include `expires_at` timestamp:
+
 - Expired commands are not processed
 - Agent returns `EXPIRED` status
 - Default TTL: 1 hour
@@ -640,6 +651,7 @@ protocol:
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](./CCEA_OVERVIEW.md)
 - [State Machine](./CCEA_STATE_MACHINE.md)
 - [JSON Schemas](../schemas/README.md)

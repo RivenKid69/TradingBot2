@@ -53,9 +53,7 @@ def main() -> None:
     )
     parser.add_argument("historical", help="CSV file with historical trades")
     parser.add_argument("simulated", help="CSV file with simulated trades")
-    parser.add_argument(
-        "--quantiles", type=int, default=10, help="Number of order size quantiles"
-    )
+    parser.add_argument("--quantiles", type=int, default=10, help="Number of order size quantiles")
     parser.add_argument(
         "--tolerance",
         type=float,
@@ -93,9 +91,7 @@ def main() -> None:
     plt.savefig(args.plot)
 
     if not ok:
-        print(
-            f"slippage curves deviate by more than {args.tolerance} bps", file=sys.stderr
-        )
+        print(f"slippage curves deviate by more than {args.tolerance} bps", file=sys.stderr)
         sys.exit(1)
 
 

@@ -13,6 +13,7 @@ Tests cover:
 
 import math
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from optimizers import UPGD, AdaptiveUPGD, UPGDW
@@ -20,6 +21,7 @@ from optimizers import UPGD, AdaptiveUPGD, UPGDW
 
 class SimpleModel(nn.Module):
     """Simple test model."""
+
     def __init__(self):
         super().__init__()
         self.linear = nn.Linear(10, 5)
@@ -246,7 +248,6 @@ class TestUPGDWeightDecay:
         # Note: relationship is complex due to update formula, but norm should generally decrease
         # with weight decay when gradients are small
 
-
     def test_zero_weight_decay(self):
         """Test that zero weight decay doesn't affect parameters beyond gradient update."""
         model = nn.Linear(3, 2, bias=False)
@@ -294,6 +295,7 @@ class TestUPGDNoisePerturbation:
 
     def test_deterministic_with_manual_seed(self):
         """Test that results are deterministic with manual seed."""
+
         def run_optimization():
             torch.manual_seed(123)
             model = nn.Linear(5, 3, bias=False)
@@ -631,9 +633,9 @@ class TestOptimizerComparison:
                 weight_decay=0.01,
             )
             # Verify optimizer was created with expected interface
-            assert hasattr(optimizer, 'step'), "UPGDW must have step() method"
-            assert hasattr(optimizer, 'zero_grad'), "UPGDW must have zero_grad() method"
-            assert hasattr(optimizer, 'param_groups'), "UPGDW must have param_groups"
+            assert hasattr(optimizer, "step"), "UPGDW must have step() method"
+            assert hasattr(optimizer, "zero_grad"), "UPGDW must have zero_grad() method"
+            assert hasattr(optimizer, "param_groups"), "UPGDW must have param_groups"
         except TypeError:
             pytest.fail("UPGDW should accept AdamW-style parameters")
 

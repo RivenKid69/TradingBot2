@@ -57,6 +57,7 @@ class PBTAdversarialConfig:
         adversarial: SA-PPO configuration
         base_config_path: Path to base training config (e.g., config_train.yaml)
     """
+
     pbt_enabled: bool = True
     adversarial_enabled: bool = True
     pbt: Optional[PBTConfig] = None
@@ -351,8 +352,10 @@ class PBTTrainingCoordinator:
         checkpoint_format = None
 
         if self.pbt_scheduler is not None and self.pbt_scheduler.should_exploit_and_explore(member):
-            new_parameters, new_hyperparams, checkpoint_format = self.pbt_scheduler.exploit_and_explore(
-                member, model_state_dict=None  # Deprecated parameter, not used
+            new_parameters, new_hyperparams, checkpoint_format = (
+                self.pbt_scheduler.exploit_and_explore(
+                    member, model_state_dict=None  # Deprecated parameter, not used
+                )
             )
 
         # Notify SA-PPO wrapper
@@ -426,7 +429,9 @@ class PBTTrainingCoordinator:
             )
 
         # Handle optimizer state based on strategy
-        optimizer_strategy = self.config.pbt.optimizer_exploit_strategy if self.config.pbt else "reset"
+        optimizer_strategy = (
+            self.config.pbt.optimizer_exploit_strategy if self.config.pbt else "reset"
+        )
 
         if optimizer_strategy == "reset":
             # Reset optimizer to fresh state
@@ -450,7 +455,7 @@ class PBTTrainingCoordinator:
                 optimizer_class = type(model.optimizer)
                 optimizer_kwargs = {
                     "lr": new_lr,
-                    **{k: v for k, v in model.optimizer.defaults.items() if k != "lr"}
+                    **{k: v for k, v in model.optimizer.defaults.items() if k != "lr"},
                 }
                 model.optimizer = optimizer_class(model.policy.parameters(), **optimizer_kwargs)
                 logger.info(
@@ -494,7 +499,10 @@ class PBTTrainingCoordinator:
 
         # Load VGS state if available
         if isinstance(new_parameters, dict) and "vgs_state" in new_parameters:
-            if hasattr(model, "_variance_gradient_scaler") and model._variance_gradient_scaler is not None:
+            if (
+                hasattr(model, "_variance_gradient_scaler")
+                and model._variance_gradient_scaler is not None
+            ):
                 model._variance_gradient_scaler.load_state_dict(new_parameters["vgs_state"])
                 logger.info(f"Member {member.member_id}: VGS state loaded from checkpoint")
             else:
@@ -569,11 +577,19 @@ if __name__ == "__main__":
     import numpy as np
 
     # Configure logging
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
 
     parser = argparse.ArgumentParser(description="PBT + Adversarial Training Coordinator CLI")
-    parser.add_argument("--config", default="configs/config_pbt_adversarial.yaml", help="Path to PBT + Adversarial YAML configuration")
-    parser.add_argument("--steps", type=int, default=15, help="Number of simulated training steps to run")
+    parser.add_argument(
+        "--config",
+        default="configs/config_pbt_adversarial.yaml",
+        help="Path to PBT + Adversarial YAML configuration",
+    )
+    parser.add_argument(
+        "--steps", type=int, default=15, help="Number of simulated training steps to run"
+    )
     parser.add_argument("--seed", type=int, default=42, help="RNG seed")
 
     args = parser.parse_args()
@@ -636,9 +652,7 @@ adversarial:
         def __init__(self, learning_rate=3e-4):
             super().__init__()
             self.policy = torch.nn.Sequential(
-                torch.nn.Linear(10, 32),
-                torch.nn.ReLU(),
-                torch.nn.Linear(32, 2)
+                torch.nn.Linear(10, 32), torch.nn.ReLU(), torch.nn.Linear(32, 2)
             )
             self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate)
 
@@ -659,6 +673,7 @@ adversarial:
     # Instantiate models for the population
     models = {}
     for member in population:
+
         def model_factory(**kwargs):
             lr = kwargs.get("learning_rate", 3e-4)
             return DemoPPOModel(learning_rate=lr)
@@ -693,20 +708,20 @@ adversarial:
 
             # End update
             new_state, new_hp, checkpoint_format = coordinator.on_member_update_end(
-                member,
-                performance=performance,
-                step=step,
-                model_state_dict=model.state_dict()
+                member, performance=performance, step=step, model_state_dict=model.state_dict()
             )
 
-            print(f"  Member {member.member_id}: Performance={performance:.4f}, LR={member.hyperparams['learning_rate']:.2e}, Loss={loss:.4f}")
+            print(
+                f"  Member {member.member_id}: Performance={performance:.4f}, LR={member.hyperparams['learning_rate']:.2e}, Loss={loss:.4f}"
+            )
 
             if new_state is not None:
-                print(f"  >> Exploited! Member {member.member_id} updated weights and hyperparams: {new_hp}")
+                print(
+                    f"  >> Exploited! Member {member.member_id} updated weights and hyperparams: {new_hp}"
+                )
                 coordinator.apply_exploited_parameters(model, new_state, member)
 
     print("\n" + "=" * 80)
     print("PBT + ADVERSARIAL COORDINATOR DEMO RUN COMPLETE")
     print("=" * 80)
     print(f"Final stats: {coordinator.get_stats()}")
-

@@ -72,16 +72,19 @@ logger = logging.getLogger(__name__)
 # Enums and Constants
 # =============================================================================
 
+
 class CircuitBreakerLevel(int, Enum):
     """Circuit breaker levels for equity index."""
+
     NONE = 0
-    LEVEL_1 = 1   # -7%
-    LEVEL_2 = 2   # -13%
-    LEVEL_3 = 3   # -20%
+    LEVEL_1 = 1  # -7%
+    LEVEL_2 = 2  # -13%
+    LEVEL_3 = 3  # -20%
 
 
 class TradingState(str, Enum):
     """Trading state for circuit breakers."""
+
     NORMAL = "NORMAL"
     HALTED = "HALTED"
     LIMIT_UP = "LIMIT_UP"
@@ -92,6 +95,7 @@ class TradingState(str, Enum):
 
 class PriceLimitStatus(str, Enum):
     """Status of commodity price limit."""
+
     INITIAL = "INITIAL"
     EXPANDED_1 = "EXPANDED_1"
     EXPANDED_2 = "EXPANDED_2"
@@ -100,6 +104,7 @@ class PriceLimitStatus(str, Enum):
 
 class LimitViolationType(str, Enum):
     """Type of price limit violation."""
+
     NONE = "NONE"
     LIMIT_UP = "LIMIT_UP"
     LIMIT_DOWN = "LIMIT_DOWN"
@@ -111,16 +116,16 @@ class LimitViolationType(str, Enum):
 
 # Equity index circuit breaker thresholds (percentage decline from reference)
 EQUITY_CB_THRESHOLDS: Dict[CircuitBreakerLevel, Decimal] = {
-    CircuitBreakerLevel.LEVEL_1: Decimal("-0.07"),   # -7%
-    CircuitBreakerLevel.LEVEL_2: Decimal("-0.13"),   # -13%
-    CircuitBreakerLevel.LEVEL_3: Decimal("-0.20"),   # -20%
+    CircuitBreakerLevel.LEVEL_1: Decimal("-0.07"),  # -7%
+    CircuitBreakerLevel.LEVEL_2: Decimal("-0.13"),  # -13%
+    CircuitBreakerLevel.LEVEL_3: Decimal("-0.20"),  # -20%
 }
 
 # Halt durations in seconds
 EQUITY_CB_HALT_DURATIONS: Dict[CircuitBreakerLevel, Optional[int]] = {
     CircuitBreakerLevel.LEVEL_1: 15 * 60,  # 15 minutes
     CircuitBreakerLevel.LEVEL_2: 15 * 60,  # 15 minutes
-    CircuitBreakerLevel.LEVEL_3: None,     # Remainder of day
+    CircuitBreakerLevel.LEVEL_3: None,  # Remainder of day
 }
 
 # Products that use equity circuit breakers
@@ -128,7 +133,7 @@ EQUITY_CB_PRODUCTS: Set[str] = {"ES", "NQ", "YM", "RTY", "MES", "MNQ", "MYM", "M
 
 # Overnight price limits (% from reference)
 OVERNIGHT_LIMITS: Dict[str, Decimal] = {
-    "ES": Decimal("0.05"),    # ±5%
+    "ES": Decimal("0.05"),  # ±5%
     "NQ": Decimal("0.05"),
     "YM": Decimal("0.05"),
     "RTY": Decimal("0.05"),
@@ -151,6 +156,7 @@ class CommodityPriceLimits:
         max_expansion: Maximum expansion (±%)
         expansion_trigger_minutes: Minutes at limit before expansion
     """
+
     initial: Decimal
     expanded_1: Decimal
     expanded_2: Decimal
@@ -211,15 +217,15 @@ COMMODITY_LIMITS: Dict[str, CommodityPriceLimits] = {
 
 # Velocity logic thresholds (ticks per second)
 VELOCITY_THRESHOLDS: Dict[str, int] = {
-    "ES": 12,    # 12 ticks/sec = 3 points/sec
-    "NQ": 20,    # 20 ticks/sec = 5 points/sec
-    "YM": 20,    # 20 ticks/sec = 20 points/sec
-    "RTY": 20,   # 20 ticks/sec = 2 points/sec
-    "GC": 30,    # 30 ticks/sec = 3 points/sec
-    "CL": 50,    # 50 ticks/sec = 0.50/sec
-    "NG": 100,   # 100 ticks/sec
-    "6E": 50,    # 50 ticks/sec
-    "ZN": 30,    # 30 ticks/sec
+    "ES": 12,  # 12 ticks/sec = 3 points/sec
+    "NQ": 20,  # 20 ticks/sec = 5 points/sec
+    "YM": 20,  # 20 ticks/sec = 20 points/sec
+    "RTY": 20,  # 20 ticks/sec = 2 points/sec
+    "GC": 30,  # 30 ticks/sec = 3 points/sec
+    "CL": 50,  # 50 ticks/sec = 0.50/sec
+    "NG": 100,  # 100 ticks/sec
+    "6E": 50,  # 50 ticks/sec
+    "ZN": 30,  # 30 ticks/sec
 }
 
 # Velocity pause duration
@@ -230,8 +236,10 @@ VELOCITY_PAUSE_MS = 2000  # 2 seconds
 # Data Classes
 # =============================================================================
 
+
 class CircuitBreakerEvent(NamedTuple):
     """Record of a circuit breaker event."""
+
     timestamp_ms: int
     level: CircuitBreakerLevel
     trigger_price: Decimal
@@ -243,6 +251,7 @@ class CircuitBreakerEvent(NamedTuple):
 
 class PriceLimitEvent(NamedTuple):
     """Record of a price limit event."""
+
     timestamp_ms: int
     symbol: str
     limit_type: LimitViolationType
@@ -253,6 +262,7 @@ class PriceLimitEvent(NamedTuple):
 
 class VelocityEvent(NamedTuple):
     """Record of a velocity logic event."""
+
     timestamp_ms: int
     symbol: str
     velocity_ticks_per_sec: float
@@ -277,6 +287,7 @@ class CircuitBreakerState:
         velocity_pause_until_ms: Velocity pause end time
         events: List of circuit breaker events
     """
+
     trading_state: TradingState = TradingState.NORMAL
     current_level: CircuitBreakerLevel = CircuitBreakerLevel.NONE
     triggered_levels: Set[CircuitBreakerLevel] = field(default_factory=set)
@@ -294,6 +305,7 @@ class CircuitBreakerState:
 # =============================================================================
 # Circuit Breaker Engine
 # =============================================================================
+
 
 class CMECircuitBreaker:
     """
@@ -427,7 +439,10 @@ class CMECircuitBreaker:
 
         # Check if currently halted
         if self._state.trading_state == TradingState.HALTED:
-            if self._state.halt_end_time_ms is not None and timestamp_ms >= self._state.halt_end_time_ms:
+            if (
+                self._state.halt_end_time_ms is not None
+                and timestamp_ms >= self._state.halt_end_time_ms
+            ):
                 # Halt period ended
                 self._state.trading_state = TradingState.NORMAL
             else:
@@ -437,7 +452,11 @@ class CMECircuitBreaker:
         change_pct = (current_price - self._state.reference_price) / self._state.reference_price
 
         # Check levels from highest to lowest
-        for level in [CircuitBreakerLevel.LEVEL_3, CircuitBreakerLevel.LEVEL_2, CircuitBreakerLevel.LEVEL_1]:
+        for level in [
+            CircuitBreakerLevel.LEVEL_3,
+            CircuitBreakerLevel.LEVEL_2,
+            CircuitBreakerLevel.LEVEL_1,
+        ]:
             threshold = EQUITY_CB_THRESHOLDS[level]
 
             if change_pct <= threshold:
@@ -588,7 +607,9 @@ class CMECircuitBreaker:
                 timestamp_ms=timestamp_ms,
                 symbol=self._symbol,
                 limit_type=violation,
-                limit_price=upper_bound if violation == LimitViolationType.LIMIT_UP else lower_bound,
+                limit_price=(
+                    upper_bound if violation == LimitViolationType.LIMIT_UP else lower_bound
+                ),
                 attempted_price=price,
                 status=self._state.limit_status,
             )
@@ -724,7 +745,7 @@ class CMECircuitBreaker:
 
         # Check velocity pause
         if timestamp_ms < self._state.velocity_pause_until_ms:
-            remaining = (self._state.velocity_pause_until_ms - timestamp_ms)
+            remaining = self._state.velocity_pause_until_ms - timestamp_ms
             return (False, f"Velocity pause, {remaining}ms remaining")
 
         # Check price limits if price provided
@@ -739,7 +760,10 @@ class CMECircuitBreaker:
             if self._commodity_limits is not None:
                 is_within, lower, upper, violation = self.check_commodity_limit(price, timestamp_ms)
                 if not is_within:
-                    return (False, f"Price violates {violation.value} limit ({lower:.2f} - {upper:.2f})")
+                    return (
+                        False,
+                        f"Price violates {violation.value} limit ({lower:.2f} - {upper:.2f})",
+                    )
 
         return (True, "OK")
 
@@ -778,13 +802,23 @@ class CMECircuitBreaker:
         """
         result: Dict[str, Any] = {
             "symbol": self._symbol,
-            "reference_price": float(self._state.reference_price) if self._state.reference_price else None,
+            "reference_price": (
+                float(self._state.reference_price) if self._state.reference_price else None
+            ),
             "trading_state": self._state.trading_state.value,
         }
 
         if self._is_equity_index:
-            result["overnight_upper"] = float(self._state.overnight_upper_limit) if self._state.overnight_upper_limit else None
-            result["overnight_lower"] = float(self._state.overnight_lower_limit) if self._state.overnight_lower_limit else None
+            result["overnight_upper"] = (
+                float(self._state.overnight_upper_limit)
+                if self._state.overnight_upper_limit
+                else None
+            )
+            result["overnight_lower"] = (
+                float(self._state.overnight_lower_limit)
+                if self._state.overnight_lower_limit
+                else None
+            )
             result["cb_levels_triggered"] = [l.value for l in self._state.triggered_levels]
 
         if self._commodity_limits is not None:
@@ -832,6 +866,7 @@ class CMECircuitBreaker:
 # Factory Functions
 # =============================================================================
 
+
 def create_circuit_breaker(
     symbol: str,
     reference_price: Optional[Decimal] = None,
@@ -864,7 +899,11 @@ def get_circuit_breaker_level(
     Returns:
         Circuit breaker level
     """
-    for level in [CircuitBreakerLevel.LEVEL_3, CircuitBreakerLevel.LEVEL_2, CircuitBreakerLevel.LEVEL_1]:
+    for level in [
+        CircuitBreakerLevel.LEVEL_3,
+        CircuitBreakerLevel.LEVEL_2,
+        CircuitBreakerLevel.LEVEL_1,
+    ]:
         if change_pct <= EQUITY_CB_THRESHOLDS[level]:
             return level
     return CircuitBreakerLevel.NONE
@@ -925,6 +964,7 @@ def get_velocity_threshold(symbol: str) -> int:
 # =============================================================================
 # Multi-Product Circuit Breaker Manager
 # =============================================================================
+
 
 class CircuitBreakerManager:
     """

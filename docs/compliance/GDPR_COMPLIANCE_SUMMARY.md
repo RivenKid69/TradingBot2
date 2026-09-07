@@ -207,6 +207,7 @@ RAW_ORDER_EVENTS (Enterprise-only + Explicit Opt-in)
 ### Quarterly Reviews (Planned)
 
 The platform is designed to support automated quarterly compliance reviews covering:
+
 - Retention schedule validation
 - Subprocessors list updates
 - DSAR metrics analysis

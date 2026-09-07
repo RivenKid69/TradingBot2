@@ -69,6 +69,7 @@ def reqContractDetails(reqId: int, contract: Contract)
 ```
 
 **Response Fields:**
+
 ```python
 class ContractDetails:
     contract: Contract
@@ -114,6 +115,7 @@ def reqMktData(
 ```
 
 **Generic Tick Types:**
+
 | Code | Description |
 |------|-------------|
 | 100 | Option volume |
@@ -131,6 +133,7 @@ def reqMktData(
 | 411 | RT historical vol |
 
 **Callback:**
+
 ```python
 def tickPrice(reqId, tickType, price, attrib):
     # tickType: 1=Bid, 2=Ask, 4=Last, 6=High, 7=Low, 9=Close
@@ -154,6 +157,7 @@ def reqMktDepth(
 ```
 
 **Callback:**
+
 ```python
 def updateMktDepth(reqId, position, operation, side, price, size):
     # operation: 0=Insert, 1=Update, 2=Delete
@@ -179,6 +183,7 @@ def reqHistoricalData(
 ```
 
 **Bar Sizes:**
+
 - `1 secs`, `5 secs`, `10 secs`, `15 secs`, `30 secs`
 - `1 min`, `2 mins`, `3 mins`, `5 mins`, `10 mins`, `15 mins`, `20 mins`, `30 mins`
 - `1 hour`, `2 hours`, `3 hours`, `4 hours`, `8 hours`
@@ -289,6 +294,7 @@ def reqAccountSummary(
 ```
 
 **Tags:**
+
 - `AccountType` - Individual, Joint, etc.
 - `NetLiquidation` - Net liquidation value
 - `TotalCashValue` - Cash balance
@@ -326,6 +332,7 @@ def reqPositions()
 ```
 
 **Callback:**
+
 ```python
 def position(account, contract, position, avgCost):
     # position: Signed (positive=long, negative=short)
@@ -340,6 +347,7 @@ def reqAccountUpdates(subscribe: bool, accountCode: str)
 ```
 
 **Callback:**
+
 ```python
 def updateAccountValue(key, val, currency, accountName):
     pass
@@ -356,6 +364,7 @@ def updatePortfolio(contract, position, marketPrice, marketValue,
 ### 6.1 SPAN Margin Overview
 
 CME uses SPAN (Standard Portfolio ANalysis of Risk) for margin:
+
 - Portfolio-based margin calculation
 - Offsets for correlated products
 - Scenario analysis for price moves

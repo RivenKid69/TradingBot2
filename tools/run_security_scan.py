@@ -38,8 +38,10 @@ SEMGREP_CONFIG = PROJECT_ROOT / ".semgrep.yml"
 # Color Output
 # =============================================================================
 
+
 class Colors:
     """ANSI color codes for terminal output."""
+
     RED = "\033[91m"
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
@@ -74,6 +76,7 @@ def print_error(msg: str) -> None:
 # Bandit Scanner
 # =============================================================================
 
+
 def check_bandit_installed() -> bool:
     """Check if bandit is installed."""
     try:
@@ -105,8 +108,10 @@ def run_bandit(quick: bool = False) -> Tuple[int, List[Dict]]:
 
     cmd = [
         "bandit",
-        "-r", str(PROJECT_ROOT),
-        "-f", "json",
+        "-r",
+        str(PROJECT_ROOT),
+        "-f",
+        "json",
     ]
 
     if BANDIT_CONFIG.exists():
@@ -145,7 +150,9 @@ def run_bandit(quick: bool = False) -> Tuple[int, List[Dict]]:
             print_error(f"Found {high_count} HIGH severity issues!")
             for issue in issues:
                 if issue.get("issue_severity") == "HIGH":
-                    print(f"\n  {Colors.RED}[HIGH]{Colors.RESET} {issue.get('filename')}:{issue.get('line_number')}")
+                    print(
+                        f"\n  {Colors.RED}[HIGH]{Colors.RESET} {issue.get('filename')}:{issue.get('line_number')}"
+                    )
                     print(f"    {issue.get('issue_text')}")
                     print(f"    Test ID: {issue.get('test_id')}")
         elif medium_count > 0:
@@ -163,6 +170,7 @@ def run_bandit(quick: bool = False) -> Tuple[int, List[Dict]]:
 # =============================================================================
 # Semgrep Scanner
 # =============================================================================
+
 
 def check_semgrep_installed() -> bool:
     """Check if semgrep is installed."""
@@ -201,8 +209,10 @@ def run_semgrep(quick: bool = False) -> Tuple[int, List[Dict]]:
     if SEMGREP_CONFIG.exists():
         print("Running local rules...")
         cmd = [
-            "semgrep", "scan",
-            "--config", str(SEMGREP_CONFIG),
+            "semgrep",
+            "scan",
+            "--config",
+            str(SEMGREP_CONFIG),
             "--json",
             str(PROJECT_ROOT),
         ]
@@ -236,9 +246,12 @@ def run_semgrep(quick: bool = False) -> Tuple[int, List[Dict]]:
     if not quick:
         print("\nRunning community rules (p/python, p/secrets)...")
         cmd = [
-            "semgrep", "scan",
-            "--config", "p/python",
-            "--config", "p/secrets",
+            "semgrep",
+            "scan",
+            "--config",
+            "p/python",
+            "--config",
+            "p/secrets",
             "--json",
             str(PROJECT_ROOT),
         ]
@@ -261,7 +274,9 @@ def run_semgrep(quick: bool = False) -> Tuple[int, List[Dict]]:
                     errors = [i for i in issues if i.get("extra", {}).get("severity") == "ERROR"]
                     if errors:
                         exit_code = 1
-                        print_error(f"Found {len(errors)} ERROR severity issues from community rules")
+                        print_error(
+                            f"Found {len(errors)} ERROR severity issues from community rules"
+                        )
                     else:
                         print_success(f"Community rules: {len(issues)} issues (no errors)")
                 except json.JSONDecodeError:
@@ -280,6 +295,7 @@ def run_semgrep(quick: bool = False) -> Tuple[int, List[Dict]]:
 # =============================================================================
 # Main
 # =============================================================================
+
 
 def main() -> int:
     """Main entry point."""

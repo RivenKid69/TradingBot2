@@ -1,1 +1,0 @@
-"        let quickActionInterval = null;\n        let currentRunningJob = null;"

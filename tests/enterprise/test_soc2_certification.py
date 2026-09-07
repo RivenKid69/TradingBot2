@@ -268,9 +268,7 @@ class TestSOC2CertificationService:
         )
         service = SOC2CertificationService(config)
 
-        security_controls = service.list_controls(
-            trust_principle=SOC2TrustPrinciple.SECURITY
-        )
+        security_controls = service.list_controls(trust_principle=SOC2TrustPrinciple.SECURITY)
         assert all(c.trust_principle == SOC2TrustPrinciple.SECURITY for c in security_controls)
 
     def test_list_controls_by_status(self) -> None:
@@ -515,8 +513,12 @@ class TestSOC2CertificationService:
         )
         controls = service.list_controls()
 
-        service.add_finding(report.report_id, controls[0].control_id, "Find 1", "Desc", "high", "auditor")
-        service.add_finding(report.report_id, controls[1].control_id, "Find 2", "Desc", "medium", "auditor")
+        service.add_finding(
+            report.report_id, controls[0].control_id, "Find 1", "Desc", "high", "auditor"
+        )
+        service.add_finding(
+            report.report_id, controls[1].control_id, "Find 2", "Desc", "medium", "auditor"
+        )
 
         findings = service.list_findings(audit_id=report.report_id)
         assert len(findings) == 2
@@ -580,10 +582,7 @@ class TestControlLibrary:
         """Test library has DORA mappings."""
         library = get_soc2_control_library()
 
-        controls_with_dora = [
-            ctrl for ctrl in library
-            if ctrl.get("dora_mapping")
-        ]
+        controls_with_dora = [ctrl for ctrl in library if ctrl.get("dora_mapping")]
         assert len(controls_with_dora) > 0
 
 

@@ -62,6 +62,7 @@ logger = logging.getLogger(__name__)
 # TIMEFRAME UTILITIES
 # =============================================================================
 
+
 def _timeframe_to_polygon(tf: str) -> tuple[int, str]:
     """
     Convert timeframe string to Polygon API format.
@@ -101,6 +102,7 @@ def _timeframe_to_polygon(tf: str) -> tuple[int, str]:
 
     # Try parsing numeric format
     import re
+
     match = re.match(r"(\d+)([mhdw])", tf_lower)
     if match:
         value = int(match.group(1))
@@ -129,6 +131,7 @@ def _timeframe_to_ms(tf: str) -> int:
 # =============================================================================
 # POLYGON MARKET DATA ADAPTER
 # =============================================================================
+
 
 class PolygonMarketDataAdapter(MarketDataAdapter):
     """
@@ -190,6 +193,7 @@ class PolygonMarketDataAdapter(MarketDataAdapter):
 
             try:
                 from polygon import RESTClient
+
                 self._rest_client = RESTClient(api_key=self._api_key)
             except ImportError:
                 raise ImportError(

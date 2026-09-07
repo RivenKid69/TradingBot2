@@ -32,9 +32,9 @@ def verify_formula_from_first_principles():
 
     Key insight: The sign of u determines the asymmetry!
     """
-    print("="*80)
+    print("=" * 80)
     print("VERIFICATION FROM FIRST PRINCIPLES")
-    print("="*80)
+    print("=" * 80)
     print()
 
     print("Standard definition of quantile loss (Koenker & Bassett 1978):")
@@ -70,7 +70,7 @@ def verify_formula_from_first_principles():
     print()
 
     print("CONCLUSION: u MUST be (target - predicted)")
-    print("="*80)
+    print("=" * 80)
     print()
 
 
@@ -85,9 +85,9 @@ def verify_against_dabney_2018():
 
     For value function learning: δ = target - predicted
     """
-    print("="*80)
+    print("=" * 80)
     print("VERIFICATION AGAINST DABNEY ET AL. 2018 (AAAI)")
-    print("="*80)
+    print("=" * 80)
     print()
 
     print("Dabney et al. 2018, Equation (9):")
@@ -141,7 +141,7 @@ def verify_against_dabney_2018():
     else:
         print("  ✗ DOES NOT MATCH!")
 
-    print("="*80)
+    print("=" * 80)
     print()
 
 
@@ -153,9 +153,9 @@ def verify_gradient_direction():
     For high quantiles (τ > 0.5): should push predictions UP (aggressive)
     For median (τ = 0.5): symmetric
     """
-    print("="*80)
+    print("=" * 80)
     print("VERIFICATION OF GRADIENT DIRECTION")
-    print("="*80)
+    print("=" * 80)
     print()
 
     print("Gradient of quantile loss w.r.t. predicted value:")
@@ -203,7 +203,7 @@ def verify_gradient_direction():
     print("  High quantiles: strong push UP when underestimating")
     print("  High quantiles: weak push DOWN when overestimating")
     print()
-    print("="*80)
+    print("=" * 80)
     print()
 
 
@@ -211,9 +211,9 @@ def verify_edge_cases():
     """
     Test edge cases to ensure robustness.
     """
-    print("="*80)
+    print("=" * 80)
     print("EDGE CASE VERIFICATION")
-    print("="*80)
+    print("=" * 80)
     print()
 
     # Edge case 1: τ = 0
@@ -262,7 +262,7 @@ def verify_edge_cases():
     print(f"  Underestimation should be penalized {1/expected_ratio:.0f}x more")
     print()
 
-    print("="*80)
+    print("=" * 80)
     print()
 
 
@@ -270,9 +270,9 @@ def compare_both_implementations():
     """
     Direct side-by-side comparison of OLD vs NEW implementation.
     """
-    print("="*80)
+    print("=" * 80)
     print("SIDE-BY-SIDE COMPARISON: OLD vs NEW")
-    print("="*80)
+    print("=" * 80)
     print()
 
     tau_values = [0.1, 0.25, 0.5, 0.75, 0.9]
@@ -305,20 +305,22 @@ def compare_both_implementations():
         coef_new_under = abs(tau - indicator_new_under)  # |τ - 0| = τ
         coef_new_over = abs(tau - indicator_new_over)  # |τ - 1| = 1 - τ
 
-        print(f"{tau:^6.2f} | Q-T: {delta_old_under:+5.1f} | under:{coef_old_under:.2f} over:{coef_old_over:.2f} | "
-              f"T-Q: {delta_new_under:+5.1f} | under:{coef_new_under:.2f} over:{coef_new_over:.2f}")
+        print(
+            f"{tau:^6.2f} | Q-T: {delta_old_under:+5.1f} | under:{coef_old_under:.2f} over:{coef_old_over:.2f} | "
+            f"T-Q: {delta_new_under:+5.1f} | under:{coef_new_under:.2f} over:{coef_new_over:.2f}"
+        )
 
     print("-" * 80)
     print()
     print("Observation: OLD coefficients are INVERTED compared to NEW!")
-    print("="*80)
+    print("=" * 80)
     print()
 
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEEP MATHEMATICAL VERIFICATION OF QUANTILE REGRESSION LOSS")
-    print("="*80)
+    print("=" * 80)
     print()
 
     verify_formula_from_first_principles()
@@ -327,9 +329,9 @@ if __name__ == "__main__":
     verify_edge_cases()
     compare_both_implementations()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("FINAL CONCLUSION")
-    print("="*80)
+    print("=" * 80)
     print()
     print("The correct formula MUST use:")
     print("  delta = target - predicted  (T - Q)")
@@ -342,4 +344,4 @@ if __name__ == "__main__":
     print("  ✓ Edge case testing")
     print()
     print("The OLD implementation using (Q - T) is MATHEMATICALLY INCORRECT.")
-    print("="*80)
+    print("=" * 80)

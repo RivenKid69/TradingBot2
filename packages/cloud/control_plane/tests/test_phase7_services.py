@@ -31,12 +31,16 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # CommandService Tests
 # ============================================================================
 
+
 class TestCommandServiceValidation:
     """Tests for command validation in CommandService."""
 
     def test_allowed_command_types(self):
         """Test that only allowed command types are defined."""
-        from packages.cloud.control_plane.services.command_service import ALLOWED_COMMAND_TYPES, CommandType
+        from packages.cloud.control_plane.services.command_service import (
+            ALLOWED_COMMAND_TYPES,
+            CommandType,
+        )
 
         # Check all enum values are in allowlist
         for ct in CommandType:
@@ -72,8 +76,7 @@ class TestCommandServiceValidation:
             "target_position",
         ]
         for field in prohibited:
-            assert field in PROHIBITED_PAYLOAD_FIELDS, \
-                f"{field} should be prohibited"
+            assert field in PROHIBITED_PAYLOAD_FIELDS, f"{field} should be prohibited"
 
     def test_validate_command_type_valid(self):
         """Test validation of valid command types."""
@@ -172,8 +175,7 @@ class TestCommandServiceStateTransitions:
         ]
 
         for state in terminal_states:
-            assert COMMAND_STATE_TRANSITIONS[state] == [], \
-                f"{state} should have no transitions"
+            assert COMMAND_STATE_TRANSITIONS[state] == [], f"{state} should have no transitions"
 
 
 class TestCommandServiceDTOs:
@@ -220,7 +222,10 @@ class TestCommandServiceExceptions:
 
     def test_command_not_found_error(self):
         """Test CommandNotFoundError exception."""
-        from packages.cloud.control_plane.services.command_service import CommandNotFoundError, CommandServiceError
+        from packages.cloud.control_plane.services.command_service import (
+            CommandNotFoundError,
+            CommandServiceError,
+        )
 
         error = CommandNotFoundError("Command not found")
         assert isinstance(error, CommandServiceError)
@@ -228,14 +233,20 @@ class TestCommandServiceExceptions:
 
     def test_command_state_error(self):
         """Test CommandStateError exception."""
-        from packages.cloud.control_plane.services.command_service import CommandStateError, CommandServiceError
+        from packages.cloud.control_plane.services.command_service import (
+            CommandStateError,
+            CommandServiceError,
+        )
 
         error = CommandStateError("Invalid transition")
         assert isinstance(error, CommandServiceError)
 
     def test_duplicate_command_error(self):
         """Test DuplicateCommandError exception."""
-        from packages.cloud.control_plane.services.command_service import DuplicateCommandError, CommandServiceError
+        from packages.cloud.control_plane.services.command_service import (
+            DuplicateCommandError,
+            CommandServiceError,
+        )
 
         error = DuplicateCommandError("Duplicate key")
         assert isinstance(error, CommandServiceError)
@@ -244,6 +255,7 @@ class TestCommandServiceExceptions:
 # ============================================================================
 # AgentService Tests
 # ============================================================================
+
 
 class TestAgentServiceTrustStates:
     """Tests for agent trust state management."""
@@ -319,21 +331,30 @@ class TestAgentServiceExceptions:
 
     def test_agent_not_found_error(self):
         """Test AgentNotFoundError exception."""
-        from packages.cloud.control_plane.services.agent_service import AgentNotFoundError, AgentServiceError
+        from packages.cloud.control_plane.services.agent_service import (
+            AgentNotFoundError,
+            AgentServiceError,
+        )
 
         error = AgentNotFoundError("Agent not found")
         assert isinstance(error, AgentServiceError)
 
     def test_agent_not_enrolled_error(self):
         """Test AgentNotEnrolledError exception."""
-        from packages.cloud.control_plane.services.agent_service import AgentNotEnrolledError, AgentServiceError
+        from packages.cloud.control_plane.services.agent_service import (
+            AgentNotEnrolledError,
+            AgentServiceError,
+        )
 
         error = AgentNotEnrolledError("Agent not enrolled")
         assert isinstance(error, AgentServiceError)
 
     def test_enrollment_token_error(self):
         """Test EnrollmentTokenError exception."""
-        from packages.cloud.control_plane.services.agent_service import EnrollmentTokenError, AgentServiceError
+        from packages.cloud.control_plane.services.agent_service import (
+            EnrollmentTokenError,
+            AgentServiceError,
+        )
 
         error = EnrollmentTokenError("Invalid token")
         assert isinstance(error, AgentServiceError)
@@ -342,6 +363,7 @@ class TestAgentServiceExceptions:
 # ============================================================================
 # Integration Tests (with mocked DB)
 # ============================================================================
+
 
 class TestCommandServiceIntegration:
     """Integration tests for CommandService with mocked database."""
@@ -385,7 +407,10 @@ class TestCommandServiceIntegration:
     @pytest.mark.asyncio
     async def test_create_command_generates_idempotency_key(self, mock_session):
         """Test that idempotency key is generated if not provided."""
-        from packages.cloud.control_plane.services.command_service import CommandService, CommandCreateRequest
+        from packages.cloud.control_plane.services.command_service import (
+            CommandService,
+            CommandCreateRequest,
+        )
         from packages.cloud.control_plane.models import ChangeClass, Agent, TrustState
 
         # Mock no existing command
@@ -445,7 +470,10 @@ class TestAgentServiceIntegration:
     @pytest.mark.asyncio
     async def test_heartbeat_updates_last_seen(self, mock_session):
         """Test that heartbeat updates agent's last_seen timestamp."""
-        from packages.cloud.control_plane.services.agent_service import AgentService, HeartbeatRequest
+        from packages.cloud.control_plane.services.agent_service import (
+            AgentService,
+            HeartbeatRequest,
+        )
         from packages.cloud.control_plane.models import Agent, TrustState
 
         agent_id = uuid4()
@@ -518,6 +546,7 @@ class TestAgentServiceIntegration:
 # ============================================================================
 # Deprecation Tests
 # ============================================================================
+
 
 class TestDeprecationWarnings:
     """Tests for deprecation warnings."""

@@ -48,6 +48,7 @@ Cryptocurrency spot market OHLCV (Open, High, Low, Close, Volume) data for major
 **Assets Covered**: BTC/USDT, ETH/USDT, BNB/USDT, Major altcoins
 
 **Preprocessing Steps**:
+
 - Outlier detection and removal (>5 sigma)
 - Gap filling using forward-fill (max 5 bars)
 - Volume normalization per asset
@@ -74,6 +75,7 @@ US stock market data including OHLCV, trades, and quotes.
 **Assets Covered**: S&P 500 constituents, Russell 2000 constituents
 
 **Preprocessing Steps**:
+
 - Corporate actions adjustment (splits, dividends)
 - Exchange code normalization
 - Timestamp alignment to market hours
@@ -100,6 +102,7 @@ Foreign exchange data for major currency pairs.
 **Assets Covered**: EUR/USD, GBP/USD, USD/JPY, USD/CHF, AUD/USD, USD/CAD
 
 **Preprocessing Steps**:
+
 - Weekend gap handling
 - Spread validation
 - Tick-to-bar aggregation
@@ -123,6 +126,7 @@ Computed technical analysis features derived from price and volume data.
 | Personal Data | No |
 
 **Features Computed**:
+
 - Price momentum indicators (RSI, MACD, Stochastic)
 - Volatility measures (ATR, Bollinger Bands, historical volatility)
 - Volume analysis (OBV, VWAP, volume profiles)
@@ -130,6 +134,7 @@ Computed technical analysis features derived from price and volume data.
 - Market microstructure features
 
 **Preprocessing Steps**:
+
 - Rolling window calculation
 - Z-score normalization
 - Winsorization at 1st/99th percentile
@@ -154,6 +159,7 @@ Synthetically generated adversarial market scenarios for model robustness traini
 | Personal Data | No |
 
 **Scenario Types**:
+
 - Flash crash simulations
 - Liquidity crisis scenarios
 - High volatility regimes
@@ -161,6 +167,7 @@ Synthetically generated adversarial market scenarios for model robustness traini
 - Black swan events
 
 **Preprocessing Steps**:
+
 - Scenario validation against statistical bounds
 - Distribution alignment with real market moments
 - Extreme event calibration
@@ -204,6 +211,7 @@ Data is collected through:
 4. **Algorithmic Generation**: Synthetic scenario creation
 
 All data collection:
+
 - Respects API rate limits
 - Complies with terms of service
 - Follows data protection regulations
@@ -226,12 +234,14 @@ No human labeling or annotation is performed.
 **No personal data is used for training.**
 
 All training data consists exclusively of:
+
 - Aggregated market statistics
 - Price and volume information
 - Computed technical indicators
 - Synthetically generated scenarios
 
 The model does not process, store, or learn from any personally identifiable information (PII). This includes:
+
 - No user trading history
 - No account information
 - No demographic data
@@ -242,6 +252,7 @@ The model does not process, store, or learn from any personally identifiable inf
 For detailed copyright compliance information, see [COPYRIGHT_POLICY.md](COPYRIGHT_POLICY.md).
 
 **Summary**:
+
 - All data sources are documented and reviewed
 - Opt-out mechanisms are monitored per DSM Directive Article 4(3)
 - Licensed data complies with provider terms

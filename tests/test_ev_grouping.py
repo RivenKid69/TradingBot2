@@ -6,6 +6,7 @@ import math
 
 import numpy as np
 import pytest
+
 pytest.importorskip("torch")
 
 import sys
@@ -17,7 +18,9 @@ if "sb3_contrib" not in sys.modules:  # FIX-TEST
     sb3_contrib.RecurrentPPO = object  # type: ignore[attr-defined]  # FIX-TEST
     sys.modules["sb3_contrib"] = sb3_contrib  # FIX-TEST
     sys.modules["sb3_contrib.common"] = types.ModuleType("sb3_contrib.common")  # FIX-TEST
-    sys.modules["sb3_contrib.common.recurrent"] = types.ModuleType("sb3_contrib.common.recurrent")  # FIX-TEST
+    sys.modules["sb3_contrib.common.recurrent"] = types.ModuleType(
+        "sb3_contrib.common.recurrent"
+    )  # FIX-TEST
     buffers_mod = types.ModuleType("sb3_contrib.common.recurrent.buffers")  # FIX-TEST
     buffers_mod.RecurrentRolloutBuffer = object  # type: ignore[attr-defined]  # FIX-TEST
     sys.modules["sb3_contrib.common.recurrent.buffers"] = buffers_mod  # FIX-TEST
@@ -81,26 +84,32 @@ def test_compute_grouped_explained_variance_weighted_and_median() -> None:
 
 
 def test_compute_grouped_explained_variance_respects_weight_mass() -> None:
-    y_true = np.array([
-        0.0,
-        1.0,
-        2.0,
-        3.0,
-        0.0,
-        1.0,
-        2.0,
-        3.0,
-    ], dtype=np.float64)
-    y_pred = np.array([
-        -5.0,
-        -4.0,
-        -3.0,
-        -2.0,
-        0.1,
-        0.9,
-        2.1,
-        2.9,
-    ], dtype=np.float64)
+    y_true = np.array(
+        [
+            0.0,
+            1.0,
+            2.0,
+            3.0,
+            0.0,
+            1.0,
+            2.0,
+            3.0,
+        ],
+        dtype=np.float64,
+    )
+    y_pred = np.array(
+        [
+            -5.0,
+            -4.0,
+            -3.0,
+            -2.0,
+            0.1,
+            0.9,
+            2.1,
+            2.9,
+        ],
+        dtype=np.float64,
+    )
     group_keys = ["A"] * 4 + ["B"] * 4
     weights = np.array([1e-6, 1e-6, 1e-6, 1e-6, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
 
@@ -168,8 +177,7 @@ def test_compute_grouped_explained_variance_relabels_blank_keys(group_keys: list
 
     trimmed = group_keys[: len(y_true)]
     expected_keys = {
-        (f"group_{idx}" if str(key).strip() == "" else str(key))
-        for idx, key in enumerate(trimmed)
+        (f"group_{idx}" if str(key).strip() == "" else str(key)) for idx, key in enumerate(trimmed)
     }
 
     assert set(grouped) == expected_keys

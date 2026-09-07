@@ -18,7 +18,12 @@ import pytest
 
 from impl_panel import PanelBuilder
 from signals.crypto_signals import (
-    Basis, CryptoMomentum, FundingCarry, OnChain, ShortTermReversal, Size,
+    Basis,
+    CryptoMomentum,
+    FundingCarry,
+    OnChain,
+    ShortTermReversal,
+    Size,
 )
 from xs_risk.crypto_factors import btc_beta, build_crypto_exposures
 from service_xs_pipeline import XSConfig, run_backtest, build_signal_library
@@ -38,10 +43,16 @@ def _crypto_panel():
     for sym, (base, fund, basis, mcap) in spec.items():
         n = len(ts)
         close = base * (1.0 + 0.01 * np.arange(n))  # детерминированный рост
-        frames[sym] = pd.DataFrame({
-            "timestamp": ts, "symbol": sym, "close": close,
-            "funding_rate": fund, "basis": basis, "mcap": mcap,
-        })
+        frames[sym] = pd.DataFrame(
+            {
+                "timestamp": ts,
+                "symbol": sym,
+                "close": close,
+                "funding_rate": fund,
+                "basis": basis,
+                "mcap": mcap,
+            }
+        )
     return PanelBuilder.from_frames(frames)
 
 
@@ -65,8 +76,8 @@ def test_funding_basis_size_signs():
     bs = Basis("bs").compute_panel(panel)
     sz = Size("sz").compute_panel(panel)
     t0 = T0 * 1000
-    assert fc.loc[(t0, "BTC")] == pytest.approx(-0.0001)   # -funding
-    assert bs.loc[(t0, "BTC")] == pytest.approx(-0.002)    # -basis
+    assert fc.loc[(t0, "BTC")] == pytest.approx(-0.0001)  # -funding
+    assert bs.loc[(t0, "BTC")] == pytest.approx(-0.002)  # -basis
     assert sz.loc[(t0, "BTC")] == pytest.approx(-np.log(1300.0))  # -log(mcap)
 
 
@@ -95,8 +106,10 @@ def test_build_crypto_exposures():
     rng = np.random.default_rng(1)
     rw = pd.DataFrame({s: rng.normal(0, 0.02, 100) for s in ["BTC", "ETH", "SOL"]})
     B = build_crypto_exposures(
-        rw, sectors={"BTC": "L1", "ETH": "L1", "SOL": "DeFi"},
-        mcaps={"BTC": 1300, "ETH": 400, "SOL": 80}, btc_symbol="BTC",
+        rw,
+        sectors={"BTC": "L1", "ETH": "L1", "SOL": "DeFi"},
+        mcaps={"BTC": 1300, "ETH": 400, "SOL": 80},
+        btc_symbol="BTC",
     )
     assert "btc_beta" in B.columns and "size" in B.columns
     assert any(c.startswith("sector_") for c in B.columns)
@@ -107,14 +120,16 @@ def test_build_crypto_exposures():
 # pipeline integration
 # ---------------------------------------------------------------------------
 def test_pipeline_builds_crypto_signals():
-    cfg = XSConfig.model_validate({
-        "data": {"source": "synthetic", "symbols": ["BTC", "ETH"]},
-        "signals": [
-            {"name": "fc", "kind": "funding_carry"},
-            {"name": "bs", "kind": "basis"},
-            {"name": "mom", "kind": "crypto_momentum", "lookback": 30, "skip": 1},
-        ],
-    })
+    cfg = XSConfig.model_validate(
+        {
+            "data": {"source": "synthetic", "symbols": ["BTC", "ETH"]},
+            "signals": [
+                {"name": "fc", "kind": "funding_carry"},
+                {"name": "bs", "kind": "basis"},
+                {"name": "mom", "kind": "crypto_momentum", "lookback": 30, "skip": 1},
+            ],
+        }
+    )
     lib = build_signal_library(cfg)
     assert lib.names == ["fc", "bs", "mom"]
 
@@ -124,6 +139,7 @@ def test_pipeline_builds_crypto_signals():
 # ---------------------------------------------------------------------------
 def test_crypto_preset_end_to_end():
     import yaml
+
     with open(CRYPTO_CFG, "r", encoding="utf-8") as fh:
         cfg = XSConfig.model_validate(yaml.safe_load(fh))
     assert cfg.risk.type == "crypto_factor"

@@ -315,18 +315,12 @@ def _raw_to_df(raw: Sequence[Sequence[Any]], symbol: str) -> pd.DataFrame:
             "low": pd.to_numeric(df["low"], errors="coerce"),
             "close": pd.to_numeric(df["close"], errors="coerce"),
             "volume": pd.to_numeric(df["volume"], errors="coerce"),
-            "quote_asset_volume": pd.to_numeric(
-                df["quote_asset_volume"], errors="coerce"
+            "quote_asset_volume": pd.to_numeric(df["quote_asset_volume"], errors="coerce"),
+            "number_of_trades": pd.to_numeric(df["number_of_trades"], errors="coerce").astype(
+                "Int64"
             ),
-            "number_of_trades": pd.to_numeric(
-                df["number_of_trades"], errors="coerce"
-            ).astype("Int64"),
-            "taker_buy_base": pd.to_numeric(
-                df["taker_buy_base"], errors="coerce"
-            ),
-            "taker_buy_quote": pd.to_numeric(
-                df["taker_buy_quote"], errors="coerce"
-            ),
+            "taker_buy_base": pd.to_numeric(df["taker_buy_base"], errors="coerce"),
+            "taker_buy_quote": pd.to_numeric(df["taker_buy_quote"], errors="coerce"),
         }
     )
     return out[KLINE_COLUMNS]
@@ -463,7 +457,6 @@ def _save_checkpoint(
     }
 
 
-
 def build_adv(
     session: RestBudgetSession,
     symbols: Sequence[str],
@@ -552,9 +545,7 @@ def build_adv(
         tasks.extend(symbol_tasks)
         existing = 0
         if dataset is not None and not dataset.empty:
-            ts_series = (
-                pd.to_numeric(dataset["ts_ms"], errors="coerce").dropna().astype("int64")
-            )
+            ts_series = pd.to_numeric(dataset["ts_ms"], errors="coerce").dropna().astype("int64")
             mask = (ts_series >= start_aligned) & (ts_series < end_aligned)
             existing = int(mask.sum())
         existing_counts[symbol] = existing
@@ -876,9 +867,7 @@ def build_adv(
             pass
 
     combined = _combine_datasets(datasets, start_ms=start_aligned, end_ms=end_aligned)
-    combined = combined[
-        (combined["ts_ms"] >= start_aligned) & (combined["ts_ms"] < end_aligned)
-    ]
+    combined = combined[(combined["ts_ms"] >= start_aligned) & (combined["ts_ms"] < end_aligned)]
     combined = combined.sort_values(["symbol", "ts_ms"]).reset_index(drop=True)
 
     _write_dataset(config.out_path, combined)
@@ -921,6 +910,8 @@ def build_adv(
         plan=plan_payload,
         rest_stats=rest_stats,
     )
+
+
 def fetch_klines_for_symbols(
     session: RestBudgetSession,
     symbols: Sequence[str],
@@ -992,17 +983,13 @@ def fetch_klines_for_symbols(
                 frame = _raw_to_df(raw, task.symbol)
                 if not frame.empty:
                     ts_numeric = pd.to_numeric(frame["ts_ms"], errors="coerce")
-                    frame = frame.loc[
-                        (ts_numeric >= start_aligned) & (ts_numeric < end_aligned)
-                    ]
+                    frame = frame.loc[(ts_numeric >= start_aligned) & (ts_numeric < end_aligned)]
                 if not frame.empty:
                     dataset = _merge_frames(dataset, frame)
                 _write_stats_safe()
             if not dataset.empty:
                 ts_numeric = pd.to_numeric(dataset["ts_ms"], errors="coerce")
-                dataset = dataset.loc[
-                    (ts_numeric >= start_aligned) & (ts_numeric < end_aligned)
-                ]
+                dataset = dataset.loc[(ts_numeric >= start_aligned) & (ts_numeric < end_aligned)]
                 dataset = dataset.sort_values(["symbol", "ts_ms"]).reset_index(drop=True)
             datasets[symbol] = dataset
     finally:
@@ -1045,9 +1032,7 @@ def aggregate_daily_quote_volume(df: pd.DataFrame) -> pd.Series:
 
     quote_series = pd.Series(float("nan"), index=df.index, dtype="float64")
     if "quote_asset_volume" in df.columns:
-        quote_series = pd.to_numeric(df["quote_asset_volume"], errors="coerce").astype(
-            "float64"
-        )
+        quote_series = pd.to_numeric(df["quote_asset_volume"], errors="coerce").astype("float64")
 
     if "volume" in df.columns and "close" in df.columns:
         base_numeric = pd.to_numeric(df["volume"], errors="coerce")

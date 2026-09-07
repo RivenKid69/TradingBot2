@@ -4,6 +4,7 @@ This doesn't require pytest.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import sys
 
@@ -12,9 +13,9 @@ from distributional_ppo import DistributionalPPO
 
 def test_gradient_flow_simple():
     """Test basic gradient flow through projection."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 1: Basic Gradient Flow")
-    print("="*80)
+    print("=" * 80)
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
@@ -65,9 +66,9 @@ def test_gradient_flow_simple():
 
 def test_gradient_flow_with_same_bounds():
     """Test gradient flow when same_bounds correction is triggered."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 2: Gradient Flow with Same Bounds Correction")
-    print("="*80)
+    print("=" * 80)
     print("This test specifically checks the suspected bug location!")
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
@@ -131,9 +132,9 @@ def test_gradient_flow_with_same_bounds():
 
 def test_gradient_flow_end_to_end():
     """Test gradient flow in VF clipping scenario."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 3: End-to-End VF Clipping Scenario")
-    print("="*80)
+    print("=" * 80)
     print("This mimics the exact usage in distributional_ppo.py:8788-8819")
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
@@ -152,11 +153,7 @@ def test_gradient_flow_end_to_end():
     mean_old = torch.zeros(batch_size, 1)
     clip_range = 2.0
 
-    mean_clipped = torch.clamp(
-        mean_pred,
-        min=mean_old - clip_range,
-        max=mean_old + clip_range
-    )
+    mean_clipped = torch.clamp(mean_pred, min=mean_old - clip_range, max=mean_old + clip_range)
 
     print(f"\nPredicted means: {mean_pred.squeeze().tolist()}")
     print(f"Clipped means: {mean_clipped.squeeze().tolist()}")
@@ -216,19 +213,19 @@ def test_gradient_flow_end_to_end():
 
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("GRADIENT FLOW TEST SUITE")
     print("Testing categorical distribution projection")
-    print("="*80)
+    print("=" * 80)
 
     results = []
     results.append(("Basic gradient flow", test_gradient_flow_simple()))
     results.append(("Same bounds correction", test_gradient_flow_with_same_bounds()))
     results.append(("End-to-end VF clipping", test_gradient_flow_end_to_end()))
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SUMMARY")
-    print("="*80)
+    print("=" * 80)
 
     all_passed = True
     for name, passed in results:
@@ -237,7 +234,7 @@ if __name__ == "__main__":
         if not passed:
             all_passed = False
 
-    print("="*80)
+    print("=" * 80)
 
     if all_passed:
         print("\n🎉 ALL TESTS PASSED - Gradient flow is working correctly!")

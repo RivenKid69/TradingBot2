@@ -25,6 +25,7 @@ HTML = (Path(__file__).resolve().parents[1] / "index.html").read_text(encoding="
 
 # ------------------------------------------------------------ backend real bugs
 
+
 def test_clock_drift_is_real_not_fabricated_constant():
     d = client.get("/api/compliance/clock/status").json()
     # the fake constant 12.4 (from the offset_ns-never-existed bug) must be gone
@@ -34,7 +35,7 @@ def test_clock_drift_is_real_not_fabricated_constant():
 
 def test_killswitch_has_no_fabricated_cancel_count():
     k = client.post("/api/compliance/killswitch/trigger", json={"scope": "ALL"}).json()
-    assert "cancelled_orders_count" not in k       # was hardcoded 8
+    assert "cancelled_orders_count" not in k  # was hardcoded 8
     assert k.get("tripped") is True
 
 
@@ -48,7 +49,7 @@ def test_gdpr_download_route_serves_real_zip():
 def test_adapters_status_reports_registration_not_fake_auth():
     rows = client.get("/api/adapters/status").json()
     assert all(r["status"] in ("REGISTERED", "NOT_REGISTERED") for r in rows)
-    assert all(r["ping_ms"] is None for r in rows)   # no fabricated ping
+    assert all(r["ping_ms"] is None for r in rows)  # no fabricated ping
     tc = client.post("/api/adapters/test_connection", json={"vendor": "binance"}).json()
     assert tc["status"] == "registered" and tc.get("simulated") is True
 
@@ -62,8 +63,10 @@ def test_fixture_endpoints_now_flagged_demo():
 def test_config_endpoints_persist_for_real():
     # Real persistence (was an echo): the endpoint reports persisted_to and the
     # YAML actually appears on disk. Clean up the runtime config afterwards.
-    r = client.post("/api/execution/algo_config",
-                    json={"algorithm": "TWAP", "max_participation": 10, "window": 30, "offset": 2}).json()
+    r = client.post(
+        "/api/execution/algo_config",
+        json={"algorithm": "TWAP", "max_participation": 10, "window": 30, "offset": 2},
+    ).json()
     assert r.get("persisted_to")
     p = Path(r["persisted_to"])
     try:
@@ -73,6 +76,7 @@ def test_config_endpoints_persist_for_real():
 
 
 # ------------------------------------------------------------ frontend honesty
+
 
 def test_no_false_success_toasts_remain():
     for lie in (
@@ -89,12 +93,12 @@ def test_no_false_success_toasts_remain():
 def test_unlabeled_client_fakes_now_self_label():
     # each previously-unbadged fake renderer now calls showSimBadge
     for marker in (
-        "иллюстративный реестр",            # renderProModelRegistry
-        "иллюстративные прогоны",           # renderProModelExperiments
-        "иллюстративные факторные беты",    # renderProRiskFactor
-        "иллюстративный стресс-сценарий",   # renderProRiskScenario
-        "иллюстративные торговые алерты",   # renderProDashAlerts
-        "иллюстративные фильтры Binance",   # refreshProExchangeFilters
+        "иллюстративный реестр",  # renderProModelRegistry
+        "иллюстративные прогоны",  # renderProModelExperiments
+        "иллюстративные факторные беты",  # renderProRiskFactor
+        "иллюстративный стресс-сценарий",  # renderProRiskScenario
+        "иллюстративные торговые алерты",  # renderProDashAlerts
+        "иллюстративные фильтры Binance",  # refreshProExchangeFilters
     ):
         assert marker in HTML, f"missing DEMO self-label: {marker}"
 
@@ -108,12 +112,12 @@ def test_position_sync_verdict_is_honest():
 def test_backend_honesty_flags_surfaced_in_frontend():
     # OMS portfolio + compliance attestations now surface the backend flag
     assert "flagFromPayload(data, 'Портфель — paper/simulated" in HTML
-    assert "mock-executor" in HTML or "mock_executor" in HTML          # conformance disclaimer
-    assert "DEMO чек-лист" in HTML                                      # AI-Act disclaimer
+    assert "mock-executor" in HTML or "mock_executor" in HTML  # conformance disclaimer
+    assert "DEMO чек-лист" in HTML  # AI-Act disclaimer
 
 
 def test_no_op_buttons_relabeled_demo():
     # a representative set of the relabeled no-op buttons
     assert "rate-лимиты" in HTML and "НЕ применены" in HTML
-    assert "PDF не создаётся" in HTML                                   # tearsheet export
-    assert "промо" not in HTML.lower() or "DEMO" in HTML               # sanity
+    assert "PDF не создаётся" in HTML  # tearsheet export
+    assert "промо" not in HTML.lower() or "DEMO" in HTML  # sanity

@@ -73,7 +73,9 @@ def normalize_volume(value: Any, *, clip: bool = True) -> float:
     return vol
 
 
-def _coerce_int(value: Any, *, name: str, minimum: int | None = None, maximum: int | None = None) -> int:
+def _coerce_int(
+    value: Any, *, name: str, minimum: int | None = None, maximum: int | None = None
+) -> int:
     try:
         ivalue = int(value)
     except Exception as exc:  # pragma: no cover - defensive path
@@ -169,4 +171,3 @@ def action_v1_to_proto(action: Mapping[str, Any] | _ActionV1 | ActionProto) -> A
         tif=tif,
         client_tag=client_tag,
     )
-

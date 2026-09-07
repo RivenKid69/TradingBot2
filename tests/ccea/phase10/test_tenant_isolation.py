@@ -310,9 +310,7 @@ class TestTenantJobIsolation:
         isolation = TenantJobIsolation()
         context = isolation.create_job_context("tenant-123", "job-456")
 
-        result = isolation.verify_job_context(
-            "tenant-123", "job-456", context.context_token
-        )
+        result = isolation.verify_job_context("tenant-123", "job-456", context.context_token)
 
         assert result is True
 
@@ -321,9 +319,7 @@ class TestTenantJobIsolation:
         isolation = TenantJobIsolation()
         isolation.create_job_context("tenant-123", "job-456")
 
-        result = isolation.verify_job_context(
-            "tenant-123", "job-456", "invalid-token"
-        )
+        result = isolation.verify_job_context("tenant-123", "job-456", "invalid-token")
 
         assert result is False
 
@@ -332,9 +328,7 @@ class TestTenantJobIsolation:
         isolation = TenantJobIsolation()
         context = isolation.create_job_context("tenant-123", "job-456")
 
-        result = isolation.verify_job_context(
-            "other-tenant", "job-456", context.context_token
-        )
+        result = isolation.verify_job_context("other-tenant", "job-456", context.context_token)
 
         assert result is False
 

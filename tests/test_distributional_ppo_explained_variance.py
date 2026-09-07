@@ -5,9 +5,12 @@ from typing import Any
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 
-from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import (
+    test_distributional_ppo_raw_outliers,
+)  # noqa: F401  # ensure RL stubs are installed
 
 from distributional_ppo import (
     DistributionalPPO,
@@ -195,9 +198,7 @@ def test_reserve_batch_preserves_mask_weights_after_indexing() -> None:
     assert torch.allclose(filtered_raw, target_raw_selected)
     assert torch.allclose(filtered_weights.reshape(-1), mask_values[valid_indices])
 
-    reserve_weight = (
-        filtered_weights.detach().reshape(-1, 1).to(device="cpu", dtype=torch.float32)
-    )
+    reserve_weight = filtered_weights.detach().reshape(-1, 1).to(device="cpu", dtype=torch.float32)
     assert torch.allclose(reserve_weight.reshape(-1), mask_values[valid_indices])
 
     cache_entry = algo._build_value_prediction_cache_entry(
@@ -239,9 +240,7 @@ def test_ev_group_key_from_info_falls_back_to_env_index() -> None:
 def test_resolve_ev_group_keys_from_flat_uses_cached_keys_and_env_defaults() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
     algo.rollout_buffer = SimpleNamespace(buffer_size=2, n_envs=2)
-    algo._last_rollout_ev_keys = np.array(
-        [["vec0::BTC", None], ["", "vec1::SOL"]], dtype=object
-    )
+    algo._last_rollout_ev_keys = np.array([["vec0::BTC", None], ["", "vec1::SOL"]], dtype=object)
 
     indices = np.array([0, 1, 2, 3], dtype=np.int64)
     result = algo._resolve_ev_group_keys_from_flat(indices)
@@ -272,9 +271,7 @@ def test_extract_group_keys_for_indices_filters_invalid_rows() -> None:
     algo.rollout_buffer = SimpleNamespace(buffer_size=4, n_envs=1)
     algo._last_rollout_ev_keys = np.array(["A", "B", "C", "D"], dtype=object)
 
-    rollout_data = SimpleNamespace(
-        sample_indices=torch.tensor([0, 3, -1, 1], dtype=torch.long)
-    )
+    rollout_data = SimpleNamespace(sample_indices=torch.tensor([0, 3, -1, 1], dtype=torch.long))
     subset = torch.tensor([0, 3], dtype=torch.long)
 
     result = algo._extract_group_keys_for_indices(rollout_data, subset)
@@ -287,9 +284,7 @@ def test_extract_group_keys_for_indices_returns_empty_on_bad_indices() -> None:
     algo.rollout_buffer = SimpleNamespace(buffer_size=2, n_envs=1)
     algo._last_rollout_ev_keys = np.array(["X", "Y"], dtype=object)
 
-    rollout_data = SimpleNamespace(
-        sample_indices=torch.tensor([0, 1], dtype=torch.long)
-    )
+    rollout_data = SimpleNamespace(sample_indices=torch.tensor([0, 1], dtype=torch.long))
     subset = torch.tensor([0, 5], dtype=torch.long)
 
     assert algo._extract_group_keys_for_indices(rollout_data, subset) == []
@@ -300,9 +295,7 @@ def test_resolve_group_keys_for_training_batch_prefers_value_indices() -> None:
     algo.rollout_buffer = SimpleNamespace(buffer_size=3, n_envs=1)
     algo._last_rollout_ev_keys = np.array(["A", "B", "C"], dtype=object)
 
-    rollout_data = SimpleNamespace(
-        sample_indices=torch.tensor([0, 1, 2], dtype=torch.long)
-    )
+    rollout_data = SimpleNamespace(sample_indices=torch.tensor([0, 1, 2], dtype=torch.long))
     policy_indices = torch.tensor([0, 2], dtype=torch.long)
     value_indices = torch.tensor([1], dtype=torch.long)
 
@@ -607,7 +600,9 @@ def test_ev_builder_with_mixed_masks_falls_back_to_unweighted() -> None:
     )
 
     assert ev_value == pytest.approx(expected_ev)
-    assert metrics["n_samples"] == pytest.approx(float(sum(t.numel() for t in primary_true_batches)))
+    assert metrics["n_samples"] == pytest.approx(
+        float(sum(t.numel() for t in primary_true_batches))
+    )
 
 
 def test_explained_variance_fallback_uses_raw_targets() -> None:

@@ -80,7 +80,7 @@ class TestCheckProhibitedFields:
                 "name": {"type": "string"},
                 "version": {"type": "string"},
                 "timestamp": {"type": "string", "format": "date-time"},
-            }
+            },
         }
 
         violations = check_prohibited_fields(schema, file_path="test.json")
@@ -92,7 +92,7 @@ class TestCheckProhibitedFields:
             "type": "object",
             "properties": {
                 "side": {"type": "string", "enum": ["BUY", "SELL"]},
-            }
+            },
         }
 
         violations = check_prohibited_fields(schema, file_path="test.json")
@@ -105,7 +105,7 @@ class TestCheckProhibitedFields:
             "type": "object",
             "properties": {
                 "quantity": {"type": "number"},
-            }
+            },
         }
 
         violations = check_prohibited_fields(schema, file_path="test.json")
@@ -122,9 +122,9 @@ class TestCheckProhibitedFields:
                     "properties": {
                         "side": {"type": "string"},
                         "price": {"type": "number"},
-                    }
+                    },
                 }
-            }
+            },
         }
 
         violations = check_prohibited_fields(schema, file_path="test.json")
@@ -143,10 +143,10 @@ class TestCheckProhibitedFields:
                         "type": "object",
                         "properties": {
                             "quantity": {"type": "number"},
-                        }
-                    }
+                        },
+                    },
                 }
-            }
+            },
         }
 
         violations = check_prohibited_fields(schema, file_path="test.json")
@@ -160,7 +160,7 @@ class TestCheckProhibitedFields:
                     "type": "object",
                     "properties": {
                         "target_position": {"type": "number"},
-                    }
+                    },
                 }
             ]
         }
@@ -194,7 +194,7 @@ class TestManifestSchemaValidation:
                 "runtime": {"type": "object"},
                 "deps_lock_digest": {"type": "string"},
                 "created_at": {"type": "string"},
-            }
+            },
         }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -214,9 +214,9 @@ class TestManifestSchemaValidation:
                     "properties": {
                         "side": {"type": "string"},
                         "quantity": {"type": "number"},
-                    }
+                    },
                 }
-            }
+            },
         }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -244,10 +244,10 @@ class TestProtocolSchemaValidation:
                             "message_type": {"const": "HEARTBEAT"},
                             "agent_id": {"type": "string"},
                             "timestamp": {"type": "string"},
-                        }
+                        },
                     }
                 }
-            }
+            },
         }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -269,7 +269,7 @@ class TestProtocolSchemaValidation:
                             "side": {"type": "string", "enum": ["BUY", "SELL"]},
                             "quantity": {"type": "number"},
                             "price": {"type": "number"},
-                        }
+                        },
                     }
                 }
             }
@@ -350,13 +350,7 @@ class TestEdgeCases:
                 "level1": {
                     "properties": {
                         "level2": {
-                            "properties": {
-                                "level3": {
-                                    "properties": {
-                                        "intent": {"type": "object"}
-                                    }
-                                }
-                            }
+                            "properties": {"level3": {"properties": {"intent": {"type": "object"}}}}
                         }
                     }
                 }

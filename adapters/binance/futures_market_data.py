@@ -330,15 +330,17 @@ class BinanceFuturesMarketDataAdapter(MarketDataAdapter):
                 if symbols and sym not in symbols:
                     continue
 
-                results.append(MarkPriceTick(
-                    symbol=sym,
-                    mark_price=Decimal(str(item.get("markPrice", "0"))),
-                    index_price=Decimal(str(item.get("indexPrice", "0"))),
-                    estimated_settle_price=Decimal(str(item.get("estimatedSettlePrice", "0"))),
-                    funding_rate=Decimal(str(item.get("lastFundingRate", "0"))),
-                    next_funding_time_ms=int(item.get("nextFundingTime", 0)),
-                    timestamp_ms=int(item.get("time", int(time.time() * 1000))),
-                ))
+                results.append(
+                    MarkPriceTick(
+                        symbol=sym,
+                        mark_price=Decimal(str(item.get("markPrice", "0"))),
+                        index_price=Decimal(str(item.get("indexPrice", "0"))),
+                        estimated_settle_price=Decimal(str(item.get("estimatedSettlePrice", "0"))),
+                        funding_rate=Decimal(str(item.get("lastFundingRate", "0"))),
+                        next_funding_time_ms=int(item.get("nextFundingTime", 0)),
+                        timestamp_ms=int(item.get("time", int(time.time() * 1000))),
+                    )
+                )
 
             return results
 
@@ -420,14 +422,16 @@ class BinanceFuturesMarketDataAdapter(MarketDataAdapter):
 
                 # Note: This is funding rate history, not actual payments
                 # For actual payment amounts, need account API
-                results.append(FundingPayment(
-                    symbol=str(item.get("symbol", symbol)),
-                    timestamp_ms=int(item.get("fundingTime", 0)),
-                    funding_rate=Decimal(str(item.get("fundingRate", "0"))),
-                    mark_price=Decimal(str(item.get("markPrice", "0"))),
-                    position_qty=Decimal("0"),  # Unknown without account context
-                    payment_amount=Decimal("0"),  # Unknown without account context
-                ))
+                results.append(
+                    FundingPayment(
+                        symbol=str(item.get("symbol", symbol)),
+                        timestamp_ms=int(item.get("fundingTime", 0)),
+                        funding_rate=Decimal(str(item.get("fundingRate", "0"))),
+                        mark_price=Decimal(str(item.get("markPrice", "0"))),
+                        position_qty=Decimal("0"),  # Unknown without account context
+                        payment_amount=Decimal("0"),  # Unknown without account context
+                    )
+                )
 
             return results
 
@@ -522,12 +526,14 @@ class BinanceFuturesMarketDataAdapter(MarketDataAdapter):
                 if not isinstance(item, dict):
                     continue
 
-                results.append(OpenInterestInfo(
-                    symbol=str(item.get("symbol", symbol)),
-                    open_interest=Decimal(str(item.get("sumOpenInterest", "0"))),
-                    open_interest_value=Decimal(str(item.get("sumOpenInterestValue", "0"))),
-                    timestamp_ms=int(item.get("timestamp", 0)),
-                ))
+                results.append(
+                    OpenInterestInfo(
+                        symbol=str(item.get("symbol", symbol)),
+                        open_interest=Decimal(str(item.get("sumOpenInterest", "0"))),
+                        open_interest_value=Decimal(str(item.get("sumOpenInterestValue", "0"))),
+                        timestamp_ms=int(item.get("timestamp", 0)),
+                    )
+                )
 
             return results
 
@@ -640,16 +646,18 @@ class BinanceFuturesMarketDataAdapter(MarketDataAdapter):
                 status = str(item.get("status", "")).upper()
                 liq_type = "full" if status == "FILLED" else "partial"
 
-                results.append(LiquidationEvent(
-                    symbol=str(item.get("symbol", "")),
-                    timestamp_ms=int(item.get("time", 0)),
-                    side=str(item.get("side", "")),
-                    qty=Decimal(str(item.get("origQty", "0"))),
-                    price=Decimal(str(item.get("avgPrice", item.get("price", "0")))),
-                    liquidation_type=liq_type,
-                    loss_amount=Decimal("0"),  # Not provided by API
-                    order_id=str(item.get("orderId", "")),
-                ))
+                results.append(
+                    LiquidationEvent(
+                        symbol=str(item.get("symbol", "")),
+                        timestamp_ms=int(item.get("time", 0)),
+                        side=str(item.get("side", "")),
+                        qty=Decimal(str(item.get("origQty", "0"))),
+                        price=Decimal(str(item.get("avgPrice", item.get("price", "0")))),
+                        liquidation_type=liq_type,
+                        loss_amount=Decimal("0"),  # Not provided by API
+                        order_id=str(item.get("orderId", "")),
+                    )
+                )
 
             return results
 
@@ -697,13 +705,15 @@ class BinanceFuturesMarketDataAdapter(MarketDataAdapter):
             results = []
             for item in data if isinstance(data, list) else []:
                 if isinstance(item, dict):
-                    results.append({
-                        "symbol": item.get("symbol", symbol),
-                        "timestamp_ms": int(item.get("timestamp", 0)),
-                        "long_short_ratio": float(item.get("longShortRatio", 0)),
-                        "long_account": float(item.get("longAccount", 0)),
-                        "short_account": float(item.get("shortAccount", 0)),
-                    })
+                    results.append(
+                        {
+                            "symbol": item.get("symbol", symbol),
+                            "timestamp_ms": int(item.get("timestamp", 0)),
+                            "long_short_ratio": float(item.get("longShortRatio", 0)),
+                            "long_account": float(item.get("longAccount", 0)),
+                            "short_account": float(item.get("shortAccount", 0)),
+                        }
+                    )
 
             return results
 

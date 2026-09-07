@@ -13,6 +13,7 @@ Total: 70+ tests covering all latency functionality.
 
 import math
 import pytest
+
 pytest.importorskip("sortedcontainers")
 import threading
 import time
@@ -457,12 +458,30 @@ class TestLatencyModel:
         """Test time-of-day seasonality."""
         # Create multipliers: higher during market hours
         multipliers = [
-            1.0, 1.0, 1.0, 1.0,  # 00:00-03:00 (low)
-            1.0, 1.0, 1.0, 1.0,  # 04:00-07:00 (low)
-            1.5, 2.0, 2.0, 2.0,  # 08:00-11:00 (market open)
-            2.0, 2.0, 1.5, 1.5,  # 12:00-15:00 (market hours)
-            1.2, 1.0, 1.0, 1.0,  # 16:00-19:00 (market close)
-            1.0, 1.0, 1.0, 1.0,  # 20:00-23:00 (low)
+            1.0,
+            1.0,
+            1.0,
+            1.0,  # 00:00-03:00 (low)
+            1.0,
+            1.0,
+            1.0,
+            1.0,  # 04:00-07:00 (low)
+            1.5,
+            2.0,
+            2.0,
+            2.0,  # 08:00-11:00 (market open)
+            2.0,
+            2.0,
+            1.5,
+            1.5,  # 12:00-15:00 (market hours)
+            1.2,
+            1.0,
+            1.0,
+            1.0,  # 16:00-19:00 (market close)
+            1.0,
+            1.0,
+            1.0,
+            1.0,  # 20:00-23:00 (low)
         ]
 
         config = LatencyModelConfig(

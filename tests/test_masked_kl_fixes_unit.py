@@ -9,6 +9,7 @@ These are unit tests that verify the fix logic without requiring full PPO traini
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -40,20 +41,17 @@ class TestMaskedKLFixLogic:
         approx_kl_unmasked = (old_log_prob - log_prob).mean().item()
 
         # Verify they are different (mask has an effect)
-        assert approx_kl_masked != approx_kl_unmasked, \
-            "Masked KL should differ from unmasked KL"
+        assert approx_kl_masked != approx_kl_unmasked, "Masked KL should differ from unmasked KL"
 
         # Verify masked KL only uses valid samples
         expected_kl_masked = (
-            (old_log_prob[0] - log_prob[0]) +
-            (old_log_prob[2] - log_prob[2]) +
-            (old_log_prob[4] - log_prob[4])
+            (old_log_prob[0] - log_prob[0])
+            + (old_log_prob[2] - log_prob[2])
+            + (old_log_prob[4] - log_prob[4])
         ) / 3.0
 
         assert torch.isclose(
-            torch.tensor(approx_kl_masked),
-            torch.tensor(expected_kl_masked.item()),
-            rtol=1e-5
+            torch.tensor(approx_kl_masked), torch.tensor(expected_kl_masked.item()), rtol=1e-5
         ), "Masked KL should match manual calculation"
 
     def test_raw_action_kl_with_mask(self):
@@ -87,18 +85,16 @@ class TestMaskedKLFixLogic:
 
         # Verify masked mean is correct
         expected_masked_mean = (
-            (old_log_prob_raw[0] - log_prob_raw_new[0]) +
-            (old_log_prob_raw[2] - log_prob_raw_new[2]) +
-            (old_log_prob_raw[3] - log_prob_raw_new[3]) +
-            (old_log_prob_raw[5] - log_prob_raw_new[5])
+            (old_log_prob_raw[0] - log_prob_raw_new[0])
+            + (old_log_prob_raw[2] - log_prob_raw_new[2])
+            + (old_log_prob_raw[3] - log_prob_raw_new[3])
+            + (old_log_prob_raw[5] - log_prob_raw_new[5])
         ) / 4.0
 
         masked_mean = approx_kl_raw_masked.mean()
 
         assert torch.isclose(
-            masked_mean,
-            expected_masked_mean,
-            rtol=1e-5
+            masked_mean, expected_masked_mean, rtol=1e-5
         ), "Masked mean should match manual calculation"
 
     def test_kl_computation_preserves_gradient_flow(self):
@@ -150,20 +146,24 @@ class TestMaskedKLFixLogic:
         assert kl_tensor.numel() > 0, "Tensor should be non-empty"
 
         # Test case 2: Contains NaN (should fail finite check)
-        old_log_prob_nan = torch.tensor([1.0, float('nan'), 3.0, 4.0])
+        old_log_prob_nan = torch.tensor([1.0, float("nan"), 3.0, 4.0])
         log_prob_new_nan = torch.tensor([1.1, 2.1, 3.1, 4.1])
         valid_indices_with_nan = torch.tensor([0, 1, 2])  # Includes NaN at index 1
 
-        kl_tensor_nan = old_log_prob_nan[valid_indices_with_nan] - log_prob_new_nan[valid_indices_with_nan]
+        kl_tensor_nan = (
+            old_log_prob_nan[valid_indices_with_nan] - log_prob_new_nan[valid_indices_with_nan]
+        )
 
         assert not torch.isfinite(kl_tensor_nan).all(), "Should detect NaN"
 
         # Test case 3: Contains Inf (should fail finite check)
-        old_log_prob_inf = torch.tensor([1.0, 2.0, float('inf'), 4.0])
+        old_log_prob_inf = torch.tensor([1.0, 2.0, float("inf"), 4.0])
         log_prob_new_inf = torch.tensor([1.1, 2.1, 3.1, 4.1])
         valid_indices_with_inf = torch.tensor([0, 2, 3])  # Includes Inf at index 2
 
-        kl_tensor_inf = old_log_prob_inf[valid_indices_with_inf] - log_prob_new_inf[valid_indices_with_inf]
+        kl_tensor_inf = (
+            old_log_prob_inf[valid_indices_with_inf] - log_prob_new_inf[valid_indices_with_inf]
+        )
 
         assert not torch.isfinite(kl_tensor_inf).all(), "Should detect Inf"
 
@@ -213,8 +213,7 @@ class TestMaskedKLFixLogic:
 
         # Verify computation works
         expected = ((old_log_prob - log_prob).sum() / 4.0).item()
-        assert np.isclose(approx_kl, expected, rtol=1e-5), \
-            "Unmasked KL should work correctly"
+        assert np.isclose(approx_kl, expected, rtol=1e-5), "Unmasked KL should work correctly"
 
 
 class TestKLSchedulerIntegration:
@@ -249,8 +248,12 @@ class TestKLSchedulerIntegration:
         samples can significantly dilute the KL signal.
         """
         # Create scenario with large policy change in valid samples
-        old_log_prob = torch.tensor([-1.0, -5.0, -1.0, -5.0, -1.0])  # Pattern: trading, no-trade, trading, ...
-        log_prob = torch.tensor([-2.0, -5.0, -2.0, -5.0, -2.0])      # Trading samples changed, no-trade stable
+        old_log_prob = torch.tensor(
+            [-1.0, -5.0, -1.0, -5.0, -1.0]
+        )  # Pattern: trading, no-trade, trading, ...
+        log_prob = torch.tensor(
+            [-2.0, -5.0, -2.0, -5.0, -2.0]
+        )  # Trading samples changed, no-trade stable
 
         # Mask selects only trading samples (indices 0, 2, 4)
         valid_indices = torch.tensor([0, 2, 4])
@@ -266,17 +269,13 @@ class TestKLSchedulerIntegration:
         # Masked KL should be much larger (captures true policy change)
         # Masked: (1.0 + 1.0 + 1.0) / 3 = 1.0
         # Unmasked: (1.0 + 0.0 + 1.0 + 0.0 + 1.0) / 5 = 0.6
-        assert kl_masked > kl_unmasked, \
-            "Masked KL should capture larger policy change"
-        assert np.isclose(kl_masked, 1.0, rtol=0.01), \
-            "Masked KL should be ~1.0"
-        assert np.isclose(kl_unmasked, 0.6, rtol=0.01), \
-            "Unmasked KL should be ~0.6"
+        assert kl_masked > kl_unmasked, "Masked KL should capture larger policy change"
+        assert np.isclose(kl_masked, 1.0, rtol=0.01), "Masked KL should be ~1.0"
+        assert np.isclose(kl_unmasked, 0.6, rtol=0.01), "Unmasked KL should be ~0.6"
 
         # The dilution factor is significant (67% reduction)
         dilution = (kl_masked - kl_unmasked) / kl_masked
-        assert dilution > 0.3, \
-            "Bug causes >30% dilution of KL signal"
+        assert dilution > 0.3, "Bug causes >30% dilution of KL signal"
 
 
 class TestRealWorldScenarios:

@@ -34,7 +34,7 @@ from adapters.models import (
 def mock_yfinance():
     """Create a mock yfinance module."""
     mock_yf = MagicMock()
-    with patch.dict(sys.modules, {'yfinance': mock_yf}):
+    with patch.dict(sys.modules, {"yfinance": mock_yf}):
         yield mock_yf
 
 
@@ -125,7 +125,9 @@ class TestYahooCorporateActionsGetDividends:
         mock_ticker = Mock()
         mock_yfinance.Ticker.return_value = mock_ticker
         # Simulate an exception when accessing dividends
-        type(mock_ticker).dividends = property(lambda self: (_ for _ in ()).throw(Exception("API error")))
+        type(mock_ticker).dividends = property(
+            lambda self: (_ for _ in ()).throw(Exception("API error"))
+        )
 
         adapter = YahooCorporateActionsAdapter()
         # Should return empty list, not raise
@@ -338,12 +340,12 @@ class TestYahooCorporateActionsCaching:
         adapter = YahooCorporateActionsAdapter()
 
         # First call creates Ticker
-        with patch('time.time', return_value=1000.0):
+        with patch("time.time", return_value=1000.0):
             adapter.get_dividends("AAPL")
         assert mock_yfinance.Ticker.call_count == 1
 
         # Second call uses cache (time hasn't advanced much)
-        with patch('time.time', return_value=1001.0):
+        with patch("time.time", return_value=1001.0):
             adapter.get_dividends("AAPL")
         assert mock_yfinance.Ticker.call_count == 1
 
@@ -358,17 +360,17 @@ class TestYahooCorporateActionsCaching:
         adapter = YahooCorporateActionsAdapter(config={"cache_ttl": 3600})
 
         # First call at t=1000
-        with patch('time.time', return_value=1000.0):
+        with patch("time.time", return_value=1000.0):
             adapter.get_dividends("AAPL")
         assert mock_yfinance.Ticker.call_count == 1
 
         # Second call within TTL
-        with patch('time.time', return_value=2000.0):
+        with patch("time.time", return_value=2000.0):
             adapter.get_dividends("AAPL")
         assert mock_yfinance.Ticker.call_count == 1
 
         # Third call after TTL (> 3600 seconds)
-        with patch('time.time', return_value=5000.0):
+        with patch("time.time", return_value=5000.0):
             adapter.get_dividends("AAPL")
         assert mock_yfinance.Ticker.call_count == 2
 

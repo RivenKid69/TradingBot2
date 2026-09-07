@@ -35,6 +35,7 @@ from ccea.crypto.digest import compute_file_digest
 
 class SBOMFormat(str, Enum):
     """SBOM output formats."""
+
     CYCLONEDX_JSON = "cyclonedx+json"
     CYCLONEDX_XML = "cyclonedx+xml"
     SPDX_JSON = "spdx+json"
@@ -43,6 +44,7 @@ class SBOMFormat(str, Enum):
 
 class ComponentType(str, Enum):
     """Component types for SBOM."""
+
     APPLICATION = "application"
     LIBRARY = "library"
     FRAMEWORK = "framework"
@@ -53,6 +55,7 @@ class ComponentType(str, Enum):
 
 class ComponentScope(str, Enum):
     """Component scope."""
+
     REQUIRED = "required"
     OPTIONAL = "optional"
     EXCLUDED = "excluded"
@@ -61,6 +64,7 @@ class ComponentScope(str, Enum):
 @dataclass
 class License:
     """License information."""
+
     id: Optional[str] = None  # SPDX ID
     name: Optional[str] = None
     url: Optional[str] = None
@@ -77,6 +81,7 @@ class License:
 @dataclass
 class ExternalRef:
     """External reference (e.g., package URL, advisory)."""
+
     type: str
     url: str
     comment: Optional[str] = None
@@ -85,6 +90,7 @@ class ExternalRef:
 @dataclass
 class Component:
     """SBOM Component."""
+
     name: str
     version: str
     type: ComponentType = ComponentType.LIBRARY
@@ -123,15 +129,13 @@ class Component:
             component["cpe"] = self.cpe
         if self.hashes:
             component["hashes"] = [
-                {"alg": alg.upper(), "content": content}
-                for alg, content in self.hashes.items()
+                {"alg": alg.upper(), "content": content} for alg, content in self.hashes.items()
             ]
         if self.licenses:
             component["licenses"] = [lic.to_cyclonedx() for lic in self.licenses]
         if self.external_refs:
             component["externalReferences"] = [
-                {"type": ref.type, "url": ref.url}
-                for ref in self.external_refs
+                {"type": ref.type, "url": ref.url} for ref in self.external_refs
             ]
 
         return component
@@ -146,11 +150,13 @@ class Component:
         }
 
         if self.purl:
-            package["externalRefs"] = [{
-                "referenceCategory": "PACKAGE-MANAGER",
-                "referenceType": "purl",
-                "referenceLocator": self.purl,
-            }]
+            package["externalRefs"] = [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": self.purl,
+                }
+            ]
 
         if self.licenses:
             if self.licenses[0].id:
@@ -170,6 +176,7 @@ class Component:
 @dataclass
 class Dependency:
     """Dependency relationship."""
+
     ref: str
     depends_on: List[str] = field(default_factory=list)
 
@@ -177,6 +184,7 @@ class Dependency:
 @dataclass
 class Vulnerability:
     """Vulnerability reference."""
+
     id: str
     source: str
     description: Optional[str] = None
@@ -187,6 +195,7 @@ class Vulnerability:
 @dataclass
 class SBOM:
     """Software Bill of Materials."""
+
     serial_number: str
     version: int = 1
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -212,11 +221,13 @@ class SBOM:
             "version": self.version,
             "metadata": {
                 "timestamp": self.created_at.isoformat(),
-                "tools": [{
-                    "vendor": "CCEA",
-                    "name": "CCEA SBOM Generator",
-                    "version": "1.0.0",
-                }],
+                "tools": [
+                    {
+                        "vendor": "CCEA",
+                        "name": "CCEA SBOM Generator",
+                        "version": "1.0.0",
+                    }
+                ],
                 **self.metadata,
             },
             "components": [c.to_cyclonedx() for c in self.components],
@@ -224,8 +235,7 @@ class SBOM:
 
         if self.dependencies:
             bom["dependencies"] = [
-                {"ref": d.ref, "dependsOn": d.depends_on}
-                for d in self.dependencies
+                {"ref": d.ref, "dependsOn": d.depends_on} for d in self.dependencies
             ]
 
         if self.vulnerabilities:
@@ -264,22 +274,28 @@ class SBOM:
         for comp in self.components:
             if comp.type == ComponentType.APPLICATION:
                 spdx_id = f"SPDXRef-Package-{comp.name.replace('-', '_').replace('.', '_')}"
-                doc["relationships"].append({
-                    "spdxElementId": "SPDXRef-DOCUMENT",
-                    "relatedSpdxElement": spdx_id,
-                    "relationshipType": "DESCRIBES",
-                })
+                doc["relationships"].append(
+                    {
+                        "spdxElementId": "SPDXRef-DOCUMENT",
+                        "relatedSpdxElement": spdx_id,
+                        "relationshipType": "DESCRIBES",
+                    }
+                )
 
         # Add dependency relationships
         for dep in self.dependencies:
-            ref_id = f"SPDXRef-Package-{dep.ref.replace('-', '_').replace('.', '_').replace('@', '_')}"
+            ref_id = (
+                f"SPDXRef-Package-{dep.ref.replace('-', '_').replace('.', '_').replace('@', '_')}"
+            )
             for depends_on in dep.depends_on:
                 dep_id = f"SPDXRef-Package-{depends_on.replace('-', '_').replace('.', '_').replace('@', '_')}"
-                doc["relationships"].append({
-                    "spdxElementId": ref_id,
-                    "relatedSpdxElement": dep_id,
-                    "relationshipType": "DEPENDS_ON",
-                })
+                doc["relationships"].append(
+                    {
+                        "spdxElementId": ref_id,
+                        "relatedSpdxElement": dep_id,
+                        "relationshipType": "DEPENDS_ON",
+                    }
+                )
 
         return doc
 
@@ -400,13 +416,18 @@ class SBOMGenerator:
         # Add Python runtime
         if "python" not in seen:
             import sys
-            python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-            components.append(Component(
-                name="python",
-                version=python_version,
-                type=ComponentType.LIBRARY,
-                purl=f"pkg:generic/python@{python_version}",
-            ))
+
+            python_version = (
+                f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+            )
+            components.append(
+                Component(
+                    name="python",
+                    version=python_version,
+                    type=ComponentType.LIBRARY,
+                    purl=f"pkg:generic/python@{python_version}",
+                )
+            )
 
         return components
 
@@ -430,7 +451,7 @@ class SBOMGenerator:
                 # Parse requirement specifier
                 # Handle: package==1.0.0, package>=1.0.0, package[extra]==1.0.0
                 match = re.match(
-                    r'^([a-zA-Z0-9_-]+)(?:\[[\w,]+\])?(?:[=<>!~]+)?([\d.]+)?',
+                    r"^([a-zA-Z0-9_-]+)(?:\[[\w,]+\])?(?:[=<>!~]+)?([\d.]+)?",
                     line.replace(" ", ""),
                 )
                 if match:
@@ -439,12 +460,14 @@ class SBOMGenerator:
 
                     if name not in seen:
                         seen.add(name)
-                        components.append(Component(
-                            name=name,
-                            version=version,
-                            type=ComponentType.LIBRARY,
-                            purl=f"pkg:pypi/{name}@{version}",
-                        ))
+                        components.append(
+                            Component(
+                                name=name,
+                                version=version,
+                                type=ComponentType.LIBRARY,
+                                purl=f"pkg:pypi/{name}@{version}",
+                            )
+                        )
         except Exception:
             pass
 
@@ -462,12 +485,14 @@ class SBOMGenerator:
             # Try to import tomllib (Python 3.11+) or fallback
             try:
                 import tomllib
+
                 with open(pyproject_path, "rb") as f:
                     data = tomllib.load(f)
             except ImportError:
                 # Python < 3.11, try tomli
                 try:
                     import tomli
+
                     with open(pyproject_path, "rb") as f:
                         data = tomli.load(f)
                 except ImportError:
@@ -487,7 +512,7 @@ class SBOMGenerator:
                 project = data["project"]
                 if "dependencies" in project:
                     for dep in project["dependencies"]:
-                        match = re.match(r'^([a-zA-Z0-9_-]+)', dep)
+                        match = re.match(r"^([a-zA-Z0-9_-]+)", dep)
                         if match:
                             deps.append((match.group(1), "*"))
 
@@ -498,13 +523,15 @@ class SBOMGenerator:
                 if name not in seen:
                     seen.add(name)
                     version = version_spec if isinstance(version_spec, str) else "unknown"
-                    version = re.sub(r'[^0-9.]', '', version) or "unknown"
-                    components.append(Component(
-                        name=name,
-                        version=version,
-                        type=ComponentType.LIBRARY,
-                        purl=f"pkg:pypi/{name}@{version}",
-                    ))
+                    version = re.sub(r"[^0-9.]", "", version) or "unknown"
+                    components.append(
+                        Component(
+                            name=name,
+                            version=version,
+                            type=ComponentType.LIBRARY,
+                            purl=f"pkg:pypi/{name}@{version}",
+                        )
+                    )
 
         except Exception:
             pass
@@ -524,7 +551,7 @@ class SBOMGenerator:
 
             # Simple regex to find install_requires
             match = re.search(
-                r'install_requires\s*=\s*\[(.*?)\]',
+                r"install_requires\s*=\s*\[(.*?)\]",
                 content,
                 re.DOTALL,
             )
@@ -533,17 +560,19 @@ class SBOMGenerator:
                 # Extract quoted strings
                 for dep_match in re.finditer(r'["\']([^"\']+)["\']', deps_str):
                     dep = dep_match.group(1)
-                    name_match = re.match(r'^([a-zA-Z0-9_-]+)', dep)
+                    name_match = re.match(r"^([a-zA-Z0-9_-]+)", dep)
                     if name_match:
                         name = name_match.group(1).lower()
                         if name not in seen:
                             seen.add(name)
-                            components.append(Component(
-                                name=name,
-                                version="unknown",
-                                type=ComponentType.LIBRARY,
-                                purl=f"pkg:pypi/{name}",
-                            ))
+                            components.append(
+                                Component(
+                                    name=name,
+                                    version="unknown",
+                                    type=ComponentType.LIBRARY,
+                                    purl=f"pkg:pypi/{name}",
+                                )
+                            )
         except Exception:
             pass
 

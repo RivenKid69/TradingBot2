@@ -44,6 +44,7 @@ from distributional_ppo import (
 # PopArtController Tests
 # =============================================================================
 
+
 class TestPopArtControllerInit:
     """Tests for PopArtController initialization."""
 
@@ -639,6 +640,7 @@ class TestPopArtControllerApplyCategoricalTransform:
 # RawRecurrentRolloutBuffer Tests
 # =============================================================================
 
+
 class TestRawRecurrentRolloutBufferToNumpy:
     """Tests for RawRecurrentRolloutBuffer._to_numpy static method."""
 
@@ -664,6 +666,7 @@ class TestRawRecurrentRolloutBufferToNumpy:
 # DistributionalPPO Static Methods Tests
 # =============================================================================
 
+
 class TestDistributionalPPOCloneStates:
     """Tests for DistributionalPPO._clone_states_to_device."""
 
@@ -683,6 +686,7 @@ class TestDistributionalPPOCloneStates:
 
         # Create RNNStates-like object
         from sb3_contrib.common.recurrent.type_aliases import RNNStates
+
         states = RNNStates(pi=pi_states, vf=vf_states)
 
         result = DistributionalPPO._clone_states_to_device(states, torch.device("cpu"))
@@ -798,6 +802,7 @@ class TestDistributionalPPOExtractStates:
 
     def test_extract_critic_with_vf(self):
         from sb3_contrib.common.recurrent.type_aliases import RNNStates
+
         pi_states = (torch.zeros(1, 2, 64), torch.zeros(1, 2, 64))
         vf_states = (torch.ones(1, 2, 64), torch.ones(1, 2, 64))
         states = RNNStates(pi=pi_states, vf=vf_states)
@@ -817,6 +822,7 @@ class TestDistributionalPPOExtractStates:
 
     def test_extract_actor_with_pi(self):
         from sb3_contrib.common.recurrent.type_aliases import RNNStates
+
         pi_states = (torch.zeros(1, 2, 64), torch.zeros(1, 2, 64))
         vf_states = (torch.ones(1, 2, 64), torch.ones(1, 2, 64))
         states = RNNStates(pi=pi_states, vf=vf_states)
@@ -979,24 +985,30 @@ class TestDistributionalPPOHasNonemptyBatches:
         assert result is False
 
     def test_all_empty_tensors(self):
-        result = DistributionalPPO._has_nonempty_batches([
-            torch.tensor([]),
-            torch.tensor([]),
-        ])
+        result = DistributionalPPO._has_nonempty_batches(
+            [
+                torch.tensor([]),
+                torch.tensor([]),
+            ]
+        )
         assert result is False
 
     def test_one_nonempty(self):
-        result = DistributionalPPO._has_nonempty_batches([
-            torch.tensor([]),
-            torch.tensor([1.0]),
-        ])
+        result = DistributionalPPO._has_nonempty_batches(
+            [
+                torch.tensor([]),
+                torch.tensor([1.0]),
+            ]
+        )
         assert result is True
 
     def test_all_nonempty(self):
-        result = DistributionalPPO._has_nonempty_batches([
-            torch.tensor([1.0]),
-            torch.tensor([2.0]),
-        ])
+        result = DistributionalPPO._has_nonempty_batches(
+            [
+                torch.tensor([1.0]),
+                torch.tensor([2.0]),
+            ]
+        )
         assert result is True
 
 
@@ -1267,6 +1279,7 @@ class TestCfgGetEdgeCases:
 
     def test_object_with_get_type_error_fallback(self):
         """Test that TypeError in get() triggers fallback to get(key) only."""
+
         class GetWithTypeError:
             def get(self, key, default=None):
                 # Simulate a get method that doesn't accept default
@@ -1297,6 +1310,7 @@ class TestCfgGetEdgeCases:
         class FailingModelDumpWithDict:
             def model_dump(self):
                 raise RuntimeError("model_dump failed")
+
             def dict(self):
                 return {"key": "value"}
 
@@ -1307,6 +1321,7 @@ class TestCfgGetEdgeCases:
         class AllFail:
             def model_dump(self):
                 raise RuntimeError("model_dump failed")
+
             def dict(self):
                 raise RuntimeError("dict failed")
 
@@ -1315,6 +1330,7 @@ class TestCfgGetEdgeCases:
 
     def test_get_type_error_then_key_error(self):
         """Test TypeError triggers retry with single arg which also fails."""
+
         class GetTypeErrorThenKeyError:
             def get(self, *args):
                 if len(args) == 2:
@@ -1388,9 +1404,7 @@ class TestDistributionalPPOFilterEvReserveRows:
         assert result[1].shape[0] == 2
 
     def test_all_valid_indices(self):
-        rollout_data = types.SimpleNamespace(
-            sample_indices=torch.tensor([0, 1, 2])
-        )
+        rollout_data = types.SimpleNamespace(sample_indices=torch.tensor([0, 1, 2]))
         target_norm = torch.tensor([[1.0], [2.0], [3.0]])
         target_raw = torch.tensor([[1.0], [2.0], [3.0]])
         weights = None
@@ -1438,9 +1452,7 @@ class TestDistributionalPPOShouldSkipEvReserveBatch:
         algo._logger = None
 
         rollout_data = types.SimpleNamespace()
-        result = algo._should_skip_ev_reserve_batch(
-            rollout_data, torch.tensor([0, 1]), None
-        )
+        result = algo._should_skip_ev_reserve_batch(rollout_data, torch.tensor([0, 1]), None)
         assert result is False
 
     def test_with_mask_values(self):
@@ -1448,9 +1460,7 @@ class TestDistributionalPPOShouldSkipEvReserveBatch:
         algo._logger = None
 
         rollout_data = types.SimpleNamespace()
-        result = algo._should_skip_ev_reserve_batch(
-            rollout_data, None, torch.tensor([1.0, 1.0])
-        )
+        result = algo._should_skip_ev_reserve_batch(rollout_data, None, torch.tensor([1.0, 1.0]))
         assert result is False
 
     def test_no_rollout_mask(self):

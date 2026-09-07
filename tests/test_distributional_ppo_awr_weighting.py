@@ -35,8 +35,9 @@ def test_awr_weight_basic_computation() -> None:
         exp_arg = torch.clamp(advantages / beta, max=math.log(max_weight))
         weights = torch.exp(exp_arg)
 
-        assert torch.isclose(weights[0], torch.tensor(expected_weight), atol=1e-3), \
-            f"Failed for advantage={adv_sigma}σ: expected {expected_weight}, got {weights[0].item()}"
+        assert torch.isclose(
+            weights[0], torch.tensor(expected_weight), atol=1e-3
+        ), f"Failed for advantage={adv_sigma}σ: expected {expected_weight}, got {weights[0].item()}"
 
 
 def test_awr_weight_max_clipping() -> None:
@@ -53,12 +54,14 @@ def test_awr_weight_max_clipping() -> None:
     weights = torch.exp(exp_arg)
 
     # All weights should be <= max_weight (with float32 tolerance)
-    assert torch.all(weights <= max_weight + 1e-5), \
-        f"Weights exceeded max_weight: {weights.tolist()}"
+    assert torch.all(
+        weights <= max_weight + 1e-5
+    ), f"Weights exceeded max_weight: {weights.tolist()}"
 
     # Weights should be very close to max_weight for extreme advantages
-    assert torch.all(weights >= max_weight * 0.99), \
-        f"Weights should be ≥99% of max_weight for extreme advantages: {weights.tolist()}"
+    assert torch.all(
+        weights >= max_weight * 0.99
+    ), f"Weights should be ≥99% of max_weight for extreme advantages: {weights.tolist()}"
 
 
 def test_awr_weight_prevents_overflow() -> None:
@@ -75,17 +78,20 @@ def test_awr_weight_prevents_overflow() -> None:
 
     # exp_arg should never exceed log(max_weight) ≈ 4.605
     max_safe_exp_arg = math.log(max_weight)
-    assert torch.all(exp_arg <= max_safe_exp_arg), \
-        f"exp_arg exceeded safe limit: {exp_arg.tolist()} > {max_safe_exp_arg}"
+    assert torch.all(
+        exp_arg <= max_safe_exp_arg
+    ), f"exp_arg exceeded safe limit: {exp_arg.tolist()} > {max_safe_exp_arg}"
 
     # Verify exp_arg is far below overflow threshold
-    assert torch.all(exp_arg < 50.0), \
-        f"exp_arg dangerously close to overflow threshold (88): {exp_arg.tolist()}"
+    assert torch.all(
+        exp_arg < 50.0
+    ), f"exp_arg dangerously close to overflow threshold (88): {exp_arg.tolist()}"
 
     # Verify exp() doesn't produce inf or nan
     weights = torch.exp(exp_arg)
-    assert torch.all(torch.isfinite(weights)), \
-        f"exp() produced non-finite values: {weights.tolist()}"
+    assert torch.all(
+        torch.isfinite(weights)
+    ), f"exp() produced non-finite values: {weights.tolist()}"
 
 
 def test_awr_weight_old_bug_comparison() -> None:
@@ -108,17 +114,18 @@ def test_awr_weight_old_bug_comparison() -> None:
     weight_new = torch.exp(exp_arg_new)
 
     # Verify old implementation computed gigantic intermediate value
-    assert weight_old_before_clamp > 1e8, \
-        "Old implementation should compute exp(20) ≈ 485M"
+    assert weight_old_before_clamp > 1e8, "Old implementation should compute exp(20) ≈ 485M"
 
     # Verify final weights are identical (bug was wasted computation, not wrong result)
-    assert torch.isclose(weight_old, weight_new, atol=1e-2), \
-        f"Final weights should match: old={weight_old.item()}, new={weight_new.item()}"
+    assert torch.isclose(
+        weight_old, weight_new, atol=1e-2
+    ), f"Final weights should match: old={weight_old.item()}, new={weight_new.item()}"
 
     # Verify new implementation never computes gigantic values
     weight_new_max_intermediate = torch.exp(torch.tensor(math.log(max_weight)))
-    assert weight_new_max_intermediate <= max_weight * 1.01, \
-        f"New implementation should never exceed max_weight: {weight_new_max_intermediate}"
+    assert (
+        weight_new_max_intermediate <= max_weight * 1.01
+    ), f"New implementation should never exceed max_weight: {weight_new_max_intermediate}"
 
 
 def test_awr_weight_vectorized() -> None:
@@ -135,17 +142,19 @@ def test_awr_weight_vectorized() -> None:
     weights = torch.exp(exp_arg)
 
     # Verify all weights are finite
-    assert torch.all(torch.isfinite(weights)), \
-        f"Non-finite weights detected: {weights.tolist()}"
+    assert torch.all(torch.isfinite(weights)), f"Non-finite weights detected: {weights.tolist()}"
 
     # Verify monotonicity: higher advantage => higher weight
     for i in range(len(advantages) - 1):
-        assert weights[i] <= weights[i + 1], \
-            f"Weights not monotonic: w[{i}]={weights[i]} > w[{i+1}]={weights[i+1]}"
+        assert (
+            weights[i] <= weights[i + 1]
+        ), f"Weights not monotonic: w[{i}]={weights[i]} > w[{i+1}]={weights[i+1]}"
 
     # Verify all weights are in valid range
     assert torch.all(weights > 0), "All weights should be positive"
-    assert torch.all(weights <= max_weight + 1e-5), f"Weights exceeded max_weight: {weights.tolist()}"
+    assert torch.all(
+        weights <= max_weight + 1e-5
+    ), f"Weights exceeded max_weight: {weights.tolist()}"
 
 
 def test_awr_weight_zero_advantage() -> None:
@@ -161,8 +170,9 @@ def test_awr_weight_zero_advantage() -> None:
     weights = torch.exp(exp_arg)
 
     # All weights should be exactly 1.0
-    assert torch.allclose(weights, torch.ones_like(weights)), \
-        f"Zero advantages should produce unit weights: {weights.tolist()}"
+    assert torch.allclose(
+        weights, torch.ones_like(weights)
+    ), f"Zero advantages should produce unit weights: {weights.tolist()}"
 
 
 def test_awr_weight_negative_advantages() -> None:
@@ -179,12 +189,12 @@ def test_awr_weight_negative_advantages() -> None:
     weights = torch.exp(exp_arg)
 
     # All weights should be < 1.0
-    assert torch.all(weights < 1.0), \
-        f"Negative advantages should produce weights < 1.0: {weights.tolist()}"
+    assert torch.all(
+        weights < 1.0
+    ), f"Negative advantages should produce weights < 1.0: {weights.tolist()}"
 
     # All weights should be > 0
-    assert torch.all(weights > 0), \
-        f"All weights should be positive: {weights.tolist()}"
+    assert torch.all(weights > 0), f"All weights should be positive: {weights.tolist()}"
 
 
 def test_awr_weight_different_betas() -> None:
@@ -207,8 +217,9 @@ def test_awr_weight_different_betas() -> None:
     # beta=1.0: exp(3/1) = exp(3) ≈ 20.09
     # beta=5.0: exp(3/5) = exp(0.6) ≈ 1.82
     # beta=10.0: exp(3/10) = exp(0.3) ≈ 1.35
-    assert weights[0] > weights[1] > weights[2], \
-        f"Higher beta should produce more conservative weights: {weights}"
+    assert (
+        weights[0] > weights[1] > weights[2]
+    ), f"Higher beta should produce more conservative weights: {weights}"
 
 
 def test_awr_weight_consistency_with_normalization() -> None:
@@ -235,18 +246,18 @@ def test_awr_weight_consistency_with_normalization() -> None:
     weights_95th = torch.quantile(weights, 0.95).item()
     weights_99th = torch.quantile(weights, 0.99).item()
 
-    assert 0.9 < weights_median < 1.1, \
-        f"Median weight should be ~1.0: {weights_median}"
+    assert 0.9 < weights_median < 1.1, f"Median weight should be ~1.0: {weights_median}"
 
-    assert weights_95th < 3.0, \
-        f"95th percentile weight should be < 3.0 with beta=5.0: {weights_95th}"
+    assert (
+        weights_95th < 3.0
+    ), f"95th percentile weight should be < 3.0 with beta=5.0: {weights_95th}"
 
-    assert weights_99th < 10.0, \
-        f"99th percentile weight should be < 10.0 with beta=5.0: {weights_99th}"
+    assert (
+        weights_99th < 10.0
+    ), f"99th percentile weight should be < 10.0 with beta=5.0: {weights_99th}"
 
     # No weight should exceed max_weight
-    assert weights.max() <= max_weight, \
-        f"Max weight exceeded limit: {weights.max()}"
+    assert weights.max() <= max_weight, f"Max weight exceeded limit: {weights.max()}"
 
 
 def test_awr_weight_edge_case_inf_input() -> None:
@@ -257,15 +268,16 @@ def test_awr_weight_edge_case_inf_input() -> None:
     max_weight = 100.0
 
     # Edge case: inf advantage
-    advantages = torch.tensor([float('inf')], dtype=torch.float32)
+    advantages = torch.tensor([float("inf")], dtype=torch.float32)
 
     exp_arg = torch.clamp(advantages / beta, max=math.log(max_weight))
     weights = torch.exp(exp_arg)
 
     # Weight should be finite and equal to max_weight
     assert torch.isfinite(weights[0]), "Weight should be finite even with inf advantage"
-    assert torch.isclose(weights[0], torch.tensor(max_weight), atol=0.1), \
-        f"Inf advantage should produce max_weight: {weights[0]}"
+    assert torch.isclose(
+        weights[0], torch.tensor(max_weight), atol=0.1
+    ), f"Inf advantage should produce max_weight: {weights[0]}"
 
 
 def test_awr_weight_edge_case_nan_input() -> None:
@@ -276,15 +288,14 @@ def test_awr_weight_edge_case_nan_input() -> None:
     max_weight = 100.0
 
     # Edge case: NaN advantage
-    advantages = torch.tensor([float('nan')], dtype=torch.float32)
+    advantages = torch.tensor([float("nan")], dtype=torch.float32)
 
     exp_arg = torch.clamp(advantages / beta, max=math.log(max_weight))
     weights = torch.exp(exp_arg)
 
     # NaN should propagate (expected behavior for debugging)
     # This helps catch upstream bugs rather than silently masking them
-    assert torch.isnan(weights[0]), \
-        "NaN advantages should propagate to weights for debugging"
+    assert torch.isnan(weights[0]), "NaN advantages should propagate to weights for debugging"
 
 
 def test_awr_weight_gradient_flow() -> None:
@@ -310,8 +321,7 @@ def test_awr_weight_gradient_flow() -> None:
 
     # Verify gradients exist and are reasonable
     assert log_prob.grad is not None, "Gradients should exist"
-    assert torch.all(torch.isfinite(log_prob.grad)), \
-        f"Gradients should be finite: {log_prob.grad}"
+    assert torch.all(torch.isfinite(log_prob.grad)), f"Gradients should be finite: {log_prob.grad}"
 
 
 def test_awr_weight_memory_efficiency() -> None:
@@ -353,8 +363,7 @@ def test_awr_weight_deterministic() -> None:
     weights2 = torch.exp(exp_arg2)
 
     # Results should be exactly identical
-    assert torch.equal(weights1, weights2), \
-        "AWR weight computation should be deterministic"
+    assert torch.equal(weights1, weights2), "AWR weight computation should be deterministic"
 
 
 def test_awr_weight_formula_correctness() -> None:
@@ -375,8 +384,9 @@ def test_awr_weight_formula_correctness() -> None:
     weight = torch.exp(exp_arg)
 
     # Should be exactly equal
-    assert abs(weight.item() - weight_manual) < 1e-6, \
-        f"Formula mismatch: tensor={weight.item()}, manual={weight_manual}"
+    assert (
+        abs(weight.item() - weight_manual) < 1e-6
+    ), f"Formula mismatch: tensor={weight.item()}, manual={weight_manual}"
 
 
 if __name__ == "__main__":

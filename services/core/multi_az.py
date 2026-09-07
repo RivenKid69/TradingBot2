@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class AvailabilityZone(Enum):
     """Availability zones."""
+
     EU_WEST_1A = "eu-west-1a"
     EU_WEST_1B = "eu-west-1b"
     EU_WEST_1C = "eu-west-1c"
@@ -41,6 +42,7 @@ class AvailabilityZone(Enum):
 
 class DeploymentStrategy(Enum):
     """Deployment strategies."""
+
     ACTIVE_ACTIVE = "active_active"
     ACTIVE_PASSIVE = "active_passive"
     ACTIVE_STANDBY = "active_standby"
@@ -48,6 +50,7 @@ class DeploymentStrategy(Enum):
 
 class FailoverMode(Enum):
     """Failover modes."""
+
     AUTOMATIC = "automatic"
     MANUAL = "manual"
     SEMI_AUTOMATIC = "semi_automatic"
@@ -55,6 +58,7 @@ class FailoverMode(Enum):
 
 class ZoneStatus(Enum):
     """Zone health status."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -65,6 +69,7 @@ class ZoneStatus(Enum):
 @dataclass
 class ZoneConfig:
     """Availability zone configuration."""
+
     zone_id: str = ""
     zone: AvailabilityZone = AvailabilityZone.EU_WEST_1A
     region: str = "eu-west-1"
@@ -82,6 +87,7 @@ class ZoneConfig:
 @dataclass
 class DeploymentConfig:
     """Multi-AZ deployment configuration."""
+
     deployment_id: str = ""
     name: str = ""
     strategy: DeploymentStrategy = DeploymentStrategy.ACTIVE_ACTIVE
@@ -99,6 +105,7 @@ class DeploymentConfig:
 @dataclass
 class FailoverConfig:
     """Failover configuration."""
+
     config_id: str = ""
     mode: FailoverMode = FailoverMode.AUTOMATIC
     health_check_failures_threshold: int = 3
@@ -114,6 +121,7 @@ class FailoverConfig:
 @dataclass
 class ZoneHealthStatus:
     """Zone health status record."""
+
     zone_id: str = ""
     status: ZoneStatus = ZoneStatus.HEALTHY
     last_check: str = ""
@@ -132,6 +140,7 @@ class ZoneHealthStatus:
 @dataclass
 class MultiAZConfig:
     """Configuration for MultiAZManager."""
+
     default_strategy: DeploymentStrategy = DeploymentStrategy.ACTIVE_ACTIVE
     health_check_interval_seconds: int = 30
     failover_threshold: int = 3
@@ -228,7 +237,8 @@ class MultiAZManager:
                 zone_ids = [z.zone_id for z in deployment.zones]
                 if unhealthy_zone_id in zone_ids:
                     healthy_zones = [
-                        zid for zid in zone_ids
+                        zid
+                        for zid in zone_ids
                         if self._health.get(zid, ZoneHealthStatus()).status == ZoneStatus.HEALTHY
                     ]
 
@@ -237,11 +247,14 @@ class MultiAZManager:
                     else:
                         logger.warning(f"Insufficient healthy zones for {deployment.name}")
                         if self.config.alert_callback:
-                            self.config.alert_callback("failover_warning", {
-                                "deployment": deployment.name,
-                                "unhealthy_zone": unhealthy_zone_id,
-                                "healthy_zones": healthy_zones,
-                            })
+                            self.config.alert_callback(
+                                "failover_warning",
+                                {
+                                    "deployment": deployment.name,
+                                    "unhealthy_zone": unhealthy_zone_id,
+                                    "healthy_zones": healthy_zones,
+                                },
+                            )
 
     def trigger_failover(
         self,
@@ -262,9 +275,10 @@ class MultiAZManager:
 
             # Find target zone
             healthy_zones = [
-                zid for zid in zone_ids
-                if zid != from_zone_id and
-                self._health.get(zid, ZoneHealthStatus()).status == ZoneStatus.HEALTHY
+                zid
+                for zid in zone_ids
+                if zid != from_zone_id
+                and self._health.get(zid, ZoneHealthStatus()).status == ZoneStatus.HEALTHY
             ]
 
             if not healthy_zones:
@@ -300,14 +314,16 @@ class MultiAZManager:
 
             for zone in deployment.zones:
                 health = self._health.get(zone.zone_id, ZoneHealthStatus())
-                zone_statuses.append({
-                    "zone_id": zone.zone_id,
-                    "zone": zone.zone.value,
-                    "is_primary": zone.is_primary,
-                    "is_active": zone.is_active,
-                    "status": health.status.value,
-                    "latency_ms": health.latency_ms,
-                })
+                zone_statuses.append(
+                    {
+                        "zone_id": zone.zone_id,
+                        "zone": zone.zone.value,
+                        "is_primary": zone.is_primary,
+                        "is_active": zone.is_active,
+                        "status": health.status.value,
+                        "latency_ms": health.latency_ms,
+                    }
+                )
 
         healthy_count = sum(1 for z in zone_statuses if z["status"] == "healthy")
         overall_status = "healthy" if healthy_count >= deployment.minimum_zones else "degraded"
@@ -343,10 +359,13 @@ class MultiAZManager:
                     for s in DeploymentStrategy
                 },
             },
-            "failovers_30d": len([
-                f for f in self._failover_history
-                if f["timestamp"] > (datetime.now(timezone.utc).isoformat()[:10])
-            ]),
+            "failovers_30d": len(
+                [
+                    f
+                    for f in self._failover_history
+                    if f["timestamp"] > (datetime.now(timezone.utc).isoformat()[:10])
+                ]
+            ),
         }
 
 

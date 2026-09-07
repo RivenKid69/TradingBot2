@@ -19,8 +19,14 @@ import pytest
 
 from impl_panel import PanelBuilder
 from signals.equity_signals import (
-    Accruals, BookToPrice, EarningsYield, EquityMomentum, EquitySize,
-    FCFYield, LowVolatility, ReturnOnEquity,
+    Accruals,
+    BookToPrice,
+    EarningsYield,
+    EquityMomentum,
+    EquitySize,
+    FCFYield,
+    LowVolatility,
+    ReturnOnEquity,
 )
 from xs_risk.equity_factors import market_beta, build_equity_exposures
 from service_xs_pipeline import XSConfig, run_backtest, build_signal_library
@@ -40,11 +46,18 @@ def _equity_panel(n: int = 60):
     frames = {}
     for sym, (base, earn, book, mcap) in spec.items():
         close = base * (1.0 + 0.005 * np.arange(n))
-        frames[sym] = pd.DataFrame({
-            "timestamp": ts, "symbol": sym, "close": close,
-            "earnings": earn, "book_value": book, "market_cap": mcap,
-            "roe": earn / book, "accruals": 0.1,
-        })
+        frames[sym] = pd.DataFrame(
+            {
+                "timestamp": ts,
+                "symbol": sym,
+                "close": close,
+                "earnings": earn,
+                "book_value": book,
+                "market_cap": mcap,
+                "roe": earn / book,
+                "accruals": 0.1,
+            }
+        )
     return PanelBuilder.from_frames(frames)
 
 
@@ -81,8 +94,8 @@ def test_roe_and_accruals_sign():
     roe = ReturnOnEquity("roe").compute_panel(panel)
     acc = Accruals("acc").compute_panel(panel)
     t0 = T0 * 1000
-    assert roe.loc[(t0, "AAA")] == pytest.approx(8.0 / 40.0)   # earnings/book
-    assert acc.loc[(t0, "AAA")] == pytest.approx(-0.1)         # −accruals
+    assert roe.loc[(t0, "AAA")] == pytest.approx(8.0 / 40.0)  # earnings/book
+    assert acc.loc[(t0, "AAA")] == pytest.approx(-0.1)  # −accruals
 
 
 def test_low_vol_nonpositive_and_size():
@@ -90,7 +103,7 @@ def test_low_vol_nonpositive_and_size():
     lv = LowVolatility("lv", window=20).compute_panel(panel)
     finite = lv.dropna()
     assert len(finite) > 0
-    assert (finite <= 1e-12).all()                            # −std ≤ 0
+    assert (finite <= 1e-12).all()  # −std ≤ 0
     sz = EquitySize("sz").compute_panel(panel)
     t0 = T0 * 1000
     assert sz.loc[(t0, "CCC")] == pytest.approx(-np.log(120.0))
@@ -100,8 +113,14 @@ def test_signals_graceful_missing_column():
     # панель только с close → фундаментальные → NaN (BYO-слот пуст), без падения
     frame = pd.DataFrame({"timestamp": [T0, T0 + STEP], "symbol": "AAA", "close": [1.0, 2.0]})
     panel = PanelBuilder.from_frames({"AAA": frame})
-    for sig in (EarningsYield("e"), BookToPrice("b"), FCFYield("f"),
-                ReturnOnEquity("r"), Accruals("a"), EquitySize("s")):
+    for sig in (
+        EarningsYield("e"),
+        BookToPrice("b"),
+        FCFYield("f"),
+        ReturnOnEquity("r"),
+        Accruals("a"),
+        EquitySize("s"),
+    ):
         out = sig.compute_panel(panel)
         assert out.isna().all()
 
@@ -146,15 +165,17 @@ def test_build_equity_exposures():
 # pipeline integration
 # ---------------------------------------------------------------------------
 def test_pipeline_builds_equity_signals():
-    cfg = XSConfig.model_validate({
-        "asset_class": "equity",
-        "data": {"source": "synthetic", "symbols": ["AAA", "BBB"]},
-        "signals": [
-            {"name": "mom", "kind": "equity_momentum", "lookback": 252, "skip": 21},
-            {"name": "lv", "kind": "low_vol", "vol_window": 60},
-            {"name": "ey", "kind": "earnings_yield"},
-        ],
-    })
+    cfg = XSConfig.model_validate(
+        {
+            "asset_class": "equity",
+            "data": {"source": "synthetic", "symbols": ["AAA", "BBB"]},
+            "signals": [
+                {"name": "mom", "kind": "equity_momentum", "lookback": 252, "skip": 21},
+                {"name": "lv", "kind": "low_vol", "vol_window": 60},
+                {"name": "ey", "kind": "earnings_yield"},
+            ],
+        }
+    )
     lib = build_signal_library(cfg)
     assert lib.names == ["mom", "lv", "ey"]
 
@@ -164,6 +185,7 @@ def test_pipeline_builds_equity_signals():
 # ---------------------------------------------------------------------------
 def test_equity_preset_end_to_end():
     import yaml
+
     with open(EQUITY_CFG, "r", encoding="utf-8") as fh:
         cfg = XSConfig.model_validate(yaml.safe_load(fh))
     assert cfg.risk.type == "equity_factor"

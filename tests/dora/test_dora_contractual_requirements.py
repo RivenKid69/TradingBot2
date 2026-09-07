@@ -52,6 +52,7 @@ from services.dora_integration.contracts import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def config():
     """Create test configuration."""
@@ -103,6 +104,7 @@ def assessed_contract(manager, sample_contract):
 # Enumeration Tests
 # =============================================================================
 
+
 class TestEnumerations:
     """Test all enumeration classes."""
 
@@ -151,6 +153,7 @@ class TestEnumerations:
 # =============================================================================
 # Data Structure Tests
 # =============================================================================
+
 
 class TestContractualRequirement:
     """Test ContractualRequirement data structure."""
@@ -275,6 +278,7 @@ class TestICTContract:
 # Configuration Tests
 # =============================================================================
 
+
 class TestContractualRequirementsConfig:
     """Test ContractualRequirementsConfig."""
 
@@ -301,6 +305,7 @@ class TestContractualRequirementsConfig:
 # =============================================================================
 # Article 30 Requirements Tests
 # =============================================================================
+
 
 class TestArticle30Requirements:
     """Test Article 30 requirements definition."""
@@ -343,6 +348,7 @@ class TestArticle30Requirements:
 # Requirements Management Tests
 # =============================================================================
 
+
 class TestRequirementsManagement:
     """Test requirements management functionality."""
 
@@ -382,6 +388,7 @@ class TestRequirementsManagement:
 # =============================================================================
 # Contract Management Tests
 # =============================================================================
+
 
 class TestContractManagement:
     """Test contract management functionality."""
@@ -440,6 +447,7 @@ class TestContractManagement:
 # Provision Management Tests
 # =============================================================================
 
+
 class TestProvisionManagement:
     """Test provision management functionality."""
 
@@ -493,6 +501,7 @@ class TestProvisionManagement:
 # =============================================================================
 # Contract Assessment Tests
 # =============================================================================
+
 
 class TestContractAssessment:
     """Test contract assessment functionality."""
@@ -558,6 +567,7 @@ class TestContractAssessment:
 # Gap Management Tests
 # =============================================================================
 
+
 class TestGapManagement:
     """Test gap management functionality."""
 
@@ -574,10 +584,7 @@ class TestGapManagement:
 
         open_gaps = manager.get_open_gaps()
         assert len(open_gaps) > 0
-        assert all(
-            g.remediation_status != RemediationStatus.COMPLETED
-            for g in open_gaps
-        )
+        assert all(g.remediation_status != RemediationStatus.COMPLETED for g in open_gaps)
 
     def test_get_gaps_by_severity(self, manager, sample_contract):
         """Test getting gaps by severity."""
@@ -606,6 +613,7 @@ class TestGapManagement:
 # =============================================================================
 # Amendment Management Tests
 # =============================================================================
+
 
 class TestAmendmentManagement:
     """Test amendment management functionality."""
@@ -701,6 +709,7 @@ class TestAmendmentManagement:
 # SLA Management Tests
 # =============================================================================
 
+
 class TestSLAManagement:
     """Test SLA management functionality."""
 
@@ -744,6 +753,7 @@ class TestSLAManagement:
 # Reporting Tests
 # =============================================================================
 
+
 class TestReporting:
     """Test reporting functionality."""
 
@@ -778,6 +788,7 @@ class TestReporting:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Test factory functions."""
@@ -818,6 +829,7 @@ class TestFactoryFunctions:
 # Thread Safety Tests
 # =============================================================================
 
+
 class TestThreadSafety:
     """Test thread safety of manager operations."""
 
@@ -852,6 +864,7 @@ class TestThreadSafety:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests for complete workflows."""
@@ -896,7 +909,8 @@ class TestIntegration:
 
         # 7. Verify gaps are addressed
         completed_gaps = [
-            g for g in manager.get_gaps_for_contract(contract.contract_id)
+            g
+            for g in manager.get_gaps_for_contract(contract.contract_id)
             if g.remediation_status == RemediationStatus.COMPLETED
         ]
         assert len(completed_gaps) > 0

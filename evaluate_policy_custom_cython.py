@@ -36,6 +36,7 @@ except ImportError:  # pragma: no cover - compatibility shim for SB3>=2.0
             env = env.venv
         return isinstance(env, wrapper_class)
 
+
 _cy_evaluate_episode: Callable[..., tuple[list[float], list[list[float]]]] | None = None
 _cy_spec = importlib.util.find_spec("cy_eval_core")
 if _cy_spec is not None:
@@ -108,7 +109,9 @@ def evaluate_policy_custom_cython(
 
     vec_env, should_close = _maybe_vec_env(eval_env)
 
-    is_monitor_wrapped = is_vecenv_wrapped(vec_env, VecMonitor) or vec_env.env_is_wrapped(Monitor)[0]
+    is_monitor_wrapped = (
+        is_vecenv_wrapped(vec_env, VecMonitor) or vec_env.env_is_wrapped(Monitor)[0]
+    )
     if not is_monitor_wrapped and warn:
         warnings.warn(
             "Evaluation environment is not wrapped with a ``Monitor`` wrapper. "
@@ -150,7 +153,9 @@ def evaluate_policy_custom_cython(
                     RuntimeWarning,
                     stacklevel=2,
                 )
-            except Exception as exc:  # pragma: no cover - safety net for unexpected C-level failures
+            except (
+                Exception
+            ) as exc:  # pragma: no cover - safety net for unexpected C-level failures
                 warnings.warn(
                     f"cy_eval_core evaluation failed ({exc!r}); falling back to Python implementation.",
                     RuntimeWarning,
@@ -168,7 +173,9 @@ def evaluate_policy_custom_cython(
 
         n_envs = vec_env.num_envs
         episode_counts = np.zeros(n_envs, dtype=int)
-        episode_count_targets = np.array([(num_episodes + i) // n_envs for i in range(n_envs)], dtype=int)
+        episode_count_targets = np.array(
+            [(num_episodes + i) // n_envs for i in range(n_envs)], dtype=int
+        )
         current_rewards = np.zeros(n_envs, dtype=float)
         current_equity = [[] for _ in range(n_envs)]
         episode_starts = np.ones(n_envs, dtype=bool)
@@ -225,7 +232,9 @@ def evaluate_policy_custom_cython(
                     if isinstance(reset_info, dict):
                         equity_reset = reset_info.get("equity")
                         if equity_reset is None:
-                            equity_reset = reset_info.get("portfolio_value", reset_info.get("net_worth"))
+                            equity_reset = reset_info.get(
+                                "portfolio_value", reset_info.get("net_worth")
+                            )
                         _append_equity(current_equity[env_idx], equity_reset)
 
                 observations = new_observations
@@ -234,7 +243,9 @@ def evaluate_policy_custom_cython(
                     vec_env.render()
 
         if not equity_curves and warn:
-            warnings.warn("Evaluation finished without producing equity curves.", RuntimeWarning, stacklevel=2)
+            warnings.warn(
+                "Evaluation finished without producing equity curves.", RuntimeWarning, stacklevel=2
+            )
 
     finally:
         policy.set_training_mode(training_mode)
@@ -244,4 +255,3 @@ def evaluate_policy_custom_cython(
             vec_env.close()
 
     return episode_rewards[:num_episodes], equity_curves[:num_episodes]
-

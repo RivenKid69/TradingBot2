@@ -305,11 +305,15 @@ class TestDashboard:
         monitor = HealthMonitorService()
 
         monitor.update_agent_health(
-            "agent-1", "ws-456", datetime.utcnow(),
+            "agent-1",
+            "ws-456",
+            datetime.utcnow(),
             metrics={"cpu_usage": 40, "memory_usage": 50},
         )
         monitor.update_agent_health(
-            "agent-2", "ws-456", datetime.utcnow(),
+            "agent-2",
+            "ws-456",
+            datetime.utcnow(),
             metrics={"cpu_usage": 60, "memory_usage": 70},
         )
 
@@ -349,7 +353,9 @@ class TestHealthIssues:
         monitor = HealthMonitorService()
 
         monitor.update_agent_health(
-            "agent-1", "ws-456", datetime.utcnow(),
+            "agent-1",
+            "ws-456",
+            datetime.utcnow(),
             metrics={"cpu_usage": 95},
         )
 
@@ -362,7 +368,9 @@ class TestHealthIssues:
         monitor = HealthMonitorService()
 
         monitor.update_agent_health(
-            "agent-1", "ws-456", datetime.utcnow(),
+            "agent-1",
+            "ws-456",
+            datetime.utcnow(),
             metrics={"latency_ms": 2000},  # 2 seconds
         )
 

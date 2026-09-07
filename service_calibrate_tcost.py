@@ -51,7 +51,9 @@ def _compute_vol_bps(df: pd.DataFrame, vol_mode: str, price_col: str) -> pd.Seri
     vol_mode = str(vol_mode).lower().strip()
     if vol_mode == "hl" and ("high" in df.columns) and ("low" in df.columns):
         with np.errstate(divide="ignore", invalid="ignore"):
-            vol = (df["high"].astype(float).values - df["low"].astype(float).values) / df[price_col].astype(float).values
+            vol = (df["high"].astype(float).values - df["low"].astype(float).values) / df[
+                price_col
+            ].astype(float).values
         vol = np.where(np.isfinite(vol), np.maximum(0.0, vol), np.nan)
         return pd.Series(vol * 10000.0, index=df.index)
     if "ret_1m" in df.columns:
@@ -83,14 +85,19 @@ def _target_spread_bps(df: pd.DataFrame, price_col: str, mode: str, k: float) ->
         if ("high" not in df.columns) or ("low" not in df.columns):
             raise ValueError("Для target=hl требуются колонки 'high' и 'low'.")
         with np.errstate(divide="ignore", invalid="ignore"):
-            y = (df["high"].astype(float).values - df["low"].astype(float).values) / df[price_col].astype(float).values
+            y = (df["high"].astype(float).values - df["low"].astype(float).values) / df[
+                price_col
+            ].astype(float).values
         y = np.where(np.isfinite(y), np.maximum(0.0, y), np.nan) * (10000.0 * float(k))
         return pd.Series(y, index=df.index)
     if mode == "oc":
         if ("open" not in df.columns) or ("close" not in df.columns):
             raise ValueError("Для target=oc требуются колонки 'open' и 'close'.")
         with np.errstate(divide="ignore", invalid="ignore"):
-            y = np.abs(df["close"].astype(float).values - df["open"].astype(float).values) / df[price_col].astype(float).values
+            y = (
+                np.abs(df["close"].astype(float).values - df["open"].astype(float).values)
+                / df[price_col].astype(float).values
+            )
         y = np.where(np.isfinite(y), y, np.nan) * (10000.0 * float(k))
         return pd.Series(y, index=df.index)
     raise ValueError("Неизвестный режим target. Используйте 'hl' или 'oc'.")
@@ -118,25 +125,36 @@ def calibrate(
     vol_bps = _compute_vol_bps(df, vol_mode, price_col)
     illq_ratio = _compute_illq_ratio(df, liq_col, liq_ref)
 
-    data = pd.DataFrame({
-        "y": y,
-        "vol_bps": vol_bps,
-        "illq_ratio": illq_ratio,
-    }).dropna()
+    data = pd.DataFrame(
+        {
+            "y": y,
+            "vol_bps": vol_bps,
+            "illq_ratio": illq_ratio,
+        }
+    ).dropna()
 
-    data = data[(data["y"] > 0) & np.isfinite(data["y"]) & np.isfinite(data["vol_bps"]) & np.isfinite(data["illq_ratio"])]
+    data = data[
+        (data["y"] > 0)
+        & np.isfinite(data["y"])
+        & np.isfinite(data["vol_bps"])
+        & np.isfinite(data["illq_ratio"])
+    ]
     if data.empty:
         raise ValueError("Недостаточно данных для калибровки (после очистки пусто).")
 
     # Check for minimum number of data points for meaningful regression
     if len(data) < 3:
-        raise ValueError(f"Недостаточно данных для калибровки (требуется минимум 3 точки, получено {len(data)}).")
+        raise ValueError(
+            f"Недостаточно данных для калибровки (требуется минимум 3 точки, получено {len(data)})."
+        )
 
-    X = np.column_stack([
-        np.ones(len(data), dtype=float),
-        data["vol_bps"].values.astype(float),
-        data["illq_ratio"].values.astype(float),
-    ])
+    X = np.column_stack(
+        [
+            np.ones(len(data), dtype=float),
+            data["vol_bps"].values.astype(float),
+            data["illq_ratio"].values.astype(float),
+        ]
+    )
     yv = data["y"].values.astype(float)
 
     coef = _fit_linear_nonneg(X, yv)
@@ -149,10 +167,10 @@ def calibrate(
 
     y_hat = X @ coef
     resid = yv - y_hat
-    rmse = float(np.sqrt(np.mean(resid ** 2)))
+    rmse = float(np.sqrt(np.mean(resid**2)))
     mae = float(np.mean(np.abs(resid)))
     ss_tot = float(np.sum((yv - np.mean(yv)) ** 2))
-    ss_res = float(np.sum(resid ** 2))
+    ss_res = float(np.sum(resid**2))
     r2 = float(1.0 - ss_res / ss_tot) if ss_tot > 0 else 0.0
 
     params = {
@@ -264,4 +282,3 @@ __all__ = [
     "run",
     "from_config",
 ]
-

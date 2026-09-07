@@ -16,15 +16,19 @@ from packages.agent.accounting.books import BooksAndRecords
 # --------------------------------------------------------------------------- hash chain
 def test_hash_chain_valid():
     hc = HashChain(key=b"secret")
-    hc.append({"a": 1}); hc.append({"b": 2}); hc.append({"c": 3})
+    hc.append({"a": 1})
+    hc.append({"b": 2})
+    hc.append({"c": 3})
     res = hc.verify()
     assert res["valid"] and res["n"] == 3 and res["broken_at"] is None
 
 
 def test_hash_chain_detects_mutation():
     hc = HashChain(key=b"secret")
-    hc.append({"a": 1}); hc.append({"b": 2}); hc.append({"c": 3})
-    hc.records[1].payload["b"] = 999   # tamper with record 2
+    hc.append({"a": 1})
+    hc.append({"b": 2})
+    hc.append({"c": 3})
+    hc.records[1].payload["b"] = 999  # tamper with record 2
     res = hc.verify()
     assert not res["valid"] and res["broken_at"] == 2
 
@@ -33,7 +37,7 @@ def test_hash_chain_detects_deletion():
     hc = HashChain()
     for i in range(5):
         hc.append({"i": i})
-    del hc.records[2]                   # delete a middle record
+    del hc.records[2]  # delete a middle record
     res = hc.verify()
     assert not res["valid"]
 
@@ -48,10 +52,24 @@ def test_hash_chain_keyed_vs_unkeyed():
 # --------------------------------------------------------------------------- blotter
 def test_blotter_records_and_verifies(tmp_path):
     bl = TradeBlotter(db_path=tmp_path / "bl.db", hmac_key=b"k")
-    bl.record_trade(symbol="AAPL", side="buy", quantity=100, price=150, fee=1.0,
-                    figi="BBG000B9XRY4", asset_class="equity")
-    bl.record_trade(symbol="AAPL", side="sell", quantity=50, price=160, fee=0.5,
-                    figi="BBG000B9XRY4", asset_class="equity")
+    bl.record_trade(
+        symbol="AAPL",
+        side="buy",
+        quantity=100,
+        price=150,
+        fee=1.0,
+        figi="BBG000B9XRY4",
+        asset_class="equity",
+    )
+    bl.record_trade(
+        symbol="AAPL",
+        side="sell",
+        quantity=50,
+        price=160,
+        fee=0.5,
+        figi="BBG000B9XRY4",
+        asset_class="equity",
+    )
     v = bl.verify()
     assert v["valid"] and v["n"] == 2 and v["keyed"] is True
     s = bl.summary()
@@ -66,9 +84,11 @@ def test_blotter_tamper_detected_in_db(tmp_path):
     bl.close()
     # tamper directly in SQLite (mutate price of the first row)
     import sqlite3
+
     conn = sqlite3.connect(str(db))
     conn.execute("UPDATE trades SET price='1.0' WHERE seq=1")
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
     bl2 = TradeBlotter(db_path=db, hmac_key=b"k")
     v = bl2.verify()
     assert not v["valid"] and v["broken_at"] == 1
@@ -87,9 +107,9 @@ def test_blotter_persistence(tmp_path):
 # --------------------------------------------------------------------------- cash ledger
 def test_cash_ledger_running_balance_and_verify(tmp_path):
     cl = CashLedger(db_path=tmp_path / "cl.db", opening_balance=100_000, hmac_key=b"k")
-    cl.post("TRADE", -5000, symbol="BTC")     # buy
+    cl.post("TRADE", -5000, symbol="BTC")  # buy
     cl.post("FEE", -10)
-    cl.post("TRADE", +5500, symbol="BTC")     # sell
+    cl.post("TRADE", +5500, symbol="BTC")  # sell
     assert cl.balance == pytest.approx(100_490)
     v = cl.verify()
     assert v["valid"] and v["n_movements"] if "n_movements" in v else v["valid"]
@@ -108,24 +128,25 @@ def test_cash_ledger_tamper_detected():
     cl = CashLedger(opening_balance=1000)
     cl.post("DEPOSIT", 500)
     cl.post("WITHDRAWAL", -200)
-    cl._mem[0].amount = 999999      # tamper in-memory
+    cl._mem[0].amount = 999999  # tamper in-memory
     assert not cl.verify()["valid"]
 
 
 def test_settlement_date_by_asset_class():
     d = date(2026, 1, 12)  # a Monday
     from datetime import datetime, timezone
+
     dt = datetime(2026, 1, 12, tzinfo=timezone.utc)
-    assert settlement_date("crypto", dt) == "2026-01-12"   # T+0
-    assert settlement_date("equity", dt) == "2026-01-13"   # T+1
-    assert settlement_date("fx", dt) == "2026-01-14"       # T+2
+    assert settlement_date("crypto", dt) == "2026-01-12"  # T+0
+    assert settlement_date("equity", dt) == "2026-01-13"  # T+1
+    assert settlement_date("fx", dt) == "2026-01-14"  # T+2
 
 
 # --------------------------------------------------------------------------- books facade
 def test_books_on_fill_updates_all(tmp_path):
     b = BooksAndRecords(starting_cash=100_000, data_dir=tmp_path, hmac_key=b"k")
     out = b.on_fill(symbol="BTCUSDT", side="buy", quantity=0.1, price=50_000, fee=5)
-    assert out["figi"] is not None                     # resolved via instrument master
+    assert out["figi"] is not None  # resolved via instrument master
     assert out["trade"]["figi"] == out["figi"]
     b.mark("BTCUSDT", 55_000)
     snap = b.snapshot()
@@ -160,15 +181,32 @@ def test_books_surveillance_spoofing_via_on_order(tmp_path):
     # 3 large orders placed far from mid then cancelled fast, never filled -> spoofing
     alerts = []
     for i in range(3):
-        b.on_order(symbol="ES", side="buy", action="NEW", quantity=2000, price=3950,
-                   order_id=f"s{i}", mid=4000, ts_ms=1_000_000 + i * 100)
-        alerts = b.on_order(symbol="ES", side="buy", action="CANCEL", quantity=2000, price=3950,
-                            order_id=f"s{i}", mid=4000, ts_ms=1_000_000 + i * 100 + 50)
+        b.on_order(
+            symbol="ES",
+            side="buy",
+            action="NEW",
+            quantity=2000,
+            price=3950,
+            order_id=f"s{i}",
+            mid=4000,
+            ts_ms=1_000_000 + i * 100,
+        )
+        alerts = b.on_order(
+            symbol="ES",
+            side="buy",
+            action="CANCEL",
+            quantity=2000,
+            price=3950,
+            order_id=f"s{i}",
+            mid=4000,
+            ts_ms=1_000_000 + i * 100 + 50,
+        )
     assert any(a["pattern"] == "spoofing" for a in alerts)
 
 
 def test_books_integrity_serializable(tmp_path):
     import json
+
     b = BooksAndRecords(starting_cash=100_000, data_dir=tmp_path, hmac_key=b"k")
     b.on_fill(symbol="ETHUSDT", side="buy", quantity=2, price=3000)
     blob = json.dumps(b.snapshot())

@@ -134,9 +134,7 @@ class DedicatedRegionServiceConfig:
     allow_custom_domains: bool = True
     require_encryption: bool = True
     default_isolation_level: IsolationLevel = IsolationLevel.FULL
-    supported_providers: list[str] = field(
-        default_factory=lambda: ["aws", "azure", "gcp"]
-    )
+    supported_providers: list[str] = field(default_factory=lambda: ["aws", "azure", "gcp"])
     minimum_contract_months: int = 12
 
 
@@ -180,7 +178,11 @@ class DedicatedRegionService:
             storage_allowed=["eu-central-1"],
             processing_allowed=["eu-central-1"],
             backup_allowed=["eu-central-1", "eu-west-1"],
-            compliance_regimes=[ComplianceRegime.DORA, ComplianceRegime.GDPR, ComplianceRegime.BAFIN],
+            compliance_regimes=[
+                ComplianceRegime.DORA,
+                ComplianceRegime.GDPR,
+                ComplianceRegime.BAFIN,
+            ],
             notes="BaFin-regulated entities require German data residency",
         )
         self._residency_requirements[germany_requirement.requirement_id] = germany_requirement
@@ -344,7 +346,11 @@ class DedicatedRegionService:
         is_valid = location in allowed_locations
         return {
             "valid": is_valid,
-            "reason": "Location allowed" if is_valid else f"Location not in allowed list: {allowed_locations}",
+            "reason": (
+                "Location allowed"
+                if is_valid
+                else f"Location not in allowed list: {allowed_locations}"
+            ),
             "allowed_locations": allowed_locations,
         }
 
@@ -411,7 +417,11 @@ class DedicatedRegionService:
             "region_type": region.region_type.value,
             "location": region.location,
             "provider": region.provider,
-            "isolation_level": region.isolation_boundary.isolation_level.value if region.isolation_boundary else None,
+            "isolation_level": (
+                region.isolation_boundary.isolation_level.value
+                if region.isolation_boundary
+                else None
+            ),
             "compliance_regimes": [c.value for c in region.compliance_regimes],
             "has_data_residency": region.data_residency is not None,
             "custom_domain": region.custom_domain,
@@ -442,7 +452,11 @@ class DedicatedRegionService:
             "region_id": region_id,
             "client_id": region.client_id,
             "compliance_regimes": [c.value for c in region.compliance_regimes],
-            "isolation_level": region.isolation_boundary.isolation_level.value if region.isolation_boundary else None,
+            "isolation_level": (
+                region.isolation_boundary.isolation_level.value
+                if region.isolation_boundary
+                else None
+            ),
             "data_residency_compliant": data_residency_compliant,
             "data_residency_details": residency_details,
             "encryption_at_rest": True,

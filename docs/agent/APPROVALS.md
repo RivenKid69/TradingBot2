@@ -147,6 +147,7 @@ ccea-agent pending --request req_abc123 --details
 ### Interactive CLI
 
 When agent runs in foreground:
+
 ```bash
 ccea-agent start --foreground --interactive
 ```
@@ -219,6 +220,7 @@ policy:
 ```
 
 **WARNING:** Auto-approve should be used sparingly and NEVER for:
+
 - Paper to live mode changes
 - Risk limit increases
 - Adding new trading symbols
@@ -287,6 +289,7 @@ policy:
 ```
 
 After timeout:
+
 - Request marked as EXPIRED
 - Cloud notified
 - New request must be sent
@@ -410,6 +413,7 @@ ccea-agent config show approval
 ---
 
 **Related Documentation:**
+
 - [Risk Controls](./RISK_CONTROLS.md)
 - [Installation](./INSTALLATION.md)
 - [CCEA Overview](../CCEA_OVERVIEW.md)

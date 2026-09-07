@@ -32,17 +32,20 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 **"Toolkit Implementation Complete"** means we have **implemented all necessary tools and controls** designed to help B2B clients align with MiFID II requirements.
 
 **What this does NOT mean:**
+
 - ❌ We are NOT claiming to be "MiFID II compliant" or "MiFID II certified"
 - ❌ We have NOT undergone independent third-party audit or certification
 - ❌ We are NOT guaranteeing that use of our toolkit ensures regulatory compliance
 
 **What this DOES mean:**
+
 - ✅ All planned internal tooling has been implemented
 - ✅ Tools are designed to support alignment with MiFID II requirements (not a compliance guarantee)
 - ✅ Clients receive a toolkit designed to support their own compliance efforts
 - ✅ Internal testing has been performed (~1,500 tests at time of writing; verify current count via CI run logs; not third-party validated)
 
 **Client Responsibility:**
+
 - Clients must conduct their own compliance assessment
 - Clients should engage qualified legal/compliance advisors
 - Final compliance determination rests with clients and their regulators
@@ -53,14 +56,14 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 
 1. [Executive Summary](#1-executive-summary)
 2. [Регуляторная база](#2-регуляторная-база)
-3. [GAP Analysis](#3-gap-analysis)
+3. [GAP Analysis](#33-original-gap-analysis-historical)
 4. [Фаза 1: Foundational Compliance](#4-фаза-1-foundational-compliance)
 5. [Фаза 2: Transaction Reporting](#5-фаза-2-transaction-reporting)
 6. [Фаза 3: Algorithmic Trading Controls](#6-фаза-3-algorithmic-trading-controls)
-7. [Фаза 4: Record Keeping & Audit Trail](#7-фаза-4-record-keeping--audit-trail)
-8. [Фаза 5: Best Execution](#8-фаза-5-best-execution)
-9. [Фаза 6: Governance & Documentation](#9-фаза-6-governance--documentation)
-10. [Фаза 7: Testing & Certification](#10-фаза-7-testing--certification)
+7. [Фаза 4: Record Keeping & Audit Trail](#7-фаза-4-record-keeping--audit-trail--завершена)
+8. [Фаза 5: Best Execution](#8-фаза-5-best-execution--завершена)
+9. [Фаза 6: Governance & Documentation](#9-фаза-6-governance--documentation--завершена)
+10. [Фаза 7: Testing & Certification](#10-фаза-7-testing--certification--завершена)
 11. [Архитектура решения](#11-архитектура-решения)
 12. [Референсы](#12-референсы)
 
@@ -157,6 +160,7 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 #### Наше позиционирование: ICT Provider / Software Vendor
 
 Согласно MiFID II scope, мы НЕ являемся Investment Firm, потому что:
+
 - ❌ НЕ исполняем сделки от имени клиентов
 - ❌ НЕ храним активы клиентов
 - ❌ НЕ предоставляем инвестиционные рекомендации
@@ -171,6 +175,7 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 > "An investment firm that engages in algorithmic trading shall have in place effective systems and risk controls..."
 
 **Наши B2B клиенты классифицируются как:**
+
 - ✅ Investment Firms использующие algorithmic trading
 - ✅ Субъекты MiFID II Article 17
 - ⚠️ Потенциально HFT firms (зависит от их торговли)
@@ -258,6 +263,7 @@ from services.archive.mifid_financial_entity import (
 
 **Статус**: ✅ ЗАВЕРШЕНО
 **Модули**:
+
 - `services.core.risk_controls` (time_sync, algorithm_registry config)
 - `services.archive.mifid_financial_entity` (LEI - 🔴 ARCHIVED, not for ICT Providers)
 
@@ -357,6 +363,7 @@ def test_no_lei_no_trade():
 > "All records include a timestamp synchronized with UTC"
 
 **Текущее состояние:**
+
 ```python
 # clock.py (существующий)
 def now_ms() -> int:
@@ -1236,7 +1243,7 @@ class OrderToTradeRatioMonitor:
 **Приоритет**: 🔴 Critical
 **Статус**: ✅ **INTERNAL IMPLEMENTATION COMPLETE** (2025-12-07; verify via CI/tests)
 
-### Реализованные модули:
+### Реализованные модули
 
 | Модуль | Описание | Тесты |
 |--------|----------|-------|
@@ -1254,6 +1261,7 @@ class OrderToTradeRatioMonitor:
 > "Keep at the disposal of the competent authority, for **five years**, the relevant data relating to all orders and all transactions"
 
 **Требуемые записи:**
+
 - Все ордера (submitted, modified, cancelled)
 - Все транзакции
 - Параметры алгоритмов
@@ -1390,6 +1398,7 @@ class AuditTrailWriter:
 ### 7.3 Этап 4.2: Storage Backend
 
 **Требования:**
+
 - 5-7 лет retention
 - Tamper-proof
 - High availability
@@ -1612,7 +1621,7 @@ class RetentionManager:
 **Приоритет**: 🟡 High
 **Статус**: ✅ **INTERNAL IMPLEMENTATION COMPLETE** (2025-12-07; verify via CI/tests)
 
-### Реализованные модули:
+### Реализованные модули
 
 | Модуль | Описание | Тесты |
 |--------|----------|-------|
@@ -1630,6 +1639,7 @@ class RetentionManager:
 > "Investment firms must take all sufficient steps to obtain the best possible result for their clients"
 
 **Факторы Best Execution:**
+
 1. Price
 2. Costs
 3. Speed
@@ -1834,7 +1844,7 @@ class ComplianceTCAWrapper:
 **Приоритет**: 🟡 High
 **Статус**: ✅ **INTERNAL IMPLEMENTATION COMPLETE** (2025-12-07; verify via CI/tests)
 
-### Реализованные модули:
+### Реализованные модули
 
 | Модуль | Описание | Тесты |
 |--------|----------|-------|
@@ -2038,7 +2048,7 @@ BCP_SCENARIOS = [
 **Приоритет**: 🟡 High
 **Статус**: ✅ **INTERNAL IMPLEMENTATION COMPLETE** (2025-12-07; verify via CI/tests)
 
-### Реализованные модули:
+### Реализованные модули
 
 | Модуль | Описание | Тесты |
 |--------|----------|-------|
@@ -2374,6 +2384,7 @@ compliance:
 > All modules have been migrated to the new three-tier architecture. See [Section 3.1](#31-module-location-mapping) for current paths.
 
 **Quick Reference:**
+
 | Old Path | New Path | Layer |
 |----------|----------|-------|
 | `services/compliance/` | `services/core/risk_controls/` | 🟢 CORE |
@@ -2633,7 +2644,8 @@ Phase 7: Testing & Internal Conformance ✅ COMPLETED (2025-12-07)
 
 > **Note**: Test counts are approximate and subject to change. "Tooling complete" means internal implementation is done; verify current test pass rates via CI. This is internal tooling, not an independent audit or certification.
 
-Система включает alignment/evidence toolkit, спроектированный для поддержки клиентских оценок и внутренних compliance‑workflow (не является сертификацией и не заменяет юридическую/комплаенс‑оценку клиента):
+Система включает alignment/evidence toolkit, спроектированный для поддержки клиентских оценок и внутренних compliance-workflow (не является сертификацией и не заменяет юридическую/комплаенс-оценку клиента):
+
 - MiFID II (Directive 2014/65/EU)
 - MiFIR (Regulation 600/2014)
 - RTS 6 (Regulation 2017/589) - Algorithmic Trading

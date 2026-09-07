@@ -12,6 +12,7 @@ Tests cover:
 import json
 import tempfile
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob.data_structures import (
@@ -165,22 +166,26 @@ class TestLOBSnapshot:
         """Test creating snapshot from OrderBook."""
         book = OrderBook(symbol="AAPL")
 
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=101.0,
-            qty=150.0,
-            remaining_qty=150.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=101.0,
+                qty=150.0,
+                remaining_qty=150.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         snapshot = LOBSnapshot.from_orderbook(book)
 
@@ -230,24 +235,28 @@ class TestLOBStateManager:
         manager = LOBStateManager()
 
         # First add
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000000000,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000000000,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
         # Then delete
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.DELETE,
-            timestamp_ns=1000000001,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=0.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.DELETE,
+                timestamp_ns=1000000001,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=0.0,
+            )
+        )
 
         book = manager.orderbook
         assert not book.contains_order("order_1")
@@ -258,25 +267,29 @@ class TestLOBStateManager:
         manager = LOBStateManager()
 
         # Add order
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000000000,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000000000,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
         # Execute part
-        trade = manager.apply_message(LOBMessage(
-            msg_type=MessageType.EXECUTE,
-            timestamp_ns=1000000001,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=0.0,
-            execute_qty=30.0,
-        ))
+        trade = manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.EXECUTE,
+                timestamp_ns=1000000001,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=0.0,
+                execute_qty=30.0,
+            )
+        )
 
         assert trade is not None
         assert trade.qty == 30.0
@@ -288,24 +301,28 @@ class TestLOBStateManager:
         """Test executing full order removes it."""
         manager = LOBStateManager()
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000000000,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000000000,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.EXECUTE,
-            timestamp_ns=1000000001,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=0.0,
-            execute_qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.EXECUTE,
+                timestamp_ns=1000000001,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=0.0,
+                execute_qty=100.0,
+            )
+        )
 
         assert not manager.orderbook.contains_order("order_1")
 
@@ -313,25 +330,29 @@ class TestLOBStateManager:
         """Test applying MODIFY message."""
         manager = LOBStateManager()
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000000000,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000000000,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
         # Modify with new order ID (replace)
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.MODIFY,
-            timestamp_ns=1000000001,
-            order_id="order_1",
-            side=Side.BUY,
-            price=101.0,
-            qty=150.0,
-            new_order_id="order_2",
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.MODIFY,
+                timestamp_ns=1000000001,
+                order_id="order_1",
+                side=Side.BUY,
+                price=101.0,
+                qty=150.0,
+                new_order_id="order_2",
+            )
+        )
 
         assert not manager.orderbook.contains_order("order_1")
         assert manager.orderbook.contains_order("order_2")
@@ -401,14 +422,16 @@ class TestLOBStateManager:
         """Test snapshot creation."""
         manager = LOBStateManager(symbol="AAPL")
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000000000,
-            order_id="bid_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000000000,
+                order_id="bid_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
         snapshot = manager.create_snapshot()
 
@@ -420,16 +443,18 @@ class TestLOBStateManager:
         """Test saving and loading snapshot."""
         manager1 = LOBStateManager(symbol="AAPL")
 
-        manager1.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000000000,
-            order_id="bid_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager1.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000000000,
+                order_id="bid_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             filepath = f.name
 
         manager1.save_snapshot(filepath)
@@ -446,14 +471,16 @@ class TestLOBStateManager:
 
         # Add multiple orders at same price
         for i in range(3):
-            manager.apply_message(LOBMessage(
-                msg_type=MessageType.ADD,
-                timestamp_ns=1000000000 + i,
-                order_id=f"order_{i}",
-                side=Side.BUY,
-                price=100.0,
-                qty=100.0,
-            ))
+            manager.apply_message(
+                LOBMessage(
+                    msg_type=MessageType.ADD,
+                    timestamp_ns=1000000000 + i,
+                    order_id=f"order_{i}",
+                    side=Side.BUY,
+                    price=100.0,
+                    qty=100.0,
+                )
+            )
 
         assert manager.get_queue_position("order_0") == 0
         assert manager.get_queue_position("order_1") == 1
@@ -466,14 +493,16 @@ class TestLOBStateManager:
 
         # Add orders at back of queue
         for i in range(5):
-            manager.apply_message(LOBMessage(
-                msg_type=MessageType.ADD,
-                timestamp_ns=1000000000 + i,
-                order_id=f"order_{i}",
-                side=Side.BUY,
-                price=100.0,
-                qty=100.0,
-            ))
+            manager.apply_message(
+                LOBMessage(
+                    msg_type=MessageType.ADD,
+                    timestamp_ns=1000000000 + i,
+                    order_id=f"order_{i}",
+                    side=Side.BUY,
+                    price=100.0,
+                    qty=100.0,
+                )
+            )
 
         # Front of queue with low volume - still high probability (nothing ahead)
         prob_front = manager.estimate_fill_probability(
@@ -499,24 +528,28 @@ class TestLOBStateManager:
         """Test statistics tracking."""
         manager = LOBStateManager()
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.EXECUTE,
-            timestamp_ns=1001,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=0.0,
-            execute_qty=50.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.EXECUTE,
+                timestamp_ns=1001,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=0.0,
+                execute_qty=50.0,
+            )
+        )
 
         stats = manager.get_statistics()
 
@@ -529,14 +562,16 @@ class TestLOBStateManager:
         """Test statistics reset."""
         manager = LOBStateManager()
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
         manager.reset_statistics()
 
@@ -551,24 +586,28 @@ class TestLOBStateManager:
 
         manager = LOBStateManager(on_trade=on_trade)
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.EXECUTE,
-            timestamp_ns=1001,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=0.0,
-            execute_qty=50.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.EXECUTE,
+                timestamp_ns=1001,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=0.0,
+                execute_qty=50.0,
+            )
+        )
 
         assert len(trades_received) == 1
         assert trades_received[0].qty == 50.0
@@ -582,14 +621,16 @@ class TestLOBStateManager:
 
         manager = LOBStateManager(on_level_change=on_level_change)
 
-        manager.apply_message(LOBMessage(
-            msg_type=MessageType.ADD,
-            timestamp_ns=1000,
-            order_id="order_1",
-            side=Side.BUY,
-            price=100.0,
-            qty=100.0,
-        ))
+        manager.apply_message(
+            LOBMessage(
+                msg_type=MessageType.ADD,
+                timestamp_ns=1000,
+                order_id="order_1",
+                side=Side.BUY,
+                price=100.0,
+                qty=100.0,
+            )
+        )
 
         assert len(level_changes) == 1
         assert level_changes[0] == (Side.BUY, 100.0, 100.0)
@@ -624,17 +665,15 @@ class TestStateManagerIntegration:
         assert book.spread == 1.0
 
         # Execute against ask
-        manager.apply_message(LOBMessage(
-            MessageType.EXECUTE, 1004, "ask_1", Side.SELL, 101.0, 0.0, execute_qty=100.0
-        ))
+        manager.apply_message(
+            LOBMessage(MessageType.EXECUTE, 1004, "ask_1", Side.SELL, 101.0, 0.0, execute_qty=100.0)
+        )
 
         assert book.best_ask == 101.0  # Still 50 left
         assert book.get_order("ask_1").remaining_qty == 50.0
 
         # Delete bid
-        manager.apply_message(LOBMessage(
-            MessageType.DELETE, 1005, "bid_1", Side.BUY, 100.0, 0.0
-        ))
+        manager.apply_message(LOBMessage(MessageType.DELETE, 1005, "bid_1", Side.BUY, 100.0, 0.0))
 
         assert book.best_bid == 99.0
 
@@ -643,14 +682,10 @@ class TestStateManagerIntegration:
         manager = LOBStateManager()
 
         # Add original order
-        manager.apply_message(LOBMessage(
-            MessageType.ADD, 1000, "order_1", Side.BUY, 100.0, 100.0
-        ))
+        manager.apply_message(LOBMessage(MessageType.ADD, 1000, "order_1", Side.BUY, 100.0, 100.0))
 
         # Replace with new price and ID
-        msg = LOBMessage(
-            MessageType.MODIFY, 1001, "order_1", Side.BUY, 101.0, 150.0
-        )
+        msg = LOBMessage(MessageType.MODIFY, 1001, "order_1", Side.BUY, 101.0, 150.0)
         msg.new_order_id = "order_2"
         manager.apply_message(msg)
 

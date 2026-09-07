@@ -30,11 +30,7 @@ class TestZeroFeaturesServiceTrain:
         mock_config = MagicMock()
         mock_config.artifacts_dir = "artifacts"
 
-        service = ServiceTrain(
-            feature_pipe=MagicMock(),
-            trainer=MagicMock(),
-            cfg=mock_config
-        )
+        service = ServiceTrain(feature_pipe=MagicMock(), trainer=MagicMock(), cfg=mock_config)
 
         # Should raise ValueError
         with pytest.raises(ValueError, match="Cannot train model with zero features"):
@@ -42,7 +38,9 @@ class TestZeroFeaturesServiceTrain:
 
         # Verify error logging
         assert any("КРИТИЧЕСКАЯ ОШИБКА" in record.message for record in caplog.records)
-        assert any("Design matrix не содержит признаков" in record.message for record in caplog.records)
+        assert any(
+            "Design matrix не содержит признаков" in record.message for record in caplog.records
+        )
 
     def test_zero_features_error_message_quality(self, caplog):
         """Test that error message provides actionable information."""
@@ -51,17 +49,15 @@ class TestZeroFeaturesServiceTrain:
         mock_config = MagicMock()
         mock_config.artifacts_dir = "artifacts"
 
-        service = ServiceTrain(
-            feature_pipe=MagicMock(),
-            trainer=MagicMock(),
-            cfg=mock_config
-        )
+        service = ServiceTrain(feature_pipe=MagicMock(), trainer=MagicMock(), cfg=mock_config)
 
         with pytest.raises(ValueError):
             service._log_feature_statistics(X)
 
         # Check for helpful diagnostic information
-        error_messages = [record.message for record in caplog.records if record.levelname == "ERROR"]
+        error_messages = [
+            record.message for record in caplog.records if record.levelname == "ERROR"
+        ]
 
         assert any("Количество образцов:" in msg for msg in error_messages)
         assert any("Возможные причины:" in msg for msg in error_messages)
@@ -70,18 +66,12 @@ class TestZeroFeaturesServiceTrain:
     def test_single_feature_works(self, caplog):
         """Test that single feature works correctly (boundary case)."""
         # Create design matrix with single feature
-        X = pd.DataFrame({
-            'feature1': [1.0, 2.0, 3.0, 4.0, 5.0]
-        })
+        X = pd.DataFrame({"feature1": [1.0, 2.0, 3.0, 4.0, 5.0]})
 
         mock_config = MagicMock()
         mock_config.artifacts_dir = "artifacts"
 
-        service = ServiceTrain(
-            feature_pipe=MagicMock(),
-            trainer=MagicMock(),
-            cfg=mock_config
-        )
+        service = ServiceTrain(feature_pipe=MagicMock(), trainer=MagicMock(), cfg=mock_config)
 
         # Should not raise ZeroDivisionError (main test objective)
         try:
@@ -94,26 +84,26 @@ class TestZeroFeaturesServiceTrain:
     def test_normal_features_works(self, caplog):
         """Test that normal feature set works correctly."""
         # Create normal design matrix
-        X = pd.DataFrame({
-            'feature1': [1.0, 2.0, 3.0, 4.0, 5.0],
-            'feature2': [1.0, None, 3.0, 4.0, 5.0],
-            'feature3': [None, None, None, None, None]
-        })
+        X = pd.DataFrame(
+            {
+                "feature1": [1.0, 2.0, 3.0, 4.0, 5.0],
+                "feature2": [1.0, None, 3.0, 4.0, 5.0],
+                "feature3": [None, None, None, None, None],
+            }
+        )
 
         mock_config = MagicMock()
         mock_config.artifacts_dir = "artifacts"
 
-        service = ServiceTrain(
-            feature_pipe=MagicMock(),
-            trainer=MagicMock(),
-            cfg=mock_config
-        )
+        service = ServiceTrain(feature_pipe=MagicMock(), trainer=MagicMock(), cfg=mock_config)
 
         # Should not raise ZeroDivisionError (main test objective)
         try:
             service._log_feature_statistics(X)
             # Success - verify service processed the features
-            assert service is not None, "Service should remain valid after processing normal features"
+            assert (
+                service is not None
+            ), "Service should remain valid after processing normal features"
         except ZeroDivisionError:
             pytest.fail("ZeroDivisionError occurred with normal features")
 
@@ -126,35 +116,33 @@ class TestZeroFeaturesTrainScript:
         from train_model_multi_patch import _log_features_statistics_per_symbol
 
         # Create dataframe with only service columns
-        df = pd.DataFrame({
-            'timestamp': [1, 2, 3, 4, 5],
-            'symbol': ['BTCUSDT'] * 5,
-            'train_test': ['train'] * 5
-        })
+        df = pd.DataFrame(
+            {"timestamp": [1, 2, 3, 4, 5], "symbol": ["BTCUSDT"] * 5, "train_test": ["train"] * 5}
+        )
 
-        dfs_dict = {'BTCUSDT': df}
+        dfs_dict = {"BTCUSDT": df}
 
         with caplog.at_level(logging.WARNING):
-            _log_features_statistics_per_symbol(dfs_dict, role_column='train_test')
+            _log_features_statistics_per_symbol(dfs_dict, role_column="train_test")
 
         # Should log warning about zero features
-        assert any("нет признаков после исключения служебных колонок" in record.message
-                   for record in caplog.records)
+        assert any(
+            "нет признаков после исключения служебных колонок" in record.message
+            for record in caplog.records
+        )
 
     def test_zero_features_shows_debug_info(self, caplog):
         """Test that zero features warning includes debug information."""
         from train_model_multi_patch import _log_features_statistics_per_symbol
 
-        df = pd.DataFrame({
-            'timestamp': [1, 2, 3],
-            'symbol': ['ETHUSDT'] * 3,
-            'train_test': ['train'] * 3
-        })
+        df = pd.DataFrame(
+            {"timestamp": [1, 2, 3], "symbol": ["ETHUSDT"] * 3, "train_test": ["train"] * 3}
+        )
 
-        dfs_dict = {'ETHUSDT': df}
+        dfs_dict = {"ETHUSDT": df}
 
         with caplog.at_level(logging.WARNING):
-            _log_features_statistics_per_symbol(dfs_dict, role_column='train_test')
+            _log_features_statistics_per_symbol(dfs_dict, role_column="train_test")
 
         # Should show service columns and all columns
         messages = [record.message for record in caplog.records]
@@ -166,18 +154,20 @@ class TestZeroFeaturesTrainScript:
         """Test that normal symbol with features works correctly."""
         from train_model_multi_patch import _log_features_statistics_per_symbol
 
-        df = pd.DataFrame({
-            'timestamp': [1, 2, 3, 4, 5],
-            'symbol': ['BTCUSDT'] * 5,
-            'train_test': ['train'] * 5,
-            'feature1': [1.0, 2.0, 3.0, 4.0, 5.0],
-            'feature2': [1.0, None, 3.0, 4.0, 5.0]
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [1, 2, 3, 4, 5],
+                "symbol": ["BTCUSDT"] * 5,
+                "train_test": ["train"] * 5,
+                "feature1": [1.0, 2.0, 3.0, 4.0, 5.0],
+                "feature2": [1.0, None, 3.0, 4.0, 5.0],
+            }
+        )
 
-        dfs_dict = {'BTCUSDT': df}
+        dfs_dict = {"BTCUSDT": df}
 
         with caplog.at_level(logging.INFO):
-            _log_features_statistics_per_symbol(dfs_dict, role_column='train_test')
+            _log_features_statistics_per_symbol(dfs_dict, role_column="train_test")
 
         # Should log statistics
         assert any("Общее количество признаков: 2" in record.message for record in caplog.records)
@@ -188,24 +178,24 @@ class TestZeroFeaturesTrainScript:
         from train_model_multi_patch import _log_features_statistics_per_symbol
 
         # Symbol 1: only service columns
-        df1 = pd.DataFrame({
-            'timestamp': [1, 2, 3],
-            'symbol': ['SYM1'] * 3,
-            'train_test': ['train'] * 3
-        })
+        df1 = pd.DataFrame(
+            {"timestamp": [1, 2, 3], "symbol": ["SYM1"] * 3, "train_test": ["train"] * 3}
+        )
 
         # Symbol 2: has features
-        df2 = pd.DataFrame({
-            'timestamp': [1, 2, 3],
-            'symbol': ['SYM2'] * 3,
-            'train_test': ['train'] * 3,
-            'feature1': [1.0, 2.0, 3.0]
-        })
+        df2 = pd.DataFrame(
+            {
+                "timestamp": [1, 2, 3],
+                "symbol": ["SYM2"] * 3,
+                "train_test": ["train"] * 3,
+                "feature1": [1.0, 2.0, 3.0],
+            }
+        )
 
-        dfs_dict = {'SYM1': df1, 'SYM2': df2}
+        dfs_dict = {"SYM1": df1, "SYM2": df2}
 
         with caplog.at_level(logging.INFO):  # Changed to INFO to capture all messages
-            _log_features_statistics_per_symbol(dfs_dict, role_column='train_test')
+            _log_features_statistics_per_symbol(dfs_dict, role_column="train_test")
 
         # Should warn about SYM1 but succeed for SYM2
         messages = [record.message for record in caplog.records]
@@ -243,16 +233,12 @@ class TestZeroFeaturesNumericEdgeCases:
 
     def test_zero_samples_handled(self, caplog):
         """Test that zero samples is also handled correctly."""
-        X = pd.DataFrame({'feature1': []})  # Empty dataframe
+        X = pd.DataFrame({"feature1": []})  # Empty dataframe
 
         mock_config = MagicMock()
         mock_config.artifacts_dir = "artifacts"
 
-        service = ServiceTrain(
-            feature_pipe=MagicMock(),
-            trainer=MagicMock(),
-            cfg=mock_config
-        )
+        service = ServiceTrain(feature_pipe=MagicMock(), trainer=MagicMock(), cfg=mock_config)
 
         # Should not raise ZeroDivisionError even with 0 samples
         try:

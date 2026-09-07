@@ -39,8 +39,9 @@ def test_log_ratio_approx_kl_relationship() -> None:
 
     # Verify relationship: approx_kl = -log_ratio
     expected_approx_kl = -log_ratio
-    assert torch.allclose(approx_kl, expected_approx_kl, atol=1e-7), \
-        f"approx_kl should equal -log_ratio: {approx_kl.tolist()} vs {expected_approx_kl.tolist()}"
+    assert torch.allclose(
+        approx_kl, expected_approx_kl, atol=1e-7
+    ), f"approx_kl should equal -log_ratio: {approx_kl.tolist()} vs {expected_approx_kl.tolist()}"
 
 
 def test_healthy_training_thresholds_consistency() -> None:
@@ -66,18 +67,21 @@ def test_healthy_training_thresholds_consistency() -> None:
     max_abs_approx_kl = torch.max(torch.abs(approx_kl)).item()
 
     # Verify healthy ranges
-    assert abs(mean_log_ratio) < 0.01, \
-        f"Healthy training should have small mean log_ratio: {mean_log_ratio}"
-    assert std_log_ratio < healthy_kl_threshold, \
-        f"Healthy training std should be < {healthy_kl_threshold}: {std_log_ratio}"
-    assert max_abs_log_ratio < 0.1, \
-        f"Healthy training max_abs should be < 0.1: {max_abs_log_ratio}"
+    assert (
+        abs(mean_log_ratio) < 0.01
+    ), f"Healthy training should have small mean log_ratio: {mean_log_ratio}"
+    assert (
+        std_log_ratio < healthy_kl_threshold
+    ), f"Healthy training std should be < {healthy_kl_threshold}: {std_log_ratio}"
+    assert max_abs_log_ratio < 0.1, f"Healthy training max_abs should be < 0.1: {max_abs_log_ratio}"
 
     # approx_kl consistency
-    assert abs(mean_approx_kl + mean_log_ratio) < 1e-6, \
-        f"mean(approx_kl) should equal -mean(log_ratio)"
-    assert abs(max_abs_approx_kl - max_abs_log_ratio) < 1e-6, \
-        f"max_abs should be consistent: {max_abs_approx_kl} vs {max_abs_log_ratio}"
+    assert (
+        abs(mean_approx_kl + mean_log_ratio) < 1e-6
+    ), f"mean(approx_kl) should equal -mean(log_ratio)"
+    assert (
+        abs(max_abs_approx_kl - max_abs_log_ratio) < 1e-6
+    ), f"max_abs should be consistent: {max_abs_approx_kl} vs {max_abs_log_ratio}"
 
 
 def test_warning_threshold_vs_kl_target() -> None:
@@ -104,8 +108,9 @@ def test_warning_threshold_vs_kl_target() -> None:
     # |log_ratio| = 1.0 corresponds to approx_kl = 1.0
     # This is 67× larger than early_stop_kl (0.015)
     ratio_vs_kl_stop = concerning_threshold / early_stop_kl
-    assert ratio_vs_kl_stop > 50, \
-        f"Concerning threshold should be much larger than KL stop: {ratio_vs_kl_stop:.1f}×"
+    assert (
+        ratio_vs_kl_stop > 50
+    ), f"Concerning threshold should be much larger than KL stop: {ratio_vs_kl_stop:.1f}×"
 
     # This is intentional: we're more permissive with warnings to reduce noise
     # But we still catch catastrophic failures (|log_ratio| > 10)
@@ -118,11 +123,11 @@ def test_extreme_log_ratio_vs_kl_relationship() -> None:
     # Test cases: (log_ratio, expected behavior)
     # Note: "concerning" threshold is > 1.0, so we use 1.01 to clearly exceed it
     test_cases = [
-        (0.01, "healthy"),      # approx_kl = 0.01 (at target)
-        (0.1, "healthy"),       # approx_kl = 0.1 (still ok)
-        (1.0, "healthy"),       # approx_kl = 1.0 (at boundary, still healthy)
-        (1.01, "concerning"),   # approx_kl = 1.01 (just above threshold)
-        (10.01, "severe"),      # approx_kl > 10 (catastrophic)
+        (0.01, "healthy"),  # approx_kl = 0.01 (at target)
+        (0.1, "healthy"),  # approx_kl = 0.1 (still ok)
+        (1.0, "healthy"),  # approx_kl = 1.0 (at boundary, still healthy)
+        (1.01, "concerning"),  # approx_kl = 1.01 (just above threshold)
+        (10.01, "severe"),  # approx_kl > 10 (catastrophic)
     ]
 
     for log_ratio_val, expected_level in test_cases:
@@ -133,8 +138,9 @@ def test_extreme_log_ratio_vs_kl_relationship() -> None:
         max_abs_kl = torch.abs(approx_kl).item()
 
         # Verify consistency
-        assert abs(max_abs_log_ratio - max_abs_kl) < 1e-6, \
-            f"log_ratio and KL magnitudes should match: {max_abs_log_ratio} vs {max_abs_kl}"
+        assert (
+            abs(max_abs_log_ratio - max_abs_kl) < 1e-6
+        ), f"log_ratio and KL magnitudes should match: {max_abs_log_ratio} vs {max_abs_kl}"
 
         # Verify warning level
         if max_abs_log_ratio > 10.0:
@@ -144,8 +150,9 @@ def test_extreme_log_ratio_vs_kl_relationship() -> None:
         else:
             level = "healthy"
 
-        assert level == expected_level, \
-            f"For |log_ratio|={max_abs_log_ratio}: expected {expected_level}, got {level}"
+        assert (
+            level == expected_level
+        ), f"For |log_ratio|={max_abs_log_ratio}: expected {expected_level}, got {level}"
 
 
 def test_multi_sample_kl_vs_log_ratio_statistics() -> None:
@@ -174,12 +181,15 @@ def test_multi_sample_kl_vs_log_ratio_statistics() -> None:
     max_abs_approx_kl = torch.max(torch.abs(approx_kl)).item()
 
     # Verify consistency
-    assert abs(mean_log_ratio + mean_approx_kl) < 1e-5, \
-        f"Means should be negatives: {mean_log_ratio} vs {mean_approx_kl}"
-    assert abs(std_log_ratio - std_approx_kl) < 1e-5, \
-        f"Std should be equal: {std_log_ratio} vs {std_approx_kl}"
-    assert abs(max_abs_log_ratio - max_abs_approx_kl) < 1e-5, \
-        f"Max abs should be equal: {max_abs_log_ratio} vs {max_abs_approx_kl}"
+    assert (
+        abs(mean_log_ratio + mean_approx_kl) < 1e-5
+    ), f"Means should be negatives: {mean_log_ratio} vs {mean_approx_kl}"
+    assert (
+        abs(std_log_ratio - std_approx_kl) < 1e-5
+    ), f"Std should be equal: {std_log_ratio} vs {std_approx_kl}"
+    assert (
+        abs(max_abs_log_ratio - max_abs_approx_kl) < 1e-5
+    ), f"Max abs should be equal: {max_abs_log_ratio} vs {max_abs_approx_kl}"
 
 
 def test_kl_early_stop_simulation() -> None:
@@ -195,13 +205,13 @@ def test_kl_early_stop_simulation() -> None:
     healthy_approx_kl = -healthy_log_ratio
 
     mean_healthy_kl = torch.abs(healthy_approx_kl).mean().item()
-    assert mean_healthy_kl < target_kl, \
-        f"Healthy training should have mean KL < {target_kl}: {mean_healthy_kl}"
+    assert (
+        mean_healthy_kl < target_kl
+    ), f"Healthy training should have mean KL < {target_kl}: {mean_healthy_kl}"
 
     # No warnings expected
     max_abs_healthy = torch.max(torch.abs(healthy_log_ratio)).item()
-    assert max_abs_healthy < 0.1, \
-        f"Healthy training should not trigger warnings: {max_abs_healthy}"
+    assert max_abs_healthy < 0.1, f"Healthy training should not trigger warnings: {max_abs_healthy}"
 
     # Scenario 2: Aggressive training (SHOULD trigger early stop)
     torch.manual_seed(222)
@@ -233,10 +243,12 @@ def test_numerical_precision_log_ratio_kl() -> None:
     expected_log_ratio = torch.tensor([-1e-3, -1e-3], dtype=torch.float32)
     expected_approx_kl = -expected_log_ratio
 
-    assert torch.allclose(log_ratio, expected_log_ratio, atol=1e-5), \
-        f"High precision log_ratio: {log_ratio.tolist()}"
-    assert torch.allclose(approx_kl, expected_approx_kl, atol=1e-5), \
-        f"High precision approx_kl: {approx_kl.tolist()}"
+    assert torch.allclose(
+        log_ratio, expected_log_ratio, atol=1e-5
+    ), f"High precision log_ratio: {log_ratio.tolist()}"
+    assert torch.allclose(
+        approx_kl, expected_approx_kl, atol=1e-5
+    ), f"High precision approx_kl: {approx_kl.tolist()}"
 
 
 def test_log_ratio_monitoring_prevents_kl_explosion() -> None:
@@ -267,8 +279,9 @@ def test_log_ratio_monitoring_prevents_kl_explosion() -> None:
         warning = None
 
     # Should trigger at least concerning warning
-    assert warning is not None, \
-        f"KL explosion should trigger warning: max_epoch3={max_epoch3}, warning={warning}"
+    assert (
+        warning is not None
+    ), f"KL explosion should trigger warning: max_epoch3={max_epoch3}, warning={warning}"
 
 
 def test_ratio_clipping_vs_kl_clipping_distinction() -> None:
@@ -295,8 +308,9 @@ def test_ratio_clipping_vs_kl_clipping_distinction() -> None:
     assert abs(ratio.item() - 148.4) < 0.1, f"ratio should be exp(5)≈148: {ratio.item()}"
 
     # 3. ratio is clipped to [0.8, 1.2] in loss
-    assert ratio_clipped.item() == pytest.approx(1.2), \
-        f"ratio should be clipped to 1.2 in loss: {ratio_clipped.item()}"
+    assert ratio_clipped.item() == pytest.approx(
+        1.2
+    ), f"ratio should be clipped to 1.2 in loss: {ratio_clipped.item()}"
 
     # 4. But monitoring should detect log_ratio = 5.0 as concerning
     max_abs = abs(log_ratio.item())
@@ -307,8 +321,7 @@ def test_ratio_clipping_vs_kl_clipping_distinction() -> None:
     else:
         warning = None
 
-    assert warning == "concerning", \
-        f"log_ratio=5.0 should trigger concerning warning: {warning}"
+    assert warning == "concerning", f"log_ratio=5.0 should trigger concerning warning: {warning}"
 
 
 def test_zero_log_ratio_first_epoch() -> None:
@@ -323,15 +336,14 @@ def test_zero_log_ratio_first_epoch() -> None:
     approx_kl = old_log_prob - new_log_prob
 
     # Should be exactly zero
-    assert torch.all(log_ratio == 0.0), \
-        f"First epoch log_ratio should be 0: {log_ratio.tolist()}"
-    assert torch.all(approx_kl == 0.0), \
-        f"First epoch approx_kl should be 0: {approx_kl.tolist()}"
+    assert torch.all(log_ratio == 0.0), f"First epoch log_ratio should be 0: {log_ratio.tolist()}"
+    assert torch.all(approx_kl == 0.0), f"First epoch approx_kl should be 0: {approx_kl.tolist()}"
 
     # ratio should be exactly 1.0
     ratio = torch.exp(log_ratio)
-    assert torch.allclose(ratio, torch.ones_like(ratio)), \
-        f"First epoch ratio should be 1.0: {ratio.tolist()}"
+    assert torch.allclose(
+        ratio, torch.ones_like(ratio)
+    ), f"First epoch ratio should be 1.0: {ratio.tolist()}"
 
 
 if __name__ == "__main__":

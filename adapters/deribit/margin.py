@@ -52,13 +52,13 @@ logger = logging.getLogger(__name__)
 
 # Deribit margin parameters (as of 2024)
 # These are approximate and may change - always verify with Deribit
-INITIAL_MARGIN_FACTOR = Decimal("0.10")      # 10% for options
+INITIAL_MARGIN_FACTOR = Decimal("0.10")  # 10% for options
 MAINTENANCE_MARGIN_FACTOR = Decimal("0.075")  # 7.5% for options
 
 # Maximum leverage by underlying
 MAX_LEVERAGE = {
-    "BTC": Decimal("10"),   # 10x max
-    "ETH": Decimal("10"),   # 10x max
+    "BTC": Decimal("10"),  # 10x max
+    "ETH": Decimal("10"),  # 10x max
 }
 
 # Liquidation buffer (margin called before liquidation)
@@ -66,8 +66,8 @@ LIQUIDATION_BUFFER = Decimal("0.005")  # 0.5%
 
 # Minimum margin requirements (in underlying)
 MIN_MARGIN = {
-    "BTC": Decimal("0.001"),   # 0.001 BTC
-    "ETH": Decimal("0.01"),    # 0.01 ETH
+    "BTC": Decimal("0.001"),  # 0.001 BTC
+    "ETH": Decimal("0.01"),  # 0.01 ETH
 }
 
 
@@ -75,23 +75,27 @@ MIN_MARGIN = {
 # Enums
 # =============================================================================
 
+
 class MarginMode(str, Enum):
     """Margin mode for Deribit accounts."""
-    CROSS = "cross"          # Portfolio margin (cross-margining)
-    ISOLATED = "isolated"    # Isolated margin per position (not supported for options)
+
+    CROSS = "cross"  # Portfolio margin (cross-margining)
+    ISOLATED = "isolated"  # Isolated margin per position (not supported for options)
 
 
 class MarginCallLevel(str, Enum):
     """Margin call severity levels."""
+
     NONE = "none"
-    WARNING = "warning"         # Approaching maintenance
-    MARGIN_CALL = "margin_call" # Below maintenance
-    LIQUIDATION = "liquidation" # Force liquidation
+    WARNING = "warning"  # Approaching maintenance
+    MARGIN_CALL = "margin_call"  # Below maintenance
+    LIQUIDATION = "liquidation"  # Force liquidation
 
 
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass
 class InversePayoff:
@@ -100,12 +104,13 @@ class InversePayoff:
 
     All values are in the underlying cryptocurrency units.
     """
-    payoff_crypto: Decimal      # Payoff in crypto units
-    payoff_usd: Decimal         # Payoff in USD (for reference)
-    spot_price: Decimal         # Spot price at calculation
-    strike: Decimal             # Strike price
-    is_call: bool               # True if call option
-    is_itm: bool                # True if in-the-money
+
+    payoff_crypto: Decimal  # Payoff in crypto units
+    payoff_usd: Decimal  # Payoff in USD (for reference)
+    spot_price: Decimal  # Spot price at calculation
+    strike: Decimal  # Strike price
+    is_call: bool  # True if call option
+    is_itm: bool  # True if in-the-money
 
     @property
     def intrinsic_value_usd(self) -> Decimal:
@@ -121,12 +126,13 @@ class DeribitMarginResult:
     """
     Result of margin calculation for a position or portfolio.
     """
-    initial_margin: Decimal          # Required to open (in crypto)
-    maintenance_margin: Decimal      # Required to maintain (in crypto)
-    mark_value: Decimal              # Current mark-to-market value (in crypto)
-    available_margin: Decimal        # Margin available for new trades
-    margin_balance: Decimal          # Total margin balance
-    margin_ratio: Decimal            # Margin used / total margin
+
+    initial_margin: Decimal  # Required to open (in crypto)
+    maintenance_margin: Decimal  # Required to maintain (in crypto)
+    mark_value: Decimal  # Current mark-to-market value (in crypto)
+    available_margin: Decimal  # Margin available for new trades
+    margin_balance: Decimal  # Total margin balance
+    margin_ratio: Decimal  # Margin used / total margin
     margin_call_level: MarginCallLevel
     liquidation_price: Optional[Decimal] = None
     currency: str = "BTC"
@@ -166,12 +172,13 @@ class PositionForMargin:
     """
     Position data required for margin calculation.
     """
+
     instrument_name: str
-    size: Decimal               # Positive = long, negative = short
-    mark_price: Decimal         # Mark price in crypto
-    index_price: Decimal        # Underlying index price in USD
-    strike: Decimal             # Strike price
-    is_call: bool               # True if call
+    size: Decimal  # Positive = long, negative = short
+    mark_price: Decimal  # Mark price in crypto
+    index_price: Decimal  # Underlying index price in USD
+    strike: Decimal  # Strike price
+    is_call: bool  # True if call
     delta: Decimal = Decimal("0")
     gamma: Decimal = Decimal("0")
     vega: Decimal = Decimal("0")
@@ -204,6 +211,7 @@ class PositionForMargin:
 # =============================================================================
 # Inverse Settlement Calculator
 # =============================================================================
+
 
 class InverseSettlementCalculator:
     """
@@ -365,6 +373,7 @@ class InverseSettlementCalculator:
 # =============================================================================
 # Margin Calculator
 # =============================================================================
+
 
 class DeribitMarginCalculator:
     """
@@ -705,6 +714,7 @@ class DeribitMarginCalculator:
 # =============================================================================
 # Convenience Functions
 # =============================================================================
+
 
 def calculate_inverse_call_payoff(
     spot: Union[Decimal, float],

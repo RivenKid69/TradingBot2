@@ -53,6 +53,7 @@ from execution_providers import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def default_config() -> CMESlippageConfig:
     """Default CME slippage configuration."""
@@ -127,6 +128,7 @@ def es_bar_data() -> BarData:
 # Test Tick Sizes
 # =============================================================================
 
+
 class TestTickSizes:
     """Tests for tick size configuration."""
 
@@ -170,6 +172,7 @@ class TestTickSizes:
 # =============================================================================
 # Test CMESlippageConfig
 # =============================================================================
+
 
 class TestCMESlippageConfig:
     """Tests for CME slippage configuration."""
@@ -225,6 +228,7 @@ class TestCMESlippageConfig:
 # Test Slippage Profiles
 # =============================================================================
 
+
 class TestSlippageProfiles:
     """Tests for predefined slippage profiles."""
 
@@ -265,6 +269,7 @@ class TestSlippageProfiles:
 # Test CMESlippageProvider - Basic
 # =============================================================================
 
+
 class TestCMESlippageProviderBasic:
     """Tests for basic slippage provider operations."""
 
@@ -291,6 +296,7 @@ class TestCMESlippageProviderBasic:
 # Test CMESlippageProvider - Slippage Calculations
 # =============================================================================
 
+
 class TestCMESlippageCalculations:
     """Tests for slippage calculations."""
 
@@ -304,7 +310,9 @@ class TestCMESlippageCalculations:
         assert slippage > 0
         assert slippage < 200  # Should be reasonable
 
-    def test_slippage_increases_with_participation(self, slippage_provider, es_order, es_market_state):
+    def test_slippage_increases_with_participation(
+        self, slippage_provider, es_order, es_market_state
+    ):
         """Slippage increases with participation ratio."""
         low_part = slippage_provider.compute_slippage_bps(
             order=es_order,
@@ -390,6 +398,7 @@ class TestCMESlippageCalculations:
 # Test Circuit Breaker Integration
 # =============================================================================
 
+
 class TestCircuitBreakerIntegration:
     """Tests for circuit breaker integration in slippage."""
 
@@ -457,6 +466,7 @@ class TestCircuitBreakerIntegration:
 # Test Impact Cost Estimation
 # =============================================================================
 
+
 class TestImpactCostEstimation:
     """Tests for pre-trade impact cost estimation."""
 
@@ -502,6 +512,7 @@ class TestImpactCostEstimation:
 # =============================================================================
 # Test CMEFeeProvider
 # =============================================================================
+
 
 class TestCMEFeeProvider:
     """Tests for CME fee provider."""
@@ -595,6 +606,7 @@ class TestCMEFeeProvider:
 # Test CMEL2ExecutionProvider
 # =============================================================================
 
+
 class TestCMEL2ExecutionProvider:
     """Tests for combined CME execution provider."""
 
@@ -634,7 +646,9 @@ class TestCMEL2ExecutionProvider:
         )
         assert fill is not None
 
-    def test_limit_order_no_fill_when_not_touched(self, execution_provider, es_market_state, es_bar_data):
+    def test_limit_order_no_fill_when_not_touched(
+        self, execution_provider, es_market_state, es_bar_data
+    ):
         """Limit order doesn't fill when price not touched."""
         order = Order(
             symbol="ES",
@@ -679,7 +693,9 @@ class TestCMEL2ExecutionProvider:
         )
         assert fill.price <= es_bar_data.high
 
-    def test_circuit_breaker_integration(self, execution_provider, es_order, es_market_state, es_bar_data):
+    def test_circuit_breaker_integration(
+        self, execution_provider, es_order, es_market_state, es_bar_data
+    ):
         """Circuit breaker affects execution."""
         normal_fill = execution_provider.execute(
             order=es_order,
@@ -718,6 +734,7 @@ class TestCMEL2ExecutionProvider:
 # Test Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory functions."""
 
@@ -746,6 +763,7 @@ class TestFactoryFunctions:
 # Test Utility Functions
 # =============================================================================
 
+
 class TestUtilityFunctions:
     """Tests for utility functions."""
 
@@ -773,6 +791,7 @@ class TestUtilityFunctions:
 # =============================================================================
 # Test Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
@@ -853,6 +872,7 @@ class TestEdgeCases:
 # Additional Coverage Tests
 # =============================================================================
 
+
 class TestCoverageEdgeCases:
     """Tests for edge cases to achieve 100% coverage."""
 
@@ -882,7 +902,7 @@ class TestCoverageEdgeCases:
         provider = CMESlippageProvider()
         result = provider.estimate_impact_cost(
             notional=75_000_000,  # $75M
-            adv=2_500_000_000,    # $2.5B ADV -> 3% participation
+            adv=2_500_000_000,  # $2.5B ADV -> 3% participation
             symbol="ES",
         )
         assert "recommendation" in result
@@ -893,7 +913,7 @@ class TestCoverageEdgeCases:
         provider = CMESlippageProvider()
         result = provider.estimate_impact_cost(
             notional=200_000_000,  # $200M
-            adv=2_500_000_000,     # $2.5B ADV -> 8% participation
+            adv=2_500_000_000,  # $2.5B ADV -> 8% participation
             symbol="ES",
         )
         assert "recommendation" in result

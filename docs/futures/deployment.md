@@ -79,6 +79,7 @@ features:
 ```
 
 **Monitor for 1-2 weeks:**
+
 - No crashes or errors
 - Results match expectations
 - Performance within targets
@@ -97,6 +98,7 @@ features:
 ```
 
 **Monitor for 1 week:**
+
 - Trading behavior as expected
 - No unexpected liquidations
 - Margin calculations accurate
@@ -373,16 +375,19 @@ trip_kill_switch(reason="Manual intervention - futures issue")
    - Check account balance
 
 2. **Sync positions**
+
    ```bash
    python scripts/sync_positions.py --force
    ```
 
 3. **Verify state**
+
    ```bash
    python scripts/verify_positions.py
    ```
 
 4. **Resume trading**
+
    ```bash
    ./scripts/reset_kill_switch.sh
    python script_live.py --config configs/config_live_futures.yaml

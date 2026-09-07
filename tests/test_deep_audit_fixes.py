@@ -7,6 +7,7 @@
 import sys
 from typing import Dict, List
 
+
 def test_feature_name_consistency():
     """Проверка соответствия имен признаков между transformers.py и mediator.py"""
     print("=" * 80)
@@ -20,9 +21,7 @@ def test_feature_name_consistency():
     garch_windows_minutes = [50 * 240, 14 * 24 * 60, 30 * 24 * 60]  # 12000, 20160, 43200
 
     # Генерируем имена признаков
-    garch_feature_names = [
-        f"garch_{_format_window_name(w)}" for w in garch_windows_minutes
-    ]
+    garch_feature_names = [f"garch_{_format_window_name(w)}" for w in garch_windows_minutes]
 
     print(f"\nГенерируемые имена GARCH признаков:")
     for i, (window, name) in enumerate(zip(garch_windows_minutes, garch_feature_names)):
@@ -32,7 +31,11 @@ def test_feature_name_consistency():
     with open("mediator.py", "r", encoding="utf-8") as f:
         mediator_content = f.read()
 
-    expected_names = ["garch_200h", "garch_14d", "garch_30d"]  # 50 баров = 12000 мин = 200h, минимум для GARCH на 4h
+    expected_names = [
+        "garch_200h",
+        "garch_14d",
+        "garch_30d",
+    ]  # 50 баров = 12000 мин = 200h, минимум для GARCH на 4h
 
     print(f"\nОжидаемые имена в mediator.py:")
     for i, name in enumerate(expected_names):
@@ -60,6 +63,7 @@ def test_feature_name_consistency():
     else:
         # Проверяем что это не упоминание в комментариях или истории
         import re
+
         # Ищем использование в коде (не в комментариях)
         code_usage = re.findall(r'["\']garch_7d["\']', mediator_content)
         if code_usage:
@@ -84,38 +88,50 @@ def test_all_feature_names():
         "returns": {
             "windows": [240, 720, 1440],
             "prefix": "ret_",
-            "expected": ["ret_4h", "ret_12h", "ret_24h"]
+            "expected": ["ret_4h", "ret_12h", "ret_24h"],
         },
         "yang_zhang": {
             "windows": [48 * 60, 7 * 24 * 60, 30 * 24 * 60],
             "prefix": "yang_zhang_",
-            "expected": ["yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d"]
+            "expected": ["yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d"],
         },
         "parkinson": {
             "windows": [48 * 60, 7 * 24 * 60],
             "prefix": "parkinson_",
-            "expected": ["parkinson_48h", "parkinson_7d"]
+            "expected": ["parkinson_48h", "parkinson_7d"],
         },
         "garch": {
             "windows": [50 * 240, 14 * 24 * 60, 30 * 24 * 60],
             "prefix": "garch_",
-            "expected": ["garch_200h", "garch_14d", "garch_30d"]  # 50 баров = 12000 мин = 200h, минимум для GARCH на 4h
+            "expected": [
+                "garch_200h",
+                "garch_14d",
+                "garch_30d",
+            ],  # 50 баров = 12000 мин = 200h, минимум для GARCH на 4h
         },
         "cvd": {
             "windows": [24 * 60, 7 * 24 * 60],
             "prefix": "cvd_",
-            "expected": ["cvd_24h", "cvd_7d"]
+            "expected": ["cvd_24h", "cvd_7d"],
         },
         "taker_buy_ratio_sma": {
             "windows": [8 * 60, 16 * 60, 24 * 60],
             "prefix": "taker_buy_ratio_sma_",
-            "expected": ["taker_buy_ratio_sma_8h", "taker_buy_ratio_sma_16h", "taker_buy_ratio_sma_24h"]
+            "expected": [
+                "taker_buy_ratio_sma_8h",
+                "taker_buy_ratio_sma_16h",
+                "taker_buy_ratio_sma_24h",
+            ],
         },
         "taker_buy_ratio_momentum": {
             "windows": [4 * 60, 8 * 60, 12 * 60],
             "prefix": "taker_buy_ratio_momentum_",
-            "expected": ["taker_buy_ratio_momentum_4h", "taker_buy_ratio_momentum_8h", "taker_buy_ratio_momentum_12h"]
-        }
+            "expected": [
+                "taker_buy_ratio_momentum_4h",
+                "taker_buy_ratio_momentum_8h",
+                "taker_buy_ratio_momentum_12h",
+            ],
+        },
     }
 
     all_match = True
@@ -174,6 +190,7 @@ def test_mediator_norm_cols_indices():
     for idx, feature_name in expected_mapping.items():
         # Ищем строку вида: norm_cols[idx] = self._get_safe_float(row, "feature_name", 0.0)
         import re
+
         pattern = rf'norm_cols\[{idx}\]\s*=\s*self\._get_safe_float\(row,\s*["\'](\w+)["\']'
         matches = re.findall(pattern, content)
 

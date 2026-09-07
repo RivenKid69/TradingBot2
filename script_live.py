@@ -62,6 +62,7 @@ try:
         ROLLOVER_HOUR_ET,
         ROLLOVER_KEEPOUT_MINUTES,
     )
+
     FOREX_SERVICES_AVAILABLE = True
 except ImportError:
     FOREX_SERVICES_AVAILABLE = False
@@ -309,9 +310,7 @@ def _get_symbols_for_asset_class(
     return get_symbols()
 
 
-def _apply_runtime_overrides(
-    cfg_dict: Dict[str, Any], args: argparse.Namespace
-) -> Dict[str, Any]:
+def _apply_runtime_overrides(cfg_dict: Dict[str, Any], args: argparse.Namespace) -> Dict[str, Any]:
     """Apply CLI-provided runtime overrides to a config mapping."""
 
     def _require_non_negative(value: float, label: str) -> float:
@@ -406,9 +405,7 @@ def _apply_runtime_overrides(
             exec_impact["sqrt_coeff"] = sqrt_coeff
 
         if args.costs_impact_linear is not None:
-            linear_coeff = _require_non_negative(
-                args.costs_impact_linear, "costs-impact-linear"
-            )
+            linear_coeff = _require_non_negative(args.costs_impact_linear, "costs-impact-linear")
             impact_block["linear_coeff"] = linear_coeff
             exec_impact["linear_coeff"] = linear_coeff
 
@@ -838,12 +835,13 @@ def main() -> None:
 
     # Always emit deprecation warning for awareness
     import warnings
+
     warnings.warn(
         "script_live.py is deprecated for production use. "
         "Use 'python -m packages.agent.daemon.agentd' for CCEA production deployments. "
         "See docs/archive/LEGACY_STACKS.md for migration guide.",
         DeprecationWarning,
-        stacklevel=1
+        stacklevel=1,
     )
 
     # ==========================================================================
@@ -953,8 +951,7 @@ def main() -> None:
         # Check if forex market is open
         if not is_forex_market_open():
             logger.warning(
-                "Forex market is currently CLOSED (weekend). "
-                "Trading will resume Sunday 5pm ET."
+                "Forex market is currently CLOSED (weekend). " "Trading will resume Sunday 5pm ET."
             )
 
         # Log current session

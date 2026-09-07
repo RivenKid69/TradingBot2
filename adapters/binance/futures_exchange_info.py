@@ -287,13 +287,15 @@ class BinanceFuturesExchangeInfoAdapter(ExchangeInfoAdapter):
                     if not isinstance(b, dict):
                         continue
 
-                    brackets.append(LeverageBracket(
-                        bracket=int(b.get("bracket", 0)),
-                        notional_cap=Decimal(str(b.get("notionalCap", "0"))),
-                        maint_margin_rate=Decimal(str(b.get("maintMarginRatio", "0.004"))),
-                        max_leverage=int(b.get("initialLeverage", 125)),
-                        cum_maintenance=Decimal(str(b.get("cum", "0"))),
-                    ))
+                    brackets.append(
+                        LeverageBracket(
+                            bracket=int(b.get("bracket", 0)),
+                            notional_cap=Decimal(str(b.get("notionalCap", "0"))),
+                            maint_margin_rate=Decimal(str(b.get("maintMarginRatio", "0.004"))),
+                            max_leverage=int(b.get("initialLeverage", 125)),
+                            cum_maintenance=Decimal(str(b.get("cum", "0"))),
+                        )
+                    )
 
                 if brackets:
                     self._leverage_brackets[symbol] = brackets
@@ -613,6 +615,7 @@ class BinanceFuturesExchangeInfoAdapter(ExchangeInfoAdapter):
         if delivery_date and isinstance(delivery_date, int):
             # Convert ms to YYYYMMDD
             import datetime
+
             dt = datetime.datetime.fromtimestamp(delivery_date / 1000, tz=datetime.timezone.utc)
             delivery_date = dt.strftime("%Y%m%d")
 

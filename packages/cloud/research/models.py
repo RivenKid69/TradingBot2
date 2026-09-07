@@ -56,8 +56,10 @@ from packages.cloud.control_plane.models import (
 # Enums
 # ============================================================================
 
+
 class ResearchJobState(str, enum.Enum):
     """Research job lifecycle state."""
+
     PENDING = "pending"
     VALIDATING = "validating"
     QUEUED = "queued"
@@ -72,6 +74,7 @@ class ResearchJobState(str, enum.Enum):
 
 class JobTerminationReason(str, enum.Enum):
     """Reason for job termination."""
+
     COMPLETED = "completed"
     TIMEOUT = "timeout"
     OOM = "oom"
@@ -85,6 +88,7 @@ class JobTerminationReason(str, enum.Enum):
 
 class IsolationLevel(str, enum.Enum):
     """Sandbox isolation level."""
+
     NONE = "none"
     PROCESS = "process"
     CONTAINER = "container"
@@ -94,6 +98,7 @@ class IsolationLevel(str, enum.Enum):
 
 class QuotaTier(str, enum.Enum):
     """Quota tier for tenants."""
+
     FREE = "free"
     PREMIUM = "premium"
     ENTERPRISE = "enterprise"
@@ -102,6 +107,7 @@ class QuotaTier(str, enum.Enum):
 
 class AbuseType(str, enum.Enum):
     """Type of detected abuse."""
+
     CRYPTOCURRENCY_MINING = "cryptocurrency_mining"
     PORT_SCANNING = "port_scanning"
     NETWORK_SCANNING = "network_scanning"
@@ -114,6 +120,7 @@ class AbuseType(str, enum.Enum):
 
 class AlertSeverity(str, enum.Enum):
     """Alert severity level."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -124,6 +131,7 @@ class AlertSeverity(str, enum.Enum):
 # Research Job Model
 # ============================================================================
 
+
 class ResearchJob(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
     """
     Research job execution record.
@@ -131,6 +139,7 @@ class ResearchJob(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
     Tracks the complete lifecycle of a cloud research job including
     configuration, execution state, resource usage, and results.
     """
+
     __tablename__ = "research_jobs"
 
     id: Mapped[UUID] = mapped_column(
@@ -177,7 +186,9 @@ class ResearchJob(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
 
     # Network
     network_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    egress_allowlist: Mapped[Optional[List[str]]] = mapped_column(PortableStringArray100, nullable=True)
+    egress_allowlist: Mapped[Optional[List[str]]] = mapped_column(
+        PortableStringArray100, nullable=True
+    )
 
     # Execution environment
     docker_image: Mapped[str] = mapped_column(String(255), default="python:3.11-slim")
@@ -238,12 +249,14 @@ class ResearchJob(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
 # Quota Models
 # ============================================================================
 
+
 class JobQuota(Base, TenantMixin, TimestampMixin):
     """
     Tenant quota configuration for research jobs.
 
     Defines resource limits and usage quotas per tenant.
     """
+
     __tablename__ = "job_quotas"
 
     id: Mapped[UUID] = mapped_column(
@@ -289,9 +302,7 @@ class JobQuota(Base, TenantMixin, TimestampMixin):
     # Expiration
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    __table_args__ = (
-        UniqueConstraint("workspace_id", name="uq_job_quota_workspace"),
-    )
+    __table_args__ = (UniqueConstraint("workspace_id", name="uq_job_quota_workspace"),)
 
 
 class QuotaUsageRecord(Base, TenantMixin, TimestampMixin):
@@ -300,6 +311,7 @@ class QuotaUsageRecord(Base, TenantMixin, TimestampMixin):
 
     Tracks daily/monthly resource consumption.
     """
+
     __tablename__ = "quota_usage_records"
 
     id: Mapped[UUID] = mapped_column(
@@ -338,12 +350,14 @@ class QuotaUsageRecord(Base, TenantMixin, TimestampMixin):
 # Egress Policy Model
 # ============================================================================
 
+
 class EgressPolicyRecord(Base, TenantMixin, TimestampMixin):
     """
     Egress policy configuration for tenants.
 
     Defines allowed network destinations and rules.
     """
+
     __tablename__ = "egress_policies"
 
     id: Mapped[UUID] = mapped_column(
@@ -357,7 +371,9 @@ class EgressPolicyRecord(Base, TenantMixin, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Allowlist
-    allowed_destinations: Mapped[Optional[List[str]]] = mapped_column(PortableStringArray100, nullable=True)
+    allowed_destinations: Mapped[Optional[List[str]]] = mapped_column(
+        PortableStringArray100, nullable=True
+    )
     allowed_ports: Mapped[Optional[List[int]]] = mapped_column(PortableJSON, nullable=True)
 
     # Mode
@@ -366,7 +382,7 @@ class EgressPolicyRecord(Base, TenantMixin, TimestampMixin):
 
     # Rate limits
     max_requests_per_minute: Mapped[int] = mapped_column(Integer, default=60)
-    max_bytes_per_minute: Mapped[int] = mapped_column(Integer, default=50*1024*1024)
+    max_bytes_per_minute: Mapped[int] = mapped_column(Integer, default=50 * 1024 * 1024)
 
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -380,6 +396,7 @@ class EgressViolationRecord(Base, TenantMixin, TimestampMixin):
     """
     Record of egress policy violations.
     """
+
     __tablename__ = "egress_violations"
 
     id: Mapped[UUID] = mapped_column(
@@ -421,10 +438,12 @@ class EgressViolationRecord(Base, TenantMixin, TimestampMixin):
 # Abuse Incident Model
 # ============================================================================
 
+
 class AbuseIncident(Base, TenantMixin, TimestampMixin):
     """
     Record of detected abuse.
     """
+
     __tablename__ = "abuse_incidents"
 
     id: Mapped[UUID] = mapped_column(
@@ -476,12 +495,14 @@ class AbuseIncident(Base, TenantMixin, TimestampMixin):
 # Job Artifact Model
 # ============================================================================
 
+
 class JobArtifact(Base, TenantMixin, TimestampMixin):
     """
     Job input/output artifacts.
 
     Stores code, input data, and output files for jobs.
     """
+
     __tablename__ = "job_artifacts"
 
     id: Mapped[UUID] = mapped_column(
@@ -500,7 +521,9 @@ class JobArtifact(Base, TenantMixin, TimestampMixin):
 
     # Artifact identity
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    artifact_type: Mapped[str] = mapped_column(String(50), nullable=False)  # code, input, output, stdout, stderr
+    artifact_type: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # code, input, output, stdout, stderr
 
     # Storage
     storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -526,6 +549,7 @@ class JobArtifact(Base, TenantMixin, TimestampMixin):
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 def create_research_job(
     workspace_id: UUID,

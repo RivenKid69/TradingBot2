@@ -37,8 +37,7 @@ GENESIS_HASH = "0" * 64
 
 
 def _canonical(payload: Any) -> bytes:
-    return json.dumps(payload, sort_keys=True, separators=(",", ":"),
-                      default=str).encode("utf-8")
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
 
 
 def chain_hash(prev_hash: str, payload: Any, seq: int, *, key: Optional[bytes] = None) -> str:
@@ -57,8 +56,12 @@ class ChainRecord:
     entry_hash: str
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"seq": self.seq, "payload": self.payload,
-                "prev_hash": self.prev_hash, "entry_hash": self.entry_hash}
+        return {
+            "seq": self.seq,
+            "payload": self.payload,
+            "prev_hash": self.prev_hash,
+            "entry_hash": self.entry_hash,
+        }
 
 
 @dataclass
@@ -97,15 +100,27 @@ def verify_chain(records: List[ChainRecord], *, key: Optional[bytes] = None) -> 
     prev = GENESIS_HASH
     for i, rec in enumerate(records, start=1):
         if rec.seq != i:
-            return {"valid": False, "n": len(records), "broken_at": rec.seq,
-                    "reason": f"sequence gap: expected {i}, got {rec.seq}"}
+            return {
+                "valid": False,
+                "n": len(records),
+                "broken_at": rec.seq,
+                "reason": f"sequence gap: expected {i}, got {rec.seq}",
+            }
         if rec.prev_hash != prev:
-            return {"valid": False, "n": len(records), "broken_at": rec.seq,
-                    "reason": "prev_hash linkage broken (insertion/deletion/reorder)"}
+            return {
+                "valid": False,
+                "n": len(records),
+                "broken_at": rec.seq,
+                "reason": "prev_hash linkage broken (insertion/deletion/reorder)",
+            }
         expect = chain_hash(prev, rec.payload, rec.seq, key=key)
         if expect != rec.entry_hash:
-            return {"valid": False, "n": len(records), "broken_at": rec.seq,
-                    "reason": "entry_hash mismatch (record payload was mutated)"}
+            return {
+                "valid": False,
+                "n": len(records),
+                "broken_at": rec.seq,
+                "reason": "entry_hash mismatch (record payload was mutated)",
+            }
         prev = rec.entry_hash
     return {"valid": True, "n": len(records), "broken_at": None, "reason": "ok"}
 

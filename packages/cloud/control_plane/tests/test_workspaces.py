@@ -3,6 +3,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..models import User
+
 from uuid import uuid4
 
 import pytest

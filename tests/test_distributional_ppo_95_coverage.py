@@ -54,6 +54,7 @@ def seed():
 @pytest.fixture
 def mock_logger():
     """Create a mock logger for testing."""
+
     class MockLogger:
         def __init__(self):
             self.records = {}
@@ -67,6 +68,7 @@ def mock_logger():
 # =============================================================================
 # PopArtController.evaluate_shadow() - All Blocked Reasons
 # =============================================================================
+
 
 class TestPopArtControllerEvaluateShadowBlockedReasons:
     """Test all blocked reasons in evaluate_shadow()."""
@@ -159,7 +161,7 @@ class TestPopArtControllerEvaluateShadowBlockedReasons:
 
         model = MagicMock()
         # Returns with NaN
-        returns = torch.tensor([float('nan'), 1.0, 2.0])
+        returns = torch.tensor([float("nan"), 1.0, 2.0])
         result = controller.evaluate_shadow(
             model=model,
             returns_raw=returns,
@@ -197,6 +199,7 @@ class TestPopArtControllerEvaluateShadowBlockedReasons:
 # _compute_returns_with_time_limits() Branches
 # =============================================================================
 
+
 class TestComputeReturnsWithTimeLimits:
     """Test _compute_returns_with_time_limits branches."""
 
@@ -217,8 +220,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.zeros((8, 2), dtype=np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert buffer.advantages is not None
@@ -245,8 +247,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.random.randn(8, 2).astype(np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert buffer.advantages is not None
@@ -263,14 +264,13 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="2D arrays"):
             _compute_returns_with_time_limits(
-                buffer, last_values, dones, 0.99, 0.95,
-                np.zeros((8, 1)), np.zeros((8, 1))
+                buffer, last_values, dones, 0.99, 0.95, np.zeros((8, 1)), np.zeros((8, 1))
             )
 
     def test_nan_rewards_raises(self, seed):
         """NaN in rewards should raise ValueError."""
         buffer = MagicMock()
-        buffer.rewards = np.array([[1.0, float('nan')], [2.0, 3.0]], dtype=np.float32)
+        buffer.rewards = np.array([[1.0, float("nan")], [2.0, 3.0]], dtype=np.float32)
         buffer.values = np.random.randn(2, 2).astype(np.float32)
         buffer.episode_starts = np.zeros((2, 2), dtype=np.float32)
 
@@ -279,15 +279,14 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="rewards contain NaN"):
             _compute_returns_with_time_limits(
-                buffer, last_values, dones, 0.99, 0.95,
-                np.zeros((2, 2)), np.zeros((2, 2))
+                buffer, last_values, dones, 0.99, 0.95, np.zeros((2, 2)), np.zeros((2, 2))
             )
 
     def test_inf_values_raises(self, seed):
         """Inf in values should raise ValueError."""
         buffer = MagicMock()
         buffer.rewards = np.random.randn(2, 2).astype(np.float32)
-        buffer.values = np.array([[1.0, float('inf')], [2.0, 3.0]], dtype=np.float32)
+        buffer.values = np.array([[1.0, float("inf")], [2.0, 3.0]], dtype=np.float32)
         buffer.episode_starts = np.zeros((2, 2), dtype=np.float32)
 
         last_values = torch.randn(2)
@@ -295,8 +294,7 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="values contain NaN or inf"):
             _compute_returns_with_time_limits(
-                buffer, last_values, dones, 0.99, 0.95,
-                np.zeros((2, 2)), np.zeros((2, 2))
+                buffer, last_values, dones, 0.99, 0.95, np.zeros((2, 2)), np.zeros((2, 2))
             )
 
     def test_nan_last_values_raises(self, seed):
@@ -306,13 +304,12 @@ class TestComputeReturnsWithTimeLimits:
         buffer.values = np.random.randn(2, 2).astype(np.float32)
         buffer.episode_starts = np.zeros((2, 2), dtype=np.float32)
 
-        last_values = torch.tensor([1.0, float('nan')])
+        last_values = torch.tensor([1.0, float("nan")])
         dones = np.zeros(2)
 
         with pytest.raises(ValueError, match="last_values contain NaN"):
             _compute_returns_with_time_limits(
-                buffer, last_values, dones, 0.99, 0.95,
-                np.zeros((2, 2)), np.zeros((2, 2))
+                buffer, last_values, dones, 0.99, 0.95, np.zeros((2, 2)), np.zeros((2, 2))
             )
 
     def test_nan_time_limit_bootstrap_raises(self, seed):
@@ -324,12 +321,11 @@ class TestComputeReturnsWithTimeLimits:
 
         last_values = torch.randn(2)
         dones = np.zeros(2)
-        time_limit_bootstrap = np.array([[float('nan'), 0.0], [0.0, 0.0]], dtype=np.float32)
+        time_limit_bootstrap = np.array([[float("nan"), 0.0], [0.0, 0.0]], dtype=np.float32)
 
         with pytest.raises(ValueError, match="time_limit_bootstrap contains NaN"):
             _compute_returns_with_time_limits(
-                buffer, last_values, dones, 0.99, 0.95,
-                np.zeros((2, 2)), time_limit_bootstrap
+                buffer, last_values, dones, 0.99, 0.95, np.zeros((2, 2)), time_limit_bootstrap
             )
 
     def test_wrong_mask_shape_raises(self, seed):
@@ -345,8 +341,7 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="mask must match"):
             _compute_returns_with_time_limits(
-                buffer, last_values, dones, 0.99, 0.95,
-                wrong_shape_mask, np.zeros((2, 2))
+                buffer, last_values, dones, 0.99, 0.95, wrong_shape_mask, np.zeros((2, 2))
             )
 
     def test_wrong_bootstrap_shape_raises(self, seed):
@@ -362,14 +357,14 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="bootstrap values must match"):
             _compute_returns_with_time_limits(
-                buffer, last_values, dones, 0.99, 0.95,
-                np.zeros((2, 2)), wrong_shape_bootstrap
+                buffer, last_values, dones, 0.99, 0.95, np.zeros((2, 2)), wrong_shape_bootstrap
             )
 
 
 # =============================================================================
 # safe_explained_variance Branches
 # =============================================================================
+
 
 class TestSafeExplainedVarianceBranches:
     """Test uncovered branches in safe_explained_variance."""
@@ -456,6 +451,7 @@ class TestSafeExplainedVarianceBranches:
 # =============================================================================
 # __init__ Validation Branches
 # =============================================================================
+
 
 class TestInitValidationBranches:
     """Test __init__ parameter validation branches."""
@@ -759,6 +755,7 @@ class TestInitValidationBranches:
 # _twin_critics_loss() Categorical Mode
 # =============================================================================
 
+
 class TestTwinCriticsLossCategoricalMode:
     """Test _twin_critics_loss with categorical critics."""
 
@@ -918,6 +915,7 @@ class TestTwinCriticsLossCategoricalMode:
 # _weighted_variance_np Branches
 # =============================================================================
 
+
 class TestWeightedVarianceNpBranches:
     """Test uncovered branches in _weighted_variance_np."""
 
@@ -957,6 +955,7 @@ class TestWeightedVarianceNpBranches:
 # RawRecurrentRolloutBuffer Tests
 # =============================================================================
 
+
 class TestRawRecurrentRolloutBufferBranches:
     """Test uncovered branches in RawRecurrentRolloutBuffer."""
 
@@ -984,17 +983,18 @@ class TestRawRecurrentRolloutBufferBranches:
 # Import Fallback Tests
 # =============================================================================
 
+
 class TestImportFallbacks:
     """Test module import fallback paths."""
 
     def test_recurrent_backend_variable_exists(self):
         """_RECURRENT_BACKEND should be set."""
-        assert hasattr(dppo, '_RECURRENT_BACKEND')
-        assert dppo._RECURRENT_BACKEND in ('sb3_contrib', 'stable_baselines3')
+        assert hasattr(dppo, "_RECURRENT_BACKEND")
+        assert dppo._RECURRENT_BACKEND in ("sb3_contrib", "stable_baselines3")
 
     def test_distributional_policy_aliases(self):
         """_DISTRIBUTIONAL_POLICY_ALIASES should be a dict."""
-        assert hasattr(dppo, '_DISTRIBUTIONAL_POLICY_ALIASES')
+        assert hasattr(dppo, "_DISTRIBUTIONAL_POLICY_ALIASES")
         assert isinstance(dppo._DISTRIBUTIONAL_POLICY_ALIASES, dict)
 
     def test_patch_rand_for_tests_idempotent(self):
@@ -1002,12 +1002,13 @@ class TestImportFallbacks:
         # Should not raise even when called multiple times
         dppo._patch_rand_for_tests()
         dppo._patch_rand_for_tests()
-        assert getattr(torch, '_distributional_rand_patch', False)
+        assert getattr(torch, "_distributional_rand_patch", False)
 
 
 # =============================================================================
 # PopArtController Additional Methods
 # =============================================================================
+
 
 class TestPopArtControllerMethods:
     """Test additional PopArtController methods."""
@@ -1088,6 +1089,7 @@ class TestPopArtControllerMethods:
 # =============================================================================
 # Utility Function Tests
 # =============================================================================
+
 
 class TestUtilityFunctions:
     """Test utility functions for coverage."""
@@ -1179,6 +1181,7 @@ class TestUtilityFunctions:
 
         # Check the function signature
         import inspect
+
         sig = inspect.signature(calculate_cvar)
         params = list(sig.parameters.keys())
 
@@ -1216,15 +1219,16 @@ class TestUtilityFunctions:
             pytest.skip("create_sequencers not available")
 
         import inspect
+
         sig = inspect.signature(create_sequencers)
         params = list(sig.parameters.keys())
 
         try:
             # Try with device argument
             device = torch.device("cpu")
-            if 'n_seq' in params:
+            if "n_seq" in params:
                 result = create_sequencers(n_seq=4, seq_len=8, device=device)
-            elif 'n_envs' in params:
+            elif "n_envs" in params:
                 result = create_sequencers(n_envs=4, seq_len=8, device=device)
             else:
                 result = create_sequencers(4, 8, device)
@@ -1236,6 +1240,7 @@ class TestUtilityFunctions:
 # =============================================================================
 # Additional Edge Case Tests
 # =============================================================================
+
 
 class TestEdgeCases:
     """Test additional edge cases for coverage."""
@@ -1296,11 +1301,11 @@ class TestEdgeCases:
             pytest.skip("RawRecurrentRolloutBufferSamples not available")
 
         # Check that the class has the expected fields
-        assert hasattr(RawRecurrentRolloutBufferSamples, '_fields')
+        assert hasattr(RawRecurrentRolloutBufferSamples, "_fields")
         fields = RawRecurrentRolloutBufferSamples._fields
-        assert 'observations' in fields
-        assert 'actions' in fields
-        assert 'old_values' in fields
+        assert "observations" in fields
+        assert "actions" in fields
+        assert "old_values" in fields
 
 
 if __name__ == "__main__":

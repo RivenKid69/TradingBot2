@@ -127,7 +127,8 @@ class TestOCIImageBuilder:
         src.mkdir()
 
         (src / "__init__.py").write_text("# Package\n")
-        (src / "strategy.py").write_text('''
+        (src / "strategy.py").write_text(
+            '''
 """Test strategy."""
 class TestStrategy:
     """Simple test strategy."""
@@ -136,7 +137,8 @@ class TestStrategy:
 
     def run(self):
         return {"status": "ok"}
-''')
+'''
+        )
         return src
 
     def test_builder_initialization(self):
@@ -240,7 +242,9 @@ class TestStrategy:
         assert len(result.layers) >= 2
 
         # Check that deps layer has correct annotation
-        deps_layer = [l for l in result.layers if l.annotations.get("io.ccea.layer.type") == "dependencies"]
+        deps_layer = [
+            l for l in result.layers if l.annotations.get("io.ccea.layer.type") == "dependencies"
+        ]
         assert len(deps_layer) == 1
 
     def test_image_labels(self, sample_source, tmp_path):

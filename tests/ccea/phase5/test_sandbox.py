@@ -155,6 +155,7 @@ class TestSandbox:
 
     def test_execute_no_isolation(self, sandbox_none):
         """Test execution without isolation."""
+
         def simple_fn(x, y):
             return x + y
 
@@ -166,6 +167,7 @@ class TestSandbox:
 
     def test_execute_with_exception(self, sandbox_none):
         """Test execution with exception."""
+
         def failing_fn():
             raise ValueError("Test error")
 
@@ -176,6 +178,7 @@ class TestSandbox:
 
     def test_execute_with_kwargs(self, sandbox_none):
         """Test execution with keyword arguments."""
+
         def kwarg_fn(a, b=10):
             return a * b
 
@@ -186,6 +189,7 @@ class TestSandbox:
 
     def test_execute_process_isolation(self, sandbox_process):
         """Test execution with process isolation."""
+
         def simple_fn():
             return "hello from process"
 
@@ -201,6 +205,7 @@ class TestSandbox:
 
     def test_execute_timeout(self, sandbox_process):
         """Test execution timeout."""
+
         def slow_fn():
             time.sleep(10)
             return "done"
@@ -333,6 +338,7 @@ class TestPlatformCompatibility:
         """Test sandbox module can be imported without errors on any platform."""
         # This test passes if we got here without ImportError
         from packages.agent.daemon.sandbox import Sandbox, SandboxConfig
+
         assert Sandbox is not None
         assert SandboxConfig is not None
 
@@ -401,6 +407,7 @@ class TestPlatformCompatibility:
 
         # Test that we can query current limits
         import resource
+
         soft, hard = resource.getrlimit(resource.RLIMIT_AS)
         assert soft >= 0 or soft == -1  # -1 means unlimited
 

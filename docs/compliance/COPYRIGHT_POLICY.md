@@ -78,6 +78,7 @@ We implement state-of-the-art technologies to identify opt-out reservations:
 #### 4.1.1 robots.txt Directives
 
 Monitored directives include:
+
 ```
 User-agent: GPTBot
 User-agent: AI-Training
@@ -98,6 +99,7 @@ Per W3C TDMRep specification:
 #### 4.1.3 ai.txt Standard
 
 Emerging standard for AI training opt-out:
+
 ```
 # ai.txt
 User-agent: *
@@ -223,6 +225,7 @@ We maintain comprehensive records of:
 ### 8.2 Documentation
 
 Each audit produces:
+
 - Findings report
 - Remediation plan (if needed)
 - Updated compliance status

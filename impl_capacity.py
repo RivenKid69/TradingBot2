@@ -81,7 +81,7 @@ def capacity_curve(
             )
         else:
             impact_frac = _sqrt_impact_fraction(participation, impact_coef)
-        cost = impact_frac * to            # платим impact на торгуемую долю
+        cost = impact_frac * to  # платим impact на торгуемую долю
         net = g - cost
         curve.append(
             CapacityPoint(
@@ -118,7 +118,9 @@ def capacity_from_result(
 ) -> Dict[str, Any]:
     """Удобная обёртка: capacity из ``XSBacktestResult`` (gross = net + costs)."""
     net = result.returns
-    costs = result.costs.reindex(net.index).fillna(0.0) if len(getattr(result, "costs", [])) else 0.0
+    costs = (
+        result.costs.reindex(net.index).fillna(0.0) if len(getattr(result, "costs", [])) else 0.0
+    )
     gross = (net + costs) if not isinstance(costs, float) else net
     turnover = result.turnover.reindex(net.index).fillna(0.0)
     return capacity_curve(

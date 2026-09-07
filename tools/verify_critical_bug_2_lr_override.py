@@ -25,10 +25,10 @@ def test_lr_override():
 
     # Test multiple custom lr values
     test_cases = [
-        0.001,   # 1e-3
-        0.005,   # 5e-3
+        0.001,  # 1e-3
+        0.005,  # 5e-3
         0.0001,  # 1e-4
-        0.01,    # 1e-2
+        0.01,  # 1e-2
     ]
 
     bugs_found = []
@@ -44,12 +44,12 @@ def test_lr_override():
             model = DistributionalPPO(
                 CustomActorCriticPolicy,
                 env,
-                optimizer_kwargs={'lr': custom_lr},
+                optimizer_kwargs={"lr": custom_lr},
                 verbose=0,
             )
 
             # Check actual lr in optimizer
-            actual_lr = model.policy.optimizer.param_groups[0]['lr']
+            actual_lr = model.policy.optimizer.param_groups[0]["lr"]
 
             print(f"  Expected lr: {custom_lr}")
             print(f"  Actual lr:   {actual_lr}")

@@ -22,6 +22,7 @@ sys.path.insert(0, str(project_root))
 # MEDIUM #1: Return Fallback NaN (reward.pyx)
 # ==============================================================================
 
+
 class TestMedium1_ReturnFallbackNaN:
     """Test that log_return returns NaN for invalid inputs instead of 0.0."""
 
@@ -98,13 +99,15 @@ class TestMedium1_ReturnFallbackNaN:
         assert np.isnan(missing_data), "Invalid inputs should be NaN"
 
         # Verify they are distinguishable
-        assert no_change != missing_data or (no_change == 0.0 and np.isnan(missing_data)), \
-            "Model must be able to distinguish 'no change' from 'missing data'"
+        assert no_change != missing_data or (
+            no_change == 0.0 and np.isnan(missing_data)
+        ), "Model must be able to distinguish 'no change' from 'missing data'"
 
 
 # ==============================================================================
 # MEDIUM #3: Outlier Detection (features_pipeline.py)
 # ==============================================================================
+
 
 class TestMedium3_OutlierDetection:
     """Test winsorization for outlier detection."""
@@ -154,7 +157,7 @@ class TestMedium3_OutlierDetection:
 
         # Add extreme outliers
         returns[0] = -0.30  # Extreme negative
-        returns[-1] = 0.40   # Extreme positive
+        returns[-1] = 0.40  # Extreme positive
 
         # Winsorize
         clean = winsorize_array(returns, lower_percentile=1.0, upper_percentile=99.0)
@@ -187,38 +190,42 @@ class TestMedium3_OutlierDetection:
 
         # Create data with outlier in a feature that gets normalized (volume)
         # Note: 'close' may be excluded from normalization in some configurations
-        df = pd.DataFrame({
-            'timestamp': range(100),
-            'symbol': ['BTC'] * 100,
-            'close': [100.0] * 100,
-            'volume': [1.0] * 99 + [1000.0],  # One extreme outlier in volume
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": range(100),
+                "symbol": ["BTC"] * 100,
+                "close": [100.0] * 100,
+                "volume": [1.0] * 99 + [1000.0],  # One extreme outlier in volume
+            }
+        )
 
         # Fit pipeline WITH winsorization
         pipe_with = FeaturePipeline(enable_winsorization=True, winsorize_percentiles=(1.0, 99.0))
-        pipe_with.fit({'BTC': df})
+        pipe_with.fit({"BTC": df})
 
         # Fit pipeline WITHOUT winsorization
         pipe_without = FeaturePipeline(enable_winsorization=False)
-        pipe_without.fit({'BTC': df})
+        pipe_without.fit({"BTC": df})
 
         # Stats should be different for volume (which gets normalized)
-        vol_stats_with = pipe_with.stats.get('volume', {})
-        vol_stats_without = pipe_without.stats.get('volume', {})
+        vol_stats_with = pipe_with.stats.get("volume", {})
+        vol_stats_without = pipe_without.stats.get("volume", {})
 
         # Mean should be more robust with winsorization
-        mean_with = vol_stats_with.get('mean', 0)
-        mean_without = vol_stats_without.get('mean', 0)
+        mean_with = vol_stats_with.get("mean", 0)
+        mean_without = vol_stats_without.get("mean", 0)
 
         # Without winsorization, mean should be pulled up by outlier
         # With winsorization, outlier is clipped so mean stays low
-        assert mean_with < mean_without, \
-            f"Winsorization should reduce mean: with={mean_with:.2f}, without={mean_without:.2f}"
+        assert (
+            mean_with < mean_without
+        ), f"Winsorization should reduce mean: with={mean_with:.2f}, without={mean_without:.2f}"
 
 
 # ==============================================================================
 # MEDIUM #4: Zero Std Fallback (features_pipeline.py)
 # ==============================================================================
+
 
 class TestMedium4_ZeroStdFallback:
     """Test explicit zero handling for constant features."""
@@ -228,68 +235,77 @@ class TestMedium4_ZeroStdFallback:
         from features_pipeline import FeaturePipeline
 
         # Create data with constant feature
-        df = pd.DataFrame({
-            'timestamp': range(100),
-            'symbol': ['BTC'] * 100,
-            'close': [100.0] * 100,  # Constant (zero variance)
-            'volume': np.random.randn(100),  # Variable
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": range(100),
+                "symbol": ["BTC"] * 100,
+                "close": [100.0] * 100,  # Constant (zero variance)
+                "volume": np.random.randn(100),  # Variable
+            }
+        )
 
         # Fit and transform
         pipe = FeaturePipeline(enable_winsorization=False)
-        pipe.fit({'BTC': df})
+        pipe.fit({"BTC": df})
         result = pipe.transform_df(df)
 
         # Constant feature should be normalized to zeros
-        assert 'close_z' in result.columns, "close_z column should exist"
-        assert np.allclose(result['close_z'].dropna(), 0.0, atol=1e-6), \
-            "Constant feature should be normalized to zeros"
+        assert "close_z" in result.columns, "close_z column should exist"
+        assert np.allclose(
+            result["close_z"].dropna(), 0.0, atol=1e-6
+        ), "Constant feature should be normalized to zeros"
 
     def test_is_constant_flag_stored(self):
         """Test that is_constant flag is stored in stats."""
         from features_pipeline import FeaturePipeline
 
-        df = pd.DataFrame({
-            'timestamp': range(100),
-            'symbol': ['BTC'] * 100,
-            'close': [100.0] * 100,  # Constant
-            'volume': [1.0, 2.0, 3.0] * 33 + [1.0],  # Variable
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": range(100),
+                "symbol": ["BTC"] * 100,
+                "close": [100.0] * 100,  # Constant
+                "volume": [1.0, 2.0, 3.0] * 33 + [1.0],  # Variable
+            }
+        )
 
         pipe = FeaturePipeline(enable_winsorization=False)
-        pipe.fit({'BTC': df})
+        pipe.fit({"BTC": df})
 
         # Check stats
-        close_stats = pipe.stats.get('close', {})
-        volume_stats = pipe.stats.get('volume', {})
+        close_stats = pipe.stats.get("close", {})
+        volume_stats = pipe.stats.get("volume", {})
 
-        assert close_stats.get('is_constant') == True, "close should be marked as constant"
-        assert volume_stats.get('is_constant') == False, "volume should not be marked as constant"
+        assert close_stats.get("is_constant") == True, "close should be marked as constant"
+        assert volume_stats.get("is_constant") == False, "volume should not be marked as constant"
 
     def test_constant_with_nan_handled_correctly(self):
         """Test edge case: constant feature with NaN."""
         from features_pipeline import FeaturePipeline
 
-        df = pd.DataFrame({
-            'timestamp': range(100),
-            'symbol': ['BTC'] * 100,
-            'close': [100.0] * 98 + [np.nan, 100.0],  # Constant with one NaN
-            'volume': [1.0] * 100,
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": range(100),
+                "symbol": ["BTC"] * 100,
+                "close": [100.0] * 98 + [np.nan, 100.0],  # Constant with one NaN
+                "volume": [1.0] * 100,
+            }
+        )
 
         pipe = FeaturePipeline(enable_winsorization=False)
-        pipe.fit({'BTC': df})
+        pipe.fit({"BTC": df})
         result = pipe.transform_df(df)
 
         # All non-NaN values should be zero
-        close_z_not_nan = result['close_z'].dropna()
-        assert np.allclose(close_z_not_nan, 0.0, atol=1e-6), \
-            "Constant feature should normalize to zeros even with NaN present"
+        close_z_not_nan = result["close_z"].dropna()
+        assert np.allclose(
+            close_z_not_nan, 0.0, atol=1e-6
+        ), "Constant feature should normalize to zeros even with NaN present"
 
 
 # ==============================================================================
 # MEDIUM #5: Lookahead Bias (features_pipeline.py)
 # ==============================================================================
+
 
 class TestMedium5_LookaheadBias:
     """Test that close shifting prevents look-ahead bias (UPDATED 2025-11-21)."""
@@ -297,65 +313,77 @@ class TestMedium5_LookaheadBias:
     def test_no_double_shifting_in_fit_transform(self):
         """Test that transform_df() is idempotent (multiple calls give same result)."""
         from features_pipeline import FeaturePipeline
-        
+
         # Create simple data
-        df = pd.DataFrame({
-            'timestamp': range(10),
-            'symbol': ['BTC'] * 10,
-            'close': [100.0, 101.0, 102.0, 103.0, 104.0, 105.0, 106.0, 107.0, 108.0, 109.0],
-            'volume': [1.0] * 10,
-        })
-        
+        df = pd.DataFrame(
+            {
+                "timestamp": range(10),
+                "symbol": ["BTC"] * 10,
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0, 105.0, 106.0, 107.0, 108.0, 109.0],
+                "volume": [1.0] * 10,
+            }
+        )
+
         # Fit pipeline
         pipe = FeaturePipeline(enable_winsorization=False)
-        pipe.fit({'BTC': df})
-        
+        pipe.fit({"BTC": df})
+
         # Verify that calling transform_df multiple times doesn't cause additional shifts (idempotency)
         result1 = pipe.transform_df(df.copy())
         result2 = pipe.transform_df(df.copy())
-        
+
         # Both transforms should produce identical results
-        assert np.array_equal(result1['close'].values, result2['close'].values, equal_nan=True),             "Multiple transform_df() calls should produce identical results (idempotent)"
-    
+        assert np.array_equal(
+            result1["close"].values, result2["close"].values, equal_nan=True
+        ), "Multiple transform_df() calls should produce identical results (idempotent)"
+
     def test_shift_prevents_lookahead_bias(self):
         """Test that close is shifted in transform_df() to prevent look-ahead bias."""
         from features_pipeline import FeaturePipeline
-        
-        df = pd.DataFrame({
-            'timestamp': range(5),
-            'symbol': ['BTC'] * 5,
-            'close': [100.0, 101.0, 102.0, 103.0, 104.0],
-            'volume': [1.0] * 5,
-        })
-        
+
+        df = pd.DataFrame(
+            {
+                "timestamp": range(5),
+                "symbol": ["BTC"] * 5,
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "volume": [1.0] * 5,
+            }
+        )
+
         pipe = FeaturePipeline(enable_winsorization=False)
-        pipe.fit({'BTC': df})
+        pipe.fit({"BTC": df})
         result = pipe.transform_df(df.copy())
-        
+
         # First row should have NaN (shifted)
-        assert pd.isna(result['close'].iloc[0]),             "First row should have NaN after shift (no look-ahead bias)"
-    
+        assert pd.isna(
+            result["close"].iloc[0]
+        ), "First row should have NaN after shift (no look-ahead bias)"
+
     def test_reset_clears_stats(self):
         """Test that reset() clears stats."""
         from features_pipeline import FeaturePipeline
-        
-        df = pd.DataFrame({
-            'timestamp': range(5),
-            'symbol': ['BTC'] * 5,
-            'close': [100.0, 101.0, 102.0, 103.0, 104.0],
-            'volume': [1.0] * 5,
-        })
-        
+
+        df = pd.DataFrame(
+            {
+                "timestamp": range(5),
+                "symbol": ["BTC"] * 5,
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "volume": [1.0] * 5,
+            }
+        )
+
         pipe = FeaturePipeline(enable_winsorization=False)
-        pipe.fit({'BTC': df})
-        assert 'close' in pipe.stats
-        
+        pipe.fit({"BTC": df})
+        assert "close" in pipe.stats
+
         pipe.reset()
         assert len(pipe.stats) == 0, "Stats should be cleared after reset"
+
 
 # ==============================================================================
 # MEDIUM #9: Hard-coded Reward Clip (reward.pyx)
 # ==============================================================================
+
 
 class TestMedium9_RewardCapParameter:
     """Test that reward_cap parameter is used instead of hard-coded value."""
@@ -371,7 +399,7 @@ class TestMedium9_RewardCapParameter:
             params = list(sig.parameters.keys())
 
             # Should have reward_cap parameter
-            assert 'reward_cap' in params, "compute_reward_view should have reward_cap parameter"
+            assert "reward_cap" in params, "compute_reward_view should have reward_cap parameter"
 
         except ImportError:
             pytest.skip("reward module not compiled, skipping Cython test")
@@ -383,7 +411,7 @@ class TestMedium9_RewardCapParameter:
             from reward import compute_reward_view
 
             sig = inspect.signature(compute_reward_view)
-            reward_cap_param = sig.parameters.get('reward_cap')
+            reward_cap_param = sig.parameters.get("reward_cap")
 
             if reward_cap_param:
                 default = reward_cap_param.default
@@ -412,6 +440,7 @@ class TestMedium9_RewardCapParameter:
 # Integration Tests
 # ==============================================================================
 
+
 class TestIntegration:
     """Integration tests for multiple fixes working together."""
 
@@ -430,42 +459,42 @@ class TestIntegration:
         close_prices[50] = 50.0  # Flash crash
         close_prices[100:110] = 105.0  # Constant period
 
-        df = pd.DataFrame({
-            'timestamp': range(n),
-            'symbol': ['BTC'] * n,
-            'close': close_prices,
-            'volume': np.random.randn(n) * 100,
-            'constant_feature': [1.0] * n,  # Constant
-        })
-
-        # Add some NaN
-        df.loc[25, 'volume'] = np.nan
-
-        # Process with all fixes enabled
-        pipe = FeaturePipeline(
-            enable_winsorization=True,
-            winsorize_percentiles=(1.0, 99.0)
+        df = pd.DataFrame(
+            {
+                "timestamp": range(n),
+                "symbol": ["BTC"] * n,
+                "close": close_prices,
+                "volume": np.random.randn(n) * 100,
+                "constant_feature": [1.0] * n,  # Constant
+            }
         )
 
-        pipe.fit({'BTC': df})
+        # Add some NaN
+        df.loc[25, "volume"] = np.nan
+
+        # Process with all fixes enabled
+        pipe = FeaturePipeline(enable_winsorization=True, winsorize_percentiles=(1.0, 99.0))
+
+        pipe.fit({"BTC": df})
         result = pipe.transform_df(df)
 
         # Verify all fixes applied:
         # 1. Winsorization handled flash crash
-        volume_stats = pipe.stats.get('volume', {})
+        volume_stats = pipe.stats.get("volume", {})
         assert volume_stats is not None, "volume stats should exist"
 
         # 2. Constant feature normalized to zeros
-        if 'constant_feature_z' in result.columns:
-            assert np.allclose(result['constant_feature_z'].dropna(), 0.0, atol=1e-6), \
-                "Constant feature should be zeros"
+        if "constant_feature_z" in result.columns:
+            assert np.allclose(
+                result["constant_feature_z"].dropna(), 0.0, atol=1e-6
+            ), "Constant feature should be zeros"
 
         # 3. Close shifted correctly (first row should be NaN after shift)
-        assert pd.isna(result['close'].iloc[0]), "Close should be shifted (first row NaN)"
+        assert pd.isna(result["close"].iloc[0]), "Close should be shifted (first row NaN)"
 
         # 4. Pipeline completed without errors
         assert result is not None, "Pipeline should complete successfully"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])

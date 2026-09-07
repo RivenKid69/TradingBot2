@@ -10,6 +10,7 @@ HOURS_IN_WEEK = 168
 # 1970-01-01 00:00 UTC was a Thursday, which is hour 72 of the week
 _EPOCH_HOW = 72  # Hour-of-week for Unix epoch (0 = Monday 00:00 UTC)
 
+
 def hour_of_week(ts_ms: Union[int, Sequence[int], np.ndarray]) -> Union[int, np.ndarray]:
     """Return hour-of-week index where ``0`` is Monday 00:00 UTC.
 

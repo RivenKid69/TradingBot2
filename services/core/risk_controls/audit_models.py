@@ -518,7 +518,9 @@ class AuditRecordBuilder:
         self._record.trader_id = trader_id
         return self
 
-    def order_id(self, order_id: str, client_order_id: Optional[str] = None) -> "AuditRecordBuilder":
+    def order_id(
+        self, order_id: str, client_order_id: Optional[str] = None
+    ) -> "AuditRecordBuilder":
         """Set order identifiers."""
         self._record.order_id = order_id
         self._record.client_order_id = client_order_id
@@ -773,7 +775,9 @@ def create_order_filled_record(
     Returns:
         AuditRecord for order fill.
     """
-    event_type = AuditEventType.ORDER_PARTIALLY_FILLED if is_partial else AuditEventType.ORDER_FILLED
+    event_type = (
+        AuditEventType.ORDER_PARTIALLY_FILLED if is_partial else AuditEventType.ORDER_FILLED
+    )
 
     fill_details = details.copy() if details else {}
     if is_partial and remaining_quantity is not None:

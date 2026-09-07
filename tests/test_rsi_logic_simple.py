@@ -43,8 +43,12 @@ def test_case(name, avg_gain, avg_loss, expected_rsi):
     old_result = calculate_rsi_old_buggy(avg_gain, avg_loss)
     new_result = calculate_rsi_fixed(avg_gain, avg_loss)
 
-    old_ok = (math.isnan(old_result) and math.isnan(expected_rsi)) or (abs(old_result - expected_rsi) < 0.01)
-    new_ok = (math.isnan(new_result) and math.isnan(expected_rsi)) or (abs(new_result - expected_rsi) < 0.01)
+    old_ok = (math.isnan(old_result) and math.isnan(expected_rsi)) or (
+        abs(old_result - expected_rsi) < 0.01
+    )
+    new_ok = (math.isnan(new_result) and math.isnan(expected_rsi)) or (
+        abs(new_result - expected_rsi) < 0.01
+    )
 
     print(f"\n{name}:")
     print(f"  avg_gain={avg_gain}, avg_loss={avg_loss}")
@@ -70,10 +74,7 @@ if __name__ == "__main__":
     print("TEST 1: CRITICAL BUG - Pure uptrend (4 bars rising)")
     print("─" * 70)
     all_passed &= test_case(
-        "Pure uptrend (avg_loss=0)",
-        avg_gain=100.0,
-        avg_loss=0.0,
-        expected_rsi=100.0
+        "Pure uptrend (avg_loss=0)", avg_gain=100.0, avg_loss=0.0, expected_rsi=100.0
     )
 
     # Test 2: Pure downtrend (avg_gain = 0)
@@ -81,22 +82,14 @@ if __name__ == "__main__":
     print("TEST 2: Pure downtrend")
     print("─" * 70)
     all_passed &= test_case(
-        "Pure downtrend (avg_gain=0)",
-        avg_gain=0.0,
-        avg_loss=50.0,
-        expected_rsi=0.0
+        "Pure downtrend (avg_gain=0)", avg_gain=0.0, avg_loss=50.0, expected_rsi=0.0
     )
 
     # Test 3: No movement (both = 0)
     print("\n" + "─" * 70)
     print("TEST 3: No price movement")
     print("─" * 70)
-    all_passed &= test_case(
-        "No movement (both=0)",
-        avg_gain=0.0,
-        avg_loss=0.0,
-        expected_rsi=50.0
-    )
+    all_passed &= test_case("No movement (both=0)", avg_gain=0.0, avg_loss=0.0, expected_rsi=50.0)
 
     # Test 4: Normal case (both > 0)
     print("\n" + "─" * 70)
@@ -104,12 +97,7 @@ if __name__ == "__main__":
     print("─" * 70)
     # RS = 92.8 / 14.3 = 6.49
     # RSI = 100 - (100 / (1 + 6.49)) = 100 - 13.35 = 86.65
-    all_passed &= test_case(
-        "Mixed movements",
-        avg_gain=92.8,
-        avg_loss=14.3,
-        expected_rsi=86.65
-    )
+    all_passed &= test_case("Mixed movements", avg_gain=92.8, avg_loss=14.3, expected_rsi=86.65)
 
     # Test 5: Another normal case
     print("\n" + "─" * 70)
@@ -118,10 +106,7 @@ if __name__ == "__main__":
     # RS = 50 / 50 = 1.0
     # RSI = 100 - (100 / 2) = 50
     all_passed &= test_case(
-        "Balanced (avg_gain=avg_loss)",
-        avg_gain=50.0,
-        avg_loss=50.0,
-        expected_rsi=50.0
+        "Balanced (avg_gain=avg_loss)", avg_gain=50.0, avg_loss=50.0, expected_rsi=50.0
     )
 
     # Test 6: Heavily oversold
@@ -130,12 +115,7 @@ if __name__ == "__main__":
     print("─" * 70)
     # RS = 10 / 90 = 0.111
     # RSI = 100 - (100 / 1.111) = 100 - 90.0 = 10.0
-    all_passed &= test_case(
-        "Oversold",
-        avg_gain=10.0,
-        avg_loss=90.0,
-        expected_rsi=10.0
-    )
+    all_passed &= test_case("Oversold", avg_gain=10.0, avg_loss=90.0, expected_rsi=10.0)
 
     # Test 7: Heavily overbought
     print("\n" + "─" * 70)
@@ -143,12 +123,7 @@ if __name__ == "__main__":
     print("─" * 70)
     # RS = 90 / 10 = 9.0
     # RSI = 100 - (100 / 10) = 100 - 10 = 90.0
-    all_passed &= test_case(
-        "Overbought",
-        avg_gain=90.0,
-        avg_loss=10.0,
-        expected_rsi=90.0
-    )
+    all_passed &= test_case("Overbought", avg_gain=90.0, avg_loss=10.0, expected_rsi=90.0)
 
     print("\n" + "=" * 70)
     if all_passed:

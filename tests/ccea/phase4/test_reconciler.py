@@ -310,9 +310,7 @@ class TestPositionReconciler:
 
     def test_set_local_position_zero_removes(self):
         """Test setting position to zero removes it."""
-        reconciler = PositionReconciler(
-            local_positions={"BTCUSDT": Decimal("1.0")}
-        )
+        reconciler = PositionReconciler(local_positions={"BTCUSDT": Decimal("1.0")})
 
         reconciler.set_local_position("BTCUSDT", Decimal("0"))
 

@@ -288,7 +288,6 @@ __all__ = [
     # Version info
     "__version__",
     "__phase__",
-
     # Block 2.1 - Tiered Backup
     "BackupTier",
     "RPOLevel",
@@ -304,7 +303,6 @@ __all__ = [
     "TieredBackupManager",
     "create_tiered_backup_manager",
     "get_tier_definitions",
-
     # Block 2.2 - Enhanced Healthcheck
     "ProbeType",
     "DependencyType",
@@ -318,7 +316,6 @@ __all__ = [
     "EnhancedHealthcheckConfig",
     "EnhancedHealthcheck",
     "create_enhanced_healthcheck",
-
     # Block 2.3 - Structured Logging
     "LogLevel",
     "LogCategory",
@@ -330,7 +327,6 @@ __all__ = [
     "get_correlation_id",
     "set_correlation_id",
     "correlation_context",
-
     # Block 2.4 - Comprehensive Alerting
     "AlertSeverity",
     "AlertChannel",
@@ -343,7 +339,6 @@ __all__ = [
     "NotificationResult",
     "AlertingService",
     "create_alerting_service",
-
     # Block 2.5 - DR Testing Framework
     "DRTestType",
     "DRTestStatus",
@@ -356,7 +351,6 @@ __all__ = [
     "DRTestingConfig",
     "DRTestingFramework",
     "create_dr_testing_framework",
-
     # Block 2.6 - CI/CD Security Gates
     "ScanType",
     "ScanStatus",
@@ -368,7 +362,6 @@ __all__ = [
     "SecurityGatesConfig",
     "SecurityGatesManager",
     "create_security_gates_manager",
-
     # Block 2.7 - SOC2-DORA Control Mapping
     "SOC2Category",
     "DORAArticle",
@@ -382,7 +375,6 @@ __all__ = [
     "SOC2DORAMapper",
     "create_soc2_dora_mapper",
     "get_control_mappings",
-
     # Block 2.9 - Multi-AZ Deployment
     "AvailabilityZone",
     "DeploymentStrategy",
@@ -395,7 +387,6 @@ __all__ = [
     "MultiAZConfig",
     "MultiAZManager",
     "create_multi_az_manager",
-
     # Block 2.10 - On-Call Rotation
     "OnCallTier",
     "RotationSchedule",
@@ -408,7 +399,6 @@ __all__ = [
     "OnCallRotationConfig",
     "OnCallRotationManager",
     "create_oncall_rotation_manager",
-
     # Block 2.11 - Subcontractor Monitoring
     "SubcontractorHealthStatus",
     "MonitoringFrequency",
@@ -419,7 +409,6 @@ __all__ = [
     "SubcontractorMonitoringConfig",
     "SubcontractorMonitor",
     "create_subcontractor_monitor",
-
     # Block 2.12 - Trust Center Platform
     "DocumentType",
     "AccessLevel",
@@ -431,7 +420,6 @@ __all__ = [
     "TrustCenterConfig",
     "TrustCenterPlatform",
     "create_trust_center",
-
     # Block 2.13 - DR Execution
     "ExecutionPhase",
     "ExecutionStatus",
@@ -442,7 +430,6 @@ __all__ = [
     "DRExecutionConfig",
     "DRExecutionManager",
     "create_dr_execution_manager",
-
     # Block 2.14 - CTPP Risk Monitoring
     "CTPPRiskLevel",
     "MonitoringStatus",

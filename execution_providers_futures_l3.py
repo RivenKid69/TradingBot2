@@ -181,6 +181,7 @@ class FuturesL3Config:
         insurance_fund_initial: Starting insurance fund balance
         liquidation_fee_bps: Fee for liquidation orders
     """
+
     # Feature flags
     enable_liquidation_injection: bool = True
     enable_cascade_simulation: bool = True
@@ -311,7 +312,9 @@ class FuturesL3SlippageProvider:
         cascade_mult = 1.0
         if cascade_active and self._cascade_impact_remaining_bps > 0:
             # Additional slippage during cascade
-            cascade_mult = 1.0 + (self._cascade_impact_remaining_bps / base_bps) if base_bps > 0 else 1.0
+            cascade_mult = (
+                1.0 + (self._cascade_impact_remaining_bps / base_bps) if base_bps > 0 else 1.0
+            )
             cascade_mult = min(cascade_mult, 3.0)  # Cap at 200% increase
 
         total_bps = base_bps * funding_mult * cascade_mult
@@ -444,7 +447,7 @@ class FuturesL3FillProvider:
             is_maker = False
         else:
             # LIMIT order - check if fills
-            limit_price = getattr(order, 'limit_price', None)
+            limit_price = getattr(order, "limit_price", None)
             if limit_price is None:
                 # Fallback: use typical price
                 fill_price = Decimal(str(bar.typical_price))
@@ -542,9 +545,7 @@ class FuturesL3FillProvider:
                 slippage_bps = 0.0
 
             # Insurance fund impact
-            insurance_impact = self._calculate_insurance_impact(
-                liq_order, fill_price, fill_qty
-            )
+            insurance_impact = self._calculate_insurance_impact(liq_order, fill_price, fill_qty)
 
             result = LiquidationFillResult(
                 order_info=liq_order,
@@ -696,12 +697,8 @@ class FuturesL3ExecutionProvider:
         self._config = config or FuturesL3Config()
 
         # Create components
-        self._slippage = slippage_provider or FuturesL3SlippageProvider(
-            config=self._config
-        )
-        self._fill_provider = fill_provider or FuturesL3FillProvider(
-            config=self._config
-        )
+        self._slippage = slippage_provider or FuturesL3SlippageProvider(config=self._config)
+        self._fill_provider = fill_provider or FuturesL3FillProvider(config=self._config)
         self._fees = fee_provider or FuturesFeeProvider()
 
         # Futures-specific components
@@ -768,7 +765,7 @@ class FuturesL3ExecutionProvider:
             - Insurance fund is updated on each liquidation
             - ADL may be triggered if insurance fund depletes
         """
-        timestamp_ms = bar.timestamp_ms if hasattr(bar, 'timestamp_ms') else int(time.time() * 1000)
+        timestamp_ms = bar.timestamp_ms if hasattr(bar, "timestamp_ms") else int(time.time() * 1000)
 
         # Update funding state
         if self._config.enable_funding_dynamics:
@@ -854,10 +851,10 @@ class FuturesL3ExecutionProvider:
         self._total_fills += 1
 
         # Get metadata from original fill
-        original_metadata = getattr(fill, 'metadata', {}) or {}
-        is_maker = original_metadata.get('is_maker', False)
-        symbol = original_metadata.get('symbol', '')
-        side = original_metadata.get('side', '')
+        original_metadata = getattr(fill, "metadata", {}) or {}
+        is_maker = original_metadata.get("is_maker", False)
+        symbol = original_metadata.get("symbol", "")
+        side = original_metadata.get("side", "")
 
         return Fill(
             price=float(adjusted_price),
@@ -890,9 +887,13 @@ class FuturesL3ExecutionProvider:
         # Create initial liquidation event
         mid_price = market.get_mid_price() or Decimal("0")
         initial_liq = LiquidationOrderInfo(
-            symbol=market.symbol if hasattr(market, 'symbol') else "BTCUSDT",
+            symbol=market.symbol if hasattr(market, "symbol") else "BTCUSDT",
             side="SELL",  # Assume long liquidation (most common in downtrend)
-            qty=Decimal(str(recent_liquidations / float(mid_price))) if mid_price > 0 else Decimal("0"),
+            qty=(
+                Decimal(str(recent_liquidations / float(mid_price)))
+                if mid_price > 0
+                else Decimal("0")
+            ),
             bankruptcy_price=mid_price,
             mark_price=mid_price,
             timestamp_ms=timestamp_ms,
@@ -908,9 +909,7 @@ class FuturesL3ExecutionProvider:
             )
 
             # Set cascade impact on slippage provider
-            self._slippage.set_cascade_impact(
-                self._active_cascade.total_price_impact_bps
-            )
+            self._slippage.set_cascade_impact(self._active_cascade.total_price_impact_bps)
 
             self._total_cascade_events += 1
 

@@ -101,7 +101,9 @@ def setup_and_collect(model: DistributionalPPO, env, *, n_steps: int | None = No
     )
     model._last_callback = callback
     model._current_progress_remaining = 1.0
-    return model.collect_rollouts(env, callback, model.rollout_buffer, n_rollout_steps=n_steps or model.n_steps)
+    return model.collect_rollouts(
+        env, callback, model.rollout_buffer, n_rollout_steps=n_steps or model.n_steps
+    )
 
 
 def disable_vf_clip_warmup(model: DistributionalPPO) -> None:
@@ -293,7 +295,9 @@ def test_popart_shadow_and_live_nan_paths():
         mask = torch.zeros((2, 1), dtype=torch.float32)
         return PopArtHoldoutBatch(obs, returns, episode_starts, None, mask)
 
-    controller = PopArtController(enabled=True, mode="shadow", holdout_loader=holdout_loader, logger=model.logger)
+    controller = PopArtController(
+        enabled=True, mode="shadow", holdout_loader=holdout_loader, logger=model.logger
+    )
     with pytest.raises(IndexError):
         controller.evaluate_shadow(
             model=model,
@@ -310,7 +314,9 @@ def test_popart_shadow_and_live_nan_paths():
     )
     assert metrics is None or metrics.samples >= 0
 
-    controller_live = PopArtController(enabled=True, mode="live", holdout_loader=holdout_loader, logger=model.logger)
+    controller_live = PopArtController(
+        enabled=True, mode="live", holdout_loader=holdout_loader, logger=model.logger
+    )
     controller_live._last_holdout_eval = PopArtHoldoutEvaluation(
         baseline_raw=torch.zeros((2, 1)),
         candidate_raw=torch.ones((2, 1)),
@@ -321,7 +327,9 @@ def test_popart_shadow_and_live_nan_paths():
         clip_fraction_before=0.0,
         clip_fraction_after=0.0,
     )
-    controller_live.apply_live_update(model=model, old_mean=0.0, old_std=1.0, new_mean=0.1, new_std=1.1)
+    controller_live.apply_live_update(
+        model=model, old_mean=0.0, old_std=1.0, new_mean=0.1, new_std=1.1
+    )
     assert controller_live.apply_count >= 0
 
 
@@ -340,16 +348,18 @@ def test_refresh_value_prediction_tensors_clip():
     )
     ret_mu = torch.tensor(0.0)
     ret_std = torch.tensor(1.0)
-    primary_preds, reserve_preds, primary_weights, reserve_weights = model._refresh_value_prediction_tensors(
-        primary_cache=[entry],
-        primary_predictions=[],
-        reserve_cache=[],
-        reserve_predictions=[],
-        primary_weights=[],
-        reserve_weights=[],
-        clip_range_vf_value=0.2,
-        ret_mu_tensor=ret_mu,
-        ret_std_tensor=ret_std,
+    primary_preds, reserve_preds, primary_weights, reserve_weights = (
+        model._refresh_value_prediction_tensors(
+            primary_cache=[entry],
+            primary_predictions=[],
+            reserve_cache=[],
+            reserve_predictions=[],
+            primary_weights=[],
+            reserve_weights=[],
+            clip_range_vf_value=0.2,
+            ret_mu_tensor=ret_mu,
+            ret_std_tensor=ret_std,
+        )
     )
     assert len(primary_preds) == 1
     assert len(primary_weights) == 1
@@ -447,7 +457,11 @@ def test_collect_rollouts_rejects_non_recurrent_buffer():
         ({"clip_range_vf": -0.1}, "clip_range_vf", ValueError),
         ({"vf_clip_threshold_ev": 2.0}, "vf_clip_threshold_ev", ValueError),
         ({"distributional_vf_clip_mode": "invalid"}, "distributional_vf_clip_mode", ValueError),
-        ({"distributional_vf_clip_variance_factor": 0.5}, "distributional_vf_clip_variance_factor", ValueError),
+        (
+            {"distributional_vf_clip_variance_factor": 0.5},
+            "distributional_vf_clip_variance_factor",
+            ValueError,
+        ),
         ({"value_target_scale_fixed": -1.0}, "value_target_scale_fixed", ValueError),
         ({"optimizer_lr_min": -1.0}, "optimizer_lr_min", ValueError),
         ({"scheduler_min_lr": -1.0}, "scheduler_min_lr", ValueError),
@@ -547,9 +561,7 @@ def test_collect_rollouts_missing_value_logits_raises():
     env = make_vec_env()
     model = make_model(
         env=env,
-        policy_kwargs={
-            "arch_params": {"critic": {"distributional": True, "categorical": True}}
-        },
+        policy_kwargs={"arch_params": {"critic": {"distributional": True, "categorical": True}}},
     )
     total = int(env.num_envs)
     _, callback = model._setup_learn(
@@ -624,9 +636,7 @@ def test_twin_critics_vf_clipping_loss_categorical_paths():
     env = make_vec_env()
     model = make_model(
         env=env,
-        policy_kwargs={
-            "arch_params": {"critic": {"distributional": True, "categorical": True}}
-        },
+        policy_kwargs={"arch_params": {"critic": {"distributional": True, "categorical": True}}},
     )
     latent_dim = int(getattr(model.policy, "lstm_output_dim", 32))
     batch = 3
@@ -1032,7 +1042,9 @@ def test_train_sa_ppo_and_weighted_entropy():
     class _SaPpoStub:
         is_adversarial_enabled = True
 
-        def apply_adversarial_augmentation(self, states, actions, advantages, old_log_probs, clip_range):
+        def apply_adversarial_augmentation(
+            self, states, actions, advantages, old_log_probs, clip_range
+        ):
             mask = torch.zeros(states.shape[0], device=states.device)
             mask[0] = 1.0
             return states, mask, {"debug/sa_ppo_enabled": 1.0}
@@ -1210,6 +1222,7 @@ def test_compute_explained_variance_metric_fallback_empty_indices():
 
 def test_collect_rollouts_non_mapping_info():
     """Edge case: info without expected keys."""
+
     # DummyVecEnv modifies info, so we test with unusual info content
     def info_fn(step, action, terminated):
         return {"unexpected_key": 123}
@@ -1410,6 +1423,7 @@ def test_collect_rollouts_vec_normalize_error(monkeypatch):
     """Lines 8267-8268: VecNormalize env error path."""
     env = make_vec_env(max_steps=4)
     model = make_model(env=env)
+
     def _raise_unwrap(_):
         raise ValueError("unwrap failed")
 
@@ -1443,9 +1457,11 @@ def test_train_obs_mapping_handling():
     class DictObsEnv(gym.Env):
         def __init__(self):
             self.action_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
-            self.observation_space = spaces.Dict({
-                "obs": spaces.Box(-1.0, 1.0, (4,), np.float32),
-            })
+            self.observation_space = spaces.Dict(
+                {
+                    "obs": spaces.Box(-1.0, 1.0, (4,), np.float32),
+                }
+            )
             self._step = 0
 
         def reset(self, *, seed=None, options=None):
@@ -1514,6 +1530,7 @@ def test_collect_rollouts_raw_actions_tensor():
 
 def test_collect_rollouts_group_key_fallback():
     """Line 8553: group_key_candidate fallback."""
+
     def info_fn(step, action, terminated):
         return {"group_key": None}  # None group key
 
@@ -1525,6 +1542,7 @@ def test_collect_rollouts_group_key_fallback():
 
 def test_collect_rollouts_safe_fallback():
     """Line 8559: safe_fallback value."""
+
     def info_fn(step, action, terminated):
         return {"reward_raw_fraction": "not_a_number"}
 
@@ -1706,6 +1724,7 @@ def test_train_mixed_inf_values():
 
 def test_collect_rollouts_terminal_obs_handling():
     """Test terminal observation handling in collect_rollouts."""
+
     def info_fn(step, action, terminated):
         if terminated:
             return {
@@ -1807,6 +1826,7 @@ def test_train_max_grad_norm():
 
 def test_collect_rollouts_with_zero_rewards():
     """Test rollout collection with zero rewards."""
+
     class ZeroRewardEnv(TinyEnv):
         def step(self, action):
             obs, _, terminated, truncated, info = super().step(action)
@@ -1820,6 +1840,7 @@ def test_collect_rollouts_with_zero_rewards():
 
 def test_collect_rollouts_with_large_rewards():
     """Test rollout collection with large rewards."""
+
     class LargeRewardEnv(TinyEnv):
         def step(self, action):
             obs, _, terminated, truncated, info = super().step(action)
@@ -2155,6 +2176,7 @@ def test_train_very_small_batch():
 
 def test_collect_rollouts_episode_info():
     """Test rollout collection with episode info."""
+
     def info_fn(step, action, terminated):
         if terminated:
             return {
@@ -2229,6 +2251,7 @@ def test_train_value_scale_std_floor():
 
 def test_collect_rollouts_group_key_tracking():
     """Test group key tracking in rollouts."""
+
     def info_fn(step, action, terminated):
         return {"group_key": f"group_{step % 2}"}
 
@@ -2536,6 +2559,7 @@ def test_train_returns_near_zero_variance():
 
 def test_collect_rollouts_with_reward_components():
     """Test rollout collection with reward component tracking."""
+
     def info_fn(step, action, terminated):
         return {
             "reward_raw_fraction": 0.5 + step * 0.1,
@@ -2565,17 +2589,17 @@ def test_popart_controller_live_mode():
 def test_popart_holdout_batch():
     """Test PopArtHoldoutBatch is a NamedTuple with expected fields."""
     # PopArtHoldoutBatch is a NamedTuple - check its structure
-    assert hasattr(PopArtHoldoutBatch, '_fields')
-    assert 'observations' in PopArtHoldoutBatch._fields
-    assert 'returns_raw' in PopArtHoldoutBatch._fields
+    assert hasattr(PopArtHoldoutBatch, "_fields")
+    assert "observations" in PopArtHoldoutBatch._fields
+    assert "returns_raw" in PopArtHoldoutBatch._fields
 
 
 def test_popart_holdout_evaluation():
     """Test PopArtHoldoutEvaluation dataclass structure."""
     # PopArtHoldoutEvaluation is a dataclass - check its annotations
-    assert hasattr(PopArtHoldoutEvaluation, '__annotations__')
-    assert 'ev_before' in PopArtHoldoutEvaluation.__annotations__
-    assert 'ev_after' in PopArtHoldoutEvaluation.__annotations__
+    assert hasattr(PopArtHoldoutEvaluation, "__annotations__")
+    assert "ev_before" in PopArtHoldoutEvaluation.__annotations__
+    assert "ev_after" in PopArtHoldoutEvaluation.__annotations__
 
 
 def test_train_with_varied_old_values():
@@ -2655,9 +2679,7 @@ def test_compute_ev_metric_empty_mask_tensor():
     y_pred = torch.tensor([1.1, 2.1, 3.1])
     # Empty mask tensor -> lines 5501-5502
     empty_mask = torch.tensor([])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, mask_tensor=empty_mask
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, mask_tensor=empty_mask)
     # Should handle gracefully
     assert result is not None
 
@@ -2682,9 +2704,7 @@ def test_compute_ev_metric_all_zero_weights():
     y_pred = torch.tensor([1.1, 2.1, 3.1])
     # All zeros mask -> no finite positive weights
     zero_mask = torch.tensor([0.0, 0.0, 0.0])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, mask_tensor=zero_mask
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, mask_tensor=zero_mask)
     assert result is not None
 
 
@@ -2707,9 +2727,7 @@ def test_compute_ev_metric_weights_sum_zero():
     y_pred = torch.tensor([1.1, 2.1, 3.1])
     # Weights that are all negative (will be clamped) or sum to zero
     neg_mask = torch.tensor([-1.0, -1.0, -1.0])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, mask_tensor=neg_mask
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, mask_tensor=neg_mask)
     assert result is not None
 
 
@@ -2741,6 +2759,7 @@ def test_compute_ev_metric_all_inf_values():
 
 def test_collect_rollouts_terminal_obs_none():
     """Test collect_rollouts when terminal_observation is None (line 8708)."""
+
     def info_fn(step, action, terminated):
         return {"time_limit_truncated": True, "terminal_observation": None}
 
@@ -2752,6 +2771,7 @@ def test_collect_rollouts_terminal_obs_none():
 
 def test_collect_rollouts_truncated_no_terminal_obs():
     """Test collect_rollouts time_limit_truncated but no terminal_observation key."""
+
     def info_fn(step, action, terminated):
         if terminated:
             # time_limit_truncated=True but missing terminal_observation key entirely
@@ -2855,7 +2875,11 @@ def test_train_empty_scaled_returns():
 def test_train_vf_clip_normalize_returns_false():
     """Test train() VF clipping with normalize_returns=False (lines 9775-9811, 9816-9819)."""
     env = make_vec_env(max_steps=4)
-    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": False, "num_quantiles": 5}}}
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {"distributional": True, "categorical": False, "num_quantiles": 5}
+        }
+    }
     model = make_model(
         env=env,
         normalize_returns=False,  # Critical: triggers the else branch
@@ -2870,7 +2894,11 @@ def test_train_vf_clip_normalize_returns_false():
 def test_train_vf_clip_normalize_returns_false_per_quantile():
     """Test train() VF clipping normalize_returns=False + per_quantile mode."""
     env = make_vec_env(max_steps=4)
-    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": False, "num_quantiles": 5}}}
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {"distributional": True, "categorical": False, "num_quantiles": 5}
+        }
+    }
     model = make_model(
         env=env,
         normalize_returns=False,
@@ -2900,7 +2928,11 @@ def test_train_categorical_vf_clip_normalize_returns_false():
 def test_train_value_clip_limit_scaled():
     """Test train() with _value_clip_limit_scaled set (lines 9801-9806)."""
     env = make_vec_env(max_steps=4)
-    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": False, "num_quantiles": 5}}}
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {"distributional": True, "categorical": False, "num_quantiles": 5}
+        }
+    }
     model = make_model(
         env=env,
         normalize_returns=False,
@@ -3110,16 +3142,18 @@ def test_compute_ev_metric_with_negative_mask_clamped():
     y_pred = torch.tensor([1.1, 2.1, 3.1, 4.1])
     # Negative values will be clamped to 0 -> effectively empty mask
     neg_mask = torch.tensor([-0.5, -0.5, -0.5, -0.5])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, mask_tensor=neg_mask
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, mask_tensor=neg_mask)
     assert result is not None
 
 
 def test_train_quantile_mean_and_variance_clip_no_normalize():
     """Test quantile VF with mean_and_variance mode and normalize_returns=False."""
     env = make_vec_env(max_steps=4)
-    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": False, "num_quantiles": 5}}}
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {"distributional": True, "categorical": False, "num_quantiles": 5}
+        }
+    }
     model = make_model(
         env=env,
         normalize_returns=False,
@@ -3171,9 +3205,7 @@ def test_compute_ev_metric_with_record_fallback_true_single():
     # Single sample should hit the sample_count < 2 branch for corr_value = nan
     y_true = torch.tensor([1.0, float("nan"), float("nan")])
     y_pred = torch.tensor([1.1, float("nan"), float("nan")])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, record_fallback=True
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, record_fallback=True)
     assert result is not None
 
 
@@ -3184,9 +3216,7 @@ def test_compute_ev_metric_with_inf_weights():
     y_pred = torch.tensor([1.1, 2.1, 3.1])
     # inf weights -> sum_w non-finite
     inf_mask = torch.tensor([float("inf"), float("inf"), float("inf")])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, mask_tensor=inf_mask
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, mask_tensor=inf_mask)
     assert result is not None
 
 
@@ -3197,9 +3227,7 @@ def test_compute_ev_metric_with_nan_weights():
     y_pred = torch.tensor([1.1, 2.1, 3.1])
     # NaN weights -> should be filtered
     nan_mask = torch.tensor([float("nan"), float("nan"), float("nan")])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, mask_tensor=nan_mask
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, mask_tensor=nan_mask)
     assert result is not None
 
 
@@ -3210,9 +3238,7 @@ def test_compute_ev_metric_mixed_valid_invalid_mask():
     y_pred = torch.tensor([1.1, 2.1, 3.1, 4.1])
     # Mix of valid and invalid weights
     mixed_mask = torch.tensor([1.0, float("nan"), 0.0, -1.0])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, mask_tensor=mixed_mask
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, mask_tensor=mixed_mask)
     assert result is not None
 
 
@@ -3220,7 +3246,11 @@ def test_train_with_min_half_range_fallback():
     """Test train() with min_half_range fallback (lines 9413, 9418)."""
     env = make_vec_env(max_steps=4)
     # Use quantile (non-categorical) to trigger the min_half_range=0 path for quantile
-    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": False, "num_quantiles": 5}}}
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {"distributional": True, "categorical": False, "num_quantiles": 5}
+        }
+    }
     model = make_model(env=env, policy_kwargs=policy_kwargs)
     setup_and_collect(model, env, n_steps=4)
     model.train()
@@ -3261,9 +3291,7 @@ def test_collect_rollouts_with_raw_actions_none():
     original_forward = model.policy.forward
 
     def _patched_forward(obs, lstm_states, episode_starts):
-        actions, values, log_probs, new_states = original_forward(
-            obs, lstm_states, episode_starts
-        )
+        actions, values, log_probs, new_states = original_forward(obs, lstm_states, episode_starts)
         model.policy._last_raw_actions = None
         return actions, values, log_probs, new_states
 
@@ -3319,9 +3347,7 @@ def test_compute_ev_metric_all_finite_single_positive_weight():
     y_pred = torch.tensor([1.1, 2.1, 3.1])
     # Only one positive weight -> single sample after filtering
     sparse_mask = torch.tensor([1.0, 0.0, 0.0])
-    result = model._compute_explained_variance_metric(
-        y_true, y_pred, mask_tensor=sparse_mask
-    )
+    result = model._compute_explained_variance_metric(y_true, y_pred, mask_tensor=sparse_mask)
     assert result is not None
 
 
@@ -3339,7 +3365,11 @@ def test_train_with_very_small_target_kl():
 def test_train_normalize_returns_false_with_value_clip():
     """Test train() VF clipping path with normalize_returns=False completely."""
     env = make_vec_env(max_steps=4)
-    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": False, "num_quantiles": 7}}}
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {"distributional": True, "categorical": False, "num_quantiles": 7}
+        }
+    }
     model = make_model(
         env=env,
         normalize_returns=False,
@@ -3395,6 +3425,7 @@ def test_train_quantile_vf_clip_modes_warmup_off(mode):
     )
     model.clip_range_vf = 0.2
     if mode == "mean_and_variance":
+
         def _patched_quantile_loss(predicted_quantiles, targets, reduction="mean"):
             if reduction == "none":
                 return torch.zeros_like(predicted_quantiles)
@@ -3424,6 +3455,7 @@ def test_train_quantile_vf_clip_mean_and_variance_no_old_quantiles():
         policy_kwargs=policy_kwargs,
     )
     model.clip_range_vf = 0.2
+
     def _patched_quantile_loss(predicted_quantiles, targets, reduction="mean"):
         if reduction == "none":
             return torch.zeros_like(predicted_quantiles)
@@ -3773,6 +3805,7 @@ def test_collect_rollouts_time_limit_bad_terminal_obs():
 
 def test_collect_rollouts_non_tensor_actions_discrete():
     """Line 8468: non-tensor actions are converted for discrete action space."""
+
     class _FakeActions:
         def __init__(self, tensor: torch.Tensor):
             self._array = tensor.detach().cpu().numpy()
@@ -3805,9 +3838,7 @@ def test_collect_rollouts_non_tensor_actions_discrete():
     original_forward = model.policy.forward
 
     def _patched_forward(obs, lstm_states, episode_starts):
-        actions, values, log_probs, new_states = original_forward(
-            obs, lstm_states, episode_starts
-        )
+        actions, values, log_probs, new_states = original_forward(obs, lstm_states, episode_starts)
         return _FakeActions(actions), values, log_probs, new_states
 
     model.policy.forward = _patched_forward
@@ -3908,9 +3939,7 @@ def test_popart_evaluate_holdout_rnnstates(monkeypatch):
 
 def test_popart_apply_live_update_categorical():
     env = make_vec_env()
-    policy_kwargs = {
-        "arch_params": {"critic": {"distributional": True, "categorical": True}}
-    }
+    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": True}}}
     model = make_model(env=env, policy_kwargs=policy_kwargs)
     model._use_quantile_value = False
     controller = PopArtController(enabled=True, mode="live")
@@ -4002,9 +4031,7 @@ def test_clone_observations_to_device_to_fallback():
             return f"moved:{device_arg}"
 
     model = make_model()
-    result = model._clone_observations_to_device(
-        _ToOnlyPositional(), torch.device("cpu")
-    )
+    result = model._clone_observations_to_device(_ToOnlyPositional(), torch.device("cpu"))
     assert result == "moved:cpu"
 
 
@@ -4268,7 +4295,9 @@ def test_train_kl_consecutive_stop_reason(monkeypatch):
     original_eval = model.policy.evaluate_actions
 
     def _patched_eval(obs, actions, lstm_states, episode_starts, **kwargs):
-        values, log_prob, entropy = original_eval(obs, actions, lstm_states, episode_starts, **kwargs)
+        values, log_prob, entropy = original_eval(
+            obs, actions, lstm_states, episode_starts, **kwargs
+        )
         return values, torch.zeros_like(log_prob), entropy
 
     monkeypatch.setattr(model.policy, "evaluate_actions", _patched_eval)
@@ -4287,9 +4316,7 @@ def test_restore_kl_penalty_state_invalid_values():
 
 def test_refresh_value_prediction_tensors_categorical_atoms_softmax(monkeypatch):
     env = make_vec_env()
-    policy_kwargs = {
-        "arch_params": {"critic": {"distributional": True, "categorical": True}}
-    }
+    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": True}}}
     model = make_model(env=env, policy_kwargs=policy_kwargs)
     model._use_quantile_value = False
     model.policy.atoms = torch.linspace(-1.0, 1.0, 5)
@@ -4327,9 +4354,7 @@ def test_refresh_value_prediction_tensors_categorical_atoms_softmax(monkeypatch)
 
 def test_refresh_value_prediction_tensors_categorical_value_pred_1d(monkeypatch):
     env = make_vec_env()
-    policy_kwargs = {
-        "arch_params": {"critic": {"distributional": True, "categorical": True}}
-    }
+    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": True}}}
     model = make_model(env=env, policy_kwargs=policy_kwargs)
     model._use_quantile_value = False
     model.policy.atoms = None

@@ -52,8 +52,10 @@ from lob.data_structures import (
 # Enums and Constants
 # ==============================================================================
 
+
 class ImpactModelType(IntEnum):
     """Market impact model type enumeration."""
+
     KYLE_LAMBDA = 1  # Kyle (1985) linear
     ALMGREN_CHRISS = 2  # Almgren-Chriss (2001) square-root
     GATHERAL = 3  # Gatheral (2010) transient with decay
@@ -64,6 +66,7 @@ class ImpactModelType(IntEnum):
 
 class DecayType(IntEnum):
     """Impact decay function type."""
+
     EXPONENTIAL = 1  # exp(-t/τ)
     POWER_LAW = 2  # (1 + t/τ)^(-β)
     LINEAR = 3  # max(0, 1 - t/τ)
@@ -84,6 +87,7 @@ _MIN_ADV = 1.0  # Minimum ADV to prevent division by zero
 # Data Classes
 # ==============================================================================
 
+
 @dataclass
 class ImpactParameters:
     """
@@ -98,6 +102,7 @@ class ImpactParameters:
         volatility: Daily volatility (σ)
         spread_bps: Typical spread in basis points
     """
+
     eta: float = _DEFAULT_IMPACT_COEF_TEMP  # Temporary impact
     gamma: float = _DEFAULT_IMPACT_COEF_PERM  # Permanent impact
     delta: float = _DEFAULT_IMPACT_EXPONENT  # Impact exponent
@@ -148,6 +153,7 @@ class ImpactResult:
         model_type: Model used for computation
         details: Additional model-specific details
     """
+
     temporary_impact_bps: float = 0.0
     permanent_impact_bps: float = 0.0
     total_impact_bps: float = 0.0
@@ -185,6 +191,7 @@ class ImpactState:
         last_update_ms: Timestamp of last update
         impact_history: History of impacts [(timestamp_ms, temp_bps, perm_bps), ...]
     """
+
     cumulative_temp_impact_bps: float = 0.0
     cumulative_perm_impact_bps: float = 0.0
     last_update_ms: int = 0
@@ -222,6 +229,7 @@ class ImpactState:
 # ==============================================================================
 # Abstract Base Class
 # ==============================================================================
+
 
 class MarketImpactModel(ABC):
     """
@@ -385,6 +393,7 @@ class MarketImpactModel(ABC):
 # Kyle Lambda Model
 # ==============================================================================
 
+
 class KyleLambdaModel(MarketImpactModel):
     """
     Kyle (1985) Lambda Model for market impact.
@@ -491,6 +500,7 @@ class KyleLambdaModel(MarketImpactModel):
 # Almgren-Chriss Model
 # ==============================================================================
 
+
 class AlmgrenChrissModel(MarketImpactModel):
     """
     Almgren-Chriss (2001) Market Impact Model.
@@ -572,7 +582,7 @@ class AlmgrenChrissModel(MarketImpactModel):
         vol = volatility if volatility > 0 else self._params.volatility
 
         # Square-root impact (or general power-law with δ)
-        impact = self._params.eta * vol * (participation ** self._params.delta)
+        impact = self._params.eta * vol * (participation**self._params.delta)
 
         return impact * 10000.0  # Convert to bps
 
@@ -649,11 +659,8 @@ class AlmgrenChrissModel(MarketImpactModel):
         sigma = volatility
 
         # Optimal time in ADV units
-        if risk_aversion * gamma * (sigma ** 2) > 0:
-            t_star = math.sqrt(
-                abs(order_qty) * eta /
-                (risk_aversion * gamma * (sigma ** 2))
-            )
+        if risk_aversion * gamma * (sigma**2) > 0:
+            t_star = math.sqrt(abs(order_qty) * eta / (risk_aversion * gamma * (sigma**2)))
             # Convert to seconds (assuming ADV is daily)
             return t_star * 24 * 3600  # Seconds in a trading day equivalent
 
@@ -694,6 +701,7 @@ class AlmgrenChrissModel(MarketImpactModel):
 # ==============================================================================
 # Gatheral Model
 # ==============================================================================
+
 
 class GatheralModel(MarketImpactModel):
     """
@@ -775,7 +783,7 @@ class GatheralModel(MarketImpactModel):
         vol = volatility if volatility > 0 else self._params.volatility
 
         # Gatheral power-law impact
-        impact = self._params.eta * vol * (participation ** self._params.delta)
+        impact = self._params.eta * vol * (participation**self._params.delta)
 
         return impact * 10000.0  # Convert to bps
 
@@ -866,6 +874,7 @@ class GatheralModel(MarketImpactModel):
 # Composite Model
 # ==============================================================================
 
+
 class CompositeImpactModel(MarketImpactModel):
     """
     Composite model combining multiple impact models.
@@ -911,9 +920,7 @@ class CompositeImpactModel(MarketImpactModel):
         """Weighted average of model temporary impacts."""
         total = 0.0
         for model, weight in self._models:
-            total += weight * model.compute_temporary_impact(
-                order_qty, adv, volatility, side
-            )
+            total += weight * model.compute_temporary_impact(order_qty, adv, volatility, side)
         return total
 
     def compute_permanent_impact(
@@ -943,6 +950,7 @@ class CompositeImpactModel(MarketImpactModel):
 # ==============================================================================
 # Impact Tracker
 # ==============================================================================
+
 
 class ImpactTracker:
     """
@@ -1011,9 +1019,7 @@ class ImpactTracker:
                 self._state.decay_temporary(decay_factor)
 
         # Compute new impact
-        temp_bps = self._model.compute_temporary_impact(
-            order_qty, adv, volatility
-        )
+        temp_bps = self._model.compute_temporary_impact(order_qty, adv, volatility)
         perm_bps = self._model.compute_permanent_impact(order_qty, adv)
 
         # Update state
@@ -1050,10 +1056,7 @@ class ImpactTracker:
         if elapsed <= 0:
             return self._state.total_impact_bps
 
-        decayed_temp = self._model.compute_decay(
-            self._state.cumulative_temp_impact_bps,
-            elapsed
-        )
+        decayed_temp = self._model.compute_decay(self._state.cumulative_temp_impact_bps, elapsed)
         return decayed_temp + self._state.cumulative_perm_impact_bps
 
     def reset(self) -> None:
@@ -1065,6 +1068,7 @@ class ImpactTracker:
 # ==============================================================================
 # Factory Functions
 # ==============================================================================
+
 
 def create_impact_model(
     model_type: Union[str, ImpactModelType] = "almgren_chriss",

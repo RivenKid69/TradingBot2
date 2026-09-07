@@ -34,8 +34,10 @@ logger = logging.getLogger(__name__)
 # Trading Session Types
 # =========================
 
+
 class CMESession(str, Enum):
     """CME trading session types."""
+
     REGULAR = "regular"  # Normal trading hours
     MAINTENANCE = "maintenance"  # Daily maintenance window
     CLOSED = "closed"  # Market closed (weekends, holidays)
@@ -101,9 +103,11 @@ CME_EARLY_CLOSE: Dict[str, time] = {
 # Trading Hours Models
 # =========================
 
+
 @dataclass
 class TradingHoursInfo:
     """Trading hours information for a specific time."""
+
     session: CMESession
     is_trading: bool
     next_open: Optional[datetime] = None
@@ -114,6 +118,7 @@ class TradingHoursInfo:
 @dataclass
 class DaySchedule:
     """Trading schedule for a specific day."""
+
     date: date
     is_holiday: bool
     is_early_close: bool
@@ -126,6 +131,7 @@ class DaySchedule:
 # =========================
 # CME Trading Calendar
 # =========================
+
 
 class CMETradingCalendar:
     """
@@ -162,12 +168,12 @@ class CMETradingCalendar:
     """
 
     # Globex hours in Eastern Time
-    GLOBEX_SUNDAY_OPEN = time(18, 0)    # Sunday 6:00 PM
-    GLOBEX_FRIDAY_CLOSE = time(17, 0)   # Friday 5:00 PM
+    GLOBEX_SUNDAY_OPEN = time(18, 0)  # Sunday 6:00 PM
+    GLOBEX_FRIDAY_CLOSE = time(17, 0)  # Friday 5:00 PM
 
     # Daily maintenance window in Eastern Time
-    MAINTENANCE_START = time(16, 15)    # 4:15 PM
-    MAINTENANCE_END = time(16, 30)      # 4:30 PM
+    MAINTENANCE_START = time(16, 15)  # 4:15 PM
+    MAINTENANCE_END = time(16, 30)  # 4:30 PM
 
     # Extended holidays set (can be expanded)
     HOLIDAYS = CME_HOLIDAYS
@@ -611,6 +617,7 @@ class CMETradingCalendar:
 # =========================
 # Convenience Functions
 # =========================
+
 
 def create_cme_calendar() -> CMETradingCalendar:
     """Create a new CME trading calendar."""

@@ -39,6 +39,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 @dataclass
 class BenchmarkResult:
     """Result of a single benchmark run."""
+
     name: str
     iterations: int
     total_time_ms: float
@@ -74,6 +75,7 @@ class BenchmarkResult:
 @dataclass
 class BenchmarkSuite:
     """Collection of benchmark results."""
+
     name: str
     results: List[BenchmarkResult] = field(default_factory=list)
     total_time_sec: float = 0.0
@@ -203,6 +205,7 @@ def print_result(result: BenchmarkResult):
 # L2 Execution Provider Benchmarks
 # =============================================================================
 
+
 def bench_l2_crypto_futures_slippage(iterations: int = 1000) -> BenchmarkResult:
     """Benchmark L2 crypto futures slippage calculation."""
     try:
@@ -320,6 +323,7 @@ def bench_l2_cme_futures_slippage(iterations: int = 1000) -> BenchmarkResult:
 # L3 LOB Benchmarks
 # =============================================================================
 
+
 def bench_l3_crypto_futures_matching(iterations: int = 1000) -> BenchmarkResult:
     """Benchmark L3 crypto futures matching engine."""
     try:
@@ -330,22 +334,26 @@ def bench_l3_crypto_futures_matching(iterations: int = 1000) -> BenchmarkResult:
 
         # Setup: Add resting orders
         for i in range(100):
-            engine.add_resting_order(LimitOrder(
-                order_id=f"rest_buy_{i}",
-                price=49990.0 - i * 0.5,
-                qty=0.1,
-                remaining_qty=0.1,
-                timestamp_ns=i,
-                side=Side.BUY,
-            ))
-            engine.add_resting_order(LimitOrder(
-                order_id=f"rest_sell_{i}",
-                price=50010.0 + i * 0.5,
-                qty=0.1,
-                remaining_qty=0.1,
-                timestamp_ns=i,
-                side=Side.SELL,
-            ))
+            engine.add_resting_order(
+                LimitOrder(
+                    order_id=f"rest_buy_{i}",
+                    price=49990.0 - i * 0.5,
+                    qty=0.1,
+                    remaining_qty=0.1,
+                    timestamp_ns=i,
+                    side=Side.BUY,
+                )
+            )
+            engine.add_resting_order(
+                LimitOrder(
+                    order_id=f"rest_sell_{i}",
+                    price=50010.0 + i * 0.5,
+                    qty=0.1,
+                    remaining_qty=0.1,
+                    timestamp_ns=i,
+                    side=Side.SELL,
+                )
+            )
 
         order_counter = [0]
 
@@ -397,22 +405,26 @@ def bench_l3_cme_futures_matching(iterations: int = 1000) -> BenchmarkResult:
 
         # Setup: Add resting orders
         for i in range(100):
-            engine.add_resting_order(LimitOrder(
-                order_id=f"rest_buy_{i}",
-                price=4499.0 - i * 0.25,
-                qty=5.0,
-                remaining_qty=5.0,
-                timestamp_ns=i,
-                side=Side.BUY,
-            ))
-            engine.add_resting_order(LimitOrder(
-                order_id=f"rest_sell_{i}",
-                price=4501.0 + i * 0.25,
-                qty=5.0,
-                remaining_qty=5.0,
-                timestamp_ns=i,
-                side=Side.SELL,
-            ))
+            engine.add_resting_order(
+                LimitOrder(
+                    order_id=f"rest_buy_{i}",
+                    price=4499.0 - i * 0.25,
+                    qty=5.0,
+                    remaining_qty=5.0,
+                    timestamp_ns=i,
+                    side=Side.BUY,
+                )
+            )
+            engine.add_resting_order(
+                LimitOrder(
+                    order_id=f"rest_sell_{i}",
+                    price=4501.0 + i * 0.25,
+                    qty=5.0,
+                    remaining_qty=5.0,
+                    timestamp_ns=i,
+                    side=Side.SELL,
+                )
+            )
 
         order_counter = [0]
 
@@ -457,6 +469,7 @@ def bench_l3_cme_futures_matching(iterations: int = 1000) -> BenchmarkResult:
 # =============================================================================
 # Margin Calculation Benchmarks
 # =============================================================================
+
 
 def bench_crypto_margin_calculation(iterations: int = 1000) -> BenchmarkResult:
     """Benchmark crypto futures margin calculation."""
@@ -558,6 +571,7 @@ def bench_span_margin_calculation(iterations: int = 1000) -> BenchmarkResult:
 # Funding Rate Benchmarks
 # =============================================================================
 
+
 def bench_funding_rate_calculation(iterations: int = 1000) -> BenchmarkResult:
     """Benchmark funding rate calculation."""
     try:
@@ -600,6 +614,7 @@ def bench_funding_rate_calculation(iterations: int = 1000) -> BenchmarkResult:
 # =============================================================================
 # Liquidation Engine Benchmarks
 # =============================================================================
+
 
 def bench_liquidation_price_calculation(iterations: int = 1000) -> BenchmarkResult:
     """Benchmark liquidation price calculation."""
@@ -695,6 +710,7 @@ def bench_liquidation_cascade_simulation(iterations: int = 500) -> BenchmarkResu
 # =============================================================================
 # Risk Guard Benchmarks
 # =============================================================================
+
 
 def bench_leverage_guard_check(iterations: int = 1000) -> BenchmarkResult:
     """Benchmark leverage guard check."""
@@ -831,6 +847,7 @@ def bench_unified_risk_guard_check(iterations: int = 1000) -> BenchmarkResult:
 # Circuit Breaker Benchmarks
 # =============================================================================
 
+
 def bench_circuit_breaker_check(iterations: int = 1000) -> BenchmarkResult:
     """Benchmark circuit breaker check."""
     try:
@@ -873,6 +890,7 @@ def bench_circuit_breaker_check(iterations: int = 1000) -> BenchmarkResult:
 # =============================================================================
 # Full Execution Flow Benchmarks
 # =============================================================================
+
 
 def bench_full_l2_execution_crypto(iterations: int = 500) -> BenchmarkResult:
     """Benchmark full L2 execution flow for crypto futures."""
@@ -1001,6 +1019,7 @@ def bench_full_l2_execution_cme(iterations: int = 500) -> BenchmarkResult:
 # Main
 # =============================================================================
 
+
 def run_all_benchmarks(iterations: int = 1000) -> BenchmarkSuite:
     """Run all futures simulation benchmarks."""
     suite = BenchmarkSuite(name="Futures Simulation Benchmarks")
@@ -1010,28 +1029,22 @@ def run_all_benchmarks(iterations: int = 1000) -> BenchmarkSuite:
         # L2 Execution
         (bench_l2_crypto_futures_slippage, iterations),
         (bench_l2_cme_futures_slippage, iterations),
-
         # L3 LOB
         (bench_l3_crypto_futures_matching, iterations),
         (bench_l3_cme_futures_matching, iterations),
-
         # Margin Calculation
         (bench_crypto_margin_calculation, iterations),
         (bench_span_margin_calculation, iterations),
-
         # Funding Rate
         (bench_funding_rate_calculation, iterations),
-
         # Liquidation
         (bench_liquidation_price_calculation, iterations),
         (bench_liquidation_cascade_simulation, iterations // 2),
-
         # Risk Guards
         (bench_leverage_guard_check, iterations),
         (bench_margin_guard_check, iterations),
         (bench_unified_risk_guard_check, iterations),
         (bench_circuit_breaker_check, iterations),
-
         # Full Execution Flow
         (bench_full_l2_execution_crypto, iterations // 2),
         (bench_full_l2_execution_cme, iterations // 2),
@@ -1059,7 +1072,12 @@ def run_component_benchmark(component: str, iterations: int = 1000) -> Benchmark
         "margin": [bench_crypto_margin_calculation, bench_span_margin_calculation],
         "funding": [bench_funding_rate_calculation],
         "liquidation": [bench_liquidation_price_calculation, bench_liquidation_cascade_simulation],
-        "risk_guards": [bench_leverage_guard_check, bench_margin_guard_check, bench_unified_risk_guard_check, bench_circuit_breaker_check],
+        "risk_guards": [
+            bench_leverage_guard_check,
+            bench_margin_guard_check,
+            bench_unified_risk_guard_check,
+            bench_circuit_breaker_check,
+        ],
         "full_execution": [bench_full_l2_execution_crypto, bench_full_l2_execution_cme],
     }
 

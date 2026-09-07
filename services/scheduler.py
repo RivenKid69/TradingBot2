@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 # Статусы завершения одного запуска задачи.
 STATUS_SUCCEEDED = "succeeded"
 STATUS_FAILED = "failed"
-STATUS_SKIPPED = "skipped"      # precondition не выполнен / trading-гейт: НЕ ошибка
+STATUS_SKIPPED = "skipped"  # precondition не выполнен / trading-гейт: НЕ ошибка
 STATUS_TIMEOUT = "timeout"
 
 _TRUTHY = ("1", "true", "yes", "on")
@@ -82,9 +82,9 @@ class ScheduledJob:
     enabled: bool = False
     # Триггер: ровно один из двух.
     interval_sec: Optional[int] = None
-    daily_utc: Optional[str] = None          # "HH:MM"
-    weekdays: Optional[List[int]] = None     # 0=Пн … 6=Вс; None = все дни
-    market_days_only: bool = False           # пропускать Сб/Вс (v1; праздники — v2)
+    daily_utc: Optional[str] = None  # "HH:MM"
+    weekdays: Optional[List[int]] = None  # 0=Пн … 6=Вс; None = все дни
+    market_days_only: bool = False  # пропускать Сб/Вс (v1; праздники — v2)
     catch_up: bool = True
     catch_up_grace_sec: int = 6 * 3600
     max_retries: int = 1
@@ -95,7 +95,9 @@ class ScheduledJob:
 
     def validate(self) -> None:
         if bool(self.interval_sec) == bool(self.daily_utc):
-            raise ValueError(f"job '{self.id}': нужен ровно один триггер (interval_sec ИЛИ daily_utc)")
+            raise ValueError(
+                f"job '{self.id}': нужен ровно один триггер (interval_sec ИЛИ daily_utc)"
+            )
         if self.daily_utc is not None:
             hh, mm = self.daily_utc.split(":")
             if not (0 <= int(hh) <= 23 and 0 <= int(mm) <= 59):
@@ -185,7 +187,7 @@ class SchedulerService:
                     raw = yaml.safe_load(f) or {}
             except Exception as exc:
                 logger.error("scheduler: не удалось прочитать %s: %s", self.config_path, exc)
-        for item in (raw.get("jobs") or []):
+        for item in raw.get("jobs") or []:
             try:
                 job = ScheduledJob(
                     id=str(item["id"]),
@@ -242,7 +244,7 @@ class SchedulerService:
             return []
         try:
             with open(self.journal_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()[-max(1, int(limit)):]
+                lines = f.readlines()[-max(1, int(limit)) :]
             out = []
             for line in lines:
                 try:
@@ -340,14 +342,23 @@ class SchedulerService:
                 st = self._job_state(job.id)
                 st["last_attempt_ts"] = now
                 st["last_status"] = STATUS_SKIPPED
-                st["last_detail"] = "trading-impacting: автозапуск запрещён (нет RIVEN_ALLOW_SCHEDULED_TRADING=1)"
+                st["last_detail"] = (
+                    "trading-impacting: автозапуск запрещён (нет RIVEN_ALLOW_SCHEDULED_TRADING=1)"
+                )
                 st.pop("retry_at", None)
                 self._save_state()
-            self._journal({
-                "job": job.id, "run_id": uuid.uuid4().hex[:8], "manual": False,
-                "started_at": now, "finished_at": now,
-                "status": STATUS_SKIPPED, "detail": st["last_detail"], "attempt": 0,
-            })
+            self._journal(
+                {
+                    "job": job.id,
+                    "run_id": uuid.uuid4().hex[:8],
+                    "manual": False,
+                    "started_at": now,
+                    "finished_at": now,
+                    "status": STATUS_SKIPPED,
+                    "detail": st["last_detail"],
+                    "attempt": 0,
+                }
+            )
             return
         with self._lock:
             if job.id in self._running_ids:
@@ -403,12 +414,20 @@ class SchedulerService:
             self._running_ids.discard(job.id)
             self._save_state()
 
-        self._journal({
-            "job": job.id, "run_id": run_id, "manual": manual,
-            "started_at": started, "finished_at": finished,
-            "status": result.status, "detail": result.detail[:500],
-            "exit_code": result.exit_code, "steps": result.steps, "attempt": attempt,
-        })
+        self._journal(
+            {
+                "job": job.id,
+                "run_id": run_id,
+                "manual": manual,
+                "started_at": started,
+                "finished_at": finished,
+                "status": result.status,
+                "detail": result.detail[:500],
+                "exit_code": result.exit_code,
+                "steps": result.steps,
+                "attempt": attempt,
+            }
+        )
 
     # ------------------------------------------------------------------- цикл
 
@@ -461,28 +480,35 @@ class SchedulerService:
             for job in self._jobs.values():
                 st = self._job_state(job.id)
                 nxt = self.next_run_ts(job, now)
-                out.append({
-                    "id": job.id,
-                    "title": job.title,
-                    "action": job.action,
-                    "enabled": self.is_enabled(job),
-                    "trading_impacting": job.trading_impacting,
-                    "trigger": (f"каждые {job.interval_sec}с" if job.interval_sec
-                                else f"ежедневно {job.daily_utc} UTC"
-                                     + (" (только торговые дни)" if job.market_days_only else "")),
-                    "running": job.id in self._running_ids,
-                    "last_attempt_ts": st.get("last_attempt_ts"),
-                    "last_status": st.get("last_status"),
-                    "last_detail": st.get("last_detail", ""),
-                    "consecutive_failures": st.get("consecutive_failures", 0),
-                    "next_run_ts": nxt,
-                })
+                out.append(
+                    {
+                        "id": job.id,
+                        "title": job.title,
+                        "action": job.action,
+                        "enabled": self.is_enabled(job),
+                        "trading_impacting": job.trading_impacting,
+                        "trigger": (
+                            f"каждые {job.interval_sec}с"
+                            if job.interval_sec
+                            else f"ежедневно {job.daily_utc} UTC"
+                            + (" (только торговые дни)" if job.market_days_only else "")
+                        ),
+                        "running": job.id in self._running_ids,
+                        "last_attempt_ts": st.get("last_attempt_ts"),
+                        "last_status": st.get("last_status"),
+                        "last_detail": st.get("last_detail", ""),
+                        "consecutive_failures": st.get("consecutive_failures", 0),
+                        "next_run_ts": nxt,
+                    }
+                )
         return {
             "enabled_env": os.environ.get("RIVEN_ENABLE_SCHEDULER", "1"),
             "scheduled_trading_allowed": _scheduled_trading_allowed(),
             "tick_sec": self.tick_sec,
             "jobs": out,
-            "generated_at": datetime.fromtimestamp(now, tz=timezone.utc).isoformat(timespec="seconds"),
+            "generated_at": datetime.fromtimestamp(now, tz=timezone.utc).isoformat(
+                timespec="seconds"
+            ),
         }
 
 

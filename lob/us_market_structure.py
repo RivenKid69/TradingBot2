@@ -21,7 +21,7 @@ References:
     - NYSE Pillar Gateway Spec: Tick size and lot classifications
 
 FIX (2025-11-28): Added as part of Issue #7 "L3 LOB: US Market Structure" fix.
-Reference: CLAUDE.md → "L3 LOB: US Market Structure"
+Reference: docs/PLATFORM_REFERENCE.md → "L3 LOB: US Market Structure"
 """
 
 from __future__ import annotations
@@ -58,24 +58,27 @@ TICK_PILOT_THRESHOLD = 1.00  # Stocks below $1 can trade sub-penny
 
 class LotType(IntEnum):
     """Order lot classification per SEC Rule 600."""
-    ODD_LOT = 1       # < 100 shares
-    ROUND_LOT = 2     # Exactly 100 shares or multiples thereof
-    MIXED_LOT = 3     # Combination: round lots + odd lot remainder
+
+    ODD_LOT = 1  # < 100 shares
+    ROUND_LOT = 2  # Exactly 100 shares or multiples thereof
+    MIXED_LOT = 3  # Combination: round lots + odd lot remainder
 
 
 class TradeThrough(IntEnum):
     """Trade-through violation type per Reg NMS Rule 611."""
-    NONE = 0          # No violation
-    BID_THROUGH = 1   # Sell below protected bid
-    ASK_THROUGH = 2   # Buy above protected ask
+
+    NONE = 0  # No violation
+    BID_THROUGH = 1  # Sell below protected bid
+    ASK_THROUGH = 2  # Buy above protected ask
 
 
 class OddLotHandling(str, Enum):
     """How to handle odd lot orders."""
-    ALLOW = "allow"                  # Allow all odd lots (default)
-    REJECT = "reject"                # Reject odd lots
-    COMBINE_ONLY = "combine_only"    # Only accept as part of mixed lot
-    SEGREGATE = "segregate"          # Route to odd-lot only book
+
+    ALLOW = "allow"  # Allow all odd lots (default)
+    REJECT = "reject"  # Reject odd lots
+    COMBINE_ONLY = "combine_only"  # Only accept as part of mixed lot
+    SEGREGATE = "segregate"  # Route to odd-lot only book
 
 
 # =============================================================================
@@ -100,6 +103,7 @@ class NBBO:
         ask_exchange: Exchange with best ask
         timestamp_ns: NBBO timestamp in nanoseconds
     """
+
     bid: float
     bid_size: float
     ask: float
@@ -150,6 +154,7 @@ class ValidationResult:
         lot_type: Classified lot type
         trade_through: Trade-through violation type (if any)
     """
+
     valid: bool = True
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
@@ -283,7 +288,9 @@ class TickSizeEnforcer:
         tick_dec = Decimal(str(tick))
 
         if direction == "nearest":
-            rounded = (price_dec / tick_dec).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * tick_dec
+            rounded = (price_dec / tick_dec).quantize(
+                Decimal("1"), rounding=ROUND_HALF_UP
+            ) * tick_dec
         elif direction == "down":
             rounded = (price_dec / tick_dec).quantize(Decimal("1"), rounding=ROUND_DOWN) * tick_dec
         elif direction == "up":
@@ -581,13 +588,9 @@ class RegNMSValidator:
         if tt != TradeThrough.NONE and self.enforce_trade_through:
             result.valid = False
             if tt == TradeThrough.ASK_THROUGH:
-                result.errors.append(
-                    f"Trade-through: BUY at {price} > protected ask {nbbo.ask}"
-                )
+                result.errors.append(f"Trade-through: BUY at {price} > protected ask {nbbo.ask}")
             else:
-                result.errors.append(
-                    f"Trade-through: SELL at {price} < protected bid {nbbo.bid}"
-                )
+                result.errors.append(f"Trade-through: SELL at {price} < protected bid {nbbo.bid}")
 
         return result
 
@@ -779,9 +782,7 @@ class USMarketStructureValidator:
 
         # Adjust for NBBO
         if nbbo is not None:
-            compliant_price = self.nbbo_validator.get_compliant_price(
-                side, adjusted_price, nbbo
-            )
+            compliant_price = self.nbbo_validator.get_compliant_price(side, adjusted_price, nbbo)
             if abs(compliant_price - adjusted_price) > 1e-9:
                 warnings.append(
                     f"Price adjusted from {adjusted_price} to {compliant_price} for NBBO compliance"

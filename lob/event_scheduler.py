@@ -52,26 +52,26 @@ class EventType(IntEnum):
     """Types of events in the scheduler."""
 
     # Market data events (from exchange to us)
-    MARKET_DATA_UPDATE = 1      # Price/quantity update
-    TRADE_REPORT = 2            # Public trade occurred
-    BOOK_SNAPSHOT = 3           # Full book snapshot
-    ORDER_ADD = 4               # New order added to book
-    ORDER_CANCEL = 5            # Order cancelled
-    ORDER_MODIFY = 6            # Order modified
+    MARKET_DATA_UPDATE = 1  # Price/quantity update
+    TRADE_REPORT = 2  # Public trade occurred
+    BOOK_SNAPSHOT = 3  # Full book snapshot
+    ORDER_ADD = 4  # New order added to book
+    ORDER_CANCEL = 5  # Order cancelled
+    ORDER_MODIFY = 6  # Order modified
 
     # Our order events (from us to exchange, then back)
-    ORDER_SUBMITTED = 10        # We submitted an order
-    ORDER_RECEIVED = 11         # Exchange received our order
-    ORDER_ACCEPTED = 12         # Exchange accepted our order
-    ORDER_REJECTED = 13         # Exchange rejected our order
+    ORDER_SUBMITTED = 10  # We submitted an order
+    ORDER_RECEIVED = 11  # Exchange received our order
+    ORDER_ACCEPTED = 12  # Exchange accepted our order
+    ORDER_REJECTED = 13  # Exchange rejected our order
 
     # Fill events
-    OUR_FILL = 20               # Our order was filled
-    OUR_PARTIAL_FILL = 21       # Our order partially filled
+    OUR_FILL = 20  # Our order was filled
+    OUR_PARTIAL_FILL = 21  # Our order partially filled
 
     # Timer events
-    TIMER = 30                  # Timer callback
-    END_OF_DATA = 31            # No more data
+    TIMER = 30  # Timer callback
+    END_OF_DATA = 31  # No more data
 
 
 @dataclass
@@ -308,9 +308,7 @@ class EventScheduler:
         self._on_race_condition = on_race_condition
         self._pending_orders: Dict[str, OrderSubmission] = {}
         self._max_race_conditions = max(1, max_race_conditions)
-        self._race_conditions: Deque[RaceConditionInfo] = deque(
-            maxlen=self._max_race_conditions
-        )
+        self._race_conditions: Deque[RaceConditionInfo] = deque(maxlen=self._max_race_conditions)
 
         # Event handling
         self._on_event = on_event
@@ -636,7 +634,8 @@ class EventScheduler:
                 if abs(race_delta) < 1_000_000:  # 1ms in nanoseconds
                     race_info = RaceConditionInfo(
                         our_event=ScheduledEvent(
-                            timestamp_ns=submission.our_send_time_ns + submission.round_trip_latency_ns,
+                            timestamp_ns=submission.our_send_time_ns
+                            + submission.round_trip_latency_ns,
                             sequence_id=-1,
                             event_type=EventType.ORDER_ACCEPTED,
                             exchange_time_ns=submission.exchange_receive_time_ns,

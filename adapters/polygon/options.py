@@ -85,6 +85,7 @@ class PolygonOptionsContract:
         cfi: CFI code
         primary_exchange: Primary exchange
     """
+
     ticker: str
     underlying: str
     expiration: date
@@ -148,6 +149,7 @@ class PolygonOptionsQuote:
         open_interest: Open interest
         underlying_price: Underlying price at quote time
     """
+
     contract: PolygonOptionsContract
     timestamp: datetime
     bid: Optional[Decimal] = None
@@ -178,6 +180,7 @@ class PolygonOptionsSnapshot:
         underlying_price: Underlying price
         quotes: List of option quotes
     """
+
     underlying: str
     snapshot_date: date
     underlying_price: Optional[Decimal] = None
@@ -187,27 +190,29 @@ class PolygonOptionsSnapshot:
         """Convert snapshot to DataFrame."""
         records = []
         for q in self.quotes:
-            records.append({
-                "ticker": q.contract.ticker,
-                "underlying": q.contract.underlying,
-                "expiration": q.contract.expiration,
-                "strike": float(q.contract.strike),
-                "option_type": q.contract.option_type.value,
-                "bid": float(q.bid) if q.bid else None,
-                "ask": float(q.ask) if q.ask else None,
-                "bid_size": q.bid_size,
-                "ask_size": q.ask_size,
-                "last_price": float(q.last_price) if q.last_price else None,
-                "volume": q.volume,
-                "open_interest": q.open_interest,
-                "underlying_price": float(q.underlying_price) if q.underlying_price else None,
-                "iv": q.iv,
-                "delta": q.delta,
-                "gamma": q.gamma,
-                "theta": q.theta,
-                "vega": q.vega,
-                "timestamp": q.timestamp,
-            })
+            records.append(
+                {
+                    "ticker": q.contract.ticker,
+                    "underlying": q.contract.underlying,
+                    "expiration": q.contract.expiration,
+                    "strike": float(q.contract.strike),
+                    "option_type": q.contract.option_type.value,
+                    "bid": float(q.bid) if q.bid else None,
+                    "ask": float(q.ask) if q.ask else None,
+                    "bid_size": q.bid_size,
+                    "ask_size": q.ask_size,
+                    "last_price": float(q.last_price) if q.last_price else None,
+                    "volume": q.volume,
+                    "open_interest": q.open_interest,
+                    "underlying_price": float(q.underlying_price) if q.underlying_price else None,
+                    "iv": q.iv,
+                    "delta": q.delta,
+                    "gamma": q.gamma,
+                    "theta": q.theta,
+                    "vega": q.vega,
+                    "timestamp": q.timestamp,
+                }
+            )
 
         df = pd.DataFrame(records)
         if not df.empty:
@@ -473,11 +478,15 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
                     contract = PolygonOptionsContract(
                         ticker=item.ticker,
                         underlying=item.underlying_ticker,
-                        expiration=datetime.strptime(
-                            item.expiration_date, "%Y-%m-%d"
-                        ).date() if isinstance(item.expiration_date, str) else item.expiration_date,
+                        expiration=(
+                            datetime.strptime(item.expiration_date, "%Y-%m-%d").date()
+                            if isinstance(item.expiration_date, str)
+                            else item.expiration_date
+                        ),
                         strike=Decimal(str(item.strike_price)),
-                        option_type=OptionType.CALL if item.contract_type == "call" else OptionType.PUT,
+                        option_type=(
+                            OptionType.CALL if item.contract_type == "call" else OptionType.PUT
+                        ),
                         contract_type=item.exercise_style or "american",
                         shares_per_contract=item.shares_per_contract or 100,
                         cfi=getattr(item, "cfi", None),
@@ -485,7 +494,9 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
                     )
                     contracts.append(contract)
                 except Exception as e:
-                    logger.warning(f"Failed to parse contract {getattr(item, 'ticker', 'unknown')}: {e}")
+                    logger.warning(
+                        f"Failed to parse contract {getattr(item, 'ticker', 'unknown')}: {e}"
+                    )
 
             logger.debug(f"Found {len(contracts)} contracts for {underlying}")
             return contracts
@@ -620,10 +631,7 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
         if underlying_price and strike_range_pct > 0:
             min_strike = underlying_price * Decimal(str(1 - strike_range_pct))
             max_strike = underlying_price * Decimal(str(1 + strike_range_pct))
-            contracts = [
-                c for c in contracts
-                if min_strike <= c.strike <= max_strike
-            ]
+            contracts = [c for c in contracts if min_strike <= c.strike <= max_strike]
 
         # Fetch snapshots for contracts
         quotes: List[PolygonOptionsQuote] = []
@@ -631,14 +639,12 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
         # Process in batches to respect rate limits
         batch_size = 50
         for i in range(0, len(contracts), batch_size):
-            batch = contracts[i:i + batch_size]
+            batch = contracts[i : i + batch_size]
 
             for contract in batch:
                 try:
                     self._ensure_rate_limit()
-                    quote = self._get_contract_snapshot(
-                        contract, snapshot_date, underlying_price
-                    )
+                    quote = self._get_contract_snapshot(contract, snapshot_date, underlying_price)
                     if quote:
                         quotes.append(quote)
                 except Exception as e:
@@ -681,7 +687,9 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
                 return Decimal(str(agg.close))
 
         except Exception as e:
-            logger.warning(f"Failed to get underlying price for {underlying} on {snapshot_date}: {e}")
+            logger.warning(
+                f"Failed to get underlying price for {underlying} on {snapshot_date}: {e}"
+            )
 
         return None
 
@@ -762,6 +770,7 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
 
         # Parse timeframe
         from .market_data import _timeframe_to_polygon
+
         multiplier, timespan = _timeframe_to_polygon(timeframe)
 
         try:
@@ -778,16 +787,20 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
             records = []
             for agg in aggs:
                 ts = datetime.fromtimestamp(agg.timestamp / 1000, tz=timezone.utc)
-                records.append({
-                    "timestamp": ts,
-                    "open": float(agg.open) if agg.open else None,
-                    "high": float(agg.high) if agg.high else None,
-                    "low": float(agg.low) if agg.low else None,
-                    "close": float(agg.close) if agg.close else None,
-                    "volume": int(agg.volume) if agg.volume else 0,
-                    "vwap": float(agg.vwap) if hasattr(agg, "vwap") and agg.vwap else None,
-                    "num_trades": int(agg.transactions) if hasattr(agg, "transactions") else None,
-                })
+                records.append(
+                    {
+                        "timestamp": ts,
+                        "open": float(agg.open) if agg.open else None,
+                        "high": float(agg.high) if agg.high else None,
+                        "low": float(agg.low) if agg.low else None,
+                        "close": float(agg.close) if agg.close else None,
+                        "volume": int(agg.volume) if agg.volume else 0,
+                        "vwap": float(agg.vwap) if hasattr(agg, "vwap") and agg.vwap else None,
+                        "num_trades": (
+                            int(agg.transactions) if hasattr(agg, "transactions") else None
+                        ),
+                    }
+                )
 
             df = pd.DataFrame(records)
             if not df.empty:
@@ -842,16 +855,17 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
             records = []
             for trade in trades:
                 ts = datetime.fromtimestamp(
-                    trade.sip_timestamp / 1_000_000_000,  # Nanoseconds to seconds
-                    tz=timezone.utc
+                    trade.sip_timestamp / 1_000_000_000, tz=timezone.utc  # Nanoseconds to seconds
                 )
-                records.append({
-                    "timestamp": ts,
-                    "price": float(trade.price) if trade.price else None,
-                    "size": int(trade.size) if trade.size else None,
-                    "exchange": trade.exchange,
-                    "conditions": trade.conditions,
-                })
+                records.append(
+                    {
+                        "timestamp": ts,
+                        "price": float(trade.price) if trade.price else None,
+                        "size": int(trade.size) if trade.size else None,
+                        "exchange": trade.exchange,
+                        "conditions": trade.conditions,
+                    }
+                )
 
             df = pd.DataFrame(records)
             if not df.empty:
@@ -994,12 +1008,14 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
 
             records = []
             for split in splits:
-                records.append({
-                    "ticker": split.ticker,
-                    "execution_date": split.execution_date,
-                    "split_from": split.split_from,
-                    "split_to": split.split_to,
-                })
+                records.append(
+                    {
+                        "ticker": split.ticker,
+                        "execution_date": split.execution_date,
+                        "split_from": split.split_from,
+                        "split_to": split.split_to,
+                    }
+                )
 
             return pd.DataFrame(records)
 
@@ -1036,14 +1052,16 @@ class PolygonOptionsAdapter(PolygonMarketDataAdapter):
 
             records = []
             for div in dividends:
-                records.append({
-                    "ticker": div.ticker,
-                    "ex_dividend_date": div.ex_dividend_date,
-                    "pay_date": getattr(div, "pay_date", None),
-                    "record_date": getattr(div, "record_date", None),
-                    "cash_amount": getattr(div, "cash_amount", None),
-                    "dividend_type": getattr(div, "dividend_type", None),
-                })
+                records.append(
+                    {
+                        "ticker": div.ticker,
+                        "ex_dividend_date": div.ex_dividend_date,
+                        "pay_date": getattr(div, "pay_date", None),
+                        "record_date": getattr(div, "record_date", None),
+                        "cash_amount": getattr(div, "cash_amount", None),
+                        "dividend_type": getattr(div, "dividend_type", None),
+                    }
+                )
 
             return pd.DataFrame(records)
 

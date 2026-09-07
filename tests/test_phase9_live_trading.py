@@ -172,9 +172,7 @@ class MockPositionProvider:
     def __init__(self, positions: Dict[str, Any]):
         self._positions = positions
 
-    def get_positions(
-        self, symbols: Optional[Sequence[str]] = None
-    ) -> Dict[str, Any]:
+    def get_positions(self, symbols: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         if symbols:
             return {s: self._positions[s] for s in symbols if s in self._positions}
         return self._positions
@@ -747,12 +745,8 @@ class TestSessionRouter:
         router = SessionRouter()
         daily_volume = 1_000_000
 
-        regular_vol = router.get_session_volume_estimate(
-            daily_volume, TradingSession.REGULAR
-        )
-        pre_market_vol = router.get_session_volume_estimate(
-            daily_volume, TradingSession.PRE_MARKET
-        )
+        regular_vol = router.get_session_volume_estimate(daily_volume, TradingSession.REGULAR)
+        pre_market_vol = router.get_session_volume_estimate(daily_volume, TradingSession.PRE_MARKET)
         after_hours_vol = router.get_session_volume_estimate(
             daily_volume, TradingSession.AFTER_HOURS
         )

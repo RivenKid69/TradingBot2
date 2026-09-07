@@ -88,9 +88,9 @@ class FuturesSlippageConfig(CryptoParametricConfig):
     oi_concentration_threshold: float = 0.3
     liquidation_cascade_sensitivity: float = 5.0
     liquidation_cascade_threshold: float = 0.01
-    liquidation_cascade_max_factor: float = 3.0        # Cap at 200% increase
+    liquidation_cascade_max_factor: float = 3.0  # Cap at 200% increase
     open_interest_liquidity_factor: float = 0.1
-    open_interest_max_penalty: float = 2.0             # Cap at 100% increase
+    open_interest_max_penalty: float = 2.0  # Cap at 100% increase
     use_mark_price_execution: bool = True
 
 
@@ -197,15 +197,16 @@ class FuturesSlippageProvider(CryptoParametricSlippageProvider):
         # High negative funding + selling = extra cost (crowded short)
         funding_stress = 1.0
         if funding_rate is not None:
-            is_same_direction = (
-                (funding_rate > 0 and str(order.side).upper() == "BUY") or
-                (funding_rate < 0 and str(order.side).upper() == "SELL")
+            is_same_direction = (funding_rate > 0 and str(order.side).upper() == "BUY") or (
+                funding_rate < 0 and str(order.side).upper() == "SELL"
             )
             if is_same_direction:
                 # FIX (2025-12-02): Use multiplicative ratio, not additive bps
                 # E.g., 0.0001 (0.01%) × 5.0 = 0.0005 = 0.05% increase
                 # Original had × 10000 which gave 51x for 0.1% funding (WRONG!)
-                funding_stress = 1.0 + abs(funding_rate) * self.futures_config.funding_impact_sensitivity
+                funding_stress = (
+                    1.0 + abs(funding_rate) * self.futures_config.funding_impact_sensitivity
+                )
 
         # =====================================================================
         # 3. Liquidation cascade factor
@@ -220,7 +221,7 @@ class FuturesSlippageProvider(CryptoParametricSlippageProvider):
                 # FIX (2025-12-02): Cap at max_factor to prevent extreme scenarios
                 cascade_factor = min(
                     self.futures_config.liquidation_cascade_max_factor,
-                    1.0 + liquidation_ratio * self.futures_config.liquidation_cascade_sensitivity
+                    1.0 + liquidation_ratio * self.futures_config.liquidation_cascade_sensitivity,
                 )
 
         # =====================================================================
@@ -237,7 +238,7 @@ class FuturesSlippageProvider(CryptoParametricSlippageProvider):
             if oi_to_adv > 1.0:
                 oi_penalty = min(
                     self.futures_config.open_interest_max_penalty,
-                    1.0 + (oi_to_adv - 1.0) * self.futures_config.open_interest_liquidity_factor
+                    1.0 + (oi_to_adv - 1.0) * self.futures_config.open_interest_liquidity_factor,
                 )
 
         # =====================================================================
@@ -287,9 +288,9 @@ class FuturesSlippageProvider(CryptoParametricSlippageProvider):
 
         # Calculate liquidation price
         if is_long:
-            liquidation_price = entry_price * (1 - 1/leverage + maintenance_margin_rate)
+            liquidation_price = entry_price * (1 - 1 / leverage + maintenance_margin_rate)
         else:
-            liquidation_price = entry_price * (1 + 1/leverage - maintenance_margin_rate)
+            liquidation_price = entry_price * (1 + 1 / leverage - maintenance_margin_rate)
 
         # Distance to liquidation
         current_price = float(market.get_mid_price())
@@ -386,18 +387,18 @@ class FuturesFeeProvider:
         # Regular trade: maker or taker
         # Check liquidity field (string "maker" or "taker") or metadata for is_maker
         is_maker = False
-        if hasattr(fill, 'liquidity') and fill.liquidity == "maker":
+        if hasattr(fill, "liquidity") and fill.liquidity == "maker":
             is_maker = True
-        elif hasattr(fill, 'metadata') and fill.metadata:
-            is_maker = fill.metadata.get('is_maker', False)
-        elif hasattr(fill, 'is_maker'):
+        elif hasattr(fill, "metadata") and fill.metadata:
+            is_maker = fill.metadata.get("is_maker", False)
+        elif hasattr(fill, "is_maker"):
             is_maker = fill.is_maker
 
         bps = self._maker_bps if is_maker else self._taker_bps
 
         # Get notional, with fallback to price * qty if notional is None
         notional = fill.notional
-        if notional is None and hasattr(fill, 'price') and hasattr(fill, 'qty'):
+        if notional is None and hasattr(fill, "price") and hasattr(fill, "qty"):
             notional = fill.price * fill.qty
         if notional is None:
             notional = 0
@@ -545,7 +546,7 @@ class FuturesL2ExecutionProvider:
         # Compute fill using selected bar
         fill = self._fill.try_fill(order, market, exec_bar)
 
-        if fill is None or not getattr(fill, 'is_filled', False):
+        if fill is None or not getattr(fill, "is_filled", False):
             return fill
 
         # Compute participation ratio

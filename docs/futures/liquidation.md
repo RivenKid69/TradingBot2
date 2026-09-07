@@ -222,6 +222,7 @@ When insurance fund is depleted:
 ### Trigger
 
 ADL triggers when:
+
 - Insurance fund is depleted
 - Liquidation cannot be filled at bankruptcy price
 

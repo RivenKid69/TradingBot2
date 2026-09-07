@@ -36,6 +36,7 @@ from no_trade import NO_TRADE_FEATURES_DISABLED
 
 from core_contracts import SignalPolicy, PolicyCtx
 from core_models import Order, Side
+
 if TYPE_CHECKING:  # pragma: no cover - typing helper
     from sandbox.sim_adapter import SimAdapter  # type: ignore
 else:  # pragma: no cover - runtime placeholder for annotations
@@ -115,7 +116,9 @@ class DynSpreadConfig:
         if liq_col_val is None:
             liq_col_val = "number_of_trades"
         if liq_ref_val is None:
-            liq_ref_val = 240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
+            liq_ref_val = (
+                240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
+            )
 
         cfg = cls(
             enabled=bool(d.get("enabled", True)),
@@ -171,7 +174,9 @@ class GuardsConfig:
         return cls(
             min_history_bars=int(d.get("min_history_bars", 0)),
             gap_cooldown_bars=int(d.get("gap_cooldown_bars", 0)),
-            gap_threshold_ms=int(d["gap_threshold_ms"]) if d.get("gap_threshold_ms") is not None else None,
+            gap_threshold_ms=(
+                int(d["gap_threshold_ms"]) if d.get("gap_threshold_ms") is not None else None
+            ),
         )
 
 
@@ -221,6 +226,7 @@ class BacktestAdapter:
       - Частотный кулдаун: блок новых сигналов чаще, чем раз в X секунд.
       - Чёрные окна (no_trade): ежедневные окна UTC, буфер вокруг funding (00:00/08:00/16:00 UTC), кастомные окна по ts_ms.
     """
+
     def __init__(
         self,
         policy: SignalPolicy,
@@ -310,7 +316,6 @@ class BacktestAdapter:
             return True
 
         return False
-
 
     def _compute_vol_factor(self, row: pd.Series, *, ref: float, has_hl: bool) -> float:
         estimator = getattr(self.sim, "vol_estimator", None)
@@ -530,7 +535,11 @@ class BacktestAdapter:
 
         if last is not None:
             dt = int(ts) - int(last)
-            thr = self._guards.gap_threshold_ms if self._guards.gap_threshold_ms is not None else 21600000  # 1.5 * 4h = 6 hours (changed from 90000 = 1.5m for 1m timeframe)
+            thr = (
+                self._guards.gap_threshold_ms
+                if self._guards.gap_threshold_ms is not None
+                else 21600000
+            )  # 1.5 * 4h = 6 hours (changed from 90000 = 1.5m for 1m timeframe)
             if dt > max(0, int(thr)):
                 self._cooldown_left[sym] = int(self._guards.gap_cooldown_bars or 0)
 
@@ -544,9 +553,7 @@ class BacktestAdapter:
             return False
         return True
 
-    def _apply_signal_cooldown(
-        self, sym: str, ts: int, orders: Sequence[Order]
-    ) -> List[Order]:
+    def _apply_signal_cooldown(self, sym: str, ts: int, orders: Sequence[Order]) -> List[Order]:
         if self._signal_cooldown_ms <= 0 or not orders:
             return list(orders)
         last_sig = self._last_signal_ts.get(sym)
@@ -604,7 +611,7 @@ class BacktestAdapter:
         if NO_TRADE_FEATURES_DISABLED:
             return False
 
-        for w in (self._no_trade.custom_ms or []):
+        for w in self._no_trade.custom_ms or []:
             try:
                 s = int(w["start_ts_ms"])
                 e = int(w["end_ts_ms"])
@@ -627,11 +634,22 @@ class BacktestAdapter:
         if NO_TRADE_FEATURES_DISABLED:
             return False
 
-        return self._in_daily_window(ts_ms) or self._in_funding_buffer(ts_ms) or self._in_custom_window(ts_ms)
+        return (
+            self._in_daily_window(ts_ms)
+            or self._in_funding_buffer(ts_ms)
+            or self._in_custom_window(ts_ms)
+        )
 
     # --------------------- main loop ---------------------
 
-    def run(self, df: pd.DataFrame, *, ts_col: str = "ts_ms", symbol_col: str = "symbol", price_col: str = "ref_price") -> List[Dict[str, Any]]:
+    def run(
+        self,
+        df: pd.DataFrame,
+        *,
+        ts_col: str = "ts_ms",
+        symbol_col: str = "symbol",
+        price_col: str = "ref_price",
+    ) -> List[Dict[str, Any]]:
         if df.empty:
             return []
         need = [ts_col, symbol_col, price_col]
@@ -720,12 +738,18 @@ class BacktestAdapter:
             orders = self._apply_exchange_rules_to_orders(sym, ref, orders)
 
             # стандартизированный выход стратегии: OrderIntent[]
-            from order_shims import OrderContext, orders_to_order_intents  # локальный импорт во избежание циклов
+            from order_shims import (
+                OrderContext,
+                orders_to_order_intents,
+            )  # локальный импорт во избежание циклов
+
             _ctx = OrderContext(
                 ts_ms=int(ts),
                 symbol=str(sym),
                 ref_price=float(ref),
-                max_position_abs_base=float(self._specs.get(sym).step_size if self._specs.get(sym) else 1.0),  # нижняя оценка; точный объём задаст исполнитель
+                max_position_abs_base=float(
+                    self._specs.get(sym).step_size if self._specs.get(sym) else 1.0
+                ),  # нижняя оценка; точный объём задаст исполнитель
                 tick_size=(self._specs.get(sym).tick_size if self._specs.get(sym) else None),
                 price_offset_ticks=0,
                 tif="GTC",
@@ -755,7 +779,9 @@ class BacktestAdapter:
                 bar_close=ref,
                 bar_timeframe_ms=self.sim.interval_ms,
             )
-            out_reports.append({**rep, "symbol": sym, "ts_ms": ts, "core_order_intents": core_order_intents})
+            out_reports.append(
+                {**rep, "symbol": sym, "ts_ms": ts, "core_order_intents": core_order_intents}
+            )
         if skip_cnt:
             try:
                 logger.info("Skipped %d incomplete bars", skip_cnt)

@@ -11,6 +11,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 _orig_sys_path = list(sys.path)
 sys.path = [p for p in sys.path if p not in ("", str(REPO_ROOT))]
 import logging as std_logging  # type: ignore
+
 sys.modules["logging"] = std_logging
 sys.path = _orig_sys_path
 if str(REPO_ROOT) not in sys.path:
@@ -24,8 +25,11 @@ from config import DataDegradationConfig
 import impl_offline_data
 from impl_offline_data import OfflineCSVConfig, OfflineCSVBarSource
 
+
 class _DummyWS:
     pass
+
+
 sys.modules.setdefault("websockets", _DummyWS())
 import binance_ws
 from services.event_bus import EventBus
@@ -50,13 +54,17 @@ def _simulate_bar_stream(n: int, cfg: DataDegradationConfig) -> tuple[int, int, 
     return drop, stale, delay
 
 
-def _simulate_latency_queue(n: int, cfg: DataDegradationConfig, step_ms: int) -> tuple[int, int, int]:
+def _simulate_latency_queue(
+    n: int, cfg: DataDegradationConfig, step_ms: int
+) -> tuple[int, int, int]:
     rng = random.Random(cfg.seed)
     max_delay_steps = cfg.max_delay_ms // step_ms
+
     class P:
         def __init__(self) -> None:
             self.remaining = 0
             self.delayed = False
+
     queue = [P() for _ in range(n)]
     total = drop = delay = 0
     while queue:
@@ -82,7 +90,9 @@ def _simulate_latency_queue(n: int, cfg: DataDegradationConfig, step_ms: int) ->
 
 
 def test_offline_csv_degradation_logging(tmp_path, monkeypatch, caplog):
-    cfg = DataDegradationConfig(stale_prob=0.2, drop_prob=0.1, dropout_prob=0.5, max_delay_ms=5, seed=1)
+    cfg = DataDegradationConfig(
+        stale_prob=0.2, drop_prob=0.1, dropout_prob=0.5, max_delay_ms=5, seed=1
+    )
     rows = [
         {"ts": i * 60_000, "symbol": "BTC", "open": 1, "high": 1, "low": 1, "close": 1, "volume": 1}
         for i in range(20)
@@ -92,7 +102,9 @@ def test_offline_csv_degradation_logging(tmp_path, monkeypatch, caplog):
 
     monkeypatch.setattr(impl_offline_data.time, "sleep", lambda _: None)
     caplog.set_level(logging.INFO, logger=impl_offline_data.__name__)
-    src = OfflineCSVBarSource(OfflineCSVConfig(paths=[str(path)], timeframe="1m"), data_degradation=cfg)
+    src = OfflineCSVBarSource(
+        OfflineCSVConfig(paths=[str(path)], timeframe="1m"), data_degradation=cfg
+    )
     list(src.stream_bars(["BTC"], 60_000))
 
     drop, stale, delay = _simulate_bar_stream(20, cfg)
@@ -105,9 +117,27 @@ def test_offline_csv_degradation_logging(tmp_path, monkeypatch, caplog):
 
 def test_binance_ws_degradation_logging(monkeypatch, caplog):
     async def run() -> None:
-        cfg = DataDegradationConfig(stale_prob=0.2, drop_prob=0.1, dropout_prob=0.5, max_delay_ms=5, seed=1)
+        cfg = DataDegradationConfig(
+            stale_prob=0.2, drop_prob=0.1, dropout_prob=0.5, max_delay_ms=5, seed=1
+        )
         messages = [
-            json.dumps({"data": {"k": {"x": True, "t": i, "s": "BTCUSDT", "o": "1", "h": "1", "l": "1", "c": "1", "v": "1", "n": 1}}})
+            json.dumps(
+                {
+                    "data": {
+                        "k": {
+                            "x": True,
+                            "t": i,
+                            "s": "BTCUSDT",
+                            "o": "1",
+                            "h": "1",
+                            "l": "1",
+                            "c": "1",
+                            "v": "1",
+                            "n": 1,
+                        }
+                    }
+                }
+            )
             for i in range(20)
         ]
         bus = EventBus(queue_size=100, drop_policy="newest")
@@ -145,7 +175,9 @@ def test_binance_ws_degradation_logging(monkeypatch, caplog):
         async def dummy_sleep(_):
             pass
 
-        monkeypatch.setattr(binance_ws, "websockets", SimpleNamespace(connect=lambda *a, **k: MockWS(messages)))
+        monkeypatch.setattr(
+            binance_ws, "websockets", SimpleNamespace(connect=lambda *a, **k: MockWS(messages))
+        )
         monkeypatch.setattr(binance_ws.asyncio, "sleep", dummy_sleep)
         caplog.set_level(logging.INFO, logger=binance_ws.__name__)
 

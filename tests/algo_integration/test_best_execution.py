@@ -212,9 +212,13 @@ class TestFactorWeights:
         weights = FactorWeights()
 
         total = (
-            weights.price + weights.cost + weights.speed +
-            weights.likelihood + weights.settlement +
-            weights.size + weights.nature
+            weights.price
+            + weights.cost
+            + weights.speed
+            + weights.likelihood
+            + weights.settlement
+            + weights.size
+            + weights.nature
         )
 
         assert abs(total - 1.0) < 0.001
@@ -228,7 +232,7 @@ class TestFactorWeights:
         """Test validation returns errors list."""
         weights = FactorWeights()
         # Manually override to test validation
-        object.__setattr__(weights, 'price', 2.0)
+        object.__setattr__(weights, "price", 2.0)
 
         errors = weights.validate()
         assert len(errors) > 0
@@ -243,9 +247,15 @@ class TestFactorWeights:
 
     def test_get_weight(self):
         """Test getting weight by factor."""
-        weights = FactorWeights(price=0.40, cost=0.20, speed=0.15,
-                                likelihood=0.15, settlement=0.05,
-                                size=0.03, nature=0.02)
+        weights = FactorWeights(
+            price=0.40,
+            cost=0.20,
+            speed=0.15,
+            likelihood=0.15,
+            settlement=0.05,
+            size=0.03,
+            nature=0.02,
+        )
 
         assert weights.get_weight(ExecutionFactor.PRICE) == 0.40
         assert weights.get_weight(ExecutionFactor.COST) == 0.20
@@ -256,18 +266,34 @@ class TestFactorWeights:
 
         # Retail: cost should be weighted higher
         assert weights.cost > weights.speed
-        total = sum([weights.price, weights.cost, weights.speed,
-                     weights.likelihood, weights.settlement,
-                     weights.size, weights.nature])
+        total = sum(
+            [
+                weights.price,
+                weights.cost,
+                weights.speed,
+                weights.likelihood,
+                weights.settlement,
+                weights.size,
+                weights.nature,
+            ]
+        )
         assert abs(total - 1.0) < 0.001
 
     def test_for_professional_client(self):
         """Test professional client weights."""
         weights = FactorWeights.for_professional_client()
 
-        total = sum([weights.price, weights.cost, weights.speed,
-                     weights.likelihood, weights.settlement,
-                     weights.size, weights.nature])
+        total = sum(
+            [
+                weights.price,
+                weights.cost,
+                weights.speed,
+                weights.likelihood,
+                weights.settlement,
+                weights.size,
+                weights.nature,
+            ]
+        )
         assert abs(total - 1.0) < 0.001
 
     def test_for_proprietary_trading(self):
@@ -275,9 +301,17 @@ class TestFactorWeights:
         weights = FactorWeights.for_proprietary_trading()
 
         assert weights.price >= 0.40  # Price most important
-        total = sum([weights.price, weights.cost, weights.speed,
-                     weights.likelihood, weights.settlement,
-                     weights.size, weights.nature])
+        total = sum(
+            [
+                weights.price,
+                weights.cost,
+                weights.speed,
+                weights.likelihood,
+                weights.settlement,
+                weights.size,
+                weights.nature,
+            ]
+        )
         assert abs(total - 1.0) < 0.001
 
 
@@ -390,9 +424,13 @@ class TestBestExecutionPolicyConfig:
         """Test config with asset class specific weights."""
         equity_weights = FactorWeights.for_proprietary_trading()
         fx_weights = FactorWeights(
-            price=0.30, cost=0.20, speed=0.25,
-            likelihood=0.15, settlement=0.05,
-            size=0.03, nature=0.02
+            price=0.30,
+            cost=0.20,
+            speed=0.25,
+            likelihood=0.15,
+            settlement=0.05,
+            size=0.03,
+            nature=0.02,
         )
 
         config = BestExecutionPolicyConfig(
@@ -435,9 +473,7 @@ class TestBestExecutionPolicyConfig:
     def test_get_factor_weights_by_asset_class(self):
         """Test getting weights by asset class."""
         equity_weights = FactorWeights.for_proprietary_trading()
-        config = BestExecutionPolicyConfig(
-            asset_class_weights={AssetClass.EQUITY: equity_weights}
-        )
+        config = BestExecutionPolicyConfig(asset_class_weights={AssetClass.EQUITY: equity_weights})
 
         weights = config.get_factor_weights(asset_class=AssetClass.EQUITY)
         assert weights == equity_weights
@@ -445,17 +481,20 @@ class TestBestExecutionPolicyConfig:
     def test_get_factor_weights_by_order_category(self):
         """Test order category overrides asset class."""
         block_weights = FactorWeights(
-            price=0.25, cost=0.20, speed=0.10,
-            likelihood=0.20, settlement=0.10,
-            size=0.10, nature=0.05
+            price=0.25,
+            cost=0.20,
+            speed=0.10,
+            likelihood=0.20,
+            settlement=0.10,
+            size=0.10,
+            nature=0.05,
         )
         config = BestExecutionPolicyConfig(
             order_category_weights={OrderCategory.BLOCK: block_weights}
         )
 
         weights = config.get_factor_weights(
-            asset_class=AssetClass.EQUITY,
-            order_category=OrderCategory.BLOCK
+            asset_class=AssetClass.EQUITY, order_category=OrderCategory.BLOCK
         )
         assert weights == block_weights
 
@@ -757,8 +796,7 @@ class TestBestExecutionAnalyzer:
         }
 
         analysis = analyzer.analyze_execution(
-            order, fill, market_data,
-            asset_class=AssetClass.EQUITY
+            order, fill, market_data, asset_class=AssetClass.EQUITY
         )
 
         assert analysis is not None
@@ -921,7 +959,12 @@ class TestBestExecutionAnalyzer:
 
         analyzer = BestExecutionAnalyzer(policy, audit_callback=callback)
 
-        order = {"order_id": "AUDIT", "side": "BUY", "quantity": Decimal("100"), "submit_time_ms": 0}
+        order = {
+            "order_id": "AUDIT",
+            "side": "BUY",
+            "quantity": Decimal("100"),
+            "submit_time_ms": 0,
+        }
         fill = {"price": Decimal("100"), "quantity": Decimal("100"), "fill_time_ms": 10}
         analyzer.analyze_execution(order, fill, {"mid": Decimal("100")})
 
@@ -1029,7 +1072,12 @@ class TestEdgeCases:
         policy = create_best_execution_policy()
         analyzer = BestExecutionAnalyzer(policy)
 
-        order = {"order_id": "ZERO-QTY", "side": "BUY", "quantity": Decimal("0"), "submit_time_ms": 0}
+        order = {
+            "order_id": "ZERO-QTY",
+            "side": "BUY",
+            "quantity": Decimal("0"),
+            "submit_time_ms": 0,
+        }
         fill = {"price": Decimal("100"), "quantity": Decimal("0"), "fill_time_ms": 10}
         market_data = {"mid": Decimal("100")}
 
@@ -1047,7 +1095,9 @@ class TestEdgeCases:
         top = policy.get_top_venue(AssetClass.EQUITY)
         assert top is None
 
-    def test_concurrent_analysis(self, ):
+    def test_concurrent_analysis(
+        self,
+    ):
         """Test concurrent analysis operations."""
         import threading
 
@@ -1058,10 +1108,17 @@ class TestEdgeCases:
         def analyze_orders():
             try:
                 for i in range(10):
-                    order = {"order_id": f"CONC-{i}", "side": "BUY",
-                             "quantity": Decimal("100"), "submit_time_ms": i}
-                    fill = {"price": Decimal("100"), "quantity": Decimal("100"),
-                            "fill_time_ms": i + 10}
+                    order = {
+                        "order_id": f"CONC-{i}",
+                        "side": "BUY",
+                        "quantity": Decimal("100"),
+                        "submit_time_ms": i,
+                    }
+                    fill = {
+                        "price": Decimal("100"),
+                        "quantity": Decimal("100"),
+                        "fill_time_ms": i + 10,
+                    }
                     analyzer.analyze_execution(order, fill, {"mid": Decimal("100")})
             except Exception as e:
                 errors.append(e)

@@ -76,8 +76,10 @@ NYSE_MWCB_CUTOFF = time(15, 25)
 # Enumerations
 # =========================
 
+
 class HaltType(str, Enum):
     """Types of trading halts."""
+
     NONE = "NONE"
     LULD_PAUSE = "LULD_PAUSE"  # Limit Up/Limit Down pause
     LULD_HALT = "LULD_HALT"  # Extended LULD halt
@@ -91,6 +93,7 @@ class HaltType(str, Enum):
 
 class TierType(str, Enum):
     """LULD tier classification."""
+
     TIER1 = "TIER1"  # S&P 500, Russell 1000, ETFs
     TIER2 = "TIER2"  # All other NMS securities
 
@@ -99,9 +102,11 @@ class TierType(str, Enum):
 # Data Classes
 # =========================
 
+
 @dataclass
 class LULDBands:
     """LULD price bands for a symbol."""
+
     symbol: str
     reference_price: float  # Average of last 5 minutes
     upper_band: float  # Limit up price
@@ -114,6 +119,7 @@ class LULDBands:
 @dataclass
 class HaltStatus:
     """Current halt status for a symbol or market."""
+
     symbol: str  # "MARKET" for market-wide
     halt_type: HaltType = HaltType.NONE
     is_halted: bool = False
@@ -127,6 +133,7 @@ class HaltStatus:
 @dataclass
 class TradingHaltsConfig:
     """Configuration for TradingHaltsSimulator."""
+
     # LULD settings
     luld_enabled: bool = True
     luld_pause_duration_sec: int = LULD_HALT_DURATION_SEC
@@ -144,16 +151,29 @@ class TradingHaltsConfig:
     asset_class: str = "equity"  # Only applies to equity
 
     # Tier 1 symbols (simplified - in production, load from NYSE list)
-    tier1_symbols: Set[str] = field(default_factory=lambda: {
-        "SPY", "QQQ", "IWM", "DIA",  # Major ETFs
-        "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA",  # Mega caps
-        "GLD", "SLV",  # Commodity ETFs
-    })
+    tier1_symbols: Set[str] = field(
+        default_factory=lambda: {
+            "SPY",
+            "QQQ",
+            "IWM",
+            "DIA",  # Major ETFs
+            "AAPL",
+            "MSFT",
+            "GOOGL",
+            "AMZN",
+            "META",
+            "NVDA",
+            "TSLA",  # Mega caps
+            "GLD",
+            "SLV",  # Commodity ETFs
+        }
+    )
 
 
 # =========================
 # Trading Halts Simulator
 # =========================
+
 
 class TradingHaltsSimulator:
     """
@@ -247,11 +267,7 @@ class TradingHaltsSimulator:
 
     def _get_tier(self, symbol: str) -> TierType:
         """Get LULD tier for a symbol."""
-        return (
-            TierType.TIER1
-            if symbol.upper() in self._config.tier1_symbols
-            else TierType.TIER2
-        )
+        return TierType.TIER1 if symbol.upper() in self._config.tier1_symbols else TierType.TIER2
 
     def _get_luld_band_percentage(
         self,
@@ -347,8 +363,7 @@ class TradingHaltsSimulator:
             bands = self._luld_bands.get(symbol)
             if bands is None:
                 ref_price = self._reference_prices.get(
-                    symbol,
-                    self._prev_close_prices.get(symbol, price)
+                    symbol, self._prev_close_prices.get(symbol, price)
                 )
                 bands = self._update_luld_bands(symbol, ref_price, timestamp_ms)
 
@@ -416,8 +431,7 @@ class TradingHaltsSimulator:
         with self._lock:
             # Check existing halt
             if self._market_halt.is_halted:
-                if (self._market_halt.halt_end_ms and
-                    timestamp_ms >= self._market_halt.halt_end_ms):
+                if self._market_halt.halt_end_ms and timestamp_ms >= self._market_halt.halt_end_ms:
                     # Halt expired
                     self._market_halt.is_halted = False
                     self._market_halt.halt_type = HaltType.NONE
@@ -515,8 +529,10 @@ class TradingHaltsSimulator:
             if market_status.is_halted:
                 return market_status
         elif self._market_halt.is_halted:
-            if (self._market_halt.halt_end_ms is None or
-                timestamp_ms < self._market_halt.halt_end_ms):
+            if (
+                self._market_halt.halt_end_ms is None
+                or timestamp_ms < self._market_halt.halt_end_ms
+            ):
                 return self._market_halt
 
         # Check symbol-level LULD
@@ -627,6 +643,7 @@ class TradingHaltsSimulator:
 # =========================
 # Factory Functions
 # =========================
+
 
 def create_trading_halts_simulator(
     asset_class: str = "equity",

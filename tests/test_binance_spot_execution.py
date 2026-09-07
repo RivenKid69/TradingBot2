@@ -23,6 +23,7 @@ from core_models import Order, OrderType, Side, TimeInForce, ExecStatus
 
 # --------------------------------------------------------------------------- fixtures
 
+
 def _make_adapter(**cfg):
     adapter = BinanceOrderExecutionAdapter(config={"api_key": "k", "api_secret": "s", **cfg})
     calls = []
@@ -32,29 +33,53 @@ def _make_adapter(**cfg):
         if endpoint == "/api/v3/order" and method == "POST":
             qty = params.get("quantity", "0")
             return {
-                "orderId": 555, "clientOrderId": params.get("newClientOrderId", "x"),
-                "status": "FILLED", "executedQty": qty,
+                "orderId": 555,
+                "clientOrderId": params.get("newClientOrderId", "x"),
+                "status": "FILLED",
+                "executedQty": qty,
                 "cummulativeQuoteQty": str(float(qty) * 50000.0),
-                "type": params.get("type"), "side": params.get("side"),
+                "type": params.get("type"),
+                "side": params.get("side"),
             }
         if endpoint == "/api/v3/order" and method == "DELETE":
             return {"orderId": 555, "status": "CANCELED"}
         if endpoint == "/api/v3/order" and method == "GET":
-            return {"orderId": 555, "clientOrderId": "x", "symbol": "BTCUSDT",
-                    "side": "BUY", "type": "LIMIT", "status": "FILLED",
-                    "executedQty": "0.01", "cummulativeQuoteQty": "500", "price": "50000"}
+            return {
+                "orderId": 555,
+                "clientOrderId": "x",
+                "symbol": "BTCUSDT",
+                "side": "BUY",
+                "type": "LIMIT",
+                "status": "FILLED",
+                "executedQty": "0.01",
+                "cummulativeQuoteQty": "500",
+                "price": "50000",
+            }
         if endpoint == "/api/v3/account":
-            return {"accountType": "SPOT", "balances": [
-                {"asset": "BTC", "free": "0.5", "locked": "0.0"},
-                {"asset": "ETH", "free": "2.0", "locked": "1.0"},
-                {"asset": "USDT", "free": "10000", "locked": "0"},
-                {"asset": "BNB", "free": "0", "locked": "0"},   # zero → skipped
-            ]}
+            return {
+                "accountType": "SPOT",
+                "balances": [
+                    {"asset": "BTC", "free": "0.5", "locked": "0.0"},
+                    {"asset": "ETH", "free": "2.0", "locked": "1.0"},
+                    {"asset": "USDT", "free": "10000", "locked": "0"},
+                    {"asset": "BNB", "free": "0", "locked": "0"},  # zero → skipped
+                ],
+            }
         if endpoint == "/api/v3/openOrders":
             if method == "GET":
-                return [{"symbol": "BTCUSDT", "side": "SELL", "type": "LIMIT",
-                         "origQty": "0.1", "price": "60000", "status": "NEW",
-                         "orderId": 9, "clientOrderId": "c9", "timeInForce": "GTC"}]
+                return [
+                    {
+                        "symbol": "BTCUSDT",
+                        "side": "SELL",
+                        "type": "LIMIT",
+                        "origQty": "0.1",
+                        "price": "60000",
+                        "status": "NEW",
+                        "orderId": 9,
+                        "clientOrderId": "c9",
+                        "timeInForce": "GTC",
+                    }
+                ]
             return {}
         return {}
 
@@ -65,6 +90,7 @@ def _make_adapter(**cfg):
 
 # --------------------------------------------------------------------------- registry
 
+
 def test_spot_execution_adapter_is_registered():
     a = create_order_execution_adapter(ExchangeVendor.BINANCE, {"api_key": "k", "api_secret": "s"})
     assert isinstance(a, BinanceOrderExecutionAdapter)
@@ -73,7 +99,9 @@ def test_spot_execution_adapter_is_registered():
 
 
 def test_spot_execution_adapter_registered_for_binance_us():
-    a = create_order_execution_adapter(ExchangeVendor.BINANCE_US, {"api_key": "k", "api_secret": "s"})
+    a = create_order_execution_adapter(
+        ExchangeVendor.BINANCE_US, {"api_key": "k", "api_secret": "s"}
+    )
     assert isinstance(a, BinanceOrderExecutionAdapter)
     assert a._spot_url == "https://api.binance.us"
 
@@ -81,17 +109,21 @@ def test_spot_execution_adapter_registered_for_binance_us():
 def test_futures_adapter_still_resolves_separately():
     # No regression: the futures execution factory is unaffected.
     from adapters.registry import create_futures_order_execution_adapter
-    fa = create_futures_order_execution_adapter(ExchangeVendor.BINANCE_FUTURES,
-                                                {"api_key": "k", "api_secret": "s"})
+
+    fa = create_futures_order_execution_adapter(
+        ExchangeVendor.BINANCE_FUTURES, {"api_key": "k", "api_secret": "s"}
+    )
     assert fa.market_type == MarketType.CRYPTO_FUTURES
 
 
 # --------------------------------------------------------------------------- submit
 
+
 def test_submit_market_order_parses_fill():
     a = _make_adapter()
-    o = Order(ts=1, symbol="BTCUSDT", side=Side.BUY, order_type=OrderType.MARKET,
-              quantity=Decimal("0.01"))
+    o = Order(
+        ts=1, symbol="BTCUSDT", side=Side.BUY, order_type=OrderType.MARKET, quantity=Decimal("0.01")
+    )
     r = a.submit_order(o)
     assert r.success and r.order_id == "555"
     assert r.filled_qty == Decimal("0.01")
@@ -104,8 +136,15 @@ def test_submit_market_order_parses_fill():
 
 def test_submit_limit_order_sets_price_and_tif():
     a = _make_adapter()
-    o = Order(ts=1, symbol="ETHUSDT", side=Side.SELL, order_type=OrderType.LIMIT,
-              quantity=Decimal("2"), price=Decimal("3500"), time_in_force=TimeInForce.IOC)
+    o = Order(
+        ts=1,
+        symbol="ETHUSDT",
+        side=Side.SELL,
+        order_type=OrderType.LIMIT,
+        quantity=Decimal("2"),
+        price=Decimal("3500"),
+        time_in_force=TimeInForce.IOC,
+    )
     a.submit_order(o)
     params = a._calls[-1][2]
     assert params["type"] == "LIMIT" and params["price"] == "3500"
@@ -115,8 +154,9 @@ def test_submit_limit_order_sets_price_and_tif():
 def test_submit_order_error_code_is_failure():
     a = _make_adapter()
     a._request = lambda *args, **kw: {"code": -2010, "msg": "insufficient balance"}
-    o = Order(ts=1, symbol="BTCUSDT", side=Side.BUY, order_type=OrderType.MARKET,
-              quantity=Decimal("999"))
+    o = Order(
+        ts=1, symbol="BTCUSDT", side=Side.BUY, order_type=OrderType.MARKET, quantity=Decimal("999")
+    )
     r = a.submit_order(o)
     assert not r.success and r.error_code == "-2010"
     assert "insufficient" in r.error_message
@@ -124,9 +164,15 @@ def test_submit_order_error_code_is_failure():
 
 def test_submit_spot_order_stop_limit():
     a = _make_adapter()
-    a.submit_spot_order("BTCUSDT", "SELL", "STOP_LOSS_LIMIT", Decimal("0.1"),
-                        price=Decimal("48000"), stop_price=Decimal("48500"),
-                        time_in_force="GTC")
+    a.submit_spot_order(
+        "BTCUSDT",
+        "SELL",
+        "STOP_LOSS_LIMIT",
+        Decimal("0.1"),
+        price=Decimal("48000"),
+        stop_price=Decimal("48500"),
+        time_in_force="GTC",
+    )
     params = a._calls[-1][2]
     assert params["type"] == "STOP_LOSS_LIMIT"
     assert params["stopPrice"] == "48500" and params["price"] == "48000"
@@ -135,29 +181,33 @@ def test_submit_spot_order_stop_limit():
 
 # --------------------------------------------------------------------------- cancel
 
+
 def test_cancel_requires_symbol():
     a = _make_adapter()
-    assert a.cancel_order(order_id="555") is False          # no symbol → refused
+    assert a.cancel_order(order_id="555") is False  # no symbol → refused
     assert a.cancel_order(order_id="555", symbol="BTCUSDT") is True
 
 
 def test_cancel_all_orders_enumerates_symbols():
     a = _make_adapter()
-    n = a.cancel_all_orders()   # no symbol → enumerate open orders, cancel per symbol
+    n = a.cancel_all_orders()  # no symbol → enumerate open orders, cancel per symbol
     assert n == 1
     # A DELETE on the openOrders endpoint was issued for the open order's symbol.
-    assert any(m == "DELETE" and ep == "/api/v3/openOrders" and p.get("symbol") == "BTCUSDT"
-               for m, ep, p in a._calls)
+    assert any(
+        m == "DELETE" and ep == "/api/v3/openOrders" and p.get("symbol") == "BTCUSDT"
+        for m, ep, p in a._calls
+    )
 
 
 # --------------------------------------------------------------------------- positions
+
 
 def test_positions_from_balances_map_to_pairs():
     a = _make_adapter()
     pos = a.get_positions()
     # BTC + ETH surfaced as *USDT; USDT (quote) and zero-balance BNB excluded.
     assert set(pos) == {"BTCUSDT", "ETHUSDT"}
-    assert pos["ETHUSDT"].qty == Decimal("3.0")           # free + locked
+    assert pos["ETHUSDT"].qty == Decimal("3.0")  # free + locked
     assert pos["BTCUSDT"].avg_entry_price == Decimal("0")  # spot: no cost basis
     assert pos["BTCUSDT"].meta["market"] == "spot"
 
@@ -176,6 +226,7 @@ def test_get_positions_filter_by_symbol():
 
 # --------------------------------------------------------------------------- close / flatten
 
+
 def test_close_position_market_sells_full_balance():
     a = _make_adapter()
     r = a.close_position("BTCUSDT")
@@ -187,11 +238,12 @@ def test_close_position_market_sells_full_balance():
 
 def test_close_position_noop_when_flat():
     a = _make_adapter()
-    r = a.close_position("XRPUSDT")   # no XRP balance
+    r = a.close_position("XRPUSDT")  # no XRP balance
     assert r.success and r.status == "NO_POSITION"
 
 
 # --------------------------------------------------------------------------- status / account
+
 
 def test_get_order_status_returns_exec_report():
     a = _make_adapter()
@@ -213,8 +265,10 @@ def test_get_account_info_quote_cash():
 # adapter instead of the old fail-closed "no adapter" short-circuit. The
 # broker adapter is stubbed so no network is touched.
 
+
 def test_panic_halt_crypto_spot_flattens(monkeypatch):
     import os
+
     os.environ.setdefault("SEASONALITY_API_TOKEN", "test-token-spot")
     os.environ.setdefault("RIVEN_ENABLE_CCEA", "0")
     from fastapi.testclient import TestClient
@@ -232,18 +286,22 @@ def test_panic_halt_crypto_spot_flattens(monkeypatch):
 
     class _Pos:
         def __init__(self, qty, entry):
-            self.qty = Decimal(str(qty)); self.avg_entry_price = Decimal(str(entry))
+            self.qty = Decimal(str(qty))
+            self.avg_entry_price = Decimal(str(entry))
 
     class _StubAdapter:
         def __init__(self):
             self._pos = {"BTCUSDT": _Pos("0.5", "50000")}
             self.submitted = []
+
         def cancel_all_orders(self, symbol=None):
             return 0
+
         def get_positions(self, symbols=None):
             return dict(self._pos)
+
         def submit_order(self, order):
-            self._pos.pop(order.symbol, None)   # flattened
+            self._pos.pop(order.symbol, None)  # flattened
             self.submitted.append(order.symbol)
             return OrderResult(success=True, order_id="1", status="FILLED")
 
@@ -252,6 +310,7 @@ def test_panic_halt_crypto_spot_flattens(monkeypatch):
     def fake_create(vendor, config=None):
         assert str(getattr(vendor, "value", vendor)) == "binance"
         return stub
+
     monkeypatch.setattr(registry, "create_order_execution_adapter", fake_create)
 
     try:
@@ -265,6 +324,6 @@ def test_panic_halt_crypto_spot_flattens(monkeypatch):
         syms = [p["symbol"] for p in data["positions_liquidated"]]
         assert "BTCUSDT" in syms
         assert "нет order-execution" not in data["detail"]
-        assert stub.submitted == ["BTCUSDT"]   # a market SELL was actually sent
+        assert stub.submitted == ["BTCUSDT"]  # a market SELL was actually sent
     finally:
         client.post("/api/panic_reset")

@@ -53,8 +53,10 @@ logger = logging.getLogger(__name__)
 # Enums
 # ============================================================================
 
+
 class PurgeJobStatus(str, Enum):
     """Status of a purge job."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -64,6 +66,7 @@ class PurgeJobStatus(str, Enum):
 
 class PurgeDataType(str, Enum):
     """Data types that can be purged."""
+
     TELEMETRY_EVENTS = "telemetry_events"
     ALERTS = "alerts"
     COMMANDS = "commands"
@@ -76,9 +79,11 @@ class PurgeDataType(str, Enum):
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class PurgeJobResult:
     """Result of a single purge job execution."""
+
     job_id: UUID
     workspace_id: UUID
     data_type: PurgeDataType
@@ -94,17 +99,19 @@ class PurgeJobResult:
 @dataclass
 class PurgeSchedulerConfig:
     """Configuration for purge scheduler."""
+
     enabled: bool = True
     interval_hours: int = 24  # Run every 24 hours
-    batch_size: int = 1000    # Records to delete per batch
+    batch_size: int = 1000  # Records to delete per batch
     max_runtime_minutes: int = 60  # Max runtime per workspace
-    dry_run: bool = False     # If True, don't actually delete
+    dry_run: bool = False  # If True, don't actually delete
     notify_before_days: int = 7  # Notify before purge (if enabled)
 
 
 @dataclass
 class PurgeSchedulerState:
     """Current state of the scheduler."""
+
     is_running: bool = False
     last_run_at: Optional[datetime] = None
     next_run_at: Optional[datetime] = None
@@ -116,6 +123,7 @@ class PurgeSchedulerState:
 # ============================================================================
 # Purge Scheduler
 # ============================================================================
+
 
 class PurgeScheduler:
     """
@@ -267,9 +275,7 @@ class PurgeScheduler:
         session: AsyncSession,
     ) -> List[UUID]:
         """Get all workspace IDs with retention policies."""
-        result = await session.execute(
-            select(DataRetentionPolicy.workspace_id).distinct()
-        )
+        result = await session.execute(select(DataRetentionPolicy.workspace_id).distinct())
         return [row[0] for row in result.fetchall()]
 
     async def _purge_workspace(
@@ -282,9 +288,7 @@ class PurgeScheduler:
 
         # Get retention policies for this workspace
         policies_result = await session.execute(
-            select(DataRetentionPolicy).where(
-                DataRetentionPolicy.workspace_id == workspace_id
-            )
+            select(DataRetentionPolicy).where(DataRetentionPolicy.workspace_id == workspace_id)
         )
         policies = list(policies_result.scalars().all())
 
@@ -295,30 +299,34 @@ class PurgeScheduler:
             try:
                 # Check if purge is enabled
                 if not policy.auto_purge_enabled:
-                    results.append(PurgeJobResult(
-                        job_id=job_id,
-                        workspace_id=workspace_id,
-                        data_type=PurgeDataType(policy.data_type),
-                        status=PurgeJobStatus.SKIPPED,
-                        records_purged=0,
-                        started_at=started_at,
-                        completed_at=datetime.now(timezone.utc),
-                        legal_hold_blocked=not policy.dsar_export_enabled,
-                    ))
+                    results.append(
+                        PurgeJobResult(
+                            job_id=job_id,
+                            workspace_id=workspace_id,
+                            data_type=PurgeDataType(policy.data_type),
+                            status=PurgeJobStatus.SKIPPED,
+                            records_purged=0,
+                            started_at=started_at,
+                            completed_at=datetime.now(timezone.utc),
+                            legal_hold_blocked=not policy.dsar_export_enabled,
+                        )
+                    )
                     continue
 
                 # Check legal hold
                 if not policy.dsar_export_enabled:
-                    results.append(PurgeJobResult(
-                        job_id=job_id,
-                        workspace_id=workspace_id,
-                        data_type=PurgeDataType(policy.data_type),
-                        status=PurgeJobStatus.SKIPPED,
-                        records_purged=0,
-                        started_at=started_at,
-                        completed_at=datetime.now(timezone.utc),
-                        legal_hold_blocked=True,
-                    ))
+                    results.append(
+                        PurgeJobResult(
+                            job_id=job_id,
+                            workspace_id=workspace_id,
+                            data_type=PurgeDataType(policy.data_type),
+                            status=PurgeJobStatus.SKIPPED,
+                            records_purged=0,
+                            started_at=started_at,
+                            completed_at=datetime.now(timezone.utc),
+                            legal_hold_blocked=True,
+                        )
+                    )
                     continue
 
                 # Get purge handler
@@ -365,16 +373,18 @@ class PurgeScheduler:
 
             except Exception as e:
                 logger.error(f"Purge job failed for {workspace_id}/{policy.data_type}: {e}")
-                results.append(PurgeJobResult(
-                    job_id=job_id,
-                    workspace_id=workspace_id,
-                    data_type=PurgeDataType(policy.data_type),
-                    status=PurgeJobStatus.FAILED,
-                    records_purged=0,
-                    started_at=started_at,
-                    completed_at=datetime.now(timezone.utc),
-                    error_message=str(e),
-                ))
+                results.append(
+                    PurgeJobResult(
+                        job_id=job_id,
+                        workspace_id=workspace_id,
+                        data_type=PurgeDataType(policy.data_type),
+                        status=PurgeJobStatus.FAILED,
+                        records_purged=0,
+                        started_at=started_at,
+                        completed_at=datetime.now(timezone.utc),
+                        error_message=str(e),
+                    )
+                )
 
                 if self.on_error:
                     self.on_error(f"purge_{policy.data_type}", e)
@@ -403,10 +413,12 @@ class PurgeScheduler:
         while True:
             # Get batch of IDs to delete
             result = await session.execute(
-                select(TelemetryEvent.id).where(
+                select(TelemetryEvent.id)
+                .where(
                     TelemetryEvent.workspace_id == workspace_id,
                     TelemetryEvent.created_at < cutoff,
-                ).limit(batch_size)
+                )
+                .limit(batch_size)
             )
             ids = [row[0] for row in result.fetchall()]
 
@@ -414,9 +426,7 @@ class PurgeScheduler:
                 break
 
             # Delete batch
-            await session.execute(
-                delete(TelemetryEvent).where(TelemetryEvent.id.in_(ids))
-            )
+            await session.execute(delete(TelemetryEvent).where(TelemetryEvent.id.in_(ids)))
             total_deleted += len(ids)
 
             # Flush after each batch
@@ -446,11 +456,13 @@ class PurgeScheduler:
         total_deleted = 0
         while True:
             result = await session.execute(
-                select(Alert.id).where(
+                select(Alert.id)
+                .where(
                     Alert.workspace_id == workspace_id,
                     Alert.created_at < cutoff,
                     Alert.resolved == True,
-                ).limit(batch_size)
+                )
+                .limit(batch_size)
             )
             ids = [row[0] for row in result.fetchall()]
 
@@ -487,11 +499,13 @@ class PurgeScheduler:
         total_deleted = 0
         while True:
             result = await session.execute(
-                select(Command.id).where(
+                select(Command.id)
+                .where(
                     Command.workspace_id == workspace_id,
                     Command.created_at < cutoff,
                     Command.status.in_(terminal_states),
-                ).limit(batch_size)
+                )
+                .limit(batch_size)
             )
             ids = [row[0] for row in result.fetchall()]
 
@@ -529,10 +543,12 @@ class PurgeScheduler:
         total_deleted = 0
         while True:
             result = await session.execute(
-                select(AccessAudit.id).where(
+                select(AccessAudit.id)
+                .where(
                     AccessAudit.workspace_id == workspace_id,
                     AccessAudit.created_at < effective_cutoff,
-                ).limit(batch_size)
+                )
+                .limit(batch_size)
             )
             ids = [row[0] for row in result.fetchall()]
 
@@ -563,9 +579,7 @@ class PurgeScheduler:
                 "records_purged": result.records_purged,
                 "retention_days": result.retention_days,
                 "legal_hold_blocked": result.legal_hold_blocked,
-                "duration_seconds": (
-                    result.completed_at - result.started_at
-                ).total_seconds(),
+                "duration_seconds": (result.completed_at - result.started_at).total_seconds(),
             },
         )
         session.add(audit)
@@ -574,6 +588,7 @@ class PurgeScheduler:
 # ============================================================================
 # DSAR Deletion Integration
 # ============================================================================
+
 
 class DSARDeletionWorkflow:
     """

@@ -47,6 +47,7 @@ from services.core.risk_controls.retention_policy import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def retention_config():
     """Create retention policy configuration."""
@@ -127,6 +128,7 @@ def nca_request():
 # Enum Tests
 # =============================================================================
 
+
 class TestRetentionPeriod:
     """Tests for RetentionPeriod enum."""
 
@@ -176,6 +178,7 @@ class TestNCARequestType:
 # Config Tests
 # =============================================================================
 
+
 class TestRetentionPolicyConfig:
     """Tests for RetentionPolicyConfig."""
 
@@ -204,6 +207,7 @@ class TestRetentionPolicyConfig:
 # =============================================================================
 # Data Class Tests
 # =============================================================================
+
 
 class TestNCARequest:
     """Tests for NCARequest dataclass."""
@@ -294,6 +298,7 @@ class TestArchiveOperation:
 # =============================================================================
 # RetentionManager Tests
 # =============================================================================
+
 
 class TestRetentionManager:
     """Tests for RetentionManager class."""
@@ -523,7 +528,9 @@ class TestMetrics:
 class TestRetentionReport:
     """Tests for retention report generation."""
 
-    def test_generate_retention_report(self, retention_manager, hot_storage, sample_records, nca_request):
+    def test_generate_retention_report(
+        self, retention_manager, hot_storage, sample_records, nca_request
+    ):
         """Test generating retention report."""
         for record in sample_records:
             hot_storage.append(record)
@@ -543,6 +550,7 @@ class TestRetentionReport:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestCreateRetentionManager:
     """Tests for create_retention_manager factory function."""

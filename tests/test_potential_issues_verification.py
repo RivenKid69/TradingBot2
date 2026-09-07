@@ -1,5 +1,5 @@
 """
-Comprehensive tests to verify three potential issues reported in CLAUDE.md:
+Comprehensive tests to verify three potential issues reported in docs/PLATFORM_REFERENCE.md:
 
 1. Quantile loss asymmetry inversion (VERIFIED: Fix enabled by default)
 2. Double trading cost penalty (VERIFIED: Intentional design)
@@ -12,7 +12,9 @@ These tests document and verify that the reported concerns are either:
 
 Created: 2025-11-21
 """
+
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import Mock, MagicMock, patch
@@ -76,9 +78,9 @@ class TestQuantileLossAsymmetryFix:
         # This is a documentation test - the actual default is True
         # Existing comprehensive tests in test_distributional_ppo_*.py verify this works
         expected_default = True
-        assert expected_default is True, (
-            "REGRESSION: Quantile loss fix should be ENABLED by default!"
-        )
+        assert (
+            expected_default is True
+        ), "REGRESSION: Quantile loss fix should be ENABLED by default!"
 
     def test_quantile_loss_can_revert_to_legacy(self):
         """
@@ -95,9 +97,9 @@ class TestQuantileLossAsymmetryFix:
         # User can override by passing use_fixed_quantile_loss_asymmetry=False
 
         legacy_override_possible = True
-        assert legacy_override_possible is True, (
-            "Legacy formula should be available for backward compatibility"
-        )
+        assert (
+            legacy_override_possible is True
+        ), "Legacy formula should be available for backward compatibility"
 
     def test_quantile_loss_formula_correctness(self):
         """
@@ -112,7 +114,7 @@ class TestQuantileLossAsymmetryFix:
         # Manual test of formula (no need for full PPO model)
         tau = torch.tensor([[0.25, 0.50, 0.75]])  # Shape: [1, 3]
         predicted = torch.tensor([[1.0, 2.0, 3.0]])  # Shape: [1, 3]
-        targets = torch.tensor([[2.0, 2.0, 2.0]])    # Shape: [1, 3]
+        targets = torch.tensor([[2.0, 2.0, 2.0]])  # Shape: [1, 3]
 
         # CORRECT formula: delta = T - Q
         delta = targets - predicted  # [1.0, 0.0, -1.0]
@@ -146,10 +148,7 @@ class TestDoubleTradingCostPenalty:
         """Verify that double penalty is explicitly documented in reward.pyx."""
         import os
 
-        reward_pyx_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            "reward.pyx"
-        )
+        reward_pyx_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "reward.pyx")
 
         # Check that documentation exists
         assert os.path.exists(reward_pyx_path), "reward.pyx not found"
@@ -158,9 +157,7 @@ class TestDoubleTradingCostPenalty:
             content = f.read()
 
         # Verify documentation is present
-        assert "DOCUMENTATION (MEDIUM #7)" in content, (
-            "Double penalty documentation missing!"
-        )
+        assert "DOCUMENTATION (MEDIUM #7)" in content, "Double penalty documentation missing!"
         assert "Two-tier trading cost structure" in content
         assert "INTENTIONAL DESIGN" in content
         assert "Almgren & Chriss" in content or "Moody et al" in content
@@ -176,12 +173,12 @@ class TestDoubleTradingCostPenalty:
         # Just verify the structure here
 
         # Mock parameters
-        taker_fee_bps = 10.0      # 0.10%
-        half_spread_bps = 2.0     # 0.02%
-        impact_coeff = 0.01       # Impact coefficient
+        taker_fee_bps = 10.0  # 0.10%
+        half_spread_bps = 2.0  # 0.02%
+        impact_coeff = 0.01  # Impact coefficient
 
         trade_notional = 10000.0  # $10k trade
-        adv_quote = 1_000_000.0   # $1M ADV
+        adv_quote = 1_000_000.0  # $1M ADV
 
         # Calculate real costs
         base_cost = (taker_fee_bps + half_spread_bps) * 1e-4 * trade_notional
@@ -205,7 +202,7 @@ class TestDoubleTradingCostPenalty:
         Purpose: Discourage excessive churning beyond real costs.
         """
         turnover_penalty_coef = 0.0005  # 5bps
-        trade_notional = 10000.0        # $10k trade
+        trade_notional = 10000.0  # $10k trade
 
         penalty_2 = turnover_penalty_coef * trade_notional
 
@@ -237,9 +234,9 @@ class TestDoubleTradingCostPenalty:
         total_bps = (total_penalty / trade_notional) * 1e4
 
         # Should be ~17bps
-        assert 15.0 <= total_bps <= 20.0, (
-            f"Total penalty should be ~17bps (intentional), got {total_bps}bps"
-        )
+        assert (
+            15.0 <= total_bps <= 20.0
+        ), f"Total penalty should be ~17bps (intentional), got {total_bps}bps"
 
 
 class TestMACDLookAheadBias:
@@ -273,9 +270,7 @@ class TestMACDLookAheadBias:
 
         # No future data is accessible
         uses_current_step = True
-        assert uses_current_step is True, (
-            "row_idx should represent CURRENT step, not future"
-        )
+        assert uses_current_step is True, "row_idx should represent CURRENT step, not future"
 
     def test_simulator_get_macd_uses_current_index(self):
         """
@@ -313,10 +308,12 @@ class TestMACDLookAheadBias:
         import pandas as pd
 
         # Create sample DataFrame
-        df = pd.DataFrame({
-            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-            "volume": [1000, 1100, 1200, 1300, 1400],
-        })
+        df = pd.DataFrame(
+            {
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "volume": [1000, 1100, 1200, 1300, 1400],
+            }
+        )
 
         # Simulate current step
         current_step = 2  # We're at step 2
@@ -359,9 +356,9 @@ class TestComprehensiveVerification:
         no_lookahead_bias = True  # Verified in test_row_idx_is_current_step
 
         # All verifications passed!
-        assert quantile_loss_fixed and double_penalty_documented and no_lookahead_bias, (
-            "All three issues should be verified"
-        )
+        assert (
+            quantile_loss_fixed and double_penalty_documented and no_lookahead_bias
+        ), "All three issues should be verified"
 
 
 if __name__ == "__main__":

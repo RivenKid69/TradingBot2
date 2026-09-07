@@ -9,6 +9,7 @@ This test file ensures 100% coverage of the target clipping fix across:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional, Tuple
@@ -45,16 +46,12 @@ class TestAllConfigurationCombinations:
             )
             # [5.0, -5.0, 5.0, -5.0] - CLIPPED
         else:
-            target_returns_norm_raw = (
-                (returns_raw / base_scale) * value_target_scale_effective
-            )
+            target_returns_norm_raw = (returns_raw / base_scale) * value_target_scale_effective
             # [10.0, -10.0, 8.0, -8.0]
 
             value_clip_limit_scaled = 5.0
             target_returns_norm = torch.clamp(
-                target_returns_norm_raw,
-                min=-value_clip_limit_scaled,
-                max=value_clip_limit_scaled
+                target_returns_norm_raw, min=-value_clip_limit_scaled, max=value_clip_limit_scaled
             )
             # [5.0, -5.0, 5.0, -5.0] - CLIPPED
 
@@ -96,16 +93,12 @@ class TestAllConfigurationCombinations:
         value_target_scale_effective = 1.0
 
         # Line 8113-8123
-        target_returns_norm_raw = (
-            (returns_raw / base_scale) * value_target_scale_effective
-        )
+        target_returns_norm_raw = (returns_raw / base_scale) * value_target_scale_effective
         # [10.0, -10.0, 8.0, -8.0]
 
         value_clip_limit_scaled = 5.0
         target_returns_norm = torch.clamp(
-            target_returns_norm_raw,
-            min=-value_clip_limit_scaled,
-            max=value_clip_limit_scaled
+            target_returns_norm_raw, min=-value_clip_limit_scaled, max=value_clip_limit_scaled
         )
         # [5.0, -5.0, 5.0, -5.0]
 
@@ -120,17 +113,13 @@ class TestAllConfigurationCombinations:
         value_target_scale_effective = 1.0
 
         # Line 8113-8127
-        target_returns_norm_raw = (
-            (returns_raw / base_scale) * value_target_scale_effective
-        )
+        target_returns_norm_raw = (returns_raw / base_scale) * value_target_scale_effective
 
         # No clipping (line 8126-8127)
         value_clip_limit_scaled = None
         if value_clip_limit_scaled is not None:
             target_returns_norm = torch.clamp(
-                target_returns_norm_raw,
-                min=-value_clip_limit_scaled,
-                max=value_clip_limit_scaled
+                target_returns_norm_raw, min=-value_clip_limit_scaled, max=value_clip_limit_scaled
             )
         else:
             target_returns_norm = target_returns_norm_raw
@@ -311,9 +300,7 @@ class TestConditionalBranches:
 
             # Clipped prediction
             V_pred_clipped = torch.clamp(
-                V_pred,
-                V_old - clip_range_vf_value,
-                V_old + clip_range_vf_value
+                V_pred, V_old - clip_range_vf_value, V_old + clip_range_vf_value
             )
 
             # Clipped loss
@@ -383,10 +370,7 @@ class TestStatisticsAndLogging:
         targets_norm_for_loss = target_returns_norm_raw.reshape(-1, 1)
 
         # Should be different
-        assert not torch.allclose(
-            target_norm_for_stats,
-            targets_norm_for_loss.squeeze()
-        )
+        assert not torch.allclose(target_norm_for_stats, targets_norm_for_loss.squeeze())
 
         # Statistics use clipped
         assert target_norm_for_stats[0].item() == pytest.approx(5.0)
@@ -406,11 +390,7 @@ class TestRegressionChecks:
         clip_range_vf = 2.0
 
         # Predictions SHOULD be clipped
-        V_pred_clipped = torch.clamp(
-            V_pred,
-            V_old - clip_range_vf,
-            V_old + clip_range_vf
-        )
+        V_pred_clipped = torch.clamp(V_pred, V_old - clip_range_vf, V_old + clip_range_vf)
 
         # Should be clipped to [3, 7]
         assert V_pred_clipped.item() == pytest.approx(7.0)
@@ -423,11 +403,7 @@ class TestRegressionChecks:
         clip_range_vf = 2.0
 
         # Clip predictions relative to old values
-        V_pred_clipped = torch.clamp(
-            V_pred,
-            V_old - clip_range_vf,
-            V_old + clip_range_vf
-        )
+        V_pred_clipped = torch.clamp(V_pred, V_old - clip_range_vf, V_old + clip_range_vf)
 
         # Should be clipped individually
         expected = torch.tensor([7.0, 4.0, 9.0])

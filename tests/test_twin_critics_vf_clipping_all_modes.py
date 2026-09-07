@@ -17,6 +17,7 @@ Test Coverage:
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
@@ -108,8 +109,16 @@ class TestPerQuantileMode:
         targets = torch.randn(batch_size, 1, device=device)
 
         # Old quantiles: deliberately create different distributions for c1 and c2
-        old_quantiles_c1 = torch.linspace(-2.0, 2.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
-        old_quantiles_c2 = torch.linspace(-1.0, 3.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
+        old_quantiles_c1 = (
+            torch.linspace(-2.0, 2.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
+        old_quantiles_c2 = (
+            torch.linspace(-1.0, 3.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
 
         clip_delta = 0.5
 
@@ -184,7 +193,9 @@ class TestPerQuantileMode:
 
             # Check bounds
             max_deviation = (quantiles_1_clipped_manual - old_quantiles_c1_raw).abs().max()
-            assert max_deviation <= clip_delta + 1e-5, f"Max deviation {max_deviation} exceeds clip_delta {clip_delta}"
+            assert (
+                max_deviation <= clip_delta + 1e-5
+            ), f"Max deviation {max_deviation} exceeds clip_delta {clip_delta}"
 
 
 class TestMeanOnlyMode:
@@ -213,8 +224,16 @@ class TestMeanOnlyMode:
         # Old quantiles: create distributions with different means and variances
         old_mean_1 = 0.0
         old_mean_2 = 1.0
-        old_quantiles_c1 = torch.linspace(-2.0, 2.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
-        old_quantiles_c2 = torch.linspace(-1.0, 3.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
+        old_quantiles_c1 = (
+            torch.linspace(-2.0, 2.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
+        old_quantiles_c2 = (
+            torch.linspace(-1.0, 3.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
 
         clip_delta = 0.5
 
@@ -244,7 +263,9 @@ class TestMeanOnlyMode:
         expected_avg = (loss_c1_clipped + loss_c2_clipped) / 2.0
         torch.testing.assert_close(clipped_loss_avg, expected_avg, rtol=1e-5, atol=1e-5)
 
-    def test_mean_only_parallel_shift_preserves_quantile_differences(self, simple_env, quantile_policy_config):
+    def test_mean_only_parallel_shift_preserves_quantile_differences(
+        self, simple_env, quantile_policy_config
+    ):
         """Test that mean_only mode preserves relative differences between quantiles (parallel shift)."""
         model = DistributionalPPO(
             CustomActorCriticPolicy,
@@ -265,8 +286,16 @@ class TestMeanOnlyMode:
         targets = torch.zeros(batch_size, 1, device=device)
 
         # Create old quantiles with specific structure
-        old_quantiles_c1 = torch.linspace(-1.0, 1.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
-        old_quantiles_c2 = torch.linspace(-2.0, 2.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
+        old_quantiles_c1 = (
+            torch.linspace(-1.0, 1.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
+        old_quantiles_c2 = (
+            torch.linspace(-2.0, 2.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
 
         clip_delta = 0.3
 
@@ -296,7 +325,9 @@ class TestMeanOnlyMode:
 class TestMeanAndVarianceMode:
     """Test mean_and_variance mode: clip mean + constrain variance expansion."""
 
-    def test_mean_and_variance_clips_mean_and_constrains_variance(self, simple_env, quantile_policy_config):
+    def test_mean_and_variance_clips_mean_and_constrains_variance(
+        self, simple_env, quantile_policy_config
+    ):
         """Test that mean_and_variance mode clips mean AND constrains variance expansion."""
         model = DistributionalPPO(
             CustomActorCriticPolicy,
@@ -318,8 +349,16 @@ class TestMeanAndVarianceMode:
         targets = torch.randn(batch_size, 1, device=device)
 
         # Old quantiles: create narrow distributions (low variance)
-        old_quantiles_c1 = torch.linspace(-0.5, 0.5, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
-        old_quantiles_c2 = torch.linspace(-0.3, 0.3, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
+        old_quantiles_c1 = (
+            torch.linspace(-0.5, 0.5, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
+        old_quantiles_c2 = (
+            torch.linspace(-0.3, 0.3, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
 
         clip_delta = 0.5
 
@@ -376,8 +415,16 @@ class TestMeanAndVarianceMode:
         targets = torch.zeros(batch_size, 1, device=device)
 
         # Create old quantiles with specific variance
-        old_quantiles_c1 = torch.linspace(-1.0, 1.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
-        old_quantiles_c2 = torch.linspace(-0.5, 0.5, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
+        old_quantiles_c1 = (
+            torch.linspace(-1.0, 1.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
+        old_quantiles_c2 = (
+            torch.linspace(-0.5, 0.5, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
 
         clip_delta = 0.5
 
@@ -633,8 +680,16 @@ class TestIndependence:
         # Create ASYMMETRIC old quantiles for c1 and c2 to avoid symmetric loss cancellation
         # c1: far from target (centered at -4)
         # c2: closer to target (centered at +1)
-        old_quantiles_c1 = torch.linspace(-5.0, -3.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
-        old_quantiles_c2 = torch.linspace(0.0, 2.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
+        old_quantiles_c1 = (
+            torch.linspace(-5.0, -3.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
+        old_quantiles_c2 = (
+            torch.linspace(0.0, 2.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
 
         clip_delta = 0.5
 
@@ -722,8 +777,16 @@ class TestEdgeCases:
         targets = torch.zeros(batch_size, 1, device=device)
 
         # Extreme quantile values
-        old_quantiles_c1 = torch.linspace(-100.0, 100.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
-        old_quantiles_c2 = torch.linspace(-50.0, 50.0, num_quantiles, device=device).unsqueeze(0).expand(batch_size, -1)
+        old_quantiles_c1 = (
+            torch.linspace(-100.0, 100.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
+        old_quantiles_c2 = (
+            torch.linspace(-50.0, 50.0, num_quantiles, device=device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
 
         clip_delta = 10.0
 

@@ -38,7 +38,7 @@ DEFAULT_RETENTION_PERIODS: Final[Dict[str, int]] = {
     "alerts": 365,
     "commands": 180,
     "approval_records": 365 * 7,  # 7 years for compliance
-    "access_audits": 365 * 7,     # 7 years for compliance
+    "access_audits": 365 * 7,  # 7 years for compliance
     "config_blobs": 365,
     "run_data": 365,
     "deployment_data": 365,
@@ -49,8 +49,8 @@ MIN_RETENTION_PERIODS: Final[Dict[str, int]] = {
     "telemetry_events": 7,
     "alerts": 30,
     "commands": 30,
-    "approval_records": 365,      # Minimum 1 year for compliance
-    "access_audits": 365,         # Minimum 1 year for compliance
+    "approval_records": 365,  # Minimum 1 year for compliance
+    "access_audits": 365,  # Minimum 1 year for compliance
     "config_blobs": 30,
     "run_data": 30,
     "deployment_data": 30,
@@ -59,10 +59,11 @@ MIN_RETENTION_PERIODS: Final[Dict[str, int]] = {
 
 class RetentionAction(Enum):
     """Actions for data after retention period."""
-    DELETE = auto()        # Permanently delete
-    ARCHIVE = auto()       # Move to cold storage
-    ANONYMIZE = auto()     # Anonymize but keep
-    AGGREGATE = auto()     # Convert to aggregated form
+
+    DELETE = auto()  # Permanently delete
+    ARCHIVE = auto()  # Move to cold storage
+    ANONYMIZE = auto()  # Anonymize but keep
+    AGGREGATE = auto()  # Convert to aggregated form
 
 
 @dataclass
@@ -78,6 +79,7 @@ class RetentionPolicy:
         action: What to do after retention period
         enabled: Whether policy is active
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     data_type: str = ""
@@ -112,7 +114,9 @@ class RetentionPolicy:
             "enabled": self.enabled,
             "compliance_reason": self.compliance_reason,
             "legal_hold": self.legal_hold,
-            "legal_hold_until": self.legal_hold_until.isoformat() if self.legal_hold_until else None,
+            "legal_hold_until": (
+                self.legal_hold_until.isoformat() if self.legal_hold_until else None
+            ),
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "last_applied_at": self.last_applied_at.isoformat() if self.last_applied_at else None,
@@ -136,6 +140,7 @@ class RetentionPolicy:
 @dataclass
 class RetentionConfig:
     """Global retention configuration."""
+
     auto_purge_enabled: bool = True
     purge_batch_size: int = 1000
     purge_interval_hours: int = 24
@@ -147,6 +152,7 @@ class RetentionConfig:
 @dataclass
 class PurgeResult:
     """Result of a purge operation."""
+
     success: bool = True
     workspace_id: str = ""
     data_type: str = ""
@@ -216,7 +222,9 @@ class RetentionService:
         """
         self.config = config or RetentionConfig()
         self._purger = purger
-        self._policies: Dict[str, Dict[str, RetentionPolicy]] = {}  # workspace_id -> data_type -> policy
+        self._policies: Dict[str, Dict[str, RetentionPolicy]] = (
+            {}
+        )  # workspace_id -> data_type -> policy
         self._audit_log: List[Dict[str, Any]] = []
         self._lock = threading.Lock()
 
@@ -299,10 +307,7 @@ class RetentionService:
                 return None
 
             if retention_days is not None:
-                policy.retention_days = max(
-                    retention_days,
-                    MIN_RETENTION_PERIODS.get(data_type, 7)
-                )
+                policy.retention_days = max(retention_days, MIN_RETENTION_PERIODS.get(data_type, 7))
             if action is not None:
                 policy.action = action
             if enabled is not None:
@@ -483,11 +488,15 @@ class RetentionService:
 
             result.duration_seconds = (datetime.utcnow() - start_time).total_seconds()
 
-            self._log_audit("purge_completed", policy, {
-                "records_purged": result.records_purged,
-                "records_archived": result.records_archived,
-                "records_anonymized": result.records_anonymized,
-            })
+            self._log_audit(
+                "purge_completed",
+                policy,
+                {
+                    "records_purged": result.records_purged,
+                    "records_archived": result.records_archived,
+                    "records_anonymized": result.records_anonymized,
+                },
+            )
 
             return result
 
@@ -521,28 +530,40 @@ class RetentionService:
         }
 
         for policy in policies:
-            report["policies"].append({
-                "data_type": policy.data_type,
-                "retention_days": policy.retention_days,
-                "action": policy.action.name,
-                "enabled": policy.enabled,
-                "cutoff_date": policy.cutoff_date.isoformat(),
-                "last_applied": policy.last_applied_at.isoformat() if policy.last_applied_at else None,
-            })
+            report["policies"].append(
+                {
+                    "data_type": policy.data_type,
+                    "retention_days": policy.retention_days,
+                    "action": policy.action.name,
+                    "enabled": policy.enabled,
+                    "cutoff_date": policy.cutoff_date.isoformat(),
+                    "last_applied": (
+                        policy.last_applied_at.isoformat() if policy.last_applied_at else None
+                    ),
+                }
+            )
 
             if policy.is_on_legal_hold:
-                report["legal_holds"].append({
-                    "data_type": policy.data_type,
-                    "reason": policy.compliance_reason,
-                    "until": policy.legal_hold_until.isoformat() if policy.legal_hold_until else "indefinite",
-                })
+                report["legal_holds"].append(
+                    {
+                        "data_type": policy.data_type,
+                        "reason": policy.compliance_reason,
+                        "until": (
+                            policy.legal_hold_until.isoformat()
+                            if policy.legal_hold_until
+                            else "indefinite"
+                        ),
+                    }
+                )
 
             if policy.enabled and not policy.is_on_legal_hold:
-                report["upcoming_purges"].append({
-                    "data_type": policy.data_type,
-                    "cutoff_date": policy.cutoff_date.isoformat(),
-                    "action": policy.action.name,
-                })
+                report["upcoming_purges"].append(
+                    {
+                        "data_type": policy.data_type,
+                        "cutoff_date": policy.cutoff_date.isoformat(),
+                        "action": policy.action.name,
+                    }
+                )
 
         return report
 

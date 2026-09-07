@@ -38,11 +38,14 @@ class TCAReport:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "n_trades": self.n_trades, "total_notional": self.total_notional,
+            "n_trades": self.n_trades,
+            "total_notional": self.total_notional,
             "avg_slippage_bps": self.avg_slippage_bps,
             "avg_impl_shortfall_bps": self.avg_impl_shortfall_bps,
             "total_cost": self.total_cost,
-            "by_venue": self.by_venue, "by_symbol": self.by_symbol, "by_side": self.by_side,
+            "by_venue": self.by_venue,
+            "by_symbol": self.by_symbol,
+            "by_side": self.by_side,
         }
 
 
@@ -69,21 +72,37 @@ class TCAReporter:
         # implementation shortfall vs arrival (decision price)
         df["is_bps"] = sign * (df["fill_price"] - df["arrival_price"]) / df["arrival_price"] * 1e4
         # slippage vs benchmark (e.g. interval VWAP)
-        df["slip_bps"] = sign * (df["fill_price"] - df["benchmark_price"]) / df["benchmark_price"] * 1e4
+        df["slip_bps"] = (
+            sign * (df["fill_price"] - df["benchmark_price"]) / df["benchmark_price"] * 1e4
+        )
         df["cost"] = df["is_bps"] / 1e4 * df["notional"]
 
         def _agg(g: pd.DataFrame) -> Dict[str, float]:
             notl = float(g["notional"].sum())
             wis = float((g["is_bps"] * g["notional"]).sum() / notl) if notl else 0.0
             wsl = float((g["slip_bps"] * g["notional"]).sum() / notl) if notl else 0.0
-            return {"n": int(len(g)), "notional": notl, "impl_shortfall_bps": round(wis, 3),
-                    "slippage_bps": round(wsl, 3), "cost": round(float(g["cost"].sum()), 2)}
+            return {
+                "n": int(len(g)),
+                "notional": notl,
+                "impl_shortfall_bps": round(wis, 3),
+                "slippage_bps": round(wsl, 3),
+                "cost": round(float(g["cost"].sum()), 2),
+            }
 
         total_notl = float(df["notional"].sum())
         return TCAReport(
-            n_trades=int(len(df)), total_notional=total_notl,
-            avg_slippage_bps=round(float((df["slip_bps"] * df["notional"]).sum() / total_notl), 3) if total_notl else 0.0,
-            avg_impl_shortfall_bps=round(float((df["is_bps"] * df["notional"]).sum() / total_notl), 3) if total_notl else 0.0,
+            n_trades=int(len(df)),
+            total_notional=total_notl,
+            avg_slippage_bps=(
+                round(float((df["slip_bps"] * df["notional"]).sum() / total_notl), 3)
+                if total_notl
+                else 0.0
+            ),
+            avg_impl_shortfall_bps=(
+                round(float((df["is_bps"] * df["notional"]).sum() / total_notl), 3)
+                if total_notl
+                else 0.0
+            ),
             total_cost=round(float(df["cost"].sum()), 2),
             by_venue={str(k): _agg(g) for k, g in df.groupby("venue")},
             by_symbol={str(k): _agg(g) for k, g in df.groupby("symbol")},
@@ -97,14 +116,19 @@ class TCAReporter:
         return self.analyze(df.to_dict("records"))
 
     def to_markdown(self, rep: TCAReport, *, title: str = "TCA / Best-Execution Report") -> str:
-        L = [f"# {title}\n",
-             f"- Сделок: **{rep.n_trades}** · оборот ${rep.total_notional:,.0f}",
-             f"- Implementation shortfall: **{rep.avg_impl_shortfall_bps:.2f} bps** · "
-             f"slippage vs benchmark: **{rep.avg_slippage_bps:.2f} bps** · издержки ${rep.total_cost:,.0f}\n",
-             "## По venue\n", "| Venue | Сделок | Оборот | IS (bps) | Slippage (bps) |",
-             "|---|---|---|---|---|"]
+        L = [
+            f"# {title}\n",
+            f"- Сделок: **{rep.n_trades}** · оборот ${rep.total_notional:,.0f}",
+            f"- Implementation shortfall: **{rep.avg_impl_shortfall_bps:.2f} bps** · "
+            f"slippage vs benchmark: **{rep.avg_slippage_bps:.2f} bps** · издержки ${rep.total_cost:,.0f}\n",
+            "## По venue\n",
+            "| Venue | Сделок | Оборот | IS (bps) | Slippage (bps) |",
+            "|---|---|---|---|---|",
+        ]
         for v, a in sorted(rep.by_venue.items()):
-            L.append(f"| {v} | {a['n']} | ${a['notional']:,.0f} | {a['impl_shortfall_bps']} | {a['slippage_bps']} |")
+            L.append(
+                f"| {v} | {a['n']} | ${a['notional']:,.0f} | {a['impl_shortfall_bps']} | {a['slippage_bps']} |"
+            )
         return "\n".join(L)
 
 

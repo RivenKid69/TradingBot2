@@ -13,6 +13,7 @@ Reference: PPO_BUGS_ANALYSIS_REPORT.md
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from typing import Optional
@@ -132,7 +133,9 @@ class TestAdvantageNormalizationFix:
             max_abs_new = np.max(np.abs(normalized_new))
             max_abs_old = np.max(np.abs(normalized_old))
             # New behavior should use actual std (no floor), which may be smaller or equal to old
-            assert max_abs_new <= max_abs_old * 1.1, "New behavior should not amplify more than old (allow small tolerance)"
+            assert (
+                max_abs_new <= max_abs_old * 1.1
+            ), "New behavior should not amplify more than old (allow small tolerance)"
         else:
             # Should be zero
             assert np.allclose(normalized_new, 0.0), "Should be zero for very small std"
@@ -190,7 +193,7 @@ class TestLogRatioNaNDetection:
 
     def test_nan_log_ratio_detected(self):
         """When log_ratio contains NaN, should detect it."""
-        log_ratio = torch.tensor([0.1, float('nan'), 0.03, -0.02], dtype=torch.float32)
+        log_ratio = torch.tensor([0.1, float("nan"), 0.03, -0.02], dtype=torch.float32)
 
         # Check if finite
         is_finite = torch.isfinite(log_ratio).all()
@@ -206,7 +209,7 @@ class TestLogRatioNaNDetection:
 
     def test_inf_log_ratio_detected(self):
         """When log_ratio contains Inf, should detect it."""
-        log_ratio = torch.tensor([0.1, -0.05, float('inf'), -0.02], dtype=torch.float32)
+        log_ratio = torch.tensor([0.1, -0.05, float("inf"), -0.02], dtype=torch.float32)
 
         # Check if finite
         is_finite = torch.isfinite(log_ratio).all()
@@ -222,7 +225,9 @@ class TestLogRatioNaNDetection:
 
     def test_mixed_nan_inf_detected(self):
         """When log_ratio contains both NaN and Inf, should detect both."""
-        log_ratio = torch.tensor([float('nan'), -0.05, float('inf'), float('-inf')], dtype=torch.float32)
+        log_ratio = torch.tensor(
+            [float("nan"), -0.05, float("inf"), float("-inf")], dtype=torch.float32
+        )
 
         # Check if finite
         is_finite = torch.isfinite(log_ratio).all()
@@ -244,7 +249,7 @@ class TestLogRatioNaNDetection:
 
     def test_nan_propagation_prevented(self):
         """Verify that NaN does not propagate if batch is skipped."""
-        log_ratio = torch.tensor([float('nan'), -0.05, 0.03, -0.02], dtype=torch.float32)
+        log_ratio = torch.tensor([float("nan"), -0.05, 0.03, -0.02], dtype=torch.float32)
 
         # Simul protocol: if NaN detected, skip batch
         if not torch.isfinite(log_ratio).all():
@@ -303,21 +308,22 @@ class TestTwinCriticsVFClipping:
         # Verify the fix is in place by checking the method exists and has correct signature
         from distributional_ppo import DistributionalPPO
 
-        assert hasattr(DistributionalPPO, "_twin_critics_vf_clipping_loss"), (
-            "BUG #1 FIX: _twin_critics_vf_clipping_loss method must exist"
-        )
+        assert hasattr(
+            DistributionalPPO, "_twin_critics_vf_clipping_loss"
+        ), "BUG #1 FIX: _twin_critics_vf_clipping_loss method must exist"
 
         # Verify method signature includes separate critic parameters
         import inspect
+
         sig = inspect.signature(DistributionalPPO._twin_critics_vf_clipping_loss)
         params = list(sig.parameters.keys())
 
-        assert "old_quantiles_critic1" in params, (
-            "BUG #1 FIX: Method must accept old_quantiles_critic1 for independent clipping"
-        )
-        assert "old_quantiles_critic2" in params, (
-            "BUG #1 FIX: Method must accept old_quantiles_critic2 for independent clipping"
-        )
+        assert (
+            "old_quantiles_critic1" in params
+        ), "BUG #1 FIX: Method must accept old_quantiles_critic1 for independent clipping"
+        assert (
+            "old_quantiles_critic2" in params
+        ), "BUG #1 FIX: Method must accept old_quantiles_critic2 for independent clipping"
 
     def test_twin_critics_vf_clipping_uses_both_critics_categorical(self):
         """
@@ -339,15 +345,15 @@ class TestTwinCriticsVFClipping:
         sig = inspect.signature(DistributionalPPO._twin_critics_vf_clipping_loss)
         params = list(sig.parameters.keys())
 
-        assert "old_probs_critic1" in params, (
-            "BUG #1 FIX: Method must accept old_probs_critic1 for categorical mode"
-        )
-        assert "old_probs_critic2" in params, (
-            "BUG #1 FIX: Method must accept old_probs_critic2 for categorical mode"
-        )
-        assert "target_distribution" in params, (
-            "BUG #1 FIX: Method must accept target_distribution for categorical mode"
-        )
+        assert (
+            "old_probs_critic1" in params
+        ), "BUG #1 FIX: Method must accept old_probs_critic1 for categorical mode"
+        assert (
+            "old_probs_critic2" in params
+        ), "BUG #1 FIX: Method must accept old_probs_critic2 for categorical mode"
+        assert (
+            "target_distribution" in params
+        ), "BUG #1 FIX: Method must accept target_distribution for categorical mode"
 
     def test_twin_critics_gradient_flow_symmetric(self):
         """
@@ -366,18 +372,18 @@ class TestTwinCriticsVFClipping:
         docstring = method.__doc__ or ""
 
         # The fixed method returns individual losses for each critic
-        assert "loss_c1_clipped" in docstring, (
-            "BUG #1 FIX: Method must return individual clipped loss for critic 1"
-        )
-        assert "loss_c2_clipped" in docstring, (
-            "BUG #1 FIX: Method must return individual clipped loss for critic 2"
-        )
-        assert "loss_c1_unclipped" in docstring, (
-            "BUG #1 FIX: Method must return individual unclipped loss for critic 1"
-        )
-        assert "loss_c2_unclipped" in docstring, (
-            "BUG #1 FIX: Method must return individual unclipped loss for critic 2"
-        )
+        assert (
+            "loss_c1_clipped" in docstring
+        ), "BUG #1 FIX: Method must return individual clipped loss for critic 1"
+        assert (
+            "loss_c2_clipped" in docstring
+        ), "BUG #1 FIX: Method must return individual clipped loss for critic 2"
+        assert (
+            "loss_c1_unclipped" in docstring
+        ), "BUG #1 FIX: Method must return individual unclipped loss for critic 1"
+        assert (
+            "loss_c2_unclipped" in docstring
+        ), "BUG #1 FIX: Method must return individual unclipped loss for critic 2"
 
 
 if __name__ == "__main__":

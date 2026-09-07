@@ -4,10 +4,11 @@ Simple standalone test for VarianceGradientScaler without external dependencies.
 
 import pytest
 import sys
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 
-sys.path.insert(0, '/home/user/ai-quant-platform')
+sys.path.insert(0, "/home/user/ai-quant-platform")
 from variance_gradient_scaler import VarianceGradientScaler
 
 
@@ -209,6 +210,7 @@ def run_all_tests():
     except Exception as e:
         print(f"\n✗ TEST FAILED: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

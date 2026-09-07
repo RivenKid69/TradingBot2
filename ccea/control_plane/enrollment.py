@@ -44,39 +44,47 @@ logger = logging.getLogger(__name__)
 # Exceptions
 # ============================================================================
 
+
 class EnrollmentError(Exception):
     """Base enrollment error."""
+
     pass
 
 
 class TokenExpiredError(EnrollmentError):
     """Token has expired."""
+
     pass
 
 
 class TokenInvalidError(EnrollmentError):
     """Token is invalid."""
+
     pass
 
 
 class TokenRevokedError(EnrollmentError):
     """Token has been revoked."""
+
     pass
 
 
 class TokenExhaustedError(EnrollmentError):
     """Token max uses reached."""
+
     pass
 
 
 class AgentAlreadyEnrolledError(EnrollmentError):
     """Agent is already enrolled."""
+
     pass
 
 
 # ============================================================================
 # Token Store Interface
 # ============================================================================
+
 
 class TokenStore(ABC):
     """Abstract token store interface."""
@@ -126,6 +134,7 @@ class InMemoryTokenStore(TokenStore):
 # ============================================================================
 # Agent Store Interface
 # ============================================================================
+
 
 class AgentStore(ABC):
     """Abstract agent store interface."""
@@ -181,15 +190,13 @@ class InMemoryAgentStore(AgentStore):
             self._agents[agent.agent_id] = agent
 
     def list_by_workspace(self, workspace_id: str) -> List[AgentInfo]:
-        return [
-            a for a in self._agents.values()
-            if a.workspace_id == workspace_id
-        ]
+        return [a for a in self._agents.values() if a.workspace_id == workspace_id]
 
 
 # ============================================================================
 # Enrollment Service
 # ============================================================================
+
 
 class EnrollmentService:
     """
@@ -260,7 +267,7 @@ class EnrollmentService:
                 "workspace_id": workspace_id,
                 "ttl_hours": ttl_hours,
                 "max_uses": max_uses,
-            }
+            },
         )
 
         return token
@@ -359,7 +366,7 @@ class EnrollmentService:
                     "agent_id": agent_id,
                     "workspace_id": token.workspace_id,
                     "capabilities": [c.value for c in agent.capabilities],
-                }
+                },
             )
 
             return EnrollmentResponse.success_response(
@@ -416,7 +423,7 @@ class EnrollmentService:
                 "agent_id": agent_id,
                 "revoked_by": revoked_by,
                 "reason": reason,
-            }
+            },
         )
 
         return True
@@ -450,7 +457,7 @@ class EnrollmentService:
             extra={
                 "token_id": token_id[:20] + "...",
                 "revoked_by": revoked_by,
-            }
+            },
         )
 
         return True

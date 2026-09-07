@@ -42,8 +42,15 @@ def _fmt(x: Any, pct: bool = False, dp: int = 2) -> str:
     return f"{v * 100:.{dp}f}%" if pct else f"{v:.{dp}f}"
 
 
-def _svg_line(values: Sequence[float], *, w: int = 720, h: int = 180,
-              color: str = "#3b82f6", fill: Optional[str] = None, baseline: Optional[float] = None) -> str:
+def _svg_line(
+    values: Sequence[float],
+    *,
+    w: int = 720,
+    h: int = 180,
+    color: str = "#3b82f6",
+    fill: Optional[str] = None,
+    baseline: Optional[float] = None,
+) -> str:
     vals = [float(v) for v in values if v is not None and math.isfinite(float(v))]
     if len(vals) < 2:
         return f'<svg width="{w}" height="{h}"></svg>'
@@ -61,7 +68,9 @@ def _svg_line(values: Sequence[float], *, w: int = 720, h: int = 180,
     out = [f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none">']
     if baseline is not None:
         by = h - 4 - (baseline - lo) / rng * (h - 8)
-        out.append(f'<line x1="4" y1="{by:.1f}" x2="{w-4}" y2="{by:.1f}" stroke="#9ca3af" stroke-dasharray="3,3" stroke-width="1"/>')
+        out.append(
+            f'<line x1="4" y1="{by:.1f}" x2="{w-4}" y2="{by:.1f}" stroke="#9ca3af" stroke-dasharray="3,3" stroke-width="1"/>'
+        )
     if fill:
         area = path + f" L {pts[-1][0]:.1f},{h-4} L {pts[0][0]:.1f},{h-4} Z"
         out.append(f'<path d="{area}" fill="{fill}" opacity="0.15"/>')
@@ -85,7 +94,9 @@ def _bars(values: Sequence[float], *, w: int = 720, h: int = 140) -> str:
         bh = abs(v) / mx * (h / 2 - 4)
         y = mid - bh if v >= 0 else mid
         col = "#10b981" if v >= 0 else "#ef4444"
-        out.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{bh:.1f}" fill="{col}"/>')
+        out.append(
+            f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{bh:.1f}" fill="{col}"/>'
+        )
     out.append("</svg>")
     return "".join(out)
 
@@ -96,11 +107,15 @@ def _metric_card(label: str, value: str, *, good: Optional[bool] = None) -> str:
         color = "#10b981"
     elif good is False:
         color = "#ef4444"
-    return (f'<div class="card"><div class="k">{html.escape(label)}</div>'
-            f'<div class="v" style="color:{color}">{html.escape(value)}</div></div>')
+    return (
+        f'<div class="card"><div class="k">{html.escape(label)}</div>'
+        f'<div class="v" style="color:{color}">{html.escape(value)}</div></div>'
+    )
 
 
-def render_html_tearsheet(out: Dict[str, Any], *, title: str = "Cross-Sectional Strategy — Tear Sheet") -> str:
+def render_html_tearsheet(
+    out: Dict[str, Any], *, title: str = "Cross-Sectional Strategy — Tear Sheet"
+) -> str:
     """Render an HTML tear-sheet from a ``run_backtest`` output dict."""
     res = out.get("result")
     summary: Dict[str, Any] = dict(out.get("summary") or {})
@@ -125,7 +140,11 @@ def render_html_tearsheet(out: Dict[str, Any], *, title: str = "Cross-Sectional 
             costs = res.costs.reindex(res.returns.index).fillna(0.0)
             gross_ret = res.returns + costs
             gross_summary = compute_metrics(
-                gross_ret, periods_per_year=float((res.meta or {}).get("config", {}).get("periods_per_year", 252.0)))
+                gross_ret,
+                periods_per_year=float(
+                    (res.meta or {}).get("config", {}).get("periods_per_year", 252.0)
+                ),
+            )
         except Exception:
             gross_summary = {}
 
@@ -154,11 +173,16 @@ def render_html_tearsheet(out: Dict[str, Any], *, title: str = "Cross-Sectional 
     # GIPS gross/net dual table
     gips_rows = ""
     if gross_summary:
-        for k, lbl in [("ann_return", "Annualized return"), ("sharpe", "Sharpe"),
-                       ("max_drawdown", "Max drawdown")]:
+        for k, lbl in [
+            ("ann_return", "Annualized return"),
+            ("sharpe", "Sharpe"),
+            ("max_drawdown", "Max drawdown"),
+        ]:
             pct = k != "sharpe"
-            gips_rows += (f"<tr><td>{lbl}</td><td>{_fmt(gross_summary.get(k), pct=pct)}</td>"
-                          f"<td>{_fmt(summary.get(k), pct=pct)}</td></tr>")
+            gips_rows += (
+                f"<tr><td>{lbl}</td><td>{_fmt(gross_summary.get(k), pct=pct)}</td>"
+                f"<td>{_fmt(summary.get(k), pct=pct)}</td></tr>"
+            )
 
     # factor attribution table
     fa_rows = ""
@@ -166,31 +190,39 @@ def render_html_tearsheet(out: Dict[str, Any], *, title: str = "Cross-Sectional 
         fa_rows += f"<tr><td>{html.escape(str(f))}</td><td>{_fmt(v, pct=True)}</td></tr>"
     if fa:
         fa_rows += f'<tr class="tot"><td>specific</td><td>{_fmt(fa.get("specific_pnl"), pct=True)}</td></tr>'
-        fa_rows += f'<tr class="tot"><td>total</td><td>{_fmt(fa.get("total_pnl"), pct=True)}</td></tr>'
+        fa_rows += (
+            f'<tr class="tot"><td>total</td><td>{_fmt(fa.get("total_pnl"), pct=True)}</td></tr>'
+        )
 
     # capacity
     cap_curve = cap.get("curve") or []
     cap_sharpes = [p.get("sharpe") for p in cap_curve]
     cap_rows = ""
     for p in cap_curve:
-        cap_rows += (f"<tr><td>${p.get('aum',0):,.0f}</td><td>{_fmt(p.get('sharpe'))}</td>"
-                     f"<td>{_fmt(p.get('avg_cost_bps'), dp=1)} bps</td></tr>")
+        cap_rows += (
+            f"<tr><td>${p.get('aum',0):,.0f}</td><td>{_fmt(p.get('sharpe'))}</td>"
+            f"<td>{_fmt(p.get('avg_cost_bps'), dp=1)} bps</td></tr>"
+        )
 
     # trust report
     trust_rows = ""
-    for k, lbl, pct in [("sharpe_annual", "Sharpe (annual)", False),
-                        ("probabilistic_sharpe", "Probabilistic Sharpe", False),
-                        ("deflated_sharpe", "Deflated Sharpe", False),
-                        ("pbo", "PBO (overfit prob.)", False),
-                        ("n_trials", "Trials tested", False)]:
+    for k, lbl, pct in [
+        ("sharpe_annual", "Sharpe (annual)", False),
+        ("probabilistic_sharpe", "Probabilistic Sharpe", False),
+        ("deflated_sharpe", "Deflated Sharpe", False),
+        ("pbo", "PBO (overfit prob.)", False),
+        ("n_trials", "Trials tested", False),
+    ]:
         if k in trust:
             trust_rows += f"<tr><td>{lbl}</td><td>{_fmt(trust.get(k))}</td></tr>"
     verdict = trust.get("verdict") or trust.get("trust_verdict")
 
     syn_banner = ""
     if is_syn:
-        syn_banner = ('<div class="banner">⚠️ SYNTHETIC DATA — these results are a demo and '
-                      'NOT a real edge. Do not present as performance.</div>')
+        syn_banner = (
+            '<div class="banner">⚠️ SYNTHETIC DATA — these results are a demo and '
+            "NOT a real edge. Do not present as performance.</div>"
+        )
 
     css = """
     body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#0b0b0f;color:#e5e7eb;margin:0;padding:24px}
@@ -239,6 +271,7 @@ def render_html_tearsheet(out: Dict[str, Any], *, title: str = "Cross-Sectional 
 def render_tearsheet_from_config(cfg: Any) -> str:
     """Run a backtest from an XSConfig and render its HTML tear-sheet."""
     from service_xs_pipeline import run_backtest
+
     out = run_backtest(cfg)
     return render_html_tearsheet(out)
 

@@ -51,8 +51,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ThreatCategory(Enum):
     """Cyber threat categories based on ENISA taxonomy."""
+
     MALWARE = "malware"
     RANSOMWARE = "ransomware"
     PHISHING = "phishing"
@@ -76,6 +78,7 @@ class ThreatCategory(Enum):
 
 class ThreatActorType(Enum):
     """Threat actor types."""
+
     NATION_STATE = "nation_state"
     CYBERCRIMINAL = "cybercriminal"
     HACKTIVIST = "hacktivist"
@@ -88,6 +91,7 @@ class ThreatActorType(Enum):
 
 class ThreatSeverity(Enum):
     """Threat severity levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -96,6 +100,7 @@ class ThreatSeverity(Enum):
 
 class ThreatStatus(Enum):
     """Threat status."""
+
     IDENTIFIED = "identified"
     UNDER_ANALYSIS = "under_analysis"
     CONFIRMED = "confirmed"
@@ -106,6 +111,7 @@ class ThreatStatus(Enum):
 
 class ThreatSignificance(Enum):
     """Threat significance for notification decision."""
+
     NOT_SIGNIFICANT = "not_significant"
     POTENTIALLY_SIGNIFICANT = "potentially_significant"
     SIGNIFICANT = "significant"
@@ -114,6 +120,7 @@ class ThreatSignificance(Enum):
 
 class NotificationStatus(Enum):
     """Notification status."""
+
     NOT_NOTIFIED = "not_notified"
     PENDING_DECISION = "pending_decision"
     APPROVED_FOR_NOTIFICATION = "approved_for_notification"
@@ -125,11 +132,13 @@ class NotificationStatus(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ThreatIndicator:
     """
     Indicator of Compromise (IoC) or threat indicator.
     """
+
     indicator_id: str = ""
     indicator_type: str = ""  # ip, domain, hash, url, email, etc.
     indicator_value: str = ""
@@ -162,6 +171,7 @@ class CyberThreat:
     """
     Cyber threat record per Article 19(4).
     """
+
     threat_id: str = ""
     title: str = ""
     description: str = ""
@@ -232,7 +242,9 @@ class CyberThreat:
 
     def __post_init__(self):
         if not self.threat_id:
-            self.threat_id = f"THR-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.threat_id = (
+                f"THR-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.detected_at:
             self.detected_at = datetime.now(timezone.utc).isoformat()
         if not self.created_at:
@@ -244,6 +256,7 @@ class ThreatSignificanceAssessment:
     """
     Significance assessment for notification decision.
     """
+
     assessment_id: str = ""
     threat_id: str = ""
 
@@ -297,6 +310,7 @@ class ThreatNotification:
     """
     Voluntary cyber threat notification per Article 19(4).
     """
+
     notification_id: str = ""
     threat_id: str = ""
 
@@ -349,7 +363,9 @@ class ThreatNotification:
 
     def __post_init__(self):
         if not self.notification_id:
-            self.notification_id = f"TNOTIF-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.notification_id = (
+                f"TNOTIF-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -358,9 +374,11 @@ class ThreatNotification:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class CyberThreatNotificationConfig:
     """Configuration for cyber threat notification."""
+
     # Entity information
     entity_lei: str = ""
     entity_name: str = ""
@@ -389,6 +407,7 @@ class CyberThreatNotificationConfig:
 # =============================================================================
 # Main Class Implementation
 # =============================================================================
+
 
 class CyberThreatNotificationService:
     """
@@ -525,12 +544,15 @@ class CyberThreatNotificationService:
             for indicator in threat.indicators:
                 self._indicators[indicator.indicator_id] = indicator
 
-        self._log_event("threat_recorded", {
-            "threat_id": threat.threat_id,
-            "title": title,
-            "category": category.value,
-            "severity": severity.value,
-        })
+        self._log_event(
+            "threat_recorded",
+            {
+                "threat_id": threat.threat_id,
+                "title": title,
+                "category": category.value,
+                "severity": severity.value,
+            },
+        )
 
         logger.info(f"Cyber threat recorded: {threat.threat_id} - {title}")
 
@@ -604,7 +626,8 @@ class CyberThreatNotificationService:
         """Get all active threats."""
         with self._lock:
             return [
-                t for t in self._threats.values()
+                t
+                for t in self._threats.values()
                 if t.status not in (ThreatStatus.RESOLVED, ThreatStatus.FALSE_POSITIVE)
             ]
 
@@ -693,9 +716,7 @@ class CyberThreatNotificationService:
         )
 
         # Calculate significance score
-        assessment.significance_score = self._calculate_significance_score(
-            assessment, threat
-        )
+        assessment.significance_score = self._calculate_significance_score(assessment, threat)
 
         # Determine significance level
         if assessment.significance_score >= 80:
@@ -722,12 +743,15 @@ class CyberThreatNotificationService:
             threat.significance_assessed_at = assessment.assessed_at
             threat.significance_assessed_by = assessed_by
 
-        self._log_event("significance_assessed", {
-            "threat_id": threat_id,
-            "assessment_id": assessment.assessment_id,
-            "significance": assessment.significance.value,
-            "recommend_notification": assessment.recommend_notification,
-        })
+        self._log_event(
+            "significance_assessed",
+            {
+                "threat_id": threat_id,
+                "assessment_id": assessment.assessment_id,
+                "significance": assessment.significance.value,
+                "recommend_notification": assessment.recommend_notification,
+            },
+        )
 
         return assessment
 
@@ -890,12 +914,14 @@ class CyberThreatNotificationService:
         if include_indicators:
             for ind in threat.indicators:
                 if not ind.false_positive:
-                    indicators_shared.append({
-                        "type": ind.indicator_type,
-                        "value": ind.indicator_value,
-                        "description": ind.description,
-                        "confidence": ind.confidence,
-                    })
+                    indicators_shared.append(
+                        {
+                            "type": ind.indicator_type,
+                            "value": ind.indicator_value,
+                            "description": ind.description,
+                            "confidence": ind.confidence,
+                        }
+                    )
 
         notification = ThreatNotification(
             threat_id=threat_id,
@@ -923,10 +949,13 @@ class CyberThreatNotificationService:
             self._notifications[notification.notification_id] = notification
             threat.notification_status = NotificationStatus.PENDING_DECISION
 
-        self._log_event("notification_created", {
-            "notification_id": notification.notification_id,
-            "threat_id": threat_id,
-        })
+        self._log_event(
+            "notification_created",
+            {
+                "notification_id": notification.notification_id,
+                "threat_id": threat_id,
+            },
+        )
 
         return notification
 
@@ -959,10 +988,13 @@ class CyberThreatNotificationService:
                 threat.notification_decision_at = datetime.now(timezone.utc).isoformat()
                 threat.notification_decision_by = approved_by
 
-        self._log_event("notification_approved", {
-            "notification_id": notification_id,
-            "approved_by": approved_by,
-        })
+        self._log_event(
+            "notification_approved",
+            {
+                "notification_id": notification_id,
+                "approved_by": approved_by,
+            },
+        )
 
         return notification
 
@@ -1045,18 +1077,24 @@ class CyberThreatNotificationService:
         # Trigger callback
         if self.config.notification_callback:
             try:
-                self.config.notification_callback("threat_notified", {
-                    "notification_id": notification_id,
-                    "threat_id": notification.threat_id,
-                    "submitted_to": notification.submitted_to,
-                })
+                self.config.notification_callback(
+                    "threat_notified",
+                    {
+                        "notification_id": notification_id,
+                        "threat_id": notification.threat_id,
+                        "submitted_to": notification.submitted_to,
+                    },
+                )
             except Exception as e:
                 logger.error(f"Notification callback failed: {e}")
 
-        self._log_event("notification_submitted", {
-            "notification_id": notification_id,
-            "submitted_to": notification.submitted_to,
-        })
+        self._log_event(
+            "notification_submitted",
+            {
+                "notification_id": notification_id,
+                "submitted_to": notification.submitted_to,
+            },
+        )
 
         logger.info(f"Threat notification submitted: {notification_id}")
         return notification
@@ -1073,8 +1111,10 @@ class CyberThreatNotificationService:
         """Get notifications pending decision or submission."""
         with self._lock:
             return [
-                n for n in self._notifications.values()
-                if n.status in (
+                n
+                for n in self._notifications.values()
+                if n.status
+                in (
                     NotificationStatus.PENDING_DECISION,
                     NotificationStatus.APPROVED_FOR_NOTIFICATION,
                 )
@@ -1159,19 +1199,16 @@ class CyberThreatNotificationService:
         if not period_end:
             period_end = datetime.now(timezone.utc).isoformat()
         if not period_start:
-            period_start = (
-                datetime.now(timezone.utc) - timedelta(days=30)
-            ).isoformat()
+            period_start = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
 
         start_dt = datetime.fromisoformat(period_start.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(period_end.replace("Z", "+00:00"))
 
         with self._lock:
             period_threats = [
-                t for t in self._threats.values()
-                if start_dt <= datetime.fromisoformat(
-                    t.created_at.replace("Z", "+00:00")
-                ) <= end_dt
+                t
+                for t in self._threats.values()
+                if start_dt <= datetime.fromisoformat(t.created_at.replace("Z", "+00:00")) <= end_dt
             ]
 
         by_category = {}
@@ -1182,13 +1219,10 @@ class CyberThreatNotificationService:
 
         by_severity = {}
         for sev in ThreatSeverity:
-            by_severity[sev.value] = sum(
-                1 for t in period_threats if t.severity == sev
-            )
+            by_severity[sev.value] = sum(1 for t in period_threats if t.severity == sev)
 
         notified = sum(
-            1 for t in period_threats
-            if t.notification_status == NotificationStatus.NOTIFIED
+            1 for t in period_threats if t.notification_status == NotificationStatus.NOTIFIED
         )
 
         return {
@@ -1198,8 +1232,10 @@ class CyberThreatNotificationService:
             "by_category": by_category,
             "by_severity": by_severity,
             "significant_threats": sum(
-                1 for t in period_threats
-                if t.significance in (
+                1
+                for t in period_threats
+                if t.significance
+                in (
                     ThreatSignificance.SIGNIFICANT,
                     ThreatSignificance.HIGHLY_SIGNIFICANT,
                 )
@@ -1245,6 +1281,7 @@ class CyberThreatNotificationService:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_cyber_threat_notification_service(
     config: Optional[CyberThreatNotificationConfig] = None,

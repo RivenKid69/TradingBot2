@@ -27,12 +27,31 @@ def _write_csv(df: pd.DataFrame, path: str) -> None:
 
 def main():
     ap = argparse.ArgumentParser(description="Проверить дрифт (PSI) относительно baseline JSON.")
-    ap.add_argument("--data", required=True, help="Текущий датасет (CSV/Parquet), например, последние дни онлайна.")
-    ap.add_argument("--baseline", required=True, help="Baseline JSON, созданный make_drift_baseline.py.")
-    ap.add_argument("--features", default="", help="Явный список фичей через запятую. Если пусто — возьмём из baseline.")
+    ap.add_argument(
+        "--data",
+        required=True,
+        help="Текущий датасет (CSV/Parquet), например, последние дни онлайна.",
+    )
+    ap.add_argument(
+        "--baseline", required=True, help="Baseline JSON, созданный make_drift_baseline.py."
+    )
+    ap.add_argument(
+        "--features",
+        default="",
+        help="Явный список фичей через запятую. Если пусто — возьмём из baseline.",
+    )
     ap.add_argument("--ts_col", default="ts_ms", help="Колонка времени (UTC мс).")
-    ap.add_argument("--last_days", type=int, default=14, help="Сколько последних дней взять из data (если 0 — берём всё).")
-    ap.add_argument("--out_csv", default="", help="Куда сохранить таблицу PSI (CSV). Если пусто — рядом с суффиксом _psi.csv.")
+    ap.add_argument(
+        "--last_days",
+        type=int,
+        default=14,
+        help="Сколько последних дней взять из data (если 0 — берём всё).",
+    )
+    ap.add_argument(
+        "--out_csv",
+        default="",
+        help="Куда сохранить таблицу PSI (CSV). Если пусто — рядом с суффиксом _psi.csv.",
+    )
     args = ap.parse_args()
 
     df = _read_table(args.data)
@@ -40,7 +59,9 @@ def main():
     if int(args.last_days) > 0 and args.ts_col in df.columns:
         max_ts = int(pd.to_numeric(df[args.ts_col], errors="coerce").max())
         cutoff = max_ts - int(args.last_days) * 86400000
-        df = df.loc[pd.to_numeric(df[args.ts_col], errors="coerce") >= cutoff].reset_index(drop=True)
+        df = df.loc[pd.to_numeric(df[args.ts_col], errors="coerce") >= cutoff].reset_index(
+            drop=True
+        )
 
     baseline = load_baseline_json(args.baseline)
 

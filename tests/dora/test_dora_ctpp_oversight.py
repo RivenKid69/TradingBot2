@@ -56,6 +56,7 @@ from services.dora_integration.third_party import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def ctpp_config():
     """Create CTPP oversight configuration."""
@@ -95,6 +96,7 @@ def manager_with_relationship(ctpp_manager):
 # =============================================================================
 # Test Enumerations
 # =============================================================================
+
 
 class TestCTPPEnumerations:
     """Tests for CTPP oversight enumerations."""
@@ -149,6 +151,7 @@ class TestCTPPEnumerations:
 # =============================================================================
 # Test Data Structures
 # =============================================================================
+
 
 class TestDataStructures:
     """Tests for CTPP data structures."""
@@ -221,6 +224,7 @@ class TestDataStructures:
 # Test Configuration
 # =============================================================================
 
+
 class TestCTPPOversightConfig:
     """Tests for CTPP oversight configuration."""
 
@@ -265,6 +269,7 @@ class TestCTPPOversightConfig:
 # Test CTPP Contract Requirements
 # =============================================================================
 
+
 class TestCTPPContractRequirements:
     """Tests for CTPP contractual requirements."""
 
@@ -298,6 +303,7 @@ class TestCTPPContractRequirements:
 # Test Known CTPPs
 # =============================================================================
 
+
 class TestKnownCTPPs:
     """Tests for known CTPP data."""
 
@@ -326,6 +332,7 @@ class TestKnownCTPPs:
 # Test CTPP Status Checking
 # =============================================================================
 
+
 class TestCTPPStatusChecking:
     """Tests for CTPP status checking."""
 
@@ -335,7 +342,10 @@ class TestCTPPStatusChecking:
 
         assert is_ctpp is True
         assert designation is not None
-        assert "amazon" in designation.provider_name.lower() or "aws" in designation.provider_name.lower()
+        assert (
+            "amazon" in designation.provider_name.lower()
+            or "aws" in designation.provider_name.lower()
+        )
 
     def test_check_ctpp_status_google(self, ctpp_manager):
         """Test checking Google Cloud as CTPP."""
@@ -370,6 +380,7 @@ class TestCTPPStatusChecking:
 # =============================================================================
 # Test CTPP Designation Management
 # =============================================================================
+
 
 class TestCTPPDesignationManagement:
     """Tests for CTPP designation management."""
@@ -428,6 +439,7 @@ class TestCTPPDesignationManagement:
 # =============================================================================
 # Test Entity CTPP Relationship Management
 # =============================================================================
+
 
 class TestEntityCTPPRelationshipManagement:
     """Tests for entity CTPP relationship management."""
@@ -505,6 +517,7 @@ class TestEntityCTPPRelationshipManagement:
 # Test Oversight Recommendations
 # =============================================================================
 
+
 class TestOversightRecommendations:
     """Tests for oversight recommendation management."""
 
@@ -577,6 +590,7 @@ class TestOversightRecommendations:
 # Test Oversight Exercises
 # =============================================================================
 
+
 class TestOversightExercises:
     """Tests for oversight exercise management."""
 
@@ -642,6 +656,7 @@ class TestOversightExercises:
 # Test CTPP Risk Assessment
 # =============================================================================
 
+
 class TestCTPPRiskAssessment:
     """Tests for CTPP risk assessment."""
 
@@ -691,6 +706,7 @@ class TestCTPPRiskAssessment:
 # =============================================================================
 # Test Contract Compliance
 # =============================================================================
+
 
 class TestContractCompliance:
     """Tests for CTPP contract compliance checking."""
@@ -743,6 +759,7 @@ class TestContractCompliance:
 # Test Reporting
 # =============================================================================
 
+
 class TestCTPPReporting:
     """Tests for CTPP reporting."""
 
@@ -787,6 +804,7 @@ class TestCTPPReporting:
 # Test Thread Safety
 # =============================================================================
 
+
 class TestThreadSafety:
     """Tests for thread safety."""
 
@@ -808,10 +826,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=register_relationship, args=(i,))
-            for i in range(10)
-        ]
+        threads = [threading.Thread(target=register_relationship, args=(i,)) for i in range(10)]
 
         for t in threads:
             t.start()
@@ -833,10 +848,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=check_status)
-            for _ in range(10)
-        ]
+        threads = [threading.Thread(target=check_status) for _ in range(10)]
 
         for t in threads:
             t.start()
@@ -850,6 +862,7 @@ class TestThreadSafety:
 # =============================================================================
 # Test Factory Functions
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""
@@ -893,6 +906,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Test Integration Scenarios
 # =============================================================================
+
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows."""

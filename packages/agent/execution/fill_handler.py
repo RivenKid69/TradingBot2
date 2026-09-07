@@ -130,12 +130,15 @@ class FillEvent:
             event_type=str(ev),
             filled_qty=_to_decimal(payload.get("filled_qty", payload.get("cum_qty"))),
             avg_fill_price=_to_decimal(
-                payload.get("avg_fill_price", payload.get("filled_avg_price", payload.get("avg_price")))
+                payload.get(
+                    "avg_fill_price", payload.get("filled_avg_price", payload.get("avg_price"))
+                )
             ),
             last_fill_qty=_to_decimal(payload.get("last_fill_qty", payload.get("last_qty"))),
             last_fill_price=_to_decimal(payload.get("last_fill_price", payload.get("last_price"))),
             broker_order_id=(
-                str(payload["broker_order_id"]) if payload.get("broker_order_id")
+                str(payload["broker_order_id"])
+                if payload.get("broker_order_id")
                 else (str(payload["order_id"]) if payload.get("order_id") else None)
             ),
             cumulative=bool(payload.get("cumulative", True)),
@@ -252,7 +255,10 @@ class PollingFillSource:
             self._tracked[coid] = signature
             ev = FillEvent.from_payload({**info, "client_order_id": coid, "cumulative": True})
             out.append(ev)
-            if ev.kind in (_EVENT_FILL, _EVENT_CANCELED, _EVENT_REJECTED, _EVENT_EXPIRED) and cum is not None:
+            if (
+                ev.kind in (_EVENT_FILL, _EVENT_CANCELED, _EVENT_REJECTED, _EVENT_EXPIRED)
+                and cum is not None
+            ):
                 # stop tracking terminal orders after they're reported once
                 self.untrack(coid)
         return out
@@ -373,7 +379,9 @@ class FillHandler:
         # --- decide final status (partial vs full) ---
         status = self._KIND_TO_STATUS.get(kind)
         if status is None:
-            logger.debug("FillHandler: unmapped event kind %r for %s", ev.event_type, ev.client_order_id)
+            logger.debug(
+                "FillHandler: unmapped event kind %r for %s", ev.event_type, ev.client_order_id
+            )
             return order
 
         order_qty = Decimal(order.quantity)
@@ -385,7 +393,10 @@ class FillHandler:
             status = OrderStatus.FILLED  # cumulative reached full on a 'partial' event
 
         is_terminal = status in (
-            OrderStatus.FILLED, OrderStatus.CANCELLED, OrderStatus.REJECTED, OrderStatus.EXPIRED
+            OrderStatus.FILLED,
+            OrderStatus.CANCELLED,
+            OrderStatus.REJECTED,
+            OrderStatus.EXPIRED,
         )
         st.terminal = is_terminal
 
@@ -408,18 +419,20 @@ class FillHandler:
 
         if self._on_fill is not None:
             try:
-                self._on_fill({
-                    "client_order_id": ev.client_order_id,
-                    "broker_order_id": ev.broker_order_id,
-                    "symbol": order.symbol,
-                    "side": order.side,
-                    "status": status.value,
-                    "filled_qty": str(st.cum_qty),
-                    "fill_increment": str(inc),   # incremental qty this event (P&L ledger)
-                    "leaves_qty": str(leaves),
-                    "avg_fill_price": str(st.avg_price) if st.avg_price is not None else None,
-                    "ts": ev.ts.isoformat(),
-                })
+                self._on_fill(
+                    {
+                        "client_order_id": ev.client_order_id,
+                        "broker_order_id": ev.broker_order_id,
+                        "symbol": order.symbol,
+                        "side": order.side,
+                        "status": status.value,
+                        "filled_qty": str(st.cum_qty),
+                        "fill_increment": str(inc),  # incremental qty this event (P&L ledger)
+                        "leaves_qty": str(leaves),
+                        "avg_fill_price": str(st.avg_price) if st.avg_price is not None else None,
+                        "ts": ev.ts.isoformat(),
+                    }
+                )
             except Exception as exc:  # pragma: no cover
                 logger.warning("on_fill callback failed: %s", exc)
 

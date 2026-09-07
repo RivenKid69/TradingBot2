@@ -104,6 +104,7 @@ NCA_NOTIFICATION_DEADLINE_DAYS: int = 30
 # Enums
 # =============================================================================
 
+
 class CommunityType(Enum):
     """
     Trusted community classification per Art. 45(1).
@@ -111,6 +112,7 @@ class CommunityType(Enum):
     Financial entities may participate in cyber threat information
     sharing arrangements within trusted communities.
     """
+
     FS_ISAC = "fs_isac"  # Financial Services - ISAC
     CERT = "cert"  # Computer Emergency Response Team
     CSIRT = "csirt"  # Computer Security Incident Response Team
@@ -125,6 +127,7 @@ class SharingChannel(Enum):
     """
     Permitted sharing channels for threat intelligence.
     """
+
     API = "api"  # REST/GraphQL API
     EMAIL = "email"  # Encrypted email
     PORTAL = "portal"  # Secure web portal
@@ -141,6 +144,7 @@ class TLPLevel(Enum):
     TLP is a framework for classifying sensitive information
     and controlling its distribution.
     """
+
     TLP_RED = "tlp_red"  # Named recipients only
     TLP_AMBER_STRICT = "tlp_amber_strict"  # Organization only
     TLP_AMBER = "tlp_amber"  # Organization + clients
@@ -152,6 +156,7 @@ class MembershipStatus(Enum):
     """
     Membership lifecycle states for sharing communities.
     """
+
     PENDING = "pending"  # Application submitted
     ACTIVE = "active"  # Full membership
     SUSPENDED = "suspended"  # Temporarily suspended
@@ -163,6 +168,7 @@ class SharingOutcome(Enum):
     """
     Result of a sharing attempt.
     """
+
     SUCCESS = "success"  # Shared successfully
     SANITISED = "sanitised"  # Shared after sanitisation
     BLOCKED_POLICY = "blocked_policy"  # Blocked by policy
@@ -176,6 +182,7 @@ class IntelligenceDirection(Enum):
     """
     Direction of intelligence flow.
     """
+
     OUTBOUND = "outbound"  # We share to community
     INBOUND = "inbound"  # We receive from community
     BIDIRECTIONAL = "bidirectional"  # Both directions
@@ -185,6 +192,7 @@ class ThreatSeverity(Enum):
     """
     Threat severity classification.
     """
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -196,6 +204,7 @@ class SanitizationLevel(Enum):
     """
     Level of data sanitization applied.
     """
+
     NONE = "none"  # No sanitization
     MINIMAL = "minimal"  # Keywords only
     MODERATE = "moderate"  # Keywords + IPs + domains
@@ -206,6 +215,7 @@ class SanitizationLevel(Enum):
 # =============================================================================
 # Data Structures
 # =============================================================================
+
 
 @dataclass
 class SharingCommunity:
@@ -228,6 +238,7 @@ class SharingCommunity:
         data_protection_agreement: DPA in place
         notes: Additional notes
     """
+
     name: str
     community_type: CommunityType
     country: str
@@ -274,7 +285,9 @@ class SharingCommunity:
             "membership_status": self.membership_status.value,
             "joined_at": self.joined_at.isoformat() if self.joined_at else None,
             "nca_notified": self.nca_notified,
-            "nca_notification_date": self.nca_notification_date.isoformat() if self.nca_notification_date else None,
+            "nca_notification_date": (
+                self.nca_notification_date.isoformat() if self.nca_notification_date else None
+            ),
             "data_protection_agreement": self.data_protection_agreement,
             "compliance_certifications": self.compliance_certifications,
             "direction": self.direction.value,
@@ -306,28 +319,45 @@ class InformationSharingPolicy:
         auto_sanitize: Automatically sanitize before sharing
         pii_patterns: Regex patterns for PII detection
     """
+
     policy_id: str = ""
-    allowed_information_types: Set[str] = field(default_factory=lambda: set(SHAREABLE_INFORMATION_TYPES))
-    restricted_keywords: Set[str] = field(default_factory=lambda: {
-        "client_name", "client_id", "account_number", "pricing",
-        "trade_id", "transaction_id", "internal_ip", "employee_name",
-        "salary", "revenue", "profit", "ssn", "passport"
-    })
+    allowed_information_types: Set[str] = field(
+        default_factory=lambda: set(SHAREABLE_INFORMATION_TYPES)
+    )
+    restricted_keywords: Set[str] = field(
+        default_factory=lambda: {
+            "client_name",
+            "client_id",
+            "account_number",
+            "pricing",
+            "trade_id",
+            "transaction_id",
+            "internal_ip",
+            "employee_name",
+            "salary",
+            "revenue",
+            "profit",
+            "ssn",
+            "passport",
+        }
+    )
     require_gdpr_review: bool = True
     require_competition_review: bool = True
-    allowed_tlp_levels: Set[TLPLevel] = field(default_factory=lambda: {
-        TLPLevel.TLP_AMBER, TLPLevel.TLP_GREEN, TLPLevel.TLP_CLEAR
-    })
+    allowed_tlp_levels: Set[TLPLevel] = field(
+        default_factory=lambda: {TLPLevel.TLP_AMBER, TLPLevel.TLP_GREEN, TLPLevel.TLP_CLEAR}
+    )
     default_tlp: TLPLevel = TLPLevel.TLP_AMBER
     default_channel: SharingChannel = SharingChannel.PORTAL
     sanitization_level: SanitizationLevel = SanitizationLevel.MODERATE
     auto_sanitize: bool = True
-    pii_patterns: List[str] = field(default_factory=lambda: [
-        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",  # Email
-        r"\b\d{3}[-.]?\d{2}[-.]?\d{4}\b",  # SSN
-        r"\b(?:\d{4}[-\s]?){3}\d{4}\b",  # Credit card
-        r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",  # IPv4 (internal)
-    ])
+    pii_patterns: List[str] = field(
+        default_factory=lambda: [
+            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",  # Email
+            r"\b\d{3}[-.]?\d{2}[-.]?\d{4}\b",  # SSN
+            r"\b(?:\d{4}[-\s]?){3}\d{4}\b",  # Credit card
+            r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",  # IPv4 (internal)
+        ]
+    )
     retention_days: int = DEFAULT_INTELLIGENCE_RETENTION_DAYS
     version: str = "1.0"
     effective_date: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -424,6 +454,7 @@ class CyberThreatIntelligence:
         related_threats: Related threat IDs
         tags: Classification tags
     """
+
     title: str
     description: str
     information_types: Set[str] = field(default_factory=set)
@@ -494,6 +525,7 @@ class ThreatIntelligenceRecord:
 
     Tracks the sharing event with full audit trail.
     """
+
     threat: CyberThreatIntelligence
     community_id: str
     channel: SharingChannel
@@ -539,6 +571,7 @@ class SharingAuditRecord:
     Article 45(4) requires maintaining appropriate records
     of sharing activities.
     """
+
     record_id: str
     threat_id: str
     community_id: str
@@ -584,6 +617,7 @@ class NCANotification:
     Financial entities must inform their NCA about participation
     in information sharing arrangements.
     """
+
     notification_id: str = ""
     community_id: str = ""
     community_name: str = ""
@@ -614,7 +648,9 @@ class NCANotification:
             "nca_reference": self.nca_reference,
             "dpo_contact": self.dpo_contact,
             "acknowledgment_received": self.acknowledgment_received,
-            "acknowledgment_date": self.acknowledgment_date.isoformat() if self.acknowledgment_date else None,
+            "acknowledgment_date": (
+                self.acknowledgment_date.isoformat() if self.acknowledgment_date else None
+            ),
             "notes": self.notes,
         }
 
@@ -624,6 +660,7 @@ class InformationSharingConfig:
     """
     Configuration for the Information Sharing service.
     """
+
     provider_name: str = "AI Research Platform"
     provider_lei: str = ""
     gdpr_officer_email: str = "dpo@platform.example"
@@ -640,6 +677,7 @@ class InformationSharingConfig:
 # =============================================================================
 # Main Service Class
 # =============================================================================
+
 
 class DORAInformationSharing:
     """
@@ -1028,8 +1066,7 @@ class DORAInformationSharing:
         # Sanitize text fields
         sanitized_description = self._sanitize_text(threat.description, sanitization_level)
         sanitized_iocs = [
-            self._sanitize_text(ioc, sanitization_level)
-            for ioc in threat.indicators_of_compromise
+            self._sanitize_text(ioc, sanitization_level) for ioc in threat.indicators_of_compromise
         ]
 
         # Create sanitized copy
@@ -1075,7 +1112,9 @@ class DORAInformationSharing:
         if level == SanitizationLevel.AGGRESSIVE:
             # Additional aggressive sanitization
             # Redact potential internal hostnames
-            result = re.sub(r"\b[a-z0-9-]+\.(internal|local|corp)\b", "[REDACTED]", result, flags=re.IGNORECASE)
+            result = re.sub(
+                r"\b[a-z0-9-]+\.(internal|local|corp)\b", "[REDACTED]", result, flags=re.IGNORECASE
+            )
             # Redact file paths
             result = re.sub(r"[A-Za-z]:\\[\w\\]+", "[REDACTED]", result)
             result = re.sub(r"/[\w/]+", "[REDACTED]", result)
@@ -1135,10 +1174,7 @@ class DORAInformationSharing:
 
     def get_pending_nca_notifications(self) -> List[NCANotification]:
         """Get all NCA notifications pending acknowledgment."""
-        return [
-            n for n in self._nca_notifications.values()
-            if not n.acknowledgment_received
-        ]
+        return [n for n in self._nca_notifications.values() if not n.acknowledgment_received]
 
     def acknowledge_nca_notification(
         self,
@@ -1212,8 +1248,14 @@ class DORAInformationSharing:
         outbound = [r for r in self._audit_records if r.direction == IntelligenceDirection.OUTBOUND]
         inbound = [r for r in self._audit_records if r.direction == IntelligenceDirection.INBOUND]
 
-        successful_out = [r for r in outbound if r.outcome in {SharingOutcome.SUCCESS, SharingOutcome.SANITISED}]
-        blocked_out = [r for r in outbound if r.outcome not in {SharingOutcome.SUCCESS, SharingOutcome.SANITISED}]
+        successful_out = [
+            r for r in outbound if r.outcome in {SharingOutcome.SUCCESS, SharingOutcome.SANITISED}
+        ]
+        blocked_out = [
+            r
+            for r in outbound
+            if r.outcome not in {SharingOutcome.SUCCESS, SharingOutcome.SANITISED}
+        ]
 
         return {
             "total_sharing_events": len(self._audit_records),
@@ -1278,16 +1320,14 @@ class DORAInformationSharing:
 
         # Purge received intelligence
         keys_to_remove = [
-            key for key, intel in self._received_intelligence.items()
-            if intel.created_at < cutoff
+            key for key, intel in self._received_intelligence.items() if intel.created_at < cutoff
         ]
         for key in keys_to_remove:
             del self._received_intelligence[key]
 
         # Purge intelligence records
         records_to_remove = [
-            key for key, record in self._intelligence_records.items()
-            if record.shared_at < cutoff
+            key for key, record in self._intelligence_records.items() if record.shared_at < cutoff
         ]
         for key in records_to_remove:
             del self._intelligence_records[key]
@@ -1330,9 +1370,7 @@ class DORAInformationSharing:
         }
 
         if threat.tlp_level:
-            stix_indicator["object_marking_refs"] = [
-                self._get_tlp_marking_ref(threat.tlp_level)
-            ]
+            stix_indicator["object_marking_refs"] = [self._get_tlp_marking_ref(threat.tlp_level)]
 
         return {
             "type": "bundle",
@@ -1392,10 +1430,7 @@ class DORAInformationSharing:
             "pii_pattern_detected",
         }
         # Can sanitize if all reasons are sanitizable
-        return all(
-            any(r.startswith(sr) for sr in sanitizable_reasons)
-            for r in reasons
-        )
+        return all(any(r.startswith(sr) for sr in sanitizable_reasons) for r in reasons)
 
     def _determine_block_outcome(self, reasons: List[str]) -> SharingOutcome:
         """Determine blocking outcome based on reasons."""
@@ -1412,6 +1447,7 @@ class DORAInformationSharing:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_information_sharing(
     config: Optional[InformationSharingConfig] = None,

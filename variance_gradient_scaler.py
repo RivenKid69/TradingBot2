@@ -144,15 +144,15 @@ class VarianceGradientScaler:
         #
         # v3.0 BUG: Used E[(E[g])²] instead of E[g²], underestimated by factor of N!
         self._param_grad_mean_ema: Optional[torch.Tensor] = None  # [num_params] - E[g]
-        self._param_grad_sq_ema: Optional[torch.Tensor] = None    # [num_params] - E[g²]
-        self._param_numel: Optional[torch.Tensor] = None          # [num_params] - num elements per param
+        self._param_grad_sq_ema: Optional[torch.Tensor] = None  # [num_params] - E[g²]
+        self._param_numel: Optional[torch.Tensor] = None  # [num_params] - num elements per param
 
         # LEGACY v1.x: Global statistics (spatial variance - kept for backward compat logging)
         # These are now computed for logging only, not used for scaling
         self._grad_mean_ema: Optional[float] = None  # Global mean (spatial)
-        self._grad_var_ema: Optional[float] = None   # Global var (spatial) - DEPRECATED
+        self._grad_var_ema: Optional[float] = None  # Global var (spatial) - DEPRECATED
         self._grad_norm_ema: Optional[float] = None  # Global norm
-        self._grad_max_ema: Optional[float] = None   # Global max
+        self._grad_max_ema: Optional[float] = None  # Global max
 
         # DEPRECATED v1.x: Per-parameter statistics (old format)
         self._param_stats: Dict[int, Dict[str, torch.Tensor]] = {}
@@ -183,15 +183,13 @@ class VarianceGradientScaler:
 
         num_params = len(self._parameters)
         # Use device of first parameter
-        device = self._parameters[0].device if num_params > 0 else torch.device('cpu')
+        device = self._parameters[0].device if num_params > 0 else torch.device("cpu")
 
         # Initialize EMA buffers
         self._param_grad_mean_ema = torch.zeros(num_params, device=device, dtype=torch.float32)
         self._param_grad_sq_ema = torch.zeros(num_params, device=device, dtype=torch.float32)
         self._param_numel = torch.tensor(
-            [p.numel() for p in self._parameters],
-            device=device,
-            dtype=torch.float32
+            [p.numel() for p in self._parameters], device=device, dtype=torch.float32
         )
 
     def _log(self, key: str, value: float) -> None:
@@ -252,7 +250,7 @@ class VarianceGradientScaler:
             }
 
         # Compute global gradient norm
-        grad_norm = (sum(grad_norms_sq) ** 0.5)
+        grad_norm = sum(grad_norms_sq) ** 0.5
 
         # Compute mean and variance of gradient values
         # FIXED: Use abs() for both mean and variance for mathematical consistency
@@ -296,8 +294,8 @@ class VarianceGradientScaler:
             # E[g] = mean of gradients (scalar per parameter)
             # E[g²] = mean of SQUARED gradients (NOT square of mean!)
             # Stochastic variance: Var[g] = E[g²] - E[g]²
-            grad_mean_current = grad.mean().item()              # E[g] - mean of gradients
-            grad_sq_current = (grad ** 2).mean().item()        # E[g²] - mean of squares (FIXED v3.1!)
+            grad_mean_current = grad.mean().item()  # E[g] - mean of gradients
+            grad_sq_current = (grad**2).mean().item()  # E[g²] - mean of squares (FIXED v3.1!)
 
             # Update EMA for this parameter using standard Adam-style formula
             # Track E[g] and E[g²] over time
@@ -306,12 +304,10 @@ class VarianceGradientScaler:
             # IMPORTANT: Always use EMA formula, buffers are initialized to zeros
             # Bias correction is applied when reading values, not when updating
             self._param_grad_mean_ema[i] = (
-                self.beta * self._param_grad_mean_ema[i] +
-                (1 - self.beta) * grad_mean_current
+                self.beta * self._param_grad_mean_ema[i] + (1 - self.beta) * grad_mean_current
             )
             self._param_grad_sq_ema[i] = (
-                self.beta * self._param_grad_sq_ema[i] +
-                (1 - self.beta) * grad_sq_current
+                self.beta * self._param_grad_sq_ema[i] + (1 - self.beta) * grad_sq_current
             )
 
         # LEGACY: Update global statistics for backward compat logging
@@ -329,10 +325,18 @@ class VarianceGradientScaler:
             self._grad_max_ema = stats["grad_max"]
         else:
             # Update EMA
-            self._grad_mean_ema = self.beta * self._grad_mean_ema + (1 - self.beta) * stats["grad_mean"]
-            self._grad_var_ema = self.beta * self._grad_var_ema + (1 - self.beta) * stats["grad_var"]
-            self._grad_norm_ema = self.beta * self._grad_norm_ema + (1 - self.beta) * stats["grad_norm"]
-            self._grad_max_ema = self.beta * self._grad_max_ema + (1 - self.beta) * stats["grad_max"]
+            self._grad_mean_ema = (
+                self.beta * self._grad_mean_ema + (1 - self.beta) * stats["grad_mean"]
+            )
+            self._grad_var_ema = (
+                self.beta * self._grad_var_ema + (1 - self.beta) * stats["grad_var"]
+            )
+            self._grad_norm_ema = (
+                self.beta * self._grad_norm_ema + (1 - self.beta) * stats["grad_norm"]
+            )
+            self._grad_max_ema = (
+                self.beta * self._grad_max_ema + (1 - self.beta) * stats["grad_max"]
+            )
 
     @torch.no_grad()
     def get_normalized_variance(self) -> float:
@@ -367,14 +371,14 @@ class VarianceGradientScaler:
             return 0.0
 
         # Bias correction for EMA
-        bias_correction = 1.0 - self.beta ** self._step_count
+        bias_correction = 1.0 - self.beta**self._step_count
 
         # Correct for bias
         # v3.1 FIXED semantics:
         # - _param_grad_mean_ema stores E[μ] where μ_t = mean(g_t)
         # - _param_grad_sq_ema stores E[s] where s_t = mean(g_t²)  # FIXED v3.1!
         mean_corrected = self._param_grad_mean_ema / bias_correction  # E[μ]
-        sq_corrected = self._param_grad_sq_ema / bias_correction      # E[s]
+        sq_corrected = self._param_grad_sq_ema / bias_correction  # E[s]
 
         # CRITICAL FIX (v3.1): Compute stochastic variance as Var[g] = E[s] - E[μ]²
         # where E[s] = E[mean(g²)], NOT E[(mean(g))²] as in v3.0!
@@ -393,7 +397,7 @@ class VarianceGradientScaler:
         normalized_var_per_param = torch.where(
             torch.isfinite(normalized_var_per_param),
             normalized_var_per_param,
-            torch.zeros_like(normalized_var_per_param)
+            torch.zeros_like(normalized_var_per_param),
         )
 
         # Aggregate to global metric using 90th percentile (robust to outliers)
@@ -495,14 +499,14 @@ class VarianceGradientScaler:
 
         # Log v3.0 metrics (per-parameter STOCHASTIC variance - FIXED)
         if self._param_grad_mean_ema is not None and self._param_grad_sq_ema is not None:
-            bias_correction = 1.0 - self.beta ** self._step_count
+            bias_correction = 1.0 - self.beta**self._step_count
 
             # Compute per-parameter stochastic variances
             # v3.0 FIXED semantics:
             # - _param_grad_mean_ema stores E[g] (gradient mean over time)
             # - _param_grad_sq_ema stores E[g²] (squared gradient mean over time)
             mean_corrected = self._param_grad_mean_ema / bias_correction  # E[g]
-            sq_corrected = self._param_grad_sq_ema / bias_correction      # E[g²]
+            sq_corrected = self._param_grad_sq_ema / bias_correction  # E[g²]
             variance = sq_corrected - mean_corrected.pow(2)  # Var[g] = E[g²] - E[g]²
             variance = torch.clamp(variance, min=0.0)  # Numerical stability
             denominator = torch.clamp(mean_corrected.abs().pow(2), min=1e-12) + self.eps
@@ -510,23 +514,31 @@ class VarianceGradientScaler:
             normalized_var_per_param = torch.where(
                 torch.isfinite(normalized_var_per_param),
                 normalized_var_per_param,
-                torch.zeros_like(normalized_var_per_param)
+                torch.zeros_like(normalized_var_per_param),
             )
 
             # Log percentiles of per-parameter stochastic variance
             if normalized_var_per_param.numel() > 0:
-                self._log("vgs/stochastic_var_p10", torch.quantile(normalized_var_per_param, 0.1).item())
-                self._log("vgs/stochastic_var_p50", torch.quantile(normalized_var_per_param, 0.5).item())
-                self._log("vgs/stochastic_var_p90", torch.quantile(normalized_var_per_param, 0.9).item())
+                self._log(
+                    "vgs/stochastic_var_p10", torch.quantile(normalized_var_per_param, 0.1).item()
+                )
+                self._log(
+                    "vgs/stochastic_var_p50", torch.quantile(normalized_var_per_param, 0.5).item()
+                )
+                self._log(
+                    "vgs/stochastic_var_p90", torch.quantile(normalized_var_per_param, 0.9).item()
+                )
                 self._log("vgs/stochastic_var_mean", normalized_var_per_param.mean().item())
 
         # Log LEGACY v1.x metrics (spatial variance - for backward compat)
         if self._grad_norm_ema is not None:
-            bias_correction = 1.0 - self.beta ** self._step_count
+            bias_correction = 1.0 - self.beta**self._step_count
 
             self._log("vgs/grad_norm_ema", self._grad_norm_ema / bias_correction)
             self._log("vgs/grad_mean_ema_spatial", self._grad_mean_ema / bias_correction)  # Renamed
-            self._log("vgs/grad_var_ema_spatial", self._grad_var_ema / bias_correction)    # Renamed (DEPRECATED)
+            self._log(
+                "vgs/grad_var_ema_spatial", self._grad_var_ema / bias_correction
+            )  # Renamed (DEPRECATED)
             self._log("vgs/grad_max_ema", self._grad_max_ema / bias_correction)
 
         # Log normalized variance (now stochastic, was spatial in v1.x)
@@ -601,20 +613,17 @@ class VarianceGradientScaler:
             # FIX (2025-11-27): New parameters to prevent overly aggressive scaling
             "min_scaling_factor": self.min_scaling_factor,
             "variance_cap": self.variance_cap,
-
             # v3.1 FIXED: Per-parameter stochastic variance statistics
             # Stores E[μ] and E[s] for computing Var[g] = E[s] - E[μ]²
             # where μ_t = mean(g_t), s_t = mean(g_t²)
             "param_grad_mean_ema": self._param_grad_mean_ema,  # E[μ]
-            "param_grad_sq_ema": self._param_grad_sq_ema,      # E[s] - FIXED v3.1!
+            "param_grad_sq_ema": self._param_grad_sq_ema,  # E[s] - FIXED v3.1!
             "param_numel": self._param_numel,
-
             # LEGACY v1.x: Global spatial variance statistics (for logging only)
             "grad_mean_ema": self._grad_mean_ema,
             "grad_var_ema": self._grad_var_ema,
             "grad_norm_ema": self._grad_norm_ema,
             "grad_max_ema": self._grad_max_ema,
-
             # Version marker for migration
             "vgs_version": "3.2",  # v3.2: Added min_scaling_factor and variance_cap
         }
@@ -646,6 +655,7 @@ class VarianceGradientScaler:
         if vgs_version not in ("3.1", "3.2"):
             # OLD FORMAT (v1.x-v3.0 with INCORRECT E[(E[g])²] instead of E[g²])
             import warnings
+
             warnings.warn(
                 "\n"
                 "=" * 80 + "\n"
@@ -676,7 +686,7 @@ class VarianceGradientScaler:
                 "\n"
                 "See VGS_E_G_SQUARED_BUG_REPORT.md for technical details.\n"
                 "=" * 80,
-                UserWarning
+                UserWarning,
             )
 
             # Reset per-parameter statistics (will be reinitialized with CORRECT computation)
@@ -694,7 +704,9 @@ class VarianceGradientScaler:
             # NEW FORMAT (v3.1 with CORRECT E[g²] = mean of squares)
             # Load per-parameter statistics
             self._param_grad_mean_ema = state_dict.get("param_grad_mean_ema", None)  # E[μ]
-            self._param_grad_sq_ema = state_dict.get("param_grad_sq_ema", None)      # E[s] where s=mean(g²)
+            self._param_grad_sq_ema = state_dict.get(
+                "param_grad_sq_ema", None
+            )  # E[s] where s=mean(g²)
             self._param_numel = state_dict.get("param_numel", None)
             # param_ids will be rebuilt by _initialize_per_param_stats if needed
 

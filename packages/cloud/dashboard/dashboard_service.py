@@ -43,6 +43,7 @@ MAX_QUERY_RANGE_DAYS: Final[int] = 365
 
 class TimeRange(str, Enum):
     """Predefined time ranges."""
+
     LAST_HOUR = "1h"
     LAST_6_HOURS = "6h"
     LAST_24_HOURS = "24h"
@@ -54,6 +55,7 @@ class TimeRange(str, Enum):
 
 class AggregationInterval(str, Enum):
     """Data aggregation intervals."""
+
     MINUTE = "1m"
     FIVE_MINUTES = "5m"
     FIFTEEN_MINUTES = "15m"
@@ -64,6 +66,7 @@ class AggregationInterval(str, Enum):
 
 class MetricType(str, Enum):
     """Metric types."""
+
     COUNTER = "counter"
     GAUGE = "gauge"
     HISTOGRAM = "histogram"
@@ -78,6 +81,7 @@ class MetricType(str, Enum):
 @dataclass
 class DashboardConfig:
     """Dashboard configuration."""
+
     workspace_id: UUID
     name: str = "Main Dashboard"
     description: str = ""
@@ -90,6 +94,7 @@ class DashboardConfig:
 @dataclass
 class MetricPoint:
     """Single metric data point."""
+
     timestamp: datetime
     value: float
     labels: Dict[str, str] = field(default_factory=dict)
@@ -98,6 +103,7 @@ class MetricPoint:
 @dataclass
 class MetricSeries:
     """Time series of metric points."""
+
     metric_name: str
     metric_type: MetricType
     points: List[MetricPoint]
@@ -134,8 +140,7 @@ class MetricSeries:
             "metric_name": self.metric_name,
             "metric_type": self.metric_type.value,
             "points": [
-                {"timestamp": p.timestamp.isoformat(), "value": p.value}
-                for p in self.points
+                {"timestamp": p.timestamp.isoformat(), "value": p.value} for p in self.points
             ],
             "labels": self.labels,
             "stats": {
@@ -150,6 +155,7 @@ class MetricSeries:
 @dataclass
 class AgentStatus:
     """Agent status summary."""
+
     agent_id: str
     workspace_id: UUID
     status: str  # ONLINE, OFFLINE, DEGRADED
@@ -174,6 +180,7 @@ class AgentStatus:
 @dataclass
 class RunStatus:
     """Run status summary."""
+
     run_id: str
     deployment_id: str
     strategy_name: str
@@ -201,6 +208,7 @@ class RunStatus:
 @dataclass
 class DashboardData:
     """Complete dashboard data snapshot."""
+
     workspace_id: UUID
     timestamp: datetime
     time_range: TimeRange
@@ -372,10 +380,12 @@ class DashboardService:
         points = []
         current = start
         while current <= now:
-            points.append(MetricPoint(
-                timestamp=current,
-                value=50 + (hash(str(current)) % 50),  # Mock value
-            ))
+            points.append(
+                MetricPoint(
+                    timestamp=current,
+                    value=50 + (hash(str(current)) % 50),  # Mock value
+                )
+            )
             current += timedelta(seconds=interval_seconds)
 
         return MetricSeries(
@@ -429,13 +439,15 @@ class DashboardService:
         # Mock data
         alerts = []
         for i in range(min(limit, 10)):
-            alerts.append({
-                "alert_id": f"alert_{i}",
-                "severity": "warning" if i % 3 == 0 else "info",
-                "title": f"Alert {i}",
-                "message": f"Alert message {i}",
-                "created_at": (datetime.now(timezone.utc) - timedelta(hours=i)).isoformat(),
-            })
+            alerts.append(
+                {
+                    "alert_id": f"alert_{i}",
+                    "severity": "warning" if i % 3 == 0 else "info",
+                    "title": f"Alert {i}",
+                    "message": f"Alert message {i}",
+                    "created_at": (datetime.now(timezone.utc) - timedelta(hours=i)).isoformat(),
+                }
+            )
         return alerts
 
     # ========================================================================

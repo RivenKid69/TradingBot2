@@ -8,13 +8,13 @@ import re
 
 def read_source():
     """Read distributional_ppo.py source code."""
-    with open('distributional_ppo.py', 'r', encoding='utf-8') as f:
+    with open("distributional_ppo.py", "r", encoding="utf-8") as f:
         return f.read()
 
 
 def find_function_source(source, function_name):
     """Extract function source code."""
-    pattern = rf'    def {function_name}\(.*?\):'
+    pattern = rf"    def {function_name}\(.*?\):"
     match = re.search(pattern, source)
     if not match:
         return None
@@ -22,32 +22,32 @@ def find_function_source(source, function_name):
     start = match.start()
 
     # Find function end (next def at same indentation level or class end)
-    lines = source[start:].split('\n')
+    lines = source[start:].split("\n")
     func_lines = [lines[0]]  # Include def line
 
     for line in lines[1:]:
         # Check if we hit another def at same level or less indentation
-        if line.startswith('    def ') or (line and not line[0].isspace()):
+        if line.startswith("    def ") or (line and not line[0].isspace()):
             break
         func_lines.append(line)
 
-    return '\n'.join(func_lines)
+    return "\n".join(func_lines)
 
 
 def test_projection_function_exists():
     """Test that projection function exists and has correct structure."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 1: Projection function exists")
-    print("="*70)
+    print("=" * 70)
 
     source = read_source()
 
     # Check function exists
-    if '_project_categorical_distribution' not in source:
+    if "_project_categorical_distribution" not in source:
         print("✗ FAIL: _project_categorical_distribution function not found")
         return False
 
-    proj_source = find_function_source(source, '_project_categorical_distribution')
+    proj_source = find_function_source(source, "_project_categorical_distribution")
     if not proj_source:
         print("✗ FAIL: Could not extract projection function source")
         return False
@@ -77,12 +77,12 @@ def test_projection_function_exists():
 
 def test_same_bounds_bug_fixed():
     """Test that same_bounds bug is fixed."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 2: Same bounds bug is fixed")
-    print("="*70)
+    print("=" * 70)
 
     source = read_source()
-    proj_source = find_function_source(source, '_project_categorical_distribution')
+    proj_source = find_function_source(source, "_project_categorical_distribution")
 
     if not proj_source:
         print("✗ FAIL: Could not find projection function")
@@ -108,8 +108,7 @@ def test_same_bounds_bug_fixed():
         ("Rebuilds row with all atoms", "for atom_idx" in proj_source),
         ("Normalizes corrected row", "row_sum" in proj_source),
         ("Replaces row once", "projected_probs[batch_idx] = corrected_row" in proj_source),
-        ("No repeated zeroing bug",
-         "projected_probs[batch_indices] = 0.0" not in proj_source),
+        ("No repeated zeroing bug", "projected_probs[batch_indices] = 0.0" not in proj_source),
     ]
 
     all_pass = True
@@ -129,12 +128,12 @@ def test_same_bounds_bug_fixed():
 
 def test_gradient_flow_safe():
     """Test that gradient flow is preserved."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 3: Gradient flow is safe")
-    print("="*70)
+    print("=" * 70)
 
     source = read_source()
-    proj_source = find_function_source(source, '_project_categorical_distribution')
+    proj_source = find_function_source(source, "_project_categorical_distribution")
 
     if not proj_source:
         print("✗ FAIL: Could not find projection function")
@@ -149,16 +148,21 @@ def test_gradient_flow_safe():
     # corrected_row[target_idx] += probs[batch_idx, atom_idx].item()
 
     checks = [
-        ("Uses tensor ops for probs",
-         "+ probs[batch_idx, atom_idx]" in proj_source),
-        ("Uses tensor ops for lower_prob",
-         "+ l_prob" in proj_source or "corrected_row[lower_idx] +" in proj_source),
-        ("Uses tensor ops for upper_prob",
-         "+ u_prob" in proj_source or "corrected_row[upper_idx] +" in proj_source),
-        ("Doesn't break gradients with .item() on probs",
-         ".item()" not in proj_source or
-         # .item() only for indices is OK
-         "probs[batch_idx, atom_idx].item()" not in proj_source),
+        ("Uses tensor ops for probs", "+ probs[batch_idx, atom_idx]" in proj_source),
+        (
+            "Uses tensor ops for lower_prob",
+            "+ l_prob" in proj_source or "corrected_row[lower_idx] +" in proj_source,
+        ),
+        (
+            "Uses tensor ops for upper_prob",
+            "+ u_prob" in proj_source or "corrected_row[upper_idx] +" in proj_source,
+        ),
+        (
+            "Doesn't break gradients with .item() on probs",
+            ".item()" not in proj_source or
+            # .item() only for indices is OK
+            "probs[batch_idx, atom_idx].item()" not in proj_source,
+        ),
     ]
 
     all_pass = True
@@ -171,16 +175,16 @@ def test_gradient_flow_safe():
     # Check that projection is called OUTSIDE torch.no_grad() in VF clipping
     # Find the VF clipping section for categorical
     cat_vf_section_match = re.search(
-        r'# Apply VF clipping if enabled.*?critic_loss = critic_loss / self\._critic_ce_normalizer',
+        r"# Apply VF clipping if enabled.*?critic_loss = critic_loss / self\._critic_ce_normalizer",
         source,
-        re.DOTALL
+        re.DOTALL,
     )
 
     if cat_vf_section_match:
         cat_vf_section = cat_vf_section_match.group(0)
 
         # Find where projection is called
-        proj_call_pos = cat_vf_section.find('_project_categorical_distribution')
+        proj_call_pos = cat_vf_section.find("_project_categorical_distribution")
 
         if proj_call_pos == -1:
             print("✗ Projection not called in VF clipping section!")
@@ -207,9 +211,9 @@ def test_gradient_flow_safe():
 
 def test_vf_clipping_structure():
     """Test VF clipping structure for categorical."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 4: VF clipping structure")
-    print("="*70)
+    print("=" * 70)
 
     source = read_source()
 
@@ -217,24 +221,32 @@ def test_vf_clipping_structure():
     # Look for the VF clipping code
 
     checks = [
-        ("Computes critic_loss_unclipped",
-         re.search(r'critic_loss_unclipped = -\([^)]*target_distribution', source) is not None),
-        ("Checks clip_range_vf_value",
-         "if clip_range_vf_value is not None:" in source),
-        ("Computes mean from categorical",
-         "pred_probs_fp32 * self.policy.atoms" in source),
-        ("Clips mean in raw space",
-         "mean_values_raw_clipped" in source or "mean_values_unscaled_clipped" in source),
-        ("Computes delta_norm",
-         "delta_norm = " in source),
-        ("Shifts atoms",
-         "atoms_shifted" in source),
-        ("Calls projection",
-         "_project_categorical_distribution" in source),
-        ("Computes critic_loss_clipped",
-         re.search(r'critic_loss_clipped = -\([^)]*target_distribution.*log_predictions_clipped', source, re.DOTALL) is not None),
-        ("Uses max(unclipped, clipped)",
-         "torch.max(critic_loss_unclipped, critic_loss_clipped)" in source),
+        (
+            "Computes critic_loss_unclipped",
+            re.search(r"critic_loss_unclipped = -\([^)]*target_distribution", source) is not None,
+        ),
+        ("Checks clip_range_vf_value", "if clip_range_vf_value is not None:" in source),
+        ("Computes mean from categorical", "pred_probs_fp32 * self.policy.atoms" in source),
+        (
+            "Clips mean in raw space",
+            "mean_values_raw_clipped" in source or "mean_values_unscaled_clipped" in source,
+        ),
+        ("Computes delta_norm", "delta_norm = " in source),
+        ("Shifts atoms", "atoms_shifted" in source),
+        ("Calls projection", "_project_categorical_distribution" in source),
+        (
+            "Computes critic_loss_clipped",
+            re.search(
+                r"critic_loss_clipped = -\([^)]*target_distribution.*log_predictions_clipped",
+                source,
+                re.DOTALL,
+            )
+            is not None,
+        ),
+        (
+            "Uses max(unclipped, clipped)",
+            "torch.max(critic_loss_unclipped, critic_loss_clipped)" in source,
+        ),
     ]
 
     all_pass = True
@@ -254,18 +266,20 @@ def test_vf_clipping_structure():
 
 def test_consistency_with_quantile():
     """Test that categorical matches quantile pattern."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 5: Consistency with quantile VF clipping")
-    print("="*70)
+    print("=" * 70)
 
     source = read_source()
 
     # Both should use max(unclipped, clipped)
-    max_pattern = r'torch\.max\(critic_loss_unclipped, critic_loss_clipped\)'
+    max_pattern = r"torch\.max\(critic_loss_unclipped, critic_loss_clipped\)"
     matches = list(re.finditer(max_pattern, source))
 
     if len(matches) < 2:
-        print(f"✗ FAIL: Expected at least 2 max() calls (quantile + categorical), found {len(matches)}")
+        print(
+            f"✗ FAIL: Expected at least 2 max() calls (quantile + categorical), found {len(matches)}"
+        )
         return False
 
     print(f"✓ Found {len(matches)} max(unclipped, clipped) calls")
@@ -290,23 +304,25 @@ def test_consistency_with_quantile():
 
 def test_documentation_present():
     """Test that documentation is present."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 6: Documentation present")
-    print("="*70)
+    print("=" * 70)
 
     source = read_source()
-    proj_source = find_function_source(source, '_project_categorical_distribution')
+    proj_source = find_function_source(source, "_project_categorical_distribution")
 
     checks = [
-        ("Projection has docstring",
-         proj_source and ('"""' in proj_source or "'''" in proj_source)),
-        ("Has CRITICAL FIX comments",
-         "CRITICAL FIX" in source),
-        ("Mentions PPO VF clipping",
-         "PPO VF clipping" in source),
-        ("Explains max(loss_unclipped, loss_clipped)",
-         "max(loss(pred, target), loss(clip(pred), target))" in source.lower() or
-         "max(loss_unclipped, loss_clipped)" in source),
+        (
+            "Projection has docstring",
+            proj_source and ('"""' in proj_source or "'''" in proj_source),
+        ),
+        ("Has CRITICAL FIX comments", "CRITICAL FIX" in source),
+        ("Mentions PPO VF clipping", "PPO VF clipping" in source),
+        (
+            "Explains max(loss_unclipped, loss_clipped)",
+            "max(loss(pred, target), loss(clip(pred), target))" in source.lower()
+            or "max(loss_unclipped, loss_clipped)" in source,
+        ),
     ]
 
     all_pass = True
@@ -321,12 +337,12 @@ def test_documentation_present():
 
 def test_edge_cases_handled():
     """Test that edge cases are handled."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST 7: Edge cases handled")
-    print("="*70)
+    print("=" * 70)
 
     source = read_source()
-    proj_source = find_function_source(source, '_project_categorical_distribution')
+    proj_source = find_function_source(source, "_project_categorical_distribution")
 
     if not proj_source:
         print("✗ Could not find projection function")
@@ -354,9 +370,9 @@ def test_edge_cases_handled():
 
 def main():
     """Run all source analysis tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("CATEGORICAL VF CLIPPING - SOURCE CODE ANALYSIS")
-    print("="*70)
+    print("=" * 70)
 
     tests = [
         ("Projection function exists", test_projection_function_exists),
@@ -376,13 +392,14 @@ def main():
         except Exception as e:
             print(f"\n✗ EXCEPTION in {test_name}: {e}")
             import traceback
+
             traceback.print_exc()
             results.append((test_name, False, str(e)))
 
     # Summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("SUMMARY")
-    print("="*70)
+    print("=" * 70)
 
     passed_count = sum(1 for _, p, _ in results if p)
     total_count = len(results)
@@ -397,9 +414,9 @@ def main():
     print(f"Coverage: {passed_count/total_count*100:.1f}%")
 
     if passed_count == total_count:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("✓✓✓ ALL SOURCE ANALYSIS TESTS PASSED ✓✓✓")
-        print("="*70)
+        print("=" * 70)
         print("\n🎉 Implementation is COMPLETE and CORRECT:")
         print("  ✓ Projection function properly implemented")
         print("  ✓ Same bounds bug FIXED")
@@ -410,12 +427,13 @@ def main():
         print("  ✓ Edge cases handled")
         return 0
     else:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print(f"⚠ {total_count - passed_count} tests had issues")
-        print("="*70)
+        print("=" * 70)
         return 1
 
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

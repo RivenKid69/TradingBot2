@@ -1,6 +1,8 @@
 import numpy as np
-import pathlib, sys
+import pathlib
+import sys
 import pytest
+
 pytest.importorskip("torch")
 sys.path.append(str(pathlib.Path(__file__).resolve().parent.parent))
 
@@ -33,7 +35,7 @@ def rollout(seed, steps):
     obs_seq = [obs.copy()]
     reward_seq = []
     for _ in range(steps):
-        obs, rewards, _, _ = vec_env.step(np.zeros((1,1), dtype=np.float32))
+        obs, rewards, _, _ = vec_env.step(np.zeros((1, 1), dtype=np.float32))
         obs_seq.append(obs.copy())
         reward_seq.append(rewards.copy())
     vec_env.close()

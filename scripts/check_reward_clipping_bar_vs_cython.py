@@ -140,7 +140,9 @@ def simulate_bar_reward_path(
             env.state.cash = prev_net_worth
             env.state.units = 0.0
 
-            prev_equity_value = prev_net_worth if math.isfinite(prev_net_worth) else env._reward_equity_floor
+            prev_equity_value = (
+                prev_net_worth if math.isfinite(prev_net_worth) else env._reward_equity_floor
+            )
             prev_equity_value = max(prev_equity_value, env._reward_equity_floor)
             denom = prev_equity_value
             ratio = _sample_ratio(rng)
@@ -156,9 +158,7 @@ def simulate_bar_reward_path(
                 turnover=turnover,
             )
 
-            _, reward_env, terminated, truncated, info = env.step(
-                ActionProto(ActionType.HOLD, 0.0)
-            )
+            _, reward_env, terminated, truncated, info = env.step(ActionProto(ActionType.HOLD, 0.0))
 
             if terminated or truncated:
                 break
@@ -275,7 +275,9 @@ def check_bar_reward_consistency(
 
     for key, value in percentiles.items():
         if value > reward_cap + 1e-9:
-            raise AssertionError(f"{key} percentile {value:.6f} exceeds reward cap {reward_cap:.2f}")
+            raise AssertionError(
+                f"{key} percentile {value:.6f} exceeds reward cap {reward_cap:.2f}"
+            )
 
     frac_gt_cap = float(np.mean(rewards_env > reward_cap))
     if frac_gt_cap > 1e-9:
@@ -315,4 +317,3 @@ def main() -> None:  # pragma: no cover - entry point
 
 if __name__ == "__main__":  # pragma: no cover - CLI guard
     main()
-

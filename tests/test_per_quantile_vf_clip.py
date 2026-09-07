@@ -9,6 +9,7 @@ Tests that the new per_quantile mode:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -38,21 +39,22 @@ class TestPerQuantileMode:
 
         # Clip each quantile: quantile_clipped = old_value + clip(quantile - old_value, -delta, +delta)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # Verify ALL quantiles are within bounds
-        assert torch.all(quantiles_clipped >= clip_min), \
-            f"Some quantiles below {clip_min}: {quantiles_clipped[quantiles_clipped < clip_min]}"
-        assert torch.all(quantiles_clipped <= clip_max), \
-            f"Some quantiles above {clip_max}: {quantiles_clipped[quantiles_clipped > clip_max]}"
+        assert torch.all(
+            quantiles_clipped >= clip_min
+        ), f"Some quantiles below {clip_min}: {quantiles_clipped[quantiles_clipped < clip_min]}"
+        assert torch.all(
+            quantiles_clipped <= clip_max
+        ), f"Some quantiles above {clip_max}: {quantiles_clipped[quantiles_clipped > clip_max]}"
 
         # Verify exact values for this test case
         expected = torch.tensor([[5.0, 10.0, 15.0, 15.0, 15.0]])  # All clipped to [5, 15]
-        assert torch.allclose(quantiles_clipped, expected), \
-            f"Expected {expected}, got {quantiles_clipped}"
+        assert torch.allclose(
+            quantiles_clipped, expected
+        ), f"Expected {expected}, got {quantiles_clipped}"
 
         print("✓ per_quantile mode guarantees all quantiles within bounds!")
 
@@ -79,20 +81,16 @@ class TestPerQuantileMode:
         # per_quantile mode
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_per_quantile = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )  # [5, 15, 15]
 
         # Check violations
-        mean_only_violates = (
-            (quantiles_mean_only < clip_min).any() or
-            (quantiles_mean_only > clip_max).any()
-        )
-        per_quantile_violates = (
-            (quantiles_per_quantile < clip_min).any() or
-            (quantiles_per_quantile > clip_max).any()
-        )
+        mean_only_violates = (quantiles_mean_only < clip_min).any() or (
+            quantiles_mean_only > clip_max
+        ).any()
+        per_quantile_violates = (quantiles_per_quantile < clip_min).any() or (
+            quantiles_per_quantile > clip_max
+        ).any()
 
         print(f"\nmean_only clipped quantiles: {quantiles_mean_only.tolist()}")
         print(f"  Bounds violation: {mean_only_violates}")
@@ -126,17 +124,17 @@ class TestPerQuantileMode:
 
         # Same new quantiles for all (for simplicity)
         # In practice, each sample would have different quantiles
-        new_quantiles = torch.tensor([
-            [0.0, 10.0, 20.0, 30.0, 50.0],
-            [0.0, 10.0, 20.0, 30.0, 50.0],
-            [0.0, 10.0, 20.0, 30.0, 50.0],
-        ])  # [batch, num_quantiles]
+        new_quantiles = torch.tensor(
+            [
+                [0.0, 10.0, 20.0, 30.0, 50.0],
+                [0.0, 10.0, 20.0, 30.0, 50.0],
+                [0.0, 10.0, 20.0, 30.0, 50.0],
+            ]
+        )  # [batch, num_quantiles]
 
         # per_quantile clipping: different bounds per sample
         quantiles_clipped = old_values + torch.clamp(
-            new_quantiles - old_values,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_values, min=-clip_delta, max=clip_delta
         )
 
         # Verify each sample respects its own bounds
@@ -146,14 +144,18 @@ class TestPerQuantileMode:
             sample_clip_max = sample_old_value + clip_delta
             sample_quantiles = quantiles_clipped[i]
 
-            assert torch.all(sample_quantiles >= sample_clip_min), \
-                f"Sample {i}: quantiles below {sample_clip_min}"
-            assert torch.all(sample_quantiles <= sample_clip_max), \
-                f"Sample {i}: quantiles above {sample_clip_max}"
+            assert torch.all(
+                sample_quantiles >= sample_clip_min
+            ), f"Sample {i}: quantiles below {sample_clip_min}"
+            assert torch.all(
+                sample_quantiles <= sample_clip_max
+            ), f"Sample {i}: quantiles above {sample_clip_max}"
 
-            print(f"Sample {i}: old_value={sample_old_value:.1f}, "
-                  f"bounds=[{sample_clip_min:.1f}, {sample_clip_max:.1f}], "
-                  f"quantiles={sample_quantiles.tolist()}")
+            print(
+                f"Sample {i}: old_value={sample_old_value:.1f}, "
+                f"bounds=[{sample_clip_min:.1f}, {sample_clip_max:.1f}], "
+                f"quantiles={sample_quantiles.tolist()}"
+            )
 
         print("\n✓ per_quantile handles batch-specific clipping correctly!")
 
@@ -171,15 +173,14 @@ class TestPerQuantileMode:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # Check ordering preserved
         for i in range(quantiles_clipped.shape[1] - 1):
-            assert quantiles_clipped[0, i] <= quantiles_clipped[0, i + 1], \
-                f"Ordering violated at index {i}: {quantiles_clipped[0, i]} > {quantiles_clipped[0, i+1]}"
+            assert (
+                quantiles_clipped[0, i] <= quantiles_clipped[0, i + 1]
+            ), f"Ordering violated at index {i}: {quantiles_clipped[0, i]} > {quantiles_clipped[0, i+1]}"
 
         print(f"Original: {new_quantiles.tolist()}")
         print(f"Clipped:  {quantiles_clipped.tolist()}")
@@ -199,14 +200,13 @@ class TestPerQuantileMode:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # Should be unchanged
-        assert torch.allclose(quantiles_clipped, new_quantiles), \
-            "Clipping should be no-op when already within bounds"
+        assert torch.allclose(
+            quantiles_clipped, new_quantiles
+        ), "Clipping should be no-op when already within bounds"
 
         print(f"Original: {new_quantiles.tolist()}")
         print(f"Clipped:  {quantiles_clipped.tolist()}")
@@ -226,15 +226,14 @@ class TestPerQuantileMode:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # All should be clipped to [-1, 1]
         expected = torch.tensor([[-1.0, -1.0, 0.0, 1.0, 1.0]])
-        assert torch.allclose(quantiles_clipped, expected), \
-            f"Expected {expected}, got {quantiles_clipped}"
+        assert torch.allclose(
+            quantiles_clipped, expected
+        ), f"Expected {expected}, got {quantiles_clipped}"
 
         print(f"Original: {new_quantiles.tolist()}")
         print(f"Clipped:  {quantiles_clipped.tolist()}")
@@ -263,9 +262,7 @@ class TestPerQuantileMode:
 
         # Clip atoms relative to old_value for each sample
         atoms_clipped_batch = old_values + torch.clamp(
-            atoms_broadcast - old_values,
-            min=-clip_delta,
-            max=clip_delta
+            atoms_broadcast - old_values, min=-clip_delta, max=clip_delta
         )  # [batch, num_atoms]
 
         # Verify each sample's atoms are within bounds
@@ -275,14 +272,14 @@ class TestPerQuantileMode:
             clip_max_i = old_value_i + clip_delta
             atoms_i = atoms_clipped_batch[i]
 
-            assert torch.all(atoms_i >= clip_min_i), \
-                f"Sample {i}: atoms below {clip_min_i}"
-            assert torch.all(atoms_i <= clip_max_i), \
-                f"Sample {i}: atoms above {clip_max_i}"
+            assert torch.all(atoms_i >= clip_min_i), f"Sample {i}: atoms below {clip_min_i}"
+            assert torch.all(atoms_i <= clip_max_i), f"Sample {i}: atoms above {clip_max_i}"
 
-            print(f"Sample {i}: old_value={old_value_i:.1f}, "
-                  f"atoms range=[{atoms_i.min().item():.2f}, {atoms_i.max().item():.2f}], "
-                  f"expected=[{clip_min_i:.1f}, {clip_max_i:.1f}]")
+            print(
+                f"Sample {i}: old_value={old_value_i:.1f}, "
+                f"atoms range=[{atoms_i.min().item():.2f}, {atoms_i.max().item():.2f}], "
+                f"expected=[{clip_min_i:.1f}, {clip_max_i:.1f}]"
+            )
 
         print("\n✓ Categorical per_quantile clips atoms correctly!")
 
@@ -308,9 +305,7 @@ class TestPerQuantileMode:
         # Apply per_quantile clipping
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # CVaR from clipped quantiles
@@ -323,13 +318,13 @@ class TestPerQuantileMode:
         print(f"  CVaR (α=0.25): {cvar_clipped:.2f}")
 
         # Verify tail quantiles are bounded
-        assert torch.all(tail_clipped >= clip_min), \
-            f"Tail quantiles must be >= {clip_min}"
+        assert torch.all(tail_clipped >= clip_min), f"Tail quantiles must be >= {clip_min}"
 
         # CVaR should be more conservative (higher) after clipping
         # because we clipped the extreme negative values
-        assert cvar_clipped >= cvar_original, \
-            "Clipped CVaR should be >= original (less extreme risk)"
+        assert (
+            cvar_clipped >= cvar_original
+        ), "Clipped CVaR should be >= original (less extreme risk)"
 
         print(f"\n✓ per_quantile properly constrains CVaR (tail risk)!")
 
@@ -344,8 +339,12 @@ class TestPerQuantileParameterValidation:
         for mode in valid_modes:
             # Simulate validation logic
             mode_lower = mode.lower()
-            assert mode_lower in ["disable", "mean_only", "mean_and_variance", "per_quantile"], \
-                f"Valid mode {mode} should pass validation"
+            assert mode_lower in [
+                "disable",
+                "mean_only",
+                "mean_and_variance",
+                "per_quantile",
+            ], f"Valid mode {mode} should pass validation"
 
         print("✓ 'per_quantile' is recognized as valid mode!")
 

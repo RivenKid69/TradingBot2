@@ -118,11 +118,7 @@ def _load_offline_config(path: Path) -> dict[str, Any]:
 def _merge_mappings(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
     merged: dict[str, Any] = {key: value for key, value in base.items()}
     for key, value in override.items():
-        if (
-            key in merged
-            and isinstance(merged[key], Mapping)
-            and isinstance(value, Mapping)
-        ):
+        if key in merged and isinstance(merged[key], Mapping) and isinstance(value, Mapping):
             merged[key] = _merge_mappings(
                 merged[key],
                 value,
@@ -278,7 +274,11 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         description="Fetch Binance OHLCV history and build ADV dataset parquet.",
     )
     parser.add_argument("--market", choices=["spot", "futures"], default="futures")
-    parser.add_argument("--interval", default="4h", help="Kline interval (e.g. 4h,1h,1d) - default 4h for project migration")
+    parser.add_argument(
+        "--interval",
+        default="4h",
+        help="Kline interval (e.g. 4h,1h,1d) - default 4h for project migration",
+    )
     parser.add_argument("--start", required=True, help="Start of history (ISO8601 or unix ms)")
     parser.add_argument("--end", required=True, help="End of history (ISO8601 or unix ms)")
     parser.add_argument("--symbols", default="", help="Comma-separated symbol list")

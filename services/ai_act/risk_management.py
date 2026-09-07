@@ -49,12 +49,14 @@ logger = logging.getLogger(__name__)
 # Risk Categories (per AI Act taxonomy)
 # =============================================================================
 
+
 class AIActRiskCategory(Enum):
     """
     Risk categories as defined by EU AI Act for high-risk AI systems.
 
     Based on Article 9(2) and industry best practices for algorithmic trading.
     """
+
     # Core AI Act categories
     SAFETY = "safety"
     FUNDAMENTAL_RIGHTS = "fundamental_rights"
@@ -85,6 +87,7 @@ class AIActRiskCategory(Enum):
 
 class AIActRiskSeverity(Enum):
     """Risk severity levels for impact assessment."""
+
     NEGLIGIBLE = 1
     LOW = 2
     MEDIUM = 3
@@ -94,16 +97,18 @@ class AIActRiskSeverity(Enum):
 
 class AIActRiskLikelihood(Enum):
     """Risk likelihood levels for probability assessment."""
-    RARE = 1       # < 5% probability
-    UNLIKELY = 2   # 5-20% probability
-    POSSIBLE = 3   # 20-50% probability
-    LIKELY = 4     # 50-80% probability
+
+    RARE = 1  # < 5% probability
+    UNLIKELY = 2  # 5-20% probability
+    POSSIBLE = 3  # 20-50% probability
+    LIKELY = 4  # 50-80% probability
     ALMOST_CERTAIN = 5  # > 80% probability
 
 
 # =============================================================================
 # Risk Data Structures
 # =============================================================================
+
 
 @dataclass
 class RiskIdentification:
@@ -114,6 +119,7 @@ class RiskIdentification:
     - (a) intended use
     - (b) reasonably foreseeable misuse
     """
+
     risk_id: str
     category: AIActRiskCategory
     title: str
@@ -157,6 +163,7 @@ class RiskAssessment:
     Evaluates and estimates risks based on available data including
     post-market monitoring data.
     """
+
     assessment_id: str
     risk_id: str
 
@@ -217,6 +224,7 @@ class RiskMitigation:
     - (b) implementation of mitigation and control measures
     - (c) provision of information and training to deployers
     """
+
     mitigation_id: str
     risk_id: str
 
@@ -268,6 +276,7 @@ class RiskMitigation:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class AIActRiskConfig:
     """
@@ -275,6 +284,7 @@ class AIActRiskConfig:
 
     Extends existing RiskConfig with AI Act specific parameters.
     """
+
     # Assessment frequency (Article 9(1) - continuous iterative process)
     risk_assessment_frequency_hours: int = 24
     enable_continuous_monitoring: bool = True
@@ -305,6 +315,7 @@ class AIActRiskConfig:
 # =============================================================================
 # Main Risk Manager
 # =============================================================================
+
 
 class AIActRiskManager:
     """
@@ -506,11 +517,14 @@ class AIActRiskManager:
             self._escalate_risk(risk_id, assessment)
 
         if self.config.log_all_assessments:
-            self._log_event("risk_assessed", {
-                **asdict(assessment),
-                "risk_score": assessment.risk_score,
-                "risk_level": assessment.risk_level,
-            })
+            self._log_event(
+                "risk_assessed",
+                {
+                    **asdict(assessment),
+                    "risk_score": assessment.risk_score,
+                    "risk_level": assessment.risk_level,
+                },
+            )
 
         logger.info(
             f"Risk assessed: {risk_id} - Score={assessment.risk_score} "
@@ -681,12 +695,15 @@ class AIActRiskManager:
                     "Risk reassessment recommended."
                 )
 
-        self._log_event("incident_recorded", {
-            "risk_id": risk_id,
-            "description": incident_description,
-            "severity": severity.name,
-            "total_incidents": self._incident_count,
-        })
+        self._log_event(
+            "incident_recorded",
+            {
+                "risk_id": risk_id,
+                "description": incident_description,
+                "severity": severity.name,
+                "total_incidents": self._incident_count,
+            },
+        )
 
     def needs_reassessment(self) -> bool:
         """Check if risk reassessment is due based on time or incidents."""
@@ -756,12 +773,8 @@ class AIActRiskManager:
             risks_data = []
             for risk_id, risk in self._risks.items():
                 risk_data = asdict(risk)
-                risk_data["assessments"] = [
-                    asdict(a) for a in self._assessments.get(risk_id, [])
-                ]
-                risk_data["mitigations"] = [
-                    asdict(m) for m in self._mitigations.get(risk_id, [])
-                ]
+                risk_data["assessments"] = [asdict(a) for a in self._assessments.get(risk_id, [])]
+                risk_data["mitigations"] = [asdict(m) for m in self._mitigations.get(risk_id, [])]
                 risks_data.append(risk_data)
 
         return {
@@ -784,13 +797,16 @@ class AIActRiskManager:
 
         if self.config.escalation_callback:
             try:
-                self.config.escalation_callback(risk_id, {
-                    "assessment_id": assessment.assessment_id,
-                    "risk_score": assessment.risk_score,
-                    "risk_level": assessment.risk_level,
-                    "severity": assessment.severity.name,
-                    "likelihood": assessment.likelihood.name,
-                })
+                self.config.escalation_callback(
+                    risk_id,
+                    {
+                        "assessment_id": assessment.assessment_id,
+                        "risk_score": assessment.risk_score,
+                        "risk_level": assessment.risk_level,
+                        "severity": assessment.severity.name,
+                        "likelihood": assessment.likelihood.name,
+                    },
+                )
             except Exception as e:
                 logger.error(f"Escalation callback failed: {e}")
 
@@ -814,6 +830,7 @@ class AIActRiskManager:
 # Factory Function
 # =============================================================================
 
+
 def create_risk_manager(
     config: Optional[Union[Dict[str, Any], AIActRiskConfig]] = None,
 ) -> AIActRiskManager:
@@ -836,11 +853,15 @@ def create_risk_manager(
         ai_act_config = AIActRiskConfig(
             risk_assessment_frequency_hours=config.get("risk_assessment_frequency_hours", 24),
             enable_continuous_monitoring=config.get("enable_continuous_monitoring", True),
-            residual_risk_acceptance_threshold=config.get("residual_risk_acceptance_threshold", 0.01),
+            residual_risk_acceptance_threshold=config.get(
+                "residual_risk_acceptance_threshold", 0.01
+            ),
             risk_score_escalation_threshold=config.get("risk_score_escalation_threshold", 16),
             vulnerable_group_considerations=config.get("vulnerable_group_considerations", []),
             post_market_data_lookback_days=config.get("post_market_data_lookback_days", 90),
-            incident_threshold_for_reassessment=config.get("incident_threshold_for_reassessment", 3),
+            incident_threshold_for_reassessment=config.get(
+                "incident_threshold_for_reassessment", 3
+            ),
             testing_frequency_hours=config.get("testing_frequency_hours", 168),
             test_coverage_target=config.get("test_coverage_target", 0.95),
             log_all_assessments=config.get("log_all_assessments", True),

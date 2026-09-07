@@ -68,6 +68,7 @@ from risk_guard import (
 # Helper Functions
 # =========================
 
+
 def get_timestamp_ms(year=2024, month=6, day=15, hour=10, minute=0) -> int:
     """Create a timestamp in milliseconds."""
     dt = datetime(year, month, day, hour, minute, tzinfo=timezone.utc)
@@ -87,6 +88,7 @@ def get_business_day_timestamp(days_ago: int = 0) -> int:
 # =========================
 # PDT Tracker Tests
 # =========================
+
 
 class TestPDTTracker:
     """Tests for Pattern Day Trader rule enforcement."""
@@ -275,6 +277,7 @@ class TestPDTTracker:
 # Margin Guard Tests
 # =========================
 
+
 class TestMarginGuard:
     """Tests for Reg T margin requirements."""
 
@@ -353,13 +356,15 @@ class TestMarginGuard:
         guard.set_equity(10_000.0)  # Low equity
 
         # Add position worth $50k
-        guard.set_position(PositionSnapshot(
-            symbol="AAPL",
-            quantity=250,
-            market_value=50_000.0,
-            cost_basis=45_000.0,
-            unrealized_pnl=5_000.0,
-        ))
+        guard.set_position(
+            PositionSnapshot(
+                symbol="AAPL",
+                quantity=250,
+                market_value=50_000.0,
+                cost_basis=45_000.0,
+                unrealized_pnl=5_000.0,
+            )
+        )
 
         # Check margin status
         status = guard.check_margin_call()
@@ -385,6 +390,7 @@ class TestMarginGuard:
 # =========================
 # Short Sale Guard Tests
 # =========================
+
 
 class TestShortSaleGuard:
     """Tests for short sale rules enforcement."""
@@ -480,6 +486,7 @@ class TestShortSaleGuard:
 # =========================
 # Corporate Actions Tests
 # =========================
+
 
 class TestCorporateActionsHandler:
     """Tests for corporate actions handling."""
@@ -594,18 +601,22 @@ class TestCorporateActionsHandler:
 
         # Add actions at different dates
         today = date.today()
-        handler.add_action(CorporateAction(
-            symbol="AAPL",
-            action_type=CorporateActionType.DIVIDEND,
-            ex_date=today + timedelta(days=2),
-            dividend_amount=0.24,
-        ))
-        handler.add_action(CorporateAction(
-            symbol="MSFT",
-            action_type=CorporateActionType.DIVIDEND,
-            ex_date=today + timedelta(days=10),
-            dividend_amount=0.68,
-        ))
+        handler.add_action(
+            CorporateAction(
+                symbol="AAPL",
+                action_type=CorporateActionType.DIVIDEND,
+                ex_date=today + timedelta(days=2),
+                dividend_amount=0.24,
+            )
+        )
+        handler.add_action(
+            CorporateAction(
+                symbol="MSFT",
+                action_type=CorporateActionType.DIVIDEND,
+                ex_date=today + timedelta(days=10),
+                dividend_amount=0.68,
+            )
+        )
 
         # Get actions in next 7 days
         upcoming = handler.get_upcoming_actions(days=7)
@@ -616,6 +627,7 @@ class TestCorporateActionsHandler:
 # =========================
 # Stock Risk Guard Integration Tests
 # =========================
+
 
 class TestStockRiskGuard:
     """Integration tests for combined stock risk guard."""
@@ -663,7 +675,10 @@ class TestStockRiskGuard:
 
         # Next day trade should be blocked
         event = guard.check_trade(
-            "AAPL", "BUY", 100, 150.0,
+            "AAPL",
+            "BUY",
+            100,
+            150.0,
             is_day_trade=True,
             timestamp_ms=ts,
         )
@@ -722,9 +737,7 @@ class TestStockRiskGuard:
 
         # Add dividend
         tomorrow = date.today() + timedelta(days=1)
-        guard.add_corporate_action(
-            "AAPL", "DIVIDEND", tomorrow, dividend_amount=0.24
-        )
+        guard.add_corporate_action("AAPL", "DIVIDEND", tomorrow, dividend_amount=0.24)
 
         # Should be in corporate actions handler
         actions = guard.corporate_actions.get_actions("AAPL")
@@ -760,6 +773,7 @@ class TestStockRiskGuard:
 # Backward Compatibility Tests
 # =========================
 
+
 class TestBackwardCompatibility:
     """Tests ensuring backward compatibility with crypto trading."""
 
@@ -771,9 +785,7 @@ class TestBackwardCompatibility:
     def test_create_combined_guard_crypto(self):
         """Test combined guard creation for crypto."""
         crypto_config = StockRiskConfig(market_type="CRYPTO_SPOT")
-        risk_guard, stock_guard = create_combined_risk_guard(
-            stock_config=crypto_config
-        )
+        risk_guard, stock_guard = create_combined_risk_guard(stock_config=crypto_config)
 
         assert risk_guard is not None
         assert stock_guard is None  # Should be None for crypto
@@ -781,9 +793,7 @@ class TestBackwardCompatibility:
     def test_create_combined_guard_equity(self):
         """Test combined guard creation for equity."""
         stock_config = StockRiskConfig(market_type="EQUITY")
-        risk_guard, stock_guard = create_combined_risk_guard(
-            stock_config=stock_config
-        )
+        risk_guard, stock_guard = create_combined_risk_guard(stock_config=stock_config)
 
         assert risk_guard is not None
         assert stock_guard is not None
@@ -821,6 +831,7 @@ class TestBackwardCompatibility:
 # =========================
 # Factory Function Tests
 # =========================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""
@@ -874,6 +885,7 @@ class TestFactoryFunctions:
 # Edge Cases
 # =========================
 
+
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
@@ -904,9 +916,7 @@ class TestEdgeCases:
         handler = CorporateActionsHandler()
 
         # Zero denominator should return unchanged
-        new_qty, new_price = handler.apply_split(
-            "AAPL", 100, 150.0, split_ratio=(2, 0)
-        )
+        new_qty, new_price = handler.apply_split("AAPL", 100, 150.0, split_ratio=(2, 0))
         assert new_qty == 100
         assert new_price == 150.0
 

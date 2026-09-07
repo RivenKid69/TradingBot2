@@ -31,8 +31,8 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 TRADE = "trade"
-QUOTE = "quote"       # L1 top of book
-DEPTH = "depth"       # L2/L3 book snapshot (levels flattened)
+QUOTE = "quote"  # L1 top of book
+DEPTH = "depth"  # L2/L3 book snapshot (levels flattened)
 
 
 def _day(ts_ms: int) -> str:
@@ -44,8 +44,8 @@ class TickStore:
     """Durable, buffered, queryable microstructure store."""
 
     root: str = "data/ticks"
-    flush_every: int = 1000          # rows buffered per (kind,symbol) before auto-flush
-    fmt: str = "parquet"             # parquet | csv
+    flush_every: int = 1000  # rows buffered per (kind,symbol) before auto-flush
+    fmt: str = "parquet"  # parquet | csv
 
     _buffers: Dict[tuple, List[Dict[str, Any]]] = field(default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock)
@@ -59,24 +59,60 @@ class TickStore:
             if len(buf) >= self.flush_every:
                 self._flush_key(key)
 
-    def record_trade(self, symbol: str, ts_ms: int, price: float, size: float,
-                     side: str = "", **extra: Any) -> None:
-        self._append(TRADE, symbol, {"ts_ms": int(ts_ms), "price": float(price),
-                                     "size": float(size), "side": str(side), **extra})
+    def record_trade(
+        self, symbol: str, ts_ms: int, price: float, size: float, side: str = "", **extra: Any
+    ) -> None:
+        self._append(
+            TRADE,
+            symbol,
+            {
+                "ts_ms": int(ts_ms),
+                "price": float(price),
+                "size": float(size),
+                "side": str(side),
+                **extra,
+            },
+        )
 
-    def record_quote(self, symbol: str, ts_ms: int, bid: float, ask: float,
-                     bid_size: float = 0.0, ask_size: float = 0.0, **extra: Any) -> None:
-        self._append(QUOTE, symbol, {"ts_ms": int(ts_ms), "bid": float(bid), "ask": float(ask),
-                                     "bid_size": float(bid_size), "ask_size": float(ask_size),
-                                     "mid": (float(bid) + float(ask)) / 2.0, **extra})
+    def record_quote(
+        self,
+        symbol: str,
+        ts_ms: int,
+        bid: float,
+        ask: float,
+        bid_size: float = 0.0,
+        ask_size: float = 0.0,
+        **extra: Any,
+    ) -> None:
+        self._append(
+            QUOTE,
+            symbol,
+            {
+                "ts_ms": int(ts_ms),
+                "bid": float(bid),
+                "ask": float(ask),
+                "bid_size": float(bid_size),
+                "ask_size": float(ask_size),
+                "mid": (float(bid) + float(ask)) / 2.0,
+                **extra,
+            },
+        )
 
-    def record_depth(self, symbol: str, ts_ms: int,
-                     bids: List[tuple], asks: List[tuple], *, levels: int = 10, **extra: Any) -> None:
+    def record_depth(
+        self,
+        symbol: str,
+        ts_ms: int,
+        bids: List[tuple],
+        asks: List[tuple],
+        *,
+        levels: int = 10,
+        **extra: Any,
+    ) -> None:
         """Record an L2/L3 snapshot. ``bids``/``asks`` = list of (price, size) best-first."""
         row: Dict[str, Any] = {"ts_ms": int(ts_ms), **extra}
         for i in range(levels):
-            bp, bs = (bids[i] if i < len(bids) else (None, None))
-            ap, as_ = (asks[i] if i < len(asks) else (None, None))
+            bp, bs = bids[i] if i < len(bids) else (None, None)
+            ap, as_ = asks[i] if i < len(asks) else (None, None)
             row[f"bid_px_{i}"] = float(bp) if bp is not None else None
             row[f"bid_sz_{i}"] = float(bs) if bs is not None else None
             row[f"ask_px_{i}"] = float(ap) if ap is not None else None
@@ -126,8 +162,14 @@ class TickStore:
                 self._flush_key(key)
 
     # -- query --------------------------------------------------------------
-    def query(self, symbol: str, *, kind: str = TRADE,
-              start_ms: Optional[int] = None, end_ms: Optional[int] = None) -> pd.DataFrame:
+    def query(
+        self,
+        symbol: str,
+        *,
+        kind: str = TRADE,
+        start_ms: Optional[int] = None,
+        end_ms: Optional[int] = None,
+    ) -> pd.DataFrame:
         """Read back records for a symbol/kind within [start_ms, end_ms]."""
         self.flush()
         d = os.path.join(self.root, kind, str(symbol))
@@ -155,7 +197,9 @@ class TickStore:
         the store. Returns events recorded. Bounded by ``max_events`` (0 = until end)."""
         n = 0
         for ev in stream:
-            ts = int(getattr(ev, "ts_ms", None) or (ev.get("ts_ms") if isinstance(ev, dict) else 0) or 0)
+            ts = int(
+                getattr(ev, "ts_ms", None) or (ev.get("ts_ms") if isinstance(ev, dict) else 0) or 0
+            )
             px = getattr(ev, "price", None) or (ev.get("price") if isinstance(ev, dict) else None)
             sz = getattr(ev, "size", None) or (ev.get("size") if isinstance(ev, dict) else 0.0)
             if px is not None:

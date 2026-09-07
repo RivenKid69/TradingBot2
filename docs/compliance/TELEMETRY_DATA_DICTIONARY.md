@@ -4,6 +4,7 @@
 **Effective Date**: 2025-12-16
 **Classification**: INTERNAL / COMPLIANCE
 **Related Documents**:
+
 - `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 - `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt`
 - `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md`
@@ -66,6 +67,7 @@ This document defines the canonical telemetry data dictionary for Cloud ingestio
 ### 3.1 Allowed Fields
 
 #### Temporal Fields
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `timestamp` | datetime | Event timestamp (ISO 8601) | `2025-12-16T10:30:00Z` |
@@ -78,6 +80,7 @@ This document defines the canonical telemetry data dictionary for Cloud ingestio
 | `duration_seconds` | integer | Duration in seconds | `3600` |
 
 #### Statistical Aggregates
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `count` | integer | Count of events | `1500` |
@@ -96,6 +99,7 @@ This document defines the canonical telemetry data dictionary for Cloud ingestio
 | `buckets` | array | Bucket values | `[0, 10, 20, 50, 100]` |
 
 #### System Metrics
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `cpu_percent` | float | CPU utilization (0-100) | `45.2` |
@@ -113,6 +117,7 @@ This document defines the canonical telemetry data dictionary for Cloud ingestio
 | `latency_p99` | float | p99 latency | `45.0` |
 
 #### Trading Metrics (Aggregated Only)
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `trade_count` | integer | Number of trades | `150` |
@@ -130,6 +135,7 @@ This document defines the canonical telemetry data dictionary for Cloud ingestio
 | `information_ratio` | float | Information ratio | `0.65` |
 
 #### Identifiers (Non-PII)
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `strategy_id` | string | Strategy identifier | `strat_abc123` |
@@ -144,6 +150,7 @@ This document defines the canonical telemetry data dictionary for Cloud ingestio
 | `is_paper_trading` | boolean | Paper trading flag | `true` |
 
 #### Error Metrics
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `error_count` | integer | Number of errors | `5` |
@@ -155,6 +162,7 @@ This document defines the canonical telemetry data dictionary for Cloud ingestio
 | `timeout_count` | integer | Timeout count | `2` |
 
 #### Resource Usage
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `active_connections` | integer | Active connections | `15` |
@@ -184,6 +192,7 @@ All fields from sections 4.2, 5.2, and 6 are **FORBIDDEN** at AGGREGATED level.
 All fields from AGGREGATED level **plus** the following:
 
 #### Event Details
+
 | Field | Type | Description | Example | Redaction |
 |-------|------|-------------|---------|-----------|
 | `event_type` | string | Type of event | `heartbeat` | None |
@@ -205,6 +214,7 @@ All fields from AGGREGATED level **plus** the following:
 | `annotations` | object | Annotations | `{}` | Deep scan |
 
 #### Error Details (Non-PII)
+
 | Field | Type | Description | Example | Redaction |
 |-------|------|-------------|---------|-----------|
 | `error_type` | string | Error type | `ValidationError` | None |
@@ -213,6 +223,7 @@ All fields from AGGREGATED level **plus** the following:
 | `stack_trace_hash` | string | Hash of stack trace | `sha256:abc...` | Hash only |
 
 #### Tracing Fields
+
 | Field | Type | Description | Example | Redaction |
 |-------|------|-------------|---------|-----------|
 | `operation` | string | Operation name | `process_command` | None |
@@ -227,6 +238,7 @@ All fields from AGGREGATED level **plus** the following:
 ### 4.2 Forbidden Fields at DETAILED_NON_SENSITIVE Level
 
 #### Order/Intent Fields (ALWAYS FORBIDDEN unless RAW)
+
 | Field | Reason | Violation Type |
 |-------|--------|----------------|
 | `side` | Trading intent | `PROHIBITED_FIELD` |
@@ -267,6 +279,7 @@ All fields from AGGREGATED level **plus** the following:
 | `slippage` | Slippage | `PROHIBITED_FIELD` |
 
 #### PII Fields (Designed to be FORBIDDEN in Cloud; verify via redaction tests)
+
 | Field | Reason | Violation Type |
 |-------|--------|----------------|
 | `email` | Personal data | `SENSITIVE_PII` |
@@ -322,6 +335,7 @@ To use `RAW_ORDER_EVENTS`, ALL of the following must be true:
 All fields from AGGREGATED and DETAILED_NON_SENSITIVE levels **plus**:
 
 #### Order Fields
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `side` | string | Order side | `BUY`, `SELL` |
@@ -343,6 +357,7 @@ All fields from AGGREGATED and DETAILED_NON_SENSITIVE levels **plus**:
 | `slippage` | float | Slippage | `0.25` |
 
 #### Position Fields
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `position_side` | string | Position side | `LONG`, `SHORT` |
@@ -353,6 +368,7 @@ All fields from AGGREGATED and DETAILED_NON_SENSITIVE levels **plus**:
 | `realized_pnl` | float | Realized P&L | `1500.00` |
 
 #### Signal/Intent Fields (Audit Trail)
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `signal` | string | Trading signal | `ENTER_LONG` |
@@ -361,6 +377,7 @@ All fields from AGGREGATED and DETAILED_NON_SENSITIVE levels **plus**:
 | `target_qty` | float | Target quantity | `500.0` |
 
 #### Order Lifecycle
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `order_status` | string | Order status | `FILLED` |
@@ -370,6 +387,7 @@ All fields from AGGREGATED and DETAILED_NON_SENSITIVE levels **plus**:
 | `order_cancelled_at` | datetime | Order cancellation time | `null` |
 
 #### Execution Timing
+
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | `signal_timestamp` | datetime | Signal generation time | `2025-12-16T10:29:59Z` |
@@ -383,6 +401,7 @@ All fields from AGGREGATED and DETAILED_NON_SENSITIVE levels **plus**:
 Even with enterprise RAW access, the following are **ALWAYS FORBIDDEN**:
 
 #### Credentials (CRITICAL)
+
 | Field | Pattern | Reason |
 |-------|---------|--------|
 | `api_key` | `api[_-]?key` | Broker credential |
@@ -394,9 +413,10 @@ Even with enterprise RAW access, the following are **ALWAYS FORBIDDEN**:
 | `bearer_token` | `bearer[_-]?token` | Bearer token |
 | `password` | - | Password |
 | `passphrase` | - | Passphrase |
-| Broker-specific | `(binance|alpaca|...)_(key|secret|token)` | Broker credential |
+| Broker-specific | `(binance\|alpaca\|...)_(key\|secret\|token)` | Broker credential |
 
 #### Environment Variables
+
 | Pattern | Reason |
 |---------|--------|
 | `AWS_*` | Cloud credentials |
@@ -451,11 +471,13 @@ The validator performs deep scanning to detect order-like structures:
 ### 7.1 Order Structure Detection
 
 A payload containing all of these fields is considered an order structure:
+
 - `side` AND `quantity` AND `price`
 
 ### 7.2 Intent Structure Detection
 
 A payload containing:
+
 - (`signal` OR `target`) AND (`position` OR `allocation` OR `order`)
 
 ---

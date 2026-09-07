@@ -16,6 +16,7 @@ Test Coverage:
 
 import numpy as np
 import pytest
+
 pytest.importorskip("gymnasium")
 from typing import Dict, Optional
 from distributional_ppo import compute_grouped_explained_variance
@@ -53,10 +54,12 @@ class TestBug7GroupedEVEpsilon:
         groups = np.array([0] * 50 + [1] * 50)
 
         # Group 0: Very small variance (1e-10, above variance_floor 1e-12)
-        y_true = np.concatenate([
-            np.ones(50) * 10.0 + np.random.randn(50) * 1e-5,  # Very small noise
-            np.random.randn(50) * 5.0  # Normal variance
-        ])
+        y_true = np.concatenate(
+            [
+                np.ones(50) * 10.0 + np.random.randn(50) * 1e-5,  # Very small noise
+                np.random.randn(50) * 5.0,  # Normal variance
+            ]
+        )
         y_pred = y_true + np.random.randn(n) * 1e-6  # Very small prediction error
 
         ev_dict, summary = compute_grouped_explained_variance(
@@ -65,8 +68,9 @@ class TestBug7GroupedEVEpsilon:
 
         # Check that epsilon prevents division issues
         overall_ev = summary.get("mean_weighted")
-        assert overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev), \
-            "Overall EV should be finite or NaN (not inf) even with small variance"
+        assert (
+            overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev)
+        ), "Overall EV should be finite or NaN (not inf) even with small variance"
 
         # Group 0 might have very high EV (near 1.0) due to small error
         if "0" in ev_dict:
@@ -86,8 +90,7 @@ class TestBug7GroupedEVEpsilon:
         # With perfect predictions, var_err ≈ 0, so EV ≈ 1.0
         overall_ev = summary.get("mean_weighted")
         if overall_ev is not None and np.isfinite(overall_ev):
-            assert overall_ev >= 0.95, \
-                f"Perfect predictions should give EV ≈ 1.0, got {overall_ev}"
+            assert overall_ev >= 0.95, f"Perfect predictions should give EV ≈ 1.0, got {overall_ev}"
 
     def test_constant_predictions_ev_near_zero(self):
         """Test constant predictions (mean predictor) give EV ≈ 0.0."""
@@ -107,8 +110,9 @@ class TestBug7GroupedEVEpsilon:
         # Mean predictor should give EV ≈ 0.0
         overall_ev = summary.get("mean_weighted")
         if overall_ev is not None and np.isfinite(overall_ev):
-            assert -0.15 <= overall_ev <= 0.15, \
-                f"Mean predictor should give EV ≈ 0.0, got {overall_ev}"
+            assert (
+                -0.15 <= overall_ev <= 0.15
+            ), f"Mean predictor should give EV ≈ 0.0, got {overall_ev}"
 
     def test_worse_than_mean_ev_negative(self):
         """Test predictions worse than mean give negative EV."""
@@ -124,8 +128,9 @@ class TestBug7GroupedEVEpsilon:
         # Worse-than-mean predictions should give negative EV
         overall_ev = summary.get("mean_weighted")
         if overall_ev is not None and np.isfinite(overall_ev):
-            assert overall_ev < 0.0, \
-                f"Worse-than-mean predictions should give EV < 0, got {overall_ev}"
+            assert (
+                overall_ev < 0.0
+            ), f"Worse-than-mean predictions should give EV < 0, got {overall_ev}"
 
     def test_large_variance_ratio(self):
         """Test when var_err >> var_true (poor predictions)."""
@@ -133,10 +138,12 @@ class TestBug7GroupedEVEpsilon:
         groups = np.array([0] * 50 + [1] * 50)
 
         # Group 0: Small true variance, large error variance
-        y_true = np.concatenate([
-            np.ones(50) * 10.0 + np.random.randn(50) * 1.0,  # Small variance
-            np.random.randn(50) * 5.0  # Normal variance
-        ])
+        y_true = np.concatenate(
+            [
+                np.ones(50) * 10.0 + np.random.randn(50) * 1.0,  # Small variance
+                np.random.randn(50) * 5.0,  # Normal variance
+            ]
+        )
 
         # Add large random error to group 0
         y_pred = y_true.copy()
@@ -146,15 +153,15 @@ class TestBug7GroupedEVEpsilon:
 
         # Check that epsilon prevents numerical issues
         overall_ev = summary.get("mean_weighted")
-        assert overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev), \
-            "Overall EV should be finite or NaN (not inf)"
+        assert (
+            overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev)
+        ), "Overall EV should be finite or NaN (not inf)"
 
         # Group 0 should have very negative EV
         if "0" in ev_dict:
             ev_0 = ev_dict["0"]
             if np.isfinite(ev_0):
-                assert ev_0 < 0.0, \
-                    f"Group 0 with large errors should have negative EV, got {ev_0}"
+                assert ev_0 < 0.0, f"Group 0 with large errors should have negative EV, got {ev_0}"
 
     def test_numerical_stability_always_finite(self):
         """Test that results are always finite when var_true > variance_floor."""
@@ -173,8 +180,9 @@ class TestBug7GroupedEVEpsilon:
 
             # Overall should be finite or NaN (not inf)
             overall_ev = summary.get("mean_weighted")
-            assert overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev), \
-                f"Seed {seed}: Overall EV should be finite or NaN, not inf"
+            assert (
+                overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev)
+            ), f"Seed {seed}: Overall EV should be finite or NaN, not inf"
 
     def test_epsilon_prevents_division_by_near_zero(self):
         """Test that epsilon prevents division issues when var_true is very small."""
@@ -200,8 +208,7 @@ class TestBug7GroupedEVEpsilon:
         # Result should not have inf values
         for key, value in ev_dict.items():
             if not np.isnan(value):
-                assert np.isfinite(value), \
-                    f"Group {key} EV should be finite, got {value}"
+                assert np.isfinite(value), f"Group {key} EV should be finite, got {value}"
 
     def test_mixed_variance_scales(self):
         """Test groups with very different variance scales."""
@@ -211,11 +218,13 @@ class TestBug7GroupedEVEpsilon:
         # Group 0: Large variance
         # Group 1: Medium variance
         # Group 2: Small variance (but above variance_floor)
-        y_true = np.concatenate([
-            np.random.randn(100) * 100.0,  # Large
-            np.random.randn(100) * 10.0,   # Medium
-            np.random.randn(100) * 0.1     # Small
-        ])
+        y_true = np.concatenate(
+            [
+                np.random.randn(100) * 100.0,  # Large
+                np.random.randn(100) * 10.0,  # Medium
+                np.random.randn(100) * 0.1,  # Small
+            ]
+        )
 
         y_pred = y_true + np.random.randn(n) * 5.0
 
@@ -223,8 +232,9 @@ class TestBug7GroupedEVEpsilon:
 
         # Check that all groups are handled correctly
         overall_ev = summary.get("mean_weighted")
-        assert overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev), \
-            "Overall EV should be finite or NaN"
+        assert (
+            overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev)
+        ), "Overall EV should be finite or NaN"
 
     def test_single_sample_group_returns_nan(self):
         """Test that groups with only 1 sample return NaN."""
@@ -243,8 +253,9 @@ class TestBug7GroupedEVEpsilon:
 
         # But overall should still be finite (based on groups 0 and 1)
         overall_ev = summary.get("mean_weighted")
-        assert overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev), \
-            "Overall should be finite or NaN despite singleton group"
+        assert (
+            overall_ev is None or np.isfinite(overall_ev) or np.isnan(overall_ev)
+        ), "Overall should be finite or NaN despite singleton group"
 
     def test_fix_verifies_epsilon_added(self):
         """Verify that the fix (epsilon added) is present in the code."""
@@ -265,8 +276,9 @@ class TestBug7GroupedEVEpsilon:
         if "0" in ev_dict:
             ev_0 = ev_dict["0"]
             # With epsilon, result should be finite (not inf)
-            assert np.isfinite(ev_0) or np.isnan(ev_0), \
-                f"Bug #7 fix verification: EV should be finite or NaN, got {ev_0}"
+            assert np.isfinite(ev_0) or np.isnan(
+                ev_0
+            ), f"Bug #7 fix verification: EV should be finite or NaN, got {ev_0}"
 
 
 if __name__ == "__main__":

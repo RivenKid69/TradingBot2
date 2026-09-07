@@ -46,6 +46,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
 **Procedure**:
 
 1. **Preparation** (T-30 min)
+
    ```bash
    # Record current state
    ccea-agent positions list > pre_drill_positions.json
@@ -54,6 +55,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
    ```
 
 2. **Simulate Failure** (T=0)
+
    ```bash
    # Stop agent abruptly (simulate crash)
    kill -9 $(pgrep ccea-agent)
@@ -67,6 +69,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
    ```
 
 3. **Recovery** (Start clock)
+
    ```bash
    # Restore from backup
    ccea-agent restore --from-backup latest
@@ -78,6 +81,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
    ```
 
 4. **Validation**
+
    ```bash
    # Verify positions match
    ccea-agent positions list > post_drill_positions.json
@@ -93,6 +97,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
    ```
 
 5. **Calculate RTO**
+
    ```bash
    # Compare timestamps
    python3 -c "
@@ -110,6 +115,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
 **Procedure**:
 
 1. **Record baseline**
+
    ```bash
    # Count records
    sqlite3 ~/.ccea/telemetry.db "SELECT COUNT(*) FROM events;" > baseline_count.txt
@@ -119,6 +125,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
    ```
 
 2. **Simulate corruption**
+
    ```bash
    # Backup first
    cp ~/.ccea/telemetry.db ~/.ccea/telemetry.db.pre_drill
@@ -128,6 +135,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
    ```
 
 3. **Recover from backup**
+
    ```bash
    # Restore from backup
    cp /backup/telemetry.db ~/.ccea/telemetry.db
@@ -137,6 +145,7 @@ Per `docs/CYBERSECURITY_FRAMEWORK.md`:
    ```
 
 4. **Calculate RPO**
+
    ```bash
    # Compare event counts
    sqlite3 ~/.ccea/telemetry.db "SELECT COUNT(*) FROM events;" > recovered_count.txt

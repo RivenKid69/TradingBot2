@@ -39,8 +39,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class TrainingType(Enum):
     """Types of training programs."""
+
     SECURITY_AWARENESS = "security_awareness"
     OPERATIONAL_RESILIENCE = "operational_resilience"
     INCIDENT_RESPONSE = "incident_response"
@@ -52,6 +54,7 @@ class TrainingType(Enum):
 
 class ParticipationMode(Enum):
     """Training participation modes."""
+
     IN_PERSON = "in_person"
     REMOTE = "remote"
     HYBRID = "hybrid"
@@ -61,6 +64,7 @@ class ParticipationMode(Enum):
 
 class RequestStatus(Enum):
     """Training request status."""
+
     PENDING = "pending"
     ACCEPTED = "accepted"
     DECLINED = "declined"
@@ -72,6 +76,7 @@ class RequestStatus(Enum):
 
 class PersonnelRole(Enum):
     """Provider personnel roles for training."""
+
     SECURITY_CONTACT = "security_contact"
     INCIDENT_MANAGER = "incident_manager"
     TECHNICAL_LEAD = "technical_lead"
@@ -84,9 +89,11 @@ class PersonnelRole(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class TrainingCommitment:
     """Provider's training participation commitment per contract."""
+
     commitment_id: str = ""
     client_id: str = ""
     client_name: str = ""
@@ -136,6 +143,7 @@ class TrainingCommitment:
 @dataclass
 class TrainingRequest:
     """Client request for provider training participation."""
+
     request_id: str = ""
     client_id: str = ""
     client_name: str = ""
@@ -182,6 +190,7 @@ class TrainingRequest:
 @dataclass
 class TrainingSession:
     """Record of completed training session."""
+
     session_id: str = ""
     request_id: str = ""
     client_id: str = ""
@@ -218,6 +227,7 @@ class TrainingSession:
 @dataclass
 class QuarterlyUsage:
     """Track quarterly training participation usage."""
+
     client_id: str = ""
     year: int = 0
     quarter: int = 0
@@ -240,6 +250,7 @@ class QuarterlyUsage:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class TrainingParticipationConfig:
     """Configuration for training participation management."""
@@ -250,11 +261,13 @@ class TrainingParticipationConfig:
     default_minimum_notice_days: int = 14
 
     # Supported modes
-    supported_modes: List[str] = field(default_factory=lambda: [
-        ParticipationMode.REMOTE.value,
-        ParticipationMode.HYBRID.value,
-        ParticipationMode.MATERIALS_ONLY.value,
-    ])
+    supported_modes: List[str] = field(
+        default_factory=lambda: [
+            ParticipationMode.REMOTE.value,
+            ParticipationMode.HYBRID.value,
+            ParticipationMode.MATERIALS_ONLY.value,
+        ]
+    )
 
     # Response SLA
     response_sla_days: int = 5
@@ -273,6 +286,7 @@ class TrainingParticipationConfig:
 # Main Class
 # =============================================================================
 
+
 class DORATrainingParticipation:
     """
     DORA Training Participation Manager.
@@ -288,7 +302,7 @@ class DORATrainingParticipation:
         self._requests: Dict[str, TrainingRequest] = {}
         self._sessions: Dict[str, TrainingSession] = {}
         self._usage: Dict[str, QuarterlyUsage] = {}  # Key: client_id_year_quarter
-        self._lock = __import__('threading').RLock()
+        self._lock = __import__("threading").RLock()
 
         logger.info("DORATrainingParticipation initialized")
 
@@ -297,11 +311,7 @@ class DORATrainingParticipation:
     # -------------------------------------------------------------------------
 
     def create_commitment(
-        self,
-        client_id: str,
-        client_name: str,
-        contract_reference: str,
-        **kwargs
+        self, client_id: str, client_name: str, contract_reference: str, **kwargs
     ) -> TrainingCommitment:
         """
         Create training participation commitment for a client contract.
@@ -320,32 +330,25 @@ class DORATrainingParticipation:
             client_name=client_name,
             contract_reference=contract_reference,
             max_hours_per_quarter=kwargs.get(
-                'max_hours_per_quarter',
-                self.config.default_max_hours_per_quarter
+                "max_hours_per_quarter", self.config.default_max_hours_per_quarter
             ),
             max_sessions_per_quarter=kwargs.get(
-                'max_sessions_per_quarter',
-                self.config.default_max_sessions_per_quarter
+                "max_sessions_per_quarter", self.config.default_max_sessions_per_quarter
             ),
             minimum_notice_days=kwargs.get(
-                'minimum_notice_days',
-                self.config.default_minimum_notice_days
+                "minimum_notice_days", self.config.default_minimum_notice_days
             ),
-            training_types_covered=kwargs.get('training_types_covered', []),
-            participation_modes=kwargs.get('participation_modes', []),
-            designated_personnel=kwargs.get('designated_personnel', []),
-            effective_from=kwargs.get(
-                'effective_from',
-                datetime.now(timezone.utc).isoformat()
-            ),
+            training_types_covered=kwargs.get("training_types_covered", []),
+            participation_modes=kwargs.get("participation_modes", []),
+            designated_personnel=kwargs.get("designated_personnel", []),
+            effective_from=kwargs.get("effective_from", datetime.now(timezone.utc).isoformat()),
         )
 
         with self._lock:
             self._commitments[commitment.commitment_id] = commitment
 
         logger.info(
-            f"Created training commitment {commitment.commitment_id} "
-            f"for client {client_name}"
+            f"Created training commitment {commitment.commitment_id} " f"for client {client_name}"
         )
 
         return commitment
@@ -373,7 +376,7 @@ class DORATrainingParticipation:
         training_title: str,
         requested_date: str,
         duration_hours: float = 1.0,
-        **kwargs
+        **kwargs,
     ) -> TrainingRequest:
         """
         Receive and process a training participation request from client.
@@ -397,14 +400,11 @@ class DORATrainingParticipation:
             training_title=training_title,
             requested_date=requested_date,
             duration_hours=duration_hours,
-            participation_mode=kwargs.get(
-                'participation_mode',
-                ParticipationMode.REMOTE
-            ),
-            training_description=kwargs.get('training_description', ''),
-            personnel_requested=kwargs.get('personnel_requested', []),
-            personnel_count=kwargs.get('personnel_count', 1),
-            materials_provided=kwargs.get('materials_provided', True),
+            participation_mode=kwargs.get("participation_mode", ParticipationMode.REMOTE),
+            training_description=kwargs.get("training_description", ""),
+            personnel_requested=kwargs.get("personnel_requested", []),
+            personnel_count=kwargs.get("personnel_count", 1),
+            materials_provided=kwargs.get("materials_provided", True),
         )
 
         # Find commitment
@@ -447,7 +447,7 @@ class DORATrainingParticipation:
 
         # Check notice period
         if commitment:
-            requested = datetime.fromisoformat(request.requested_date.replace('Z', '+00:00'))
+            requested = datetime.fromisoformat(request.requested_date.replace("Z", "+00:00"))
             now = datetime.now(timezone.utc)
             notice_days = (requested - now).days
 
@@ -475,8 +475,7 @@ class DORATrainingParticipation:
         # Check training type supported
         if commitment and request.training_type.value not in commitment.training_types_covered:
             result["warnings"].append(
-                f"Training type {request.training_type.value} "
-                f"not in standard commitment scope"
+                f"Training type {request.training_type.value} " f"not in standard commitment scope"
             )
 
         # Set can_accept based on issues (not warnings)
@@ -490,7 +489,7 @@ class DORATrainingParticipation:
         accept: bool,
         response_notes: str = "",
         scheduled_date: str = "",
-        scheduled_personnel: List[Dict[str, str]] = None
+        scheduled_personnel: List[Dict[str, str]] = None,
     ) -> TrainingRequest:
         """
         Respond to a training request.
@@ -520,8 +519,7 @@ class DORATrainingParticipation:
             request.status = RequestStatus.DECLINED
 
         logger.info(
-            f"Responded to request {request_id}: "
-            f"{'Accepted' if accept else 'Declined'}"
+            f"Responded to request {request_id}: " f"{'Accepted' if accept else 'Declined'}"
         )
 
         return request
@@ -531,10 +529,7 @@ class DORATrainingParticipation:
     # -------------------------------------------------------------------------
 
     def record_session(
-        self,
-        request_id: str,
-        completion_status: str = "completed",
-        **kwargs
+        self, request_id: str, completion_status: str = "completed", **kwargs
     ) -> TrainingSession:
         """
         Record a completed training session.
@@ -562,9 +557,9 @@ class DORATrainingParticipation:
             participation_mode=request.participation_mode,
             completion_status=completion_status,
             provider_attendees=request.scheduled_personnel,
-            topics_covered=kwargs.get('topics_covered', []),
-            key_learnings=kwargs.get('key_learnings', ''),
-            action_items=kwargs.get('action_items', []),
+            topics_covered=kwargs.get("topics_covered", []),
+            key_learnings=kwargs.get("key_learnings", ""),
+            action_items=kwargs.get("action_items", []),
         )
 
         with self._lock:
@@ -581,8 +576,7 @@ class DORATrainingParticipation:
             request.status = RequestStatus.COMPLETED
 
         logger.info(
-            f"Recorded training session {session.session_id} "
-            f"for client {request.client_name}"
+            f"Recorded training session {session.session_id} " f"for client {request.client_name}"
         )
 
         return session
@@ -625,8 +619,9 @@ class DORATrainingParticipation:
             "sessions_completed": usage.sessions_completed,
             "sessions_remaining": usage.sessions_limit - usage.sessions_completed,
             "sessions_limit": usage.sessions_limit,
-            "utilization_pct": (usage.hours_used / usage.hours_limit * 100)
-            if usage.hours_limit > 0 else 0,
+            "utilization_pct": (
+                (usage.hours_used / usage.hours_limit * 100) if usage.hours_limit > 0 else 0
+            ),
         }
 
     # -------------------------------------------------------------------------
@@ -634,9 +629,7 @@ class DORATrainingParticipation:
     # -------------------------------------------------------------------------
 
     def generate_participation_report(
-        self,
-        client_id: Optional[str] = None,
-        year: Optional[int] = None
+        self, client_id: Optional[str] = None, year: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Generate training participation report.
@@ -652,9 +645,9 @@ class DORATrainingParticipation:
 
         # Filter sessions
         sessions = [
-            s for s in self._sessions.values()
-            if (not client_id or s.client_id == client_id)
-            and s.session_date.startswith(str(year))
+            s
+            for s in self._sessions.values()
+            if (not client_id or s.client_id == client_id) and s.session_date.startswith(str(year))
         ]
 
         # Aggregate statistics
@@ -673,11 +666,7 @@ class DORATrainingParticipation:
 
             # By client
             if session.client_id not in by_client:
-                by_client[session.client_id] = {
-                    "name": session.client_name,
-                    "count": 0,
-                    "hours": 0
-                }
+                by_client[session.client_id] = {"name": session.client_name, "count": 0, "hours": 0}
             by_client[session.client_id]["count"] += 1
             by_client[session.client_id]["hours"] += session.duration_hours
 
@@ -756,10 +745,7 @@ def get_default_manager() -> DORATrainingParticipation:
 
 
 def create_commitment(
-    client_id: str,
-    client_name: str,
-    contract_reference: str,
-    **kwargs
+    client_id: str, client_name: str, contract_reference: str, **kwargs
 ) -> TrainingCommitment:
     """Create training commitment using default manager."""
     return get_default_manager().create_commitment(
@@ -773,10 +759,9 @@ def receive_request(
     training_type: TrainingType,
     training_title: str,
     requested_date: str,
-    **kwargs
+    **kwargs,
 ) -> TrainingRequest:
     """Receive training request using default manager."""
     return get_default_manager().receive_training_request(
-        client_id, client_name, training_type, training_title,
-        requested_date, **kwargs
+        client_id, client_name, training_type, training_title, requested_date, **kwargs
     )

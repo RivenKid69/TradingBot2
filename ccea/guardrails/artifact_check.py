@@ -31,6 +31,7 @@ from ccea.crypto.digest import compute_file_digest
 
 class CheckSeverity(str, Enum):
     """Check severity level."""
+
     ERROR = "error"  # Blocks build/publish
     WARNING = "warning"  # Logs warning but continues
     INFO = "info"  # Informational only
@@ -38,6 +39,7 @@ class CheckSeverity(str, Enum):
 
 class CheckResult(str, Enum):
     """Check result."""
+
     PASSED = "passed"
     FAILED = "failed"
     SKIPPED = "skipped"
@@ -46,6 +48,7 @@ class CheckResult(str, Enum):
 @dataclass
 class GuardrailCheck:
     """Result of a guardrail check."""
+
     name: str
     result: CheckResult
     severity: CheckSeverity
@@ -68,6 +71,7 @@ class GuardrailCheck:
 @dataclass
 class GuardrailReport:
     """Complete guardrail check report."""
+
     checks: List[GuardrailCheck] = field(default_factory=list)
     passed: bool = True
     total_errors: int = 0
@@ -110,32 +114,45 @@ class ArtifactGuardrails:
         # API keys
         (r'(?i)(api[_-]?key|apikey)\s*[:=]\s*["\']?[\w\-]{20,}["\']?', "API key pattern"),
         (r'(?i)(secret[_-]?key|secretkey)\s*[:=]\s*["\']?[\w\-]{20,}["\']?', "Secret key pattern"),
-        (r'(?i)(private[_-]?key|privatekey)\s*[:=]\s*["\']?[\w\-]{20,}["\']?', "Private key pattern"),
+        (
+            r'(?i)(private[_-]?key|privatekey)\s*[:=]\s*["\']?[\w\-]{20,}["\']?',
+            "Private key pattern",
+        ),
         # AWS
-        (r'AKIA[0-9A-Z]{16}', "AWS Access Key ID"),
-        (r'(?i)aws[_-]?secret[_-]?access[_-]?key\s*[:=]', "AWS Secret Access Key"),
+        (r"AKIA[0-9A-Z]{16}", "AWS Access Key ID"),
+        (r"(?i)aws[_-]?secret[_-]?access[_-]?key\s*[:=]", "AWS Secret Access Key"),
         # Passwords
         (r'(?i)(password|passwd|pwd)\s*[:=]\s*["\'][^"\']{8,}["\']', "Password pattern"),
         # Tokens
         (r'(?i)(token|bearer)\s*[:=]\s*["\']?[\w\-\.]{20,}["\']?', "Token pattern"),
         # Private keys
-        (r'-----BEGIN (?:RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----', "Private key header"),
+        (r"-----BEGIN (?:RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----", "Private key header"),
         # Broker specific
-        (r'(?i)(binance|alpaca|deribit|oanda)[_-]?(api|secret)[_-]?key', "Broker API key pattern"),
+        (r"(?i)(binance|alpaca|deribit|oanda)[_-]?(api|secret)[_-]?key", "Broker API key pattern"),
     ]
 
     # Prohibited fields in manifest
-    PROHIBITED_MANIFEST_FIELDS = frozenset({
-        "side", "quantity", "qty", "price", "order_type",
-        "target_position", "execute_order", "place_order",
-        "submit_order", "intent", "signal", "order"
-    })
+    PROHIBITED_MANIFEST_FIELDS = frozenset(
+        {
+            "side",
+            "quantity",
+            "qty",
+            "price",
+            "order_type",
+            "target_position",
+            "execute_order",
+            "place_order",
+            "submit_order",
+            "intent",
+            "signal",
+            "order",
+        }
+    )
 
     # Prohibited message types
-    PROHIBITED_MESSAGE_TYPES = frozenset({
-        "PLACE_ORDER", "SUBMIT_ORDER", "EXECUTE_SIGNAL",
-        "SET_TARGET_POSITION", "SEND_INTENT"
-    })
+    PROHIBITED_MESSAGE_TYPES = frozenset(
+        {"PLACE_ORDER", "SUBMIT_ORDER", "EXECUTE_SIGNAL", "SET_TARGET_POSITION", "SEND_INTENT"}
+    )
 
     def __init__(
         self,
@@ -337,7 +354,9 @@ class ArtifactGuardrails:
             # Schema version check
             schema_version = manifest.get("schema_version", "0.0.0")
             if not self._version_gte(schema_version, self.min_schema_version):
-                errors.append(f"Schema version {schema_version} < minimum {self.min_schema_version}")
+                errors.append(
+                    f"Schema version {schema_version} < minimum {self.min_schema_version}"
+                )
 
             # Entrypoint validation
             entrypoint = manifest.get("entrypoint", {})
@@ -465,7 +484,9 @@ class ArtifactGuardrails:
                                 content = zf.read(name_in_zip).decode("utf-8", errors="ignore")
                                 found = self._scan_for_secrets(content)
                                 for pattern_name, line_num in found:
-                                    secrets_found.append(f"{name_in_zip}:{line_num}: {pattern_name}")
+                                    secrets_found.append(
+                                        f"{name_in_zip}:{line_num}: {pattern_name}"
+                                    )
                             except Exception:
                                 pass
             elif artifact_path.suffix == ".tar":
@@ -484,7 +505,8 @@ class ArtifactGuardrails:
                     result=CheckResult.FAILED,
                     severity=CheckSeverity.ERROR,
                     message="Potential secrets found in artifact",
-                    details="; ".join(secrets_found[:5]) + ("..." if len(secrets_found) > 5 else ""),
+                    details="; ".join(secrets_found[:5])
+                    + ("..." if len(secrets_found) > 5 else ""),
                     location=str(artifact_path),
                 )
 
@@ -558,17 +580,10 @@ class ArtifactGuardrails:
                 key_lower = key.lower()
                 if key_lower in self.PROHIBITED_MANIFEST_FIELDS:
                     found.append(f"{path}.{key}" if path else key)
-                found.extend(
-                    self._find_prohibited_fields(
-                        value,
-                        f"{path}.{key}" if path else key
-                    )
-                )
+                found.extend(self._find_prohibited_fields(value, f"{path}.{key}" if path else key))
         elif isinstance(data, list):
             for i, item in enumerate(data):
-                found.extend(
-                    self._find_prohibited_fields(item, f"{path}[{i}]")
-                )
+                found.extend(self._find_prohibited_fields(item, f"{path}[{i}]"))
 
         return found
 

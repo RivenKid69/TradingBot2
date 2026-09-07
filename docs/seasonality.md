@@ -65,6 +65,7 @@ The script writes line charts and heatmaps for liquidity and latency multipliers
    # To wrap the arrays under a specific symbol:
    python scripts/build_hourly_seasonality.py --data path/to/trades.parquet --out data/latency/liquidity_latency_seasonality.json --symbol BTCUSDT
    ```
+
 3. Optionally smooth the multipliers by applying a circular rolling mean
    and/or shrinking values towards 1.0:
 
@@ -81,6 +82,7 @@ The script writes line charts and heatmaps for liquidity and latency multipliers
    ```bash
    python scripts/validate_seasonality.py --historical path/to/trades.parquet --multipliers data/latency/liquidity_latency_seasonality.json
    ```
+
    See [seasonality_QA.md](seasonality_QA.md) for QA steps and acceptance thresholds.
 
 5. Optionally iterate on the multipliers by feeding previous validation metrics
@@ -93,6 +95,7 @@ The script writes line charts and heatmaps for liquidity and latency multipliers
      --out data/latency/liquidity_latency_seasonality.json \
      --prior-metrics reports/seasonality/validation_metrics.json
    ```
+
    The script converts each error ``e`` into a weight ``1/(1+e)`` to down-weight
     hours that previously deviated from historical data, then renormalises the
     multipliers so their average remains close to ``1.0``. Repeat the
@@ -232,9 +235,9 @@ snapshot and commit the updated
 The script performs two comparisons against the previously committed
 version:
 
-* if the maximum absolute difference across all multipliers is below
+- if the maximum absolute difference across all multipliers is below
   `SEASONALITY_THRESHOLD` (default `0.01`), the update is discarded;
-* if the difference exceeds `SEASONALITY_MAX_DELTA` (default `0.5`), the
+- if the difference exceeds `SEASONALITY_MAX_DELTA` (default `0.5`), the
   run aborts for manual inspection.
 
 Only changes that pass these checks are committed and pushed. The cron
@@ -248,7 +251,6 @@ Example crontab entry (UTC):
 5 3 * * 1 /path/to/repo/scripts/cron_update_seasonality.sh >> /var/log/seasonality.log 2>&1
 ```
 
-
 ## Operational checklist
 
 When deploying new multipliers:
@@ -258,7 +260,6 @@ When deploying new multipliers:
    and `seasonality_hash`.
 3. At runtime, the loader logs the hash and warns if it differs from the
    expected value.
-
 
 ## Performance
 

@@ -88,9 +88,7 @@ async def list_organizations(
 
     async with get_session() as session:
         # Count total
-        count_query = select(func.count(Organization.id)).where(
-            Organization.is_active == True
-        )
+        count_query = select(func.count(Organization.id)).where(Organization.is_active == True)
         total_result = await session.execute(count_query)
         total = total_result.scalar() or 0
 
@@ -205,9 +203,7 @@ async def get_organization(
     Users can only view their own organization unless superuser.
     """
     async with get_session() as session:
-        result = await session.execute(
-            select(Organization).where(Organization.id == org_id)
-        )
+        result = await session.execute(select(Organization).where(Organization.id == org_id))
         org = result.scalar_one_or_none()
 
         if org is None:
@@ -224,9 +220,7 @@ async def get_organization(
             )
 
         # Get workspace count
-        ws_count_query = select(func.count(Workspace.id)).where(
-            Workspace.organization_id == org.id
-        )
+        ws_count_query = select(func.count(Workspace.id)).where(Workspace.organization_id == org.id)
         ws_count_result = await session.execute(ws_count_query)
         ws_count = ws_count_result.scalar() or 0
 
@@ -259,9 +253,7 @@ async def update_organization(
     Requires org:write permission or superuser.
     """
     async with get_session() as session:
-        result = await session.execute(
-            select(Organization).where(Organization.id == org_id)
-        )
+        result = await session.execute(select(Organization).where(Organization.id == org_id))
         org = result.scalar_one_or_none()
 
         if org is None:
@@ -311,9 +303,7 @@ async def update_organization(
         await session.refresh(org)
 
         # Get workspace count
-        ws_count_query = select(func.count(Workspace.id)).where(
-            Workspace.organization_id == org.id
-        )
+        ws_count_query = select(func.count(Workspace.id)).where(Workspace.organization_id == org.id)
         ws_count_result = await session.execute(ws_count_query)
         ws_count = ws_count_result.scalar() or 0
 
@@ -332,6 +322,7 @@ async def update_organization(
 @router.delete(
     "/{org_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Delete organization",
     description="Soft delete organization (superuser only).",
 )
@@ -351,9 +342,7 @@ async def delete_organization(
         )
 
     async with get_session() as session:
-        result = await session.execute(
-            select(Organization).where(Organization.id == org_id)
-        )
+        result = await session.execute(select(Organization).where(Organization.id == org_id))
         org = result.scalar_one_or_none()
 
         if org is None:

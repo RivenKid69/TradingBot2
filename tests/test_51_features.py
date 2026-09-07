@@ -25,12 +25,12 @@ def test_feature_layout_and_obs_builder():
     using the resulting layout (if the Cython extension is available).
     """
     # Build layout for a single token and 21 norm columns (legacy default)
-    fc.make_layout({'max_num_tokens': 1, 'ext_norm_dim': 21})
+    fc.make_layout({"max_num_tokens": 1, "ext_norm_dim": 21})
 
     offsets, total = _get_block_offsets(fc.FEATURES_LAYOUT)
-    assert total == fc.N_FEATURES, (
-        f"N_FEATURES mismatch: layout sums to {total}, N_FEATURES={fc.N_FEATURES}"
-    )
+    assert (
+        total == fc.N_FEATURES
+    ), f"N_FEATURES mismatch: layout sums to {total}, N_FEATURES={fc.N_FEATURES}"
 
     # obs_builder is optional; skip the integration part if extension is missing
     obs_builder = pytest.importorskip("obs_builder")
@@ -86,11 +86,11 @@ def test_feature_layout_and_obs_builder():
     )
 
     # Ensure norm_cols values landed in the expected slice
-    ext_slice = obs[ext_start:ext_start + ext_dim]
+    ext_slice = obs[ext_start : ext_start + ext_dim]
     assert ext_slice.shape[0] == ext_dim, "External slice has unexpected shape"
     assert np.count_nonzero(ext_slice) > 0, "External slice should contain data"
 
     if enable_validity_flags:
         assert validity_start is not None, "Validity block offset missing"
-        validity_slice = obs[validity_start:validity_start + ext_dim]
+        validity_slice = obs[validity_start : validity_start + ext_dim]
         assert np.all(validity_slice == 1.0), "Validity flags should be set to 1.0"

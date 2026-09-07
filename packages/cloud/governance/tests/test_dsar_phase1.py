@@ -45,11 +45,13 @@ class TestDSARCCEABoundary:
     @pytest.fixture
     def mock_data_fetcher(self):
         """Mock data fetcher that returns sample data."""
+
         def fetcher(user_id: str, workspace_id: str, categories: set):
             return [
                 {"type": "telemetry", "user_id": user_id, "data": "sample"},
                 {"type": "commands", "user_id": user_id, "data": "sample"},
             ]
+
         return fetcher
 
     @pytest.fixture
@@ -135,11 +137,13 @@ class TestDSARExportBoundary:
     @pytest.fixture
     def mock_data_fetcher(self):
         """Mock data fetcher that returns sample data."""
+
         def fetcher(user_id: str, workspace_id: str, categories: set):
             return [
                 {"type": "telemetry", "user_id": user_id, "workspace_id": workspace_id},
                 {"type": "commands", "user_id": user_id, "workspace_id": workspace_id},
             ]
+
         return fetcher
 
     @pytest.fixture

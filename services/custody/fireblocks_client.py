@@ -49,7 +49,7 @@ class FireblocksError(RuntimeError):
 @dataclass
 class FireblocksConfig:
     api_key: str = ""
-    private_key_path: str = ""     # путь к .key/.pem (ключ НЕ копируется к нам)
+    private_key_path: str = ""  # путь к .key/.pem (ключ НЕ копируется к нам)
     base_url: str = PROD_URL
     default_vault_account_id: str = ""
 
@@ -61,12 +61,16 @@ class FireblocksConfig:
         """Безопасное представление для UI/статуса (без секрета)."""
         masked = ""
         if self.api_key:
-            masked = self.api_key[:4] + "…" + self.api_key[-4:] if len(self.api_key) > 8 else "設定済"
+            masked = (
+                self.api_key[:4] + "…" + self.api_key[-4:] if len(self.api_key) > 8 else "設定済"
+            )
         return {
             "configured": self.configured,
             "api_key_masked": masked,
             "private_key_path": self.private_key_path,
-            "private_key_present": bool(self.private_key_path and os.path.exists(self.private_key_path)),
+            "private_key_present": bool(
+                self.private_key_path and os.path.exists(self.private_key_path)
+            ),
             "base_url": self.base_url,
             "sandbox": self.base_url == SANDBOX_URL,
             "default_vault_account_id": self.default_vault_account_id,
@@ -119,11 +123,17 @@ def save_config(cfg: FireblocksConfig, path: str = CONFIG_PATH) -> None:
 class FireblocksClient:
     """Минимальный реальный клиент Fireblocks (read: vault accounts/balances)."""
 
-    def __init__(self, config: FireblocksConfig, *, private_key_pem: Optional[str] = None,
-                 timeout: int = 30, request_fn: Any = None):
+    def __init__(
+        self,
+        config: FireblocksConfig,
+        *,
+        private_key_pem: Optional[str] = None,
+        timeout: int = 30,
+        request_fn: Any = None,
+    ):
         self._cfg = config
         self._timeout = timeout
-        self._request_fn = request_fn   # инъекция транспорта для тестов
+        self._request_fn = request_fn  # инъекция транспорта для тестов
         # приватный ключ: из PEM (разовый) или из файла по пути
         self._pem = private_key_pem
         if self._pem is None and config.private_key_path:
@@ -147,7 +157,7 @@ class FireblocksClient:
             "uri": path,
             "nonce": secrets.randbits(63),
             "iat": now,
-            "exp": now + 50,                 # Fireblocks требует < ~55с
+            "exp": now + 50,  # Fireblocks требует < ~55с
             "sub": self._cfg.api_key,
             "bodyHash": body_hash,
         }
@@ -170,8 +180,10 @@ class FireblocksClient:
             return self._request_fn(method, url, headers, body_str)
 
         import requests
-        resp = requests.request(method, url, headers=headers,
-                                data=body_str if body_str else None, timeout=self._timeout)
+
+        resp = requests.request(
+            method, url, headers=headers, data=body_str if body_str else None, timeout=self._timeout
+        )
         if resp.status_code >= 400:
             raise FireblocksError(f"Fireblocks API {resp.status_code}: {resp.text[:200]}")
         return resp.json() if resp.content else {}
@@ -224,11 +236,20 @@ class FireblocksClient:
 # Fireblocks assetId → EVM-сеть для интеграции с Gas Guard. Гейтим ТОЛЬКО когда
 # уверены в маппинге; неизвестный asset → gas-guard N/A (честно, без выдумок).
 _ASSET_TO_CHAIN: Dict[str, str] = {
-    "ETH": "ethereum", "WETH": "ethereum", "USDC": "ethereum", "USDT": "ethereum", "DAI": "ethereum",
-    "ETH-AETH": "arbitrum", "USDC_ARB": "arbitrum",
-    "ETH-OPT": "optimism", "USDC_OPT": "optimism",
-    "MATIC": "polygon", "MATIC_POLYGON": "polygon", "USDC_POLYGON": "polygon",
-    "ETH-BASE": "base", "USDC_BASE": "base",
+    "ETH": "ethereum",
+    "WETH": "ethereum",
+    "USDC": "ethereum",
+    "USDT": "ethereum",
+    "DAI": "ethereum",
+    "ETH-AETH": "arbitrum",
+    "USDC_ARB": "arbitrum",
+    "ETH-OPT": "optimism",
+    "USDC_OPT": "optimism",
+    "MATIC": "polygon",
+    "MATIC_POLYGON": "polygon",
+    "USDC_POLYGON": "polygon",
+    "ETH-BASE": "base",
+    "USDC_BASE": "base",
 }
 
 _EVM_ADDR_RE = None
@@ -238,8 +259,9 @@ def asset_to_gas_chain(asset_id: str) -> Optional[str]:
     return _ASSET_TO_CHAIN.get((asset_id or "").upper())
 
 
-def validate_transfer(asset_id: str, amount: str, dest_type: str,
-                      dest_id: str = "", address: str = "") -> Optional[str]:
+def validate_transfer(
+    asset_id: str, amount: str, dest_type: str, dest_id: str = "", address: str = ""
+) -> Optional[str]:
     """Проверить параметры перевода. Возвращает текст ошибки или None."""
     global _EVM_ADDR_RE
     if not asset_id:
@@ -254,6 +276,7 @@ def validate_transfer(asset_id: str, amount: str, dest_type: str,
     if dest_type == "ONE_TIME_ADDRESS":
         if _EVM_ADDR_RE is None:
             import re
+
             _EVM_ADDR_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
         if not address or not _EVM_ADDR_RE.match(address):
             return "для ONE_TIME_ADDRESS нужен корректный EVM-адрес 0x…(40 hex)"
@@ -265,11 +288,19 @@ def validate_transfer(asset_id: str, amount: str, dest_type: str,
     return None
 
 
-def build_transfer_payload(*, asset_id: str, amount: str, source_vault_id: str,
-                           dest_type: str, dest_id: str = "", address: str = "",
-                           external_tx_id: str, note: str = "",
-                           fee_level: str = "MEDIUM",
-                           treat_as_gross: bool = False) -> Dict[str, Any]:
+def build_transfer_payload(
+    *,
+    asset_id: str,
+    amount: str,
+    source_vault_id: str,
+    dest_type: str,
+    dest_id: str = "",
+    address: str = "",
+    external_tx_id: str,
+    note: str = "",
+    fee_level: str = "MEDIUM",
+    treat_as_gross: bool = False,
+) -> Dict[str, Any]:
     """Собрать canonical Fireblocks-payload перевода (amount строкой, идемпотентно)."""
     dest_type = dest_type.upper()
     destination: Dict[str, Any] = {"type": dest_type}
@@ -281,24 +312,28 @@ def build_transfer_payload(*, asset_id: str, amount: str, source_vault_id: str,
         "assetId": asset_id,
         "source": {"type": "VAULT_ACCOUNT", "id": str(source_vault_id)},
         "destination": destination,
-        "amount": str(amount),               # НИКОГДА не float
+        "amount": str(amount),  # НИКОГДА не float
         "feeLevel": fee_level.upper(),
         "note": note or "",
-        "externalTxId": external_tx_id,      # идемпотентность
+        "externalTxId": external_tx_id,  # идемпотентность
         "treatAsGrossAmount": bool(treat_as_gross),
     }
 
 
-def connect(config: FireblocksConfig, *, private_key_pem: Optional[str] = None,
-            request_fn: Any = None) -> Dict[str, Any]:
+def connect(
+    config: FireblocksConfig, *, private_key_pem: Optional[str] = None, request_fn: Any = None
+) -> Dict[str, Any]:
     """Высокоуровневый connect для REST: честный статус.
 
     Возвращает {ok, ...} при успехе или {ok:False, error} — без исключений
     наружу, чтобы «нет аккаунта Fireblocks» было ответом, а не 500.
     """
     if not config.api_key or not (private_key_pem or config.private_key_path):
-        return {"ok": False, "configured": False,
-                "error": "Fireblocks не настроен: нужен API Key + приватный ключ (путь или PEM)"}
+        return {
+            "ok": False,
+            "configured": False,
+            "error": "Fireblocks не настроен: нужен API Key + приватный ключ (путь или PEM)",
+        }
     try:
         client = FireblocksClient(config, private_key_pem=private_key_pem, request_fn=request_fn)
         result = client.test_connection()
@@ -310,8 +345,16 @@ def connect(config: FireblocksConfig, *, private_key_pem: Optional[str] = None,
 
 
 __all__ = [
-    "CONFIG_PATH", "PROD_URL", "SANDBOX_URL",
-    "FireblocksClient", "FireblocksConfig", "FireblocksError",
-    "asset_to_gas_chain", "build_transfer_payload", "connect",
-    "load_config", "save_config", "validate_transfer",
+    "CONFIG_PATH",
+    "PROD_URL",
+    "SANDBOX_URL",
+    "FireblocksClient",
+    "FireblocksConfig",
+    "FireblocksError",
+    "asset_to_gas_chain",
+    "build_transfer_payload",
+    "connect",
+    "load_config",
+    "save_config",
+    "validate_transfer",
 ]

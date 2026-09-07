@@ -17,6 +17,7 @@ This document defines privacy controls, data governance, and GDPR-aligned design
 ### 1.1 Core Principle
 
 **Collect only what is necessary for:**
+
 - Service operation
 - Billing (if usage-based)
 - Support (with user consent)
@@ -39,7 +40,7 @@ This document defines privacy controls, data governance, and GDPR-aligned design
 | Exact position sizes (by default) | Privacy; aggregated telemetry only unless opted-in |
 | Account balances | Privacy |
 | Individual trade details (by default) | Privacy, IP protection; aggregated unless opted-in |
-| Strategy source code | IP protection (unless training service used)
+| Strategy source code | IP protection (unless training service used) |
 
 ---
 
@@ -72,6 +73,7 @@ This document defines privacy controls, data governance, and GDPR-aligned design
 ```
 
 **Not included:**
+
 - Individual order details
 - Symbol-level positions
 - Exact entry/exit prices
@@ -101,6 +103,7 @@ This document defines privacy controls, data governance, and GDPR-aligned design
 ```
 
 **Not included:**
+
 - Individual order details
 - Symbol names
 - Prices
@@ -111,6 +114,7 @@ This document defines privacy controls, data governance, and GDPR-aligned design
 This telemetry level is available **only for enterprise** customers with explicit opt-in.
 
 **Requirements for RAW_ORDER_EVENTS:**
+
 - Enterprise tier subscription required
 - Explicit per-workspace opt-in (audited)
 - Consent record with: who, what, when, scope, expiry
@@ -119,12 +123,14 @@ This telemetry level is available **only for enterprise** customers with explici
 - Alternative: "telemetry stays local" mode (no Cloud transmission)
 
 **Data included in RAW_ORDER_EVENTS (after mandatory redaction):**
+
 - Order events (masked account IDs)
 - Fill events
 - Position changes
 - Still **NEVER** includes: API keys, secrets, credentials, unmasked account IDs
 
 **Rationale for restrictions:**
+
 - Privacy risk: Order data reveals trading behavior
 - IP risk: Reveals strategy logic
 - Regulatory risk: Could be construed as advisory data
@@ -183,6 +189,7 @@ async def enforce_retention():
 ### 3.3 User-Initiated Deletion
 
 Users can request deletion of:
+
 - Account and all associated data
 - Specific strategies and artifacts
 - Telemetry data
@@ -210,11 +217,13 @@ API: DELETE /api/v1/telemetry?before={date}
 ### 4.2 EU Data Residency (Default for EU)
 
 **For EU users:**
+
 - All data stored in EU region by default
 - No data transfer outside EU without explicit consent
 - Sub-processors located in EU or with SCCs
 
 **Configuration:**
+
 ```yaml
 # workspace settings
 data_residency:
@@ -549,9 +558,10 @@ privacy:
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](./CCEA_OVERVIEW.md)
 - [Data Model](./CCEA_DATA_MODEL.md)
-- [Terms of Service Guidelines](../business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md)
+- [Terms of Service Guidelines](../history/business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md)
 - [GDPR Compliance Summary](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
 - [GDPR Implementation Plan](../compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md)
 - [Privacy Policy](../legal/PRIVACY_POLICY.md)

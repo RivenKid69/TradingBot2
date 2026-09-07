@@ -1,9 +1,0 @@
-{
-  "avg_psi": 1.5741499952251898,
-  "worst_feature": "keltner_upper_480",
-  "worst_psi": 7.071319956662011,
-  "status": "drift",
-  "status_label": "Сильный дрифт (PSI >= 0.25)",
-  "total_features": 103,
-  "n_samples": 1743
-}

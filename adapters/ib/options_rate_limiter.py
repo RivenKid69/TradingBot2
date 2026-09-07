@@ -60,23 +60,26 @@ T = TypeVar("T")
 # Priority Levels
 # =============================================================================
 
+
 class RequestPriority(IntEnum):
     """
     Priority levels for rate-limited requests.
 
     Lower value = higher priority.
     """
-    ORDER_EXECUTION = 0       # Highest: order execution
-    RISK_UPDATE = 1           # Position risk updates
-    FRONT_MONTH = 2           # Front-month chain refresh
-    ACTIVE_UNDERLYING = 3     # Active underlyings we're trading
-    BACKGROUND_REFRESH = 4    # Background chain updates
-    BACKFILL = 9              # Lowest: historical backfill
+
+    ORDER_EXECUTION = 0  # Highest: order execution
+    RISK_UPDATE = 1  # Position risk updates
+    FRONT_MONTH = 2  # Front-month chain refresh
+    ACTIVE_UNDERLYING = 3  # Active underlyings we're trading
+    BACKGROUND_REFRESH = 4  # Background chain updates
+    BACKFILL = 9  # Lowest: historical backfill
 
 
 # =============================================================================
 # Cached Option Chain
 # =============================================================================
+
 
 @dataclass
 class CachedChain:
@@ -92,6 +95,7 @@ class CachedChain:
         access_count: Number of times accessed (for LFU)
         last_access: Last access timestamp
     """
+
     underlying: str
     expiration: date
     chain_data: Any
@@ -117,6 +121,7 @@ class CachedChain:
 # =============================================================================
 # Options Chain Cache
 # =============================================================================
+
 
 class OptionsChainCache:
     """
@@ -243,9 +248,7 @@ class OptionsChainCache:
         # Determine TTL
         if ttl_sec is None:
             ttl_sec = (
-                self._front_month_ttl
-                if self._is_front_month(expiration)
-                else self._default_ttl
+                self._front_month_ttl if self._is_front_month(expiration) else self._default_ttl
             )
 
         with self._lock:
@@ -286,10 +289,7 @@ class OptionsChainCache:
                     count = 1
             else:
                 # Invalidate all entries for underlying
-                keys_to_remove = [
-                    k for k in self._cache.keys()
-                    if k.startswith(f"{underlying}:")
-                ]
+                keys_to_remove = [k for k in self._cache.keys() if k.startswith(f"{underlying}:")]
                 for key in keys_to_remove:
                     del self._cache[key]
                     count += 1
@@ -311,10 +311,7 @@ class OptionsChainCache:
         count = 0
 
         with self._lock:
-            expired_keys = [
-                k for k, v in self._cache.items()
-                if v.is_expired()
-            ]
+            expired_keys = [k for k, v in self._cache.items() if v.is_expired()]
             for key in expired_keys:
                 del self._cache[key]
                 count += 1
@@ -348,6 +345,7 @@ class OptionsChainCache:
 # Prioritized Request
 # =============================================================================
 
+
 @dataclass(order=True)
 class PrioritizedRequest:
     """
@@ -355,6 +353,7 @@ class PrioritizedRequest:
 
     Ordering is by priority (lower = higher priority), then by timestamp.
     """
+
     priority: int
     timestamp: float = field(compare=True)
     request_id: str = field(compare=False)
@@ -372,6 +371,7 @@ class PrioritizedRequest:
 # =============================================================================
 # IB Options Rate Limit Manager
 # =============================================================================
+
 
 class IBOptionsRateLimitManager:
     """
@@ -410,9 +410,9 @@ class IBOptionsRateLimitManager:
     """
 
     # Rate limits (with safety margins)
-    CHAIN_LIMIT_PER_MIN = 8      # IB limit: 10, safety: 8
-    QUOTE_LIMIT_PER_SEC = 80     # IB limit: 100, safety: 80
-    ORDER_LIMIT_PER_SEC = 40     # IB limit: 50, safety: 40
+    CHAIN_LIMIT_PER_MIN = 8  # IB limit: 10, safety: 8
+    QUOTE_LIMIT_PER_SEC = 80  # IB limit: 100, safety: 80
+    ORDER_LIMIT_PER_SEC = 40  # IB limit: 50, safety: 40
     MAX_MARKET_DATA_LINES = 100  # Hard limit
 
     def __init__(
@@ -637,10 +637,7 @@ class IBOptionsRateLimitManager:
             self._reset_minute_counter_if_needed()
             self._reset_second_counter_if_needed()
 
-            while (
-                self._request_queue
-                and processed < max_requests
-            ):
+            while self._request_queue and processed < max_requests:
                 # Peek at next request
                 if not self._request_queue:
                     break
@@ -862,6 +859,7 @@ class IBOptionsRateLimitManager:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_options_rate_limiter(
     profile: str = "default",

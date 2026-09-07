@@ -87,9 +87,7 @@ def test_binance_ws_bar_uses_close_timestamp_for_ttl(monkeypatch):
         update=lambda *a, **k: None,
     )
     monkeypatch.setattr(service_signal_runner, "signal_bus", dummy_signal_bus)
-    monkeypatch.setattr(
-        service_signal_runner, "publish_signal_envelope", lambda *a, **k: True
-    )
+    monkeypatch.setattr(service_signal_runner, "publish_signal_envelope", lambda *a, **k: True)
 
     monkeypatch.setattr(clock, "now_ms", lambda: close_ts + 1_000)
 

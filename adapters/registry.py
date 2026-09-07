@@ -74,8 +74,10 @@ A = TypeVar("A", bound=BaseAdapter)
 # Adapter Types
 # =========================
 
+
 class AdapterType(str, Enum):
     """Types of adapters that can be registered."""
+
     # Standard adapters
     MARKET_DATA = "market_data"
     FEE = "fee"
@@ -86,11 +88,11 @@ class AdapterType(str, Enum):
     EARNINGS = "earnings"  # Earnings calendar and estimates (Phase 7)
     COMBINED = "combined"  # ExchangeAdapter implementing all interfaces
     # Futures-specific adapters
-    FUTURES_MARKET_DATA = "futures_market_data"      # Mark price, funding, OI
+    FUTURES_MARKET_DATA = "futures_market_data"  # Mark price, funding, OI
     FUTURES_EXCHANGE_INFO = "futures_exchange_info"  # Contract specs, leverage
     FUTURES_ORDER_EXECUTION = "futures_order_execution"  # Margin, leverage control
     # Options-specific adapters (Phase 2)
-    OPTIONS_MARKET_DATA = "options_market_data"      # Historical chains, quotes, Greeks
+    OPTIONS_MARKET_DATA = "options_market_data"  # Historical chains, quotes, Greeks
     OPTIONS_ORDER_EXECUTION = "options_order_execution"  # Single-leg options orders
     OPTIONS_COMBO = "options_combo"  # Multi-leg spreads, combos (IB)
 
@@ -120,9 +122,11 @@ ADAPTER_BASE_CLASSES: Dict[AdapterType, Type[BaseAdapter]] = {
 # Registration Entry
 # =========================
 
+
 @dataclass
 class AdapterRegistration:
     """Registration entry for an adapter implementation."""
+
     vendor: ExchangeVendor
     adapter_type: AdapterType
     adapter_class: Type[BaseAdapter]
@@ -154,6 +158,7 @@ class AdapterRegistration:
 # =========================
 # Adapter Registry
 # =========================
+
 
 class AdapterRegistry:
     """
@@ -328,9 +333,7 @@ class AdapterRegistry:
             if combined is not None:
                 return combined.create(config)
 
-            raise ValueError(
-                f"No adapter registered for {vendor.value}/{adapter_type.value}"
-            )
+            raise ValueError(f"No adapter registered for {vendor.value}/{adapter_type.value}")
 
         return registration.create(config)
 
@@ -432,6 +435,7 @@ def register(
 # =========================
 # Convenience Factory Functions
 # =========================
+
 
 def create_market_data_adapter(
     vendor: Union[ExchangeVendor, str],
@@ -595,6 +599,7 @@ def create_earnings_adapter(
 # Futures Adapter Factory Functions
 # =========================
 
+
 def create_futures_market_data_adapter(
     vendor: Union[ExchangeVendor, str],
     config: Optional[Mapping[str, Any]] = None,
@@ -667,6 +672,7 @@ def create_futures_order_execution_adapter(
 # =========================
 # Options Adapter Factory Functions
 # =========================
+
 
 def create_options_market_data_adapter(
     vendor: Union[ExchangeVendor, str],
@@ -772,6 +778,7 @@ def create_options_combo_adapter(
 # =========================
 # Deribit Adapter Factory Functions (Phase 2B)
 # =========================
+
 
 def create_deribit_options_market_data_adapter(
     config: Optional[Mapping[str, Any]] = None,
@@ -894,6 +901,7 @@ def create_deribit_margin_calculator(
     """
     try:
         from adapters.deribit.margin import DeribitMarginCalculator
+
         return DeribitMarginCalculator(**(config or {}))
     except ImportError:
         raise ImportError("Deribit adapter module not available")
@@ -934,6 +942,7 @@ def create_deribit_websocket_client(
     """
     try:
         from adapters.deribit.websocket import DeribitWebSocketClient, DeribitStreamConfig
+
         stream_config = DeribitStreamConfig(
             testnet=testnet,
             client_id=client_id,
@@ -949,9 +958,11 @@ def create_deribit_websocket_client(
 # Configuration-Driven Creation
 # =========================
 
+
 @dataclass
 class AdapterConfig:
     """Configuration for adapter creation."""
+
     vendor: str
     adapter_type: str = "combined"
     config: Dict[str, Any] = field(default_factory=dict)
@@ -989,6 +1000,7 @@ def create_from_config(adapter_config: Union[AdapterConfig, Mapping[str, Any]]) 
 # Decorator for Registration
 # =========================
 
+
 def register_adapter(
     vendor: ExchangeVendor,
     adapter_type: AdapterType,
@@ -1002,6 +1014,7 @@ def register_adapter(
         class BinanceMarketDataAdapter(MarketDataAdapter):
             ...
     """
+
     def decorator(cls: Type[A]) -> Type[A]:
         register(vendor, adapter_type, cls, **kwargs)
         return cls

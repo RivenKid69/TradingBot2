@@ -1,0 +1,36 @@
+# Bandit configuration.
+#
+# This lived in `.bandit`, written in INI syntax. Bandit reads `-c` as YAML, so
+# every run died with "Error parsing file" and bandit never scanned anything.
+# The file is also renamed, because bandit auto-discovers a project-level
+# `.bandit` and expects *that* one to be INI — keeping a YAML file under that
+# name produces a parse warning on every invocation.
+# https://bandit.readthedocs.io/en/latest/config.html
+
+exclude_dirs:
+  - ./tests
+  - ./.git
+  - ./__pycache__
+  - ./venv
+  - ./.venv
+  - ./env
+  - ./build
+  - ./dist
+  - ./.hypothesis
+  - ./docs
+  - ./data
+  - ./models
+  - ./logs
+  - ./benchmarks
+  - ./web_assets
+  - ./node_modules
+
+# B101 assert_used      - asserts are used in non-production paths
+# B311 random           - random is used for simulation, not for cryptography
+# B314 xml_ElementTree  - not applicable here
+# B405 import_xml_etree - not applicable here
+skips:
+  - B101
+  - B311
+  - B314
+  - B405

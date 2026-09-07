@@ -13,9 +13,11 @@ Test strategy:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import tempfile
 import os
+import gymnasium as gym
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
@@ -24,7 +26,12 @@ from typing import Dict, Any
 try:
     from distributional_ppo import DistributionalPPO
     from variance_gradient_scaler import VarianceGradientScaler
-    from adversarial.pbt_scheduler import PBTScheduler, PBTConfig, HyperparamConfig, PopulationMember
+    from adversarial.pbt_scheduler import (
+        PBTScheduler,
+        PBTConfig,
+        HyperparamConfig,
+        PopulationMember,
+    )
     from custom_policy_patch1 import CustomActorCriticPolicy
     from stable_baselines3.common.vec_env import DummyVecEnv
 except ImportError as e:
@@ -33,11 +40,13 @@ except ImportError as e:
 
 def make_test_env(seed=None):
     """Create a Pendulum environment for testing (continuous action space)."""
+
     def _make():
         env = gym.make("Pendulum-v1")
         if seed is not None:
             env.reset(seed=seed)
         return env
+
     return DummyVecEnv([_make])
 
 
@@ -83,8 +92,12 @@ def get_vgs_state(model: DistributionalPPO) -> Dict[str, Any]:
 def print_vgs_comparison(name_a: str, state_a: Dict, name_b: str, state_b: Dict):
     """Print VGS state comparison."""
     print(f"\nVGS State Comparison:")
-    grad_var_a_str = f"{state_a['grad_var_ema']:.6e}" if state_a['grad_var_ema'] is not None else 'None'
-    grad_var_b_str = f"{state_b['grad_var_ema']:.6e}" if state_b['grad_var_ema'] is not None else 'None'
+    grad_var_a_str = (
+        f"{state_a['grad_var_ema']:.6e}" if state_a["grad_var_ema"] is not None else "None"
+    )
+    grad_var_b_str = (
+        f"{state_b['grad_var_ema']:.6e}" if state_b["grad_var_ema"] is not None else "None"
+    )
     print(f"  {name_a}: step_count={state_a['step_count']}, grad_var_ema={grad_var_a_str}")
     print(f"  {name_b}: step_count={state_b['step_count']}, grad_var_ema={grad_var_b_str}")
 
@@ -112,7 +125,11 @@ class TestVGS_PBT_StateMismatch:
         vgs_before = get_vgs_state(model_original)
         print(f"\n2. VGS state before save:")
         print(f"   step_count: {vgs_before['step_count']}")
-        grad_var_str = f"{vgs_before['grad_var_ema']:.6e}" if vgs_before['grad_var_ema'] is not None else 'None'
+        grad_var_str = (
+            f"{vgs_before['grad_var_ema']:.6e}"
+            if vgs_before["grad_var_ema"] is not None
+            else "None"
+        )
         print(f"   grad_var_ema: {grad_var_str}")
 
         # Save and load
@@ -128,20 +145,26 @@ class TestVGS_PBT_StateMismatch:
             vgs_after = get_vgs_state(model_loaded)
             print(f"\n5. VGS state after load:")
             print(f"   step_count: {vgs_after['step_count']}")
-            grad_var_str = f"{vgs_after['grad_var_ema']:.6e}" if vgs_after['grad_var_ema'] is not None else 'None'
+            grad_var_str = (
+                f"{vgs_after['grad_var_ema']:.6e}"
+                if vgs_after["grad_var_ema"] is not None
+                else "None"
+            )
             print(f"   grad_var_ema: {grad_var_str}")
 
             # Verify state is preserved
             print("\n6. Verification:")
-            assert vgs_after['enabled'], "VGS should be enabled after load"
-            assert vgs_after['step_count'] == vgs_before['step_count'], \
-                f"step_count mismatch: {vgs_after['step_count']} != {vgs_before['step_count']}"
+            assert vgs_after["enabled"], "VGS should be enabled after load"
+            assert (
+                vgs_after["step_count"] == vgs_before["step_count"]
+            ), f"step_count mismatch: {vgs_after['step_count']} != {vgs_before['step_count']}"
 
-            if vgs_before['grad_var_ema'] is not None and vgs_after['grad_var_ema'] is not None:
-                var_diff = abs(vgs_after['grad_var_ema'] - vgs_before['grad_var_ema'])
+            if vgs_before["grad_var_ema"] is not None and vgs_after["grad_var_ema"] is not None:
+                var_diff = abs(vgs_after["grad_var_ema"] - vgs_before["grad_var_ema"])
                 tolerance = 1e-8
-                assert var_diff < tolerance, \
-                    f"grad_var_ema mismatch: diff={var_diff:.2e} > tolerance={tolerance:.2e}"
+                assert (
+                    var_diff < tolerance
+                ), f"grad_var_ema mismatch: diff={var_diff:.2e} > tolerance={tolerance:.2e}"
                 print(f"   [OK] VGS state preserved (diff={var_diff:.2e})")
             else:
                 print("   [WARN] VGS grad_var_ema is None (not enough training)")
@@ -180,8 +203,7 @@ class TestVGS_PBT_StateMismatch:
         vgs_a_before = get_vgs_state(model_a)
         vgs_b = get_vgs_state(model_b)
 
-        print_vgs_comparison("Member A (before exploit)", vgs_a_before,
-                           "Member B (source)", vgs_b)
+        print_vgs_comparison("Member A (before exploit)", vgs_a_before, "Member B (source)", vgs_b)
 
         # Save full checkpoint
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -196,24 +218,27 @@ class TestVGS_PBT_StateMismatch:
 
             vgs_a_after = get_vgs_state(model_a_loaded)
 
-            print_vgs_comparison("Member A (after load)", vgs_a_after,
-                               "Member B (expected)", vgs_b)
+            print_vgs_comparison("Member A (after load)", vgs_a_after, "Member B (expected)", vgs_b)
 
             # Verification
             print("\n5. Verification:")
-            step_match = (vgs_a_after['step_count'] == vgs_b['step_count'])
+            step_match = vgs_a_after["step_count"] == vgs_b["step_count"]
 
             if step_match:
-                print(f"   [OK] VGS step_count matches ({vgs_a_after['step_count']} == {vgs_b['step_count']})")
+                print(
+                    f"   [OK] VGS step_count matches ({vgs_a_after['step_count']} == {vgs_b['step_count']})"
+                )
             else:
-                print(f"   [FAIL] VGS step_count mismatch: {vgs_a_after['step_count']} != {vgs_b['step_count']}")
+                print(
+                    f"   [FAIL] VGS step_count mismatch: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
+                )
 
             # Check grad_var_ema
             var_match = True
-            if vgs_a_after['grad_var_ema'] is not None and vgs_b['grad_var_ema'] is not None:
-                var_diff = abs(vgs_a_after['grad_var_ema'] - vgs_b['grad_var_ema'])
+            if vgs_a_after["grad_var_ema"] is not None and vgs_b["grad_var_ema"] is not None:
+                var_diff = abs(vgs_a_after["grad_var_ema"] - vgs_b["grad_var_ema"])
                 tolerance = 1e-8
-                var_match = (var_diff < tolerance)
+                var_match = var_diff < tolerance
 
                 if var_match:
                     print(f"   [OK] VGS grad_var_ema matches (diff={var_diff:.2e})")
@@ -242,7 +267,9 @@ class TestVGS_PBT_StateMismatch:
 
             # Assertions
             assert training_ok, "Training should work after checkpoint load"
-            assert step_match, f"VGS step_count should match: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
+            assert (
+                step_match
+            ), f"VGS step_count should match: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
             assert var_match, "VGS grad_var_ema should match"
 
     def test_pbt_scheduler_direct_exploitation(self):
@@ -270,8 +297,7 @@ class TestVGS_PBT_StateMismatch:
         vgs_a_before = get_vgs_state(model_a)
         vgs_b = get_vgs_state(model_b)
 
-        print_vgs_comparison("Member A (before exploit)", vgs_a_before,
-                           "Member B (source)", vgs_b)
+        print_vgs_comparison("Member A (before exploit)", vgs_a_before, "Member B (source)", vgs_b)
 
         # Simulate PBT behavior: Save ONLY policy.state_dict()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -295,18 +321,21 @@ class TestVGS_PBT_StateMismatch:
             # Check VGS state AFTER exploitation
             vgs_a_after = get_vgs_state(model_a)
 
-            print_vgs_comparison("Member A (after PBT exploit)", vgs_a_after,
-                               "Member B (expected)", vgs_b)
+            print_vgs_comparison(
+                "Member A (after PBT exploit)", vgs_a_after, "Member B (expected)", vgs_b
+            )
 
             # Verification
             print("\n5. Verification:")
-            step_match = (vgs_a_after['step_count'] == vgs_b['step_count'])
+            step_match = vgs_a_after["step_count"] == vgs_b["step_count"]
 
             if step_match:
                 print(f"   [OK] VGS step_count matches")
                 problem_confirmed = False
             else:
-                print(f"   [FAIL] VGS step_count mismatch: {vgs_a_after['step_count']} != {vgs_b['step_count']}")
+                print(
+                    f"   [FAIL] VGS step_count mismatch: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
+                )
                 print(f"         Member A has: {vgs_a_after['step_count']}")
                 print(f"         Member B has: {vgs_b['step_count']}")
                 problem_confirmed = True
@@ -346,7 +375,9 @@ class TestVGS_PBT_StateMismatch:
             # This assertion SHOULD FAIL, confirming the bug
             if not step_match:
                 print("\n[ERROR] VGS state mismatch confirmed - this is the bug we need to fix!")
-            assert step_match, f"VGS step_count should match but doesn't: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
+            assert (
+                step_match
+            ), f"VGS step_count should match but doesn't: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
 
 
 if __name__ == "__main__":
@@ -373,8 +404,10 @@ if __name__ == "__main__":
     except AssertionError as e:
         print(f"\nX TEST FAILED: {e}")
         import traceback
+
         traceback.print_exc()
     except Exception as e:
         print(f"\nX UNEXPECTED ERROR: {e}")
         import traceback
+
         traceback.print_exc()

@@ -214,7 +214,9 @@ def main() -> None:
     p = argparse.ArgumentParser(
         description="Fetch Binance exchangeInfo and save minimal specs JSON (tickSize/stepSize/minNotional) per symbol.",
     )
-    p.add_argument("--market", choices=["spot", "futures"], default="futures", help="Какой рынок опрашивать")
+    p.add_argument(
+        "--market", choices=["spot", "futures"], default="futures", help="Какой рынок опрашивать"
+    )
     p.add_argument("--symbols", default="", help="Список символов через запятую; пусто = все")
     p.add_argument("--out", default="data/exchange_specs.json", help="Куда сохранить JSON")
     p.add_argument(
@@ -299,7 +301,9 @@ def main() -> None:
         def _checkpoint_listener(payload: dict[str, Any]) -> None:
             checkpoint_state["payload"] = payload
 
-        def _handle_signal(signum: int, frame: Any | None) -> None:  # pragma: no cover - signal handler
+        def _handle_signal(
+            signum: int, frame: Any | None
+        ) -> None:  # pragma: no cover - signal handler
             payload = checkpoint_state.get("payload")
             if payload is not None:
                 session.save_checkpoint(payload)

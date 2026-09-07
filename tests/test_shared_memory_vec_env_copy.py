@@ -1,6 +1,8 @@
 import numpy as np
-import pathlib, sys
+import pathlib
+import sys
 import pytest
+
 pytest.importorskip("torch")
 sys.path.append(str(pathlib.Path(__file__).resolve().parent.parent))
 
@@ -9,6 +11,7 @@ try:
     from shared_memory_vec_env import SharedMemoryVecEnv
 except ModuleNotFoundError:
     pytest.skip("stable-baselines3 or gymnasium is not available", allow_module_level=True)
+
 
 class DummyEnv(Env):
     def __init__(self):
@@ -26,7 +29,7 @@ def test_step_returns_copies():
     vec_env = SharedMemoryVecEnv([lambda: DummyEnv()])
     obs = vec_env.reset()
     assert obs.base is None
-    obs, rewards, dones, _ = vec_env.step(np.zeros((1,1), dtype=np.float32))
+    obs, rewards, dones, _ = vec_env.step(np.zeros((1, 1), dtype=np.float32))
     assert obs.base is None
     assert rewards.base is None
     assert dones.base is None

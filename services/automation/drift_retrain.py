@@ -37,9 +37,13 @@ class RetrainDecision:
     on_cooldown: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"should_retrain": self.should_retrain, "reason": self.reason,
-                "max_psi": self.max_psi, "triggering_features": list(self.triggering_features),
-                "on_cooldown": self.on_cooldown}
+        return {
+            "should_retrain": self.should_retrain,
+            "reason": self.reason,
+            "max_psi": self.max_psi,
+            "triggering_features": list(self.triggering_features),
+            "on_cooldown": self.on_cooldown,
+        }
 
 
 def psi_from_report(report: Any) -> Dict[str, float]:
@@ -61,8 +65,14 @@ def psi_from_report(report: Any) -> Dict[str, float]:
 
 
 class DriftRetrainScheduler:
-    def __init__(self, *, psi_threshold: float = PSI_SIGNIFICANT, cooldown_sec: float = 86_400.0,
-                 min_features: int = 1, time_fn: Callable[[], float] = _time.time) -> None:
+    def __init__(
+        self,
+        *,
+        psi_threshold: float = PSI_SIGNIFICANT,
+        cooldown_sec: float = 86_400.0,
+        min_features: int = 1,
+        time_fn: Callable[[], float] = _time.time,
+    ) -> None:
         self.psi_threshold = float(psi_threshold)
         self.cooldown_sec = float(cooldown_sec)
         self.min_features = int(min_features)
@@ -74,25 +84,34 @@ class DriftRetrainScheduler:
         psi = psi_from_report(report)
         if not psi:
             return RetrainDecision(False, "no PSI data", 0.0)
-        trig = sorted([f for f, v in psi.items() if v >= self.psi_threshold],
-                      key=lambda f: -psi[f])
+        trig = sorted([f for f, v in psi.items() if v >= self.psi_threshold], key=lambda f: -psi[f])
         max_psi = max(psi.values())
         if len(trig) < self.min_features:
-            return RetrainDecision(False, f"max PSI {max_psi:.3f} < threshold {self.psi_threshold}", max_psi)
+            return RetrainDecision(
+                False, f"max PSI {max_psi:.3f} < threshold {self.psi_threshold}", max_psi
+            )
         # cooldown
-        if self._last_retrain_ts is not None and \
-                (self._time() - self._last_retrain_ts) < self.cooldown_sec:
+        if (
+            self._last_retrain_ts is not None
+            and (self._time() - self._last_retrain_ts) < self.cooldown_sec
+        ):
             return RetrainDecision(False, "retrain on cooldown", max_psi, trig, on_cooldown=True)
-        return RetrainDecision(True, f"{len(trig)} feature(s) drift PSI>={self.psi_threshold}",
-                               max_psi, trig)
+        return RetrainDecision(
+            True, f"{len(trig)} feature(s) drift PSI>={self.psi_threshold}", max_psi, trig
+        )
 
-    def run(self, report: Any, retrain_fn: Optional[Callable[[RetrainDecision], Any]] = None) -> RetrainDecision:
+    def run(
+        self, report: Any, retrain_fn: Optional[Callable[[RetrainDecision], Any]] = None
+    ) -> RetrainDecision:
         """Проверить и при необходимости запустить ретрейн (callback). Фиксирует cooldown."""
         decision = self.check(report)
         if decision.should_retrain:
             self._last_retrain_ts = self._time()
-            logger.warning("DriftRetrain: triggering retrain — %s (features=%s)",
-                           decision.reason, decision.triggering_features)
+            logger.warning(
+                "DriftRetrain: triggering retrain — %s (features=%s)",
+                decision.reason,
+                decision.triggering_features,
+            )
             if retrain_fn is not None:
                 try:
                     retrain_fn(decision)
@@ -119,9 +138,15 @@ class DriftRetrainScheduler:
         Returns a structured outcome dict so the caller has full provenance.
         """
         decision = self.check(report)
-        out: Dict[str, Any] = {"decision": decision.to_dict(), "retrained": False,
-                               "registered": False, "verified": None, "promoted": False,
-                               "artifact": None, "error": None}
+        out: Dict[str, Any] = {
+            "decision": decision.to_dict(),
+            "retrained": False,
+            "registered": False,
+            "verified": None,
+            "promoted": False,
+            "artifact": None,
+            "error": None,
+        }
         if not decision.should_retrain:
             return out
         self._last_retrain_ts = self._time()
@@ -139,8 +164,13 @@ class DriftRetrainScheduler:
             if verified and promote_fn is not None:
                 promote_fn(artifact)
                 out["promoted"] = True
-            logger.warning("DriftRetrain closed-loop: retrained=%s registered=%s verified=%s promoted=%s",
-                           out["retrained"], out["registered"], out["verified"], out["promoted"])
+            logger.warning(
+                "DriftRetrain closed-loop: retrained=%s registered=%s verified=%s promoted=%s",
+                out["retrained"],
+                out["registered"],
+                out["verified"],
+                out["promoted"],
+            )
         except Exception as exc:  # pragma: no cover - never crash the loop
             out["error"] = str(exc)
             logger.error("closed-loop retrain failed: %s", exc)
@@ -151,5 +181,10 @@ class DriftRetrainScheduler:
         return self._last_retrain_ts
 
 
-__all__ = ["RetrainDecision", "DriftRetrainScheduler", "psi_from_report",
-           "PSI_MODERATE", "PSI_SIGNIFICANT"]
+__all__ = [
+    "RetrainDecision",
+    "DriftRetrainScheduler",
+    "psi_from_report",
+    "PSI_MODERATE",
+    "PSI_SIGNIFICANT",
+]

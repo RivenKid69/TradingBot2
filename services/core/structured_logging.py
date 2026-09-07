@@ -37,9 +37,7 @@ from typing import Any, Dict, List, Optional, Union
 from contextlib import contextmanager
 
 # Context variable for correlation ID
-_correlation_id: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "correlation_id", default=""
-)
+_correlation_id: contextvars.ContextVar[str] = contextvars.ContextVar("correlation_id", default="")
 
 # Context variable for additional context
 _log_context: contextvars.ContextVar[Dict[str, Any]] = contextvars.ContextVar(
@@ -51,8 +49,10 @@ _log_context: contextvars.ContextVar[Dict[str, Any]] = contextvars.ContextVar(
 # Enumerations
 # =============================================================================
 
+
 class LogLevel(Enum):
     """Log levels."""
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
@@ -67,6 +67,7 @@ class LogLevel(Enum):
 
 class LogCategory(Enum):
     """Log categories for classification."""
+
     APPLICATION = "application"
     SECURITY = "security"
     AUDIT = "audit"
@@ -84,9 +85,11 @@ class LogCategory(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class CorrelationContext:
     """Correlation context for distributed tracing."""
+
     correlation_id: str = ""
     trace_id: str = ""
     span_id: str = ""
@@ -123,6 +126,7 @@ class CorrelationContext:
 @dataclass
 class StructuredLogEntry:
     """Structured log entry."""
+
     # Core fields
     timestamp: str = ""
     level: str = "INFO"
@@ -183,6 +187,7 @@ class StructuredLogEntry:
 @dataclass
 class LoggingConfig:
     """Configuration for StructuredLogger."""
+
     # Service identification
     service_name: str = "quantitative-research-platform"
     service_version: str = "1.0.0"
@@ -214,10 +219,18 @@ class LoggingConfig:
 
     # Sensitive data masking
     mask_sensitive_fields: bool = True
-    sensitive_field_patterns: List[str] = field(default_factory=lambda: [
-        "password", "secret", "token", "api_key", "auth",
-        "credit_card", "ssn", "private_key",
-    ])
+    sensitive_field_patterns: List[str] = field(
+        default_factory=lambda: [
+            "password",
+            "secret",
+            "token",
+            "api_key",
+            "auth",
+            "credit_card",
+            "ssn",
+            "private_key",
+        ]
+    )
 
     def __post_init__(self):
         if not self.instance_id:
@@ -227,6 +240,7 @@ class LoggingConfig:
 # =============================================================================
 # Context Management
 # =============================================================================
+
 
 def get_correlation_id() -> str:
     """Get current correlation ID."""
@@ -301,6 +315,7 @@ def correlation_context(
 # JSON Formatter
 # =============================================================================
 
+
 class StructuredFormatter(logging.Formatter):
     """JSON formatter for structured logging."""
 
@@ -374,6 +389,7 @@ class StructuredFormatter(logging.Formatter):
 # Main Logger Class
 # =============================================================================
 
+
 class StructuredLogger:
     """
     Structured Logger per DORA requirements.
@@ -437,6 +453,7 @@ class StructuredLogger:
             log_path.parent.mkdir(parents=True, exist_ok=True)
 
             from logging.handlers import RotatingFileHandler
+
             file_handler = RotatingFileHandler(
                 log_path,
                 maxBytes=self.config.max_file_size_mb * 1024 * 1024,
@@ -600,6 +617,7 @@ class ContextualLogger:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_structured_logger(
     config: Optional[LoggingConfig] = None,

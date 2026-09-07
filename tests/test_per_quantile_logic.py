@@ -18,9 +18,9 @@ def per_quantile_clip_logic(new_quantiles, old_value, clip_delta):
 
 def test_basic_clipping():
     """Test basic per_quantile clipping."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Basic per_quantile clipping")
-    print("="*80)
+    print("=" * 80)
 
     old_value = 10.0
     clip_delta = 5.0
@@ -39,23 +39,24 @@ def test_basic_clipping():
     print(f"Clipped quantiles: {quantiles_clipped}")
     print(f"Expected: {expected}")
 
-    assert np.allclose(quantiles_clipped, expected), \
-        f"Expected {expected}, got {quantiles_clipped}"
+    assert np.allclose(quantiles_clipped, expected), f"Expected {expected}, got {quantiles_clipped}"
 
     # Verify bounds
-    assert np.all(quantiles_clipped >= old_value - clip_delta), \
-        "All quantiles should be >= lower bound"
-    assert np.all(quantiles_clipped <= old_value + clip_delta), \
-        "All quantiles should be <= upper bound"
+    assert np.all(
+        quantiles_clipped >= old_value - clip_delta
+    ), "All quantiles should be >= lower bound"
+    assert np.all(
+        quantiles_clipped <= old_value + clip_delta
+    ), "All quantiles should be <= upper bound"
 
     print("✓ Basic clipping works correctly")
 
 
 def test_problem_case_from_description():
     """Test the exact problem case from the issue description."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Problem case from issue description")
-    print("="*80)
+    print("=" * 80)
 
     old_value = 10.0
     clip_delta = 5.0
@@ -92,8 +93,7 @@ def test_problem_case_from_description():
         if violation_high:
             print(f"     Max quantile {quantiles_mean_only.max():.1f} > {clip_max}")
 
-    assert violation_low or violation_high, \
-        "mean_only should allow violations for this case"
+    assert violation_low or violation_high, "mean_only should allow violations for this case"
 
     # per_quantile mode (solution)
     quantiles_per_quantile = per_quantile_clip_logic(new_quantiles, old_value, clip_delta)
@@ -110,17 +110,16 @@ def test_problem_case_from_description():
         print(f"  ✓ NO VIOLATIONS in per_quantile mode!")
         print(f"     All quantiles within [{clip_min}, {clip_max}]")
 
-    assert not violation_low_pq and not violation_high_pq, \
-        "per_quantile must NOT allow violations"
+    assert not violation_low_pq and not violation_high_pq, "per_quantile must NOT allow violations"
 
     print("\n✓ Problem case verified: per_quantile solves the issue!")
 
 
 def test_batch_specific_clipping():
     """Test that different samples get different clipping bounds."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Batch-specific clipping")
-    print("="*80)
+    print("=" * 80)
 
     clip_delta = 5.0
 
@@ -128,11 +127,13 @@ def test_batch_specific_clipping():
     old_values = np.array([10.0, 20.0, 30.0])
 
     # Same new quantiles for all samples (for simplicity)
-    new_quantiles = np.array([
-        [0.0, 10.0, 20.0, 30.0, 50.0],  # Sample 1
-        [0.0, 10.0, 20.0, 30.0, 50.0],  # Sample 2
-        [0.0, 10.0, 20.0, 30.0, 50.0],  # Sample 3
-    ])
+    new_quantiles = np.array(
+        [
+            [0.0, 10.0, 20.0, 30.0, 50.0],  # Sample 1
+            [0.0, 10.0, 20.0, 30.0, 50.0],  # Sample 2
+            [0.0, 10.0, 20.0, 30.0, 50.0],  # Sample 3
+        ]
+    )
 
     print(f"Clip delta: {clip_delta}")
     print(f"Old values: {old_values}")
@@ -151,25 +152,25 @@ def test_batch_specific_clipping():
         print(f"    {quantiles_clipped[i]}")
 
         # Verify bounds
-        assert np.all(quantiles_clipped[i] >= clip_min - 1e-6), \
-            f"Sample {i}: quantiles below bound"
-        assert np.all(quantiles_clipped[i] <= clip_max + 1e-6), \
-            f"Sample {i}: quantiles above bound"
+        assert np.all(quantiles_clipped[i] >= clip_min - 1e-6), f"Sample {i}: quantiles below bound"
+        assert np.all(quantiles_clipped[i] <= clip_max + 1e-6), f"Sample {i}: quantiles above bound"
 
     # Verify samples have different clipped values
-    assert not np.allclose(quantiles_clipped[0], quantiles_clipped[1]), \
-        "Different samples should have different clipped quantiles"
-    assert not np.allclose(quantiles_clipped[1], quantiles_clipped[2]), \
-        "Different samples should have different clipped quantiles"
+    assert not np.allclose(
+        quantiles_clipped[0], quantiles_clipped[1]
+    ), "Different samples should have different clipped quantiles"
+    assert not np.allclose(
+        quantiles_clipped[1], quantiles_clipped[2]
+    ), "Different samples should have different clipped quantiles"
 
     print("\n✓ Batch-specific clipping works correctly!")
 
 
 def test_edge_cases():
     """Test various edge cases."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Edge cases")
-    print("="*80)
+    print("=" * 80)
 
     clip_delta = 5.0
 
@@ -216,7 +217,9 @@ def test_edge_cases():
     new_quantiles = np.array([-20.0, -10.0, 0.0, 10.0, 20.0])
     quantiles_clipped = per_quantile_clip_logic(new_quantiles, old_value, clip_delta)
     expected = np.array([-15.0, -10.0, -5.0, -5.0, -5.0])
-    print(f"   Old value: {old_value}, bounds: [{old_value - clip_delta}, {old_value + clip_delta}]")
+    print(
+        f"   Old value: {old_value}, bounds: [{old_value - clip_delta}, {old_value + clip_delta}]"
+    )
     print(f"   New: {new_quantiles} -> Clipped: {quantiles_clipped}")
     assert np.allclose(quantiles_clipped, expected)
     print("   ✓ Negative old_value handled correctly")
@@ -226,9 +229,9 @@ def test_edge_cases():
 
 def test_cvar_preservation():
     """Test that per_quantile preserves CVaR bounds."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: CVaR preservation")
-    print("="*80)
+    print("=" * 80)
 
     old_value = 10.0
     clip_delta = 5.0
@@ -260,16 +263,13 @@ def test_cvar_preservation():
     print(f"  CVaR (α=0.3): {cvar_clipped:.2f}")
 
     # Verify tail quantiles are bounded
-    assert np.all(tail_clipped >= clip_min), \
-        f"Tail quantiles must be >= {clip_min}"
+    assert np.all(tail_clipped >= clip_min), f"Tail quantiles must be >= {clip_min}"
 
     # CVaR must be bounded
-    assert cvar_clipped >= clip_min - 1e-6, \
-        f"CVaR must be >= {clip_min}"
+    assert cvar_clipped >= clip_min - 1e-6, f"CVaR must be >= {clip_min}"
 
     # CVaR should be more conservative after clipping
-    assert cvar_clipped >= cvar_original, \
-        "Clipped CVaR should be >= original (less extreme risk)"
+    assert cvar_clipped >= cvar_original, "Clipped CVaR should be >= original (less extreme risk)"
 
     print(f"\n✓ CVaR properly bounded:")
     print(f"   Original CVaR: {cvar_original:.2f} (extreme risk)")
@@ -278,9 +278,9 @@ def test_cvar_preservation():
 
 def main():
     """Run all tests."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PER_QUANTILE VF CLIPPING: LOGIC VERIFICATION (No Torch)")
-    print("="*80)
+    print("=" * 80)
 
     tests = [
         test_basic_clipping,
@@ -296,19 +296,20 @@ def main():
         except Exception as e:
             print(f"\n❌ TEST FAILED: {e}")
             import traceback
+
             traceback.print_exc()
             return False
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("✓ ALL LOGIC TESTS PASSED!")
-    print("="*80)
+    print("=" * 80)
     print("\nConclusion:")
     print("  - per_quantile mode correctly implements element-wise clipping")
     print("  - All quantiles are guaranteed to stay within bounds")
     print("  - CVaR (tail risk) is properly constrained")
     print("  - Batch-specific clipping works correctly")
     print("  - Edge cases are handled properly")
-    print("\n" + "="*80 + "\n")
+    print("\n" + "=" * 80 + "\n")
 
     return True
 

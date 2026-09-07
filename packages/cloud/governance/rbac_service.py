@@ -51,8 +51,10 @@ MAX_PERMISSIONS_PER_ROLE: Final[int] = 100
 # Enums
 # ============================================================================
 
+
 class Scope(str, Enum):
     """Access scopes for RBAC."""
+
     READ = "read"
     WRITE = "write"
     DELETE = "delete"
@@ -67,6 +69,7 @@ class Scope(str, Enum):
 
 class ResourceType(str, Enum):
     """Resource types for permission checks."""
+
     STRATEGY = "strategy"
     STRATEGY_VERSION = "strategy_version"
     BUILD = "build"
@@ -95,6 +98,7 @@ class ResourceType(str, Enum):
 
 class SensitivityLevel(str, Enum):
     """Data sensitivity levels."""
+
     STANDARD = "standard"
     SENSITIVE = "sensitive"
     CRITICAL = "critical"
@@ -133,23 +137,26 @@ RESOURCE_SENSITIVITY: Dict[ResourceType, SensitivityLevel] = {
 }
 
 # Resources that require audit logging on access
-AUDIT_REQUIRED_RESOURCES: FrozenSet[ResourceType] = frozenset({
-    ResourceType.APPROVAL,
-    ResourceType.AUDIT_LOG,
-    ResourceType.ACCESS_AUDIT,
-    ResourceType.BREAK_GLASS,
-    ResourceType.DSAR,
-    ResourceType.TELEMETRY,
-    ResourceType.CONFIG_BLOB,
-    ResourceType.AGENT,
-    ResourceType.USER,
-    ResourceType.LEGAL_HOLD,
-})
+AUDIT_REQUIRED_RESOURCES: FrozenSet[ResourceType] = frozenset(
+    {
+        ResourceType.APPROVAL,
+        ResourceType.AUDIT_LOG,
+        ResourceType.ACCESS_AUDIT,
+        ResourceType.BREAK_GLASS,
+        ResourceType.DSAR,
+        ResourceType.TELEMETRY,
+        ResourceType.CONFIG_BLOB,
+        ResourceType.AGENT,
+        ResourceType.USER,
+        ResourceType.LEGAL_HOLD,
+    }
+)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
+
 
 @dataclass(frozen=True)
 class Permission:
@@ -164,8 +171,9 @@ class Permission:
         - *:read (all resources, read only)
         - strategy:* (strategy, all scopes)
     """
+
     resource: str  # ResourceType.value or "*"
-    scope: str     # Scope.value or "*"
+    scope: str  # Scope.value or "*"
     constraint: Optional[str] = None
 
     def __str__(self) -> str:
@@ -199,6 +207,7 @@ class Role:
     - Organization-wide (workspace_id is None)
     - Workspace-specific (workspace_id is set)
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
     description: str = ""
@@ -235,6 +244,7 @@ class Principal:
     """
     Principal (user or service) for access control.
     """
+
     id: str = ""
     type: str = "user"  # user, agent, system, service
     email: Optional[str] = None
@@ -267,6 +277,7 @@ class AccessContext:
     """
     Context for access check.
     """
+
     principal: Principal
     workspace_id: str = ""
     resource_type: str = ""
@@ -295,6 +306,7 @@ class AccessDecision:
     """
     Result of access check.
     """
+
     granted: bool = False
     reason: str = ""
     method: str = "rbac"  # rbac, break_glass, api_key, denied
@@ -323,6 +335,7 @@ class AccessDecision:
 # ============================================================================
 # Default Roles
 # ============================================================================
+
 
 def _create_default_roles(organization_id: str) -> Dict[str, Role]:
     """Create default system roles for an organization."""
@@ -449,6 +462,7 @@ def _create_default_roles(organization_id: str) -> Dict[str, Role]:
 # RBAC Service
 # ============================================================================
 
+
 class RBACService:
     """
     Role-Based Access Control Service.
@@ -539,9 +553,9 @@ class RBACService:
             # Check for duplicate name
             for existing in self._roles.values():
                 if (
-                    existing.name == name and
-                    existing.organization_id == organization_id and
-                    existing.workspace_id == workspace_id
+                    existing.name == name
+                    and existing.organization_id == organization_id
+                    and existing.workspace_id == workspace_id
                 ):
                     raise ValueError(f"Role '{name}' already exists")
 
@@ -583,18 +597,18 @@ class RBACService:
             if workspace_id:
                 for role in self._roles.values():
                     if (
-                        role.name == name and
-                        role.organization_id == organization_id and
-                        role.workspace_id == workspace_id
+                        role.name == name
+                        and role.organization_id == organization_id
+                        and role.workspace_id == workspace_id
                     ):
                         return role
 
             # Then check org-wide roles
             for role in self._roles.values():
                 if (
-                    role.name == name and
-                    role.organization_id == organization_id and
-                    role.workspace_id is None
+                    role.name == name
+                    and role.organization_id == organization_id
+                    and role.workspace_id is None
                 ):
                     return role
 
@@ -969,9 +983,7 @@ class RBACService:
         decision = self.check_access(context)
 
         if not decision.granted:
-            raise PermissionError(
-                f"Access denied: {resource_type}:{scope} - {decision.reason}"
-            )
+            raise PermissionError(f"Access denied: {resource_type}:{scope} - {decision.reason}")
 
         return decision
 
@@ -988,7 +1000,8 @@ class RBACService:
             f"{context.scope}:"
             f"{context.principal.break_glass_id or ''}"
         )
-        return hashlib.md5(key_data.encode()).hexdigest()
+        # cache key only, never a security digest
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()
 
     def _get_cached_decision(self, cache_key: str) -> Optional[AccessDecision]:
         """Get cached decision if valid."""
@@ -999,7 +1012,9 @@ class RBACService:
             decision, cached_at = self._permission_cache[cache_key]
 
             # Check TTL
-            if (datetime.now(timezone.utc) - cached_at).total_seconds() > PERMISSION_CACHE_TTL_SECONDS:
+            if (
+                datetime.now(timezone.utc) - cached_at
+            ).total_seconds() > PERMISSION_CACHE_TTL_SECONDS:
                 del self._permission_cache[cache_key]
                 return None
 
@@ -1065,11 +1080,13 @@ class RBACService:
                 for role_id in role_ids:
                     role = self._roles.get(role_id)
                     if role and role.organization_id == organization_id:
-                        assignments.append({
-                            "user_id": user_id,
-                            "role_id": role_id,
-                            "role_name": role.name,
-                        })
+                        assignments.append(
+                            {
+                                "user_id": user_id,
+                                "role_id": role_id,
+                                "role_name": role.name,
+                            }
+                        )
             return assignments
 
     def get_snapshot(

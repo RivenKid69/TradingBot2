@@ -14,6 +14,7 @@ This test file verifies:
 
 Test count: 12 tests
 """
+
 from __future__ import annotations
 
 import math
@@ -30,8 +31,10 @@ from action_proto import ActionProto, ActionType
 # Test fixtures and helper classes
 # ============================================================================
 
+
 class _EnvState:
     """Minimal state stub for testing."""
+
     def __init__(self):
         self.cash = 1000.0
         self.units = 0.0
@@ -81,7 +84,7 @@ class _MediatorStub:
         obs = self._build_observation(
             row=self._env.df.iloc[state.step_idx] if len(self._env.df) > state.step_idx else None,
             state=state,
-            mark_price=100.0
+            mark_price=100.0,
         )
         state.step_idx += 1
         return obs, 0.0, False, False, {}
@@ -92,15 +95,17 @@ def _create_test_df(steps: int = 10) -> pd.DataFrame:
     idx = np.arange(steps, dtype=np.int64)
     # Price goes up consistently: 100.0, 100.5, 101.0, ...
     base = 100.0 + idx * 0.5
-    return pd.DataFrame({
-        "ts_ms": idx * 60_000,
-        "open": base,
-        "high": base + 0.5,
-        "low": base - 0.5,
-        "close": base,
-        "price": base,
-        "quote_asset_volume": np.full(steps, 1000.0),
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": idx * 60_000,
+            "open": base,
+            "high": base + 0.5,
+            "low": base - 0.5,
+            "close": base,
+            "price": base,
+            "quote_asset_volume": np.full(steps, 1000.0),
+        }
+    )
 
 
 def _setup_mock_env(df, decision_mode=None, signal_only=True):
@@ -110,7 +115,7 @@ def _setup_mock_env(df, decision_mode=None, signal_only=True):
     if decision_mode is None:
         decision_mode = DecisionTiming.CLOSE_TO_OPEN
 
-    with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+    with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
         env = TradingEnv.__new__(TradingEnv)
         env.df = df.copy()
         env.initial_cash = 1000.0
@@ -145,6 +150,7 @@ def _setup_mock_env(df, decision_mode=None, signal_only=True):
 # Test class: Signal Position in Observation - Signal Only Mode
 # ============================================================================
 
+
 class TestSignalPosObservationSignalOnly:
     """Tests for signal_pos in observation in signal_only mode."""
 
@@ -154,7 +160,9 @@ class TestSignalPosObservationSignalOnly:
 
         df = _create_test_df()
         # Use a non-CLOSE_TO_OPEN mode (simulate by using a high enum value)
-        env = _setup_mock_env(df, decision_mode=DecisionTiming.INTRA_HOUR_WITH_LATENCY, signal_only=True)
+        env = _setup_mock_env(
+            df, decision_mode=DecisionTiming.INTRA_HOUR_WITH_LATENCY, signal_only=True
+        )
         env._init_state()
         env._pending_action = ActionProto(ActionType.HOLD, 0.0)
 
@@ -199,9 +207,9 @@ class TestSignalPosObservationSignalOnly:
 
         # In CLOSE_TO_OPEN: next_signal_pos = executed_signal_pos (delayed)
         next_signal_pos = executed_signal_pos
-        assert next_signal_pos == pytest.approx(0.0), (
-            "First step in CLOSE_TO_OPEN should execute HOLD, next_signal_pos = 0.0"
-        )
+        assert next_signal_pos == pytest.approx(
+            0.0
+        ), "First step in CLOSE_TO_OPEN should execute HOLD, next_signal_pos = 0.0"
 
         # Before fix: obs would contain prev_signal_pos_for_reward = 0.0 (coincidentally correct)
         # After fix: obs should contain next_signal_pos = 0.0
@@ -216,15 +224,15 @@ class TestSignalPosObservationSignalOnly:
         executed_signal_pos_1 = env._signal_position_from_proto(proto_1, env._last_signal_position)
         next_signal_pos_1 = executed_signal_pos_1
 
-        assert next_signal_pos_1 == pytest.approx(0.75), (
-            f"Step 1 should execute 0.75 (from step 0). Got {next_signal_pos_1}"
-        )
+        assert next_signal_pos_1 == pytest.approx(
+            0.75
+        ), f"Step 1 should execute 0.75 (from step 0). Got {next_signal_pos_1}"
 
         # Observation should contain 0.75 (next_signal_pos), not 0.0 (prev)
         expected_obs_signal_pos = next_signal_pos_1
-        assert expected_obs_signal_pos == pytest.approx(0.75), (
-            f"Observation should show 0.75 (position AFTER step). Got {expected_obs_signal_pos}"
-        )
+        assert expected_obs_signal_pos == pytest.approx(
+            0.75
+        ), f"Observation should show 0.75 (position AFTER step). Got {expected_obs_signal_pos}"
 
     def test_temporal_alignment_market_data_and_signal_pos(self):
         """Market data and signal_pos in observation should be temporally aligned."""
@@ -259,9 +267,9 @@ class TestSignalPosObservationSignalOnly:
         executed_1 = env._signal_position_from_proto(proto_1, env._last_signal_position)
         next_signal_pos_1 = executed_1
 
-        assert next_signal_pos_1 == pytest.approx(1.0), (
-            f"Step 1: next_signal_pos should be 1.0 (from step 0 action). Got {next_signal_pos_1}"
-        )
+        assert next_signal_pos_1 == pytest.approx(
+            1.0
+        ), f"Step 1: next_signal_pos should be 1.0 (from step 0 action). Got {next_signal_pos_1}"
 
         # Both market data (from row 2) and signal_pos (1.0 after execution)
         # are from time t+2. They are temporally aligned.
@@ -286,9 +294,9 @@ class TestSignalPosObservationSignalOnly:
         log_return = math.log(df.loc[1, "close"] / df.loc[0, "close"])
         expected_reward_0 = log_return * prev_signal_pos_for_reward  # = log_return * 0.0 = 0.0
 
-        assert expected_reward_0 == pytest.approx(0.0), (
-            "Step 0: reward should be 0 because prev_signal_pos = 0"
-        )
+        assert expected_reward_0 == pytest.approx(
+            0.0
+        ), "Step 0: reward should be 0 because prev_signal_pos = 0"
 
         # Update state
         env._pending_action = action_0
@@ -301,16 +309,18 @@ class TestSignalPosObservationSignalOnly:
         next_signal_pos_1 = executed_1  # 1.0
 
         log_return_1 = math.log(df.loc[2, "close"] / df.loc[1, "close"])
-        expected_reward_1 = log_return_1 * prev_signal_pos_for_reward_1  # = log_return_1 * 0.0 = 0.0
+        expected_reward_1 = (
+            log_return_1 * prev_signal_pos_for_reward_1
+        )  # = log_return_1 * 0.0 = 0.0
 
         # Reward uses prev (0.0), but observation shows next (1.0)
         # This is correct: reward reflects position HELD during price change
-        assert expected_reward_1 == pytest.approx(0.0), (
-            "Step 1: reward should be 0 because prev_signal_pos was 0.0 during price change"
-        )
-        assert next_signal_pos_1 == pytest.approx(1.0), (
-            "But next_signal_pos (for observation) should be 1.0"
-        )
+        assert expected_reward_1 == pytest.approx(
+            0.0
+        ), "Step 1: reward should be 0 because prev_signal_pos was 0.0 during price change"
+        assert next_signal_pos_1 == pytest.approx(
+            1.0
+        ), "But next_signal_pos (for observation) should be 1.0"
 
 
 class TestSignalPosObservationNonSignalOnly:
@@ -359,16 +369,18 @@ class TestSignalPosObservationEdgeCases:
 
         # In CLOSE_TO_OPEN: first step executes HOLD
         next_signal_pos_0 = executed_0
-        assert next_signal_pos_0 == pytest.approx(0.0), (
-            "First step in CLOSE_TO_OPEN should execute HOLD, next_signal_pos = 0.0"
-        )
+        assert next_signal_pos_0 == pytest.approx(
+            0.0
+        ), "First step in CLOSE_TO_OPEN should execute HOLD, next_signal_pos = 0.0"
 
     def test_hold_action_preserves_position_in_obs(self):
         """HOLD action should preserve previous position in observation."""
         from trading_patchnew import DecisionTiming
 
         df = _create_test_df()
-        env = _setup_mock_env(df, decision_mode=DecisionTiming.INTRA_HOUR_WITH_LATENCY, signal_only=True)
+        env = _setup_mock_env(
+            df, decision_mode=DecisionTiming.INTRA_HOUR_WITH_LATENCY, signal_only=True
+        )
         env._init_state()
         env._last_signal_position = 0.6  # Start with 60% position
 
@@ -377,9 +389,9 @@ class TestSignalPosObservationEdgeCases:
         agent_signal_pos = env._signal_position_from_proto(action, env._last_signal_position)
 
         # HOLD should return prev position
-        assert agent_signal_pos == pytest.approx(0.6), (
-            f"HOLD should preserve previous position (0.6). Got {agent_signal_pos}"
-        )
+        assert agent_signal_pos == pytest.approx(
+            0.6
+        ), f"HOLD should preserve previous position (0.6). Got {agent_signal_pos}"
 
         # In INTRA_HOUR + signal_only: next_signal_pos = agent_signal_pos
         next_signal_pos = agent_signal_pos
@@ -495,11 +507,7 @@ class TestSignalPosObservationIntegration:
         )
 
         # Build observation and verify signal_pos used
-        obs = env._mediator._build_observation(
-            row=df.iloc[1],
-            state=env.state,
-            mark_price=100.0
-        )
+        obs = env._mediator._build_observation(row=df.iloc[1], state=env.state, mark_price=100.0)
 
         # The stub records what signal_pos was used
         assert len(env._mediator._obs_signal_pos_history) == 1

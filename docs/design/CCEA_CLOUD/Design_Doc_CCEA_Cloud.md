@@ -146,6 +146,7 @@ JSON payload в командах **НЕ ДОЛЖЕН** содержать:
 ```
 
 **Характеристики:**
+
 - Cloud: research, simulation, monitoring
 - Agent: опционален, только для live trading
 - Secrets: хранятся только у пользователя
@@ -187,6 +188,7 @@ JSON payload в командах **НЕ ДОЛЖЕН** содержать:
 ```
 
 **Характеристики:**
+
 - Auto-execution локально
 - Cloud: наблюдаемость и lifecycle requests
 - Agent: полный контроль над исполнением
@@ -217,6 +219,7 @@ JSON payload в командах **НЕ ДОЛЖЕН** содержать:
 ```
 
 **Характеристики:**
+
 - Всё в инфраструктуре клиента
 - Vendor pack для compliance
 - Air-gapped режим поддерживается
@@ -268,6 +271,7 @@ JSON payload в командах **НЕ ДОЛЖЕН** содержать:
 ```
 
 **Варианты аутентификации:**
+
 - **Option A (Enterprise)**: mTLS
 - **Option B (Default)**: Signed JWT на device key
 
@@ -463,6 +467,7 @@ Priority (highest to lowest):
 ---
 
 **Document Control:**
+
 - Author: CCEA Architecture Team
 - Reviewers: Security, Compliance, Engineering
 - Approval: Architecture Review Board

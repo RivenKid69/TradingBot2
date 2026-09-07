@@ -22,9 +22,19 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from packages.agent.broker.protocol import (
-    OrderRequest, OrderResult, OrderInfo, CancelResult, BulkCancelResult,
-    Position, AccountInfo, OrderSide, OrderType, OrderStatus, PositionSide,
-    ConnectionStatus, TimeInForce,
+    OrderRequest,
+    OrderResult,
+    OrderInfo,
+    CancelResult,
+    BulkCancelResult,
+    Position,
+    AccountInfo,
+    OrderSide,
+    OrderType,
+    OrderStatus,
+    PositionSide,
+    ConnectionStatus,
+    TimeInForce,
 )
 
 
@@ -50,9 +60,9 @@ class SimBrokerConnector:
         self._broker_name = broker_name
         self._connected = True
 
-        self._positions: Dict[str, Decimal] = {}        # symbol -> signed qty
-        self._cost_basis: Dict[str, Decimal] = {}        # symbol -> avg entry
-        self._orders: Dict[str, OrderInfo] = {}          # client_order_id -> info
+        self._positions: Dict[str, Decimal] = {}  # symbol -> signed qty
+        self._cost_basis: Dict[str, Decimal] = {}  # symbol -> avg entry
+        self._orders: Dict[str, OrderInfo] = {}  # client_order_id -> info
         self._seq = 0
 
     # -- market data --------------------------------------------------------
@@ -122,23 +132,32 @@ class SimBrokerConnector:
         if request.client_order_id in self._orders:
             existing = self._orders[request.client_order_id]
             return OrderResult(
-                success=True, client_order_id=request.client_order_id,
-                broker_order_id=existing.broker_order_id, status=existing.status,
-                filled_quantity=existing.filled_quantity, avg_fill_price=existing.avg_fill_price,
+                success=True,
+                client_order_id=request.client_order_id,
+                broker_order_id=existing.broker_order_id,
+                status=existing.status,
+                filled_quantity=existing.filled_quantity,
+                avg_fill_price=existing.avg_fill_price,
             )
 
         price = self._prices.get(request.symbol)
         if price is None or price <= 0:
             return OrderResult(
-                success=False, client_order_id=request.client_order_id,
-                status=OrderStatus.REJECTED, error_message=f"no price for {request.symbol}",
+                success=False,
+                client_order_id=request.client_order_id,
+                status=OrderStatus.REJECTED,
+                error_message=f"no price for {request.symbol}",
             )
 
         self._seq += 1
         broker_id = f"SIM-{self._seq}"
         qty = Decimal(str(request.quantity))
         fill_qty = (qty * self._fill_ratio).quantize(Decimal("0.00000001"))
-        fill_price = request.limit_price if (request.order_type == OrderType.LIMIT and request.limit_price) else price
+        fill_price = (
+            request.limit_price
+            if (request.order_type == OrderType.LIMIT and request.limit_price)
+            else price
+        )
         signed = fill_qty if request.side == OrderSide.BUY else -fill_qty
 
         # update position + cash with proper average-cost basis (not last-fill).
@@ -149,7 +168,8 @@ class SimBrokerConnector:
             # opening / increasing same direction -> weighted average
             self._cost_basis[request.symbol] = (
                 (prev_avg * abs(prev) + fill_price * abs(signed)) / abs(new_pos)
-                if new_pos != 0 else Decimal("0")
+                if new_pos != 0
+                else Decimal("0")
             )
         elif (prev > 0) != (new_pos > 0) and new_pos != 0:
             self._cost_basis[request.symbol] = fill_price  # flipped through zero
@@ -160,70 +180,123 @@ class SimBrokerConnector:
         commission = abs(fill_qty * fill_price) * self._commission_bps / Decimal("10000")
         self._cash -= signed * fill_price + commission
 
-        status = OrderStatus.FILLED if fill_qty >= qty else (
-            OrderStatus.PARTIALLY_FILLED if fill_qty > 0 else OrderStatus.ACCEPTED)
+        status = (
+            OrderStatus.FILLED
+            if fill_qty >= qty
+            else (OrderStatus.PARTIALLY_FILLED if fill_qty > 0 else OrderStatus.ACCEPTED)
+        )
         now = datetime.utcnow()
         info = OrderInfo(
-            client_order_id=request.client_order_id, broker_order_id=broker_id,
-            symbol=request.symbol, side=request.side, order_type=request.order_type,
-            quantity=qty, filled_quantity=fill_qty, limit_price=request.limit_price,
-            stop_price=request.stop_price, avg_fill_price=fill_price, status=status,
-            time_in_force=request.time_in_force, commission=commission,
-            created_at=now, updated_at=now, filled_at=now if status == OrderStatus.FILLED else None,
+            client_order_id=request.client_order_id,
+            broker_order_id=broker_id,
+            symbol=request.symbol,
+            side=request.side,
+            order_type=request.order_type,
+            quantity=qty,
+            filled_quantity=fill_qty,
+            limit_price=request.limit_price,
+            stop_price=request.stop_price,
+            avg_fill_price=fill_price,
+            status=status,
+            time_in_force=request.time_in_force,
+            commission=commission,
+            created_at=now,
+            updated_at=now,
+            filled_at=now if status == OrderStatus.FILLED else None,
         )
         self._orders[request.client_order_id] = info
         return OrderResult(
-            success=True, client_order_id=request.client_order_id, broker_order_id=broker_id,
-            status=status, filled_quantity=fill_qty, avg_fill_price=fill_price, commission=commission,
+            success=True,
+            client_order_id=request.client_order_id,
+            broker_order_id=broker_id,
+            status=status,
+            filled_quantity=fill_qty,
+            avg_fill_price=fill_price,
+            commission=commission,
         )
 
-    def cancel_order(self, client_order_id: Optional[str] = None,
-                     broker_order_id: Optional[str] = None) -> CancelResult:
+    def cancel_order(
+        self, client_order_id: Optional[str] = None, broker_order_id: Optional[str] = None
+    ) -> CancelResult:
         info = self._orders.get(client_order_id) if client_order_id else None
         if info is None:
-            return CancelResult(success=False, client_order_id=client_order_id or "",
-                                error_message="order not found")
+            return CancelResult(
+                success=False,
+                client_order_id=client_order_id or "",
+                error_message="order not found",
+            )
         if info.status in (OrderStatus.FILLED, OrderStatus.CANCELLED):
-            return CancelResult(success=False, client_order_id=info.client_order_id,
-                                broker_order_id=info.broker_order_id,
-                                error_message=f"cannot cancel {info.status.value}")
+            return CancelResult(
+                success=False,
+                client_order_id=info.client_order_id,
+                broker_order_id=info.broker_order_id,
+                error_message=f"cannot cancel {info.status.value}",
+            )
         info.status = OrderStatus.CANCELLED
         info.updated_at = datetime.utcnow()
-        return CancelResult(success=True, client_order_id=info.client_order_id,
-                            broker_order_id=info.broker_order_id, cancelled_at=info.updated_at)
+        return CancelResult(
+            success=True,
+            client_order_id=info.client_order_id,
+            broker_order_id=info.broker_order_id,
+            cancelled_at=info.updated_at,
+        )
 
     def cancel_all_orders(self, symbol: Optional[str] = None) -> BulkCancelResult:
         results: List[CancelResult] = []
         for coid, info in self._orders.items():
             if symbol and info.symbol != symbol:
                 continue
-            if info.status in (OrderStatus.SUBMITTED, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED):
+            if info.status in (
+                OrderStatus.SUBMITTED,
+                OrderStatus.ACCEPTED,
+                OrderStatus.PARTIALLY_FILLED,
+            ):
                 results.append(self.cancel_order(client_order_id=coid))
         ok = sum(1 for r in results if r.success)
-        return BulkCancelResult(total_requested=len(results), total_cancelled=ok,
-                                total_failed=len(results) - ok, results=results)
+        return BulkCancelResult(
+            total_requested=len(results),
+            total_cancelled=ok,
+            total_failed=len(results) - ok,
+            results=results,
+        )
 
-    def replace_order(self, client_order_id: str, *, quantity: Optional[Decimal] = None,
-                      limit_price: Optional[Decimal] = None) -> OrderResult:
+    def replace_order(
+        self,
+        client_order_id: str,
+        *,
+        quantity: Optional[Decimal] = None,
+        limit_price: Optional[Decimal] = None,
+    ) -> OrderResult:
         """Amend a working order's qty/price (FIX 35=G semantics) — paper broker."""
         info = self._orders.get(client_order_id)
         if info is None:
-            return OrderResult(success=False, client_order_id=client_order_id,
-                               error_message="order not found")
+            return OrderResult(
+                success=False, client_order_id=client_order_id, error_message="order not found"
+            )
         if info.status in (OrderStatus.FILLED, OrderStatus.CANCELLED):
-            return OrderResult(success=False, client_order_id=client_order_id,
-                               status=info.status, error_message=f"cannot amend {info.status.value}")
+            return OrderResult(
+                success=False,
+                client_order_id=client_order_id,
+                status=info.status,
+                error_message=f"cannot amend {info.status.value}",
+            )
         if quantity is not None:
             info.quantity = Decimal(str(quantity))
         if limit_price is not None:
             info.limit_price = Decimal(str(limit_price))
         info.updated_at = datetime.utcnow()
-        return OrderResult(success=True, client_order_id=client_order_id,
-                           broker_order_id=info.broker_order_id, status=info.status,
-                           filled_quantity=info.filled_quantity, avg_fill_price=info.avg_fill_price)
+        return OrderResult(
+            success=True,
+            client_order_id=client_order_id,
+            broker_order_id=info.broker_order_id,
+            status=info.status,
+            filled_quantity=info.filled_quantity,
+            avg_fill_price=info.avg_fill_price,
+        )
 
-    def get_order(self, client_order_id: Optional[str] = None,
-                  broker_order_id: Optional[str] = None) -> Optional[OrderInfo]:
+    def get_order(
+        self, client_order_id: Optional[str] = None, broker_order_id: Optional[str] = None
+    ) -> Optional[OrderInfo]:
         if client_order_id and client_order_id in self._orders:
             return self._orders[client_order_id]
         if broker_order_id:
@@ -234,19 +307,26 @@ class SimBrokerConnector:
 
     def get_open_orders(self, symbol: Optional[str] = None) -> List[OrderInfo]:
         return [
-            o for o in self._orders.values()
-            if o.status in (OrderStatus.SUBMITTED, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED)
+            o
+            for o in self._orders.values()
+            if o.status
+            in (OrderStatus.SUBMITTED, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED)
             and (symbol is None or o.symbol == symbol)
         ]
 
     # -- positions ----------------------------------------------------------
     def _position_obj(self, symbol: str, qty: Decimal) -> Position:
         px = self._prices.get(symbol, Decimal("0"))
-        side = PositionSide.LONG if qty > 0 else (PositionSide.SHORT if qty < 0 else PositionSide.FLAT)
+        side = (
+            PositionSide.LONG if qty > 0 else (PositionSide.SHORT if qty < 0 else PositionSide.FLAT)
+        )
         return Position(
-            symbol=symbol, side=side, quantity=qty,
+            symbol=symbol,
+            side=side,
+            quantity=qty,
             avg_entry_price=self._cost_basis.get(symbol, px),
-            current_price=px, market_value=qty * px,
+            current_price=px,
+            market_value=qty * px,
             cost_basis=abs(qty) * self._cost_basis.get(symbol, px),
         )
 
@@ -263,21 +343,33 @@ class SimBrokerConnector:
             return OrderResult(success=False, client_order_id="", error_message="no position")
         close_qty = abs(q) if quantity is None else Decimal(str(quantity))
         side = OrderSide.SELL if q > 0 else OrderSide.BUY
-        return self.submit_order(OrderRequest(
-            client_order_id=f"close_{symbol}_{self._seq + 1}", symbol=symbol, side=side,
-            order_type=OrderType.MARKET, quantity=close_qty,
-        ))
+        return self.submit_order(
+            OrderRequest(
+                client_order_id=f"close_{symbol}_{self._seq + 1}",
+                symbol=symbol,
+                side=side,
+                order_type=OrderType.MARKET,
+                quantity=close_qty,
+            )
+        )
 
     def close_all_positions(self) -> List[OrderResult]:
         return [self.close_position(s) for s, q in list(self._positions.items()) if q != 0]
 
     # -- account ------------------------------------------------------------
     def get_account(self) -> AccountInfo:
-        mv = sum((q * self._prices.get(s, Decimal("0")) for s, q in self._positions.items()), Decimal("0"))
+        mv = sum(
+            (q * self._prices.get(s, Decimal("0")) for s, q in self._positions.items()),
+            Decimal("0"),
+        )
         equity = self._cash + mv
         return AccountInfo(
-            account_id="sim", equity=equity, cash=self._cash,
-            buying_power=equity, currency="USD", status="active",
+            account_id="sim",
+            equity=equity,
+            cash=self._cash,
+            buying_power=equity,
+            currency="USD",
+            status="active",
         )
 
 

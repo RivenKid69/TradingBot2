@@ -41,8 +41,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class GovernanceRole(Enum):
     """ICT governance roles per DORA Article 5."""
+
     MANAGEMENT_BODY = "management_body"  # Ultimate responsibility
     ICT_RISK_OFFICER = "ict_risk_officer"  # Control function
     CHIEF_INFORMATION_SECURITY_OFFICER = "ciso"
@@ -56,6 +58,7 @@ class GovernanceRole(Enum):
 
 class DefenceLine(Enum):
     """Three Lines of Defence model."""
+
     FIRST_LINE = "first_line"  # Business operations and risk ownership
     SECOND_LINE = "second_line"  # Risk management and compliance
     THIRD_LINE = "third_line"  # Internal audit
@@ -63,6 +66,7 @@ class DefenceLine(Enum):
 
 class TrainingStatus(Enum):
     """Training completion status."""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -72,6 +76,7 @@ class TrainingStatus(Enum):
 
 class ApprovalStatus(Enum):
     """Approval workflow status."""
+
     DRAFT = "draft"
     PENDING_REVIEW = "pending_review"
     PENDING_APPROVAL = "pending_approval"
@@ -82,6 +87,7 @@ class ApprovalStatus(Enum):
 
 class AuditFindingSeverity(Enum):
     """Internal audit finding severity."""
+
     OBSERVATION = "observation"
     LOW = "low"
     MEDIUM = "medium"
@@ -93,6 +99,7 @@ class AuditFindingSeverity(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class GovernanceRoleAssignment:
     """
@@ -100,6 +107,7 @@ class GovernanceRoleAssignment:
 
     Documents who is responsible for ICT risk management functions.
     """
+
     assignment_id: str = ""
     role: GovernanceRole = GovernanceRole.ICT_RISK_OFFICER
     person_name: str = ""
@@ -139,6 +147,7 @@ class ICTTrainingRecord:
 
     Documents ICT training for management body and staff.
     """
+
     training_id: str = ""
     person_id: str = ""
     person_name: str = ""
@@ -191,6 +200,7 @@ class FrameworkApproval:
 
     Documents management body approval of ICT risk management framework.
     """
+
     approval_id: str = ""
     document_type: str = ""  # "ict_risk_framework", "resilience_strategy", "policy"
     document_name: str = ""
@@ -228,6 +238,7 @@ class AuditFinding:
 
     Per DORA Article 5 and Article 6(5) - framework subject to internal audit.
     """
+
     finding_id: str = ""
     audit_id: str = ""
     audit_date: str = ""
@@ -272,6 +283,7 @@ class ICTBudgetAllocation:
 
     Management body must approve ICT budget for digital resilience.
     """
+
     budget_id: str = ""
     fiscal_year: int = 0
     budget_period_start: str = ""
@@ -358,9 +370,11 @@ MANDATORY_TRAINING_TOPICS = [
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class GovernanceConfig:
     """Configuration for DORA Governance Framework."""
+
     # Training requirements
     enable_training_tracking: bool = True
     training_expiry_months: int = 12
@@ -393,6 +407,7 @@ class GovernanceConfig:
 # =============================================================================
 # Main Governance Framework
 # =============================================================================
+
 
 class DORAGovernanceFramework:
     """
@@ -461,8 +476,7 @@ class DORAGovernanceFramework:
         self._log_path.mkdir(parents=True, exist_ok=True)
 
         logger.info(
-            f"DORAGovernanceFramework initialized "
-            f"(microenterprise={is_microenterprise})"
+            f"DORAGovernanceFramework initialized " f"(microenterprise={is_microenterprise})"
         )
 
     # =========================================================================
@@ -520,11 +534,14 @@ class DORAGovernanceFramework:
         with self._lock:
             self._roles[assignment.assignment_id] = assignment
 
-        self._log_event("role_assigned", {
-            "assignment_id": assignment.assignment_id,
-            "role": role.value,
-            "person_name": person_name,
-        })
+        self._log_event(
+            "role_assigned",
+            {
+                "assignment_id": assignment.assignment_id,
+                "role": role.value,
+                "person_name": person_name,
+            },
+        )
 
         logger.info(f"Role assigned: {role.value} -> {person_name}")
         return assignment
@@ -652,9 +669,9 @@ class DORAGovernanceFramework:
         """
         # Check for microenterprise exemption
         is_exempted = (
-            self.is_microenterprise and
-            self.config.exempt_microenterprises_from_training and
-            role == GovernanceRole.MANAGEMENT_BODY
+            self.is_microenterprise
+            and self.config.exempt_microenterprises_from_training
+            and role == GovernanceRole.MANAGEMENT_BODY
         )
 
         # Calculate expiry date
@@ -686,12 +703,15 @@ class DORAGovernanceFramework:
                 self._training_records[person_id] = []
             self._training_records[person_id].append(record)
 
-        self._log_event("training_recorded", {
-            "training_id": record.training_id,
-            "person_id": person_id,
-            "training_name": training_name,
-            "status": record.status.value,
-        })
+        self._log_event(
+            "training_recorded",
+            {
+                "training_id": record.training_id,
+                "person_id": person_id,
+                "training_name": training_name,
+                "status": record.status.value,
+            },
+        )
 
         logger.info(f"Training recorded: {training_name} for {person_name}")
         return record
@@ -739,7 +759,9 @@ class DORAGovernanceFramework:
                 "expired": expired,
                 "exempted": exempted,
                 "valid_current": valid,
-                "compliance_rate": (valid / (total - exempted) * 100) if (total - exempted) > 0 else 100.0,
+                "compliance_rate": (
+                    (valid / (total - exempted) * 100) if (total - exempted) > 0 else 100.0
+                ),
                 "microenterprise_exemption_applied": self.is_microenterprise,
             }
 
@@ -829,11 +851,14 @@ class DORAGovernanceFramework:
         with self._lock:
             self._approvals[approval.approval_id] = approval
 
-        self._log_event("approval_submitted", {
-            "approval_id": approval.approval_id,
-            "document_type": document_type,
-            "document_name": document_name,
-        })
+        self._log_event(
+            "approval_submitted",
+            {
+                "approval_id": approval.approval_id,
+                "document_type": document_type,
+                "document_name": document_name,
+            },
+        )
 
         logger.info(f"Document submitted for approval: {document_name}")
         return approval
@@ -854,8 +879,7 @@ class DORAGovernanceFramework:
             approval.reviewed_by = reviewed_by
             approval.reviewed_date = datetime.now(timezone.utc).isoformat()
             approval.status = (
-                ApprovalStatus.PENDING_APPROVAL if recommend_approval
-                else ApprovalStatus.REJECTED
+                ApprovalStatus.PENDING_APPROVAL if recommend_approval else ApprovalStatus.REJECTED
             )
             if not recommend_approval:
                 approval.rejection_reason = comments
@@ -905,10 +929,13 @@ class DORAGovernanceFramework:
             approval.effective_date = effective_date or datetime.now(timezone.utc).isoformat()
             approval.next_review_date = next_review_date
 
-        self._log_event("document_approved", {
-            "approval_id": approval_id,
-            "approved_by": approved_by,
-        })
+        self._log_event(
+            "document_approved",
+            {
+                "approval_id": approval_id,
+                "approved_by": approved_by,
+            },
+        )
 
         logger.info(f"Document approved: {approval.document_name} by {approved_by}")
         return approval
@@ -939,7 +966,8 @@ class DORAGovernanceFramework:
         """Get all pending approvals."""
         with self._lock:
             return [
-                a for a in self._approvals.values()
+                a
+                for a in self._approvals.values()
                 if a.status in (ApprovalStatus.PENDING_REVIEW, ApprovalStatus.PENDING_APPROVAL)
             ]
 
@@ -993,16 +1021,19 @@ class DORAGovernanceFramework:
 
         # Escalate critical findings immediately
         if (
-            severity == AuditFindingSeverity.CRITICAL and
-            self.config.critical_finding_escalation_immediate
+            severity == AuditFindingSeverity.CRITICAL
+            and self.config.critical_finding_escalation_immediate
         ):
             self._escalate_finding(finding)
 
-        self._log_event("audit_finding_recorded", {
-            "finding_id": finding.finding_id,
-            "title": title,
-            "severity": severity.value,
-        })
+        self._log_event(
+            "audit_finding_recorded",
+            {
+                "finding_id": finding.finding_id,
+                "title": title,
+                "severity": severity.value,
+            },
+        )
 
         logger.info(f"Audit finding recorded: {title} ({severity.value})")
         return finding
@@ -1154,13 +1185,9 @@ class DORAGovernanceFramework:
 
             # Check thresholds
             if budget.utilization_pct >= self.config.budget_utilization_critical_pct:
-                logger.warning(
-                    f"Budget utilization critical: {budget.utilization_pct:.1f}%"
-                )
+                logger.warning(f"Budget utilization critical: {budget.utilization_pct:.1f}%")
             elif budget.utilization_pct >= self.config.budget_utilization_warning_pct:
-                logger.info(
-                    f"Budget utilization warning: {budget.utilization_pct:.1f}%"
-                )
+                logger.info(f"Budget utilization warning: {budget.utilization_pct:.1f}%")
 
         return budget
 
@@ -1184,9 +1211,15 @@ class DORAGovernanceFramework:
                 "roles": {
                     "total_active": len(active_roles),
                     "by_defence_line": {
-                        "first_line": sum(1 for r in active_roles if r.defence_line == DefenceLine.FIRST_LINE),
-                        "second_line": sum(1 for r in active_roles if r.defence_line == DefenceLine.SECOND_LINE),
-                        "third_line": sum(1 for r in active_roles if r.defence_line == DefenceLine.THIRD_LINE),
+                        "first_line": sum(
+                            1 for r in active_roles if r.defence_line == DefenceLine.FIRST_LINE
+                        ),
+                        "second_line": sum(
+                            1 for r in active_roles if r.defence_line == DefenceLine.SECOND_LINE
+                        ),
+                        "third_line": sum(
+                            1 for r in active_roles if r.defence_line == DefenceLine.THIRD_LINE
+                        ),
                     },
                     "segregation_violations": segregation_violations,
                 },
@@ -1199,8 +1232,7 @@ class DORAGovernanceFramework:
                     "open_findings": len(open_findings),
                     "overdue_findings": len(overdue_findings),
                     "critical_open": sum(
-                        1 for f in open_findings
-                        if f.severity == AuditFindingSeverity.CRITICAL
+                        1 for f in open_findings if f.severity == AuditFindingSeverity.CRITICAL
                     ),
                 },
                 "budgets": {
@@ -1218,9 +1250,7 @@ class DORAGovernanceFramework:
                 "summary": self.get_governance_summary(),
                 "roles": [asdict(r) for r in self._roles.values()],
                 "training_records": [
-                    asdict(r)
-                    for records in self._training_records.values()
-                    for r in records
+                    asdict(r) for records in self._training_records.values() for r in records
                 ],
                 "approvals": [asdict(a) for a in self._approvals.values()],
                 "audit_findings": [asdict(f) for f in self._audit_findings.values()],
@@ -1254,6 +1284,7 @@ class DORAGovernanceFramework:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_governance_framework(
     config: Optional[GovernanceConfig] = None,

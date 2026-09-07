@@ -56,8 +56,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ExitTrigger(Enum):
     """Triggers for exit strategy activation."""
+
     PLANNED_TERMINATION = "planned_termination"
     CONTRACT_EXPIRY = "contract_expiry"
     PROVIDER_FAILURE = "provider_failure"
@@ -72,6 +74,7 @@ class ExitTrigger(Enum):
 
 class ExitPhase(Enum):
     """Phases of exit execution."""
+
     PLANNING = "planning"
     NOTIFICATION = "notification"
     TRANSITION = "transition"
@@ -84,6 +87,7 @@ class ExitPhase(Enum):
 
 class ExitPlanStatus(Enum):
     """Exit plan status."""
+
     DRAFT = "draft"
     APPROVED = "approved"
     ACTIVE = "active"
@@ -94,6 +98,7 @@ class ExitPlanStatus(Enum):
 
 class TransitionType(Enum):
     """Type of transition."""
+
     TO_ALTERNATIVE_PROVIDER = "to_alternative_provider"
     IN_HOUSE = "in_house"
     WIND_DOWN = "wind_down"
@@ -102,6 +107,7 @@ class TransitionType(Enum):
 
 class ReadinessLevel(Enum):
     """Exit readiness level."""
+
     NOT_READY = "not_ready"
     PARTIALLY_READY = "partially_ready"
     READY = "ready"
@@ -110,6 +116,7 @@ class ReadinessLevel(Enum):
 
 class AlternativeProviderStatus(Enum):
     """Alternative provider status."""
+
     IDENTIFIED = "identified"
     EVALUATED = "evaluated"
     QUALIFIED = "qualified"
@@ -119,6 +126,7 @@ class AlternativeProviderStatus(Enum):
 
 class RiskLevel(Enum):
     """Risk level classification."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -129,11 +137,13 @@ class RiskLevel(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class AlternativeProvider:
     """
     Alternative provider for exit strategy.
     """
+
     alternative_id: str = ""
     provider_name: str = ""
     provider_country: str = ""
@@ -173,9 +183,9 @@ class AlternativeProvider:
         # Calculate overall score
         if self.technical_fit_score or self.commercial_fit_score or self.compliance_fit_score:
             self.overall_score = (
-                self.technical_fit_score * 0.4 +
-                self.commercial_fit_score * 0.3 +
-                self.compliance_fit_score * 0.3
+                self.technical_fit_score * 0.4
+                + self.commercial_fit_score * 0.3
+                + self.compliance_fit_score * 0.3
             )
 
 
@@ -184,6 +194,7 @@ class DataMigrationPlan:
     """
     Data migration plan for exit.
     """
+
     migration_id: str = ""
     data_type: str = ""  # transactional, configuration, historical, etc.
     data_classification: str = ""  # public, internal, confidential, restricted
@@ -222,6 +233,7 @@ class TransitionTask:
     """
     Task in the exit transition.
     """
+
     task_id: str = ""
     task_name: str = ""
     description: str = ""
@@ -261,6 +273,7 @@ class ExitRisk:
     """
     Risk identified in exit planning.
     """
+
     risk_id: str = ""
     risk_name: str = ""
     description: str = ""
@@ -303,6 +316,7 @@ class ExitCostEstimate:
     """
     Cost estimate for exit.
     """
+
     cost_id: str = ""
     cost_category: str = ""  # transition, termination, parallel_run, resources, contingency
 
@@ -331,6 +345,7 @@ class ExitPlan:
     """
     Complete exit plan per Article 28(8).
     """
+
     plan_id: str = ""
     provider_id: str = ""
     provider_name: str = ""
@@ -418,6 +433,7 @@ class ExitExecution:
     """
     Exit execution tracking.
     """
+
     execution_id: str = ""
     plan_id: str = ""
     provider_name: str = ""
@@ -467,6 +483,7 @@ class ExitReadinessAssessment:
     """
     Exit readiness assessment.
     """
+
     assessment_id: str = ""
     plan_id: str = ""
     assessment_date: str = ""
@@ -501,6 +518,7 @@ class ExitReadinessAssessment:
 # =============================================================================
 # Configuration
 # =============================================================================
+
 
 @dataclass
 class ExitStrategiesConfig:
@@ -543,6 +561,7 @@ class ExitStrategiesConfig:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class DORAExitStrategies:
     """
@@ -669,7 +688,8 @@ class DORAExitStrategies:
 
         # Set review dates
         review_months = (
-            self.config.critical_plan_review_months if is_critical
+            self.config.critical_plan_review_months
+            if is_critical
             else self.config.exit_plan_review_frequency_months
         )
         plan.next_review_date = (
@@ -686,12 +706,15 @@ class DORAExitStrategies:
         # Create default tasks
         self._create_default_tasks(plan.plan_id)
 
-        self._log_event("plan_created", {
-            "plan_id": plan.plan_id,
-            "provider_name": provider_name,
-            "is_critical": is_critical,
-            "duration_days": total_duration_days,
-        })
+        self._log_event(
+            "plan_created",
+            {
+                "plan_id": plan.plan_id,
+                "provider_name": provider_name,
+                "is_critical": is_critical,
+                "duration_days": total_duration_days,
+            },
+        )
 
         return plan
 
@@ -767,10 +790,13 @@ class DORAExitStrategies:
             plan.approved_by = approved_by
             plan.approved_date = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("plan_approved", {
-            "plan_id": plan_id,
-            "approved_by": approved_by,
-        })
+        self._log_event(
+            "plan_approved",
+            {
+                "plan_id": plan_id,
+                "approved_by": approved_by,
+            },
+        )
 
         return plan
 
@@ -785,9 +811,7 @@ class DORAExitStrategies:
                     result.append(plan)
                     continue
 
-                review_date = datetime.fromisoformat(
-                    plan.next_review_date.replace("Z", "+00:00")
-                )
+                review_date = datetime.fromisoformat(plan.next_review_date.replace("Z", "+00:00"))
                 reminder_date = review_date - timedelta(days=self.config.notify_before_review_days)
 
                 if now >= reminder_date:
@@ -869,9 +893,7 @@ class DORAExitStrategies:
             alt.commercial_fit_score = commercial_score
             alt.compliance_fit_score = compliance_score
             alt.overall_score = (
-                technical_score * 0.4 +
-                commercial_score * 0.3 +
-                compliance_score * 0.3
+                technical_score * 0.4 + commercial_score * 0.3 + compliance_score * 0.3
             )
             alt.evaluation_date = datetime.now(timezone.utc).isoformat()
             alt.evaluation_notes = evaluation_notes
@@ -902,11 +924,7 @@ class DORAExitStrategies:
         """Get all alternatives for a plan."""
         with self._lock:
             alt_ids = self._alternatives_by_plan.get(plan_id, set())
-            return [
-                self._alternatives[aid]
-                for aid in alt_ids
-                if aid in self._alternatives
-            ]
+            return [self._alternatives[aid] for aid in alt_ids if aid in self._alternatives]
 
     def get_best_alternative(
         self,
@@ -1019,7 +1037,7 @@ class DORAExitStrategies:
             task_ids = self._tasks_by_plan.get(plan_id, set())
             return sorted(
                 [self._tasks[tid] for tid in task_ids if tid in self._tasks],
-                key=lambda t: t.sequence_order
+                key=lambda t: t.sequence_order,
             )
 
     def get_tasks_by_phase(
@@ -1042,31 +1060,25 @@ class DORAExitStrategies:
             ("Identify alternative providers", ExitPhase.PLANNING, "entity", 10),
             ("Conduct alternative provider evaluation", ExitPhase.PLANNING, "entity", 15),
             ("Negotiate contracts with alternative", ExitPhase.PLANNING, "entity", 20),
-
             # Notification phase
             ("Notify current provider of termination", ExitPhase.NOTIFICATION, "entity", 1),
             ("Notify affected stakeholders", ExitPhase.NOTIFICATION, "entity", 2),
             ("Obtain provider cooperation agreement", ExitPhase.NOTIFICATION, "shared", 5),
-
             # Transition phase
             ("Setup alternative provider environment", ExitPhase.TRANSITION, "alternative", 10),
             ("Configure integrations with alternative", ExitPhase.TRANSITION, "entity", 15),
             ("Migrate configuration data", ExitPhase.TRANSITION, "shared", 5),
             ("Migrate historical data", ExitPhase.TRANSITION, "shared", 10),
-
             # Parallel run phase
             ("Execute parallel run", ExitPhase.PARALLEL_RUN, "shared", 14),
             ("Monitor parallel operations", ExitPhase.PARALLEL_RUN, "entity", 14),
             ("Validate data consistency", ExitPhase.PARALLEL_RUN, "entity", 5),
-
             # Cutover phase
             ("Execute final cutover", ExitPhase.CUTOVER, "shared", 1),
             ("Redirect traffic to alternative", ExitPhase.CUTOVER, "entity", 1),
-
             # Validation phase
             ("Validate production operations", ExitPhase.VALIDATION, "entity", 5),
             ("Conduct user acceptance testing", ExitPhase.VALIDATION, "entity", 3),
-
             # Cleanup phase
             ("Terminate current provider access", ExitPhase.CLEANUP, "entity", 1),
             ("Archive provider data", ExitPhase.CLEANUP, "entity", 5),
@@ -1129,9 +1141,7 @@ class DORAExitStrategies:
             if not plan:
                 return []
             return [
-                self._migrations[mid]
-                for mid in plan.data_migrations
-                if mid in self._migrations
+                self._migrations[mid] for mid in plan.data_migrations if mid in self._migrations
             ]
 
     # =========================================================================
@@ -1179,11 +1189,7 @@ class DORAExitStrategies:
         """Get all risks for a plan."""
         with self._lock:
             risk_ids = self._risks_by_plan.get(plan_id, set())
-            return [
-                self._risks[rid]
-                for rid in risk_ids
-                if rid in self._risks
-            ]
+            return [self._risks[rid] for rid in risk_ids if rid in self._risks]
 
     def get_high_risks(
         self,
@@ -1191,10 +1197,7 @@ class DORAExitStrategies:
     ) -> List[ExitRisk]:
         """Get high and critical risks for a plan."""
         risks = self.get_risks_for_plan(plan_id)
-        return [
-            r for r in risks
-            if r.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
-        ]
+        return [r for r in risks if r.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]]
 
     # =========================================================================
     # Cost Estimation
@@ -1261,11 +1264,7 @@ class DORAExitStrategies:
             plan = self._plans.get(plan_id)
             if not plan:
                 return []
-            return [
-                self._costs[cid]
-                for cid in plan.cost_estimates
-                if cid in self._costs
-            ]
+            return [self._costs[cid] for cid in plan.cost_estimates if cid in self._costs]
 
     # =========================================================================
     # Exit Readiness Assessment
@@ -1318,17 +1317,25 @@ class DORAExitStrategies:
 
             # Alternatives assessment (25%)
             min_alts = (
-                self.config.min_alternatives_for_critical if plan.is_critical_provider
+                self.config.min_alternatives_for_critical
+                if plan.is_critical_provider
                 else self.config.min_alternatives_for_standard
             )
-            qualified_alts = [a for a in alternatives if a.status in [
-                AlternativeProviderStatus.QUALIFIED,
-                AlternativeProviderStatus.CONTRACTED,
-                AlternativeProviderStatus.READY
-            ]]
+            qualified_alts = [
+                a
+                for a in alternatives
+                if a.status
+                in [
+                    AlternativeProviderStatus.QUALIFIED,
+                    AlternativeProviderStatus.CONTRACTED,
+                    AlternativeProviderStatus.READY,
+                ]
+            ]
             alt_criteria = {
                 "alternatives_identified": len(alternatives) >= min_alts,
-                "alternatives_evaluated": any(a.status != AlternativeProviderStatus.IDENTIFIED for a in alternatives),
+                "alternatives_evaluated": any(
+                    a.status != AlternativeProviderStatus.IDENTIFIED for a in alternatives
+                ),
                 "target_selected": bool(plan.target_provider_id),
                 "alternatives_qualified": len(qualified_alts) > 0,
             }
@@ -1349,9 +1356,8 @@ class DORAExitStrategies:
             # Testing assessment (20%)
             test_criteria = {
                 "tested_within_year": self._was_tested_recently(plan),
-                "test_results_positive": len(plan.test_results) > 0 and all(
-                    r.get("success", False) for r in plan.test_results[-3:]
-                ),
+                "test_results_positive": len(plan.test_results) > 0
+                and all(r.get("success", False) for r in plan.test_results[-3:]),
             }
             test_score = sum(test_criteria.values()) / len(test_criteria) * 100
             assessment.testing_score = test_score
@@ -1368,11 +1374,11 @@ class DORAExitStrategies:
 
             # Calculate overall score
             assessment.overall_score = (
-                doc_score * 0.20 +
-                alt_score * 0.25 +
-                res_score * 0.20 +
-                test_score * 0.20 +
-                comm_score * 0.15
+                doc_score * 0.20
+                + alt_score * 0.25
+                + res_score * 0.20
+                + test_score * 0.20
+                + comm_score * 0.15
             )
 
             # Determine readiness level
@@ -1390,9 +1396,7 @@ class DORAExitStrategies:
             # Generate findings
             assessment.strengths = [k for k, v in criteria_results.items() if v]
             assessment.gaps = [k for k, v in criteria_results.items() if not v]
-            assessment.recommendations = self._generate_readiness_recommendations(
-                assessment.gaps
-            )
+            assessment.recommendations = self._generate_readiness_recommendations(assessment.gaps)
 
             # Store assessment
             self._assessments[assessment.assessment_id] = assessment
@@ -1402,11 +1406,14 @@ class DORAExitStrategies:
             plan.readiness_score_pct = assessment.overall_score
             plan.last_readiness_assessment = assessment.assessment_date
 
-        self._log_event("readiness_assessed", {
-            "plan_id": plan_id,
-            "readiness_level": assessment.readiness_level.value,
-            "score": assessment.overall_score,
-        })
+        self._log_event(
+            "readiness_assessed",
+            {
+                "plan_id": plan_id,
+                "readiness_level": assessment.readiness_level.value,
+                "score": assessment.overall_score,
+            },
+        )
 
         return assessment
 
@@ -1514,26 +1521,34 @@ class DORAExitStrategies:
             plan.actual_start_date = execution.triggered_date
 
             # Log activity
-            execution.activity_log.append({
-                "timestamp": execution.triggered_date,
-                "action": "exit_triggered",
-                "by": triggered_by,
-                "details": trigger_reason,
-            })
+            execution.activity_log.append(
+                {
+                    "timestamp": execution.triggered_date,
+                    "action": "exit_triggered",
+                    "by": triggered_by,
+                    "details": trigger_reason,
+                }
+            )
 
-        self._log_event("exit_triggered", {
-            "execution_id": execution.execution_id,
-            "plan_id": plan_id,
-            "trigger": trigger.value,
-        })
+        self._log_event(
+            "exit_triggered",
+            {
+                "execution_id": execution.execution_id,
+                "plan_id": plan_id,
+                "trigger": trigger.value,
+            },
+        )
 
         # Notify
         if self.config.notification_callback:
-            self.config.notification_callback("exit_triggered", {
-                "plan_id": plan_id,
-                "provider_name": plan.provider_name,
-                "trigger": trigger.value,
-            })
+            self.config.notification_callback(
+                "exit_triggered",
+                {
+                    "plan_id": plan_id,
+                    "provider_name": plan.provider_name,
+                    "trigger": trigger.value,
+                },
+            )
 
         return execution
 
@@ -1557,20 +1572,20 @@ class DORAExitStrategies:
             if tasks_completed is not None:
                 execution.tasks_completed = tasks_completed
                 if execution.tasks_total > 0:
-                    execution.overall_progress_pct = (
-                        tasks_completed / execution.tasks_total * 100
-                    )
+                    execution.overall_progress_pct = tasks_completed / execution.tasks_total * 100
 
             if actual_cost_eur is not None:
                 execution.actual_cost_eur = actual_cost_eur
                 execution.cost_variance_eur = actual_cost_eur - execution.planned_cost_eur
 
-            execution.activity_log.append({
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "action": "progress_update",
-                "phase": phase.value if phase else None,
-                "progress_pct": execution.overall_progress_pct,
-            })
+            execution.activity_log.append(
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "action": "progress_update",
+                    "phase": phase.value if phase else None,
+                    "progress_pct": execution.overall_progress_pct,
+                }
+            )
 
         return execution
 
@@ -1594,10 +1609,13 @@ class DORAExitStrategies:
                 plan.status = ExitPlanStatus.COMPLETED
                 plan.actual_completion_date = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("exit_completed", {
-            "execution_id": execution_id,
-            "plan_id": execution.plan_id,
-        })
+        self._log_event(
+            "exit_completed",
+            {
+                "execution_id": execution_id,
+                "plan_id": execution.plan_id,
+            },
+        )
 
         return execution
 
@@ -1613,8 +1631,7 @@ class DORAExitStrategies:
         """Get all active exit executions."""
         with self._lock:
             return [
-                e for e in self._executions.values()
-                if e.status in ["initiated", "in_progress"]
+                e for e in self._executions.values() if e.status in ["initiated", "in_progress"]
             ]
 
     # =========================================================================
@@ -1637,16 +1654,21 @@ class DORAExitStrategies:
 
             plan = self._plans[plan_id]
             plan.last_test_date = test_date
-            plan.test_results.append({
-                "test_date": test_date,
-                "test_type": test_type,
-                "success": success,
-                "findings": findings or [],
-                "tested_by": tested_by,
-            })
+            plan.test_results.append(
+                {
+                    "test_date": test_date,
+                    "test_type": test_type,
+                    "success": success,
+                    "findings": findings or [],
+                    "tested_by": tested_by,
+                }
+            )
 
             # Update readiness if tested successfully
-            if success and plan.readiness_level in [ReadinessLevel.READY, ReadinessLevel.PARTIALLY_READY]:
+            if success and plan.readiness_level in [
+                ReadinessLevel.READY,
+                ReadinessLevel.PARTIALLY_READY,
+            ]:
                 plan.readiness_level = ReadinessLevel.TESTED
 
         return plan
@@ -1679,11 +1701,13 @@ class DORAExitStrategies:
                 "alternatives": {
                     "total": len(self._alternatives),
                     "qualified": sum(
-                        1 for a in self._alternatives.values()
-                        if a.status in [
+                        1
+                        for a in self._alternatives.values()
+                        if a.status
+                        in [
                             AlternativeProviderStatus.QUALIFIED,
                             AlternativeProviderStatus.CONTRACTED,
-                            AlternativeProviderStatus.READY
+                            AlternativeProviderStatus.READY,
                         ]
                     ),
                 },
@@ -1695,15 +1719,13 @@ class DORAExitStrategies:
                     "all_critical_have_plans": all(
                         self._plans_by_provider.get(pid)
                         for pid in self._plans_by_provider
-                        if self._plans.get(self._plans_by_provider.get(pid, ""), ExitPlan()).is_critical_provider
+                        if self._plans.get(
+                            self._plans_by_provider.get(pid, ""), ExitPlan()
+                        ).is_critical_provider
                     ),
-                    "all_plans_approved": all(
-                        p.status != ExitPlanStatus.DRAFT
-                        for p in plans
-                    ),
+                    "all_plans_approved": all(p.status != ExitPlanStatus.DRAFT for p in plans),
                     "critical_plans_tested": all(
-                        self._was_tested_recently(p)
-                        for p in critical_plans
+                        self._was_tested_recently(p) for p in critical_plans
                     ),
                     "plans_needing_review": len(self.get_plans_needing_review()),
                 },
@@ -1739,6 +1761,7 @@ class DORAExitStrategies:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_exit_strategies(
     config: Optional[ExitStrategiesConfig] = None,

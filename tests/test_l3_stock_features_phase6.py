@@ -17,7 +17,7 @@ Test categories:
 - Backward compatibility with crypto (critical!)
 - Edge case handling
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 
@@ -34,6 +34,7 @@ from unittest.mock import MagicMock, patch
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def sample_stock_df():
     """Create sample stock DataFrame with OHLCV data."""
@@ -41,15 +42,17 @@ def sample_stock_df():
     base_ts = 1700000000
     timestamps = np.arange(base_ts, base_ts + n_rows * 14400, 14400)
 
-    df = pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "AAPL",
-        "open": np.random.uniform(150, 160, n_rows),
-        "high": np.random.uniform(160, 165, n_rows),
-        "low": np.random.uniform(145, 150, n_rows),
-        "close": np.random.uniform(150, 160, n_rows),
-        "volume": np.random.uniform(1e6, 5e6, n_rows),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "AAPL",
+            "open": np.random.uniform(150, 160, n_rows),
+            "high": np.random.uniform(160, 165, n_rows),
+            "low": np.random.uniform(145, 150, n_rows),
+            "close": np.random.uniform(150, 160, n_rows),
+            "volume": np.random.uniform(1e6, 5e6, n_rows),
+        }
+    )
     # Fix OHLC consistency
     df["high"] = df[["open", "high", "low", "close"]].max(axis=1) + 1
     df["low"] = df[["open", "high", "low", "close"]].min(axis=1) - 1
@@ -63,15 +66,17 @@ def sample_crypto_df():
     base_ts = 1700000000
     timestamps = np.arange(base_ts, base_ts + n_rows * 14400, 14400)
 
-    df = pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "BTCUSDT",
-        "open": np.random.uniform(40000, 45000, n_rows),
-        "high": np.random.uniform(45000, 48000, n_rows),
-        "low": np.random.uniform(38000, 40000, n_rows),
-        "close": np.random.uniform(40000, 45000, n_rows),
-        "volume": np.random.uniform(1000, 5000, n_rows),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "BTCUSDT",
+            "open": np.random.uniform(40000, 45000, n_rows),
+            "high": np.random.uniform(45000, 48000, n_rows),
+            "low": np.random.uniform(38000, 40000, n_rows),
+            "close": np.random.uniform(40000, 45000, n_rows),
+            "volume": np.random.uniform(1000, 5000, n_rows),
+        }
+    )
     df["high"] = df[["open", "high", "low", "close"]].max(axis=1) + 100
     df["low"] = df[["open", "high", "low", "close"]].min(axis=1) - 100
     return df
@@ -103,6 +108,7 @@ def sample_earnings():
 # TEST: DIVIDEND-ADJUSTED BACKTESTING
 # =============================================================================
 
+
 class TestDividendAdjustment:
     """Tests for dividend adjustment logic."""
 
@@ -113,7 +119,7 @@ class TestDividendAdjustment:
         service = CorporateActionsService()
 
         # Mock empty dividends
-        with patch.object(service, 'get_dividends', return_value=[]):
+        with patch.object(service, "get_dividends", return_value=[]):
             factors = service.compute_dividend_factors("AAPL", ["2024-01-01", "2024-06-01"])
 
             assert factors["2024-01-01"] == 1.0
@@ -126,7 +132,7 @@ class TestDividendAdjustment:
         service = CorporateActionsService()
 
         # Mock dividends
-        with patch.object(service, 'get_dividends', return_value=sample_dividends):
+        with patch.object(service, "get_dividends", return_value=sample_dividends):
             dates = ["2024-01-01", "2024-03-01", "2024-06-01", "2024-12-01"]
             # Total-return adjustment needs the close at each *ex-date* (no longer
             # fabricated to $100). Provide ex-date prices alongside requested dates.
@@ -149,7 +155,7 @@ class TestDividendAdjustment:
 
         service = CorporateActionsService()
 
-        with patch.object(service, 'get_dividends', return_value=sample_dividends):
+        with patch.object(service, "get_dividends", return_value=sample_dividends):
             yield_pct = service.compute_dividend_yield(
                 "AAPL",
                 "2024-12-01",
@@ -175,7 +181,7 @@ class TestDividendAdjustment:
 
         service = CorporateActionsService()
 
-        with patch.object(service, 'get_dividends', return_value=sample_dividends):
+        with patch.object(service, "get_dividends", return_value=sample_dividends):
             result = service.add_dividend_yield_column(sample_stock_df, "AAPL")
 
             assert "trailing_dividend_yield" in result.columns
@@ -193,8 +199,8 @@ class TestAdjustPricesWithDividends:
         service = CorporateActionsService()
 
         # Mock empty splits and dividends
-        with patch.object(service, 'compute_split_factors', return_value={}):
-            with patch.object(service, 'compute_dividend_factors', return_value={}):
+        with patch.object(service, "compute_split_factors", return_value={}):
+            with patch.object(service, "compute_dividend_factors", return_value={}):
                 result = service.adjust_prices(
                     sample_stock_df,
                     "AAPL",
@@ -212,15 +218,18 @@ class TestAdjustPricesWithDividends:
 
         service = CorporateActionsService()
 
-        dates = sample_stock_df["timestamp"].apply(
-            lambda ts: pd.to_datetime(ts, unit="s").strftime("%Y-%m-%d")
-        ).unique().tolist()
+        dates = (
+            sample_stock_df["timestamp"]
+            .apply(lambda ts: pd.to_datetime(ts, unit="s").strftime("%Y-%m-%d"))
+            .unique()
+            .tolist()
+        )
 
         split_factors = {d: 1.0 for d in dates}
         div_factors = {d: 0.98 for d in dates}  # 2% dividend adjustment
 
-        with patch.object(service, 'compute_split_factors', return_value=split_factors):
-            with patch.object(service, 'compute_dividend_factors', return_value=div_factors):
+        with patch.object(service, "compute_split_factors", return_value=split_factors):
+            with patch.object(service, "compute_dividend_factors", return_value=div_factors):
                 result = service.adjust_prices(
                     sample_stock_df,
                     "AAPL",
@@ -237,6 +246,7 @@ class TestAdjustPricesWithDividends:
 # TEST: EARNINGS CALENDAR FEATURES
 # =============================================================================
 
+
 class TestEarningsFeatures:
     """Tests for earnings calendar features."""
 
@@ -246,7 +256,7 @@ class TestEarningsFeatures:
 
         service = CorporateActionsService()
 
-        with patch.object(service, 'get_earnings', return_value=sample_earnings):
+        with patch.object(service, "get_earnings", return_value=sample_earnings):
             result = service.add_earnings_features_to_df(sample_stock_df, "AAPL")
 
             # Check columns exist
@@ -261,7 +271,7 @@ class TestEarningsFeatures:
 
         service = CorporateActionsService()
 
-        with patch.object(service, 'get_earnings', return_value=sample_earnings):
+        with patch.object(service, "get_earnings", return_value=sample_earnings):
             result = service.add_earnings_features_to_df(sample_stock_df, "AAPL")
 
             # Blackout should be binary
@@ -274,7 +284,7 @@ class TestEarningsFeatures:
 
         service = CorporateActionsService()
 
-        with patch.object(service, 'get_earnings', return_value=sample_earnings):
+        with patch.object(service, "get_earnings", return_value=sample_earnings):
             result = service.add_earnings_features_to_df(sample_stock_df, "AAPL")
 
             valid_days = result["days_until_earnings"].dropna()
@@ -288,7 +298,7 @@ class TestEarningsFeatures:
 
         service = CorporateActionsService()
 
-        with patch.object(service, 'get_earnings', return_value=[]):
+        with patch.object(service, "get_earnings", return_value=[]):
             result = service.add_earnings_features_to_df(sample_stock_df, "AAPL")
 
             assert "days_until_earnings" in result.columns
@@ -299,6 +309,7 @@ class TestEarningsFeatures:
 # =============================================================================
 # TEST: MACRO DATA INTEGRATION
 # =============================================================================
+
 
 class TestMacroDataFeatures:
     """Tests for macro data feature extraction in mediator."""
@@ -313,15 +324,17 @@ class TestMacroDataFeatures:
     def test_mediator_extracts_dxy(self):
         """Test mediator extracts DXY feature."""
         # Create mock row with DXY value
-        mock_row = pd.Series({
-            "dxy_value": 105.0,
-            "treasury_10y_yield": 4.5,
-            "real_yield_proxy": 1.5,
-            "days_until_earnings": 30.0,
-            "trailing_dividend_yield": 2.0,
-            "last_earnings_surprise": 5.0,
-            "in_earnings_blackout": 0,
-        })
+        mock_row = pd.Series(
+            {
+                "dxy_value": 105.0,
+                "treasury_10y_yield": 4.5,
+                "real_yield_proxy": 1.5,
+                "days_until_earnings": 30.0,
+                "trailing_dividend_yield": 2.0,
+                "last_earnings_surprise": 5.0,
+                "in_earnings_blackout": 0,
+            }
+        )
 
         # Import mediator functions
         from mediator import Mediator
@@ -358,6 +371,7 @@ class TestMacroDataFeatures:
 # =============================================================================
 # TEST: PDT RULE ENFORCEMENT
 # =============================================================================
+
 
 class TestPDTGuard:
     """Tests for PDT rule enforcement."""
@@ -473,6 +487,7 @@ class TestPDTGuard:
 # TEST: EXTENDED HOURS TRADING FEATURES
 # =============================================================================
 
+
 class TestExtendedHoursFeatures:
     """Tests for extended hours trading features."""
 
@@ -567,6 +582,7 @@ class TestExtendedHoursFeatures:
 # TEST: BACKWARD COMPATIBILITY (CRITICAL!)
 # =============================================================================
 
+
 class TestBackwardCompatibilityCrypto:
     """Tests to ensure crypto branch is not broken."""
 
@@ -591,14 +607,16 @@ class TestBackwardCompatibilityCrypto:
     def test_mediator_handles_missing_stock_features(self):
         """Test mediator handles missing stock features gracefully."""
         # Create row without stock features (crypto-like)
-        mock_row = pd.Series({
-            "close": 45000.0,
-            "open": 44000.0,
-            "high": 46000.0,
-            "low": 43000.0,
-            "volume": 1000.0,
-            # No stock features
-        })
+        mock_row = pd.Series(
+            {
+                "close": 45000.0,
+                "open": 44000.0,
+                "high": 46000.0,
+                "low": 43000.0,
+                "volume": 1000.0,
+                # No stock features
+            }
+        )
 
         from mediator import Mediator
 
@@ -632,9 +650,9 @@ class TestBackwardCompatibilityCrypto:
         # The guard itself doesn't distinguish asset class,
         # but it should only be applied in equity trading paths
         # Verify PDTGuard exists and has expected interface
-        assert hasattr(guard, 'check_trade_allowed') or hasattr(guard, 'can_trade'), (
-            "PDTGuard should have trade check method"
-        )
+        assert hasattr(guard, "check_trade_allowed") or hasattr(
+            guard, "can_trade"
+        ), "PDTGuard should have trade check method"
         # Note: Full integration test requires trading path setup
         # Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#testing-pdt-integration
 
@@ -655,6 +673,7 @@ class TestBackwardCompatibilityCrypto:
 # TEST: INTEGRATION
 # =============================================================================
 
+
 class TestIntegration:
     """Integration tests for L3 stock features."""
 
@@ -664,7 +683,7 @@ class TestIntegration:
         from services.session_router import add_extended_hours_features_to_df
 
         # Mock the corporate actions service
-        with patch('services.corporate_actions.get_service') as mock_get_service:
+        with patch("services.corporate_actions.get_service") as mock_get_service:
             mock_service = MagicMock()
             mock_service.compute_gap_features.return_value = sample_stock_df.copy()
             mock_service.get_dividends.return_value = []

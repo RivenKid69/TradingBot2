@@ -57,6 +57,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class PDTConfig:
     """Configuration for PDT rule enforcement."""
@@ -87,6 +88,7 @@ class PDTConfig:
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class DayTrade:
     """Record of a single day trade."""
@@ -115,6 +117,7 @@ class PDTStatus:
 # =============================================================================
 # PDT Guard
 # =============================================================================
+
 
 class PDTGuard:
     """
@@ -286,9 +289,7 @@ class PDTGuard:
                     f"{remaining} remaining"
                 )
             else:
-                logger.debug(
-                    f"Day trade recorded: {symbol}, {remaining} remaining"
-                )
+                logger.debug(f"Day trade recorded: {symbol}, {remaining} remaining")
 
     def check_position_close(
         self,

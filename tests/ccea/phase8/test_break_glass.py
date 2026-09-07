@@ -31,9 +31,7 @@ class TestBreakGlassControllerBasic:
 
     def test_create_with_approvers(self):
         """Test creating with approvers list."""
-        controller = BreakGlassController(
-            approvers={"admin@example.com", "security@example.com"}
-        )
+        controller = BreakGlassController(approvers={"admin@example.com", "security@example.com"})
         assert len(controller._approvers) == 2
 
 

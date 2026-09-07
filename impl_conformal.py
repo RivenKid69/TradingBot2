@@ -57,6 +57,7 @@ logger = logging.getLogger(__name__)
 # Utility Functions
 # =============================================================================
 
+
 def _now_ms() -> int:
     """Get current timestamp in milliseconds."""
     return int(time.time() * 1000)
@@ -88,6 +89,7 @@ def _compute_quantile_with_correction(
 # =============================================================================
 # CQR Calibrator
 # =============================================================================
+
 
 class CQRCalibrator:
     """
@@ -144,8 +146,7 @@ class CQRCalibrator:
 
         if n < self.config.min_calibration_samples:
             logger.warning(
-                f"Insufficient calibration samples: {n} < "
-                f"{self.config.min_calibration_samples}"
+                f"Insufficient calibration samples: {n} < " f"{self.config.min_calibration_samples}"
             )
             return CalibrationResult(
                 success=False,
@@ -167,10 +168,7 @@ class CQRCalibrator:
 
         # CQR conformity scores: E_i = max(q_lo_i - Y_i, Y_i - q_hi_i)
         # Positive when Y is outside [q_lo, q_hi]
-        scores = np.maximum(
-            predicted_lower - true_values,
-            true_values - predicted_upper
-        )
+        scores = np.maximum(predicted_lower - true_values, true_values - predicted_upper)
 
         # Compute (1-α)(1 + 1/n) quantile for finite-sample correction
         alpha = 1.0 - self.config.coverage_target
@@ -294,6 +292,7 @@ class CQRCalibrator:
 # EnbPI Calibrator
 # =============================================================================
 
+
 class EnbPICalibrator:
     """
     Ensemble batch Prediction Intervals for time series.
@@ -328,8 +327,7 @@ class EnbPICalibrator:
         self._timestamps: Deque[int] = deque(maxlen=config.lookback_window)
         self._lock = threading.Lock()
         self._agg_func: Callable[[np.ndarray], float] = (
-            np.median if config.time_series.enbpi_agg_func == "median"
-            else np.mean
+            np.median if config.time_series.enbpi_agg_func == "median" else np.mean
         )
 
     def partial_fit(
@@ -406,10 +404,7 @@ class EnbPICalibrator:
         lower_q = alpha / 2.0
         upper_q = 1.0 - alpha / 2.0
         q_lo, q_hi = np.quantile(residuals, [lower_q, upper_q])
-        in_interval = (
-            (predictions + q_lo <= true_values) &
-            (true_values <= predictions + q_hi)
-        )
+        in_interval = (predictions + q_lo <= true_values) & (true_values <= predictions + q_hi)
         empirical_coverage = float(np.mean(in_interval))
 
         logger.info(
@@ -510,6 +505,7 @@ class EnbPICalibrator:
 # =============================================================================
 # ACI Calibrator
 # =============================================================================
+
 
 class ACICalibrator:
     """
@@ -766,6 +762,7 @@ class ACICalibrator:
 # Naive Calibrator (Baseline)
 # =============================================================================
 
+
 class NaiveCalibrator:
     """
     Naive percentile-based calibrator (baseline, no guarantees).
@@ -817,7 +814,7 @@ class NaiveCalibrator:
             self._residuals.append(true_value - predicted)
             # Keep only recent residuals
             if len(self._residuals) > self.config.lookback_window:
-                self._residuals = self._residuals[-self.config.lookback_window:]
+                self._residuals = self._residuals[-self.config.lookback_window :]
 
     def predict_interval(
         self,
@@ -874,6 +871,7 @@ class NaiveCalibrator:
 # =============================================================================
 # Conformal CVaR Estimator
 # =============================================================================
+
 
 class ConformalCVaREstimator:
     """
@@ -960,7 +958,7 @@ class ConformalCVaREstimator:
             )
 
         # For CVaR bounds, use spread of tail quantiles
-        tail_quantiles = quantiles[:max(1, var_idx)]
+        tail_quantiles = quantiles[: max(1, var_idx)]
         cvar_interval = self._calibrator.predict_interval(
             predicted_lower=float(np.min(tail_quantiles)),
             predicted_upper=float(np.max(tail_quantiles)),
@@ -987,6 +985,7 @@ class ConformalCVaREstimator:
 # =============================================================================
 # Uncertainty Tracker
 # =============================================================================
+
 
 class UncertaintyTrackerImpl:
     """
@@ -1049,9 +1048,7 @@ class UncertaintyTrackerImpl:
                     np.percentile(widths, self.config.critical_percentile)
                 )
                 sorted_widths = np.sort(widths)
-                percentile = float(
-                    np.searchsorted(sorted_widths, width) / n * 100
-                )
+                percentile = float(np.searchsorted(sorted_widths, width) / n * 100)
             else:
                 percentile = 50.0  # Default until we have enough history
 
@@ -1141,6 +1138,7 @@ class UncertaintyTrackerImpl:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_calibrator(
     config: ConformalConfig,

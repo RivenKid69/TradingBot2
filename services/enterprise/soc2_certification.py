@@ -429,7 +429,9 @@ class SOC2CertificationService:
             control.implementation_notes = notes
         if status in (ControlStatus.TESTED, ControlStatus.EFFECTIVE):
             control.last_tested = datetime.utcnow()
-            control.next_test_due = datetime.utcnow() + timedelta(days=self.config.control_test_frequency_days)
+            control.next_test_due = datetime.utcnow() + timedelta(
+                days=self.config.control_test_frequency_days
+            )
 
         return control
 
@@ -494,12 +496,16 @@ class SOC2CertificationService:
     def get_evidence_coverage(self) -> dict[str, Any]:
         """Get evidence coverage statistics."""
         total_controls = len(self._controls)
-        controls_with_evidence = len(set(e.control_id for e in self._evidence.values() if e.is_current))
+        controls_with_evidence = len(
+            set(e.control_id for e in self._evidence.values() if e.is_current)
+        )
 
         return {
             "total_controls": total_controls,
             "controls_with_evidence": controls_with_evidence,
-            "coverage_percent": (controls_with_evidence / total_controls * 100) if total_controls > 0 else 0,
+            "coverage_percent": (
+                (controls_with_evidence / total_controls * 100) if total_controls > 0 else 0
+            ),
             "evidence_count": len([e for e in self._evidence.values() if e.is_current]),
         }
 
@@ -604,7 +610,9 @@ class SOC2CertificationService:
             by_principle[principle.value] = {
                 "total": len(principle_controls),
                 "effective": effective,
-                "compliance_percent": (effective / len(principle_controls) * 100) if principle_controls else 0,
+                "compliance_percent": (
+                    (effective / len(principle_controls) * 100) if principle_controls else 0
+                ),
             }
 
         effective_controls = sum(1 for c in controls if c.is_effective)

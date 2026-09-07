@@ -36,7 +36,9 @@ def _now_ms() -> int:
 class ParquetCache:
     """Файловый parquet-кэш баров по (vendor, symbol, timeframe)."""
 
-    def __init__(self, root: str = os.path.join("data", "cache", "xs"), *, enabled: bool = True) -> None:
+    def __init__(
+        self, root: str = os.path.join("data", "cache", "xs"), *, enabled: bool = True
+    ) -> None:
         self.root = str(root)
         self.enabled = bool(enabled)
 

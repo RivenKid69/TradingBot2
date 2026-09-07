@@ -102,25 +102,25 @@ logger = logging.getLogger(__name__)
 # Default protection points for Market with Protection (in ticks)
 DEFAULT_PROTECTION_POINTS: Dict[str, int] = {
     # Equity Index - tight protection for liquid products
-    "ES": 10,    # 10 ticks = 2.5 points = $125 per contract
-    "NQ": 15,    # 15 ticks = 3.75 points
-    "YM": 20,    # 20 points
-    "RTY": 20,   # 20 ticks = 2.0 points
+    "ES": 10,  # 10 ticks = 2.5 points = $125 per contract
+    "NQ": 15,  # 15 ticks = 3.75 points
+    "YM": 20,  # 20 points
+    "RTY": 20,  # 20 ticks = 2.0 points
     "MES": 10,
     "MNQ": 15,
     # Metals - wider for less liquid
-    "GC": 30,    # 30 ticks = $3
-    "SI": 40,    # 40 ticks
+    "GC": 30,  # 30 ticks = $3
+    "SI": 40,  # 40 ticks
     "HG": 40,
     # Energy
-    "CL": 50,    # 50 ticks = $0.50
-    "NG": 100,   # 100 ticks = $0.10 (volatile)
+    "CL": 50,  # 50 ticks = $0.50
+    "NG": 100,  # 100 ticks = $0.10 (volatile)
     # Currencies
     "6E": 20,
     "6J": 30,
     "6B": 20,
     # Bonds
-    "ZB": 20,    # 20 ticks
+    "ZB": 20,  # 20 ticks
     "ZN": 15,
     "ZF": 15,
 }
@@ -132,8 +132,10 @@ DEFAULT_PROTECTION_POINTS_FALLBACK = 20
 # Enums
 # =============================================================================
 
+
 class GlobexOrderType(str, Enum):
     """Extended order types for CME Globex."""
+
     LIMIT = "LIMIT"
     MARKET = "MARKET"
     MARKET_WITH_PROTECTION = "MWP"  # Market with price protection
@@ -146,24 +148,27 @@ class GlobexOrderType(str, Enum):
 
 class AuctionState(str, Enum):
     """Auction state for opening/closing."""
+
     NOT_IN_AUCTION = "NOT_IN_AUCTION"
     COLLECTING = "COLLECTING"  # Accepting orders, no matching
     UNCROSSING = "UNCROSSING"  # Calculating equilibrium
-    EXECUTING = "EXECUTING"    # Matching at equilibrium price
+    EXECUTING = "EXECUTING"  # Matching at equilibrium price
     COMPLETED = "COMPLETED"
 
 
 class StopTriggerType(str, Enum):
     """Stop order trigger condition."""
-    LAST_TRADE = "LAST_TRADE"      # CME default: trigger on last trade
-    BID = "BID"                     # Trigger on bid touch
-    ASK = "ASK"                     # Trigger on ask touch
-    MID = "MID"                     # Trigger on mid-price
+
+    LAST_TRADE = "LAST_TRADE"  # CME default: trigger on last trade
+    BID = "BID"  # Trigger on bid touch
+    ASK = "ASK"  # Trigger on ask touch
+    MID = "MID"  # Trigger on mid-price
 
 
 # =============================================================================
 # Data Structures
 # =============================================================================
+
 
 @dataclass
 class StopOrder:
@@ -183,6 +188,7 @@ class StopOrder:
         timestamp_ns: Order submission time
         account_id: Account for STP
     """
+
     order_id: str
     symbol: str
     side: Side
@@ -235,6 +241,7 @@ class StopOrder:
 @dataclass
 class AuctionOrder:
     """Order participating in auction."""
+
     order_id: str
     side: Side
     qty: float
@@ -260,6 +267,7 @@ class AuctionResult:
         imbalance_direction: Net order imbalance direction
         fills: List of fills from auction
     """
+
     equilibrium_price: float
     matched_volume: float
     buy_imbalance: float = 0.0
@@ -279,6 +287,7 @@ class AuctionResult:
 
 class VelocityLogicResult(NamedTuple):
     """Result of velocity logic check."""
+
     triggered: bool
     pause_duration_ms: int
     reason: str
@@ -287,6 +296,7 @@ class VelocityLogicResult(NamedTuple):
 # =============================================================================
 # Globex Matching Engine
 # =============================================================================
+
 
 class GlobexMatchingEngine(MatchingEngine):
     """
@@ -664,9 +674,7 @@ class GlobexMatchingEngine(MatchingEngine):
 
         # Update last trade price for velocity logic
         if last_trade_price is not None and self._last_trade_price is not None:
-            velocity_result = self._check_velocity_logic(
-                last_trade_price, timestamp_ns
-            )
+            velocity_result = self._check_velocity_logic(last_trade_price, timestamp_ns)
             if velocity_result.triggered:
                 self._velocity_pause_until_ns = timestamp_ns + (
                     velocity_result.pause_duration_ms * 1_000_000
@@ -695,9 +703,7 @@ class GlobexMatchingEngine(MatchingEngine):
             recent_count = len(self._stop_executions_in_window)
             if recent_count >= self._stop_spike_threshold:
                 # Delay stop executions
-                logger.debug(
-                    f"Stop spike logic triggered: {recent_count} stops in window"
-                )
+                logger.debug(f"Stop spike logic triggered: {recent_count} stops in window")
                 # Still execute but with delay in real system
                 # For simulation, we just log
 
@@ -820,9 +826,7 @@ class GlobexMatchingEngine(MatchingEngine):
             auction_type: Type of auction (COLLECTING for start)
         """
         if self._auction_state != AuctionState.NOT_IN_AUCTION:
-            logger.warning(
-                f"Cannot start auction: already in state {self._auction_state}"
-            )
+            logger.warning(f"Cannot start auction: already in state {self._auction_state}")
             return
 
         self._auction_state = auction_type
@@ -887,15 +891,9 @@ class GlobexMatchingEngine(MatchingEngine):
 
         for price in prices_sorted:
             # Buy volume: all buys at price or higher + market buys
-            buy_qty = sum(
-                o.remaining_qty for o in buys
-                if o.price is None or o.price >= price
-            )
+            buy_qty = sum(o.remaining_qty for o in buys if o.price is None or o.price >= price)
             # Sell volume: all sells at price or lower + market sells
-            sell_qty = sum(
-                o.remaining_qty for o in sells
-                if o.price is None or o.price <= price
-            )
+            sell_qty = sum(o.remaining_qty for o in sells if o.price is None or o.price <= price)
 
             matched = min(buy_qty, sell_qty)
             if matched > best_volume:
@@ -946,7 +944,7 @@ class GlobexMatchingEngine(MatchingEngine):
         fills: List[Fill] = []
         buys = sorted(
             [o for o in self._auction_orders if o.side == Side.BUY],
-            key=lambda o: (-(o.price or float('inf')), o.timestamp_ns),
+            key=lambda o: (-(o.price or float("inf")), o.timestamp_ns),
         )
         sells = sorted(
             [o for o in self._auction_orders if o.side == Side.SELL],
@@ -1166,7 +1164,7 @@ class GlobexMatchingEngine(MatchingEngine):
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get engine statistics."""
-        base_stats = super().get_statistics() if hasattr(super(), 'get_statistics') else {}
+        base_stats = super().get_statistics() if hasattr(super(), "get_statistics") else {}
         return {
             **base_stats,
             "symbol": self._symbol,
@@ -1183,7 +1181,7 @@ class GlobexMatchingEngine(MatchingEngine):
 
     def reset_statistics(self) -> None:
         """Reset engine statistics."""
-        if hasattr(super(), 'reset_statistics'):
+        if hasattr(super(), "reset_statistics"):
             super().reset_statistics()
         self._mwp_order_count = 0
         self._stop_trigger_count = 0
@@ -1209,6 +1207,7 @@ class GlobexMatchingEngine(MatchingEngine):
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_globex_matching_engine(
     symbol: str,

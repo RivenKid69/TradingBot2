@@ -42,6 +42,7 @@ from services.core.risk_controls.audit_models import (
 # AuditEventType Tests
 # =============================================================================
 
+
 class TestAuditEventType:
     """Tests for AuditEventType enum."""
 
@@ -125,6 +126,7 @@ class TestOrderSide:
 # =============================================================================
 # AuditRecord Tests
 # =============================================================================
+
 
 class TestAuditRecord:
     """Tests for AuditRecord dataclass."""
@@ -349,6 +351,7 @@ class TestAuditRecord:
 # AuditRecordBuilder Tests
 # =============================================================================
 
+
 class TestAuditRecordBuilder:
     """Tests for AuditRecordBuilder."""
 
@@ -422,29 +425,16 @@ class TestAuditRecordBuilder:
         dt = datetime.now()
 
         # Test nanoseconds
-        record1 = (
-            AuditRecordBuilder()
-            .firm_lei("5493001KJTIIGC8Y1R12")
-            .timestamp(ts_ns)
-            .build()
-        )
+        record1 = AuditRecordBuilder().firm_lei("5493001KJTIIGC8Y1R12").timestamp(ts_ns).build()
         assert record1.event_timestamp_ns == ts_ns
 
         # Test milliseconds
-        record2 = (
-            AuditRecordBuilder()
-            .firm_lei("5493001KJTIIGC8Y1R12")
-            .timestamp_ms(ts_ms)
-            .build()
-        )
+        record2 = AuditRecordBuilder().firm_lei("5493001KJTIIGC8Y1R12").timestamp_ms(ts_ms).build()
         assert abs(record2.event_timestamp_ns - ts_ms * 1_000_000) < 1_000_000
 
         # Test datetime
         record3 = (
-            AuditRecordBuilder()
-            .firm_lei("5493001KJTIIGC8Y1R12")
-            .timestamp_datetime(dt)
-            .build()
+            AuditRecordBuilder().firm_lei("5493001KJTIIGC8Y1R12").timestamp_datetime(dt).build()
         )
         expected_ns = int(dt.timestamp() * 1e9)
         assert abs(record3.event_timestamp_ns - expected_ns) < 1_000_000
@@ -453,21 +443,13 @@ class TestAuditRecordBuilder:
         """Test setting previous record hash."""
         prev_hash = "abc123def456"
         record = (
-            AuditRecordBuilder()
-            .firm_lei("5493001KJTIIGC8Y1R12")
-            .previous_hash(prev_hash)
-            .build()
+            AuditRecordBuilder().firm_lei("5493001KJTIIGC8Y1R12").previous_hash(prev_hash).build()
         )
         assert record.previous_record_hash == prev_hash
 
     def test_sequence_setting(self):
         """Test sequence number setting."""
-        record = (
-            AuditRecordBuilder()
-            .firm_lei("5493001KJTIIGC8Y1R12")
-            .sequence(42)
-            .build()
-        )
+        record = AuditRecordBuilder().firm_lei("5493001KJTIIGC8Y1R12").sequence(42).build()
         assert record.sequence_number == 42
 
     def test_build_with_validation(self):
@@ -504,22 +486,14 @@ class TestAuditRecordBuilder:
 
     def test_build_computes_hash(self):
         """Test build automatically computes hash."""
-        record = (
-            AuditRecordBuilder()
-            .firm_lei("5493001KJTIIGC8Y1R12")
-            .build()
-        )
+        record = AuditRecordBuilder().firm_lei("5493001KJTIIGC8Y1R12").build()
         assert record.record_hash is not None
         assert len(record.record_hash) == 64
 
     def test_build_sets_record_timestamp(self):
         """Test build sets record timestamp."""
         before = time.time_ns()
-        record = (
-            AuditRecordBuilder()
-            .firm_lei("5493001KJTIIGC8Y1R12")
-            .build()
-        )
+        record = AuditRecordBuilder().firm_lei("5493001KJTIIGC8Y1R12").build()
         after = time.time_ns()
 
         assert before <= record.record_timestamp_ns <= after
@@ -528,6 +502,7 @@ class TestAuditRecordBuilder:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""
@@ -664,6 +639,7 @@ class TestFactoryFunctions:
 # AuditChainStatus Tests
 # =============================================================================
 
+
 class TestAuditChainStatus:
     """Tests for AuditChainStatus dataclass."""
 
@@ -704,6 +680,7 @@ class TestAuditChainStatus:
 # AuditExportRequest Tests
 # =============================================================================
 
+
 class TestAuditExportRequest:
     """Tests for AuditExportRequest dataclass."""
 
@@ -739,6 +716,7 @@ class TestAuditExportRequest:
 # =============================================================================
 # AuditExportResult Tests
 # =============================================================================
+
 
 class TestAuditExportResult:
     """Tests for AuditExportResult dataclass."""
@@ -776,6 +754,7 @@ class TestAuditExportResult:
 # Integration Tests
 # =============================================================================
 
+
 class TestAuditRecordChaining:
     """Integration tests for record chain integrity."""
 
@@ -807,12 +786,7 @@ class TestAuditRecordChaining:
     def test_chain_tamper_detection(self):
         """Test that tampering is detected."""
         # Create chain
-        record1 = (
-            AuditRecordBuilder()
-            .firm_lei("5493001KJTIIGC8Y1R12")
-            .sequence(1)
-            .build()
-        )
+        record1 = AuditRecordBuilder().firm_lei("5493001KJTIIGC8Y1R12").sequence(1).build()
 
         record2 = (
             AuditRecordBuilder()

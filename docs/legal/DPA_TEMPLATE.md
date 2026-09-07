@@ -54,6 +54,7 @@ This DPA shall remain in effect for the duration of the service agreement betwee
 **2.3 Nature of Processing**
 
 The Processor shall process Personal Data to provide:
+
 - Research, simulation/backtesting, and artifact lifecycle services (non-orders)
 - Monitoring and reliability telemetry (redacted/bucketed per configured sensitivity level)
 - Analytics and operational reporting (non-performance and non-advice)
@@ -84,6 +85,7 @@ Under the Cloud-Controlled Execution Architecture (CCEA), credential handling oc
 | Trading positions | **Aggregated/redacted only** | Full data locally |
 
 The Processor's Cloud infrastructure:
+
 - **Does not** store, process, or have access to broker API keys
 - **Does not** execute orders or connect to broker/exchange APIs
 - Only receives redacted telemetry from customer-operated Agents (if deployed)
@@ -101,6 +103,7 @@ The Platform implements three telemetry sensitivity levels. Controller selects t
 **RAW_ORDER_EVENTS Processing Requirements:**
 
 If Controller enables `RAW_ORDER_EVENTS`:
+
 - Controller must be on Enterprise tier
 - Controller must provide explicit per-workspace opt-in
 - Consent record must be created (who, what, when, scope, expiry)
@@ -108,6 +111,7 @@ If Controller enables `RAW_ORDER_EVENTS`:
 - Alternative: Controller may select "telemetry stays local" mode (no Cloud transmission)
 
 **Data Designed Not to Be Processed (at any level):**
+
 - Broker API keys, secrets, credentials
 - Environment variables
 - Unmasked account identifiers
@@ -120,6 +124,7 @@ If Controller enables `RAW_ORDER_EVENTS`:
 ## 4. Categories of Data Subjects
 
 Personal Data may relate to the following categories of Data Subjects:
+
 - Controller's employees and authorized users
 - Controller's end users (if applicable)
 - Controller's contractors with platform access
@@ -131,33 +136,41 @@ Personal Data may relate to the following categories of Data Subjects:
 Pursuant to GDPR Article 28(3), the Processor shall:
 
 **5.1 Instructions**
+
 - Process Personal Data only on documented instructions from the Controller
 - Immediately inform the Controller if any instruction infringes GDPR or other applicable law
 
 **5.2 Confidentiality**
+
 - Ensure that persons authorized to process Personal Data have committed to confidentiality or are under statutory confidentiality obligations
 
 **5.3 Security Measures**
+
 - Implement appropriate technical and organizational measures as detailed in Annex A
 
 **5.4 Sub-processors**
+
 - Not engage another processor without prior specific or general written authorization from the Controller
 - Impose the same data protection obligations on Sub-processors as set out in this DPA
 - Remain fully liable for Sub-processor compliance
 
 **5.5 Data Subject Rights**
+
 - Assist the Controller in responding to Data Subject requests to exercise their rights under GDPR Chapter III
 - Provide such assistance within 10 business days of request
 
 **5.6 Security and Breach Notification**
+
 - Assist the Controller in ensuring compliance with GDPR Articles 32-36
 - Notify the Controller of any Personal Data breach without undue delay, and in any event within 24 hours of becoming aware
 
 **5.7 Deletion**
+
 - Delete or return all Personal Data upon termination of Services, at the Controller's choice
 - Delete existing copies unless EU or Member State law requires retention
 
 **5.8 Audit**
+
 - Make available all information necessary to demonstrate compliance
 - Allow for and contribute to audits and inspections conducted by the Controller or an authorized auditor
 
@@ -211,6 +224,7 @@ The Controller hereby authorizes the use of the Sub-processors listed in Annex B
 **7.2 New Sub-processors**
 
 Before engaging a new Sub-processor, the Processor shall:
+
 - Notify the Controller in writing at least 30 days in advance
 - Provide details of the processing to be undertaken
 - Allow the Controller to object within 14 days
@@ -241,12 +255,14 @@ If the Controller objects to a new Sub-processor on reasonable grounds, the Part
 **9.1 Notification Timeline**
 
 The Processor shall notify the Controller of any Personal Data breach:
+
 - Within 24 hours of becoming aware of the breach
 - Via email to [CONTROLLER SECURITY EMAIL] and phone to [CONTROLLER SECURITY PHONE]
 
 **9.2 Breach Notification Content**
 
 The notification shall include:
+
 - Description of the nature of the breach
 - Categories and approximate number of Data Subjects affected
 - Categories and approximate number of Personal Data records affected
@@ -269,6 +285,7 @@ Personal Data shall be stored and processed within the European Economic Area (E
 **10.2 Transfers Outside EEA**
 
 If transfer outside the EEA is necessary:
+
 - The Processor shall notify the Controller in advance
 - Appropriate safeguards shall be implemented (Standard Contractual Clauses per Annex C)
 - Supplementary measures shall be implemented where required
@@ -289,6 +306,7 @@ The Processor shall make available to the Controller all information necessary t
 **11.2 On-site Audits**
 
 The Controller may conduct audits of the Processor's facilities and records, subject to:
+
 - 30 days prior written notice
 - During normal business hours
 - Reasonable scope and duration
@@ -297,6 +315,7 @@ The Controller may conduct audits of the Processor's facilities and records, sub
 **11.3 Third-party Audits**
 
 The Controller may appoint a qualified third-party auditor, subject to:
+
 - Auditor signing a confidentiality agreement
 - The Processor may object to specific auditors on reasonable grounds
 - Cost borne by the Controller unless audit reveals material non-compliance
@@ -304,6 +323,7 @@ The Controller may appoint a qualified third-party auditor, subject to:
 **11.4 Audit Reports**
 
 The Processor shall provide the Controller with:
+
 - Annual SOC 2 Type II report (or equivalent), if available
 - Results of penetration testing (summary)
 - Evidence of relevant security audit reports/attestations, if available
@@ -315,6 +335,7 @@ The Processor shall provide the Controller with:
 **12.1 Data Deletion**
 
 Upon termination of the Services:
+
 - The Processor shall delete all Personal Data within 30 days
 - Alternatively, return Personal Data in a commonly used format if requested by Controller
 - Provide written confirmation of deletion upon request
@@ -322,6 +343,7 @@ Upon termination of the Services:
 **12.2 Retention Exceptions**
 
 The Processor may retain Personal Data where required by applicable law, subject to:
+
 - Notifying the Controller of such requirement
 - Limiting processing to that required by law
 - Deleting upon expiration of the retention period

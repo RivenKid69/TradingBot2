@@ -23,6 +23,7 @@ This guide covers the migration from L2 (Statistical) to L3 (LOB Simulation) exe
 ### 1. Update Factory Function Calls
 
 **Before (L2)**:
+
 ```python
 from execution_providers import create_execution_provider, AssetClass
 
@@ -30,6 +31,7 @@ provider = create_execution_provider(AssetClass.EQUITY)
 ```
 
 **After (L3)**:
+
 ```python
 from execution_providers import create_execution_provider, AssetClass
 
@@ -49,6 +51,7 @@ provider = create_execution_provider(AssetClass.EQUITY, level="L3", config=confi
 ### 2. Configuration Options
 
 #### From Python
+
 ```python
 from lob.config import L3ExecutionConfig, create_l3_config
 
@@ -87,6 +90,7 @@ config = L3ExecutionConfig(
 ```
 
 #### From YAML
+
 ```python
 from lob.config import L3ExecutionConfig
 
@@ -136,12 +140,14 @@ dark_pools:
 ### 4. Backtest Script Updates
 
 **Before**:
+
 ```python
 # script_backtest.py
 provider = create_execution_provider(AssetClass.EQUITY)
 ```
 
 **After**:
+
 ```python
 # script_backtest.py
 from lob.config import L3ExecutionConfig
@@ -254,21 +260,27 @@ fill = create_fill_provider("L3", AssetClass.EQUITY, slippage_provider, fee_prov
 ## Backward Compatibility
 
 ### Crypto Unchanged
+
 Crypto continues to use L2 by default:
+
 ```python
 # This still works exactly as before
 provider = create_execution_provider(AssetClass.CRYPTO)  # L2 by default
 ```
 
 ### L2 Still Available
+
 L2 is fully functional:
+
 ```python
 # Explicit L2 for equity
 provider = create_execution_provider(AssetClass.EQUITY, level="L2")
 ```
 
 ### Gradual Migration
+
 You can migrate incrementally:
+
 ```python
 # Development: use L3 for more realistic testing
 if env == "development":
@@ -345,4 +357,4 @@ logging.getLogger("execution_providers_l3").setLevel(logging.DEBUG)
 - [Execution Providers](../execution_providers.py)
 - [L3 Configuration](../configs/execution_l3.yaml)
 - [Market Impact Models](l3_simulator/market_impact.md)
-- [claude.md Phase 10 Section](../claude.md#-l3-lob-simulation-phase-10)
+- [PLATFORM_REFERENCE.md](PLATFORM_REFERENCE.md#-l3-lob-simulation-phase-10)

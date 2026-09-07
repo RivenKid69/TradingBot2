@@ -36,7 +36,9 @@ def test_cloud_artifact_builder_blocks_unsigned_artifacts(tmp_path):
 
 def test_cloud_artifact_builder_emits_signature_sbom_and_provenance(tmp_path):
     signing_key = generate_keypair(KeyAlgorithm.ED25519, key_id="test-key")
-    builder = ArtifactBuilder(registry_url="registry.test", builder_id="builder-test", signing_key=signing_key)
+    builder = ArtifactBuilder(
+        registry_url="registry.test", builder_id="builder-test", signing_key=signing_key
+    )
 
     src = tmp_path / "src"
     src.mkdir()
@@ -79,4 +81,3 @@ def test_cloud_artifact_builder_emits_signature_sbom_and_provenance(tmp_path):
     assert manifest_json["artifact_digest"] == result.artifact_digest
     assert manifest_json["signature"]["signature_value"]
     assert manifest_json["sbom_ref"] == "sbom.cyclonedx.json"
-

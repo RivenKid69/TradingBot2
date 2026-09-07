@@ -39,12 +39,14 @@ try:
         VerificationError,
         VerifyMismatchError,
     )
+
     _ARGON2_AVAILABLE = True
 except ImportError:
     pass
 
 try:
     import bcrypt
+
     _BCRYPT_AVAILABLE = True
 except ImportError:
     pass
@@ -74,6 +76,7 @@ PBKDF2_SALT_LENGTH: Final[int] = 16  # bytes
 
 class HashAlgorithm(str, Enum):
     """Supported hash algorithms."""
+
     ARGON2ID = "argon2id"
     BCRYPT = "bcrypt"
     PBKDF2 = "pbkdf2"
@@ -83,9 +86,11 @@ class HashAlgorithm(str, Enum):
 # Hash Result
 # ============================================================================
 
+
 @dataclass
 class HashResult:
     """Result of password hashing."""
+
     hash: str
     algorithm: HashAlgorithm
     parameters: Dict[str, Any]
@@ -102,6 +107,7 @@ class HashResult:
 # ============================================================================
 # Password Hasher
 # ============================================================================
+
 
 class PasswordHasher:
     """

@@ -70,9 +70,9 @@ def normalize_returns_to_base(
 class AssetClassBlock:
     """Блок одного класса активов для объединения."""
 
-    name: str                                   # 'crypto' | 'equity' | 'futures' | 'forex'
-    weights: pd.Series                          # within-class веса (index=symbol)
-    returns_wide: pd.DataFrame                  # index=ts, cols=symbol (ЛОКАЛЬНАЯ валюта)
+    name: str  # 'crypto' | 'equity' | 'futures' | 'forex'
+    weights: pd.Series  # within-class веса (index=symbol)
+    returns_wide: pd.DataFrame  # index=ts, cols=symbol (ЛОКАЛЬНАЯ валюта)
     currency_map: Optional[Dict[str, str]] = None
 
     def normalized_weights(self) -> pd.Series:
@@ -85,10 +85,10 @@ class AssetClassBlock:
 class CrossAssetResult:
     """Результат объединения."""
 
-    weights: pd.Series                          # унифицированные веса (все символы)
-    class_allocations: Dict[str, float]         # риск-аллокация по классам (Σ=1)
-    cov: pd.DataFrame                            # joint Σ (PSD)
-    port_vol_annual: float                      # достигнутая годовая vol
+    weights: pd.Series  # унифицированные веса (все символы)
+    class_allocations: Dict[str, float]  # риск-аллокация по классам (Σ=1)
+    cov: pd.DataFrame  # joint Σ (PSD)
+    port_vol_annual: float  # достигнутая годовая vol
     target_vol: float
     base: str
 
@@ -133,7 +133,9 @@ def build_cross_asset_cov(
         if m >= 2:
             aligned = [c.iloc[-m:].reset_index(drop=True) for c in cols]
             joint = pd.concat(aligned, axis=1).dropna(how="any")
-            logger.warning("cross-asset: ts не пересекаются → позиционное выравнивание (%d баров)", m)
+            logger.warning(
+                "cross-asset: ts не пересекаются → позиционное выравнивание (%d баров)", m
+            )
     # дубли символов (если есть) — оставляем первый
     joint = joint.loc[:, ~joint.columns.duplicated()]
     rm = StatRiskModel(method=method).fit(joint)
@@ -162,12 +164,14 @@ def combine_cross_asset(
     fx_returns: Optional[Mapping[str, pd.Series]] = None,
     base: str = "USD",
     method: str = "ledoit_wolf",
-    class_weighting: str = "risk_parity",   # 'risk_parity' | 'equal'
+    class_weighting: str = "risk_parity",  # 'risk_parity' | 'equal'
 ) -> CrossAssetResult:
     """Объединить ≥1 классов в один портфель: класс-risk-parity + общий vol-target."""
     blocks = [b for b in blocks if len(b.normalized_weights()) > 0]
     if not blocks:
-        return CrossAssetResult(pd.Series(dtype="float64"), {}, pd.DataFrame(), 0.0, target_vol, base)
+        return CrossAssetResult(
+            pd.Series(dtype="float64"), {}, pd.DataFrame(), 0.0, target_vol, base
+        )
 
     cov = build_cross_asset_cov(blocks, fx_returns=fx_returns, base=base, method=method)
 
@@ -199,8 +203,12 @@ def combine_cross_asset(
     pv_after = _annual_vol(w, cov, periods_per_year)
 
     return CrossAssetResult(
-        weights=w, class_allocations=alloc, cov=cov,
-        port_vol_annual=pv_after, target_vol=target_vol, base=base,
+        weights=w,
+        class_allocations=alloc,
+        cov=cov,
+        port_vol_annual=pv_after,
+        target_vol=target_vol,
+        base=base,
     )
 
 
@@ -238,8 +246,11 @@ def combine_from_configs(
     """Высокоуровнево: {class_name -> XSConfig} → единый cross-asset портфель."""
     blocks = [block_from_xs_config(cfg, name=name) for name, cfg in configs.items()]
     return combine_cross_asset(
-        blocks, target_vol=target_vol, periods_per_year=periods_per_year,
-        base=base, class_weighting=class_weighting,
+        blocks,
+        target_vol=target_vol,
+        periods_per_year=periods_per_year,
+        base=base,
+        class_weighting=class_weighting,
     )
 
 

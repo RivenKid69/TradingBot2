@@ -26,8 +26,21 @@ class TestRSIFixVerification:
 
         # Price pattern: First bar +10%, then small oscillations
         prices = [
-            100.0, 110.0, 110.5, 110.0, 110.5, 110.0, 110.5, 110.0,
-            110.5, 110.0, 110.5, 110.0, 110.5, 110.0, 110.5,
+            100.0,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
         ]
 
         feats_list = []
@@ -53,9 +66,9 @@ class TestRSIFixVerification:
         expected_rsi = 78.8
 
         # AFTER FIX: RSI should be close to expected value
-        assert abs(rsi_14 - expected_rsi) < 5.0, (
-            f"RSI={rsi_14:.1f} differs from expected {expected_rsi:.1f} by more than 5 points"
-        )
+        assert (
+            abs(rsi_14 - expected_rsi) < 5.0
+        ), f"RSI={rsi_14:.1f} differs from expected {expected_rsi:.1f} by more than 5 points"
 
         print(f"✓ RSI correctly initialized: {rsi_14:.1f} (expected: {expected_rsi:.1f})")
 
@@ -159,7 +172,7 @@ class TestRSIFixVerification:
             gains = []
             losses = []
             for i in range(1, len(prices)):
-                delta = prices[i] - prices[i-1]
+                delta = prices[i] - prices[i - 1]
                 gains.append(max(0, delta))
                 losses.append(max(0, -delta))
 
@@ -202,9 +215,9 @@ class TestRSIFixVerification:
             act = rsi_actual[i]
             if not math.isnan(ref) and not math.isnan(act):
                 diff = abs(ref - act)
-                assert diff < 0.1, (
-                    f"RSI at bar {i}: reference={ref:.2f}, actual={act:.2f}, diff={diff:.2f}"
-                )
+                assert (
+                    diff < 0.1
+                ), f"RSI at bar {i}: reference={ref:.2f}, actual={act:.2f}, diff={diff:.2f}"
 
         print(f"✓ RSI matches reference implementation (max diff < 0.1)")
 
@@ -224,11 +237,13 @@ class TestCCIFixVerification:
         # Simulate bars where close != TP
         bars = []
         for i in range(20):
-            bars.append({
-                "high": 102.0,
-                "low": 98.0,
-                "close": 98.5,  # Close near low
-            })
+            bars.append(
+                {
+                    "high": 102.0,
+                    "low": 98.0,
+                    "close": 98.5,  # Close near low
+                }
+            )
 
         # Compute TP
         tp_values = [(b["high"] + b["low"] + b["close"]) / 3 for b in bars]
@@ -236,7 +251,9 @@ class TestCCIFixVerification:
         # CORRECT: Use SMA(TP) as baseline
         sma_tp = sum(tp_values) / 20
         mean_dev_correct = sum(abs(tp - sma_tp) for tp in tp_values) / 20
-        cci_correct = (tp_values[-1] - sma_tp) / (0.015 * mean_dev_correct) if mean_dev_correct > 0 else 0
+        cci_correct = (
+            (tp_values[-1] - sma_tp) / (0.015 * mean_dev_correct) if mean_dev_correct > 0 else 0
+        )
 
         # Expected: TP = 99.5, SMA(TP) = 99.5, CCI ≈ 0
         expected_tp = (102.0 + 98.0 + 98.5) / 3

@@ -31,12 +31,14 @@ def test_misaligned_indices():
     print("=" * 80)
 
     # Создаем данные с NaN в price посередине
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT"] * 10,
-        "ts_ms": list(range(0, 600_000, 60_000)),
-        "close": [100.0, 101.0, 102.0, 103.0, np.nan, 105.0, 106.0, 107.0, 108.0, 109.0],
-        #                                         ^^^ NaN в строке 4 (индекс 4)
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT"] * 10,
+            "ts_ms": list(range(0, 600_000, 60_000)),
+            "close": [100.0, 101.0, 102.0, 103.0, np.nan, 105.0, 106.0, 107.0, 108.0, 109.0],
+            #                                         ^^^ NaN в строке 4 (индекс 4)
+        }
+    )
 
     print("\nИсходные данные:")
     print(df)
@@ -100,10 +102,7 @@ def test_what_happens_with_boolean_indexing():
     print("=" * 80)
 
     # Создаем DataFrame размером 5
-    df = pd.DataFrame({
-        "a": [1, 2, 3, 4, 5],
-        "b": [10, 20, 30, 40, 50]
-    })
+    df = pd.DataFrame({"a": [1, 2, 3, 4, 5], "b": [10, 20, 30, 40, 50]})
 
     # Создаем маску размером 7 (больше чем df)
     mask_larger = pd.Series([True, True, False, True, True, False, True])

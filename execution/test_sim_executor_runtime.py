@@ -19,7 +19,9 @@ class DummyExecutionConfig:
 def test_resolve_runtime_settings_alias_next_bar_open_defaults():
     cfg = {"entry_mode": "next_bar_open"}
 
-    entry_mode, profile, clip_enabled, strict_fill = SimExecutor.resolve_execution_runtime_settings(cfg)
+    entry_mode, profile, clip_enabled, strict_fill = SimExecutor.resolve_execution_runtime_settings(
+        cfg
+    )
 
     assert entry_mode is ExecutionEntryMode.DEFAULT
     assert profile is ExecutionProfile.MKT_OPEN_NEXT_H1
@@ -59,7 +61,9 @@ def test_resolve_runtime_settings_clip_config_object_variants():
     clip_cfg = DummyClipConfig(enabled=0, strict_open_fill=1)
     cfg = {"clip_to_bar": clip_cfg}
 
-    entry_mode, profile, clip_enabled, strict_fill = SimExecutor.resolve_execution_runtime_settings(cfg)
+    entry_mode, profile, clip_enabled, strict_fill = SimExecutor.resolve_execution_runtime_settings(
+        cfg
+    )
 
     assert entry_mode is ExecutionEntryMode.DEFAULT
     assert profile is ExecutionProfile.MKT_OPEN_NEXT_H1
@@ -74,7 +78,9 @@ def test_configure_simulator_execution_writes_expected_simulator_state():
     sim = SimulatorDouble()
     cfg = {"entry_mode": "limit", "clip_to_bar": {"enabled": False, "strict_open_fill": True}}
 
-    entry_mode, profile, clip_enabled, strict_fill = SimExecutor.configure_simulator_execution(sim, cfg)
+    entry_mode, profile, clip_enabled, strict_fill = SimExecutor.configure_simulator_execution(
+        sim, cfg
+    )
 
     assert entry_mode is ExecutionEntryMode.STRICT
     assert profile is ExecutionProfile.LIMIT_MID_BPS
@@ -89,7 +95,9 @@ def test_configure_simulator_execution_writes_expected_simulator_state():
 def test_resolve_runtime_settings_with_malformed_clip_config_uses_defaults():
     cfg = {"clip_to_bar": {"enabled": "maybe", "strict_open_fill": "perhaps"}}
 
-    entry_mode, profile, clip_enabled, strict_fill = SimExecutor.resolve_execution_runtime_settings(cfg)
+    entry_mode, profile, clip_enabled, strict_fill = SimExecutor.resolve_execution_runtime_settings(
+        cfg
+    )
 
     assert entry_mode is ExecutionEntryMode.DEFAULT
     assert profile is ExecutionProfile.MKT_OPEN_NEXT_H1

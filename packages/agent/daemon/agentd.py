@@ -93,6 +93,7 @@ VERSION: Final[str] = "1.0.0"
 
 class DaemonState(Enum):
     """Agent daemon state."""
+
     CREATED = auto()
     INITIALIZING = auto()
     ENROLLING = auto()
@@ -110,6 +111,7 @@ class DaemonConfig:
     """
     Agent daemon configuration.
     """
+
     # Identity
     agent_id: Optional[str] = None
     agent_name: str = "ccea-agent"
@@ -163,6 +165,7 @@ class DaemonStatus:
     """
     Agent daemon status snapshot.
     """
+
     agent_id: str = ""
     state: DaemonState = DaemonState.CREATED
     timestamp: datetime = field(default_factory=datetime.utcnow)
@@ -223,6 +226,7 @@ class RunControllerConfig:
 
     Design Doc Section 4.2/5.1/9.3: Live run controller configuration.
     """
+
     # Execution mode
     execution_mode: ExecutionMode = ExecutionMode.LIVE
 
@@ -479,7 +483,11 @@ class RunController:
             hard_cap_enforcer=self._hard_cap_enforcer or HardCapEnforcer(),
             risk_checker=self._risk_checker or RiskChecker(),
             broker_submit=broker_submit,
-            broker_name=self._broker_connector.name if self._broker_connector and hasattr(self._broker_connector, "name") else "default",
+            broker_name=(
+                self._broker_connector.name
+                if self._broker_connector and hasattr(self._broker_connector, "name")
+                else "default"
+            ),
             order_journal=self._order_journal,
             deployment_id=deployment_id,
             run_id=run_id,
@@ -487,6 +495,7 @@ class RunController:
 
     def _create_broker_submit_fn(self) -> Callable:
         """Create broker submit function."""
+
         def submit(order) -> Tuple[bool, Optional[str], Optional[str]]:
             try:
                 result = self._broker_connector.submit_order(
@@ -499,9 +508,14 @@ class RunController:
                     time_in_force=order.time_in_force,
                     client_order_id=order.client_order_id,
                 )
-                return (result.success, result.broker_order_id, result.error_message if not result.success else None)
+                return (
+                    result.success,
+                    result.broker_order_id,
+                    result.error_message if not result.success else None,
+                )
             except Exception as e:
                 return (False, None, str(e))
+
         return submit
 
     def _verify_model_signature(self) -> None:
@@ -692,6 +706,7 @@ class RunController:
         """Execute a single intent through the policy stack."""
         if not self._execution_engine:
             from packages.agent.execution.engine import ExecutionResult
+
             return ExecutionResult(
                 success=False,
                 error_message="Execution engine not initialized",
@@ -712,6 +727,7 @@ class RunController:
         - Reconciles broker positions with local state
         - Safe-halts on unrecoverable mismatches
         """
+
         @dataclass
         class ReconcileResult:
             success: bool = True
@@ -809,7 +825,11 @@ class RunController:
             "has_reconciler": self._reconciler is not None,
             "artifact_id": self._current_artifact.artifact_id if self._current_artifact else None,
             "artifact_name": self._current_artifact.name if self._current_artifact else None,
-            "execution_mode": self.config.execution_mode.value if hasattr(self.config.execution_mode, "value") else str(self.config.execution_mode),
+            "execution_mode": (
+                self.config.execution_mode.value
+                if hasattr(self.config.execution_mode, "value")
+                else str(self.config.execution_mode)
+            ),
         }
 
     def set_broker_connector(self, connector: Any) -> None:
@@ -1014,20 +1034,26 @@ class AgentDaemon:
                 self._emit_state_change()
 
                 # Log initialization
-                self._log_event(TelemetryEventType.STATE_CHANGE, {
-                    "old_state": "CREATED",
-                    "new_state": "IDLE",
-                    "message": "Agent daemon initialized",
-                })
+                self._log_event(
+                    TelemetryEventType.STATE_CHANGE,
+                    {
+                        "old_state": "CREATED",
+                        "new_state": "IDLE",
+                        "message": "Agent daemon initialized",
+                    },
+                )
 
                 return True
 
             except Exception as e:
                 self._state = DaemonState.ERROR
-                self._log_event(TelemetryEventType.ERROR, {
-                    "error_type": "InitializationError",
-                    "message": str(e),
-                })
+                self._log_event(
+                    TelemetryEventType.ERROR,
+                    {
+                        "error_type": "InitializationError",
+                        "message": str(e),
+                    },
+                )
                 return False
 
     def start(
@@ -1058,7 +1084,10 @@ class AgentDaemon:
 
             # Check kill switch
             if self._kill_switch and self._kill_switch.is_triggered:
-                return False, f"Kill switch triggered: {self._kill_switch.current_halt.halt_reason.message if self._kill_switch.current_halt else 'unknown'}"
+                return (
+                    False,
+                    f"Kill switch triggered: {self._kill_switch.current_halt.halt_reason.message if self._kill_switch.current_halt else 'unknown'}",
+                )
 
             # Run preflight checks
             if self.config.require_preflight:
@@ -1082,11 +1111,14 @@ class AgentDaemon:
                     self._sandbox.start()
 
                 # Log start
-                self._log_event(TelemetryEventType.STATE_CHANGE, {
-                    "old_state": "IDLE",
-                    "new_state": "RUNNING",
-                    "run_id": self._status.active_run_id,
-                })
+                self._log_event(
+                    TelemetryEventType.STATE_CHANGE,
+                    {
+                        "old_state": "IDLE",
+                        "new_state": "RUNNING",
+                        "run_id": self._status.active_run_id,
+                    },
+                )
 
                 return True, None
 
@@ -1137,11 +1169,14 @@ class AgentDaemon:
                 self._emit_state_change()
 
                 # Log stop
-                self._log_event(TelemetryEventType.STATE_CHANGE, {
-                    "old_state": "RUNNING",
-                    "new_state": "STOPPED",
-                    "reason": reason,
-                })
+                self._log_event(
+                    TelemetryEventType.STATE_CHANGE,
+                    {
+                        "old_state": "RUNNING",
+                        "new_state": "STOPPED",
+                        "reason": reason,
+                    },
+                )
 
                 return True
 
@@ -1163,10 +1198,13 @@ class AgentDaemon:
             self._state = DaemonState.PAUSED
             self._emit_state_change()
 
-            self._log_event(TelemetryEventType.STATE_CHANGE, {
-                "old_state": "RUNNING",
-                "new_state": "PAUSED",
-            })
+            self._log_event(
+                TelemetryEventType.STATE_CHANGE,
+                {
+                    "old_state": "RUNNING",
+                    "new_state": "PAUSED",
+                },
+            )
 
             return True
 
@@ -1188,10 +1226,13 @@ class AgentDaemon:
             self._state = DaemonState.RUNNING
             self._emit_state_change()
 
-            self._log_event(TelemetryEventType.STATE_CHANGE, {
-                "old_state": "PAUSED",
-                "new_state": "RUNNING",
-            })
+            self._log_event(
+                TelemetryEventType.STATE_CHANGE,
+                {
+                    "old_state": "PAUSED",
+                    "new_state": "RUNNING",
+                },
+            )
 
             return True
 
@@ -1213,12 +1254,15 @@ class AgentDaemon:
             self._state = DaemonState.HALTED
             self._emit_state_change()
 
-            self._log_event(TelemetryEventType.KILL_SWITCH, {
-                "reason_type": reason.reason_type.name,
-                "severity": reason.severity.value,
-                "message": reason.message,
-                "action": action.value,
-            })
+            self._log_event(
+                TelemetryEventType.KILL_SWITCH,
+                {
+                    "reason_type": reason.reason_type.name,
+                    "severity": reason.severity.value,
+                    "message": reason.message,
+                    "action": action.value,
+                },
+            )
 
             if self._on_kill_switch:
                 self._on_kill_switch(reason)
@@ -1264,9 +1308,7 @@ class AgentDaemon:
 
     def _init_keychain(self) -> None:
         """Initialize keychain manager."""
-        self._keychain = KeychainManager(
-            config=self.config.keychain_config
-        )
+        self._keychain = KeychainManager(config=self.config.keychain_config)
 
     def _init_kill_switch(self) -> None:
         """
@@ -1300,10 +1342,13 @@ class AgentDaemon:
             action: Action name (e.g., 'cancel_orders_started', 'flatten_positions_result')
             details: Action details
         """
-        self._log_event(TelemetryEventType.KILL_SWITCH, {
-            "executor_action": action,
-            **details,
-        })
+        self._log_event(
+            TelemetryEventType.KILL_SWITCH,
+            {
+                "executor_action": action,
+                **details,
+            },
+        )
 
     def _init_time_checker(self) -> None:
         """Initialize time sync checker."""
@@ -1361,10 +1406,13 @@ class AgentDaemon:
 
     def _handle_sandbox_error(self, error: str) -> None:
         """Handle sandbox error."""
-        self._log_event(TelemetryEventType.ERROR, {
-            "error_type": "SandboxError",
-            "message": error,
-        })
+        self._log_event(
+            TelemetryEventType.ERROR,
+            {
+                "error_type": "SandboxError",
+                "message": error,
+            },
+        )
 
     def _init_artifact_manager(self) -> None:
         """
@@ -1383,11 +1431,14 @@ class AgentDaemon:
 
     def _handle_artifact_progress(self, artifact_id: str, progress: float) -> None:
         """Handle artifact download progress."""
-        self._log_event(TelemetryEventType.STATE_CHANGE, {
-            "message": f"Artifact download progress: {progress:.1f}%",
-            "artifact_id": artifact_id,
-            "progress_pct": progress,
-        })
+        self._log_event(
+            TelemetryEventType.STATE_CHANGE,
+            {
+                "message": f"Artifact download progress: {progress:.1f}%",
+                "artifact_id": artifact_id,
+                "progress_pct": progress,
+            },
+        )
 
     def _init_run_controller(self) -> None:
         """
@@ -1402,7 +1453,11 @@ class AgentDaemon:
         self._run_controller_config = RunControllerConfig(
             execution_mode=ExecutionMode.LIVE,
             sandbox_enabled=self.config.sandbox_config is not None,
-            sandbox_type=self.config.sandbox_config.sandbox_type if self.config.sandbox_config else SandboxType.PROCESS,
+            sandbox_type=(
+                self.config.sandbox_config.sandbox_type
+                if self.config.sandbox_config
+                else SandboxType.PROCESS
+            ),
             deny_outbound_by_default=True,
             readonly_fs=True,
             reconcile_on_start=True,
@@ -1434,28 +1489,37 @@ class AgentDaemon:
 
     def _handle_run_controller_intent(self, intent: Any) -> None:
         """Handle intent from run controller."""
-        self._log_event(TelemetryEventType.TRADE, {
-            "event": "intent_received",
-            "intent_id": str(intent.intent_id) if hasattr(intent, "intent_id") else "unknown",
-            "symbol": intent.symbol if hasattr(intent, "symbol") else "unknown",
-        })
+        self._log_event(
+            TelemetryEventType.TRADE,
+            {
+                "event": "intent_received",
+                "intent_id": str(intent.intent_id) if hasattr(intent, "intent_id") else "unknown",
+                "symbol": intent.symbol if hasattr(intent, "symbol") else "unknown",
+            },
+        )
 
     def _handle_run_controller_order(self, order: Any) -> None:
         """Handle order from run controller."""
-        self._log_event(TelemetryEventType.TRADE, {
-            "event": "order_submitted",
-            "order_id": str(order.order_id) if hasattr(order, "order_id") else "unknown",
-            "symbol": order.symbol if hasattr(order, "symbol") else "unknown",
-            "side": order.side if hasattr(order, "side") else "unknown",
-        })
+        self._log_event(
+            TelemetryEventType.TRADE,
+            {
+                "event": "order_submitted",
+                "order_id": str(order.order_id) if hasattr(order, "order_id") else "unknown",
+                "symbol": order.symbol if hasattr(order, "symbol") else "unknown",
+                "side": order.side if hasattr(order, "side") else "unknown",
+            },
+        )
         self._status.orders_today += 1
 
     def _handle_run_controller_error(self, error: str) -> None:
         """Handle error from run controller."""
-        self._log_event(TelemetryEventType.ERROR, {
-            "error_type": "RunControllerError",
-            "message": error,
-        })
+        self._log_event(
+            TelemetryEventType.ERROR,
+            {
+                "error_type": "RunControllerError",
+                "message": error,
+            },
+        )
 
     def _init_command_journal(self) -> None:
         """
@@ -1472,10 +1536,13 @@ class AgentDaemon:
         # Restore executed command IDs from journal (Design Doc 10.4.2)
         self._executed_command_ids = self._command_journal.get_executed_command_ids()
 
-        self._log_event(TelemetryEventType.STATE_CHANGE, {
-            "message": "Command journal initialized",
-            "restored_command_count": len(self._executed_command_ids),
-        })
+        self._log_event(
+            TelemetryEventType.STATE_CHANGE,
+            {
+                "message": "Command journal initialized",
+                "restored_command_count": len(self._executed_command_ids),
+            },
+        )
 
     # ===== Callbacks =====
 
@@ -1507,10 +1574,13 @@ class AgentDaemon:
 
     def _handle_degraded_mode(self, mode: DegradedMode, action: DegradedModeAction) -> None:
         """Handle degraded mode change."""
-        self._log_event(TelemetryEventType.DEGRADED_MODE, {
-            "mode": mode.name,
-            "action": action.value,
-        })
+        self._log_event(
+            TelemetryEventType.DEGRADED_MODE,
+            {
+                "mode": mode.name,
+                "action": action.value,
+            },
+        )
 
         if self._on_degraded_mode:
             try:
@@ -1627,24 +1697,33 @@ class AgentDaemon:
             try:
                 return self._cloud_client.send_telemetry(events)
             except Exception as e:
-                self._log_event(TelemetryEventType.ERROR, {
-                    "error_type": "TelemetryUploadError",
-                    "message": str(e),
-                })
+                self._log_event(
+                    TelemetryEventType.ERROR,
+                    {
+                        "error_type": "TelemetryUploadError",
+                        "message": str(e),
+                    },
+                )
                 return False
 
         try:
             sent_count = self._telemetry_buffer.flush(send_fn=send_fn)
             if sent_count > 0:
-                self._log_event(TelemetryEventType.STATE_CHANGE, {
-                    "message": f"Flushed {sent_count} telemetry events to Cloud",
-                    "events_sent": sent_count,
-                })
+                self._log_event(
+                    TelemetryEventType.STATE_CHANGE,
+                    {
+                        "message": f"Flushed {sent_count} telemetry events to Cloud",
+                        "events_sent": sent_count,
+                    },
+                )
         except Exception as e:
-            self._log_event(TelemetryEventType.ERROR, {
-                "error_type": "TelemetryFlushError",
-                "message": str(e),
-            })
+            self._log_event(
+                TelemetryEventType.ERROR,
+                {
+                    "error_type": "TelemetryFlushError",
+                    "message": str(e),
+                },
+            )
 
     def _monitor_loop(self) -> None:
         """Background monitoring loop."""
@@ -1748,7 +1827,9 @@ class AgentDaemon:
             # Check both in-memory cache and durable journal (Design Doc 10.4.2)
             if cmd_id in self._executed_command_ids:
                 continue
-            if self._command_journal and self._command_journal.is_executed(cmd_id, cmd.idempotency_key):
+            if self._command_journal and self._command_journal.is_executed(
+                cmd_id, cmd.idempotency_key
+            ):
                 self._executed_command_ids.add(cmd_id)  # Update in-memory cache
                 continue
 
@@ -1795,7 +1876,9 @@ class AgentDaemon:
                     req = self._approval_manager.create_request(
                         command_type=cmd.command_type,
                         description=f"Cloud command {cmd.command_type} requires local approval",
-                        change_class=ChangeClass.TRADING_IMPACTING if trading_impacting else change_class,
+                        change_class=(
+                            ChangeClass.TRADING_IMPACTING if trading_impacting else change_class
+                        ),
                         details={
                             "command_id": cmd_id,
                             "idempotency_key": cmd.idempotency_key,
@@ -1855,7 +1938,9 @@ class AgentDaemon:
             except Exception:
                 pass
 
-    def _execute_cloud_command(self, cmd: PendingCommand) -> Tuple[bool, Dict[str, Any], Optional[str]]:
+    def _execute_cloud_command(
+        self, cmd: PendingCommand
+    ) -> Tuple[bool, Dict[str, Any], Optional[str]]:
         """Execute a cloud command locally (Agent-side)."""
         try:
             if cmd.command_type == "REQUEST_START_RUN":
@@ -1915,7 +2000,9 @@ class AgentDaemon:
             self._cloud_client.submit_local_approval(
                 command_id=UUID(command_id),
                 approved=approved,
-                evidence_hash=f"sha256:{finalized.evidence_hash}" if finalized.evidence_hash else None,
+                evidence_hash=(
+                    f"sha256:{finalized.evidence_hash}" if finalized.evidence_hash else None
+                ),
                 diff_summary={
                     "command_type": finalized.command_type,
                     "diff_summary": finalized.diff_summary,
@@ -1986,17 +2073,21 @@ class AgentDaemon:
             ArtifactDownloadError,
         )
 
-        self._log_event(TelemetryEventType.STATE_CHANGE, {
-            "message": "Starting artifact upgrade",
-            "command_id": cmd.command_id,
-            "payload_ref": cmd.payload_ref,
-        })
+        self._log_event(
+            TelemetryEventType.STATE_CHANGE,
+            {
+                "message": "Starting artifact upgrade",
+                "command_id": cmd.command_id,
+                "payload_ref": cmd.payload_ref,
+            },
+        )
 
         try:
             # Extract artifact info from command payload
             payload = cmd.payload_ref or {}
             if isinstance(payload, str):
                 import json
+
                 try:
                     payload = json.loads(payload)
                 except json.JSONDecodeError:
@@ -2012,7 +2103,11 @@ class AgentDaemon:
                 return (False, {}, "Missing artifact download URL")
 
             if not expected_digest:
-                return (False, {}, "Missing expected digest (Design Doc requires digest verification)")
+                return (
+                    False,
+                    {},
+                    "Missing expected digest (Design Doc requires digest verification)",
+                )
 
             # Initialize artifact manager
             artifact_cache_dir = self.config.data_dir / "artifacts"
@@ -2038,27 +2133,39 @@ class AgentDaemon:
                             allowed_registries={"local", "ccea-registry"},
                             require_sbom=True,
                         )
-                        self._log_event(TelemetryEventType.STATE_CHANGE, {
-                            "message": "ArtifactVerifier initialized with KeyManager",
-                            "trusted_keys_path": str(trusted_keys_path),
-                            "key_count": len(key_manager.list_keys()),
-                        })
+                        self._log_event(
+                            TelemetryEventType.STATE_CHANGE,
+                            {
+                                "message": "ArtifactVerifier initialized with KeyManager",
+                                "trusted_keys_path": str(trusted_keys_path),
+                                "key_count": len(key_manager.list_keys()),
+                            },
+                        )
                     except Exception as km_err:
-                        self._log_event(TelemetryEventType.WARNING, {
-                            "message": f"KeyManager init failed, using strict verifier: {km_err}",
-                        })
+                        self._log_event(
+                            TelemetryEventType.WARNING,
+                            {
+                                "message": f"KeyManager init failed, using strict verifier: {km_err}",
+                            },
+                        )
                         verifier = CCEAVerifier(strict_mode=True)
                 else:
                     # No trusted keys configured - strict mode rejects unsigned artifacts
                     verifier = CCEAVerifier(strict_mode=True)
-                    self._log_event(TelemetryEventType.WARNING, {
-                        "message": "No trusted_keys directory - strict mode (unsigned rejected)",
-                        "expected_path": str(trusted_keys_path),
-                    })
+                    self._log_event(
+                        TelemetryEventType.WARNING,
+                        {
+                            "message": "No trusted_keys directory - strict mode (unsigned rejected)",
+                            "expected_path": str(trusted_keys_path),
+                        },
+                    )
             except ImportError:
-                self._log_event(TelemetryEventType.WARNING, {
-                    "message": "ArtifactVerifier not available - signature verification limited",
-                })
+                self._log_event(
+                    TelemetryEventType.WARNING,
+                    {
+                        "message": "ArtifactVerifier not available - signature verification limited",
+                    },
+                )
 
             # Download and verify artifact
             artifact, verification_report = artifact_manager.download_verify_and_prepare(
@@ -2079,42 +2186,62 @@ class AgentDaemon:
                 return (False, {}, "Artifact not ready for upgrade")
 
             # Log success
-            self._log_event(TelemetryEventType.STATE_CHANGE, {
-                "message": "Artifact downloaded and verified",
-                "artifact_id": artifact.artifact_id,
-                "digest_verified": artifact.verified,
-                "crypto_verified": verification_report.signature_verified if verification_report else False,
-            })
+            self._log_event(
+                TelemetryEventType.STATE_CHANGE,
+                {
+                    "message": "Artifact downloaded and verified",
+                    "artifact_id": artifact.artifact_id,
+                    "digest_verified": artifact.verified,
+                    "crypto_verified": (
+                        verification_report.signature_verified if verification_report else False
+                    ),
+                },
+            )
 
-            return (True, {
-                "action": "upgrade_prepared",
-                "artifact_id": artifact.artifact_id,
-                "name": artifact.name,
-                "version": artifact.version,
-                "digest_verified": artifact.verified,
-                "crypto_verified": verification_report.signature_verified if verification_report else False,
-                "ready_for_swap": ready,
-            }, None)
+            return (
+                True,
+                {
+                    "action": "upgrade_prepared",
+                    "artifact_id": artifact.artifact_id,
+                    "name": artifact.name,
+                    "version": artifact.version,
+                    "digest_verified": artifact.verified,
+                    "crypto_verified": (
+                        verification_report.signature_verified if verification_report else False
+                    ),
+                    "ready_for_swap": ready,
+                },
+                None,
+            )
 
         except ArtifactVerificationError as e:
-            self._log_event(TelemetryEventType.ERROR, {
-                "error_type": "ArtifactVerificationError",
-                "message": str(e),
-            })
+            self._log_event(
+                TelemetryEventType.ERROR,
+                {
+                    "error_type": "ArtifactVerificationError",
+                    "message": str(e),
+                },
+            )
             return (False, {}, f"Artifact verification failed: {e}")
 
         except ArtifactDownloadError as e:
-            self._log_event(TelemetryEventType.ERROR, {
-                "error_type": "ArtifactDownloadError",
-                "message": str(e),
-            })
+            self._log_event(
+                TelemetryEventType.ERROR,
+                {
+                    "error_type": "ArtifactDownloadError",
+                    "message": str(e),
+                },
+            )
             return (False, {}, f"Artifact download failed: {e}")
 
         except Exception as e:
-            self._log_event(TelemetryEventType.ERROR, {
-                "error_type": "ArtifactUpgradeError",
-                "message": str(e),
-            })
+            self._log_event(
+                TelemetryEventType.ERROR,
+                {
+                    "error_type": "ArtifactUpgradeError",
+                    "message": str(e),
+                },
+            )
             return (False, {}, f"Artifact upgrade failed: {e}")
 
     def _handle_update_config(
@@ -2135,17 +2262,21 @@ class AgentDaemon:
         Returns:
             (success, result_data, error_message)
         """
-        self._log_event(TelemetryEventType.STATE_CHANGE, {
-            "message": "Processing config update",
-            "command_id": cmd.command_id,
-            "payload_ref": cmd.payload_ref,
-        })
+        self._log_event(
+            TelemetryEventType.STATE_CHANGE,
+            {
+                "message": "Processing config update",
+                "command_id": cmd.command_id,
+                "payload_ref": cmd.payload_ref,
+            },
+        )
 
         try:
             # Extract config from command payload
             payload = cmd.payload_ref or {}
             if isinstance(payload, str):
                 import json
+
                 try:
                     payload = json.loads(payload)
                 except json.JSONDecodeError:
@@ -2158,51 +2289,76 @@ class AgentDaemon:
             if change_class == "TRADING_IMPACTING":
                 # This should have been caught by approval flow, but double-check
                 if not cmd.requires_approval:
-                    self._log_event(TelemetryEventType.WARNING, {
-                        "message": "TRADING_IMPACTING config update without approval flag",
-                    })
+                    self._log_event(
+                        TelemetryEventType.WARNING,
+                        {
+                            "message": "TRADING_IMPACTING config update without approval flag",
+                        },
+                    )
 
             # Validate config through policy firewall if available
             if self._policy_firewall:
                 if hasattr(self._policy_firewall, "check_config_change"):
                     result = self._policy_firewall.check_config_change(config_blob, change_class)
                     if not result.allowed:
-                        self._log_event(TelemetryEventType.ERROR, {
-                            "error_type": "ConfigValidationError",
-                            "message": f"Config rejected by policy firewall: {result.violations}",
-                        })
-                        return (False, {
-                            "action": "config_rejected",
-                            "violations": result.violations,
-                        }, f"Config rejected by policy: {result.violations}")
+                        self._log_event(
+                            TelemetryEventType.ERROR,
+                            {
+                                "error_type": "ConfigValidationError",
+                                "message": f"Config rejected by policy firewall: {result.violations}",
+                            },
+                        )
+                        return (
+                            False,
+                            {
+                                "action": "config_rejected",
+                                "violations": result.violations,
+                            },
+                            f"Config rejected by policy: {result.violations}",
+                        )
 
             # Apply config (store for runtime use)
             config_path = self.config.data_dir / "runtime_config.json"
             import json
+
             with open(config_path, "w") as f:
-                json.dump({
-                    "config": config_blob,
+                json.dump(
+                    {
+                        "config": config_blob,
+                        "change_class": change_class,
+                        "applied_at": datetime.utcnow().isoformat(),
+                        "command_id": cmd.command_id,
+                    },
+                    f,
+                    indent=2,
+                )
+
+            self._log_event(
+                TelemetryEventType.STATE_CHANGE,
+                {
+                    "message": "Config update applied",
                     "change_class": change_class,
-                    "applied_at": datetime.utcnow().isoformat(),
-                    "command_id": cmd.command_id,
-                }, f, indent=2)
+                },
+            )
 
-            self._log_event(TelemetryEventType.STATE_CHANGE, {
-                "message": "Config update applied",
-                "change_class": change_class,
-            })
-
-            return (True, {
-                "action": "config_applied",
-                "change_class": change_class,
-                "config_path": str(config_path),
-            }, None)
+            return (
+                True,
+                {
+                    "action": "config_applied",
+                    "change_class": change_class,
+                    "config_path": str(config_path),
+                },
+                None,
+            )
 
         except Exception as e:
-            self._log_event(TelemetryEventType.ERROR, {
-                "error_type": "ConfigUpdateError",
-                "message": str(e),
-            })
+            self._log_event(
+                TelemetryEventType.ERROR,
+                {
+                    "error_type": "ConfigUpdateError",
+                    "message": str(e),
+                },
+            )
             return (False, {}, f"Config update failed: {e}")
 
     # ===== Logging =====
@@ -2274,7 +2430,9 @@ class AgentDaemon:
         """Set kill switch callback."""
         self._on_kill_switch = callback
 
-    def set_on_degraded_mode(self, callback: Callable[[DegradedMode, DegradedModeAction], None]) -> None:
+    def set_on_degraded_mode(
+        self, callback: Callable[[DegradedMode, DegradedModeAction], None]
+    ) -> None:
         """Set degraded mode callback."""
         self._on_degraded_mode = callback
 
@@ -2342,7 +2500,11 @@ class AgentDaemon:
         if self._kill_switch:
             return {
                 "triggered": self._kill_switch.is_triggered,
-                "current_halt": self._kill_switch.current_halt.to_dict() if self._kill_switch.current_halt else None,
+                "current_halt": (
+                    self._kill_switch.current_halt.to_dict()
+                    if self._kill_switch.current_halt
+                    else None
+                ),
                 "history_count": len(self._kill_switch.halt_history),
             }
         return {"triggered": False}
@@ -2364,5 +2526,6 @@ class AgentDaemon:
         if self._time_checker:
             return self._time_checker.get_statistics()
         return {}
+
 
 # (No extra aliases)

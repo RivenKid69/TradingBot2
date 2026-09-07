@@ -7,7 +7,18 @@ core_contracts.py
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, Iterable, Iterator, Optional, Sequence, Mapping, Any, Dict, List, runtime_checkable
+from typing import (
+    Protocol,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    Mapping,
+    Any,
+    Dict,
+    List,
+    runtime_checkable,
+)
 
 import pandas as pd
 
@@ -24,11 +35,9 @@ class MarketDataSource(Protocol):
     Реализации: OfflineBarSource (parquet/csv), BinancePublicDataSource (REST/WS).
     """
 
-    def stream_bars(self, symbols: Sequence[str], interval_ms: int) -> Iterator[Bar]:
-        ...
+    def stream_bars(self, symbols: Sequence[str], interval_ms: int) -> Iterator[Bar]: ...
 
-    def stream_ticks(self, symbols: Sequence[str]) -> Iterator[Tick]:
-        ...
+    def stream_ticks(self, symbols: Sequence[str]) -> Iterator[Tick]: ...
 
 
 @runtime_checkable
@@ -39,14 +48,13 @@ class TradeExecutor(Protocol):
     В live — может быть асинхронной интеграцией, но метод execute возвращает фактический ExecReport при завершении сделки.
     """
 
-    def execute(self, order: Order) -> ExecReport:
-        ...
+    def execute(self, order: Order) -> ExecReport: ...
 
-    def cancel(self, client_order_id: str) -> None:
-        ...
+    def cancel(self, client_order_id: str) -> None: ...
 
-    def get_open_positions(self, symbols: Optional[Sequence[str]] = None) -> Mapping[str, Position]:
-        ...
+    def get_open_positions(
+        self, symbols: Optional[Sequence[str]] = None
+    ) -> Mapping[str, Position]: ...
 
 
 @runtime_checkable
@@ -65,26 +73,20 @@ class FeaturePipe(Protocol):
         Эти методы опциональны и могут отсутствовать у конкретной реализации.
     """
 
-    def reset(self) -> None:
-        ...
+    def reset(self) -> None: ...
 
-    def warmup(self) -> None:
-        ...
+    def warmup(self) -> None: ...
 
-    def update(self, bar: Bar) -> Mapping[str, Any]:
-        ...
+    def update(self, bar: Bar) -> Mapping[str, Any]: ...
 
     # ------------------------------------------------------------------
     # Optional offline helpers
     # ------------------------------------------------------------------
-    def fit(self, df: pd.DataFrame) -> None:
-        ...
+    def fit(self, df: pd.DataFrame) -> None: ...
 
-    def transform_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        ...
+    def transform_df(self, df: pd.DataFrame) -> pd.DataFrame: ...
 
-    def make_targets(self, df: pd.DataFrame) -> Optional[pd.Series]:
-        ...
+    def make_targets(self, df: pd.DataFrame) -> Optional[pd.Series]: ...
 
 
 @runtime_checkable
@@ -94,11 +96,9 @@ class RiskGuards(Protocol):
     pre_trade возвращает None, если всё ок, либо строковый код/сообщение причины блокировки.
     """
 
-    def pre_trade(self, order: Order, position: Optional[Position] = None) -> Optional[str]:
-        ...
+    def pre_trade(self, order: Order, position: Optional[Position] = None) -> Optional[str]: ...
 
-    def post_trade(self, report: ExecReport) -> None:
-        ...
+    def post_trade(self, report: ExecReport) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -124,8 +124,7 @@ class SignalPolicy(Protocol):
     возвращает список заявок (:class:`Order`) для исполнения.
     """
 
-    def decide(self, features: Mapping[str, Any], ctx: PolicyCtx) -> List[Order]:
-        ...
+    def decide(self, features: Mapping[str, Any], ctx: PolicyCtx) -> List[Order]: ...
 
 
 @runtime_checkable

@@ -29,6 +29,7 @@ sys.path.insert(0, str(project_root))
 
 try:
     from marketmarket_simulator_wrapper import PyMarketSimulator
+
     HAVE_SIMULATOR = True
 except ImportError:
     HAVE_SIMULATOR = False
@@ -36,6 +37,7 @@ except ImportError:
 
 try:
     from transformers import FeatureSpec, OnlineFeatureTransformer
+
     HAVE_TRANSFORMERS = True
 except ImportError:
     HAVE_TRANSFORMERS = False
@@ -44,6 +46,7 @@ except ImportError:
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
+
 
 def generate_price_pattern_for_rsi_test():
     """
@@ -55,26 +58,26 @@ def generate_price_pattern_for_rsi_test():
         list[float]: 20 prices designed to expose RSI initialization bug
     """
     prices = [
-        100.0,   # bar 0 (initial)
-        110.0,   # bar 1: +10.0 gain (LARGE!)
-        110.5,   # bar 2: +0.5 gain
-        110.0,   # bar 3: -0.5 loss
-        110.5,   # bar 4: +0.5 gain
-        110.0,   # bar 5: -0.5 loss
-        110.5,   # bar 6: +0.5 gain
-        110.0,   # bar 7: -0.5 loss
-        110.5,   # bar 8: +0.5 gain
-        110.0,   # bar 9: -0.5 loss
-        110.5,   # bar 10: +0.5 gain
-        110.0,   # bar 11: -0.5 loss
-        110.5,   # bar 12: +0.5 gain
-        110.0,   # bar 13: -0.5 loss
-        110.5,   # bar 14: +0.5 gain (RSI initialization at bar 14)
-        110.0,   # bar 15: -0.5 loss
-        110.5,   # bar 16: +0.5 gain
-        110.0,   # bar 17: -0.5 loss
-        110.5,   # bar 18: +0.5 gain
-        110.0,   # bar 19: -0.5 loss
+        100.0,  # bar 0 (initial)
+        110.0,  # bar 1: +10.0 gain (LARGE!)
+        110.5,  # bar 2: +0.5 gain
+        110.0,  # bar 3: -0.5 loss
+        110.5,  # bar 4: +0.5 gain
+        110.0,  # bar 5: -0.5 loss
+        110.5,  # bar 6: +0.5 gain
+        110.0,  # bar 7: -0.5 loss
+        110.5,  # bar 8: +0.5 gain
+        110.0,  # bar 9: -0.5 loss
+        110.5,  # bar 10: +0.5 gain
+        110.0,  # bar 11: -0.5 loss
+        110.5,  # bar 12: +0.5 gain
+        110.0,  # bar 13: -0.5 loss
+        110.5,  # bar 14: +0.5 gain (RSI initialization at bar 14)
+        110.0,  # bar 15: -0.5 loss
+        110.5,  # bar 16: +0.5 gain
+        110.0,  # bar 17: -0.5 loss
+        110.5,  # bar 18: +0.5 gain
+        110.0,  # bar 19: -0.5 loss
     ]
     return prices
 
@@ -100,11 +103,11 @@ def compute_expected_rsi_correct(prices, period=14):
 
     for i in range(len(prices)):
         if i == 0:
-            rsi_values.append(float('nan'))
+            rsi_values.append(float("nan"))
             continue
 
         # Compute gain/loss
-        change = prices[i] - prices[i-1]
+        change = prices[i] - prices[i - 1]
         gain = max(change, 0.0)
         loss = max(-change, 0.0)
         gains.append(gain)
@@ -112,7 +115,7 @@ def compute_expected_rsi_correct(prices, period=14):
 
         # Wait for first 'period' samples
         if len(gains) < period:
-            rsi_values.append(float('nan'))
+            rsi_values.append(float("nan"))
             continue
 
         # Initialize with SMA at exactly 'period' samples
@@ -155,9 +158,9 @@ def compute_bollinger_bands_correct(prices, period=20):
 
     for i in range(len(prices)):
         if i < period - 1:
-            ma20_values.append(float('nan'))
-            bb_lower_values.append(float('nan'))
-            bb_upper_values.append(float('nan'))
+            ma20_values.append(float("nan"))
+            bb_lower_values.append(float("nan"))
+            bb_upper_values.append(float("nan"))
             continue
 
         # Get last 'period' prices
@@ -183,6 +186,7 @@ def compute_bollinger_bands_correct(prices, period=20):
 # BUG #1: RSI INITIALIZATION TESTS
 # =============================================================================
 
+
 class TestRSIInitializationFix:
     """Test suite for RSI initialization bug fix (Bug #1 - CRITICAL)."""
 
@@ -207,7 +211,7 @@ class TestRSIInitializationFix:
             low=np.zeros(n, dtype=np.float64),
             volume_usd=np.zeros(n, dtype=np.float64),
             n_steps=n,
-            seed=42
+            seed=42,
         )
 
         # Feed prices manually (bypass step() to control prices exactly)
@@ -286,7 +290,7 @@ class TestRSIInitializationFix:
             low=np.zeros(len(prices), dtype=np.float64),
             volume_usd=np.zeros(len(prices), dtype=np.float64),
             n_steps=len(prices),
-            seed=42
+            seed=42,
         )
 
         for i, price in enumerate(prices):
@@ -338,7 +342,7 @@ class TestRSIInitializationFix:
                 ts_ms=i * 60000,
                 close=price,
             )
-            python_rsi.append(feats.get("rsi", float('nan')))
+            python_rsi.append(feats.get("rsi", float("nan")))
 
         # C++ RSI (MarketSimulator)
         sim = PyMarketSimulator(
@@ -348,7 +352,7 @@ class TestRSIInitializationFix:
             low=np.zeros(len(prices), dtype=np.float64),
             volume_usd=np.zeros(len(prices), dtype=np.float64),
             n_steps=len(prices),
-            seed=42
+            seed=42,
         )
 
         for i, price in enumerate(prices):
@@ -383,6 +387,7 @@ class TestRSIInitializationFix:
 # BUG #2: BOLLINGER BANDS VARIANCE TESTS
 # =============================================================================
 
+
 class TestBollingerBandsVarianceFix:
     """Test suite for Bollinger Bands variance bug fix (Bug #2 - MEDIUM)."""
 
@@ -410,7 +415,7 @@ class TestBollingerBandsVarianceFix:
             low=np.zeros(n, dtype=np.float64),
             volume_usd=np.zeros(n, dtype=np.float64),
             n_steps=n,
-            seed=42
+            seed=42,
         )
 
         for i, price in enumerate(prices):
@@ -425,7 +430,9 @@ class TestBollingerBandsVarianceFix:
         ma20_cpp = sim.get_ma20(19)
 
         # Compute expected BB (with CORRECT sample variance)
-        ma20_expected, bb_lower_expected, bb_upper_expected = compute_bollinger_bands_correct(prices, period=20)
+        ma20_expected, bb_lower_expected, bb_upper_expected = compute_bollinger_bands_correct(
+            prices, period=20
+        )
         ma20_exp = ma20_expected[19]
         bb_lower_exp = bb_lower_expected[19]
         bb_upper_exp = bb_upper_expected[19]
@@ -519,6 +526,7 @@ class TestBollingerBandsVarianceFix:
 # INTEGRATION TESTS
 # =============================================================================
 
+
 class TestIntegration:
     """Integration tests for both bug fixes."""
 
@@ -543,7 +551,7 @@ class TestIntegration:
             low=np.zeros(n, dtype=np.float64),
             volume_usd=np.zeros(n, dtype=np.float64),
             n_steps=n,
-            seed=42
+            seed=42,
         )
 
         for i, price in enumerate(prices):
@@ -587,7 +595,7 @@ class TestIntegration:
             low=np.zeros(n, dtype=np.float64),
             volume_usd=np.zeros(n, dtype=np.float64),
             n_steps=n,
-            seed=42
+            seed=42,
         )
 
         for i, price in enumerate(prices):

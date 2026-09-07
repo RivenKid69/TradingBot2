@@ -428,6 +428,7 @@ class TestCreateResearchExecutor:
 
     def test_create_with_callbacks(self):
         """Test creating with callbacks."""
+
         def on_complete(result):
             pass
 

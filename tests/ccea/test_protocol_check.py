@@ -175,13 +175,7 @@ class TestExtractCommandTypes:
             "definitions": {
                 "messages": {
                     "request_start_run": {
-                        "allOf": [
-                            {
-                                "properties": {
-                                    "command_type": {"const": "REQUEST_START_RUN"}
-                                }
-                            }
-                        ]
+                        "allOf": [{"properties": {"command_type": {"const": "REQUEST_START_RUN"}}}]
                     }
                 }
             }
@@ -203,13 +197,7 @@ class TestExtractMessageTypes:
         """Should extract message types from const."""
         schema = {
             "definitions": {
-                "messages": {
-                    "heartbeat": {
-                        "properties": {
-                            "message_type": {"const": "HEARTBEAT"}
-                        }
-                    }
-                }
+                "messages": {"heartbeat": {"properties": {"message_type": {"const": "HEARTBEAT"}}}}
             }
         }
 
@@ -224,13 +212,7 @@ class TestProtocolChanges:
         """Identical schemas should have no changes."""
         schema = {
             "definitions": {
-                "messages": {
-                    "heartbeat": {
-                        "properties": {
-                            "message_type": {"const": "HEARTBEAT"}
-                        }
-                    }
-                }
+                "messages": {"heartbeat": {"properties": {"message_type": {"const": "HEARTBEAT"}}}}
             }
         }
 
@@ -245,13 +227,7 @@ class TestProtocolChanges:
             "definitions": {
                 "messages": {
                     "request_start_run": {
-                        "allOf": [
-                            {
-                                "properties": {
-                                    "command_type": {"const": "REQUEST_START_RUN"}
-                                }
-                            }
-                        ]
+                        "allOf": [{"properties": {"command_type": {"const": "REQUEST_START_RUN"}}}]
                     }
                 }
             }
@@ -267,13 +243,7 @@ class TestProtocolChanges:
             "definitions": {
                 "messages": {
                     "request_new_thing": {
-                        "allOf": [
-                            {
-                                "properties": {
-                                    "command_type": {"const": "REQUEST_NEW_THING"}
-                                }
-                            }
-                        ]
+                        "allOf": [{"properties": {"command_type": {"const": "REQUEST_NEW_THING"}}}]
                     }
                 }
             }
@@ -288,13 +258,7 @@ class TestProtocolChanges:
             "definitions": {
                 "messages": {
                     "request_start_run": {
-                        "allOf": [
-                            {
-                                "properties": {
-                                    "command_type": {"const": "REQUEST_START_RUN"}
-                                }
-                            }
-                        ]
+                        "allOf": [{"properties": {"command_type": {"const": "REQUEST_START_RUN"}}}]
                     }
                 }
             }
@@ -311,13 +275,7 @@ class TestProtocolChanges:
             "definitions": {
                 "messages": {
                     "place_order": {
-                        "allOf": [
-                            {
-                                "properties": {
-                                    "command_type": {"const": "PLACE_ORDER"}
-                                }
-                            }
-                        ]
+                        "allOf": [{"properties": {"command_type": {"const": "PLACE_ORDER"}}}]
                     }
                 }
             }
@@ -336,20 +294,10 @@ class TestProtocolAllowlistValidation:
         schema = {
             "definitions": {
                 "messages": {
-                    "heartbeat": {
-                        "properties": {
-                            "message_type": {"const": "HEARTBEAT"}
-                        }
-                    },
+                    "heartbeat": {"properties": {"message_type": {"const": "HEARTBEAT"}}},
                     "request_start_run": {
-                        "allOf": [
-                            {
-                                "properties": {
-                                    "command_type": {"const": "REQUEST_START_RUN"}
-                                }
-                            }
-                        ]
-                    }
+                        "allOf": [{"properties": {"command_type": {"const": "REQUEST_START_RUN"}}}]
+                    },
                 }
             }
         }
@@ -363,13 +311,7 @@ class TestProtocolAllowlistValidation:
             "definitions": {
                 "messages": {
                     "place_order": {
-                        "allOf": [
-                            {
-                                "properties": {
-                                    "command_type": {"const": "PLACE_ORDER"}
-                                }
-                            }
-                        ]
+                        "allOf": [{"properties": {"command_type": {"const": "PLACE_ORDER"}}}]
                     }
                 }
             }

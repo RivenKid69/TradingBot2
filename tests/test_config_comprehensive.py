@@ -6,6 +6,7 @@ Tests all configuration classes and their validators to ensure:
 2. All functionality preserved
 3. Backward compatibility maintained
 """
+
 import pytest
 import warnings
 from typing import Dict, Any
@@ -19,24 +20,35 @@ def test_import_no_warnings():
         import core_config
 
         pydantic_warnings = [
-            warning for warning in w
-            if 'PydanticDeprecatedSince20' in str(warning.category)
-            or 'deprecated' in str(warning.message).lower()
+            warning
+            for warning in w
+            if "PydanticDeprecatedSince20" in str(warning.category)
+            or "deprecated" in str(warning.message).lower()
         ]
 
-        assert len(pydantic_warnings) == 0, (
-            f"Found {len(pydantic_warnings)} Pydantic deprecation warnings during import"
-        )
+        assert (
+            len(pydantic_warnings) == 0
+        ), f"Found {len(pydantic_warnings)} Pydantic deprecation warnings during import"
 
 
 def test_all_config_classes():
     """Test instantiation of all major config classes."""
     from core_config import (
-        RiskConfigSection, LatencyConfig, ExecutionBridgeConfig,
-        SpotImpactConfig, SpotTurnoverLimit, SpotTurnoverCaps,
-        SpotCostConfig, PortfolioConfig, ExecutionRuntimeConfig,
-        AdvRuntimeConfig, CommonRunConfig, SimulationConfig,
-        TrainConfig, LiveConfig, EvalConfig
+        RiskConfigSection,
+        LatencyConfig,
+        ExecutionBridgeConfig,
+        SpotImpactConfig,
+        SpotTurnoverLimit,
+        SpotTurnoverCaps,
+        SpotCostConfig,
+        PortfolioConfig,
+        ExecutionRuntimeConfig,
+        AdvRuntimeConfig,
+        CommonRunConfig,
+        SimulationConfig,
+        TrainConfig,
+        LiveConfig,
+        EvalConfig,
     )
 
     with warnings.catch_warnings(record=True) as w:
@@ -75,11 +87,14 @@ def test_all_config_classes():
 
         # Check no critical warnings (exclude .dict() warnings which are for backward compatibility)
         critical_warnings = [
-            warning for warning in w
-            if ('deprecated' in str(warning.message).lower()
-                and 'root_validator' not in str(warning.message).lower()
-                and 'class-based `config`' not in str(warning.message).lower()
-                and '`dict` method is deprecated' not in str(warning.message).lower())
+            warning
+            for warning in w
+            if (
+                "deprecated" in str(warning.message).lower()
+                and "root_validator" not in str(warning.message).lower()
+                and "class-based `config`" not in str(warning.message).lower()
+                and "`dict` method is deprecated" not in str(warning.message).lower()
+            )
         ]
         assert len(critical_warnings) == 0
 
@@ -92,33 +107,28 @@ def test_adv_runtime_config_unknown_fields():
         warnings.simplefilter("always")
 
         # Test with unknown fields
-        config = AdvRuntimeConfig(
-            enabled=True,
-            unknown_field1="value1",
-            unknown_field2=123
-        )
+        config = AdvRuntimeConfig(enabled=True, unknown_field1="value1", unknown_field2=123)
 
         assert config.enabled is True
         assert config.extra.get("unknown_field1") == "value1"
         assert config.extra.get("unknown_field2") == 123
 
         # Test with existing extra
-        config2 = AdvRuntimeConfig(
-            enabled=False,
-            extra={"existing": "value"},
-            new_field="new"
-        )
+        config2 = AdvRuntimeConfig(enabled=False, extra={"existing": "value"}, new_field="new")
 
         assert config2.extra.get("existing") == "value"
         assert config2.extra.get("new_field") == "new"
 
         # Check no critical warnings (exclude .dict() warnings which are for backward compatibility)
         critical_warnings = [
-            warning for warning in w
-            if ('deprecated' in str(warning.message).lower()
-                and 'root_validator' not in str(warning.message).lower()
-                and 'class-based `config`' not in str(warning.message).lower()
-                and '`dict` method is deprecated' not in str(warning.message).lower())
+            warning
+            for warning in w
+            if (
+                "deprecated" in str(warning.message).lower()
+                and "root_validator" not in str(warning.message).lower()
+                and "class-based `config`" not in str(warning.message).lower()
+                and "`dict` method is deprecated" not in str(warning.message).lower()
+            )
         ]
         assert len(critical_warnings) == 0
 
@@ -138,8 +148,8 @@ def test_simulation_config_symbol_sync():
                 "executor": {"target": "test:Test"},
                 "feature_pipe": {"target": "test:Test"},
                 "policy": {"target": "test:Test"},
-                "risk_guards": {"target": "test:Test"}
-            }
+                "risk_guards": {"target": "test:Test"},
+            },
         )
 
         assert config.symbols == ["BTCUSDT", "ETHUSDT"]
@@ -147,11 +157,14 @@ def test_simulation_config_symbol_sync():
 
         # Check no critical warnings (exclude .dict() warnings which are for backward compatibility)
         critical_warnings = [
-            warning for warning in w
-            if ('deprecated' in str(warning.message).lower()
-                and 'root_validator' not in str(warning.message).lower()
-                and 'class-based `config`' not in str(warning.message).lower()
-                and '`dict` method is deprecated' not in str(warning.message).lower())
+            warning
+            for warning in w
+            if (
+                "deprecated" in str(warning.message).lower()
+                and "root_validator" not in str(warning.message).lower()
+                and "class-based `config`" not in str(warning.message).lower()
+                and "`dict` method is deprecated" not in str(warning.message).lower()
+            )
         ]
         assert len(critical_warnings) == 0
 
@@ -172,8 +185,8 @@ def test_train_config_symbol_sync():
                 "executor": {"target": "test:Test"},
                 "feature_pipe": {"target": "test:Test"},
                 "policy": {"target": "test:Test"},
-                "risk_guards": {"target": "test:Test"}
-            }
+                "risk_guards": {"target": "test:Test"},
+            },
         )
 
         assert config.symbols == ["BTCUSDT", "ETHUSDT"]
@@ -181,11 +194,14 @@ def test_train_config_symbol_sync():
 
         # Check no critical warnings (exclude .dict() warnings which are for backward compatibility)
         critical_warnings = [
-            warning for warning in w
-            if ('deprecated' in str(warning.message).lower()
-                and 'root_validator' not in str(warning.message).lower()
-                and 'class-based `config`' not in str(warning.message).lower()
-                and '`dict` method is deprecated' not in str(warning.message).lower())
+            warning
+            for warning in w
+            if (
+                "deprecated" in str(warning.message).lower()
+                and "root_validator" not in str(warning.message).lower()
+                and "class-based `config`" not in str(warning.message).lower()
+                and "`dict` method is deprecated" not in str(warning.message).lower()
+            )
         ]
         assert len(critical_warnings) == 0
 
@@ -199,20 +215,14 @@ def test_train_data_config_window_sync():
 
         # Test case 1: start_ts provided (provide symbols to avoid network call)
         config1 = TrainDataConfig(
-            symbols=["BTCUSDT"],
-            timeframe="4h",
-            start_ts=1000000,
-            end_ts=2000000
+            symbols=["BTCUSDT"], timeframe="4h", start_ts=1000000, end_ts=2000000
         )
         assert config1.train_start_ts == 1000000
         assert config1.train_end_ts == 2000000
 
         # Test case 2: train_start_ts provided
         config2 = TrainDataConfig(
-            symbols=["BTCUSDT"],
-            timeframe="4h",
-            train_start_ts=3000000,
-            train_end_ts=4000000
+            symbols=["BTCUSDT"], timeframe="4h", train_start_ts=3000000, train_end_ts=4000000
         )
         assert config2.start_ts == 3000000
         assert config2.end_ts == 4000000
@@ -224,7 +234,7 @@ def test_train_data_config_window_sync():
             start_ts=5000000,
             train_start_ts=5000000,
             end_ts=6000000,
-            train_end_ts=6000000
+            train_end_ts=6000000,
         )
         assert config3.start_ts == 5000000
         assert config3.train_start_ts == 5000000
@@ -235,16 +245,19 @@ def test_train_data_config_window_sync():
                 symbols=["BTCUSDT"],
                 timeframe="4h",
                 start_ts=1000000,
-                train_start_ts=2000000  # Different value
+                train_start_ts=2000000,  # Different value
             )
 
         # Check no critical warnings (exclude .dict() warnings which are for backward compatibility)
         critical_warnings = [
-            warning for warning in w
-            if ('deprecated' in str(warning.message).lower()
-                and 'root_validator' not in str(warning.message).lower()
-                and 'class-based `config`' not in str(warning.message).lower()
-                and '`dict` method is deprecated' not in str(warning.message).lower())
+            warning
+            for warning in w
+            if (
+                "deprecated" in str(warning.message).lower()
+                and "root_validator" not in str(warning.message).lower()
+                and "class-based `config`" not in str(warning.message).lower()
+                and "`dict` method is deprecated" not in str(warning.message).lower()
+            )
         ]
         assert len(critical_warnings) == 0
 
@@ -280,11 +293,14 @@ def test_config_dict_methods():
 
         # Check no critical warnings (exclude .dict() warnings which are for backward compatibility)
         critical_warnings = [
-            warning for warning in w
-            if ('deprecated' in str(warning.message).lower()
-                and 'root_validator' not in str(warning.message).lower()
-                and 'class-based `config`' not in str(warning.message).lower()
-                and '`dict` method is deprecated' not in str(warning.message).lower())
+            warning
+            for warning in w
+            if (
+                "deprecated" in str(warning.message).lower()
+                and "root_validator" not in str(warning.message).lower()
+                and "class-based `config`" not in str(warning.message).lower()
+                and "`dict` method is deprecated" not in str(warning.message).lower()
+            )
         ]
         assert len(critical_warnings) == 0
 
@@ -305,8 +321,8 @@ def test_common_run_config_sync_sections():
                 "executor": {"target": "test:Test"},
                 "feature_pipe": {"target": "test:Test"},
                 "policy": {"target": "test:Test"},
-                "risk_guards": {"target": "test:Test"}
-            }
+                "risk_guards": {"target": "test:Test"},
+            },
         )
 
         # Check that portfolio and costs are synced
@@ -323,11 +339,14 @@ def test_common_run_config_sync_sections():
 
         # Check no critical warnings (exclude .dict() warnings which are for backward compatibility)
         critical_warnings = [
-            warning for warning in w
-            if ('deprecated' in str(warning.message).lower()
-                and 'root_validator' not in str(warning.message).lower()
-                and 'class-based `config`' not in str(warning.message).lower()
-                and '`dict` method is deprecated' not in str(warning.message).lower())
+            warning
+            for warning in w
+            if (
+                "deprecated" in str(warning.message).lower()
+                and "root_validator" not in str(warning.message).lower()
+                and "class-based `config`" not in str(warning.message).lower()
+                and "`dict` method is deprecated" not in str(warning.message).lower()
+            )
         ]
         assert len(critical_warnings) == 0
 
@@ -367,11 +386,14 @@ components:
 
         # Check no critical warnings (exclude .dict() warnings which are for backward compatibility)
         critical_warnings = [
-            warning for warning in w
-            if ('deprecated' in str(warning.message).lower()
-                and 'root_validator' not in str(warning.message).lower()
-                and 'class-based `config`' not in str(warning.message).lower()
-                and '`dict` method is deprecated' not in str(warning.message).lower())
+            warning
+            for warning in w
+            if (
+                "deprecated" in str(warning.message).lower()
+                and "root_validator" not in str(warning.message).lower()
+                and "class-based `config`" not in str(warning.message).lower()
+                and "`dict` method is deprecated" not in str(warning.message).lower()
+            )
         ]
         assert len(critical_warnings) == 0
 

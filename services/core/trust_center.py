@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentType(Enum):
     """Trust center document types."""
+
     SOC2_REPORT = "soc2_report"
     ISO27001_CERT = "iso27001_cert"
     PENTEST_REPORT = "pentest_report"
@@ -43,6 +44,7 @@ class DocumentType(Enum):
 
 class AccessLevel(Enum):
     """Document access levels."""
+
     PUBLIC = "public"
     NDA_REQUIRED = "nda_required"
     CUSTOMER_ONLY = "customer_only"
@@ -52,6 +54,7 @@ class AccessLevel(Enum):
 
 class CertificationType(Enum):
     """Certification types."""
+
     SOC2_TYPE_I = "soc2_type_i"
     SOC2_TYPE_II = "soc2_type_ii"
     ISO_27001 = "iso_27001"
@@ -65,6 +68,7 @@ class CertificationType(Enum):
 
 class ComplianceStatus(Enum):
     """Compliance status."""
+
     COMPLIANT = "compliant"
     IN_PROGRESS = "in_progress"
     PLANNED = "planned"
@@ -74,6 +78,7 @@ class ComplianceStatus(Enum):
 @dataclass
 class TrustDocument:
     """Trust center document."""
+
     document_id: str = ""
     title: str = ""
     description: str = ""
@@ -112,6 +117,7 @@ class TrustDocument:
 @dataclass
 class CertificationRecord:
     """Certification record."""
+
     cert_id: str = ""
     certification_type: CertificationType = CertificationType.SOC2_TYPE_II
     name: str = ""
@@ -143,6 +149,7 @@ class CertificationRecord:
 @dataclass
 class SecurityPosture:
     """Security posture summary."""
+
     posture_id: str = ""
     generated_at: str = ""
 
@@ -179,6 +186,7 @@ class SecurityPosture:
 @dataclass
 class TrustCenterConfig:
     """Configuration for TrustCenterPlatform."""
+
     organization_name: str = "Quantitative Research Platform"
     support_email: str = "security@platform.com"
     nda_required_default: bool = False
@@ -355,8 +363,15 @@ class TrustCenterPlatform:
             control_coverage_percent=93.75,
             dora_compliance_status="compliant",
             dora_articles_covered=[
-                "Article 5", "Article 6", "Article 9", "Article 10",
-                "Article 11", "Article 12", "Article 17", "Article 28", "Article 30"
+                "Article 5",
+                "Article 6",
+                "Article 9",
+                "Article 10",
+                "Article 11",
+                "Article 12",
+                "Article 17",
+                "Article 28",
+                "Article 30",
             ],
         )
 
@@ -374,7 +389,9 @@ class TrustCenterPlatform:
             "security_posture": asdict(posture),
             "certifications": {
                 "active": len(certs),
-                "list": [{"type": c.certification_type.value, "expiry": c.expiry_date} for c in certs],
+                "list": [
+                    {"type": c.certification_type.value, "expiry": c.expiry_date} for c in certs
+                ],
             },
             "documents": {
                 "public": len(docs),
@@ -387,7 +404,8 @@ class TrustCenterPlatform:
         """Export trust center data for a client."""
         with self._lock:
             docs = [
-                asdict(d) for d in self._documents.values()
+                asdict(d)
+                for d in self._documents.values()
                 if self._can_access(d.access_level, access_level)
             ]
             certs = [asdict(c) for c in self._certifications.values() if c.is_valid]

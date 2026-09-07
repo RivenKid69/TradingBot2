@@ -19,6 +19,11 @@ Features:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pandas as pd
+
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -341,9 +346,7 @@ class SessionRouter:
                     )
                 else:
                     # Convert to limit order
-                    warnings.append(
-                        "Converting market order to limit order for extended hours."
-                    )
+                    warnings.append("Converting market order to limit order for extended hours.")
                     return RoutingDecision(
                         should_submit=True,
                         use_extended_hours=True,
@@ -568,11 +571,18 @@ def compute_gap_from_close(
     result = np.zeros_like(current_price)
 
     # Create valid mask
-    valid_mask = (previous_close > 0) & (current_price > 0) & np.isfinite(previous_close) & np.isfinite(current_price)
+    valid_mask = (
+        (previous_close > 0)
+        & (current_price > 0)
+        & np.isfinite(previous_close)
+        & np.isfinite(current_price)
+    )
 
     # Compute gap where valid
-    with np.errstate(divide='ignore', invalid='ignore'):
-        result[valid_mask] = ((current_price[valid_mask] - previous_close[valid_mask]) / previous_close[valid_mask]) * 100.0
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result[valid_mask] = (
+            (current_price[valid_mask] - previous_close[valid_mask]) / previous_close[valid_mask]
+        ) * 100.0
 
     return result
 
@@ -680,9 +690,9 @@ def add_extended_hours_features_to_df(
                         session_info.session
                     ]["typical_volume_fraction"]
 
-                    spread_mult = SESSION_CHARACTERISTICS[
-                        session_info.session
-                    ]["typical_spread_multiplier"]
+                    spread_mult = SESSION_CHARACTERISTICS[session_info.session][
+                        "typical_spread_multiplier"
+                    ]
                     df.at[i, "session_spread_mult"] = spread_mult if spread_mult else 1.0
         except Exception as e:
             logger.debug(f"Could not compute session features: {e}")

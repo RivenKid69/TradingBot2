@@ -18,13 +18,13 @@ Coverage includes:
 - Article 16: Simplified Framework
 """
 
-
 import pytest
+
 pytest.skip(
     "Legacy DORA test - uses deprecated imports from services.dora.* "
     "These modules have been migrated to services.dora_integration.*. "
     "See tests/dora/ and tests/dora_integration/ for current tests.",
-    allow_module_level=True
+    allow_module_level=True,
 )
 
 
@@ -172,6 +172,7 @@ from services.dora.simplified_framework import (
 # Article 5: Governance Framework Tests
 # =============================================================================
 
+
 class TestGovernanceFramework:
     """Tests for DORA Article 5 - Governance Framework."""
 
@@ -188,7 +189,7 @@ class TestGovernanceFramework:
             role=GovernanceRole.ICT_RISK_OFFICER,
             person_name="John Doe",
             email="john.doe@example.com",
-            department="IT Risk"
+            department="IT Risk",
         )
         assert role is not None
         assert role.role == GovernanceRole.ICT_RISK_OFFICER
@@ -203,7 +204,7 @@ class TestGovernanceFramework:
             training_name="ICT Risk Management Training",
             status=TrainingStatus.COMPLETED,
             duration_hours=8.0,
-            training_provider="External Provider"
+            training_provider="External Provider",
         )
         assert training is not None
         assert training.status == TrainingStatus.COMPLETED
@@ -215,7 +216,7 @@ class TestGovernanceFramework:
             document_type="ict_risk_framework",
             document_name="ICT Risk Framework v1.0",
             document_version="1.0",
-            submitted_by="CISO"
+            submitted_by="CISO",
         )
         assert approval is not None
         assert approval.status == ApprovalStatus.PENDING_REVIEW
@@ -226,7 +227,7 @@ class TestGovernanceFramework:
         framework.assign_role(
             role=GovernanceRole.ICT_RISK_OFFICER,
             person_name="John Doe",
-            email="john.doe@example.com"
+            email="john.doe@example.com",
         )
         summary = framework.get_governance_summary()
         assert summary is not None
@@ -250,6 +251,7 @@ class TestGovernanceFramework:
 # Article 6: ICT Risk Management Framework Tests
 # =============================================================================
 
+
 class TestICTRiskFramework:
     """Tests for DORA Article 6 - ICT Risk Management Framework."""
 
@@ -266,7 +268,7 @@ class TestICTRiskFramework:
             name="Information Security Policy",
             description="Main security policy",
             category=PolicyCategory.ICT_SECURITY,
-            owner="CISO"
+            owner="CISO",
         )
         assert policy is not None
         assert policy.category == PolicyCategory.ICT_SECURITY
@@ -279,7 +281,7 @@ class TestICTRiskFramework:
             description="Role-based access control",
             domain=ControlDomain.PROTECT,
             control_type=ControlType.PREVENTIVE,
-            control_owner="IT Security"
+            control_owner="IT Security",
         )
         assert control is not None
         assert control.domain == ControlDomain.PROTECT
@@ -293,7 +295,7 @@ class TestICTRiskFramework:
             category="security",
             likelihood=4,
             impact=5,
-            treatment_owner="CISO"
+            treatment_owner="CISO",
         )
         assert risk is not None
         assert risk.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
@@ -308,6 +310,7 @@ class TestICTRiskFramework:
 # =============================================================================
 # Article 7: ICT Systems Tests
 # =============================================================================
+
 
 class TestICTSystems:
     """Tests for DORA Article 7 - ICT Systems."""
@@ -327,7 +330,7 @@ class TestICTSystems:
             system_type=SystemType.APPLICATION,
             criticality=SystemCriticality.CRITICAL,
             system_owner="Trading IT",
-            vendor="Internal"
+            vendor="Internal",
         )
         assert system is not None
         assert system.criticality == SystemCriticality.CRITICAL
@@ -341,13 +344,13 @@ class TestICTSystems:
             system_type=SystemType.DATABASE,
             criticality=SystemCriticality.CRITICAL,
             system_owner="DBA Team",
-            vendor="Oracle"
+            vendor="Oracle",
         )
         metric = manager.record_capacity_metric(
             system_id=system.system_id,
             metric_name="cpu_usage",
             current_value=75.0,
-            maximum_capacity=100.0
+            maximum_capacity=100.0,
         )
         assert metric is not None
 
@@ -360,7 +363,7 @@ class TestICTSystems:
             system_type=SystemType.APPLICATION,
             criticality=SystemCriticality.CRITICAL,
             system_owner="IT",
-            vendor="Internal"
+            vendor="Internal",
         )
         critical = manager.get_critical_systems()
         assert len(critical) >= 1
@@ -369,6 +372,7 @@ class TestICTSystems:
 # =============================================================================
 # Article 8: ICT Identification Tests
 # =============================================================================
+
 
 class TestICTIdentification:
     """Tests for DORA Article 8 - ICT Identification."""
@@ -387,7 +391,7 @@ class TestICTIdentification:
             asset_type=AssetType.HARDWARE,
             classification=AssetClassification.CONFIDENTIAL,
             owner="IT Operations",
-            location="Data Center A"
+            location="Data Center A",
         )
         assert asset is not None
         assert asset.asset_type == AssetType.HARDWARE
@@ -400,7 +404,7 @@ class TestICTIdentification:
             category=ThreatCategory.MALWARE,
             description="Ransomware encryption threat",
             threat_actor_type="criminal",
-            relevance_to_entity="high"
+            relevance_to_entity="high",
         )
         assert threat is not None
         assert threat.category == ThreatCategory.MALWARE
@@ -412,7 +416,7 @@ class TestICTIdentification:
             name="SQL Injection",
             description="SQL injection vulnerability",
             severity=VulnerabilitySeverity.HIGH,
-            cve_id="CVE-2024-1234"
+            cve_id="CVE-2024-1234",
         )
         assert vuln is not None
         assert vuln.severity == VulnerabilitySeverity.HIGH
@@ -421,6 +425,7 @@ class TestICTIdentification:
 # =============================================================================
 # Article 9: Protection and Prevention Tests
 # =============================================================================
+
 
 class TestProtection:
     """Tests for DORA Article 9 - Protection and Prevention."""
@@ -438,7 +443,7 @@ class TestProtection:
             name="Firewall",
             description="Network perimeter protection",
             category=SecurityControlCategory.COMMUNICATIONS_SECURITY,
-            owner="Network Team"
+            owner="Network Team",
         )
         assert control is not None
 
@@ -449,7 +454,7 @@ class TestProtection:
             name="Admin Access Policy",
             description="Policy for admin access",
             access_control_type=AccessControlType.ROLE_BASED,
-            mfa_required=True
+            mfa_required=True,
         )
         assert policy is not None
         assert policy.mfa_required == True
@@ -460,7 +465,7 @@ class TestProtection:
         standard = protection.create_encryption_standard(
             name="Data at Rest Encryption",
             encryption_type=EncryptionType.AT_REST,
-            hsm_required=True
+            hsm_required=True,
         )
         assert standard is not None
 
@@ -468,6 +473,7 @@ class TestProtection:
 # =============================================================================
 # Article 10: Detection Tests
 # =============================================================================
+
 
 class TestDetection:
     """Tests for DORA Article 10 - Detection."""
@@ -481,6 +487,7 @@ class TestDetection:
     def test_create_detection_rule(self):
         """Test creating detection rule."""
         from services.dora.detection import IncidentCategory as DetectionIncidentCategory
+
         detection = create_detection()
         rule = detection.create_detection_rule(
             name="Brute Force Detection",
@@ -488,7 +495,7 @@ class TestDetection:
             category=DetectionIncidentCategory.SECURITY,
             threshold_value=5.0,
             method=DetectionMethod.THRESHOLD_BASED,
-            default_severity=AlertSeverity.HIGH
+            default_severity=AlertSeverity.HIGH,
         )
         assert rule is not None
         assert rule.category == DetectionIncidentCategory.SECURITY
@@ -496,6 +503,7 @@ class TestDetection:
     def test_check_metric_alert(self):
         """Test checking metric triggers alert."""
         from services.dora.detection import IncidentCategory as DetectionIncidentCategory
+
         detection = create_detection()
         # Create a rule with low threshold
         rule = detection.create_detection_rule(
@@ -504,13 +512,11 @@ class TestDetection:
             category=DetectionIncidentCategory.PERFORMANCE,
             threshold_value=90.0,
             method=DetectionMethod.THRESHOLD_BASED,
-            default_severity=AlertSeverity.MEDIUM
+            default_severity=AlertSeverity.MEDIUM,
         )
         # Check metric that should trigger alert
         alert = detection.check_metric(
-            metric_name="cpu_usage",
-            current_value=95.0,
-            system_id="SYS-001"
+            metric_name="cpu_usage", current_value=95.0, system_id="SYS-001"
         )
         # May or may not trigger depending on rule config
         # Just verify method works
@@ -520,6 +526,7 @@ class TestDetection:
 # =============================================================================
 # Article 11: Response and Recovery Tests
 # =============================================================================
+
 
 class TestResponseRecovery:
     """Tests for DORA Article 11 - Response and Recovery."""
@@ -538,7 +545,7 @@ class TestResponseRecovery:
             description="Production system outage",
             severity=IncidentSeverity.P1_CRITICAL,
             category=IncidentCategory.SYSTEM_FAILURE,
-            affected_systems=["trading_platform"]
+            affected_systems=["trading_platform"],
         )
         assert incident is not None
         assert incident.severity == IncidentSeverity.P1_CRITICAL
@@ -551,12 +558,12 @@ class TestResponseRecovery:
             title="Test Incident",
             description="Test incident for response",
             severity=IncidentSeverity.P2_HIGH,
-            category=IncidentCategory.APPLICATION_FAILURE
+            category=IncidentCategory.APPLICATION_FAILURE,
         )
         updated = rr.start_response(
             incident_id=incident.incident_id,
             responders=["security_team"],
-            incident_commander="CISO"
+            incident_commander="CISO",
         )
         assert updated is not None
         assert updated.status == IncidentStatus.INVESTIGATING
@@ -569,7 +576,7 @@ class TestResponseRecovery:
             from_level=EscalationLevel.L1_OPERATIONS,
             to_level=EscalationLevel.L4_EXECUTIVE,
             trigger_elapsed_minutes=15,
-            trigger_severity=[IncidentSeverity.P1_CRITICAL]
+            trigger_severity=[IncidentSeverity.P1_CRITICAL],
         )
         assert rule is not None
 
@@ -577,6 +584,7 @@ class TestResponseRecovery:
 # =============================================================================
 # Article 12: Backup and Recovery Tests
 # =============================================================================
+
 
 class TestBackupRecovery:
     """Tests for DORA Article 12 - Backup and Recovery."""
@@ -590,6 +598,7 @@ class TestBackupRecovery:
     def test_create_backup_policy(self):
         """Test creating backup policy."""
         from services.dora.backup_recovery import DataClassification as BackupDataClassification
+
         br = create_backup_recovery()
         policy = br.create_backup_policy(
             name="Database Backup Policy",
@@ -597,7 +606,7 @@ class TestBackupRecovery:
             backup_type=BackupType.FULL,
             frequency=BackupFrequency.DAILY,
             retention_days=30,
-            systems_covered=["production_databases"]
+            systems_covered=["production_databases"],
         )
         assert policy is not None
         assert policy.backup_type == BackupType.FULL
@@ -605,18 +614,16 @@ class TestBackupRecovery:
     def test_create_backup_job(self):
         """Test creating backup job."""
         from services.dora.backup_recovery import DataClassification as BackupDataClassification
+
         br = create_backup_recovery()
         policy = br.create_backup_policy(
             name="Test Policy",
             data_classification=BackupDataClassification.STANDARD,
             backup_type=BackupType.INCREMENTAL,
             frequency=BackupFrequency.HOURLY,
-            retention_days=7
+            retention_days=7,
         )
-        job = br.create_backup_job(
-            policy_id=policy.policy_id,
-            source_systems=["test_db"]
-        )
+        job = br.create_backup_job(policy_id=policy.policy_id, source_systems=["test_db"])
         assert job is not None
 
     def test_register_backup_location(self):
@@ -627,7 +634,7 @@ class TestBackupRecovery:
             location_type=LocationType.OFF_SITE,
             geographic_region="Europe",
             country="Germany",
-            is_disaster_recovery=True
+            is_disaster_recovery=True,
         )
         assert location is not None
 
@@ -635,6 +642,7 @@ class TestBackupRecovery:
 # =============================================================================
 # Article 13: Learning and Evolving Tests
 # =============================================================================
+
 
 class TestLearning:
     """Tests for DORA Article 13 - Learning and Evolving."""
@@ -662,7 +670,7 @@ class TestLearning:
             what_went_well=["Quick detection"],
             what_went_wrong=["Slow recovery"],
             recommendations=["Improve testing"],
-            action_items=[{"action": "Update runbook"}]
+            action_items=[{"action": "Update runbook"}],
         )
         assert review is not None
 
@@ -682,7 +690,7 @@ class TestLearning:
             recommended_actions=["Implement SIEM"],
             affected_areas=["Security"],
             affected_systems=["All"],
-            stakeholders=["IT Security"]
+            stakeholders=["IT Security"],
         )
         assert lesson is not None
         assert lesson.priority == LessonPriority.HIGH
@@ -698,7 +706,7 @@ class TestLearning:
             author="Security Team",
             applicable_systems=["All"],
             applicable_scenarios=["Security incident"],
-            procedures=[{"step": 1, "action": "Identify"}]
+            procedures=[{"step": 1, "action": "Identify"}],
         )
         assert article is not None
 
@@ -706,6 +714,7 @@ class TestLearning:
 # =============================================================================
 # Article 14: Communication Tests
 # =============================================================================
+
 
 class TestCommunication:
     """Tests for DORA Article 14 - Communication."""
@@ -730,7 +739,7 @@ class TestCommunication:
             escalation_time_hours=2,
             approval_required=True,
             approver_roles=["CISO"],
-            content_requirements=["Incident summary", "Impact"]
+            content_requirements=["Incident summary", "Impact"],
         )
         assert policy is not None
 
@@ -747,7 +756,7 @@ class TestCommunication:
             alternative_channels=[CommunicationChannel.PHONE],
             language="en",
             timezone="UTC",
-            notification_preferences={"urgent": True}
+            notification_preferences={"urgent": True},
         )
         assert stakeholder is not None
 
@@ -762,7 +771,7 @@ class TestCommunication:
             priority=CommunicationPriority.HIGH,
             channel=CommunicationChannel.EMAIL,
             sender="security@company.com",
-            recipients=["management@company.com"]
+            recipients=["management@company.com"],
         )
         assert record is not None
 
@@ -770,6 +779,7 @@ class TestCommunication:
 # =============================================================================
 # Article 15: ICT Business Continuity Tests
 # =============================================================================
+
 
 class TestICTBusinessContinuity:
     """Tests for DORA Article 15 - ICT Business Continuity."""
@@ -797,7 +807,7 @@ class TestICTBusinessContinuity:
             resource_requirements=["DR site"],
             training_requirements=["Annual BCP training"],
             review_frequency_months=12,
-            regulatory_references=["DORA Article 15"]
+            regulatory_references=["DORA Article 15"],
         )
         assert policy is not None
 
@@ -818,7 +828,7 @@ class TestICTBusinessContinuity:
             mtpd_hours=24,
             minimum_staff_required=5,
             minimum_resources=["Trading terminals"],
-            workaround_available=True
+            workaround_available=True,
         )
         assert function is not None
 
@@ -835,7 +845,7 @@ class TestICTBusinessContinuity:
             recovery_strategy=RecoveryStrategy.ACTIVE_PASSIVE,
             recovery_capabilities=["Failover"],
             dependencies_for_recovery=["DR Site"],
-            validation_criteria=["Systems operational"]
+            validation_criteria=["Systems operational"],
         )
         assert objective is not None
 
@@ -853,7 +863,7 @@ class TestICTBusinessContinuity:
             participants=[{"name": "IT Team", "role": "Technical"}],
             test_script=[{"step": 1, "action": "Initiate failover"}],
             inject_scenarios=[{"scenario": "DC failure"}],
-            expected_outcomes=["Successful failover"]
+            expected_outcomes=["Successful failover"],
         )
         assert test is not None
 
@@ -861,6 +871,7 @@ class TestICTBusinessContinuity:
 # =============================================================================
 # Article 16: Simplified Framework Tests
 # =============================================================================
+
 
 class TestSimplifiedFramework:
     """Tests for DORA Article 16 - Simplified Framework."""
@@ -897,7 +908,7 @@ class TestSimplifiedFramework:
             part_of_group=False,
             group_uses_simplified=False,
             assessed_by="Compliance",
-            next_review_date=datetime.now() + timedelta(days=365)
+            next_review_date=datetime.now() + timedelta(days=365),
         )
         assert eligibility is not None
         assert eligibility.eligible == True
@@ -917,7 +928,7 @@ class TestSimplifiedFramework:
                 control_id=controls[0].control_id,
                 status=ControlStatus.FULLY_IMPLEMENTED,
                 implementation_notes="Implemented successfully",
-                reviewer="IT Security"
+                reviewer="IT Security",
             )
             assert result == True
 
@@ -939,7 +950,7 @@ class TestSimplifiedFramework:
             treatment_actions=["Update antivirus"],
             residual_risk=SimplifiedRiskLevel.LOW,
             risk_owner="IT Manager",
-            review_date=datetime.now() + timedelta(days=90)
+            review_date=datetime.now() + timedelta(days=90),
         )
         assert assessment is not None
 
@@ -954,7 +965,7 @@ class TestSimplifiedFramework:
             affected_systems=["email_server"],
             affected_services=["email"],
             impact_description="Users cannot send/receive email",
-            initial_response="Investigating"
+            initial_response="Investigating",
         )
         assert incident is not None
 
@@ -968,7 +979,7 @@ class TestSimplifiedFramework:
             retention_days=30,
             encryption_enabled=True,
             size_gb=50.0,
-            performed_by="Backup Service"
+            performed_by="Backup Service",
         )
         assert backup is not None
 
@@ -983,7 +994,7 @@ class TestSimplifiedFramework:
             contact_name="Account Manager",
             contact_email="am@cloud.com",
             contact_phone="+1234567890",
-            data_processing=True
+            data_processing=True,
         )
         assert provider is not None
 
@@ -995,7 +1006,7 @@ class TestSimplifiedFramework:
             test_name="Monthly Backup Test",
             description="Test backup restoration",
             scheduled_date=datetime.now() + timedelta(days=7),
-            scope=["production_db"]
+            scope=["production_db"],
         )
         assert test is not None
 
@@ -1011,7 +1022,7 @@ class TestSimplifiedFramework:
             trainer="Security Team",
             topics_covered=["Phishing", "Passwords"],
             attendees=["emp1", "emp2", "emp3"],
-            completion_rate=0.95
+            completion_rate=0.95,
         )
         assert training is not None
 
@@ -1024,7 +1035,7 @@ class TestSimplifiedFramework:
             eligibility_confirmed=True,
             key_findings=["Controls improved"],
             improvement_actions=["Update policies"],
-            next_review_date=datetime.now() + timedelta(days=365)
+            next_review_date=datetime.now() + timedelta(days=365),
         )
         assert review is not None
 
@@ -1040,6 +1051,7 @@ class TestSimplifiedFramework:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestPhase1Integration:
     """Integration tests for DORA Phase 1."""
@@ -1062,6 +1074,7 @@ class TestPhase1Integration:
             DORAICTBusinessContinuity,
             DORASimplifiedFramework,
         )
+
         assert __version__ == "0.3.0"
         assert __dora_compliance_phase__ == 2
 
@@ -1080,16 +1093,28 @@ class TestPhase1Integration:
         continuity = create_dora_ict_business_continuity()
         simplified = create_dora_simplified_framework()
 
-        assert all([
-            governance, risk_framework, systems, identification,
-            protection, detection, response, backup, learning,
-            communication, continuity, simplified
-        ])
+        assert all(
+            [
+                governance,
+                risk_framework,
+                systems,
+                identification,
+                protection,
+                detection,
+                response,
+                backup,
+                learning,
+                communication,
+                continuity,
+                simplified,
+            ]
+        )
 
 
 # =============================================================================
 # Export Tests
 # =============================================================================
+
 
 class TestExports:
     """Test module exports."""
@@ -1112,12 +1137,26 @@ class TestExports:
             ContinuityStatus,
             EntitySize,
         )
+
         # Verify all enums are valid enum types
         from enum import Enum
-        for enum_cls in [GovernanceRole, DefenceLine, PolicyCategory, ControlDomain,
-                         SystemCriticality, AssetType, SecurityControlCategory,
-                         AnomalyType, IncidentSeverity, BackupType, ReviewType,
-                         CommunicationType, ContinuityStatus, EntitySize]:
+
+        for enum_cls in [
+            GovernanceRole,
+            DefenceLine,
+            PolicyCategory,
+            ControlDomain,
+            SystemCriticality,
+            AssetType,
+            SecurityControlCategory,
+            AnomalyType,
+            IncidentSeverity,
+            BackupType,
+            ReviewType,
+            CommunicationType,
+            ContinuityStatus,
+            EntitySize,
+        ]:
             assert issubclass(enum_cls, Enum), f"{enum_cls.__name__} should be an Enum"
 
     def test_all_dataclasses_exported(self):
@@ -1136,12 +1175,24 @@ class TestExports:
             ContinuityPlan,
             EligibilityCriteria,
         )
+
         # Verify all are dataclasses
         from dataclasses import is_dataclass
-        for dc_cls in [GovernanceRoleAssignment, RiskPolicy, ICTSystem, ICTAsset,
-                       SecurityControl, DetectionRule, ICTIncident, BackupPolicy,
-                       PostIncidentReview, CommunicationPolicy, ContinuityPlan,
-                       EligibilityCriteria]:
+
+        for dc_cls in [
+            GovernanceRoleAssignment,
+            RiskPolicy,
+            ICTSystem,
+            ICTAsset,
+            SecurityControl,
+            DetectionRule,
+            ICTIncident,
+            BackupPolicy,
+            PostIncidentReview,
+            CommunicationPolicy,
+            ContinuityPlan,
+            EligibilityCriteria,
+        ]:
             assert is_dataclass(dc_cls), f"{dc_cls.__name__} should be a dataclass"
 
 

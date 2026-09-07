@@ -42,35 +42,35 @@ logger = logging.getLogger(__name__)
 # Note: This is a static list. For production, fetch from Polygon API.
 US_MARKET_HOLIDAYS: List[Tuple[int, int, int]] = [
     # 2024
-    (2024, 1, 1),    # New Year's Day
-    (2024, 1, 15),   # MLK Day
-    (2024, 2, 19),   # Presidents Day
-    (2024, 3, 29),   # Good Friday
-    (2024, 5, 27),   # Memorial Day
-    (2024, 6, 19),   # Juneteenth
-    (2024, 7, 4),    # Independence Day
-    (2024, 9, 2),    # Labor Day
+    (2024, 1, 1),  # New Year's Day
+    (2024, 1, 15),  # MLK Day
+    (2024, 2, 19),  # Presidents Day
+    (2024, 3, 29),  # Good Friday
+    (2024, 5, 27),  # Memorial Day
+    (2024, 6, 19),  # Juneteenth
+    (2024, 7, 4),  # Independence Day
+    (2024, 9, 2),  # Labor Day
     (2024, 11, 28),  # Thanksgiving
     (2024, 12, 25),  # Christmas
     # 2025
-    (2025, 1, 1),    # New Year's Day
-    (2025, 1, 20),   # MLK Day
-    (2025, 2, 17),   # Presidents Day
-    (2025, 4, 18),   # Good Friday
-    (2025, 5, 26),   # Memorial Day
-    (2025, 6, 19),   # Juneteenth
-    (2025, 7, 4),    # Independence Day
-    (2025, 9, 1),    # Labor Day
+    (2025, 1, 1),  # New Year's Day
+    (2025, 1, 20),  # MLK Day
+    (2025, 2, 17),  # Presidents Day
+    (2025, 4, 18),  # Good Friday
+    (2025, 5, 26),  # Memorial Day
+    (2025, 6, 19),  # Juneteenth
+    (2025, 7, 4),  # Independence Day
+    (2025, 9, 1),  # Labor Day
     (2025, 11, 27),  # Thanksgiving
     (2025, 12, 25),  # Christmas
 ]
 
 # Half days (early close at 13:00 ET)
 US_MARKET_HALF_DAYS: List[Tuple[int, int, int]] = [
-    (2024, 7, 3),    # Day before Independence Day
+    (2024, 7, 3),  # Day before Independence Day
     (2024, 11, 29),  # Day after Thanksgiving
     (2024, 12, 24),  # Christmas Eve
-    (2025, 7, 3),    # Day before Independence Day
+    (2025, 7, 3),  # Day before Independence Day
     (2025, 11, 28),  # Day after Thanksgiving
     (2025, 12, 24),  # Christmas Eve
 ]
@@ -79,6 +79,7 @@ US_MARKET_HALF_DAYS: List[Tuple[int, int, int]] = [
 # =============================================================================
 # POLYGON TRADING HOURS ADAPTER
 # =============================================================================
+
 
 class PolygonTradingHoursAdapter(TradingHoursAdapter):
     """
@@ -134,6 +135,7 @@ class PolygonTradingHoursAdapter(TradingHoursAdapter):
                 raise ValueError("Polygon API key required")
             try:
                 from polygon import RESTClient
+
                 self._rest_client = RESTClient(api_key=self._api_key)
             except ImportError:
                 raise ImportError(
@@ -250,6 +252,7 @@ class PolygonTradingHoursAdapter(TradingHoursAdapter):
         # Convert to ET for date comparison
         try:
             import pytz
+
             et = pytz.timezone("America/New_York")
             dt_et = dt.astimezone(et)
             date_tuple = (dt_et.year, dt_et.month, dt_et.day)
@@ -298,6 +301,7 @@ class PolygonTradingHoursAdapter(TradingHoursAdapter):
         """Check if market is open based on schedule."""
         try:
             import pytz
+
             et = pytz.timezone("America/New_York")
             dt = datetime.fromtimestamp(ts / 1000, tz=pytz.UTC).astimezone(et)
         except ImportError:
@@ -355,6 +359,7 @@ class PolygonTradingHoursAdapter(TradingHoursAdapter):
         """Calculate next open or close time."""
         try:
             import pytz
+
             et = pytz.timezone("America/New_York")
             dt = datetime.fromtimestamp(ts / 1000, tz=pytz.UTC).astimezone(et)
         except ImportError:
@@ -402,6 +407,7 @@ class PolygonTradingHoursAdapter(TradingHoursAdapter):
 
             try:
                 import pytz
+
                 boundary_dt = et.localize(
                     datetime(
                         check_date.year,

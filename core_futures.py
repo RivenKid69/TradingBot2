@@ -36,21 +36,23 @@ from typing import Optional, Dict, Any, List, Tuple
 # ENUMS (Unified across all futures types)
 # ============================================================================
 
+
 class FuturesType(str, Enum):
     """
     Unified futures type classification.
 
     Covers both crypto (Binance) and traditional (CME) futures.
     """
+
     # Crypto futures (Binance, Bybit, etc.)
-    CRYPTO_PERPETUAL = "CRYPTO_PERPETUAL"    # No expiration, funding rate
-    CRYPTO_QUARTERLY = "CRYPTO_QUARTERLY"    # Quarterly expiry (BTCUSDT_240329)
+    CRYPTO_PERPETUAL = "CRYPTO_PERPETUAL"  # No expiration, funding rate
+    CRYPTO_QUARTERLY = "CRYPTO_QUARTERLY"  # Quarterly expiry (BTCUSDT_240329)
 
     # CME/CBOT/COMEX/NYMEX traditional futures
-    INDEX_FUTURES = "INDEX_FUTURES"          # ES, NQ, YM, RTY
+    INDEX_FUTURES = "INDEX_FUTURES"  # ES, NQ, YM, RTY
     COMMODITY_FUTURES = "COMMODITY_FUTURES"  # GC, CL, SI, NG
-    CURRENCY_FUTURES = "CURRENCY_FUTURES"    # 6E, 6J, 6B, 6A
-    BOND_FUTURES = "BOND_FUTURES"            # ZB, ZN, ZF (Treasury)
+    CURRENCY_FUTURES = "CURRENCY_FUTURES"  # 6E, 6J, 6B, 6A
+    BOND_FUTURES = "BOND_FUTURES"  # ZB, ZN, ZF (Treasury)
 
     @property
     def is_crypto(self) -> bool:
@@ -79,12 +81,13 @@ class ContractType(str, Enum):
 
     Defines the contract's relationship to expiration dates.
     """
-    PERPETUAL = "PERPETUAL"              # No expiration (crypto perpetual)
-    CURRENT_MONTH = "CURRENT_MONTH"      # Monthly contracts (CL, NG)
+
+    PERPETUAL = "PERPETUAL"  # No expiration (crypto perpetual)
+    CURRENT_MONTH = "CURRENT_MONTH"  # Monthly contracts (CL, NG)
     CURRENT_QUARTER = "CURRENT_QUARTER"  # Front quarter (ES, NQ)
-    NEXT_QUARTER = "NEXT_QUARTER"        # Next quarter
-    BACK_MONTH = "BACK_MONTH"            # Further out months
-    CONTINUOUS = "CONTINUOUS"            # Auto-rolling continuous contract
+    NEXT_QUARTER = "NEXT_QUARTER"  # Next quarter
+    BACK_MONTH = "BACK_MONTH"  # Further out months
+    CONTINUOUS = "CONTINUOUS"  # Auto-rolling continuous contract
 
 
 class SettlementType(str, Enum):
@@ -93,9 +96,10 @@ class SettlementType(str, Enum):
 
     Different settlement types have different P&L realization mechanics.
     """
-    CASH = "CASH"              # Cash settlement (ES, NQ, 6E)
-    PHYSICAL = "PHYSICAL"      # Physical delivery (GC, CL - most roll before)
-    FUNDING = "FUNDING"        # Funding rate payments (crypto perpetual)
+
+    CASH = "CASH"  # Cash settlement (ES, NQ, 6E)
+    PHYSICAL = "PHYSICAL"  # Physical delivery (GC, CL - most roll before)
+    FUNDING = "FUNDING"  # Funding rate payments (crypto perpetual)
 
 
 class MarginMode(str, Enum):
@@ -104,9 +108,10 @@ class MarginMode(str, Enum):
 
     Affects how margin is calculated and shared between positions.
     """
-    CROSS = "CROSS"        # Shared margin across all positions (Binance cross, IB portfolio)
+
+    CROSS = "CROSS"  # Shared margin across all positions (Binance cross, IB portfolio)
     ISOLATED = "ISOLATED"  # Per-position margin (Binance isolated)
-    SPAN = "SPAN"          # CME SPAN margin (portfolio-based with offsets)
+    SPAN = "SPAN"  # CME SPAN margin (portfolio-based with offsets)
 
 
 class PositionSide(str, Enum):
@@ -115,9 +120,10 @@ class PositionSide(str, Enum):
 
     BOTH is for one-way mode (net position), LONG/SHORT for hedge mode.
     """
-    BOTH = "BOTH"      # One-way mode (net position)
-    LONG = "LONG"      # Hedge mode long position
-    SHORT = "SHORT"    # Hedge mode short position
+
+    BOTH = "BOTH"  # One-way mode (net position)
+    LONG = "LONG"  # Hedge mode long position
+    SHORT = "SHORT"  # Hedge mode short position
 
 
 class Exchange(str, Enum):
@@ -126,23 +132,26 @@ class Exchange(str, Enum):
 
     Used for routing and exchange-specific logic.
     """
-    BINANCE = "BINANCE"      # Binance Futures
-    BYBIT = "BYBIT"          # Bybit Derivatives
-    CME = "CME"              # E-mini indices (ES, NQ)
-    COMEX = "COMEX"          # Gold, Silver
-    NYMEX = "NYMEX"          # Oil, Natural Gas
-    CBOT = "CBOT"            # Treasuries, Grains
-    ICE = "ICE"              # Brent, Coffee
+
+    BINANCE = "BINANCE"  # Binance Futures
+    BYBIT = "BYBIT"  # Bybit Derivatives
+    CME = "CME"  # E-mini indices (ES, NQ)
+    COMEX = "COMEX"  # Gold, Silver
+    NYMEX = "NYMEX"  # Oil, Natural Gas
+    CBOT = "CBOT"  # Treasuries, Grains
+    ICE = "ICE"  # Brent, Coffee
 
 
 class OrderSide(str, Enum):
     """Order side for futures trading."""
+
     BUY = "BUY"
     SELL = "SELL"
 
 
 class OrderType(str, Enum):
     """Order type for futures trading."""
+
     MARKET = "MARKET"
     LIMIT = "LIMIT"
     STOP = "STOP"
@@ -154,21 +163,24 @@ class OrderType(str, Enum):
 
 class TimeInForce(str, Enum):
     """Time in force for futures orders."""
-    GTC = "GTC"    # Good Till Cancel
-    IOC = "IOC"    # Immediate Or Cancel
-    FOK = "FOK"    # Fill Or Kill
-    GTX = "GTX"    # Good Till Crossing (Post-Only)
-    DAY = "DAY"    # Day order (CME)
+
+    GTC = "GTC"  # Good Till Cancel
+    IOC = "IOC"  # Immediate Or Cancel
+    FOK = "FOK"  # Fill Or Kill
+    GTX = "GTX"  # Good Till Crossing (Post-Only)
+    DAY = "DAY"  # Day order (CME)
 
 
 class WorkingType(str, Enum):
     """Price type for stop orders (Binance)."""
+
     MARK_PRICE = "MARK_PRICE"
     CONTRACT_PRICE = "CONTRACT_PRICE"
 
 
 class OrderStatus(str, Enum):
     """Order status for futures orders."""
+
     NEW = "NEW"
     PARTIALLY_FILLED = "PARTIALLY_FILLED"
     FILLED = "FILLED"
@@ -182,6 +194,7 @@ class OrderStatus(str, Enum):
 # ============================================================================
 # CONTRACT SPECIFICATION (Works for ALL futures types)
 # ============================================================================
+
 
 @dataclass(frozen=True)
 class FuturesContractSpec:
@@ -245,45 +258,46 @@ class FuturesContractSpec:
         >>> es_fut.notional_at_price(Decimal("5000"))
         Decimal('250000')
     """
+
     # Core identification
-    symbol: str                           # BTCUSDT, ES, GC, 6E
-    futures_type: FuturesType             # Classification
-    contract_type: ContractType           # Perpetual, quarterly, monthly
-    exchange: Exchange                    # Where it trades
+    symbol: str  # BTCUSDT, ES, GC, 6E
+    futures_type: FuturesType  # Classification
+    contract_type: ContractType  # Perpetual, quarterly, monthly
+    exchange: Exchange  # Where it trades
 
     # Asset identifiers
-    base_asset: str                       # BTC, SPX, Gold, EUR
-    quote_asset: str                      # USDT, USD
-    margin_asset: str                     # USDT, USD
+    base_asset: str  # BTC, SPX, Gold, EUR
+    quote_asset: str  # USDT, USD
+    margin_asset: str  # USDT, USD
 
     # Contract sizing
-    contract_size: Decimal = Decimal("1")        # Units per contract
-    multiplier: Decimal = Decimal("1")           # Price multiplier (ES=$50, GC=100oz)
-    tick_size: Decimal = Decimal("0.01")         # Minimum price increment
-    tick_value: Decimal = Decimal("0.01")        # Value per tick (ES=$12.50)
+    contract_size: Decimal = Decimal("1")  # Units per contract
+    multiplier: Decimal = Decimal("1")  # Price multiplier (ES=$50, GC=100oz)
+    tick_size: Decimal = Decimal("0.01")  # Minimum price increment
+    tick_value: Decimal = Decimal("0.01")  # Value per tick (ES=$12.50)
 
     # Position limits
     min_qty: Decimal = Decimal("0.001")
     max_qty: Decimal = Decimal("1000000")
-    lot_size: Decimal = Decimal("0.001")         # Order quantity increment
+    lot_size: Decimal = Decimal("0.001")  # Order quantity increment
 
     # Margin requirements
-    max_leverage: int = 125                      # Crypto: 125x, ES: ~20x, GC: ~10x
-    initial_margin_pct: Decimal = Decimal("5.0")   # % of notional
-    maint_margin_pct: Decimal = Decimal("4.0")     # % of notional
+    max_leverage: int = 125  # Crypto: 125x, ES: ~20x, GC: ~10x
+    initial_margin_pct: Decimal = Decimal("5.0")  # % of notional
+    maint_margin_pct: Decimal = Decimal("4.0")  # % of notional
 
     # Settlement
     settlement_type: SettlementType = SettlementType.CASH
-    delivery_date: Optional[str] = None          # For expiring contracts (YYYYMMDD)
-    last_trading_day: Optional[str] = None       # Last day to trade
+    delivery_date: Optional[str] = None  # For expiring contracts (YYYYMMDD)
+    last_trading_day: Optional[str] = None  # Last day to trade
 
     # Fees
     liquidation_fee_pct: Decimal = Decimal("0.5")  # Crypto: 0.5%, CME: varies
-    maker_fee_bps: Decimal = Decimal("2.0")        # Maker fee in basis points
-    taker_fee_bps: Decimal = Decimal("4.0")        # Taker fee in basis points
+    maker_fee_bps: Decimal = Decimal("2.0")  # Maker fee in basis points
+    taker_fee_bps: Decimal = Decimal("4.0")  # Taker fee in basis points
 
     # Trading hours
-    trading_hours: str = "24/7"                  # "24/7", "23/5", "RTH only"
+    trading_hours: str = "24/7"  # "24/7", "23/5", "RTH only"
 
     @property
     def notional_per_contract(self) -> Decimal:
@@ -375,7 +389,9 @@ class FuturesContractSpec:
             return qty
         return (qty / self.lot_size).quantize(Decimal("1"), rounding=ROUND_DOWN) * self.lot_size
 
-    def validate_order(self, qty: Decimal, price: Optional[Decimal] = None) -> Tuple[bool, Optional[str]]:
+    def validate_order(
+        self, qty: Decimal, price: Optional[Decimal] = None
+    ) -> Tuple[bool, Optional[str]]:
         """
         Validate order parameters against contract spec.
 
@@ -439,6 +455,7 @@ class FuturesContractSpec:
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "FuturesContractSpec":
         """Create from dictionary."""
+
         def _to_decimal(v: Any, default: str = "0") -> Decimal:
             if v is None:
                 return Decimal(default)
@@ -479,6 +496,7 @@ class FuturesContractSpec:
 # LEVERAGE BRACKET (Binance tiered margin)
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class LeverageBracket:
     """
@@ -498,10 +516,11 @@ class LeverageBracket:
         Bracket 2: notional_cap=50000, maint_margin_rate=0.005, max_leverage=100
         ...
     """
+
     bracket: int
-    notional_cap: Decimal               # Maximum position notional
-    maint_margin_rate: Decimal          # Maintenance margin rate (e.g., 0.004)
-    max_leverage: int                   # Maximum leverage allowed
+    notional_cap: Decimal  # Maximum position notional
+    maint_margin_rate: Decimal  # Maintenance margin rate (e.g., 0.004)
+    max_leverage: int  # Maximum leverage allowed
     cum_maintenance: Decimal = Decimal("0")  # Cumulative for margin calc
 
     @property
@@ -542,6 +561,7 @@ class LeverageBracket:
 # FUTURES POSITION
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class FuturesPosition:
     """
@@ -566,20 +586,21 @@ class FuturesPosition:
         timestamp_ms: Last update timestamp
         position_value: Position notional value at mark price
     """
+
     symbol: str
     side: PositionSide
     entry_price: Decimal
-    qty: Decimal                              # Positive for long, negative for short
+    qty: Decimal  # Positive for long, negative for short
     leverage: int
     margin_mode: MarginMode
     unrealized_pnl: Decimal = Decimal("0")
     realized_pnl: Decimal = Decimal("0")
     liquidation_price: Decimal = Decimal("0")
     mark_price: Decimal = Decimal("0")
-    margin: Decimal = Decimal("0")            # Isolated margin amount
+    margin: Decimal = Decimal("0")  # Isolated margin amount
     maint_margin: Decimal = Decimal("0")
     timestamp_ms: int = 0
-    position_value: Decimal = Decimal("0")    # notional at mark price
+    position_value: Decimal = Decimal("0")  # notional at mark price
 
     @property
     def is_long(self) -> bool:
@@ -688,6 +709,7 @@ class FuturesPosition:
 # MARGIN REQUIREMENT
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class MarginRequirement:
     """
@@ -699,6 +721,7 @@ class MarginRequirement:
         variation: Daily variation margin (CME)
         available: Available margin after requirements
     """
+
     initial: Decimal
     maintenance: Decimal
     variation: Decimal = Decimal("0")
@@ -735,6 +758,7 @@ class MarginRequirement:
 # FUNDING PAYMENT (Crypto Perpetual)
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class FundingPayment:
     """
@@ -752,12 +776,13 @@ class FundingPayment:
         payment_amount: Payment received (positive) or paid (negative)
         asset: Settlement asset (USDT)
     """
+
     symbol: str
     timestamp_ms: int
-    funding_rate: Decimal              # e.g., 0.0001 = 0.01%
+    funding_rate: Decimal  # e.g., 0.0001 = 0.01%
     mark_price: Decimal
     position_qty: Decimal
-    payment_amount: Decimal            # Positive = received, negative = paid
+    payment_amount: Decimal  # Positive = received, negative = paid
     asset: str = "USDT"
 
     @property
@@ -805,6 +830,7 @@ class FundingPayment:
 # FUNDING RATE INFO
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class FundingRateInfo:
     """
@@ -819,6 +845,7 @@ class FundingRateInfo:
         estimated_rate: Estimated next funding rate
         funding_interval_hours: Hours between funding (8 for Binance)
     """
+
     symbol: str
     funding_rate: Decimal
     next_funding_time_ms: int
@@ -838,6 +865,7 @@ class FundingRateInfo:
     def time_to_funding_ms(self) -> int:
         """Milliseconds until next funding (based on current time)."""
         import time
+
         now_ms = int(time.time() * 1000)
         return max(0, self.next_funding_time_ms - now_ms)
 
@@ -872,6 +900,7 @@ class FundingRateInfo:
 # LIQUIDATION EVENT
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class LiquidationEvent:
     """
@@ -890,12 +919,13 @@ class LiquidationEvent:
         insurance_fund_contribution: Amount to/from insurance fund
         order_id: Liquidation order ID
     """
+
     symbol: str
     timestamp_ms: int
-    side: str                        # "BUY" or "SELL" (closing side)
+    side: str  # "BUY" or "SELL" (closing side)
     qty: Decimal
     price: Decimal
-    liquidation_type: str            # "partial" or "full"
+    liquidation_type: str  # "partial" or "full"
     loss_amount: Decimal
     insurance_fund_contribution: Decimal = Decimal("0")
     order_id: Optional[str] = None
@@ -944,6 +974,7 @@ class LiquidationEvent:
 # OPEN INTEREST
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class OpenInterestInfo:
     """
@@ -955,6 +986,7 @@ class OpenInterestInfo:
         open_interest_value: Value in quote currency
         timestamp_ms: Data timestamp
     """
+
     symbol: str
     open_interest: Decimal
     open_interest_value: Decimal = Decimal("0")
@@ -984,6 +1016,7 @@ class OpenInterestInfo:
 # FUTURES ACCOUNT STATE
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class FuturesAccountState:
     """
@@ -1005,6 +1038,7 @@ class FuturesAccountState:
         positions: Dict of symbol to FuturesPosition
         asset: Account asset (USDT, USD)
     """
+
     timestamp_ms: int
     total_wallet_balance: Decimal
     total_margin_balance: Decimal
@@ -1080,10 +1114,7 @@ class FuturesAccountState:
     def from_dict(cls, d: Dict[str, Any]) -> "FuturesAccountState":
         """Create from dictionary."""
         positions_data = d.get("positions", {})
-        positions = {
-            k: FuturesPosition.from_dict(v)
-            for k, v in positions_data.items()
-        }
+        positions = {k: FuturesPosition.from_dict(v) for k, v in positions_data.items()}
 
         return cls(
             timestamp_ms=int(d.get("timestamp_ms", 0)),
@@ -1094,7 +1125,9 @@ class FuturesAccountState:
             total_initial_margin=Decimal(str(d.get("total_initial_margin", "0"))),
             total_maint_margin=Decimal(str(d.get("total_maint_margin", "0"))),
             total_position_initial_margin=Decimal(str(d.get("total_position_initial_margin", "0"))),
-            total_open_order_initial_margin=Decimal(str(d.get("total_open_order_initial_margin", "0"))),
+            total_open_order_initial_margin=Decimal(
+                str(d.get("total_open_order_initial_margin", "0"))
+            ),
             max_withdraw_amount=Decimal(str(d.get("max_withdraw_amount", "0"))),
             positions=positions,
             asset=str(d.get("asset", "USDT")),
@@ -1104,6 +1137,7 @@ class FuturesAccountState:
 # ============================================================================
 # FUTURES ORDER
 # ============================================================================
+
 
 @dataclass(frozen=True)
 class FuturesOrder:
@@ -1127,6 +1161,7 @@ class FuturesOrder:
         position_side: Position side for hedge mode
         close_position: Close entire position
     """
+
     symbol: str
     side: OrderSide
     order_type: OrderType
@@ -1144,7 +1179,11 @@ class FuturesOrder:
     @property
     def is_market_order(self) -> bool:
         """Check if market order."""
-        return self.order_type in (OrderType.MARKET, OrderType.STOP_MARKET, OrderType.TAKE_PROFIT_MARKET)
+        return self.order_type in (
+            OrderType.MARKET,
+            OrderType.STOP_MARKET,
+            OrderType.TAKE_PROFIT_MARKET,
+        )
 
     @property
     def is_limit_order(self) -> bool:
@@ -1155,9 +1194,11 @@ class FuturesOrder:
     def is_stop_order(self) -> bool:
         """Check if stop order (has trigger)."""
         return self.order_type in (
-            OrderType.STOP, OrderType.STOP_MARKET,
-            OrderType.TAKE_PROFIT, OrderType.TAKE_PROFIT_MARKET,
-            OrderType.TRAILING_STOP_MARKET
+            OrderType.STOP,
+            OrderType.STOP_MARKET,
+            OrderType.TAKE_PROFIT,
+            OrderType.TAKE_PROFIT_MARKET,
+            OrderType.TRAILING_STOP_MARKET,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -1205,6 +1246,7 @@ class FuturesOrder:
 # FUTURES FILL
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class FuturesFill:
     """
@@ -1227,6 +1269,7 @@ class FuturesFill:
         new_position_size: Position after fill
         new_avg_entry: New average entry price
     """
+
     order_id: str
     client_order_id: Optional[str]
     symbol: str
@@ -1238,7 +1281,7 @@ class FuturesFill:
     realized_pnl: Decimal
     timestamp_ms: int
     is_maker: bool
-    liquidity: str                    # "MAKER" or "TAKER"
+    liquidity: str  # "MAKER" or "TAKER"
     margin_impact: Decimal = Decimal("0")
     new_position_size: Decimal = Decimal("0")
     new_avg_entry: Decimal = Decimal("0")
@@ -1301,6 +1344,7 @@ class FuturesFill:
 # MARK PRICE TICK
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class MarkPriceTick:
     """
@@ -1315,6 +1359,7 @@ class MarkPriceTick:
         next_funding_time_ms: Next funding timestamp
         timestamp_ms: Update timestamp
     """
+
     symbol: str
     mark_price: Decimal
     index_price: Decimal
@@ -1360,6 +1405,7 @@ class MarkPriceTick:
 # SETTLEMENT INFO (CME)
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class SettlementInfo:
     """
@@ -1374,6 +1420,7 @@ class SettlementInfo:
         delivery_start: Delivery period start
         delivery_end: Delivery period end
     """
+
     symbol: str
     settlement_type: SettlementType
     settlement_date: str
@@ -1412,6 +1459,7 @@ class SettlementInfo:
 # CONTRACT ROLLOVER
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class ContractRollover:
     """
@@ -1426,6 +1474,7 @@ class ContractRollover:
         price_adjustment: Price difference for continuous contract
         volume_adjustment: Volume adjustment factor
     """
+
     from_contract: str
     to_contract: str
     roll_date: str
@@ -1457,6 +1506,7 @@ class ContractRollover:
 # ============================================================================
 # FACTORY FUNCTIONS
 # ============================================================================
+
 
 def create_btc_perpetual_spec() -> FuturesContractSpec:
     """Create BTC perpetual contract specification (Binance defaults)."""
@@ -1525,15 +1575,15 @@ def create_es_futures_spec() -> FuturesContractSpec:
         quote_asset="USD",
         margin_asset="USD",
         contract_size=Decimal("1"),
-        multiplier=Decimal("50"),           # $50 per point
-        tick_size=Decimal("0.25"),          # Minimum price increment
-        tick_value=Decimal("12.50"),        # $12.50 per tick
+        multiplier=Decimal("50"),  # $50 per point
+        tick_size=Decimal("0.25"),  # Minimum price increment
+        tick_value=Decimal("12.50"),  # $12.50 per tick
         min_qty=Decimal("1"),
         max_qty=Decimal("10000"),
         lot_size=Decimal("1"),
         max_leverage=20,
         initial_margin_pct=Decimal("5.0"),  # ~5% initial margin
-        maint_margin_pct=Decimal("4.0"),    # ~4% maintenance
+        maint_margin_pct=Decimal("4.0"),  # ~4% maintenance
         settlement_type=SettlementType.CASH,
         maker_fee_bps=Decimal("0.5"),
         taker_fee_bps=Decimal("1.0"),
@@ -1551,10 +1601,10 @@ def create_gc_futures_spec() -> FuturesContractSpec:
         base_asset="Gold",
         quote_asset="USD",
         margin_asset="USD",
-        contract_size=Decimal("100"),       # 100 troy ounces
+        contract_size=Decimal("100"),  # 100 troy ounces
         multiplier=Decimal("1"),
-        tick_size=Decimal("0.10"),          # $0.10 per oz
-        tick_value=Decimal("10.00"),        # $10 per tick
+        tick_size=Decimal("0.10"),  # $0.10 per oz
+        tick_value=Decimal("10.00"),  # $10 per tick
         min_qty=Decimal("1"),
         max_qty=Decimal("6000"),
         lot_size=Decimal("1"),
@@ -1578,10 +1628,10 @@ def create_6e_futures_spec() -> FuturesContractSpec:
         base_asset="EUR",
         quote_asset="USD",
         margin_asset="USD",
-        contract_size=Decimal("125000"),    # €125,000
+        contract_size=Decimal("125000"),  # €125,000
         multiplier=Decimal("1"),
-        tick_size=Decimal("0.00005"),       # 0.5 pip
-        tick_value=Decimal("6.25"),         # $6.25 per tick
+        tick_size=Decimal("0.00005"),  # 0.5 pip
+        tick_value=Decimal("6.25"),  # $6.25 per tick
         min_qty=Decimal("1"),
         max_qty=Decimal("10000"),
         lot_size=Decimal("1"),

@@ -76,7 +76,8 @@ def test_compute_metrics_empty():
 def _build_engine(syms, *, signal):
     lib = SignalLibrary().register(signal, transforms=["zscore"])
     opt = PortfolioOptimizer(
-        objective="mean_variance", use_cvxpy="never",
+        objective="mean_variance",
+        use_cvxpy="never",
         constraints=OptimizerConstraints(net_target=0.0, gross_max=1.0),  # market-neutral
     )
     return CrossSectionalBacktest(
@@ -85,9 +86,7 @@ def _build_engine(syms, *, signal):
         risk_model=StatRiskModel(method="ledoit_wolf"),
         optimizer=opt,
         signal_library=lib,
-        config=XSBacktestConfig(
-            cov_lookback=10, min_cov_obs=5, cost_bps=0.0, rebalance_every=1
-        ),
+        config=XSBacktestConfig(cov_lookback=10, min_cov_obs=5, cost_bps=0.0, rebalance_every=1),
     )
 
 
@@ -98,8 +97,8 @@ def test_end_to_end_oracle_positive_equity():
     eng = _build_engine(syms, signal=ColumnSignal("oracle", "oracle"))
     res = eng.run(panel)
 
-    assert res.weights.shape[0] > 10          # были ребалансы
-    assert res.nav.iloc[-1] > 1.0             # equity выросла (oracle предсказывает)
+    assert res.weights.shape[0] > 10  # были ребалансы
+    assert res.nav.iloc[-1] > 1.0  # equity выросла (oracle предсказывает)
     assert res.metrics["total_return"] > 0
     assert res.metrics["sharpe"] > 0
     # market-neutral: net ≈ 0 на каждом ребалансе
@@ -131,7 +130,7 @@ def test_no_lookahead_weights_identical_before_divergence():
     closes_A = {s: c.copy() for s, c in base.items()}
     closes_B = {s: c.copy() for s, c in base.items()}
     for s in syms:
-        closes_B[s][div_idx + 1:] *= 1.5  # будущее B отличается
+        closes_B[s][div_idx + 1 :] *= 1.5  # будущее B отличается
 
     panel_A = _panel(closes_A)
     panel_B = _panel(closes_B)
@@ -139,7 +138,8 @@ def test_no_lookahead_weights_identical_before_divergence():
     def _engine():
         lib = SignalLibrary().register(MomentumSignal("mom", lookback=3), transforms=["zscore"])
         opt = PortfolioOptimizer(
-            objective="mean_variance", use_cvxpy="never",
+            objective="mean_variance",
+            use_cvxpy="never",
             constraints=OptimizerConstraints(net_target=0.0, gross_max=1.0),
         )
         return CrossSectionalBacktest(

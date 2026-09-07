@@ -3,7 +3,6 @@
 Normalize encoding in markdown and YAML files.
 
 This script fixes common encoding issues:
-- Replaces em-dash (—) with double hyphen (--)
 - Replaces non-breaking hyphen (‑) with regular hyphen (-)
 - Replaces non-breaking space with regular space
 - Removes zero-width spaces
@@ -24,12 +23,12 @@ from typing import List, Tuple
 
 # Normalization rules
 REPLACEMENTS = {
-    '\u2014': '--',  # Em-dash → double hyphen
-    '\u2013': '-',   # En-dash → single hyphen
-    '\u2011': '-',   # Non-breaking hyphen → regular hyphen
-    '\u00a0': ' ',   # Non-breaking space → regular space
-    '\u200b': '',    # Zero-width space → removed
-    '\ufeff': '',    # BOM → removed
+    # Em-dash and en-dash are valid punctuation and are left alone;
+    # see tools/check_encoding.py.
+    "\u2011": "-",  # Non-breaking hyphen → regular hyphen
+    "\u00a0": " ",  # Non-breaking space → regular space
+    "\u200b": "",  # Zero-width space → removed
+    "\ufeff": "",  # BOM → removed
 }
 
 
@@ -61,7 +60,7 @@ def normalize_file(filepath: Path, dry_run: bool = False) -> Tuple[bool, int]:
     """
     try:
         # Read with UTF-8 encoding
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Normalize
@@ -72,7 +71,7 @@ def normalize_file(filepath: Path, dry_run: bool = False) -> Tuple[bool, int]:
 
         if not dry_run:
             # Write back
-            with open(filepath, 'w', encoding='utf-8', newline='\n') as f:
+            with open(filepath, "w", encoding="utf-8", newline="\n") as f:
                 f.write(normalized)
 
         return True, changes
@@ -89,40 +88,31 @@ def find_files(root: Path, patterns: List[str]) -> List[Path]:
         files.extend(root.rglob(pattern))
 
     # Exclude common directories
-    exclude_dirs = {'.git', 'node_modules', 'venv', '__pycache__', '.pytest_cache'}
+    exclude_dirs = {".git", "node_modules", "venv", "__pycache__", ".pytest_cache"}
 
-    return [
-        f for f in files
-        if not any(part in exclude_dirs for part in f.parts)
-    ]
+    return [f for f in files if not any(part in exclude_dirs for part in f.parts)]
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Normalize encoding in markdown and YAML files'
+    parser = argparse.ArgumentParser(description="Normalize encoding in markdown and YAML files")
+    parser.add_argument(
+        "paths", nargs="*", help="Files or directories to process (default: current directory)"
     )
     parser.add_argument(
-        'paths',
-        nargs='*',
-        help='Files or directories to process (default: current directory)'
+        "--dry-run", action="store_true", help="Show what would be changed without modifying files"
     )
     parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be changed without modifying files'
-    )
-    parser.add_argument(
-        '--patterns',
-        nargs='+',
-        default=['*.md', '*.yaml', '*.yml'],
-        help='File patterns to process (default: *.md *.yaml *.yml)'
+        "--patterns",
+        nargs="+",
+        default=["*.md", "*.yaml", "*.yml"],
+        help="File patterns to process (default: *.md *.yaml *.yml)",
     )
 
     args = parser.parse_args()
 
     # Determine files to process
     if not args.paths:
-        args.paths = ['.']
+        args.paths = ["."]
 
     all_files = []
     for path_str in args.paths:
@@ -156,14 +146,14 @@ def main():
             print(f"{status} {filepath}: {changes} changes")
 
     # Summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     if args.dry_run:
         print(f"Dry run completed:")
     else:
         print(f"Normalization completed:")
     print(f"  Files modified: {total_files}")
     print(f"  Total changes: {total_changes}")
-    print("="*60)
+    print("=" * 60)
 
     if modified_files and not args.dry_run:
         print("\nModified files:")
@@ -173,5 +163,5 @@ def main():
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

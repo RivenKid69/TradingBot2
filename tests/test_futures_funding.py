@@ -49,6 +49,7 @@ from core_futures import (
 # FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def tracker():
     """Create a fresh funding rate tracker."""
@@ -96,18 +97,21 @@ def sample_funding_history():
     for i in range(10):
         ts = base_ts + i * FUNDING_PERIOD_MS
         rate = Decimal("0.0001") + Decimal(str(i * 0.00001))
-        records.append(FundingRateRecord(
-            symbol="BTCUSDT",
-            timestamp_ms=ts,
-            funding_rate=rate,
-            mark_price=Decimal("50000") + Decimal(str(i * 100)),
-        ))
+        records.append(
+            FundingRateRecord(
+                symbol="BTCUSDT",
+                timestamp_ms=ts,
+                funding_rate=rate,
+                mark_price=Decimal("50000") + Decimal(str(i * 100)),
+            )
+        )
     return records
 
 
 # ============================================================================
 # FUNDING RATE TRACKER TESTS
 # ============================================================================
+
 
 class TestFundingRateTrackerBasic:
     """Basic functionality tests for FundingRateTracker."""
@@ -230,6 +234,7 @@ class TestFundingRateTrackerBasic:
 # FUNDING PAYMENT CALCULATION TESTS
 # ============================================================================
 
+
 class TestFundingPaymentCalculation:
     """Tests for funding payment calculation."""
 
@@ -344,6 +349,7 @@ class TestFundingPaymentCalculation:
 # PRO-RATA FUNDING TESTS
 # ============================================================================
 
+
 class TestProRataFunding:
     """Tests for pro-rata funding calculation."""
 
@@ -357,7 +363,7 @@ class TestProRataFunding:
             mark_price=Decimal("50000"),
             timestamp_ms=funding_time,
             entry_time_ms=None,  # Held before period start
-            exit_time_ms=None,   # Still open
+            exit_time_ms=None,  # Still open
         )
         # Full payment
         assert payment.payment_amount == Decimal("-5")
@@ -444,6 +450,7 @@ class TestProRataFunding:
 # ============================================================================
 # FUNDING TIME UTILITIES TESTS
 # ============================================================================
+
 
 class TestFundingTimeUtilities:
     """Tests for funding time calculation utilities."""
@@ -535,6 +542,7 @@ class TestFundingTimeUtilities:
 # FUNDING COST ESTIMATION TESTS
 # ============================================================================
 
+
 class TestFundingCostEstimation:
     """Tests for funding cost estimation."""
 
@@ -583,7 +591,9 @@ class TestFundingCostEstimation:
         )
 
         # Average of rates from sample history
-        expected_avg = sum(r.funding_rate for r in sample_funding_history) / len(sample_funding_history)
+        expected_avg = sum(r.funding_rate for r in sample_funding_history) / len(
+            sample_funding_history
+        )
         assert abs(avg_rate - expected_avg) < Decimal("0.000001")
 
     def test_get_funding_statistics(self, tracker, sample_funding_history):
@@ -607,6 +617,7 @@ class TestFundingCostEstimation:
 # ============================================================================
 # FUNDING RATE PREDICTION TESTS
 # ============================================================================
+
 
 class TestFundingRatePrediction:
     """Tests for funding rate prediction."""
@@ -663,6 +674,7 @@ class TestFundingRatePrediction:
 # ============================================================================
 # FUNDING RATE SIMULATOR TESTS
 # ============================================================================
+
 
 class TestFundingRateSimulator:
     """Tests for FundingRateSimulator."""
@@ -732,6 +744,7 @@ class TestFundingRateSimulator:
 # UTILITY FUNCTION TESTS
 # ============================================================================
 
+
 class TestUtilityFunctions:
     """Tests for utility functions."""
 
@@ -777,6 +790,7 @@ class TestUtilityFunctions:
 # EXPORT/IMPORT TESTS
 # ============================================================================
 
+
 class TestExportImport:
     """Tests for export/import functionality."""
 
@@ -816,6 +830,7 @@ class TestExportImport:
 # FUNDING RATE RECORD TESTS
 # ============================================================================
 
+
 class TestFundingRateRecord:
     """Tests for FundingRateRecord dataclass."""
 
@@ -839,6 +854,7 @@ class TestFundingRateRecord:
 # ============================================================================
 # FUNDING STATISTICS TESTS
 # ============================================================================
+
 
 class TestFundingStatistics:
     """Tests for FundingStatistics dataclass."""
@@ -868,6 +884,7 @@ class TestFundingStatistics:
 # ============================================================================
 # POSITION FUNDING CALCULATION TESTS
 # ============================================================================
+
 
 class TestPositionFundingCalculation:
     """Tests for calculating funding over position lifetime."""
@@ -927,6 +944,7 @@ class TestPositionFundingCalculation:
 # ============================================================================
 # EDGE CASES
 # ============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
@@ -1013,6 +1031,7 @@ class TestEdgeCases:
 # FUNDING TRACKER SERVICE TESTS
 # ============================================================================
 
+
 class TestFundingTrackerService:
     """Tests for FundingTrackerService."""
 
@@ -1022,6 +1041,7 @@ class TestFundingTrackerService:
             FundingTrackerService,
             FundingTrackerConfig,
         )
+
         config = FundingTrackerConfig(auto_load=False)
         service = FundingTrackerService(config)
         assert service is not None
@@ -1037,11 +1057,13 @@ class TestFundingTrackerService:
         config = FundingTrackerConfig(auto_load=False)
         service = FundingTrackerService(config)
 
-        df = pd.DataFrame({
-            "ts_ms": [1704067200000, 1704067200000 + FUNDING_PERIOD_MS],
-            "funding_rate": [0.0001, 0.0002],
-            "mark_price": [50000, 50100],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1704067200000, 1704067200000 + FUNDING_PERIOD_MS],
+                "funding_rate": [0.0001, 0.0002],
+                "mark_price": [50000, 50100],
+            }
+        )
 
         count = service.load_funding_dataframe(df, "BTCUSDT")
         assert count == 2
@@ -1106,6 +1128,7 @@ class TestFundingTrackerService:
 # ============================================================================
 # INTEGRATION TESTS
 # ============================================================================
+
 
 class TestIntegration:
     """Integration tests combining multiple components."""

@@ -47,34 +47,43 @@ DEFAULT_UA = os.environ.get(
 
 # XBRL-концепты → внутренние per-share / ratio поля.
 # (namespace, concept, unit_hint)
-_EPS_CONCEPTS = [("us-gaap", "EarningsPerShareDiluted", "USD/shares"),
-                 ("us-gaap", "EarningsPerShareBasic", "USD/shares")]
-_EQUITY_CONCEPTS = [("us-gaap", "StockholdersEquity", "USD"),
-                    ("us-gaap", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest", "USD")]
-_SHARES_CONCEPTS = [("dei", "EntityCommonStockSharesOutstanding", "shares"),
-                    ("us-gaap", "CommonStockSharesOutstanding", "shares"),
-                    ("us-gaap", "WeightedAverageNumberOfDilutedSharesOutstanding", "shares")]
+_EPS_CONCEPTS = [
+    ("us-gaap", "EarningsPerShareDiluted", "USD/shares"),
+    ("us-gaap", "EarningsPerShareBasic", "USD/shares"),
+]
+_EQUITY_CONCEPTS = [
+    ("us-gaap", "StockholdersEquity", "USD"),
+    ("us-gaap", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest", "USD"),
+]
+_SHARES_CONCEPTS = [
+    ("dei", "EntityCommonStockSharesOutstanding", "shares"),
+    ("us-gaap", "CommonStockSharesOutstanding", "shares"),
+    ("us-gaap", "WeightedAverageNumberOfDilutedSharesOutstanding", "shares"),
+]
 _NI_CONCEPTS = [("us-gaap", "NetIncomeLoss", "USD")]
-_CFO_CONCEPTS = [("us-gaap", "NetCashProvidedByUsedInOperatingActivities", "USD"),
-                 ("us-gaap", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations", "USD")]
+_CFO_CONCEPTS = [
+    ("us-gaap", "NetCashProvidedByUsedInOperatingActivities", "USD"),
+    ("us-gaap", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations", "USD"),
+]
 _CAPEX_CONCEPTS = [("us-gaap", "PaymentsToAcquirePropertyPlantAndEquipment", "USD")]
 
 
 # ---------------------------------------------------------------------------
 # Network (injectable)
 # ---------------------------------------------------------------------------
-def _http_json(url: str, *, ua: str = DEFAULT_UA, timeout: float = 20.0,
-               retries: int = 3) -> Any:
+def _http_json(url: str, *, ua: str = DEFAULT_UA, timeout: float = 20.0, retries: int = 3) -> Any:
     last = None
     for i in range(retries):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": ua,
-                                                       "Accept-Encoding": "gzip, deflate"})
+            req = urllib.request.Request(
+                url, headers={"User-Agent": ua, "Accept-Encoding": "gzip, deflate"}
+            )
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 raw = resp.read()
                 enc = resp.headers.get("Content-Encoding", "")
                 if "gzip" in enc:
                     import gzip
+
                     raw = gzip.decompress(raw)
                 return json.loads(raw.decode("utf-8"))
         except Exception as exc:  # pragma: no cover - сеть
@@ -123,8 +132,16 @@ def _facts_for(facts_json: Mapping[str, Any], concepts) -> List[Dict[str, Any]]:
             val = o.get("val")
             if filed is None or val is None:
                 continue
-            obs.append({"filed": filed, "end": o.get("end"), "accn": o.get("accn"),
-                        "form": o.get("form"), "fp": o.get("fp"), "val": float(val)})
+            obs.append(
+                {
+                    "filed": filed,
+                    "end": o.get("end"),
+                    "accn": o.get("accn"),
+                    "form": o.get("form"),
+                    "fp": o.get("fp"),
+                    "val": float(val),
+                }
+            )
         if obs:
             return obs
     return []
@@ -178,14 +195,27 @@ def build_symbol_fundamentals(symbol: str, facts_json: Mapping[str, Any]) -> pd.
         capex = b.get("capex")
         bvps = (equity / shares) if (equity is not None and shares not in (None, 0)) else None
         roe = (ni / equity) if (ni is not None and equity not in (None, 0)) else None
-        fcf_ps = ((cfo - capex) / shares) if (cfo is not None and capex is not None
-                                              and shares not in (None, 0)) else None
+        fcf_ps = (
+            ((cfo - capex) / shares)
+            if (cfo is not None and capex is not None and shares not in (None, 0))
+            else None
+        )
         if all(v is None for v in (eps, bvps, fcf_ps, roe)):
             continue
-        rows.append({"publish_ts": pub, "symbol": symbol,
-                     "earnings": eps, "book_value": bvps, "fcf": fcf_ps, "roe": roe})
+        rows.append(
+            {
+                "publish_ts": pub,
+                "symbol": symbol,
+                "earnings": eps,
+                "book_value": bvps,
+                "fcf": fcf_ps,
+                "roe": roe,
+            }
+        )
     if not rows:
-        return pd.DataFrame(columns=["publish_ts", "symbol", "earnings", "book_value", "fcf", "roe"])
+        return pd.DataFrame(
+            columns=["publish_ts", "symbol", "earnings", "book_value", "fcf", "roe"]
+        )
     df = pd.DataFrame(rows).sort_values("publish_ts").reset_index(drop=True)
     return df
 
@@ -215,8 +245,14 @@ def build_pit_fundamentals_frame(
         if len(df):
             frames.append(df)
     if not frames:
-        return pd.DataFrame(columns=["publish_ts", "symbol", "earnings", "book_value", "fcf", "roe"])
-    return pd.concat(frames, ignore_index=True).sort_values(["symbol", "publish_ts"]).reset_index(drop=True)
+        return pd.DataFrame(
+            columns=["publish_ts", "symbol", "earnings", "book_value", "fcf", "roe"]
+        )
+    return (
+        pd.concat(frames, ignore_index=True)
+        .sort_values(["symbol", "publish_ts"])
+        .reset_index(drop=True)
+    )
 
 
 def write_pit_parquet(symbols: Sequence[str], out_path: str, **kwargs: Any) -> str:
@@ -224,8 +260,12 @@ def write_pit_parquet(symbols: Sequence[str], out_path: str, **kwargs: Any) -> s
     df = build_pit_fundamentals_frame(symbols, **kwargs)
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
     df.to_parquet(out_path, index=False)
-    logger.info("EDGAR PIT fundamentals written: %s (%d rows, %d symbols)",
-                out_path, len(df), df["symbol"].nunique() if len(df) else 0)
+    logger.info(
+        "EDGAR PIT fundamentals written: %s (%d rows, %d symbols)",
+        out_path,
+        len(df),
+        df["symbol"].nunique() if len(df) else 0,
+    )
     return out_path
 
 
@@ -236,26 +276,35 @@ class EdgarFundamentals:
     """PIT-фундаментал из SEC EDGAR. ``get_fundamentals(symbols, fields)`` →
     long-кадр (publish_ts, symbol, fields). ``meta.pit_quality = true`` (filing dates)."""
 
-    def __init__(self, *, tickers_fn: Optional[Callable[[], Dict[str, int]]] = None,
-                 facts_fn: Optional[Callable[[int], Dict[str, Any]]] = None,
-                 cache_path: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        *,
+        tickers_fn: Optional[Callable[[], Dict[str, int]]] = None,
+        facts_fn: Optional[Callable[[int], Dict[str, Any]]] = None,
+        cache_path: Optional[str] = None,
+    ) -> None:
         self._tickers_fn = tickers_fn
         self._facts_fn = facts_fn
         self._cache_path = cache_path
         self.meta = DataSourceMeta(
-            name="edgar_fundamentals", vendor="sec_edgar", kind="enrich",
-            pit_quality=PIT_TRUE, free=True,
+            name="edgar_fundamentals",
+            vendor="sec_edgar",
+            kind="enrich",
+            pit_quality=PIT_TRUE,
+            free=True,
             notes="SEC EDGAR XBRL companyfacts; publish_ts = filing date (genuine PIT).",
         )
 
-    def get_fundamentals(self, symbols: Sequence[str],
-                         fields: Optional[Sequence[str]] = None) -> pd.DataFrame:
+    def get_fundamentals(
+        self, symbols: Sequence[str], fields: Optional[Sequence[str]] = None
+    ) -> pd.DataFrame:
         if self._cache_path and os.path.exists(self._cache_path):
             df = pd.read_parquet(self._cache_path)
             df = df[df["symbol"].isin([str(s).upper() for s in symbols])]
         else:
-            df = build_pit_fundamentals_frame(symbols, tickers_fn=self._tickers_fn,
-                                              facts_fn=self._facts_fn)
+            df = build_pit_fundamentals_frame(
+                symbols, tickers_fn=self._tickers_fn, facts_fn=self._facts_fn
+            )
             if self._cache_path and len(df):
                 try:
                     os.makedirs(os.path.dirname(os.path.abspath(self._cache_path)), exist_ok=True)
@@ -271,6 +320,10 @@ class EdgarFundamentals:
 
 
 __all__ = [
-    "EdgarFundamentals", "build_pit_fundamentals_frame", "build_symbol_fundamentals",
-    "write_pit_parquet", "default_tickers_fn", "default_facts_fn",
+    "EdgarFundamentals",
+    "build_pit_fundamentals_frame",
+    "build_symbol_fundamentals",
+    "write_pit_parquet",
+    "default_tickers_fn",
+    "default_facts_fn",
 ]

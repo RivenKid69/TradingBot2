@@ -51,10 +51,10 @@ logger = logging.getLogger(__name__)
 class AlertSeverity(str, Enum):
     """Alert severity levels."""
 
-    INFO = "info"               # Informational
-    WARNING = "warning"         # Attention needed
-    CRITICAL = "critical"       # Immediate action required
-    EMERGENCY = "emergency"     # Emergency - trigger kill switch
+    INFO = "info"  # Informational
+    WARNING = "warning"  # Attention needed
+    CRITICAL = "critical"  # Immediate action required
+    EMERGENCY = "emergency"  # Emergency - trigger kill switch
 
 
 class AlertCategory(str, Enum):
@@ -161,14 +161,14 @@ class RealTimeMonitorConfig:
     aggregation_window_seconds: float = 60.0
 
     # Order-to-Trade Ratio thresholds
-    otr_warning_threshold: float = 50.0       # 50:1
-    otr_critical_threshold: float = 100.0     # 100:1
-    otr_emergency_threshold: float = 200.0    # 200:1 - trigger kill switch
+    otr_warning_threshold: float = 50.0  # 50:1
+    otr_critical_threshold: float = 100.0  # 100:1
+    otr_emergency_threshold: float = 200.0  # 200:1 - trigger kill switch
 
     # P&L thresholds (as % of daily limit)
-    pnl_warning_pct: float = 50.0             # 50% of daily limit
-    pnl_critical_pct: float = 75.0            # 75% of daily limit
-    pnl_emergency_pct: float = 90.0           # 90% - near kill switch
+    pnl_warning_pct: float = 50.0  # 50% of daily limit
+    pnl_critical_pct: float = 75.0  # 75% of daily limit
+    pnl_emergency_pct: float = 90.0  # 90% - near kill switch
 
     # Position limit thresholds (as % of max)
     position_warning_pct: float = 80.0
@@ -837,10 +837,7 @@ class RealTimeMonitor:
             now = time.time()
             cutoff = now - 1.0  # Last 1 second
 
-            count = sum(
-                1 for ts, _ in self._order_timestamps
-                if ts > cutoff
-            )
+            count = sum(1 for ts, _ in self._order_timestamps if ts > cutoff)
             return float(count)
 
     def _calculate_avg_latency(self) -> float:
@@ -943,10 +940,12 @@ class RealTimeMonitor:
         with self._lock:
             self._alerts.append(alert)
             self._stats["alerts_generated"] += 1
-            self._stats["alerts_by_severity"][alert.severity.value] = \
+            self._stats["alerts_by_severity"][alert.severity.value] = (
                 self._stats["alerts_by_severity"].get(alert.severity.value, 0) + 1
-            self._stats["alerts_by_category"][alert.category.value] = \
+            )
+            self._stats["alerts_by_category"][alert.category.value] = (
                 self._stats["alerts_by_category"].get(alert.category.value, 0) + 1
+            )
 
         # Log the alert
         log_method = {
@@ -958,7 +957,7 @@ class RealTimeMonitor:
 
         alert_data = alert.to_dict()
         # Remove 'message' key to avoid conflict with LogRecord
-        alert_data.pop('message', None)
+        alert_data.pop("message", None)
         log_method(
             f"ALERT [{alert.severity.value.upper()}] {alert.category.value}: {alert.message}",
             extra=alert_data,
@@ -1117,9 +1116,7 @@ class RealTimeMonitor:
                 **self._stats,
                 "running": self._running,
                 "total_alerts": len(self._alerts),
-                "unacknowledged_alerts": sum(
-                    1 for a in self._alerts if not a.acknowledged
-                ),
+                "unacknowledged_alerts": sum(1 for a in self._alerts if not a.acknowledged),
                 "current_metrics": self._metrics.to_dict(),
             }
 
@@ -1156,6 +1153,7 @@ class RealTimeMonitor:
 # =============================================================================
 # Factory Function
 # =============================================================================
+
 
 def create_realtime_monitor(
     config: Optional[Dict[str, Any]] = None,

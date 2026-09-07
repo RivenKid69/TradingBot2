@@ -151,9 +151,7 @@ class IntentAdapter:
         # Calculate limit price from price_offset_ticks
         limit_price: Optional[Decimal] = None
         if price_offset_ticks != 0 and context.current_price > 0:
-            limit_price = context.current_price + (
-                Decimal(price_offset_ticks) * context.tick_size
-            )
+            limit_price = context.current_price + (Decimal(price_offset_ticks) * context.tick_size)
 
         # Create new intent
         return OrderIntent(

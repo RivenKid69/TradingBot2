@@ -582,7 +582,9 @@ class OnPremDeploymentService:
             "checklist": self.get_checklist_status(deployment_id),
             "created_at": deployment.created_at.isoformat(),
             "started_at": deployment.started_at.isoformat() if deployment.started_at else None,
-            "completed_at": deployment.completed_at.isoformat() if deployment.completed_at else None,
+            "completed_at": (
+                deployment.completed_at.isoformat() if deployment.completed_at else None
+            ),
         }
 
 

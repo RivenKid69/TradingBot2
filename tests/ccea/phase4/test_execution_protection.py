@@ -167,8 +167,8 @@ class TestExecutionPath:
         # All execution goes through execute() which checks origin
 
         # Verify broker_submit is private
-        assert not hasattr(engine, 'broker_submit')
-        assert hasattr(engine, '_broker_submit')
+        assert not hasattr(engine, "broker_submit")
+        assert hasattr(engine, "_broker_submit")
 
     def test_policy_checked_before_execution(self, engine):
         """Test policy firewall is checked before execution."""

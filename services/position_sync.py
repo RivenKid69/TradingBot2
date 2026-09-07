@@ -154,10 +154,10 @@ class SyncConfig:
 
     # --- Auto-reconciliation policy (P1 #9): act on persistent drift, don't just
     #     detect it. A discrepancy that survives N consecutive syncs is "persistent".
-    halt_on_unreconciled: bool = True       # block new orders while drift persists
-    consecutive_halt_threshold: int = 2     # syncs a discrepancy must persist before halt
-    auto_flatten: bool = False              # also close the drifted position at the broker
-    max_flatten_qty: float = 1e9            # safety cap on auto-flatten size
+    halt_on_unreconciled: bool = True  # block new orders while drift persists
+    consecutive_halt_threshold: int = 2  # syncs a discrepancy must persist before halt
+    auto_flatten: bool = False  # also close the drifted position at the broker
+    max_flatten_qty: float = 1e9  # safety cap on auto-flatten size
 
     # Symbols to include (None = all)
     include_symbols: Optional[List[str]] = None
@@ -229,7 +229,7 @@ class PositionSynchronizer:
         # Auto-reconciliation state (P1 #9)
         self._on_halt = on_halt
         self._flatten_fn = flatten_fn
-        self._consecutive: Dict[str, int] = {}   # symbol -> consecutive unreconciled syncs
+        self._consecutive: Dict[str, int] = {}  # symbol -> consecutive unreconciled syncs
         self._halted = False
         self._halt_reason: Optional[str] = None
 
@@ -297,14 +297,10 @@ class PositionSynchronizer:
                     logger.warning(f"Failed to get open orders: {e}")
 
             # Compare positions
-            discrepancies = self._compare_positions(
-                local_positions, remote_positions, remote_meta
-            )
+            discrepancies = self._compare_positions(local_positions, remote_positions, remote_meta)
 
             # Auto-reconciliation (P1 #9): act on PERSISTENT drift, not just detect.
-            halted, halt_reason, actions = self._auto_reconcile(
-                discrepancies, remote_positions
-            )
+            halted, halt_reason, actions = self._auto_reconcile(discrepancies, remote_positions)
 
             # Create result
             result = SyncResult(
@@ -394,8 +390,13 @@ class PositionSynchronizer:
                 f"(>= {cfg.consecutive_halt_threshold} consecutive syncs)"
             )
             logger.error("RECONCILIATION HALT: %s", self._halt_reason)
-            actions.append({"action": "halt_new_orders", "symbols": list(persistent),
-                            "reason": self._halt_reason})
+            actions.append(
+                {
+                    "action": "halt_new_orders",
+                    "symbols": list(persistent),
+                    "reason": self._halt_reason,
+                }
+            )
             if self._on_halt:
                 try:
                     self._on_halt(self._halt_reason)
@@ -409,8 +410,9 @@ class PositionSynchronizer:
                 if rq == 0:
                     continue
                 if abs(float(rq)) > float(cfg.max_flatten_qty):
-                    actions.append({"action": "flatten_skipped_cap", "symbol": sym,
-                                    "remote_qty": str(rq)})
+                    actions.append(
+                        {"action": "flatten_skipped_cap", "symbol": sym, "remote_qty": str(rq)}
+                    )
                     continue
                 try:
                     self._flatten_fn(sym, rq)
@@ -565,9 +567,7 @@ class PositionSynchronizer:
 
         self._running = True
         self._sync_task = asyncio.create_task(self._background_sync_loop())
-        logger.info(
-            f"Started background position sync (interval: {self._config.sync_interval_s}s)"
-        )
+        logger.info(f"Started background position sync (interval: {self._config.sync_interval_s}s)")
 
     def stop_background_sync(self) -> None:
         """Stop background synchronization loop."""

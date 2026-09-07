@@ -20,6 +20,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from distributional_ppo import PopArtHoldoutBatch
+
 import dataclasses
 import errno
 import importlib
@@ -78,9 +83,7 @@ from core_config import (
 logger = logging.getLogger(__name__)
 
 if _NO_TRADE_DEFAULTED:
-    logger.info(
-        "NO_TRADE_FEATURES_DISABLED not set – forcing mask shutdown for training safety"
-    )
+    logger.info("NO_TRADE_FEATURES_DISABLED not set – forcing mask shutdown for training safety")
 
 
 def _export_training_dataset(
@@ -148,8 +151,7 @@ def _export_training_dataset(
     else:
         role_series = roles.astype(str).str.lower().fillna("none")
         role_counts = {
-            key: int((role_series == key).sum())
-            for key in ("train", "val", "test", "none")
+            key: int((role_series == key).sum()) for key in ("train", "val", "test", "none")
         }
         other = int(len(role_series) - sum(role_counts.values()))
         if other > 0:
@@ -159,7 +161,9 @@ def _export_training_dataset(
         "start_ts": int(combined[timestamp_column].min()),
         "end_ts": int(combined[timestamp_column].max()),
     }
-    symbols = sorted({str(s) for s in combined.get("symbol", pd.Series(dtype=str)).dropna().unique()})
+    symbols = sorted(
+        {str(s) for s in combined.get("symbol", pd.Series(dtype=str)).dropna().unique()}
+    )
 
     summary = {
         "rows": int(len(combined)),
@@ -220,6 +224,7 @@ def _install_torch_intrinsic_stub() -> None:
 def _import_torch_with_intrinsic_stub() -> Any:
     try:
         import torch  # type: ignore[no-redef]
+
         return torch
     except OSError as exc:
         if exc.errno == errno.ENOMEM and "torch/nn/intrinsic" in str(exc):
@@ -288,9 +293,10 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 #   1. Backward compatibility with old training configs
 #   2. Historical reference
 #
-# WARNING: Do NOT enable PopArt without reviewing CLAUDE.md line 633 and
+# WARNING: Do NOT enable PopArt without reviewing docs/PLATFORM_REFERENCE.md line 633 and
 # running comprehensive tests. PopArt is disabled at initialization.
 # ==============================================================================
+
 
 class _PopArtHoldoutLoaderWrapper:
     """Lazily loads or materialises PopArt holdout batches.
@@ -351,9 +357,7 @@ class _PopArtHoldoutLoaderWrapper:
             try:
                 payload = np.load(str(self._path), allow_pickle=False)
             except Exception as exc:
-                self._logger.warning(
-                    "Failed to load PopArt replay %s: %s", self._path, exc
-                )
+                self._logger.warning("Failed to load PopArt replay %s: %s", self._path, exc)
                 self._cache["batch"] = None
                 return None
 
@@ -368,9 +372,7 @@ class _PopArtHoldoutLoaderWrapper:
         if targets is None:
             targets = payload.get("target")
         if obs is None or targets is None:
-            self._logger.warning(
-                "PopArt replay %s missing 'obs'/'returns' arrays", self._path
-            )
+            self._logger.warning("PopArt replay %s missing 'obs'/'returns' arrays", self._path)
             with self._lock:
                 self._cache["batch"] = None
             return None
@@ -452,9 +454,7 @@ class _PopArtHoldoutLoaderWrapper:
         try:
             data = self._collect_holdout(env)
         except Exception as exc:
-            self._logger.warning(
-                "Failed to auto-generate PopArt replay %s: %s", self._path, exc
-            )
+            self._logger.warning("Failed to auto-generate PopArt replay %s: %s", self._path, exc)
             return
 
         obs_arr = data["obs"]
@@ -619,11 +619,13 @@ def _ensure_model_popart_holdout_loader(
             "PopArt controller configuration detected but the feature is disabled; nothing to attach."
         )
 
+
 try:
     from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor, DummyVecEnv, VecEnv
     from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
     from stable_baselines3.common.vec_env import VecNormalize
 except ImportError:  # pragma: no cover - test-time fallback stubs
+
     class VecEnv:  # type: ignore[dead-code]
         pass
 
@@ -647,6 +649,8 @@ except ImportError:  # pragma: no cover - test-time fallback stubs
 
     class EvalCallback(BaseCallback):  # pragma: no cover - placeholder
         pass
+
+
 torch = _import_torch_with_intrinsic_stub()
 import optuna
 from optuna.samplers import TPESampler
@@ -712,7 +716,11 @@ def _resolve_bar_seconds(source: Any) -> float | None:
             if sec is not None:
                 return sec
 
-        for attr, assumes_ms in (("bar_interval_seconds", False), ("bar_seconds", False), ("bar_interval_ms", True)):
+        for attr, assumes_ms in (
+            ("bar_interval_seconds", False),
+            ("bar_seconds", False),
+            ("bar_interval_ms", True),
+        ):
             if hasattr(obj, attr):
                 sec = _coerce_positive_seconds(getattr(obj, attr), assumes_ms=assumes_ms)
                 if sec is not None:
@@ -767,7 +775,11 @@ def _annualization_sqrt_from_env(source: Any) -> tuple[float, float | None]:
 
 def _log_annualization(label: str, ann_sqrt: float, bar_seconds: float | None) -> None:
     if bar_seconds is None:
-        logger.info("%s: using fallback annualization sqrt factor %.6f (bar interval unknown)", label, ann_sqrt)
+        logger.info(
+            "%s: using fallback annualization sqrt factor %.6f (bar interval unknown)",
+            label,
+            ann_sqrt,
+        )
     else:
         steps_per_year = _SECONDS_PER_YEAR / float(bar_seconds)
         logger.info(
@@ -785,7 +797,6 @@ def _value_changed(previous: float | None, current: float | None) -> bool:
     return not math.isclose(previous, current, rel_tol=1e-9, abs_tol=1e-9)
 
 
-
 def _freeze_vecnormalize(vec_env: VecNormalize) -> VecNormalize:
     """Ensure VecNormalize stops updating statistics during evaluation."""
 
@@ -797,6 +808,8 @@ def _freeze_vecnormalize(vec_env: VecNormalize) -> VecNormalize:
             except Exception:
                 pass
     return vec_env
+
+
 class AdversarialCallback(BaseCallback):
     """
     Проводит стресс-тесты в специальных рыночных режимах и СОХРАНЯЕТ
@@ -829,7 +842,9 @@ class AdversarialCallback(BaseCallback):
 
     def _resolve_sortino_factor(self) -> float:
         ann_sqrt, bar_seconds = _annualization_sqrt_from_env(self.eval_env)
-        if _value_changed(self._sortino_bar_seconds, bar_seconds) or _value_changed(self._sortino_ann_sqrt, ann_sqrt):
+        if _value_changed(self._sortino_bar_seconds, bar_seconds) or _value_changed(
+            self._sortino_ann_sqrt, ann_sqrt
+        ):
             _log_annualization("AdversarialCallback", ann_sqrt, bar_seconds)
             self._sortino_bar_seconds = bar_seconds
             self._sortino_ann_sqrt = ann_sqrt
@@ -844,17 +859,23 @@ class AdversarialCallback(BaseCallback):
             for regime in self.regimes:
                 print(f"Testing regime: {regime}...")
                 # Устанавливаем режим в среде
-                self.eval_env.env_method("set_market_regime", regime=regime, duration=self.regime_duration)
-                
+                self.eval_env.env_method(
+                    "set_market_regime", regime=regime, duration=self.regime_duration
+                )
+
                 # Запускаем оценку в этом режиме
                 _rewards, equity_curves = evaluate_policy_custom_cython(
                     self.model,
                     self.eval_env,
-                    num_episodes=1 # Один длинный эпизод для каждого режима
+                    num_episodes=1,  # Один длинный эпизод для каждого режима
                 )
 
                 # Считаем Sortino и сохраняем
-                all_returns = [pd.Series(c).pct_change().dropna().to_numpy() for c in equity_curves if len(c) > 1]
+                all_returns = [
+                    pd.Series(c).pct_change().dropna().to_numpy()
+                    for c in equity_curves
+                    if len(c) > 1
+                ]
                 flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
                 score = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
                 self.regime_metrics[regime] = score
@@ -862,7 +883,7 @@ class AdversarialCallback(BaseCallback):
                 print(f"Regime '{regime}' | Sortino: {score:.4f}")
 
             # Сбрасываем среду в нормальный режим
-            self.eval_env.env_method("set_market_regime", regime='normal', duration=0)
+            self.eval_env.env_method("set_market_regime", regime="normal", duration=0)
             print("--- Adversarial Tests Finished ---\n")
 
             # Validate distributions against reference after stress tests
@@ -885,6 +906,8 @@ class AdversarialCallback(BaseCallback):
     def get_regime_metrics(self) -> dict:
         """Возвращает словарь с результатами тестов."""
         return self.regime_metrics
+
+
 from shared_memory_vec_env import SharedMemoryVecEnv
 
 
@@ -893,6 +916,7 @@ def _get_distributional_ppo():
     from distributional_ppo import DistributionalPPO
 
     return DistributionalPPO
+
 
 # --- ИЗМЕНЕНИЕ: Включаем оптимизации PyTorch ---
 # Если GPU и версия CUDA >= 11, включаем высокую точность
@@ -919,6 +943,7 @@ from services.futures_feature_flags import (
 )
 from custom_policy_patch1 import CustomActorCriticPolicy
 from fetch_all_data_patch import load_all_data
+
 # --- ИЗМЕНЕНИЕ: Импортируем быструю Cython-функцию оценки ---
 from evaluate_policy_custom_cython import evaluate_policy_custom_cython
 from scripts.validate_regime_distributions import compare_regime_distributions
@@ -926,6 +951,7 @@ from data_validation import DataValidator
 from utils.model_io import save_sidecar_metadata, check_model_compat
 from watchdog_vec_env import WatchdogVecEnv
 from scripts.offline_utils import load_offline_payload, resolve_split_bundle
+
 
 # --- helper to compute SHA256 of liquidity seasonality file ---
 def _file_sha256(path: str | None) -> str | None:
@@ -1010,9 +1036,16 @@ def _wrap_futures_env_if_needed(
     """
     # Only wrap for futures asset classes
     futures_asset_classes = {
-        "crypto_futures", "futures", "crypto_perp", "crypto_perpetual",
-        "crypto_quarterly", "index_futures", "commodity_futures",
-        "currency_futures", "bond_futures", "cme_futures"
+        "crypto_futures",
+        "futures",
+        "crypto_perp",
+        "crypto_perpetual",
+        "crypto_quarterly",
+        "index_futures",
+        "commodity_futures",
+        "currency_futures",
+        "bond_futures",
+        "cme_futures",
     }
 
     if asset_class.lower() not in futures_asset_classes:
@@ -1028,8 +1061,13 @@ def _wrap_futures_env_if_needed(
 
     # Determine futures type
     futures_type = config.get("futures_type", asset_class)
-    is_cme = futures_type.lower() in {"index_futures", "commodity_futures",
-                                       "currency_futures", "bond_futures", "cme_futures"}
+    is_cme = futures_type.lower() in {
+        "index_futures",
+        "commodity_futures",
+        "currency_futures",
+        "bond_futures",
+        "cme_futures",
+    }
 
     try:
         if is_cme:
@@ -1312,7 +1350,9 @@ def _extract_offline_split_overrides(
     return overrides
 
 
-def _load_time_splits(data_cfg) -> tuple[str | None, dict[str, list[tuple[int | None, int | None]]]]:
+def _load_time_splits(
+    data_cfg,
+) -> tuple[str | None, dict[str, list[tuple[int | None, int | None]]]]:
     """Derive train/val/test time windows from config or an external manifest."""
 
     splits: dict[str, list[tuple[int | None, int | None]]] = {"train": [], "val": [], "test": []}
@@ -1344,7 +1384,9 @@ def _load_time_splits(data_cfg) -> tuple[str | None, dict[str, list[tuple[int | 
         if raw_splits is None:
             raw_splits = {k: raw.get(k) for k in ("train", "val", "test") if raw.get(k) is not None}
         if raw_splits is None:
-            raise ValueError("Split manifest must contain 'splits' or per-phase keys (train/val/test).")
+            raise ValueError(
+                "Split manifest must contain 'splits' or per-phase keys (train/val/test)."
+            )
         for phase in ("train", "val", "test"):
             entries = raw_splits.get(phase)
             if entries is None:
@@ -1362,7 +1404,12 @@ def _load_time_splits(data_cfg) -> tuple[str | None, dict[str, list[tuple[int | 
             splits[phase].append(_normalize_interval({"start_ts": start_attr, "end_ts": end_attr}))
 
     if not splits["train"]:
-        fallback = _normalize_interval({"start_ts": getattr(data_cfg, "start_ts", None), "end_ts": getattr(data_cfg, "end_ts", None)})
+        fallback = _normalize_interval(
+            {
+                "start_ts": getattr(data_cfg, "start_ts", None),
+                "end_ts": getattr(data_cfg, "end_ts", None),
+            }
+        )
         if fallback != (None, None):
             splits["train"].append(fallback)
 
@@ -1393,9 +1440,7 @@ def _ensure_validation_split_present(
 
     configured = intervals.get("val", [])
     configured_desc = (
-        ", ".join(_format_interval(it) for it in configured)
-        if configured
-        else "(not configured)"
+        ", ".join(_format_interval(it) for it in configured) if configured else "(not configured)"
     )
     observed_start, observed_end = _phase_bounds(dfs_with_roles, timestamp_column)
     coverage_desc = f"[{_fmt_ts(observed_start)} .. {_fmt_ts(observed_end)}]"
@@ -1501,6 +1546,7 @@ def _format_interval(interval: tuple[int | None, int | None]) -> str:
     start, end = interval
     return f"[{_fmt_ts(start)} .. {_fmt_ts(end)}]"
 
+
 # === КОНФИГУРАЦИЯ ИНДИКАТОРОВ (ЕДИНЫЙ ИСТОЧНИК ПРАВДЫ) ===
 MA5_WINDOW = 5
 MA20_WINDOW = 20
@@ -1520,10 +1566,11 @@ class NanGuardCallback(BaseCallback):
     Проверяет loss и градиенты на NaN/Inf.
     При обнаружении прерывает текущий Optuna-trial.
     """
+
     def __init__(self, threshold: float = float("inf"), verbose: int = 0):
         super().__init__(verbose)
         self.model = None  # Explicitly initialize to prevent AttributeError
-        self.threshold = threshold       # Можно задать лимит «слишком большой» loss
+        self.threshold = threshold  # Можно задать лимит «слишком большой» loss
 
     def _on_rollout_end(self) -> None:
         # 1) Проверяем loss, если SB3 положил его в локалы
@@ -1541,6 +1588,7 @@ class NanGuardCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         return True
+
 
 class SortinoPruningCallback(BaseCallback):
     """
@@ -1568,7 +1616,9 @@ class SortinoPruningCallback(BaseCallback):
 
     def _resolve_sortino_factor(self) -> tuple[float, float | None]:
         ann_sqrt, bar_seconds = _annualization_sqrt_from_env(self.eval_env)
-        if _value_changed(self._bar_seconds, bar_seconds) or _value_changed(self._ann_sqrt, ann_sqrt):
+        if _value_changed(self._bar_seconds, bar_seconds) or _value_changed(
+            self._ann_sqrt, ann_sqrt
+        ):
             _log_annualization("SortinoPruningCallback", ann_sqrt, bar_seconds)
             self._ann_sqrt = ann_sqrt
             self._bar_seconds = bar_seconds
@@ -1586,9 +1636,7 @@ class SortinoPruningCallback(BaseCallback):
 
             # Используем быструю Cython-функцию для оценки
             rewards, equity_curves = evaluate_policy_custom_cython(
-                self.model,
-                self.eval_env,
-                num_episodes=self.n_eval_episodes
+                self.model, self.eval_env, num_episodes=self.n_eval_episodes
             )
 
             ann_sqrt, bar_seconds = self._resolve_sortino_factor()
@@ -1600,7 +1648,8 @@ class SortinoPruningCallback(BaseCallback):
             else:
                 all_returns = [
                     pd.Series(curve).pct_change().dropna().to_numpy()
-                    for curve in equity_curves if len(curve) > 1
+                    for curve in equity_curves
+                    if len(curve) > 1
                 ]
                 flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
                 current_sortino = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
@@ -1632,6 +1681,7 @@ class SortinoPruningCallback(BaseCallback):
 
         return True
 
+
 class ObjectiveScorePruningCallback(BaseCallback):
     """
     Callback для прунинга, использующий полную взвешенную метрику objective_score.
@@ -1662,7 +1712,9 @@ class ObjectiveScorePruningCallback(BaseCallback):
 
     def _resolve_sortino_factor(self) -> tuple[float, float | None]:
         ann_sqrt, bar_seconds = _annualization_sqrt_from_env(self.eval_env)
-        if _value_changed(self._bar_seconds, bar_seconds) or _value_changed(self._ann_sqrt, ann_sqrt):
+        if _value_changed(self._bar_seconds, bar_seconds) or _value_changed(
+            self._ann_sqrt, ann_sqrt
+        ):
             _log_annualization("ObjectiveScorePruningCallback", ann_sqrt, bar_seconds)
             self._bar_seconds = bar_seconds
             self._ann_sqrt = ann_sqrt
@@ -1681,7 +1733,7 @@ class ObjectiveScorePruningCallback(BaseCallback):
                 f"\n--- Step {current_step}: Starting comprehensive pruning check with Objective Score ---"
             )
 
-            regimes_to_evaluate = ['normal', 'choppy_flat', 'strong_trend']
+            regimes_to_evaluate = ["normal", "choppy_flat", "strong_trend"]
             evaluated_metrics = {}
             ann_sqrt, bar_seconds = self._resolve_sortino_factor()
 
@@ -1691,17 +1743,23 @@ class ObjectiveScorePruningCallback(BaseCallback):
                         print(f"Pruning evaluation: testing regime '{regime}'...")
 
                     # Устанавливаем адверсариальный режим
-                    if regime != 'normal':
-                        self.eval_env.env_method("set_market_regime", regime=regime, duration=self.regime_duration)
+                    if regime != "normal":
+                        self.eval_env.env_method(
+                            "set_market_regime", regime=regime, duration=self.regime_duration
+                        )
 
                     # Для прунинга достаточно меньшего числа эпизодов, чем в финале
                     num_episodes = 5  # Всегда использовать 5 эпизодов для более стабильной оценки
-                    
+
                     _rewards, equity_curves = evaluate_policy_custom_cython(
                         self.model, self.eval_env, num_episodes=num_episodes
                     )
 
-                    all_returns = [pd.Series(c).pct_change().dropna().to_numpy() for c in equity_curves if len(c) > 1]
+                    all_returns = [
+                        pd.Series(c).pct_change().dropna().to_numpy()
+                        for c in equity_curves
+                        if len(c) > 1
+                    ]
                     flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
                     score = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
                     evaluated_metrics[regime] = score
@@ -1709,16 +1767,18 @@ class ObjectiveScorePruningCallback(BaseCallback):
             finally:
                 # КРИТИЧЕСКИ ВАЖНО: всегда сбрасываем среду в нормальный режим,
                 # чтобы не влиять на следующий шаг обучения или другие колбэки.
-                self.eval_env.env_method("set_market_regime", regime='normal', duration=0)
+                self.eval_env.env_method("set_market_regime", regime="normal", duration=0)
 
             # Рассчитываем взвешенную метрику
-            main_sortino = evaluated_metrics.get('normal', -1.0)
-            choppy_score = evaluated_metrics.get('choppy_flat', -1.0)
-            trend_score = evaluated_metrics.get('strong_trend', -1.0)
-            
-            objective_score = (self.main_weight * main_sortino + 
-                               self.choppy_weight * choppy_score + 
-                               self.trend_weight * trend_score)
+            main_sortino = evaluated_metrics.get("normal", -1.0)
+            choppy_score = evaluated_metrics.get("choppy_flat", -1.0)
+            trend_score = evaluated_metrics.get("strong_trend", -1.0)
+
+            objective_score = (
+                self.main_weight * main_sortino
+                + self.choppy_weight * choppy_score
+                + self.trend_weight * trend_score
+            )
 
             if self.verbose > 0:
                 print(
@@ -1913,25 +1973,29 @@ def sortino_ratio(
     # downside_std is guaranteed to be finite and >= 1e-9 here
     return np.mean(returns - risk_free_rate) / downside_std * ann
 
+
 # --- ИЗМЕНЕНИЕ: Старая Python-функция удалена, так как заменена на Cython-версию ---
 
-def objective(trial: optuna.Trial,
-              cfg: TrainConfig,
-              total_timesteps: int,
-              train_data_by_token: dict,
-              train_obs_by_token: dict,
-              val_data_by_token: dict,
-              val_obs_by_token: dict,
-              test_data_by_token: dict,
-              test_obs_by_token: dict,
-              norm_stats: dict,
-              sim_config: dict,
-              timing_env_kwargs: dict,
-              env_runtime_overrides: Mapping[str, Any],
-              leak_guard_kwargs: dict,
-              trials_dir: Path,
-              tensorboard_log_dir: Path | None,
-              n_envs_override: int | None):
+
+def objective(
+    trial: optuna.Trial,
+    cfg: TrainConfig,
+    total_timesteps: int,
+    train_data_by_token: dict,
+    train_obs_by_token: dict,
+    val_data_by_token: dict,
+    val_obs_by_token: dict,
+    test_data_by_token: dict,
+    test_obs_by_token: dict,
+    norm_stats: dict,
+    sim_config: dict,
+    timing_env_kwargs: dict,
+    env_runtime_overrides: Mapping[str, Any],
+    leak_guard_kwargs: dict,
+    trials_dir: Path,
+    tensorboard_log_dir: Path | None,
+    n_envs_override: int | None,
+):
 
     print(f">>> Trial {trial.number+1} with budget={total_timesteps}")
 
@@ -2054,9 +2118,7 @@ def objective(trial: optuna.Trial,
                 try:
                     overrides["max_asset_weight"] = float(value)
                 except (TypeError, ValueError) as exc:
-                    raise ValueError(
-                        f"Invalid max_asset_weight value: {value!r}"
-                    ) from exc
+                    raise ValueError(f"Invalid max_asset_weight value: {value!r}") from exc
 
         _update_overrides(actions_payload)
         _update_overrides(wrapper_payload)
@@ -2072,10 +2134,7 @@ def objective(trial: optuna.Trial,
         )
 
     if not long_only_flag:
-        raise RuntimeError(
-            "Score-based policy requires cfg.algo.actions.long_only = true"
-        )
-
+        raise RuntimeError("Score-based policy requires cfg.algo.actions.long_only = true")
 
     # ИСПРАВЛЕНО: window_size возвращен в пространство поиска HPO
     def _get_model_param_value(cfg: TrainConfig, key: str):
@@ -2349,12 +2408,8 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "optimizer_lr_max"), "optimizer_lr_max"
     )
     gamma_cfg = _coerce_optional_float(_get_model_param_value(cfg, "gamma"), "gamma")
-    gae_lambda_cfg = _coerce_optional_float(
-        _get_model_param_value(cfg, "gae_lambda"), "gae_lambda"
-    )
-    clip_range_cfg = _coerce_optional_float(
-        _get_model_param_value(cfg, "clip_range"), "clip_range"
-    )
+    gae_lambda_cfg = _coerce_optional_float(_get_model_param_value(cfg, "gae_lambda"), "gae_lambda")
+    clip_range_cfg = _coerce_optional_float(_get_model_param_value(cfg, "clip_range"), "clip_range")
     clip_range_vf_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "clip_range_vf"), "clip_range_vf"
     )
@@ -2372,9 +2427,7 @@ def objective(trial: optuna.Trial,
     )
     value_scale_controller_cfg = _get_model_param_value(cfg, "value_scale_controller")
     popart_holdout_loader = _build_popart_holdout_loader(value_scale_controller_cfg)
-    ent_coef_cfg = _coerce_optional_float(
-        _get_model_param_value(cfg, "ent_coef"), "ent_coef"
-    )
+    ent_coef_cfg = _coerce_optional_float(_get_model_param_value(cfg, "ent_coef"), "ent_coef")
     ent_coef_final_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "ent_coef_final"), "ent_coef_final"
     )
@@ -2398,23 +2451,17 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "max_grad_norm"), "max_grad_norm"
     )
     n_steps_cfg = _coerce_optional_int(_get_model_param_value(cfg, "n_steps"), "n_steps")
-    batch_size_cfg = _coerce_optional_int(
-        _get_model_param_value(cfg, "batch_size"), "batch_size"
-    )
+    batch_size_cfg = _coerce_optional_int(_get_model_param_value(cfg, "batch_size"), "batch_size")
     microbatch_size_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "microbatch_size"), "microbatch_size"
     )
-    n_epochs_cfg = _coerce_optional_int(
-        _get_model_param_value(cfg, "n_epochs"), "n_epochs"
-    )
+    n_epochs_cfg = _coerce_optional_int(_get_model_param_value(cfg, "n_epochs"), "n_epochs")
     if n_epochs_cfg is None:
         # Некоторые конфиги (особенно легаси или кастомные CLI-переопределения)
         # могут не содержать ``model.params.n_epochs``. Вместо жёсткого падения
         # позволяем Optuna подобрать разумное значение в допустимом диапазоне.
         n_epochs_cfg = trial.suggest_int("n_epochs", 2, 4)
-    target_kl_cfg = _coerce_optional_float(
-        _get_model_param_value(cfg, "target_kl"), "target_kl"
-    )
+    target_kl_cfg = _coerce_optional_float(_get_model_param_value(cfg, "target_kl"), "target_kl")
     kl_early_stop_cfg = _coerce_optional_bool(
         _get_model_param_value(cfg, "kl_early_stop"), "kl_early_stop"
     )
@@ -2426,9 +2473,7 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "kl_absolute_stop_factor"),
         "kl_absolute_stop_factor",
     )
-    seed_cfg = _coerce_optional_int(
-        _get_model_param_value(cfg, "seed"), "seed"
-    )
+    seed_cfg = _coerce_optional_int(_get_model_param_value(cfg, "seed"), "seed")
     kl_epoch_decay_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "kl_epoch_decay"), "kl_epoch_decay"
     )
@@ -2444,9 +2489,7 @@ def objective(trial: optuna.Trial,
     )
     kl_use_lr_decay_cfg = None
     if "target_kl" in kl_section_map:
-        nested_target_kl = _coerce_optional_float(
-            kl_section_map.get("target_kl"), "kl.target_kl"
-        )
+        nested_target_kl = _coerce_optional_float(kl_section_map.get("target_kl"), "kl.target_kl")
         if nested_target_kl is not None:
             target_kl_cfg = nested_target_kl
     if "use_lr_decay" in kl_section_map:
@@ -2455,9 +2498,7 @@ def objective(trial: optuna.Trial,
                 kl_section_map.get("use_lr_decay"), "kl.use_lr_decay"
             )
         except ValueError:
-            print(
-                "Warning: cfg.model.params.kl.use_lr_decay is invalid; ignoring override"
-            )
+            print("Warning: cfg.model.params.kl.use_lr_decay is invalid; ignoring override")
             kl_use_lr_decay_cfg = None
 
     early_stop_section_map = _extract_section_payload(
@@ -2561,15 +2602,9 @@ def objective(trial: optuna.Trial,
     pid_section_map = _extract_section_payload(
         penalty_section_map.get("pid"), ["kp", "ki", "kd", "beta_min", "beta_max"]
     )
-    kl_penalty_pid_kp_cfg = _coerce_optional_float(
-        pid_section_map.get("kp"), "kl.penalty.pid.kp"
-    )
-    kl_penalty_pid_ki_cfg = _coerce_optional_float(
-        pid_section_map.get("ki"), "kl.penalty.pid.ki"
-    )
-    kl_penalty_pid_kd_cfg = _coerce_optional_float(
-        pid_section_map.get("kd"), "kl.penalty.pid.kd"
-    )
+    kl_penalty_pid_kp_cfg = _coerce_optional_float(pid_section_map.get("kp"), "kl.penalty.pid.kp")
+    kl_penalty_pid_ki_cfg = _coerce_optional_float(pid_section_map.get("ki"), "kl.penalty.pid.ki")
+    kl_penalty_pid_kd_cfg = _coerce_optional_float(pid_section_map.get("kd"), "kl.penalty.pid.kd")
     kl_penalty_beta_min_cfg = _coerce_optional_float(
         pid_section_map.get("beta_min"), "kl.penalty.pid.beta_min"
     )
@@ -2611,23 +2646,25 @@ def objective(trial: optuna.Trial,
         )
         target_kl_cfg = fallback_target_kl
     if kl_early_stop_cfg is None:
-        print(
-            "Warning: cfg.model.params.kl_early_stop is missing; defaulting to True"
-        )
+        print("Warning: cfg.model.params.kl_early_stop is missing; defaulting to True")
         kl_early_stop_cfg = True
     if kl_exceed_stop_fraction_cfg is None:
-        kl_exceed_stop_fraction_cfg = (
-            0.30 if kl_early_stop_cfg else 0.0
-        )
+        kl_exceed_stop_fraction_cfg = 0.30 if kl_early_stop_cfg else 0.0
     if turnover_penalty_coef_cfg is None:
-        print(
-            "Warning: cfg.model.params.turnover_penalty_coef is missing; defaulting to 0.0"
-        )
+        print("Warning: cfg.model.params.turnover_penalty_coef is missing; defaulting to 0.0")
         turnover_penalty_coef_cfg = 0.0
 
-    if reward_return_clip_cfg is None or not math.isfinite(reward_return_clip_cfg) or reward_return_clip_cfg <= 0.0:
+    if (
+        reward_return_clip_cfg is None
+        or not math.isfinite(reward_return_clip_cfg)
+        or reward_return_clip_cfg <= 0.0
+    ):
         reward_return_clip_cfg = 10.0
-    if turnover_norm_cap_cfg is None or not math.isfinite(turnover_norm_cap_cfg) or turnover_norm_cap_cfg <= 0.0:
+    if (
+        turnover_norm_cap_cfg is None
+        or not math.isfinite(turnover_norm_cap_cfg)
+        or turnover_norm_cap_cfg <= 0.0
+    ):
         turnover_norm_cap_cfg = 1.0
     if reward_cap_cfg is None or not math.isfinite(reward_cap_cfg) or reward_cap_cfg <= 0.0:
         reward_cap_cfg = 10.0
@@ -2892,10 +2929,7 @@ def objective(trial: optuna.Trial,
             "value_scale_range_max_rel_step",
         )
 
-    if (
-        value_scale_range_max_rel_step_cfg is None
-        and not value_scale_range_max_rel_step_provided
-    ):
+    if value_scale_range_max_rel_step_cfg is None and not value_scale_range_max_rel_step_provided:
         value_scale_range_max_rel_step_cfg = 0.5
         stability_raw = _get_model_param_value(cfg, "value_scale_stability")
         if isinstance(stability_raw, Mapping):
@@ -3012,17 +3046,41 @@ def objective(trial: optuna.Trial,
 
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
-        "n_steps": n_steps_cfg if n_steps_cfg is not None else trial.suggest_categorical("n_steps", [512, 1024, 2048]),
+        "n_steps": (
+            n_steps_cfg
+            if n_steps_cfg is not None
+            else trial.suggest_categorical("n_steps", [512, 1024, 2048])
+        ),
         "n_epochs": int(n_epochs_cfg),
-        "batch_size": batch_size_cfg if batch_size_cfg is not None else trial.suggest_categorical("batch_size", [64, 128, 256]),
-        "ent_coef": ent_coef_cfg if ent_coef_cfg is not None else trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True),
+        "batch_size": (
+            batch_size_cfg
+            if batch_size_cfg is not None
+            else trial.suggest_categorical("batch_size", [64, 128, 256])
+        ),
+        "ent_coef": (
+            ent_coef_cfg
+            if ent_coef_cfg is not None
+            else trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True)
+        ),
         "ent_coef_final": ent_coef_final_cfg if ent_coef_final_cfg is not None else None,
         "ent_coef_min": ent_coef_min_cfg if ent_coef_min_cfg is not None else 5e-4,
-        "ent_coef_decay_steps": ent_coef_decay_steps_cfg if ent_coef_decay_steps_cfg is not None else 0,
-        "ent_coef_plateau_window": ent_coef_plateau_window_cfg if ent_coef_plateau_window_cfg is not None else 0,
-        "ent_coef_plateau_tolerance": ent_coef_plateau_tolerance_cfg if ent_coef_plateau_tolerance_cfg is not None else 0.0,
-        "ent_coef_plateau_min_updates": ent_coef_plateau_min_updates_cfg if ent_coef_plateau_min_updates_cfg is not None else 0,
-        "learning_rate": learning_rate_cfg if learning_rate_cfg is not None else trial.suggest_float("learning_rate", 1e-4, 5e-4, log=True),
+        "ent_coef_decay_steps": (
+            ent_coef_decay_steps_cfg if ent_coef_decay_steps_cfg is not None else 0
+        ),
+        "ent_coef_plateau_window": (
+            ent_coef_plateau_window_cfg if ent_coef_plateau_window_cfg is not None else 0
+        ),
+        "ent_coef_plateau_tolerance": (
+            ent_coef_plateau_tolerance_cfg if ent_coef_plateau_tolerance_cfg is not None else 0.0
+        ),
+        "ent_coef_plateau_min_updates": (
+            ent_coef_plateau_min_updates_cfg if ent_coef_plateau_min_updates_cfg is not None else 0
+        ),
+        "learning_rate": (
+            learning_rate_cfg
+            if learning_rate_cfg is not None
+            else trial.suggest_float("learning_rate", 1e-4, 5e-4, log=True)
+        ),
         "optimizer_lr_min": optimizer_lr_min_value,
         "scheduler_min_lr": scheduler_min_lr_value,
         "optimizer_lr_max": optimizer_lr_max_value,
@@ -3030,10 +3088,22 @@ def objective(trial: optuna.Trial,
         "risk_aversion_variance": trial.suggest_float("risk_aversion_variance", 0.005, 0.01),
         "weight_decay": trial.suggest_float("weight_decay", 1e-6, 1e-2, log=True),
         "gamma": gamma_cfg if gamma_cfg is not None else trial.suggest_float("gamma", 0.97, 0.995),
-        "gae_lambda": gae_lambda_cfg if gae_lambda_cfg is not None else trial.suggest_float("gae_lambda", 0.8, 1.0),
-        "clip_range": clip_range_cfg if clip_range_cfg is not None else trial.suggest_float("clip_range", 0.08, 0.12),
+        "gae_lambda": (
+            gae_lambda_cfg
+            if gae_lambda_cfg is not None
+            else trial.suggest_float("gae_lambda", 0.8, 1.0)
+        ),
+        "clip_range": (
+            clip_range_cfg
+            if clip_range_cfg is not None
+            else trial.suggest_float("clip_range", 0.08, 0.12)
+        ),
         "clip_range_vf": clip_range_vf_cfg,
-        "max_grad_norm": max_grad_norm_cfg if max_grad_norm_cfg is not None else trial.suggest_float("max_grad_norm", 0.3, 1.0),
+        "max_grad_norm": (
+            max_grad_norm_cfg
+            if max_grad_norm_cfg is not None
+            else trial.suggest_float("max_grad_norm", 0.3, 1.0)
+        ),
         "target_kl": float(np.clip(target_kl_cfg, 0.02, 1.6)),
         "kl_epoch_decay": kl_epoch_decay_cfg if kl_epoch_decay_cfg is not None else 0.5,
         "kl_penalty_beta_init": (
@@ -3045,19 +3115,13 @@ def objective(trial: optuna.Trial,
         "kl_penalty_beta_max": (
             kl_penalty_beta_max_cfg if kl_penalty_beta_max_cfg is not None else 1.0
         ),
-        "kl_penalty_pid_kp": (
-            kl_penalty_pid_kp_cfg if kl_penalty_pid_kp_cfg is not None else 0.5
-        ),
-        "kl_penalty_pid_ki": (
-            kl_penalty_pid_ki_cfg if kl_penalty_pid_ki_cfg is not None else 0.05
-        ),
-        "kl_penalty_pid_kd": (
-            kl_penalty_pid_kd_cfg if kl_penalty_pid_kd_cfg is not None else 0.10
-        ),
+        "kl_penalty_pid_kp": (kl_penalty_pid_kp_cfg if kl_penalty_pid_kp_cfg is not None else 0.5),
+        "kl_penalty_pid_ki": (kl_penalty_pid_ki_cfg if kl_penalty_pid_ki_cfg is not None else 0.05),
+        "kl_penalty_pid_kd": (kl_penalty_pid_kd_cfg if kl_penalty_pid_kd_cfg is not None else 0.10),
         "kl_penalty_type": kl_penalty_type,
-        "kl_use_lr_decay_requested": bool(kl_use_lr_decay_cfg)
-        if kl_use_lr_decay_cfg is not None
-        else False,
+        "kl_use_lr_decay_requested": (
+            bool(kl_use_lr_decay_cfg) if kl_use_lr_decay_cfg is not None else False
+        ),
         "hidden_dim": trial.suggest_categorical("hidden_dim", [64, 128, 256]),
         "atr_multiplier": trial.suggest_float("atr_multiplier", 1.5, 3.0),
         "trailing_atr_mult": trial.suggest_float("trailing_atr_mult", 1.0, 2.0),
@@ -3065,19 +3129,19 @@ def objective(trial: optuna.Trial,
         "momentum_factor": trial.suggest_float("momentum_factor", 0.1, 0.7),
         "mean_reversion_factor": trial.suggest_float("mean_reversion_factor", 0.2, 0.8),
         "adversarial_factor": trial.suggest_float("adversarial_factor", 0.3, 0.9),
-        "vf_coef": (
-            vf_coef_cfg if vf_coef_cfg is not None else 1.8
+        "vf_coef": (vf_coef_cfg if vf_coef_cfg is not None else 1.8),
+        "v_range_ema_alpha": (
+            v_range_ema_alpha_cfg
+            if v_range_ema_alpha_cfg is not None
+            else trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True)
         ),
-        "v_range_ema_alpha": v_range_ema_alpha_cfg if v_range_ema_alpha_cfg is not None else trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
         "bc_warmup_steps": bc_warmup_steps_cfg if bc_warmup_steps_cfg is not None else 0,
         "bc_decay_steps": bc_decay_steps_cfg if bc_decay_steps_cfg is not None else 0,
         "bc_final_coef": bc_final_coef_cfg if bc_final_coef_cfg is not None else 0.0,
     }
 
     params["value_scale_update_enabled"] = (
-        bool(value_scale_update_enabled_cfg)
-        if value_scale_update_enabled_cfg is not None
-        else True
+        bool(value_scale_update_enabled_cfg) if value_scale_update_enabled_cfg is not None else True
     )
     params["value_target_scale_fixed"] = value_target_scale_fixed_cfg
     params["normalize_returns"] = (
@@ -3110,14 +3174,10 @@ def objective(trial: optuna.Trial,
         value_scale_std_floor_cfg if value_scale_std_floor_cfg is not None else 3e-3
     )
     params["value_scale_window_updates"] = (
-        value_scale_window_updates_cfg
-        if value_scale_window_updates_cfg is not None
-        else 16
+        value_scale_window_updates_cfg if value_scale_window_updates_cfg is not None else 16
     )
     params["value_scale_warmup_updates"] = (
-        value_scale_warmup_updates_cfg
-        if value_scale_warmup_updates_cfg is not None
-        else 0
+        value_scale_warmup_updates_cfg if value_scale_warmup_updates_cfg is not None else 0
     )
     params["value_scale_freeze_after"] = value_scale_freeze_after_cfg
     params["value_scale_freeze_after_updates"] = value_scale_freeze_after_updates_cfg
@@ -3151,7 +3211,9 @@ def objective(trial: optuna.Trial,
     )
     params["entropy_boost_cap"] = entropy_boost_cap_cfg
     params["clip_range_warmup"] = (
-        clip_range_warmup_cfg if clip_range_warmup_cfg is not None else max(params["clip_range"], 0.18)
+        clip_range_warmup_cfg
+        if clip_range_warmup_cfg is not None
+        else max(params["clip_range"], 0.18)
     )
     params["clip_range_warmup_updates"] = (
         clip_range_warmup_updates_cfg if clip_range_warmup_updates_cfg is not None else 12
@@ -3165,31 +3227,27 @@ def objective(trial: optuna.Trial,
     params["cvar_activation_hysteresis"] = (
         cvar_activation_hysteresis_cfg if cvar_activation_hysteresis_cfg is not None else 0.05
     )
-    params["cvar_ramp_updates"] = (
-        cvar_ramp_updates_cfg if cvar_ramp_updates_cfg is not None else 6
-    )
+    params["cvar_ramp_updates"] = cvar_ramp_updates_cfg if cvar_ramp_updates_cfg is not None else 6
 
     if kl_exceed_stop_fraction_override is not None:
         kl_exceed_stop_fraction_cfg = kl_exceed_stop_fraction_override
     if kl_absolute_stop_factor_override is not None:
         kl_absolute_stop_factor_cfg = kl_absolute_stop_factor_override
 
-    kl_early_stop_value = (
-        True if kl_early_stop_cfg is None else bool(kl_early_stop_cfg)
-    )
+    kl_early_stop_value = True if kl_early_stop_cfg is None else bool(kl_early_stop_cfg)
     params["kl_early_stop"] = kl_early_stop_value
 
     if kl_exceed_stop_fraction_cfg is not None:
-        kl_exceed_stop_fraction_value = float(
-            np.clip(kl_exceed_stop_fraction_cfg, 0.0, 1.0)
-        )
+        kl_exceed_stop_fraction_value = float(np.clip(kl_exceed_stop_fraction_cfg, 0.0, 1.0))
     elif kl_early_stop_value:
         kl_exceed_stop_fraction_value = 0.30
     else:
         kl_exceed_stop_fraction_value = 0.0
     params["kl_exceed_stop_fraction"] = kl_exceed_stop_fraction_value
 
-    kl_early_stop_use_ema_value = True if kl_early_stop_use_ema_cfg is None else bool(kl_early_stop_use_ema_cfg)
+    kl_early_stop_use_ema_value = (
+        True if kl_early_stop_use_ema_cfg is None else bool(kl_early_stop_use_ema_cfg)
+    )
     if kl_ema_updates_cfg is None:
         kl_ema_updates_value = 10
     else:
@@ -3274,7 +3332,9 @@ def objective(trial: optuna.Trial,
     else:
         params["cvar_alpha"] = trial.suggest_float("cvar_alpha", 0.01, 0.20)
 
-    cvar_weight_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cvar_weight"), "cvar_weight")
+    cvar_weight_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "cvar_weight"), "cvar_weight"
+    )
     if cvar_weight_cfg is not None:
         params["cvar_weight"] = cvar_weight_cfg
     else:
@@ -3382,9 +3442,9 @@ def objective(trial: optuna.Trial,
         RSI_WINDOW,
         CCI_WINDOW,
         BB_WINDOW,
-        OBV_MA_WINDOW
+        OBV_MA_WINDOW,
     )
-    
+
     # 2. Устанавливаем период прогрева с запасом (рекомендуется x2).
     #    Это гарантирует полную стабилизацию даже для вложенных сглаживаний,
     #    как в сигнальной линии MACD.
@@ -3437,12 +3497,11 @@ def objective(trial: optuna.Trial,
             execution_mode = execution_blob.get("mode")
     normalized_exec_mode = str(execution_mode or "").strip().lower()
     if normalized_exec_mode != "bar":
-        raise RuntimeError(
-            "Score-based policy requires execution.mode='bar' in configuration"
-        )
+        raise RuntimeError("Score-based policy requires execution.mode='bar' in configuration")
     policy_arch_params["execution_mode"] = normalized_exec_mode
 
-    if not train_data_by_token: raise ValueError("Нет данных для обучения в этом trial.")
+    if not train_data_by_token:
+        raise ValueError("Нет данных для обучения в этом trial.")
 
     n_envs_cfg = _coerce_optional_int(_get_model_param_value(cfg, "n_envs"), "n_envs")
     n_envs = 8
@@ -3460,7 +3519,9 @@ def objective(trial: optuna.Trial,
     except Exception:
         cpu_count = 1
     if n_envs > cpu_count:
-        print(f"Requested {n_envs} envs exceeds available CPU cores ({cpu_count}); capping to {cpu_count}.")
+        print(
+            f"Requested {n_envs} envs exceeds available CPU cores ({cpu_count}); capping to {cpu_count}."
+        )
         n_envs = cpu_count
     if n_envs < 1:
         raise ValueError("Computed n_envs must be at least 1")
@@ -3470,7 +3531,9 @@ def objective(trial: optuna.Trial,
     total_batch_size = params["n_steps"] * n_envs
     batch_size = params["batch_size"]
     if batch_size <= 0:
-        raise ValueError("Invalid configuration: 'batch_size' must be a positive integer in cfg.model.params")
+        raise ValueError(
+            "Invalid configuration: 'batch_size' must be a positive integer in cfg.model.params"
+        )
     if batch_size > total_batch_size:
         raise ValueError(
             "Invalid configuration: 'batch_size' cannot exceed n_steps * num_envs in cfg.model.params"
@@ -3535,10 +3598,8 @@ def objective(trial: optuna.Trial,
                 "momentum_factor": params["momentum_factor"],
                 "mean_reversion_factor": params["mean_reversion_factor"],
                 "adversarial_factor": params["adversarial_factor"],
-
                 # 2. Данные, которые передаются в функцию objective
                 "norm_stats": norm_stats,
-
                 # 3. Статические параметры и параметры индикаторов
                 "mode": "train",
                 "reward_shaping": False,
@@ -3554,7 +3615,6 @@ def objective(trial: optuna.Trial,
                 "cci_window": CCI_WINDOW,
                 "bb_window": BB_WINDOW,
                 "obv_ma_window": OBV_MA_WINDOW,
-
             }
             env_params.update(sim_config)
             env_params.update(timing_env_kwargs)
@@ -3566,9 +3626,7 @@ def objective(trial: optuna.Trial,
                 and math.isfinite(reward_robust_clip_fraction_value)
                 and reward_robust_clip_fraction_value > 0.0
             ):
-                env_params["reward_robust_clip_fraction"] = (
-                    reward_robust_clip_fraction_value
-                )
+                env_params["reward_robust_clip_fraction"] = reward_robust_clip_fraction_value
 
             env = TradingEnv(
                 df,
@@ -3577,15 +3635,11 @@ def objective(trial: optuna.Trial,
                 seed=unique_seed,
             )
             if reward_robust_clip_fraction_value is None:
-                candidate_fraction = float(
-                    getattr(env, "reward_robust_clip_fraction", 0.0)
-                )
+                candidate_fraction = float(getattr(env, "reward_robust_clip_fraction", 0.0))
                 if math.isfinite(candidate_fraction) and candidate_fraction > 0.0:
                     reward_robust_clip_fraction_value = candidate_fraction
             elif hasattr(env, "reward_robust_clip_fraction"):
-                env.reward_robust_clip_fraction = float(
-                    reward_robust_clip_fraction_value
-                )
+                env.reward_robust_clip_fraction = float(reward_robust_clip_fraction_value)
             setattr(env, "selected_symbol", symbol)
 
             # ==========================================================================
@@ -3609,6 +3663,7 @@ def objective(trial: optuna.Trial,
                 long_only=long_only_flag,
             )
             return env
+
         return _init
 
     env_constructors = [make_env_train(rank=i) for i in range(n_envs)]
@@ -3669,7 +3724,7 @@ def objective(trial: optuna.Trial,
             "momentum_window": MOMENTUM_WINDOW,
             "cci_window": CCI_WINDOW,
             "bb_window": BB_WINDOW,
-            "obv_ma_window": OBV_MA_WINDOW
+            "obv_ma_window": OBV_MA_WINDOW,
         }
         env_val_params.update(sim_config)
         env_val_params.update(timing_env_kwargs)
@@ -3679,9 +3734,7 @@ def objective(trial: optuna.Trial,
             and math.isfinite(reward_robust_clip_fraction_value)
             and reward_robust_clip_fraction_value > 0.0
         ):
-            env_val_params["reward_robust_clip_fraction"] = (
-                reward_robust_clip_fraction_value
-            )
+            env_val_params["reward_robust_clip_fraction"] = reward_robust_clip_fraction_value
 
         env = TradingEnv(
             df,
@@ -3812,9 +3865,7 @@ def objective(trial: optuna.Trial,
     optimizer_steps_per_rollout = max(1, num_minibatches_per_rollout)
 
     # Итоговое количество шагов оптимизатора за все обучение
-    total_optimizer_steps = (
-        num_rollouts * params["n_epochs"] * optimizer_steps_per_rollout
-    )
+    total_optimizer_steps = num_rollouts * params["n_epochs"] * optimizer_steps_per_rollout
 
     optimization_cfg = getattr(cfg, "optimization", None)
     scheduler_cfg = None
@@ -3830,7 +3881,12 @@ def objective(trial: optuna.Trial,
         scheduler_enabled_value = getattr(scheduler_cfg, "enabled", True)
 
     if isinstance(scheduler_enabled_value, str):
-        scheduler_enabled = scheduler_enabled_value.strip().lower() not in {"0", "false", "no", "off"}
+        scheduler_enabled = scheduler_enabled_value.strip().lower() not in {
+            "0",
+            "false",
+            "no",
+            "off",
+        }
     elif scheduler_enabled_value is None:
         scheduler_enabled = True
     else:
@@ -3880,24 +3936,18 @@ def objective(trial: optuna.Trial,
         "range_max_rel_step": params["value_scale_range_max_rel_step"],
     }
     if params["value_scale_freeze_after_updates"] is not None:
-        value_scale_kwargs["freeze_after_updates"] = params[
-            "value_scale_freeze_after_updates"
-        ]
+        value_scale_kwargs["freeze_after_updates"] = params["value_scale_freeze_after_updates"]
     if params["value_scale_never_freeze"] is not None:
         value_scale_kwargs["never_freeze"] = params["value_scale_never_freeze"]
     if params["value_scale_target_ema_beta"] is not None:
-        value_scale_kwargs["target_scale_ema_beta"] = params[
-            "value_scale_target_ema_beta"
-        ]
+        value_scale_kwargs["target_scale_ema_beta"] = params["value_scale_target_ema_beta"]
     if params["value_scale_max_change_pct"] is not None:
         value_scale_kwargs["max_change_pct"] = params["value_scale_max_change_pct"]
     stability_params = params["value_scale_stability"]
     if stability_params:
         value_scale_kwargs["stability"] = stability_params
     if params["value_scale_stability_patience"] is not None:
-        value_scale_kwargs["stability_patience"] = params[
-            "value_scale_stability_patience"
-        ]
+        value_scale_kwargs["stability_patience"] = params["value_scale_stability_patience"]
 
     model = DistributionalPPO(
         use_torch_compile=use_torch_compile,
@@ -3929,11 +3979,9 @@ def objective(trial: optuna.Trial,
         value_scale=value_scale_kwargs,
         value_scale_controller=params.get("value_scale_controller"),
         value_scale_controller_holdout=popart_holdout_loader,
-
         value_scale_update_enabled=params["value_scale_update_enabled"],
         value_target_scale_fixed=params["value_target_scale_fixed"],
         normalize_returns=params["normalize_returns"],
-
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],
         bc_final_coef=0.0,
@@ -3943,7 +3991,6 @@ def objective(trial: optuna.Trial,
         ent_coef_plateau_window=params["ent_coef_plateau_window"],
         ent_coef_plateau_tolerance=params["ent_coef_plateau_tolerance"],
         ent_coef_plateau_min_updates=params["ent_coef_plateau_min_updates"],
-
         cvar_cap=params["cvar_cap"],
         cvar_activation_threshold=params["cvar_activation_threshold"],
         cvar_activation_hysteresis=params["cvar_activation_hysteresis"],
@@ -3962,7 +4009,6 @@ def objective(trial: optuna.Trial,
         kl_penalty_pid_kp=params.get("kl_penalty_pid_kp", 0.5),
         kl_penalty_pid_ki=params.get("kl_penalty_pid_ki", 0.05),
         kl_penalty_pid_kd=params.get("kl_penalty_pid_kd", 0.10),
-
         learning_rate=params["learning_rate"],
         optimizer_lr_min=params["optimizer_lr_min"],
         scheduler_min_lr=params["scheduler_min_lr"],
@@ -3985,7 +4031,7 @@ def objective(trial: optuna.Trial,
         loss_head_weights=loss_head_weights,
         policy_kwargs=policy_kwargs,
         tensorboard_log=str(tb_log_path) if tb_log_path is not None else None,
-        verbose=1
+        verbose=1,
     )
 
     _ensure_model_popart_holdout_loader(
@@ -3999,9 +4045,7 @@ def objective(trial: optuna.Trial,
         "kl_beta",
         params.get("kl_penalty_beta_init", 0.01),
     )
-    kl_early_stop_logged = bool(
-        getattr(model, "kl_early_stop", params.get("kl_early_stop", True))
-    )
+    kl_early_stop_logged = bool(getattr(model, "kl_early_stop", params.get("kl_early_stop", True)))
     target_kl_logged = getattr(model, "target_kl", params.get("target_kl", 0.08))
     if target_kl_logged is None:
         target_kl_logged = params.get("target_kl", 0.08)
@@ -4034,9 +4078,7 @@ def objective(trial: optuna.Trial,
             pass
     if model_logger is not None:
         model_logger.record("config/target_kl", float(target_kl_logged))
-        model_logger.record(
-            "config/kl_exceed_stop_fraction", float(kl_exceed_stop_fraction_logged)
-        )
+        model_logger.record("config/kl_exceed_stop_fraction", float(kl_exceed_stop_fraction_logged))
         if kl_absolute_stop_factor_logged is not None:
             model_logger.record(
                 "config/kl_absolute_stop_factor",
@@ -4070,18 +4112,18 @@ def objective(trial: optuna.Trial,
             1.0 if params.get("kl_use_lr_decay_requested", False) else 0.0,
         )
 
-    
-
-
-
     lr_logger = OptimizerLrLoggingCallback()
     nan_guard = NanGuardCallback()
 
     # Быстрый колбэк для раннего отсечения по простой метрике
-    sortino_pruner = SortinoPruningCallback(trial, eval_env=env_va, eval_freq=50_000, n_eval_episodes=10)
+    sortino_pruner = SortinoPruningCallback(
+        trial, eval_env=env_va, eval_freq=50_000, n_eval_episodes=10
+    )
 
     # Медленный, но точный колбэк для позднего отсечения по финальной метрике
-    objective_pruner = ObjectiveScorePruningCallback(trial, eval_env=env_va, eval_freq=250_000, verbose=1)
+    objective_pruner = ObjectiveScorePruningCallback(
+        trial, eval_env=env_va, eval_freq=250_000, verbose=1
+    )
 
     all_callbacks = [lr_logger, nan_guard, sortino_pruner, objective_pruner]
 
@@ -4090,7 +4132,7 @@ def objective(trial: optuna.Trial,
             total_timesteps=total_timesteps,
             callback=all_callbacks,
             progress_bar=False,
-            tb_log_name=f"trial_{trial.number:03d}" if tb_log_path is not None else "run"
+            tb_log_name=f"trial_{trial.number:03d}" if tb_log_path is not None else "run",
         )
         ev_metrics = getattr(model, "_last_ev_metrics", None)  # FIX
         if isinstance(ev_metrics, Mapping):  # FIX
@@ -4099,7 +4141,10 @@ def objective(trial: optuna.Trial,
                 (
                     "ev_mean_unweighted",  # FIX
                     "[EV] Mean explained variance across groups (unweighted)",  # FIX
-                    ("train/ev_mean_grouped_final", "train/ev_mean_unweighted_grouped_final"),  # FIX
+                    (
+                        "train/ev_mean_grouped_final",
+                        "train/ev_mean_unweighted_grouped_final",
+                    ),  # FIX
                 ),
                 (
                     "ev_mean_weighted",  # FIX
@@ -4144,7 +4189,9 @@ def objective(trial: optuna.Trial,
                             model_logger = getattr(model, "logger", None)  # FIX
                             if model_logger is not None:  # FIX
                                 safe_name = name.replace("/", "_").replace(" ", "_")  # FIX
-                                model_logger.record(f"train/ev_grouped/worst/{safe_name}", float(value))  # FIX
+                                model_logger.record(
+                                    f"train/ev_grouped/worst/{safe_name}", float(value)
+                                )  # FIX
                     if best_items:  # FIX
                         print("[EV] Best groups:")  # FIX
                         for name, value in best_items:  # FIX
@@ -4152,7 +4199,9 @@ def objective(trial: optuna.Trial,
                             model_logger = getattr(model, "logger", None)  # FIX
                             if model_logger is not None:  # FIX
                                 safe_name = name.replace("/", "_").replace(" ", "_")  # FIX
-                                model_logger.record(f"train/ev_grouped/best/{safe_name}", float(value))  # FIX
+                                model_logger.record(
+                                    f"train/ev_grouped/best/{safe_name}", float(value)
+                                )  # FIX
     finally:
         try:
             env_tr.training = False
@@ -4182,9 +4231,9 @@ def objective(trial: optuna.Trial,
         value_head=value_head_meta,
     )
 
-
-
-    print(f"<<< Trial {trial.number+1} finished training, starting HPO evaluation on validation set…")
+    print(
+        f"<<< Trial {trial.number+1} finished training, starting HPO evaluation on validation set…"
+    )
 
     # CRITICAL: HPO must ONLY use validation data to prevent test data leakage.
     # Using test data during hyperparameter optimization would lead to:
@@ -4202,9 +4251,9 @@ def objective(trial: optuna.Trial,
         )
 
     # 1. Определяем все режимы для оценки
-    regimes_to_evaluate = ['normal', 'choppy_flat', 'strong_trend']
+    regimes_to_evaluate = ["normal", "choppy_flat", "strong_trend"]
     final_metrics = {}
-    regime_duration = 2_500 
+    regime_duration = 2_500
 
     # 2. Последовательно оцениваем модель в каждом режиме
     for regime in regimes_to_evaluate:
@@ -4212,22 +4261,35 @@ def objective(trial: optuna.Trial,
         val_stats_path = trials_dir / f"vec_normalize_val_{trial.number}.pkl"
 
         for symbol, df in sorted(eval_phase_data.items()):
+
             def make_final_eval_env(symbol: str = symbol, df: pd.DataFrame = df):
                 final_env_params = {
-                    "norm_stats": norm_stats, "window_size": params["window_size"],
-                    "gamma": params["gamma"], "atr_multiplier": params["atr_multiplier"],
-                    "trailing_atr_mult": params["trailing_atr_mult"], "tp_atr_mult": params["tp_atr_mult"],
+                    "norm_stats": norm_stats,
+                    "window_size": params["window_size"],
+                    "gamma": params["gamma"],
+                    "atr_multiplier": params["atr_multiplier"],
+                    "trailing_atr_mult": params["trailing_atr_mult"],
+                    "tp_atr_mult": params["tp_atr_mult"],
                     "trade_frequency_penalty": params["trade_frequency_penalty"],
-                    "turnover_penalty_coef": params["turnover_penalty_coef"], "mode": eval_phase_name,
+                    "turnover_penalty_coef": params["turnover_penalty_coef"],
+                    "mode": eval_phase_name,
                     "reward_return_clip": params["reward_return_clip"],
                     "turnover_norm_cap": params["turnover_norm_cap"],
                     "reward_cap": params["reward_cap"],
                     "reward_clip": reward_clip_params,
-                    "reward_shaping": False, "warmup_period": warmup_period,
-                    "ma5_window": MA5_WINDOW, "ma20_window": MA20_WINDOW, "atr_window": ATR_WINDOW,
-                    "rsi_window": RSI_WINDOW, "macd_fast": MACD_FAST, "macd_slow": MACD_SLOW,
-                    "macd_signal": MACD_SIGNAL, "momentum_window": MOMENTUM_WINDOW,
-                    "cci_window": CCI_WINDOW, "bb_window": BB_WINDOW, "obv_ma_window": OBV_MA_WINDOW,
+                    "reward_shaping": False,
+                    "warmup_period": warmup_period,
+                    "ma5_window": MA5_WINDOW,
+                    "ma20_window": MA20_WINDOW,
+                    "atr_window": ATR_WINDOW,
+                    "rsi_window": RSI_WINDOW,
+                    "macd_fast": MACD_FAST,
+                    "macd_slow": MACD_SLOW,
+                    "macd_signal": MACD_SIGNAL,
+                    "momentum_window": MOMENTUM_WINDOW,
+                    "cci_window": CCI_WINDOW,
+                    "bb_window": BB_WINDOW,
+                    "obv_ma_window": OBV_MA_WINDOW,
                 }
                 final_env_params.update(sim_config)
                 final_env_params.update(timing_env_kwargs)
@@ -4269,7 +4331,9 @@ def objective(trial: optuna.Trial,
             _log_annualization(f"Final evaluation ({regime})", ann_sqrt, bar_seconds)
             if bar_seconds is None:
                 steps_per_year = None
-                print(f"[{regime}] Annualization sqrt factor: {ann_sqrt:.6f} (bar interval unknown)")
+                print(
+                    f"[{regime}] Annualization sqrt factor: {ann_sqrt:.6f} (bar interval unknown)"
+                )
             else:
                 steps_per_year = _SECONDS_PER_YEAR / float(bar_seconds)
                 print(
@@ -4282,17 +4346,23 @@ def objective(trial: optuna.Trial,
                     model.logger.record(f"evaluation/{regime}_steps_per_year", float("nan"))
                 else:
                     model.logger.record(f"evaluation/{regime}_bar_seconds", float(bar_seconds))
-                    model.logger.record(f"evaluation/{regime}_steps_per_year", float(steps_per_year))
+                    model.logger.record(
+                        f"evaluation/{regime}_steps_per_year", float(steps_per_year)
+                    )
                 model.logger.record(f"evaluation/{regime}_ann_factor", float(ann_sqrt))
 
             # Always set market regime explicitly to avoid state leakage from previous iteration
-            if regime != 'normal':
-                final_eval_env.env_method("set_market_regime", regime=regime, duration=regime_duration)
+            if regime != "normal":
+                final_eval_env.env_method(
+                    "set_market_regime", regime=regime, duration=regime_duration
+                )
             else:
                 # Explicitly reset to normal regime
-                final_eval_env.env_method("set_market_regime", regime='normal', duration=0)
+                final_eval_env.env_method("set_market_regime", regime="normal", duration=0)
 
-            _rewards, equity_curves = evaluate_policy_custom_cython(model, final_eval_env, num_episodes=1)
+            _rewards, equity_curves = evaluate_policy_custom_cython(
+                model, final_eval_env, num_episodes=1
+            )
             symbol_equity_curves.extend(equity_curves)
 
             nt_stats = final_eval_env.env_method("get_no_trade_stats")
@@ -4310,22 +4380,30 @@ def objective(trial: optuna.Trial,
 
         if not val_stats_path.exists():
             final_eval_norm.save(str(val_stats_path))
-            save_sidecar_metadata(str(val_stats_path), extra={"kind": "vecnorm_stats", "phase": eval_phase_name})
+            save_sidecar_metadata(
+                str(val_stats_path), extra={"kind": "vecnorm_stats", "phase": eval_phase_name}
+            )
 
-        all_returns = [pd.Series(c).pct_change().dropna().to_numpy() for c in symbol_equity_curves if len(c) > 1]
+        all_returns = [
+            pd.Series(c).pct_change().dropna().to_numpy()
+            for c in symbol_equity_curves
+            if len(c) > 1
+        ]
         flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
         final_metrics[regime] = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
 
     # --- РАСЧЕТ ИТОГОВОЙ ВЗВЕШЕННОЙ МЕТРИКИ ---
-    main_sortino = final_metrics.get('normal', -1.0)
-    choppy_score = final_metrics.get('choppy_flat', -1.0)
-    trend_score = final_metrics.get('strong_trend', -1.0)
+    main_sortino = final_metrics.get("normal", -1.0)
+    choppy_score = final_metrics.get("choppy_flat", -1.0)
+    trend_score = final_metrics.get("strong_trend", -1.0)
 
     main_weight = 0.5
     choppy_weight = 0.3
     trend_weight = 0.2
- 
-    objective_score = (main_weight * main_sortino + choppy_weight * choppy_score + trend_weight * trend_score)
+
+    objective_score = (
+        main_weight * main_sortino + choppy_weight * choppy_score + trend_weight * trend_score
+    )
 
     if model.logger is not None:
         for regime_name, score in final_metrics.items():
@@ -4339,18 +4417,18 @@ def objective(trial: optuna.Trial,
     trial.set_user_attr("trend_sortino", trend_score)
     trial.set_user_attr("final_objective", objective_score)
 
-    
-    trial.set_user_attr("final_return", 0.0) # Устанавливаем в 0, т.к. корректный расчет усложнен
+    trial.set_user_attr("final_return", 0.0)  # Устанавливаем в 0, т.к. корректный расчет усложнен
 
     print(f"\n[[OK] Trial {trial.number}] COMPLETE. Final Weighted Score: {objective_score:.4f}")
-    print(f"   Components -> Main Sortino: {main_sortino:.4f}, Choppy: {choppy_score:.4f}, Trend: {trend_score:.4f}\n")
+    print(
+        f"   Components -> Main Sortino: {main_sortino:.4f}, Choppy: {choppy_score:.4f}, Trend: {trend_score:.4f}\n"
+    )
 
     return objective_score
 
 
 def _log_features_statistics_per_symbol(
-    dfs_dict: dict[str, pd.DataFrame],
-    role_column: str = "role"
+    dfs_dict: dict[str, pd.DataFrame], role_column: str = "role"
 ) -> None:
     """
     Логирование детальной статистики признаков для каждого символа.
@@ -4387,7 +4465,9 @@ def _log_features_statistics_per_symbol(
 
         # Guard against empty feature set
         if total_features == 0:
-            logger.warning(f"  [WARN]  Символ {symbol}: нет признаков после исключения служебных колонок")
+            logger.warning(
+                f"  [WARN]  Символ {symbol}: нет признаков после исключения служебных колонок"
+            )
             logger.warning(f"      Служебные колонки исключены: {service_cols}")
             logger.warning(f"      Все колонки датафрейма: {set(train_df.columns)}")
             continue
@@ -4402,11 +4482,9 @@ def _log_features_statistics_per_symbol(
             non_nan_count = train_df[col].notna().sum()
             fill_percentage = (non_nan_count / total_samples * 100) if total_samples > 0 else 0
 
-            features_stats.append({
-                'feature': col,
-                'non_nan_count': non_nan_count,
-                'fill_percentage': fill_percentage
-            })
+            features_stats.append(
+                {"feature": col, "non_nan_count": non_nan_count, "fill_percentage": fill_percentage}
+            )
 
             if fill_percentage == 100.0:
                 fully_filled += 1
@@ -4416,13 +4494,19 @@ def _log_features_statistics_per_symbol(
                 empty_features += 1
 
         # Сортировка по проценту заполненности
-        features_stats.sort(key=lambda x: x['fill_percentage'], reverse=True)
+        features_stats.sort(key=lambda x: x["fill_percentage"], reverse=True)
 
         # Сводная статистика
         logger.info("  СВОДКА:")
-        logger.info(f"    Признаков с 100% данными: {fully_filled} ({fully_filled/total_features*100:.1f}%)")
-        logger.info(f"    Признаков с частичными данными: {partially_filled} ({partially_filled/total_features*100:.1f}%)")
-        logger.info(f"    Признаков без данных: {empty_features} ({empty_features/total_features*100:.1f}%)")
+        logger.info(
+            f"    Признаков с 100% данными: {fully_filled} ({fully_filled/total_features*100:.1f}%)"
+        )
+        logger.info(
+            f"    Признаков с частичными данными: {partially_filled} ({partially_filled/total_features*100:.1f}%)"
+        )
+        logger.info(
+            f"    Признаков без данных: {empty_features} ({empty_features/total_features*100:.1f}%)"
+        )
 
         # Показываем топ-10 наиболее заполненных и топ-10 наименее заполненных признаков
         logger.info("  ТОП-10 наиболее заполненных признаков:")
@@ -4489,12 +4573,17 @@ def main():
     # as MARKET_REGIMES_JSON) so deep call sites don't need arg threading.
     try:
         from services.hardware import resolve_device as _resolve_device
+
         _dev = _resolve_device(args.device)
         os.environ["RIVEN_TRAIN_DEVICE_EFFECTIVE"] = _dev["effective"]
-        print(f"[device] requested={_dev['requested']} effective={_dev['effective']} — {_dev['reason']}")
+        print(
+            f"[device] requested={_dev['requested']} effective={_dev['effective']} — {_dev['reason']}"
+        )
     except Exception as _dev_exc:  # никогда не роняем тренировку из-за детекции
         os.environ.setdefault("RIVEN_TRAIN_DEVICE_EFFECTIVE", args.device or "auto")
-        print(f"[device] detection failed ({_dev_exc}) — using {os.environ['RIVEN_TRAIN_DEVICE_EFFECTIVE']}")
+        print(
+            f"[device] detection failed ({_dev_exc}) — using {os.environ['RIVEN_TRAIN_DEVICE_EFFECTIVE']}"
+        )
 
     raw_tensorboard_dir = (args.tensorboard_log_dir or "").strip()
     if raw_tensorboard_dir.lower() in {"", "none", "null"}:
@@ -4559,7 +4648,9 @@ def main():
         )
 
     config_path = Path(args.config)
-    raw_cfg_loaded = yaml.safe_load(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
+    raw_cfg_loaded = (
+        yaml.safe_load(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
+    )
     if not isinstance(raw_cfg_loaded, Mapping):
         raw_cfg_loaded = {}
     env_payload: dict[str, Any] | None = None
@@ -4577,7 +4668,7 @@ def main():
             key = unknown[i][2:]
             if i + 1 >= len(unknown):
                 raise ValueError(f"Missing value for argument {unknown[i]}")
-            block, field = key.split('.', 1)
+            block, field = key.split(".", 1)
             value = yaml.safe_load(unknown[i + 1])
             overrides.setdefault(block, {})[field] = value
             i += 2
@@ -4615,11 +4706,7 @@ def main():
             ):
                 continue
 
-            if (
-                block == "model"
-                and key == "params"
-                and isinstance(value, Mapping)
-            ):
+            if block == "model" and key == "params" and isinstance(value, Mapping):
                 existing_params = block_dict.get("params")
                 if isinstance(existing_params, Mapping):
                     merged_params = dict(existing_params)
@@ -4659,9 +4746,7 @@ def main():
         env_payload_candidate = maybe_cfg_env if isinstance(maybe_cfg_env, Mapping) else None
     else:
         env_payload_candidate = None
-    env_runtime_overrides, decision_override = _extract_env_runtime_overrides(
-        env_payload_candidate
-    )
+    env_runtime_overrides, decision_override = _extract_env_runtime_overrides(env_payload_candidate)
 
     timing_defaults, timing_profiles = load_timing_profiles()
     exec_profile = getattr(cfg, "execution_profile", ExecutionProfile.MKT_OPEN_NEXT_H1)
@@ -4678,14 +4763,18 @@ def main():
         "min_lookback_ms": resolved_timing.min_lookback_ms,
     }
 
-    sim_config = {k: getattr(cfg, k) for k in ("quantizer", "slippage", "fees", "latency", "risk", "no_trade")}
+    sim_config = {
+        k: getattr(cfg, k) for k in ("quantizer", "slippage", "fees", "latency", "risk", "no_trade")
+    }
     sim_config["liquidity_seasonality_path"] = args.liquidity_seasonality
     liq_hash = _file_sha256(args.liquidity_seasonality)
     if liq_hash:
         sim_config["liquidity_seasonality_hash"] = liq_hash
         print(f"Liquidity seasonality hash: {liq_hash}")
     else:
-        print(f"Warning: could not compute hash for {args.liquidity_seasonality}; seasonality consistency not enforced")
+        print(
+            f"Warning: could not compute hash for {args.liquidity_seasonality}; seasonality consistency not enforced"
+        )
 
     processed_data_dir = getattr(cfg.data, "processed_dir", "data/processed")
     run_id = getattr(cfg, "run_id", "default-run")
@@ -4711,16 +4800,21 @@ def main():
     #   - currency_futures: CME currency futures (6E, 6J, etc.)
     # ==========================================================================
     asset_class = (
-        getattr(cfg, "asset_class", None)
-        or getattr(cfg.data, "asset_class", None)
-        or "crypto"
+        getattr(cfg, "asset_class", None) or getattr(cfg.data, "asset_class", None) or "crypto"
     ).lower()
 
     # Check if this is a futures asset class
     futures_asset_classes = {
-        "crypto_futures", "futures", "crypto_perp", "crypto_perpetual",
-        "crypto_quarterly", "index_futures", "commodity_futures",
-        "currency_futures", "bond_futures", "cme_futures"
+        "crypto_futures",
+        "futures",
+        "crypto_perp",
+        "crypto_perpetual",
+        "crypto_quarterly",
+        "index_futures",
+        "commodity_futures",
+        "currency_futures",
+        "bond_futures",
+        "cme_futures",
     }
     is_futures = asset_class in futures_asset_classes
 
@@ -4737,7 +4831,9 @@ def main():
                 "initial_leverage": getattr(cfg_futures, "initial_leverage", 10),
                 "max_leverage": getattr(cfg_futures, "max_leverage", 50),
                 "margin_mode": getattr(cfg_futures, "margin_mode", "cross"),
-                "include_funding_in_reward": getattr(cfg_futures, "include_funding_in_reward", True),
+                "include_funding_in_reward": getattr(
+                    cfg_futures, "include_funding_in_reward", True
+                ),
                 "liquidation_penalty": getattr(cfg_futures, "liquidation_penalty", -10.0),
                 "futures_type": asset_class,
             }
@@ -4766,8 +4862,10 @@ def main():
             except Exception as e:
                 logger.warning("Failed to load feature flags from %s: %s", feature_flags_path, e)
 
-        print(f"Futures mode enabled: leverage={futures_config.get('initial_leverage', 10)}x, "
-              f"margin={futures_config.get('margin_mode', 'cross')}")
+        print(
+            f"Futures mode enabled: leverage={futures_config.get('initial_leverage', 10)}x, "
+            f"margin={futures_config.get('margin_mode', 'cross')}"
+        )
 
     # Get timeframe for equity data processing
     data_timeframe = getattr(cfg.data, "timeframe", "4h")
@@ -4855,15 +4953,25 @@ def main():
             raise FileNotFoundError(error_msg)
 
         # Load funding rate data if available
-        funding_paths = getattr(cfg.data, "funding_paths", None) or ["data/futures/*_funding.parquet"]
+        funding_paths = getattr(cfg.data, "funding_paths", None) or [
+            "data/futures/*_funding.parquet"
+        ]
         for pattern in funding_paths:
             funding_files = glob.glob(pattern)
             if funding_files:
                 funding_data = {}
                 for fpath in funding_files:
                     try:
-                        symbol = os.path.basename(fpath).replace("_funding.parquet", "").replace("_funding.feather", "")
-                        df = pd.read_parquet(fpath) if fpath.endswith(".parquet") else pd.read_feather(fpath)
+                        symbol = (
+                            os.path.basename(fpath)
+                            .replace("_funding.parquet", "")
+                            .replace("_funding.feather", "")
+                        )
+                        df = (
+                            pd.read_parquet(fpath)
+                            if fpath.endswith(".parquet")
+                            else pd.read_feather(fpath)
+                        )
                         funding_data[symbol] = df
                         logger.info("Loaded funding data for %s (%d rows)", symbol, len(df))
                     except Exception as e:
@@ -4951,9 +5059,9 @@ def main():
             "rows": len(df),
             "min_ts": min_ts,
             "max_ts": max_ts,
-            "min_date": pd.to_datetime(min_ts, unit='s', utc=True).strftime("%Y-%m-%d %H:%M:%S"),
-            "max_date": pd.to_datetime(max_ts, unit='s', utc=True).strftime("%Y-%m-%d %H:%M:%S"),
-            "days": (max_ts - min_ts) / 86400
+            "min_date": pd.to_datetime(min_ts, unit="s", utc=True).strftime("%Y-%m-%d %H:%M:%S"),
+            "max_date": pd.to_datetime(max_ts, unit="s", utc=True).strftime("%Y-%m-%d %H:%M:%S"),
+            "days": (max_ts - min_ts) / 86400,
         }
 
         if global_min_ts is None or min_ts < global_min_ts:
@@ -4970,13 +5078,19 @@ def main():
     print(f"Всего строк: {total_rows}")
     print(f"\nДиапазон данных по символам:")
     for symbol, stats in sorted(data_stats.items()):
-        print(f"  {symbol:12s}: {stats['rows']:6d} строк | "
-              f"{stats['min_date']} -> {stats['max_date']} ({stats['days']:.1f} дней)")
+        print(
+            f"  {symbol:12s}: {stats['rows']:6d} строк | "
+            f"{stats['min_date']} -> {stats['max_date']} ({stats['days']:.1f} дней)"
+        )
 
     print(f"\n{'-'*80}")
     print(f"ОБЩИЙ ДИАПАЗОН ДАННЫХ:")
-    print(f"  От: {pd.to_datetime(global_min_ts, unit='s', utc=True).strftime('%Y-%m-%d %H:%M:%S')} (ts: {global_min_ts})")
-    print(f"  До: {pd.to_datetime(global_max_ts, unit='s', utc=True).strftime('%Y-%m-%d %H:%M:%S')} (ts: {global_max_ts})")
+    print(
+        f"  От: {pd.to_datetime(global_min_ts, unit='s', utc=True).strftime('%Y-%m-%d %H:%M:%S')} (ts: {global_min_ts})"
+    )
+    print(
+        f"  До: {pd.to_datetime(global_max_ts, unit='s', utc=True).strftime('%Y-%m-%d %H:%M:%S')} (ts: {global_max_ts})"
+    )
     print(f"  Период: {(global_max_ts - global_min_ts) / 86400:.1f} дней")
     print(f"{'-'*80}\n")
 
@@ -5003,7 +5117,9 @@ def main():
 
     # === АВТОМАТИЧЕСКАЯ НАСТРОЙКА SPLIT ===
     # Проверяем конфигурацию split
-    train_start_cfg = getattr(cfg.data, "train_start_ts", None) or getattr(cfg.data, "start_ts", None)
+    train_start_cfg = getattr(cfg.data, "train_start_ts", None) or getattr(
+        cfg.data, "start_ts", None
+    )
     train_end_cfg = getattr(cfg.data, "train_end_ts", None) or getattr(cfg.data, "end_ts", None)
     val_start_cfg = getattr(cfg.data, "val_start_ts", None)
     val_end_cfg = getattr(cfg.data, "val_end_ts", None)
@@ -5015,13 +5131,19 @@ def main():
     config_issues = []
 
     if train_start_cfg and train_start_cfg < global_min_ts:
-        config_issues.append(f"train_start_ts ({train_start_cfg}) раньше доступных данных ({global_min_ts})")
+        config_issues.append(
+            f"train_start_ts ({train_start_cfg}) раньше доступных данных ({global_min_ts})"
+        )
         config_valid = False
     if train_end_cfg and train_end_cfg > global_max_ts:
-        config_issues.append(f"train_end_ts ({train_end_cfg}) позже доступных данных ({global_max_ts})")
+        config_issues.append(
+            f"train_end_ts ({train_end_cfg}) позже доступных данных ({global_max_ts})"
+        )
         config_valid = False
     if val_start_cfg and val_start_cfg > global_max_ts:
-        config_issues.append(f"val_start_ts ({val_start_cfg}) позже доступных данных ({global_max_ts})")
+        config_issues.append(
+            f"val_start_ts ({val_start_cfg}) позже доступных данных ({global_max_ts})"
+        )
         config_valid = False
     if val_end_cfg and val_end_cfg > global_max_ts:
         config_issues.append(f"val_end_ts ({val_end_cfg}) позже доступных данных ({global_max_ts})")
@@ -5062,15 +5184,21 @@ def main():
         cfg.data.test_start_ts = auto_test_start
         cfg.data.test_end_ts = auto_test_end
 
-        print(f"TRAIN: {pd.to_datetime(auto_train_start, unit='s', utc=True).strftime('%Y-%m-%d')} -> "
-              f"{pd.to_datetime(auto_train_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
-              f"({(auto_train_end - auto_train_start) / 86400:.1f} дней, 70%)")
-        print(f"VAL:   {pd.to_datetime(auto_val_start, unit='s', utc=True).strftime('%Y-%m-%d')} -> "
-              f"{pd.to_datetime(auto_val_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
-              f"({(auto_val_end - auto_val_start) / 86400:.1f} дней, 15%)")
-        print(f"TEST:  {pd.to_datetime(auto_test_start, unit='s', utc=True).strftime('%Y-%m-%d')} -> "
-              f"{pd.to_datetime(auto_test_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
-              f"({(auto_test_end - auto_test_start) / 86400:.1f} дней, 15%)")
+        print(
+            f"TRAIN: {pd.to_datetime(auto_train_start, unit='s', utc=True).strftime('%Y-%m-%d')} -> "
+            f"{pd.to_datetime(auto_train_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
+            f"({(auto_train_end - auto_train_start) / 86400:.1f} дней, 70%)"
+        )
+        print(
+            f"VAL:   {pd.to_datetime(auto_val_start, unit='s', utc=True).strftime('%Y-%m-%d')} -> "
+            f"{pd.to_datetime(auto_val_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
+            f"({(auto_val_end - auto_val_start) / 86400:.1f} дней, 15%)"
+        )
+        print(
+            f"TEST:  {pd.to_datetime(auto_test_start, unit='s', utc=True).strftime('%Y-%m-%d')} -> "
+            f"{pd.to_datetime(auto_test_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
+            f"({(auto_test_end - auto_test_start) / 86400:.1f} дней, 15%)"
+        )
         print(f"{'='*80}\n")
     else:
         print(f"[OK] Используется конфигурация split из config файла\n")
@@ -5084,7 +5212,9 @@ def main():
     dfs_with_roles: dict[str, pd.DataFrame] = {}
     inferred_test_any = False
     for symbol, df in all_dfs_dict.items():
-        annotated, inferred_flag = _apply_role_column(df, time_splits, timestamp_column, role_column)
+        annotated, inferred_flag = _apply_role_column(
+            df, time_splits, timestamp_column, role_column
+        )
         dfs_with_roles[symbol] = annotated
         inferred_test_any = inferred_test_any or inferred_flag
 
@@ -5125,11 +5255,13 @@ def main():
         pass
     all_dfs_with_roles = pipe.transform_dict(dfs_with_roles, add_suffix="_z")
     # Drop rows with NaN in key columns (caused by shift in feature pipeline)
-    key_cols = ['open', 'high', 'low', 'close', 'quote_asset_volume']
+    key_cols = ["open", "high", "low", "close", "quote_asset_volume"]
     for sym in all_dfs_with_roles:
         cols_to_check = [c for c in key_cols if c in all_dfs_with_roles[sym].columns]
         if cols_to_check:
-            all_dfs_with_roles[sym] = all_dfs_with_roles[sym].dropna(subset=cols_to_check).reset_index(drop=True)
+            all_dfs_with_roles[sym] = (
+                all_dfs_with_roles[sym].dropna(subset=cols_to_check).reset_index(drop=True)
+            )
     print(f"Feature pipeline fitted and saved to {PREPROC_PATH}. Standardized columns *_z added.")
     print("To run inference over processed data, execute: python infer_signals.py")
 
@@ -5249,7 +5381,7 @@ def main():
             "intervals": intervals,
             "start": observed_start,
             "end": observed_end,
-            "mapping": mapping
+            "mapping": mapping,
         }
 
     # Вычисляем общее количество для процентов
@@ -5263,13 +5395,13 @@ def main():
         rows = stats["rows"]
         pct = (rows / total_assigned_rows * 100) if total_assigned_rows > 0 else 0
 
-        phase_label = {
-            "train": "TRAIN  ",
-            "val": "VAL    ",
-            "test": "TEST   "
-        }[phase]
+        phase_label = {"train": "TRAIN  ", "val": "VAL    ", "test": "TEST   "}[phase]
 
-        interval_desc = ", ".join(_format_interval(it) for it in stats["intervals"]) if stats["intervals"] else "(inferred)"
+        interval_desc = (
+            ", ".join(_format_interval(it) for it in stats["intervals"])
+            if stats["intervals"]
+            else "(inferred)"
+        )
 
         print(f"{phase_label}: {rows:6d} строк ({pct:5.1f}%) | {stats['symbols']} символов")
         if stats["start"] and stats["end"]:
@@ -5310,8 +5442,8 @@ def main():
     # See NORMALIZATION_ANALYSIS.md for details.
     norm_stats = {}  # Empty dict maintained for backward compatibility with test fixtures
 
-    HPO_TRIALS = 1 # Общее количество испытаний (DEMO: was 20)
-    HPO_BUDGET_PER_TRIAL = 1000 # Таймстепы для каждого испытания (DEMO: was 1_000_000)
+    HPO_TRIALS = 1  # Общее количество испытаний (DEMO: was 20)
+    HPO_BUDGET_PER_TRIAL = 1000  # Таймстепы для каждого испытания (DEMO: was 1_000_000)
 
     print(f"\n===== Starting Unified HPO Process ({HPO_TRIALS} trials) =====")
 
@@ -5370,7 +5502,9 @@ def main():
         shutil.rmtree(ensemble_dir)
     os.makedirs(ensemble_dir)
 
-    top_trials = sorted(final_study.trials, key=lambda tr: tr.value or -1e9, reverse=True)[:N_ENSEMBLE]
+    top_trials = sorted(final_study.trials, key=lambda tr: tr.value or -1e9, reverse=True)[
+        :N_ENSEMBLE
+    ]
 
     ensemble_meta = []
     for i, trial in enumerate(top_trials):
@@ -5385,7 +5519,14 @@ def main():
             if os.path.exists(src_stats):
                 shutil.copyfile(src_stats, ensemble_dir / f"vec_normalize_{model_idx}.pkl")
 
-            ensemble_meta.append({"ensemble_index": model_idx, "trial_number": trial.number, "value": trial.value, "params": trial.params})
+            ensemble_meta.append(
+                {
+                    "ensemble_index": model_idx,
+                    "trial_number": trial.number,
+                    "value": trial.value,
+                    "params": trial.params,
+                }
+            )
         else:
             print(f"[WARN] WARNING: Could not find model for trial {trial.number}. Skipping.")
 
@@ -5395,7 +5536,9 @@ def main():
 
     with open(ensemble_dir / "ensemble_meta.json", "w") as f:
         json.dump(ensemble_meta, f, indent=4)
-    print(f"\n[OK] Ensemble of {len(ensemble_meta)} models saved to '{ensemble_dir}'. HPO complete.")
+    print(
+        f"\n[OK] Ensemble of {len(ensemble_meta)} models saved to '{ensemble_dir}'. HPO complete."
+    )
 
     # --- Final evaluation of the best model on test set (AFTER HPO completion) ---
     # NOTE: This is the ONLY place where test data should be used.
@@ -5407,9 +5550,9 @@ def main():
     best_model_path = ensemble_dir / "model_1.zip"
     best_stats_path = ensemble_dir / "vec_normalize_1.pkl"
     if best_model_path.exists() and best_stats_path.exists():
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("FINAL INDEPENDENT EVALUATION ON TEST SET (post-HPO)")
-        print("="*80)
+        print("=" * 80)
         best_trial = top_trials[0]
 
         # Use test data if available, otherwise fall back to validation data
@@ -5419,14 +5562,19 @@ def main():
         final_eval_mode = "test" if test_data_by_token else "val"
 
         if test_data_by_token:
-            print(f"[OK] Using test set for final independent evaluation ({len(test_data_by_token)} symbols)")
+            print(
+                f"[OK] Using test set for final independent evaluation ({len(test_data_by_token)} symbols)"
+            )
         else:
-            print(f"⚠ Test set not available - using validation set for final evaluation ({len(val_data_by_token)} symbols)")
+            print(
+                f"⚠ Test set not available - using validation set for final evaluation ({len(val_data_by_token)} symbols)"
+            )
             print("  (This is acceptable but test set is recommended for unbiased assessment)")
 
         if not final_eval_data:
             print("[WARN] Skipping final validation: evaluation split is empty.")
         else:
+
             def _make_env_val(symbol: str, df: pd.DataFrame):
                 params = best_trial.params.copy()
                 slowest_window = max(
@@ -5438,9 +5586,10 @@ def main():
                     MOMENTUM_WINDOW,
                     CCI_WINDOW,
                     BB_WINDOW,
-                    OBV_MA_WINDOW
+                    OBV_MA_WINDOW,
                 )
                 warmup_period = slowest_window * 2
+
                 def _get_val(key, default):
                     model_cfg = getattr(cfg, "model", None)
                     if model_cfg is not None:
@@ -5452,6 +5601,7 @@ def main():
                         if hasattr(model_cfg, key):
                             return getattr(model_cfg, key)
                     return default
+
                 reward_clip_defaults = {
                     "adaptive": True,
                     "atr_window": 14,
@@ -5464,11 +5614,13 @@ def main():
                     reward_clip_params.update(reward_clip_cfg_raw)
                 elif hasattr(reward_clip_cfg_raw, "__dict__"):
                     reward_clip_params = dict(reward_clip_defaults)
-                    reward_clip_params.update({
-                        k: getattr(reward_clip_cfg_raw, k)
-                        for k in reward_clip_defaults
-                        if hasattr(reward_clip_cfg_raw, k)
-                    })
+                    reward_clip_params.update(
+                        {
+                            k: getattr(reward_clip_cfg_raw, k)
+                            for k in reward_clip_defaults
+                            if hasattr(reward_clip_cfg_raw, k)
+                        }
+                    )
                 else:
                     reward_clip_params = reward_clip_defaults
                 for key, default in [
@@ -5516,30 +5668,34 @@ def main():
                 env_val_params.update(sim_config)
                 env_val_params.update(timing_env_kwargs)
                 env_val_params.update(env_runtime_overrides)
+                # BUG: reward_robust_clip_fraction_value, bins_vol, action_overrides and
+                # long_only_flag are bound inside objective(), not inside main(). Reaching
+                # this validation-env factory raises NameError. Left as-is pending a
+                # decision on how main() should obtain them; see docs/AUDIT_2026-09.md
+                # section 9.2.
                 if (
-                    reward_robust_clip_fraction_value is not None
-                    and math.isfinite(reward_robust_clip_fraction_value)
-                    and reward_robust_clip_fraction_value > 0.0
+                    reward_robust_clip_fraction_value is not None  # noqa: F821
+                    and math.isfinite(reward_robust_clip_fraction_value)  # noqa: F821
+                    and reward_robust_clip_fraction_value > 0.0  # noqa: F821
                 ):
                     env_val_params["reward_robust_clip_fraction"] = (
-                        reward_robust_clip_fraction_value
+                        reward_robust_clip_fraction_value  # noqa: F821
                     )
                 env = TradingEnv(
-                    df,
-                    **env_val_params,
-                    leak_guard=LeakGuard(LeakConfig(**leak_guard_kwargs))
+                    df, **env_val_params, leak_guard=LeakGuard(LeakConfig(**leak_guard_kwargs))
                 )
                 setattr(env, "selected_symbol", symbol)
                 env = _wrap_action_space_if_needed(
                     env,
-                    bins_vol=bins_vol,
-                    action_overrides=action_overrides,
-                    long_only=long_only_flag,
+                    bins_vol=bins_vol,  # noqa: F821
+                    action_overrides=action_overrides,  # noqa: F821
+                    long_only=long_only_flag,  # noqa: F821
                 )
                 return env
 
             eval_env_fns: list[Callable[[], TradingEnv]] = []
             for symbol, df in sorted(final_eval_data.items()):
+
                 def _factory(symbol=symbol, df=df):
                     return _make_env_val(symbol, df)
 
@@ -5576,7 +5732,8 @@ def main():
             )
             all_returns = [
                 pd.Series(curve).pct_change().dropna().to_numpy()
-                for curve in equity_curves if len(curve) > 1
+                for curve in equity_curves
+                if len(curve) > 1
             ]
             flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
             sortino = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
@@ -5602,9 +5759,8 @@ def main():
                 f"Report saved to '{ensemble_dir / 'validation_report.json'}'"
             )
     else:
-        print(
-            "[WARN] Could not find best model or normalization stats for validation evaluation."
-        )
+        print("[WARN] Could not find best model or normalization stats for validation evaluation.")
+
 
 def _configure_start_method() -> None:
     """Pick a multiprocessing start method suited for the current platform."""
@@ -5659,8 +5815,10 @@ if __name__ == "__main__":
 
     # --- gradient sanity check (включается флагом окружения) ---
     from runtime_flags import get_bool
+
     if get_bool("GRAD_SANITY", False):
         from tools.grad_sanity import run_check
+
         run_check()
 
     main()

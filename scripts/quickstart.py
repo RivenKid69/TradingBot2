@@ -120,8 +120,10 @@ ASSET_CLASSES = {
 # Color Output
 # =============================================================================
 
+
 class Colors:
     """ANSI color codes."""
+
     RED = "\033[91m"
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
@@ -141,9 +143,11 @@ class Colors:
 # Check Functions
 # =============================================================================
 
+
 @dataclass
 class QuickCheckResult:
     """Result of a quick check."""
+
     name: str
     passed: bool
     message: str
@@ -312,6 +316,7 @@ def get_data_download_hint(preset_name: str) -> str:
 # Commands
 # =============================================================================
 
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Run quick checks for a preset or asset class."""
     presets_to_check = []
@@ -362,12 +367,16 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"\n{Colors.GREEN}{Colors.BOLD}✓ All checks passed!{Colors.RESET}")
         print(f"\n{Colors.CYAN}Next steps:{Colors.RESET}")
         if len(presets_to_check) == 1:
-            print(f"  python script_backtest.py --config configs/quickstart/{PRESETS[presets_to_check[0]]['config']}")
+            print(
+                f"  python script_backtest.py --config configs/quickstart/{PRESETS[presets_to_check[0]]['config']}"
+            )
         else:
             print("  python scripts/quickstart.py run <preset>")
         return 0
     else:
-        print(f"\n{Colors.RED}{Colors.BOLD}✗ Some checks failed. Please fix issues above.{Colors.RESET}")
+        print(
+            f"\n{Colors.RED}{Colors.BOLD}✗ Some checks failed. Please fix issues above.{Colors.RESET}"
+        )
         return 1
 
 
@@ -509,6 +518,7 @@ def cmd_train(args: argparse.Namespace) -> int:
 # Main
 # =============================================================================
 
+
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -538,26 +548,27 @@ Presets:
     # check command
     check_parser = subparsers.add_parser("check", help="Check setup for presets")
     check_parser.add_argument("--preset", "-p", help="Check specific preset")
-    check_parser.add_argument("--asset", "-a", choices=list(ASSET_CLASSES.keys()),
-                              help="Check all presets for asset class")
+    check_parser.add_argument(
+        "--asset",
+        "-a",
+        choices=list(ASSET_CLASSES.keys()),
+        help="Check all presets for asset class",
+    )
 
     # list command
     subparsers.add_parser("list", help="List available presets")
 
     # info command
     info_parser = subparsers.add_parser("info", help="Show preset details")
-    info_parser.add_argument("preset", choices=list(PRESETS.keys()),
-                             help="Preset name")
+    info_parser.add_argument("preset", choices=list(PRESETS.keys()), help="Preset name")
 
     # run command
     run_parser = subparsers.add_parser("run", help="Run backtest for preset")
-    run_parser.add_argument("preset", choices=list(PRESETS.keys()),
-                            help="Preset name")
+    run_parser.add_argument("preset", choices=list(PRESETS.keys()), help="Preset name")
 
     # train command
     train_parser = subparsers.add_parser("train", help="Train model for preset")
-    train_parser.add_argument("preset", choices=list(PRESETS.keys()),
-                              help="Preset name")
+    train_parser.add_argument("preset", choices=list(PRESETS.keys()), help="Preset name")
 
     args = parser.parse_args()
 

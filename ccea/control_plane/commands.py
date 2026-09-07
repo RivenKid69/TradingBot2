@@ -80,11 +80,13 @@ SAFETY_COMMANDS: Set[str] = {
 # Command Record
 # ============================================================================
 
+
 @dataclass
 class CommandRecord:
     """
     Record of a dispatched command.
     """
+
     command_id: str
     idempotency_key: str
     agent_id: str
@@ -115,6 +117,7 @@ class CommandRecord:
 # Command Store Interface
 # ============================================================================
 
+
 class CommandStore(ABC):
     """Abstract command store interface."""
 
@@ -129,9 +132,7 @@ class CommandStore(ABC):
         pass
 
     @abstractmethod
-    def get_by_idempotency_key(
-        self, agent_id: str, key: str
-    ) -> Optional[CommandRecord]:
+    def get_by_idempotency_key(self, agent_id: str, key: str) -> Optional[CommandRecord]:
         """Get command by idempotency key."""
         pass
 
@@ -164,9 +165,7 @@ class InMemoryCommandStore(CommandStore):
         with self._lock:
             return self._commands.get(command_id)
 
-    def get_by_idempotency_key(
-        self, agent_id: str, key: str
-    ) -> Optional[CommandRecord]:
+    def get_by_idempotency_key(self, agent_id: str, key: str) -> Optional[CommandRecord]:
         with self._lock:
             idem_key = f"{agent_id}:{key}"
             command_id = self._by_idem_key.get(idem_key)
@@ -182,7 +181,8 @@ class InMemoryCommandStore(CommandStore):
     def list_pending(self, agent_id: str) -> List[CommandRecord]:
         with self._lock:
             return [
-                cmd for cmd in self._commands.values()
+                cmd
+                for cmd in self._commands.values()
                 if cmd.agent_id == agent_id and not cmd.is_complete()
             ]
 
@@ -190,6 +190,7 @@ class InMemoryCommandStore(CommandStore):
 # ============================================================================
 # Command Queue
 # ============================================================================
+
 
 class CommandQueue:
     """
@@ -265,6 +266,7 @@ class CommandQueue:
 # Command Service
 # ============================================================================
 
+
 class CommandService:
     """
     Command management service.
@@ -327,7 +329,7 @@ class CommandService:
                 extra={
                     "command_id": existing.command_id,
                     "idempotency_key": idem_key[:16] + "...",
-                }
+                },
             )
             return existing
 
@@ -339,7 +341,7 @@ class CommandService:
             change_class = command.change_class.value if command.change_class else None
             # REQUEST_UPDATE_CONFIG only requires approval if TRADING_IMPACTING
             if cmd_type == CommandType.REQUEST_UPDATE_CONFIG.value:
-                requires_approval = (change_class == ChangeClass.TRADING_IMPACTING.value)
+                requires_approval = change_class == ChangeClass.TRADING_IMPACTING.value
 
         # Create record
         command_id = generate_command_id()
@@ -364,7 +366,7 @@ class CommandService:
                 "command_type": cmd_type,
                 "agent_id": agent_id,
                 "requires_approval": requires_approval,
-            }
+            },
         )
 
         return record
@@ -393,8 +395,7 @@ class CommandService:
         self.store.update(record)
 
         logger.debug(
-            "Command acknowledged",
-            extra={"command_id": command_id, "status": status.value}
+            "Command acknowledged", extra={"command_id": command_id, "status": status.value}
         )
 
         return True
@@ -437,7 +438,7 @@ class CommandService:
                 "command_id": command_id,
                 "approved": approved,
                 "evidence_hash": evidence_hash[:16] + "..." if evidence_hash else None,
-            }
+            },
         )
 
         return True
@@ -478,7 +479,7 @@ class CommandService:
             extra={
                 "command_id": command_id,
                 "status": record.status.value,
-            }
+            },
         )
 
         return True
@@ -508,6 +509,7 @@ class CommandService:
 # ============================================================================
 # Command Dispatcher
 # ============================================================================
+
 
 class CommandDispatcher:
     """
@@ -594,7 +596,8 @@ class CommandDispatcher:
             new_config_digest=new_config_digest,
             old_config_digest=old_config_digest,
             change_class=(
-                ChangeClass.TRADING_IMPACTING if trading_impacting
+                ChangeClass.TRADING_IMPACTING
+                if trading_impacting
                 else ChangeClass.NON_TRADING_IMPACTING
             ),
             requires_approval=trading_impacting,

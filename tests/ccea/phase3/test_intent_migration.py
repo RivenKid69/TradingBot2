@@ -305,9 +305,7 @@ class TestDecisionToIntentAdapter:
             "reason": "Strong signal",
         }
 
-        intent = DecisionToIntentAdapter.from_decision(
-            decision, "strategy1", "BTCUSDT"
-        )
+        intent = DecisionToIntentAdapter.from_decision(decision, "strategy1", "BTCUSDT")
 
         assert intent.strategy_id == "strategy1"
         assert intent.symbol == "BTCUSDT"
@@ -323,9 +321,7 @@ class TestDecisionToIntentAdapter:
             "confidence": 0.6,
         }
 
-        intent = DecisionToIntentAdapter.from_decision(
-            decision, "strategy1", "BTCUSDT"
-        )
+        intent = DecisionToIntentAdapter.from_decision(decision, "strategy1", "BTCUSDT")
 
         assert intent.intent_type == IntentType.MARKET_EXIT
         assert intent.side == IntentSide.SHORT
@@ -338,9 +334,7 @@ class TestDecisionToIntentAdapter:
             "confidence": 0.3,
         }
 
-        intent = DecisionToIntentAdapter.from_decision(
-            decision, "strategy1", "BTCUSDT"
-        )
+        intent = DecisionToIntentAdapter.from_decision(decision, "strategy1", "BTCUSDT")
 
         assert intent.intent_type == IntentType.HOLD
         assert intent.side == IntentSide.FLAT
@@ -353,9 +347,7 @@ class TestDecisionToIntentAdapter:
             "confidence": 0.95,
         }
 
-        intent = DecisionToIntentAdapter.from_decision(
-            decision, "strategy1", "BTCUSDT"
-        )
+        intent = DecisionToIntentAdapter.from_decision(decision, "strategy1", "BTCUSDT")
 
         assert intent.intent_type == IntentType.CLOSE_POSITION
         assert intent.side == IntentSide.FLAT
@@ -365,9 +357,7 @@ class TestDecisionToIntentAdapter:
         """Test converting FLATTEN decision."""
         decision = {"action": "FLATTEN"}
 
-        intent = DecisionToIntentAdapter.from_decision(
-            decision, "strategy1", "BTCUSDT"
-        )
+        intent = DecisionToIntentAdapter.from_decision(decision, "strategy1", "BTCUSDT")
 
         assert intent.intent_type == IntentType.FLATTEN_ALL
 

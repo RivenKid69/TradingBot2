@@ -105,15 +105,27 @@ def _spearman_pair(x: np.ndarray, y: np.ndarray) -> Optional[float]:
 # Auto-detection helpers
 # ---------------------------------------------------------------------------
 _EXCLUDE_NAME_TOKENS = {
-    "ts_ms", "timestamp", "time", "date", "datetime",
-    "symbol", "ticker", "asset", "instrument", "id",
-    "open", "high", "low", "close", "volume", "ohlcv", "vwap",
+    "ts_ms",
+    "timestamp",
+    "time",
+    "date",
+    "datetime",
+    "symbol",
+    "ticker",
+    "asset",
+    "instrument",
+    "id",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "ohlcv",
+    "vwap",
 }
 
 
-def _auto_feature_cols(
-    df: pd.DataFrame, target_col: str, time_col: str
-) -> List[str]:
+def _auto_feature_cols(df: pd.DataFrame, target_col: str, time_col: str) -> List[str]:
     out: List[str] = []
     for c in df.columns:
         if c in (target_col, time_col):
@@ -145,18 +157,13 @@ def _compute_correlation(df: pd.DataFrame, feats: Sequence[str]) -> dict:
     for i in range(n):
         matrix[i][i] = 1.0
         for j in range(i + 1, n):
-            rho = _spearman_pair(
-                df[feats[i]].to_numpy(), df[feats[j]].to_numpy()
-            )
+            rho = _spearman_pair(df[feats[i]].to_numpy(), df[feats[j]].to_numpy())
             matrix[i][j] = rho
             matrix[j][i] = rho
             if rho is not None:
                 pairs.append((feats[i], feats[j], rho))
     pairs.sort(key=lambda t: abs(t[2]), reverse=True)
-    top = [
-        {"a": a, "b": b, "corr": _safe_float(c)}
-        for a, b, c in pairs[:15]
-    ]
+    top = [{"a": a, "b": b, "corr": _safe_float(c)} for a, b, c in pairs[:15]]
     return {"labels": list(feats), "matrix": matrix, "top_collinear": top}
 
 
@@ -173,8 +180,7 @@ def _compute_vif(df: pd.DataFrame, feats: Sequence[str]) -> List[dict]:
     sub = df[list(feats)].apply(pd.to_numeric, errors="coerce")
     sub = sub.replace([np.inf, -np.inf], np.nan).dropna()
     if len(sub) < len(feats) + 2:
-        return [{"feature": f, "vif": None, "flag": "insufficient_data"}
-                for f in feats]
+        return [{"feature": f, "vif": None, "flag": "insufficient_data"} for f in feats]
     X = _standardize(sub.to_numpy(dtype=float))
     nrows = X.shape[0]
     for i, f in enumerate(feats):
@@ -214,8 +220,11 @@ def _compute_vif(df: pd.DataFrame, feats: Sequence[str]) -> List[dict]:
 
 
 def _compute_ic(
-    df: pd.DataFrame, feats: Sequence[str], target_col: str,
-    time_col: Optional[str], n_time_bins: int,
+    df: pd.DataFrame,
+    feats: Sequence[str],
+    target_col: str,
+    time_col: Optional[str],
+    n_time_bins: int,
 ) -> List[dict]:
     # Time-sort if we have a usable time column; else keep given order.
     if time_col and time_col in df.columns:
@@ -249,19 +258,24 @@ def _compute_ic(
             ic_ir = _safe_float(ic_mean / ic_std)
         else:
             ic_ir = None
-        out.append({
-            "feature": f,
-            "ic": ic,
-            "ic_mean": ic_mean,
-            "ic_std": ic_std,
-            "ic_ir": ic_ir,
-            "rolling_ic": rolling,
-        })
+        out.append(
+            {
+                "feature": f,
+                "ic": ic,
+                "ic_mean": ic_mean,
+                "ic_std": ic_std,
+                "ic_ir": ic_ir,
+                "rolling_ic": rolling,
+            }
+        )
     return out
 
 
 def _compute_mutual_info(
-    df: pd.DataFrame, feats: Sequence[str], target_col: str, is_binary: bool,
+    df: pd.DataFrame,
+    feats: Sequence[str],
+    target_col: str,
+    is_binary: bool,
 ) -> Tuple[List[dict], str]:
     sub = df[list(feats) + [target_col]].apply(pd.to_numeric, errors="coerce")
     sub = sub.replace([np.inf, -np.inf], np.nan).dropna()
@@ -270,17 +284,12 @@ def _compute_mutual_info(
             X = sub[list(feats)].to_numpy(dtype=float)
             y = sub[target_col].to_numpy(dtype=float)
             if is_binary:
-                mi = mutual_info_classif(
-                    X, y.astype(int), random_state=0
-                )
+                mi = mutual_info_classif(X, y.astype(int), random_state=0)
                 method = "sklearn_mutual_info_classif"
             else:
                 mi = mutual_info_regression(X, y, random_state=0)
                 method = "sklearn_mutual_info_regression"
-            rows = [
-                {"feature": f, "mi": _safe_float(m)}
-                for f, m in zip(feats, mi)
-            ]
+            rows = [{"feature": f, "mi": _safe_float(m)} for f, m in zip(feats, mi)]
             return rows, method
         except Exception:
             pass
@@ -288,17 +297,22 @@ def _compute_mutual_info(
     rows = []
     for f in feats:
         rho = _spearman_pair(df[f].to_numpy(), df[target_col].to_numpy())
-        rows.append({
-            "feature": f,
-            "mi": _safe_float(abs(rho)) if rho is not None else None,
-            "method": "spearman_fallback",
-        })
+        rows.append(
+            {
+                "feature": f,
+                "mi": _safe_float(abs(rho)) if rho is not None else None,
+                "method": "spearman_fallback",
+            }
+        )
     return rows, "spearman_fallback"
 
 
 def _compute_importance(
-    df: pd.DataFrame, feats: Sequence[str], target_col: str,
-    is_binary: bool, ic_rows: List[dict],
+    df: pd.DataFrame,
+    feats: Sequence[str],
+    target_col: str,
+    is_binary: bool,
+    ic_rows: List[dict],
 ) -> Tuple[List[dict], str]:
     sub = df[list(feats) + [target_col]].apply(pd.to_numeric, errors="coerce")
     sub = sub.replace([np.inf, -np.inf], np.nan).dropna()
@@ -307,22 +321,15 @@ def _compute_importance(
             X = sub[list(feats)].to_numpy(dtype=float)
             y = sub[target_col].to_numpy(dtype=float)
             if is_binary:
-                model = RandomForestClassifier(
-                    n_estimators=100, random_state=0
-                )
+                model = RandomForestClassifier(n_estimators=100, random_state=0)
                 model.fit(X, y.astype(int))
                 method = "sklearn_random_forest_classifier"
             else:
-                model = RandomForestRegressor(
-                    n_estimators=100, random_state=0
-                )
+                model = RandomForestRegressor(n_estimators=100, random_state=0)
                 model.fit(X, y)
                 method = "sklearn_random_forest_regressor"
             imp = model.feature_importances_
-            rows = [
-                {"feature": f, "importance": _safe_float(v)}
-                for f, v in zip(feats, imp)
-            ]
+            rows = [{"feature": f, "importance": _safe_float(v)} for f, v in zip(feats, imp)]
             rows.sort(
                 key=lambda r: (r["importance"] is not None, r["importance"]),
                 reverse=True,
@@ -332,8 +339,7 @@ def _compute_importance(
             pass
     # Fallback: normalized |ic|.
     ic_map = {r["feature"]: r["ic"] for r in ic_rows}
-    abs_ic = {f: (abs(ic_map[f]) if ic_map.get(f) is not None else 0.0)
-              for f in feats}
+    abs_ic = {f: (abs(ic_map[f]) if ic_map.get(f) is not None else 0.0) for f in feats}
     total = sum(abs_ic.values())
     rows = []
     for f in feats:
@@ -371,7 +377,9 @@ def _psi(expected: np.ndarray, actual: np.ndarray) -> Optional[float]:
 
 
 def _compute_stability(
-    df: pd.DataFrame, feats: Sequence[str], time_col: Optional[str],
+    df: pd.DataFrame,
+    feats: Sequence[str],
+    time_col: Optional[str],
 ) -> List[dict]:
     if time_col and time_col in df.columns:
         sort_idx = np.argsort(df[time_col].to_numpy(), kind="stable")
@@ -424,9 +432,7 @@ def analyze_features(
 
     ic_rows = _compute_ic(df, feats, target_col, time_col, n_time_bins)
     mi_rows, mi_method = _compute_mutual_info(df, feats, target_col, is_binary)
-    imp_rows, imp_method = _compute_importance(
-        df, feats, target_col, is_binary, ic_rows
-    )
+    imp_rows, imp_method = _compute_importance(df, feats, target_col, is_binary, ic_rows)
 
     result: Dict = {
         "meta": {
@@ -477,10 +483,7 @@ def _summary_line(result: Dict) -> str:
         reverse=True,
     )
     top = ic_sorted[0] if ic_sorted else None
-    top_str = (
-        f"{top['feature']}(IC={top['ic']:.3f})"
-        if top and top["ic"] is not None else "n/a"
-    )
+    top_str = f"{top['feature']}(IC={top['ic']:.3f})" if top and top["ic"] is not None else "n/a"
     return (
         f"Analyzed {result['meta']['n_features']} features / "
         f"{result['meta']['n_rows']} rows | top-IC {top_str} | "
@@ -499,13 +502,15 @@ def _make_synthetic(n: int = 2000) -> pd.DataFrame:
     feat_noise = rng.normal(0, 1, n)
     feat_collinear = 0.99 * feat_signal + rng.normal(0, 0.01, n)
     target = feat_signal_true + rng.normal(0, 0.3, n)
-    return pd.DataFrame({
-        "ts_ms": np.arange(n) * 1000,
-        "feat_signal": feat_signal,
-        "feat_noise": feat_noise,
-        "feat_collinear": feat_collinear,
-        "target": target,
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": np.arange(n) * 1000,
+            "feat_signal": feat_signal,
+            "feat_noise": feat_noise,
+            "feat_collinear": feat_collinear,
+            "target": target,
+        }
+    )
 
 
 def _run_selftest() -> int:
@@ -529,26 +534,29 @@ def _run_selftest() -> int:
 
     # 2. collinear pair must show high pairwise corr in top_collinear.
     pairs = result["correlation"]["top_collinear"]
-    coll = [p for p in pairs
-            if {p["a"], p["b"]} == {"feat_signal", "feat_collinear"}]
-    assert coll and abs(coll[0]["corr"]) > 0.95, \
-        f"collinear pair not flagged: {pairs}"
+    coll = [p for p in pairs if {p["a"], p["b"]} == {"feat_signal", "feat_collinear"}]
+    assert coll and abs(coll[0]["corr"]) > 0.95, f"collinear pair not flagged: {pairs}"
 
     # 3. collinear feature should have high VIF or singular flag.
     vif_map = {r["feature"]: r for r in result["vif"]}
     vc = vif_map["feat_collinear"]
-    assert (vc["vif"] is None and vc["flag"]) or (vc["vif"] and vc["vif"] > 10), \
-        f"collinear VIF not high/flagged: {vc}"
+    assert (vc["vif"] is None and vc["flag"]) or (
+        vc["vif"] and vc["vif"] > 10
+    ), f"collinear VIF not high/flagged: {vc}"
 
     # 4. signal should be the top-importance / top-MI feature.
     mi_sorted = sorted(
         result["mutual_info"],
-        key=lambda r: (r["mi"] is not None, r["mi"] or 0.0), reverse=True,
+        key=lambda r: (r["mi"] is not None, r["mi"] or 0.0),
+        reverse=True,
     )
-    assert mi_sorted[0]["feature"] in ("feat_signal", "feat_collinear"), \
-        f"top MI not signal-like: {mi_sorted[0]}"
+    assert mi_sorted[0]["feature"] in (
+        "feat_signal",
+        "feat_collinear",
+    ), f"top MI not signal-like: {mi_sorted[0]}"
     assert result["importance"][0]["feature"] in (
-        "feat_signal", "feat_collinear"
+        "feat_signal",
+        "feat_collinear",
     ), f"top importance not signal-like: {result['importance'][0]}"
 
     print("FEATURE SELFTEST OK")
@@ -571,23 +579,23 @@ def _run_selftest() -> int:
 # CLI
 # ---------------------------------------------------------------------------
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Feature Analysis & Selection quant panel."
-    )
+    parser = argparse.ArgumentParser(description="Feature Analysis & Selection quant panel.")
     parser.add_argument("--in", dest="in_path", help="input parquet/csv file")
     parser.add_argument(
-        "--out", dest="out_path", default="models/feature_analytics.json",
+        "--out",
+        dest="out_path",
+        default="models/feature_analytics.json",
         help="output JSON path (default: models/feature_analytics.json)",
     )
     parser.add_argument("--target", dest="target", help="target column name")
     parser.add_argument(
-        "--features", dest="features", default=None,
+        "--features",
+        dest="features",
+        default=None,
         help="comma-separated feature columns (auto-detect if omitted)",
     )
     parser.add_argument("--time-col", dest="time_col", default="ts_ms")
-    parser.add_argument(
-        "--n-time-bins", dest="n_time_bins", type=int, default=10
-    )
+    parser.add_argument("--n-time-bins", dest="n_time_bins", type=int, default=10)
     parser.add_argument("--selftest", action="store_true")
     args = parser.parse_args(argv)
 
@@ -598,16 +606,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.error("--in and --target are required (or use --selftest)")
 
     df = _load_df(args.in_path)
-    feats = (
-        [c.strip() for c in args.features.split(",") if c.strip()]
-        if args.features else None
-    )
+    feats = [c.strip() for c in args.features.split(",") if c.strip()] if args.features else None
     result = analyze_features(
-        df, feats, args.target,
-        time_col=args.time_col, n_time_bins=args.n_time_bins,
+        df,
+        feats,
+        args.target,
+        time_col=args.time_col,
+        n_time_bins=args.n_time_bins,
     )
 
     import os
+
     out_dir = os.path.dirname(args.out_path)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)

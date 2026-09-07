@@ -8,6 +8,7 @@
 
 `adapters/dukascopy/__init__.py` был пустышкой (`__all__ = []`, ни одного
 адаптера, ни регистрации), хотя:
+
 - UI (`adaptersByAsset.forex = ['oanda', 'dukascopy']`) предлагал Dukascopy;
 - в Data Manager есть провайдер «Dukascopy (Public ticks)» с обещанием
   «высокоточные тиковые данные без необходимости авторизации»;

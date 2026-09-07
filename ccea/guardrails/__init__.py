@@ -173,6 +173,8 @@ try:
         validate_traceability_matrix,
     )
 
-    __all__.extend(["TraceabilityCheckResult", "TraceabilityViolation", "validate_traceability_matrix"])
+    __all__.extend(
+        ["TraceabilityCheckResult", "TraceabilityViolation", "validate_traceability_matrix"]
+    )
 except ImportError:
     pass

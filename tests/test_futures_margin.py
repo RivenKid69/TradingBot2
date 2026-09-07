@@ -51,15 +51,41 @@ from core_futures import (
 # FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def btc_brackets() -> List[LeverageBracket]:
     """Standard BTC-like leverage brackets."""
     return [
-        LeverageBracket(bracket=1, notional_cap=Decimal("50000"), maint_margin_rate=Decimal("0.004"), max_leverage=125),
-        LeverageBracket(bracket=2, notional_cap=Decimal("250000"), maint_margin_rate=Decimal("0.005"), max_leverage=100),
-        LeverageBracket(bracket=3, notional_cap=Decimal("1000000"), maint_margin_rate=Decimal("0.01"), max_leverage=50),
-        LeverageBracket(bracket=4, notional_cap=Decimal("5000000"), maint_margin_rate=Decimal("0.025"), max_leverage=20),
-        LeverageBracket(bracket=5, notional_cap=Decimal("10000000"), maint_margin_rate=Decimal("0.05"), max_leverage=10),
+        LeverageBracket(
+            bracket=1,
+            notional_cap=Decimal("50000"),
+            maint_margin_rate=Decimal("0.004"),
+            max_leverage=125,
+        ),
+        LeverageBracket(
+            bracket=2,
+            notional_cap=Decimal("250000"),
+            maint_margin_rate=Decimal("0.005"),
+            max_leverage=100,
+        ),
+        LeverageBracket(
+            bracket=3,
+            notional_cap=Decimal("1000000"),
+            maint_margin_rate=Decimal("0.01"),
+            max_leverage=50,
+        ),
+        LeverageBracket(
+            bracket=4,
+            notional_cap=Decimal("5000000"),
+            maint_margin_rate=Decimal("0.025"),
+            max_leverage=20,
+        ),
+        LeverageBracket(
+            bracket=5,
+            notional_cap=Decimal("10000000"),
+            maint_margin_rate=Decimal("0.05"),
+            max_leverage=10,
+        ),
     ]
 
 
@@ -67,9 +93,24 @@ def btc_brackets() -> List[LeverageBracket]:
 def simple_brackets() -> List[LeverageBracket]:
     """Simplified brackets for testing."""
     return [
-        LeverageBracket(bracket=1, notional_cap=Decimal("10000"), maint_margin_rate=Decimal("0.01"), max_leverage=100),
-        LeverageBracket(bracket=2, notional_cap=Decimal("100000"), maint_margin_rate=Decimal("0.02"), max_leverage=50),
-        LeverageBracket(bracket=3, notional_cap=Decimal("1000000"), maint_margin_rate=Decimal("0.05"), max_leverage=20),
+        LeverageBracket(
+            bracket=1,
+            notional_cap=Decimal("10000"),
+            maint_margin_rate=Decimal("0.01"),
+            max_leverage=100,
+        ),
+        LeverageBracket(
+            bracket=2,
+            notional_cap=Decimal("100000"),
+            maint_margin_rate=Decimal("0.02"),
+            max_leverage=50,
+        ),
+        LeverageBracket(
+            bracket=3,
+            notional_cap=Decimal("1000000"),
+            maint_margin_rate=Decimal("0.05"),
+            max_leverage=20,
+        ),
     ]
 
 
@@ -140,6 +181,7 @@ def cross_margin_position() -> FuturesPosition:
 # TIERED MARGIN CALCULATOR TESTS
 # ============================================================================
 
+
 class TestTieredMarginCalculatorInit:
     """Tests for TieredMarginCalculator initialization."""
 
@@ -156,9 +198,24 @@ class TestTieredMarginCalculatorInit:
     def test_init_sorts_brackets_by_notional_cap(self):
         """Should sort brackets by notional cap ascending."""
         unsorted = [
-            LeverageBracket(bracket=3, notional_cap=Decimal("100000"), maint_margin_rate=Decimal("0.03"), max_leverage=30),
-            LeverageBracket(bracket=1, notional_cap=Decimal("10000"), maint_margin_rate=Decimal("0.01"), max_leverage=100),
-            LeverageBracket(bracket=2, notional_cap=Decimal("50000"), maint_margin_rate=Decimal("0.02"), max_leverage=50),
+            LeverageBracket(
+                bracket=3,
+                notional_cap=Decimal("100000"),
+                maint_margin_rate=Decimal("0.03"),
+                max_leverage=30,
+            ),
+            LeverageBracket(
+                bracket=1,
+                notional_cap=Decimal("10000"),
+                maint_margin_rate=Decimal("0.01"),
+                max_leverage=100,
+            ),
+            LeverageBracket(
+                bracket=2,
+                notional_cap=Decimal("50000"),
+                maint_margin_rate=Decimal("0.02"),
+                max_leverage=50,
+            ),
         ]
         calc = TieredMarginCalculator(brackets=unsorted)
         # Access internal brackets to verify sorting
@@ -564,6 +621,7 @@ class TestTieredMarginCalculatorLiquidationDistance:
 # CME MARGIN CALCULATOR TESTS
 # ============================================================================
 
+
 class TestCMEMarginCalculatorInit:
     """Tests for CMEMarginCalculator initialization."""
 
@@ -698,6 +756,7 @@ class TestCMEMarginCalculatorImpliedLeverage:
 # SIMPLE MARGIN CALCULATOR TESTS
 # ============================================================================
 
+
 class TestSimpleMarginCalculatorInit:
     """Tests for SimpleMarginCalculator initialization."""
 
@@ -808,6 +867,7 @@ class TestSimpleMarginCalculatorBasicOps:
 # FACTORY FUNCTION TESTS
 # ============================================================================
 
+
 class TestCreateMarginCalculator:
     """Tests for create_margin_calculator factory."""
 
@@ -868,13 +928,23 @@ class TestLoadBracketsFromJson:
         data = {
             "brackets": {
                 "TESTUSDT": [
-                    {"bracket": 1, "notional_cap": 10000, "maint_margin_rate": 0.01, "max_leverage": 50},
-                    {"bracket": 2, "notional_cap": 100000, "maint_margin_rate": 0.02, "max_leverage": 25},
+                    {
+                        "bracket": 1,
+                        "notional_cap": 10000,
+                        "maint_margin_rate": 0.01,
+                        "max_leverage": 50,
+                    },
+                    {
+                        "bracket": 2,
+                        "notional_cap": 100000,
+                        "maint_margin_rate": 0.02,
+                        "max_leverage": 25,
+                    },
                 ]
             }
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             # Write with nested structure
             json.dump({"TESTUSDT": data["brackets"]["TESTUSDT"]}, f)
             temp_path = f.name
@@ -895,7 +965,7 @@ class TestLoadBracketsFromJson:
             ]
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(data, f)
             temp_path = f.name
 
@@ -910,6 +980,7 @@ class TestLoadBracketsFromJson:
 # ============================================================================
 # EDGE CASES AND INTEGRATION TESTS
 # ============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""

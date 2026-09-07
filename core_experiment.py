@@ -41,13 +41,14 @@ class ModelStage(str, Enum):
 @dataclass
 class Lineage:
     """Происхождение прогона: что → из чего получено (для воспроизводимости/аудита)."""
-    data_hash: Optional[str] = None        # хэш датасета (контент/версия)
-    config_hash: Optional[str] = None      # хэш конфига
-    git_commit: Optional[str] = None       # коммит кода
-    git_dirty: Optional[bool] = None       # были ли незакоммиченные изменения
-    dataset_uri: Optional[str] = None      # путь/идентификатор датасета
-    config_uri: Optional[str] = None       # путь к конфигу
-    parent_run_id: Optional[str] = None    # родительский прогон (для PBT/ансамблей)
+
+    data_hash: Optional[str] = None  # хэш датасета (контент/версия)
+    config_hash: Optional[str] = None  # хэш конфига
+    git_commit: Optional[str] = None  # коммит кода
+    git_dirty: Optional[bool] = None  # были ли незакоммиченные изменения
+    dataset_uri: Optional[str] = None  # путь/идентификатор датасета
+    config_uri: Optional[str] = None  # путь к конфигу
+    parent_run_id: Optional[str] = None  # родительский прогон (для PBT/ансамблей)
     # Reproducibility fingerprint (P2 #23): seed + environment lockfile so a run can
     # be deterministically reproduced and dirty-tree promotions can be blocked.
     seed: Optional[int] = None
@@ -73,13 +74,14 @@ class Lineage:
 @dataclass
 class ArtifactRef:
     """Артефакт с интегритетом и подписью (provenance)."""
-    path: str                              # путь к сохранённому артефакту
-    sha256: str                            # хэш содержимого
+
+    path: str  # путь к сохранённому артефакту
+    sha256: str  # хэш содержимого
     size_bytes: int = 0
-    algo: str = "none"                     # подпись: ed25519 | hmac-sha256 | none
-    signature: Optional[str] = None        # hex-подпись
-    public_key: Optional[str] = None       # hex pubkey (для ed25519)
-    name: Optional[str] = None             # логическое имя артефакта
+    algo: str = "none"  # подпись: ed25519 | hmac-sha256 | none
+    signature: Optional[str] = None  # hex-подпись
+    public_key: Optional[str] = None  # hex pubkey (для ed25519)
+    name: Optional[str] = None  # логическое имя артефакта
 
     def to_dict(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
@@ -93,6 +95,7 @@ class ArtifactRef:
 @dataclass
 class RunRecord:
     """Прогон эксперимента."""
+
     run_id: str
     experiment: str
     status: str = RunStatus.RUNNING.value
@@ -100,7 +103,7 @@ class RunRecord:
     end_ms: Optional[int] = None
     params: Dict[str, Any] = field(default_factory=dict)
     tags: Dict[str, Any] = field(default_factory=dict)
-    metrics: Dict[str, float] = field(default_factory=dict)   # последнее значение по ключу
+    metrics: Dict[str, float] = field(default_factory=dict)  # последнее значение по ключу
     lineage: Lineage = field(default_factory=Lineage)
     artifacts: List[ArtifactRef] = field(default_factory=list)
 
@@ -122,6 +125,7 @@ class RunRecord:
 @dataclass
 class ModelVersion:
     """Версия модели в реестре."""
+
     name: str
     version: int
     run_id: Optional[str] = None
@@ -148,5 +152,10 @@ class ModelVersion:
 
 
 __all__ = [
-    "RunStatus", "ModelStage", "Lineage", "ArtifactRef", "RunRecord", "ModelVersion",
+    "RunStatus",
+    "ModelStage",
+    "Lineage",
+    "ArtifactRef",
+    "RunRecord",
+    "ModelVersion",
 ]

@@ -233,16 +233,26 @@ class OrderIntent:
             symbol=data["symbol"],
             intent_type=IntentType(data["intent_type"]),
             side=IntentSide(data["side"]),
-            target_quantity=Decimal(data["target_quantity"]) if data.get("target_quantity") else None,
-            target_notional=Decimal(data["target_notional"]) if data.get("target_notional") else None,
+            target_quantity=(
+                Decimal(data["target_quantity"]) if data.get("target_quantity") else None
+            ),
+            target_notional=(
+                Decimal(data["target_notional"]) if data.get("target_notional") else None
+            ),
             limit_price=Decimal(data["limit_price"]) if data.get("limit_price") else None,
             stop_price=Decimal(data["stop_price"]) if data.get("stop_price") else None,
             time_in_force=data.get("time_in_force", "GTC"),
             urgency=IntentPriority(data.get("urgency", "normal")),
             reason=data.get("reason", ""),
             metadata=data.get("metadata", {}),
-            created_at=datetime.fromisoformat(data["created_at"]) if "created_at" in data else datetime.utcnow(),
-            expires_at=datetime.fromisoformat(data["expires_at"]) if data.get("expires_at") else None,
+            created_at=(
+                datetime.fromisoformat(data["created_at"])
+                if "created_at" in data
+                else datetime.utcnow()
+            ),
+            expires_at=(
+                datetime.fromisoformat(data["expires_at"]) if data.get("expires_at") else None
+            ),
         )
 
 

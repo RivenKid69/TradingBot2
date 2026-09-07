@@ -60,15 +60,10 @@ STATS_PATH = Path("logs/offline/refresh_universe_stats.json")
 
 def _deep_merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
     merged: dict[str, Any] = {
-        key: (dict(value) if isinstance(value, Mapping) else value)
-        for key, value in base.items()
+        key: (dict(value) if isinstance(value, Mapping) else value) for key, value in base.items()
     }
     for key, value in override.items():
-        if (
-            key in merged
-            and isinstance(merged[key], Mapping)
-            and isinstance(value, Mapping)
-        ):
+        if key in merged and isinstance(merged[key], Mapping) and isinstance(value, Mapping):
             merged[key] = _deep_merge(merged[key], value)  # type: ignore[arg-type]
         else:
             merged[key] = dict(value) if isinstance(value, Mapping) else value
@@ -347,9 +342,7 @@ def _log_request_stats(stats: Mapping[str, Any]) -> None:
     )
 
 
-def _fetch_quote_volume(
-    session: RestBudgetSession, symbol: str, tokens: float = 1.0
-) -> float:
+def _fetch_quote_volume(session: RestBudgetSession, symbol: str, tokens: float = 1.0) -> float:
     payload = session.get(
         TICKER_24HR_URL,
         params={"symbol": symbol},
@@ -437,7 +430,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     order = normalized_order
                     resuming = True
             if resuming:
-                saved_processed = checkpoint_data.get("processed") or checkpoint_data.get("processed_count")
+                saved_processed = checkpoint_data.get("processed") or checkpoint_data.get(
+                    "processed_count"
+                )
                 saved_position = checkpoint_data.get("position")
                 candidate_position: int | None = None
                 for candidate in (saved_processed, saved_position):
@@ -470,9 +465,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     volumes.clear()
                     order = list(symbols)
                 else:
-                    last_symbol_raw = (
-                        checkpoint_data.get("last_symbol")
-                        or checkpoint_data.get("current_symbol")
+                    last_symbol_raw = checkpoint_data.get("last_symbol") or checkpoint_data.get(
+                        "current_symbol"
                     )
                     if isinstance(last_symbol_raw, str):
                         symbol_text = last_symbol_raw.strip().upper()
@@ -558,7 +552,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         handled_signals: dict[int, Any] = {}
 
-        def _handle_signal(signum: int, frame: Any | None) -> None:  # pragma: no cover - signal handler
+        def _handle_signal(
+            signum: int, frame: Any | None
+        ) -> None:  # pragma: no cover - signal handler
             payload = checkpoint_state.get("payload")
             if isinstance(payload, Mapping):
                 session.save_checkpoint(
@@ -608,9 +604,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         absolute = idx + offset
                         if symbol in volumes and absolute < processed_count:
                             continue
-                        future = session.submit(
-                            _fetch_quote_volume, session, symbol, ticker_tokens
-                        )
+                        future = session.submit(_fetch_quote_volume, session, symbol, ticker_tokens)
                         futures.append((absolute, symbol, future))
                     if not futures:
                         processed_count = max(processed_count, idx + len(batch))

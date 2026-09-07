@@ -21,6 +21,7 @@ pytestmark = pytest.mark.asyncio
 # Helper Functions
 # ============================================================================
 
+
 def compute_expected_digest(content: Dict[str, Any]) -> str:
     """Compute expected SHA256 digest for content."""
     content_str = json.dumps(content, sort_keys=True, separators=(",", ":"))
@@ -37,6 +38,7 @@ def compute_size_bytes(content: Dict[str, Any]) -> int:
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 async def sample_config_blob(
@@ -73,7 +75,11 @@ async def multiple_config_blobs(
     """Create multiple config blobs with different types."""
     configs = [
         {"type": "strategy", "content": {"strategy": "momentum", "version": 1}, "schema": "1.0.0"},
-        {"type": "strategy", "content": {"strategy": "mean_reversion", "version": 1}, "schema": "1.0.0"},
+        {
+            "type": "strategy",
+            "content": {"strategy": "mean_reversion", "version": 1},
+            "schema": "1.0.0",
+        },
         {"type": "risk", "content": {"max_position": 100, "stop_loss": 0.05}, "schema": "1.0.0"},
         {"type": "risk", "content": {"max_position": 200, "stop_loss": 0.03}, "schema": "2.0.0"},
         {"type": "execution", "content": {"slippage": 0.001, "timeout": 60}, "schema": "1.0.0"},
@@ -175,6 +181,7 @@ async def config_with_permission_headers(
 # ============================================================================
 # Test Classes
 # ============================================================================
+
 
 class TestListConfigBlobs:
     """Tests for GET /config-blobs endpoint."""
@@ -513,8 +520,16 @@ class TestCreateConfigBlob:
     ) -> None:
         """Can create blobs with all valid config types."""
         valid_types = [
-            "strategy", "risk", "execution", "environment", "feature_flags",
-            "model", "data", "alert", "monitoring", "custom",
+            "strategy",
+            "risk",
+            "execution",
+            "environment",
+            "feature_flags",
+            "model",
+            "data",
+            "alert",
+            "monitoring",
+            "custom",
         ]
 
         for config_type in valid_types:
@@ -865,8 +880,16 @@ class TestListConfigTypes:
         data = response.json()
 
         expected_types = [
-            "alert", "custom", "data", "environment", "execution",
-            "feature_flags", "model", "monitoring", "risk", "strategy",
+            "alert",
+            "custom",
+            "data",
+            "environment",
+            "execution",
+            "feature_flags",
+            "model",
+            "monitoring",
+            "risk",
+            "strategy",
         ]
         assert data == expected_types
 

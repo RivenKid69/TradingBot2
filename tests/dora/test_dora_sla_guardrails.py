@@ -41,6 +41,7 @@ from services.dora_integration.contracts import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def config():
     """Create test configuration."""
@@ -78,6 +79,7 @@ def guardrails_with_capacity(guardrails):
 # =============================================================================
 # Enumeration Tests
 # =============================================================================
+
 
 class TestEnumerations:
     """Test all enumeration classes."""
@@ -128,6 +130,7 @@ class TestEnumerations:
 # =============================================================================
 # Data Structure Tests
 # =============================================================================
+
 
 class TestDataStructures:
     """Tests for data structures."""
@@ -222,6 +225,7 @@ class TestDataStructures:
 # Configuration Tests
 # =============================================================================
 
+
 class TestConfiguration:
     """Tests for configuration."""
 
@@ -256,6 +260,7 @@ class TestConfiguration:
 # =============================================================================
 # SLA Tier Definitions Tests
 # =============================================================================
+
 
 class TestSLATierDefinitions:
     """Tests for SLA tier definitions."""
@@ -318,6 +323,7 @@ class TestSLATierDefinitions:
 # SLA Guardrails Service Tests
 # =============================================================================
 
+
 class TestSLAGuardrailsService:
     """Tests for SLA Guardrails service."""
 
@@ -368,6 +374,7 @@ class TestSLAGuardrailsService:
 # =============================================================================
 # Capacity Validation Tests
 # =============================================================================
+
 
 class TestCapacityValidation:
     """Tests for capacity validation workflow."""
@@ -426,6 +433,7 @@ class TestCapacityValidation:
 # =============================================================================
 # SLA Commitment Request Tests
 # =============================================================================
+
 
 class TestSLACommitmentRequests:
     """Tests for SLA commitment request workflow."""
@@ -541,6 +549,7 @@ class TestSLACommitmentRequests:
 # Reporting Tests
 # =============================================================================
 
+
 class TestReporting:
     """Tests for reporting functionality."""
 
@@ -568,9 +577,7 @@ class TestReporting:
         )
 
         # Manually set expiry to soon
-        validation.expiry_date = (
-            datetime.now(timezone.utc) + timedelta(days=7)
-        ).isoformat()
+        validation.expiry_date = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
 
         expiring = guardrails_with_capacity.get_expiring_validations(days=14)
         assert len(expiring) >= 1
@@ -579,6 +586,7 @@ class TestReporting:
 # =============================================================================
 # Error Handling Tests
 # =============================================================================
+
 
 class TestErrorHandling:
     """Tests for error handling."""

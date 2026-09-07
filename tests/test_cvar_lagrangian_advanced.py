@@ -10,7 +10,7 @@ This test suite provides 100% coverage including:
 - Multi-iteration full simulation
 - Mathematical correctness proofs
 
-Author: Claude (Anthropic)
+Author: Sultan Suyunbayev
 Date: 2025-11-18
 """
 
@@ -21,6 +21,7 @@ from typing import Optional, Tuple, List
 # =============================================================================
 # 1. GRADIENT FLOW TESTS
 # =============================================================================
+
 
 def test_gradient_flow_constraint_term():
     """
@@ -121,6 +122,7 @@ def test_gradient_direction_correctness():
 # 2. NORMALIZATION CONSISTENCY TESTS
 # =============================================================================
 
+
 def test_normalization_consistency():
     """
     Test that raw <-> unit normalization is consistent and reversible.
@@ -146,7 +148,9 @@ def test_normalization_consistency():
         # Check reversibility
         error = abs(cvar_raw - cvar_raw_reconstructed)
 
-        print(f"Raw: {cvar_raw:6.2f} -> Unit: {cvar_unit:6.3f} -> Raw: {cvar_raw_reconstructed:6.2f} (error: {error:.6f})")
+        print(
+            f"Raw: {cvar_raw:6.2f} -> Unit: {cvar_unit:6.3f} -> Raw: {cvar_raw_reconstructed:6.2f} (error: {error:.6f})"
+        )
 
         assert error < 1e-10, f"Normalization not reversible for {cvar_raw}"
 
@@ -174,7 +178,9 @@ def test_dual_update_raw_unit_consistency():
     gap_raw = cvar_limit_raw - cvar_predicted_raw  # = 1.0
 
     # Values in unit space
-    cvar_predicted_unit = (cvar_predicted_raw - cvar_offset) / cvar_scale  # = (-2.0 + 1.5) / 2.0 = -0.25
+    cvar_predicted_unit = (
+        cvar_predicted_raw - cvar_offset
+    ) / cvar_scale  # = (-2.0 + 1.5) / 2.0 = -0.25
     cvar_limit_unit = (cvar_limit_raw - cvar_offset) / cvar_scale  # = (-1.0 + 1.5) / 2.0 = 0.25
     gap_unit = cvar_limit_unit - cvar_predicted_unit  # = 0.25 - (-0.25) = 0.5
 
@@ -215,6 +221,7 @@ def test_dual_update_raw_unit_consistency():
 # 3. EDGE CASES TESTS
 # =============================================================================
 
+
 def test_edge_case_nan_inf():
     """
     Test handling of NaN and Inf values in dual update.
@@ -236,13 +243,13 @@ def test_edge_case_nan_inf():
 
     test_cases = [
         # (lambda, lr, gap, description)
-        (float('nan'), 0.1, 0.5, "NaN lambda"),
-        (0.5, float('nan'), 0.5, "NaN lr"),
-        (0.5, 0.1, float('nan'), "NaN gap"),
-        (float('inf'), 0.1, 0.5, "Inf lambda"),
-        (0.5, 0.1, float('inf'), "Inf gap"),
-        (0.5, 0.1, float('-inf'), "-Inf gap"),
-        (float('nan'), float('nan'), float('nan'), "All NaN"),
+        (float("nan"), 0.1, 0.5, "NaN lambda"),
+        (0.5, float("nan"), 0.5, "NaN lr"),
+        (0.5, 0.1, float("nan"), "NaN gap"),
+        (float("inf"), 0.1, 0.5, "Inf lambda"),
+        (0.5, 0.1, float("inf"), "Inf gap"),
+        (0.5, 0.1, float("-inf"), "-Inf gap"),
+        (float("nan"), float("nan"), float("nan"), "All NaN"),
     ]
 
     for lambda_val, lr, gap, desc in test_cases:
@@ -284,7 +291,9 @@ def test_edge_case_extreme_values():
 
     for lambda_val, lr, gap, expected in test_cases:
         result = bounded_dual_update(lambda_val, lr, gap)
-        print(f"λ={lambda_val:.6f}, lr={lr:.6f}, gap={gap:10.2f} -> {result:.6f} (expected: {expected:.6f})")
+        print(
+            f"λ={lambda_val:.6f}, lr={lr:.6f}, gap={gap:10.2f} -> {result:.6f} (expected: {expected:.6f})"
+        )
         assert abs(result - expected) < 1e-6, f"Result {result} != expected {expected}"
 
     print("✓ Extreme values handled correctly")
@@ -328,6 +337,7 @@ def test_edge_case_first_iteration():
 # 4. DUAL CONVERGENCE TESTS
 # =============================================================================
 
+
 def test_dual_convergence_satisfied_constraint():
     """
     Test that dual variable stays constant when constraint is satisfied.
@@ -364,7 +374,9 @@ def test_dual_convergence_satisfied_constraint():
     final_lambda = history[-1][4]
     initial_lambda = history[0][4]
 
-    assert final_lambda == initial_lambda, "Lambda should stay constant when constraint always satisfied"
+    assert (
+        final_lambda == initial_lambda
+    ), "Lambda should stay constant when constraint always satisfied"
 
     print(f"\n✓ Lambda stays constant at {final_lambda:.6f} (constraint always satisfied)")
     print()
@@ -455,6 +467,7 @@ def test_dual_convergence_oscillation():
 # =============================================================================
 # 5. FULL SIMULATION TEST
 # =============================================================================
+
 
 def test_full_iteration_simulation():
     """
@@ -557,13 +570,15 @@ def test_full_iteration_simulation():
             # They should be DIFFERENT (one from prev, one from current)
             # But both are PREDICTED (not empirical)
 
-        history.append({
-            'iter': iter_num,
-            'dual_cvar': cvar_for_dual_unit,
-            'constraint_cvar': cvar_predicted_unit,
-            'lambda': lambda_val,
-            'source': source,
-        })
+        history.append(
+            {
+                "iter": iter_num,
+                "dual_cvar": cvar_for_dual_unit,
+                "constraint_cvar": cvar_predicted_unit,
+                "lambda": lambda_val,
+                "source": source,
+            }
+        )
 
     print(f"\n{'='*80}")
     print("SUMMARY")
@@ -571,7 +586,9 @@ def test_full_iteration_simulation():
     print(f"{'Iter':<6} {'Dual CVaR':<12} {'Constraint CVaR':<16} {'Lambda':<8} {'Source':<20}")
     print("-" * 80)
     for h in history:
-        print(f"{h['iter']:<6} {h['dual_cvar']:<12.3f} {h['constraint_cvar']:<16.3f} {h['lambda']:<8.3f} {h['source']:<20}")
+        print(
+            f"{h['iter']:<6} {h['dual_cvar']:<12.3f} {h['constraint_cvar']:<16.3f} {h['lambda']:<8.3f} {h['source']:<20}"
+        )
 
     # Verify mathematical consistency
     print(f"\nVerifications:")
@@ -581,9 +598,13 @@ def test_full_iteration_simulation():
     print(f"  ✓ Lambda increased from {history[0]['lambda']:.3f} to {history[-1]['lambda']:.3f}")
     print(f"  ✓ Both dual and constraint use predicted CVaR (mathematical consistency)")
 
-    assert history[0]['source'] == 'empirical_fallback', "First iteration should use empirical"
-    assert all(h['source'] == 'predicted' for h in history[1:]), "Subsequent iterations should use predicted"
-    assert history[-1]['lambda'] > history[0]['lambda'], "Lambda should increase (CVaR was below limit)"
+    assert history[0]["source"] == "empirical_fallback", "First iteration should use empirical"
+    assert all(
+        h["source"] == "predicted" for h in history[1:]
+    ), "Subsequent iterations should use predicted"
+    assert (
+        history[-1]["lambda"] > history[0]["lambda"]
+    ), "Lambda should increase (CVaR was below limit)"
 
     print("\n✓ Full multi-iteration simulation passed")
     print()
@@ -592,6 +613,7 @@ def test_full_iteration_simulation():
 # =============================================================================
 # 6. MATHEMATICAL CORRECTNESS PROOFS
 # =============================================================================
+
 
 def test_mathematical_correctness_kkt_conditions():
     """
@@ -627,11 +649,25 @@ def test_mathematical_correctness_kkt_conditions():
     primal_feasible = gap <= 0
     complementary_slackness = abs(lambda_val * violation) < 1e-10
 
-    print(f"  KKT Dual feasibility (λ ≥ 0): {dual_feasible} ✓" if dual_feasible else f"  KKT Dual feasibility: {dual_feasible} ✗")
-    print(f"  KKT Primal feasibility (c ≤ 0): {primal_feasible} ✓" if primal_feasible else f"  KKT Primal feasibility: {primal_feasible} ✗")
-    print(f"  KKT Complementary slackness (λ*c = 0): {complementary_slackness} ✓" if complementary_slackness else f"  KKT Complementary slackness: {complementary_slackness} ✗")
+    print(
+        f"  KKT Dual feasibility (λ ≥ 0): {dual_feasible} ✓"
+        if dual_feasible
+        else f"  KKT Dual feasibility: {dual_feasible} ✗"
+    )
+    print(
+        f"  KKT Primal feasibility (c ≤ 0): {primal_feasible} ✓"
+        if primal_feasible
+        else f"  KKT Primal feasibility: {primal_feasible} ✗"
+    )
+    print(
+        f"  KKT Complementary slackness (λ*c = 0): {complementary_slackness} ✓"
+        if complementary_slackness
+        else f"  KKT Complementary slackness: {complementary_slackness} ✗"
+    )
 
-    assert dual_feasible and primal_feasible and complementary_slackness, "KKT conditions not satisfied (scenario 1)"
+    assert (
+        dual_feasible and primal_feasible and complementary_slackness
+    ), "KKT conditions not satisfied (scenario 1)"
 
     # Scenario 2: Constraint violated (c(θ) > 0)
     cvar = -2.0  # Below limit

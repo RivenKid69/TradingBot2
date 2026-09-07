@@ -498,10 +498,7 @@ class ConformanceTestSuite:
         self.end_timestamp_ns = time.time_ns()
 
         # Check for critical failures
-        critical_failed = any(
-            t.is_critical() and t.failed()
-            for t in self.tests
-        )
+        critical_failed = any(t.is_critical() and t.failed() for t in self.tests)
 
         # Check for any failures
         any_failed = any(t.failed() for t in self.tests)
@@ -518,9 +515,7 @@ class ConformanceTestSuite:
         else:
             self.status = ConformanceSuiteStatus.PASSED
 
-        logger.info(
-            f"Conformance suite {self.suite_id} completed with status: {self.status.value}"
-        )
+        logger.info(f"Conformance suite {self.suite_id} completed with status: {self.status.value}")
 
     def abort(self, reason: str = "") -> None:
         """Abort suite execution."""
@@ -620,10 +615,16 @@ RESULTS BY CATEGORY
             report += "\nFAILED TESTS\n"
             report += "-" * 70 + "\n"
             for test in failed_tests:
-                priority_marker = "[CRITICAL]" if test.is_critical() else "[" + test.priority.value.upper() + "]"
+                priority_marker = (
+                    "[CRITICAL]" if test.is_critical() else "[" + test.priority.value.upper() + "]"
+                )
                 report += f"  {priority_marker} {test.test_id}: {test.name}\n"
                 report += f"      Reference: {test.rts_reference}\n"
-                report += f"      Details: {test.details[:100]}...\n" if len(test.details) > 100 else f"      Details: {test.details}\n"
+                report += (
+                    f"      Details: {test.details[:100]}...\n"
+                    if len(test.details) > 100
+                    else f"      Details: {test.details}\n"
+                )
                 report += "\n"
 
         # Certification status
@@ -634,7 +635,9 @@ RESULTS BY CATEGORY
             report += f"  All critical tests passed. Algorithm may proceed to deployment.\n"
         else:
             report += "  NOT ELIGIBLE FOR CERTIFICATION\n"
-            report += f"  {metrics['critical_failed']} critical test(s) failed. Remediation required.\n"
+            report += (
+                f"  {metrics['critical_failed']} critical test(s) failed. Remediation required.\n"
+            )
 
         report += """
 ================================================================================
@@ -687,10 +690,7 @@ END OF REPORT
             end_timestamp_ns=data.get("end_timestamp_ns"),
         )
 
-        suite.tests = [
-            ConformanceTest.from_dict(t)
-            for t in data.get("tests", [])
-        ]
+        suite.tests = [ConformanceTest.from_dict(t) for t in data.get("tests", [])]
 
         return suite
 
@@ -795,11 +795,7 @@ class ConformanceTestRunner:
                 self._execute_test(test)
 
                 # Check for critical failure
-                if (
-                    self.config.stop_on_critical_failure
-                    and test.is_critical()
-                    and test.failed()
-                ):
+                if self.config.stop_on_critical_failure and test.is_critical() and test.failed():
                     logger.warning(
                         f"Critical test {test.test_id} failed. Stopping suite execution."
                     )
@@ -855,7 +851,7 @@ class ConformanceTestRunner:
         log_level = logging.INFO if test.passed() else logging.WARNING
         logger.log(
             log_level,
-            f"Test {test.test_id} [{test.priority.value}]: {test.result.value} ({test.duration_ms:.0f}ms)"
+            f"Test {test.test_id} [{test.priority.value}]: {test.result.value} ({test.duration_ms:.0f}ms)",
         )
 
         return test
@@ -878,500 +874,516 @@ def get_standard_conformance_tests() -> List[ConformanceTest]:
     # KILL SWITCH TESTS (RTS 6 Article 12)
     # =========================================================================
 
-    tests.extend([
-        ConformanceTest(
-            test_id="CT-KS-001",
-            name="Kill Switch - Cancel All Orders",
-            category=TestCategory.KILL_SWITCH,
-            description="Verify kill switch cancels all orders immediately across all venues.",
-            rts_reference="RTS 6 Article 12",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Trading system connected to test venue(s)",
-                "Test orders submitted and pending",
-            ],
-            test_steps=[
-                "Submit multiple test orders to venue(s)",
-                "Trigger kill switch with scope ALL",
-                "Verify all orders cancelled within 1 second",
-                "Verify no new orders can be submitted",
-            ],
-            expected_result="All orders cancelled immediately, new orders blocked.",
-        ),
-        ConformanceTest(
-            test_id="CT-KS-002",
-            name="Kill Switch - Per-Venue Cancellation",
-            category=TestCategory.KILL_SWITCH,
-            description="Verify kill switch can cancel orders for specific venue only.",
-            rts_reference="RTS 6 Article 12(1)",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Orders on multiple venues",
-            ],
-            test_steps=[
-                "Submit orders to venues A and B",
-                "Trigger kill switch for venue A only",
-                "Verify venue A orders cancelled",
-                "Verify venue B orders remain active",
-            ],
-            expected_result="Only venue A orders cancelled.",
-        ),
-        ConformanceTest(
-            test_id="CT-KS-003",
-            name="Kill Switch - Per-Algorithm Cancellation",
-            category=TestCategory.KILL_SWITCH,
-            description="Verify kill switch can cancel orders for specific algorithm.",
-            rts_reference="RTS 6 Article 12(1)",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Multiple algorithms running",
-            ],
-            test_steps=[
-                "Start algorithms A and B",
-                "Both algorithms submit orders",
-                "Trigger kill switch for algorithm A",
-                "Verify only algorithm A orders cancelled",
-            ],
-            expected_result="Only algorithm A orders cancelled.",
-        ),
-        ConformanceTest(
-            test_id="CT-KS-004",
-            name="Kill Switch - Audit Trail",
-            category=TestCategory.KILL_SWITCH,
-            description="Verify kill switch events are fully logged.",
-            rts_reference="RTS 6 Article 12",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Audit trail enabled",
-            ],
-            test_steps=[
-                "Trigger kill switch",
-                "Retrieve audit trail",
-                "Verify event logged with timestamp, reason, operator",
-                "Verify affected orders list included",
-            ],
-            expected_result="Complete audit trail of kill switch event.",
-        ),
-        ConformanceTest(
-            test_id="CT-KS-005",
-            name="Kill Switch - Emergency Contacts",
-            category=TestCategory.KILL_SWITCH,
-            description="Verify emergency contact information is accessible.",
-            rts_reference="RTS 6 Article 12(2)",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Kill switch configured",
-            ],
-            test_steps=[
-                "Query kill switch emergency contacts",
-                "Verify primary contact exists",
-                "Verify out-of-hours contact exists",
-            ],
-            expected_result="Emergency contacts properly configured.",
-        ),
-    ])
+    tests.extend(
+        [
+            ConformanceTest(
+                test_id="CT-KS-001",
+                name="Kill Switch - Cancel All Orders",
+                category=TestCategory.KILL_SWITCH,
+                description="Verify kill switch cancels all orders immediately across all venues.",
+                rts_reference="RTS 6 Article 12",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Trading system connected to test venue(s)",
+                    "Test orders submitted and pending",
+                ],
+                test_steps=[
+                    "Submit multiple test orders to venue(s)",
+                    "Trigger kill switch with scope ALL",
+                    "Verify all orders cancelled within 1 second",
+                    "Verify no new orders can be submitted",
+                ],
+                expected_result="All orders cancelled immediately, new orders blocked.",
+            ),
+            ConformanceTest(
+                test_id="CT-KS-002",
+                name="Kill Switch - Per-Venue Cancellation",
+                category=TestCategory.KILL_SWITCH,
+                description="Verify kill switch can cancel orders for specific venue only.",
+                rts_reference="RTS 6 Article 12(1)",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Orders on multiple venues",
+                ],
+                test_steps=[
+                    "Submit orders to venues A and B",
+                    "Trigger kill switch for venue A only",
+                    "Verify venue A orders cancelled",
+                    "Verify venue B orders remain active",
+                ],
+                expected_result="Only venue A orders cancelled.",
+            ),
+            ConformanceTest(
+                test_id="CT-KS-003",
+                name="Kill Switch - Per-Algorithm Cancellation",
+                category=TestCategory.KILL_SWITCH,
+                description="Verify kill switch can cancel orders for specific algorithm.",
+                rts_reference="RTS 6 Article 12(1)",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Multiple algorithms running",
+                ],
+                test_steps=[
+                    "Start algorithms A and B",
+                    "Both algorithms submit orders",
+                    "Trigger kill switch for algorithm A",
+                    "Verify only algorithm A orders cancelled",
+                ],
+                expected_result="Only algorithm A orders cancelled.",
+            ),
+            ConformanceTest(
+                test_id="CT-KS-004",
+                name="Kill Switch - Audit Trail",
+                category=TestCategory.KILL_SWITCH,
+                description="Verify kill switch events are fully logged.",
+                rts_reference="RTS 6 Article 12",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Audit trail enabled",
+                ],
+                test_steps=[
+                    "Trigger kill switch",
+                    "Retrieve audit trail",
+                    "Verify event logged with timestamp, reason, operator",
+                    "Verify affected orders list included",
+                ],
+                expected_result="Complete audit trail of kill switch event.",
+            ),
+            ConformanceTest(
+                test_id="CT-KS-005",
+                name="Kill Switch - Emergency Contacts",
+                category=TestCategory.KILL_SWITCH,
+                description="Verify emergency contact information is accessible.",
+                rts_reference="RTS 6 Article 12(2)",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Kill switch configured",
+                ],
+                test_steps=[
+                    "Query kill switch emergency contacts",
+                    "Verify primary contact exists",
+                    "Verify out-of-hours contact exists",
+                ],
+                expected_result="Emergency contacts properly configured.",
+            ),
+        ]
+    )
 
     # =========================================================================
     # PRE-TRADE CONTROLS (RTS 6 Article 15)
     # =========================================================================
 
-    tests.extend([
-        ConformanceTest(
-            test_id="CT-PT-001",
-            name="Pre-Trade - Price Collar",
-            category=TestCategory.PRE_TRADE,
-            description="Verify orders outside price collar are rejected.",
-            rts_reference="RTS 6 Article 15(1)(a)",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Pre-trade controls enabled",
-                "Price collar configured (e.g., 5%)",
-            ],
-            test_steps=[
-                "Get current reference price",
-                "Submit order with price 10% above reference",
-                "Verify order rejected with PRICE_COLLAR reason",
-                "Submit order with price within collar",
-                "Verify order accepted",
-            ],
-            expected_result="Orders outside collar rejected, within collar accepted.",
-        ),
-        ConformanceTest(
-            test_id="CT-PT-002",
-            name="Pre-Trade - Maximum Order Value",
-            category=TestCategory.PRE_TRADE,
-            description="Verify orders exceeding max value are rejected.",
-            rts_reference="RTS 6 Article 15(1)(b)",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Max order value configured (e.g., EUR 1M)",
-            ],
-            test_steps=[
-                "Submit order with value exceeding max",
-                "Verify order rejected with MAX_ORDER_VALUE reason",
-                "Submit order below max value",
-                "Verify order accepted",
-            ],
-            expected_result="Orders exceeding max value rejected.",
-        ),
-        ConformanceTest(
-            test_id="CT-PT-003",
-            name="Pre-Trade - Maximum Order Volume",
-            category=TestCategory.PRE_TRADE,
-            description="Verify orders exceeding max volume are rejected.",
-            rts_reference="RTS 6 Article 15(1)(c)",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Max order volume configured",
-            ],
-            test_steps=[
-                "Submit order with volume exceeding max",
-                "Verify order rejected with MAX_ORDER_VOLUME reason",
-                "Submit order below max volume",
-                "Verify order accepted",
-            ],
-            expected_result="Orders exceeding max volume rejected.",
-        ),
-        ConformanceTest(
-            test_id="CT-PT-004",
-            name="Pre-Trade - Message Rate Limit",
-            category=TestCategory.PRE_TRADE,
-            description="Verify message rate limits are enforced.",
-            rts_reference="RTS 6 Article 15(1)(d)",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Message rate limit configured",
-            ],
-            test_steps=[
-                "Submit orders at rate below limit",
-                "Verify all orders accepted",
-                "Submit orders at rate exceeding limit",
-                "Verify excess orders rejected/throttled",
-            ],
-            expected_result="Message rate limits enforced.",
-        ),
-        ConformanceTest(
-            test_id="CT-PT-005",
-            name="Pre-Trade - Trader Authorization",
-            category=TestCategory.PRE_TRADE,
-            description="Verify orders from unauthorized traders rejected.",
-            rts_reference="RTS 6 Article 15(5)",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Trader authorization enabled",
-            ],
-            test_steps=[
-                "Submit order with unauthorized trader ID",
-                "Verify order rejected with UNAUTHORIZED_TRADER reason",
-                "Submit order with authorized trader ID",
-                "Verify order accepted",
-            ],
-            expected_result="Unauthorized trader orders rejected.",
-        ),
-        ConformanceTest(
-            test_id="CT-PT-006",
-            name="Pre-Trade - Fat Finger Protection",
-            category=TestCategory.PRE_TRADE,
-            description="Verify fat finger protection is active.",
-            rts_reference="RTS 6 Article 15",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Fat finger protection configured",
-            ],
-            test_steps=[
-                "Submit order with price 20% from reference",
-                "Verify order rejected or flagged",
-                "Submit order with normal price",
-                "Verify order accepted",
-            ],
-            expected_result="Extreme price deviations caught.",
-        ),
-    ])
+    tests.extend(
+        [
+            ConformanceTest(
+                test_id="CT-PT-001",
+                name="Pre-Trade - Price Collar",
+                category=TestCategory.PRE_TRADE,
+                description="Verify orders outside price collar are rejected.",
+                rts_reference="RTS 6 Article 15(1)(a)",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Pre-trade controls enabled",
+                    "Price collar configured (e.g., 5%)",
+                ],
+                test_steps=[
+                    "Get current reference price",
+                    "Submit order with price 10% above reference",
+                    "Verify order rejected with PRICE_COLLAR reason",
+                    "Submit order with price within collar",
+                    "Verify order accepted",
+                ],
+                expected_result="Orders outside collar rejected, within collar accepted.",
+            ),
+            ConformanceTest(
+                test_id="CT-PT-002",
+                name="Pre-Trade - Maximum Order Value",
+                category=TestCategory.PRE_TRADE,
+                description="Verify orders exceeding max value are rejected.",
+                rts_reference="RTS 6 Article 15(1)(b)",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Max order value configured (e.g., EUR 1M)",
+                ],
+                test_steps=[
+                    "Submit order with value exceeding max",
+                    "Verify order rejected with MAX_ORDER_VALUE reason",
+                    "Submit order below max value",
+                    "Verify order accepted",
+                ],
+                expected_result="Orders exceeding max value rejected.",
+            ),
+            ConformanceTest(
+                test_id="CT-PT-003",
+                name="Pre-Trade - Maximum Order Volume",
+                category=TestCategory.PRE_TRADE,
+                description="Verify orders exceeding max volume are rejected.",
+                rts_reference="RTS 6 Article 15(1)(c)",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Max order volume configured",
+                ],
+                test_steps=[
+                    "Submit order with volume exceeding max",
+                    "Verify order rejected with MAX_ORDER_VOLUME reason",
+                    "Submit order below max volume",
+                    "Verify order accepted",
+                ],
+                expected_result="Orders exceeding max volume rejected.",
+            ),
+            ConformanceTest(
+                test_id="CT-PT-004",
+                name="Pre-Trade - Message Rate Limit",
+                category=TestCategory.PRE_TRADE,
+                description="Verify message rate limits are enforced.",
+                rts_reference="RTS 6 Article 15(1)(d)",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Message rate limit configured",
+                ],
+                test_steps=[
+                    "Submit orders at rate below limit",
+                    "Verify all orders accepted",
+                    "Submit orders at rate exceeding limit",
+                    "Verify excess orders rejected/throttled",
+                ],
+                expected_result="Message rate limits enforced.",
+            ),
+            ConformanceTest(
+                test_id="CT-PT-005",
+                name="Pre-Trade - Trader Authorization",
+                category=TestCategory.PRE_TRADE,
+                description="Verify orders from unauthorized traders rejected.",
+                rts_reference="RTS 6 Article 15(5)",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Trader authorization enabled",
+                ],
+                test_steps=[
+                    "Submit order with unauthorized trader ID",
+                    "Verify order rejected with UNAUTHORIZED_TRADER reason",
+                    "Submit order with authorized trader ID",
+                    "Verify order accepted",
+                ],
+                expected_result="Unauthorized trader orders rejected.",
+            ),
+            ConformanceTest(
+                test_id="CT-PT-006",
+                name="Pre-Trade - Fat Finger Protection",
+                category=TestCategory.PRE_TRADE,
+                description="Verify fat finger protection is active.",
+                rts_reference="RTS 6 Article 15",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Fat finger protection configured",
+                ],
+                test_steps=[
+                    "Submit order with price 20% from reference",
+                    "Verify order rejected or flagged",
+                    "Submit order with normal price",
+                    "Verify order accepted",
+                ],
+                expected_result="Extreme price deviations caught.",
+            ),
+        ]
+    )
 
     # =========================================================================
     # CLOCK SYNCHRONISATION (RTS 25)
     # =========================================================================
 
-    tests.extend([
-        ConformanceTest(
-            test_id="CT-CLK-001",
-            name="Clock Sync - UTC Accuracy",
-            category=TestCategory.CLOCK_SYNC,
-            description="Verify clock synchronized to UTC within tolerance.",
-            rts_reference="RTS 25",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "NTP synchronization enabled",
-            ],
-            test_steps=[
-                "Get current clock offset from NTP server",
-                "Verify offset within allowed tolerance (100ms for algo trading)",
-                "Record timestamp precision",
-            ],
-            expected_result="Clock offset within ±100ms.",
-        ),
-        ConformanceTest(
-            test_id="CT-CLK-002",
-            name="Clock Sync - Continuous Monitoring",
-            category=TestCategory.CLOCK_SYNC,
-            description="Verify clock drift is continuously monitored.",
-            rts_reference="RTS 25",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Clock monitoring enabled",
-            ],
-            test_steps=[
-                "Check clock sync status",
-                "Verify last sync timestamp recent",
-                "Verify drift alerts configured",
-            ],
-            expected_result="Clock continuously monitored.",
-        ),
-    ])
+    tests.extend(
+        [
+            ConformanceTest(
+                test_id="CT-CLK-001",
+                name="Clock Sync - UTC Accuracy",
+                category=TestCategory.CLOCK_SYNC,
+                description="Verify clock synchronized to UTC within tolerance.",
+                rts_reference="RTS 25",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "NTP synchronization enabled",
+                ],
+                test_steps=[
+                    "Get current clock offset from NTP server",
+                    "Verify offset within allowed tolerance (100ms for algo trading)",
+                    "Record timestamp precision",
+                ],
+                expected_result="Clock offset within ±100ms.",
+            ),
+            ConformanceTest(
+                test_id="CT-CLK-002",
+                name="Clock Sync - Continuous Monitoring",
+                category=TestCategory.CLOCK_SYNC,
+                description="Verify clock drift is continuously monitored.",
+                rts_reference="RTS 25",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Clock monitoring enabled",
+                ],
+                test_steps=[
+                    "Check clock sync status",
+                    "Verify last sync timestamp recent",
+                    "Verify drift alerts configured",
+                ],
+                expected_result="Clock continuously monitored.",
+            ),
+        ]
+    )
 
     # =========================================================================
     # RECORD KEEPING (MiFIR Article 25)
     # =========================================================================
 
-    tests.extend([
-        ConformanceTest(
-            test_id="CT-RK-001",
-            name="Audit Trail - Order Events",
-            category=TestCategory.RECORD_KEEPING,
-            description="Verify all order events are recorded.",
-            rts_reference="MiFIR Article 25",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Audit trail enabled",
-            ],
-            test_steps=[
-                "Submit a test order",
-                "Modify the order",
-                "Cancel the order",
-                "Query audit trail for order ID",
-                "Verify submit, modify, cancel events recorded",
-            ],
-            expected_result="All order lifecycle events recorded.",
-        ),
-        ConformanceTest(
-            test_id="CT-RK-002",
-            name="Audit Trail - Timestamp Precision",
-            category=TestCategory.RECORD_KEEPING,
-            description="Verify timestamps have required precision.",
-            rts_reference="RTS 25",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Audit trail enabled",
-            ],
-            test_steps=[
-                "Generate audit event",
-                "Verify timestamp has nanosecond or microsecond precision",
-                "Verify UTC timezone",
-            ],
-            expected_result="Timestamps precise and UTC.",
-        ),
-        ConformanceTest(
-            test_id="CT-RK-003",
-            name="Audit Trail - Chain Integrity",
-            category=TestCategory.RECORD_KEEPING,
-            description="Verify audit trail is tamper-proof.",
-            rts_reference="MiFIR Article 25",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Audit trail with hash chain",
-            ],
-            test_steps=[
-                "Write multiple audit records",
-                "Verify hash chain integrity",
-                "Attempt to modify record (should fail)",
-            ],
-            expected_result="Hash chain intact, tampering detected.",
-        ),
-        ConformanceTest(
-            test_id="CT-RK-004",
-            name="Retention - 5 Year Storage",
-            category=TestCategory.RECORD_KEEPING,
-            description="Verify records retained for 5 years.",
-            rts_reference="MiFIR Article 25(1)",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Retention policy configured",
-            ],
-            test_steps=[
-                "Query retention policy settings",
-                "Verify default retention >= 5 years",
-                "Verify archival mechanism exists",
-            ],
-            expected_result="5-year retention configured.",
-        ),
-    ])
+    tests.extend(
+        [
+            ConformanceTest(
+                test_id="CT-RK-001",
+                name="Audit Trail - Order Events",
+                category=TestCategory.RECORD_KEEPING,
+                description="Verify all order events are recorded.",
+                rts_reference="MiFIR Article 25",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Audit trail enabled",
+                ],
+                test_steps=[
+                    "Submit a test order",
+                    "Modify the order",
+                    "Cancel the order",
+                    "Query audit trail for order ID",
+                    "Verify submit, modify, cancel events recorded",
+                ],
+                expected_result="All order lifecycle events recorded.",
+            ),
+            ConformanceTest(
+                test_id="CT-RK-002",
+                name="Audit Trail - Timestamp Precision",
+                category=TestCategory.RECORD_KEEPING,
+                description="Verify timestamps have required precision.",
+                rts_reference="RTS 25",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Audit trail enabled",
+                ],
+                test_steps=[
+                    "Generate audit event",
+                    "Verify timestamp has nanosecond or microsecond precision",
+                    "Verify UTC timezone",
+                ],
+                expected_result="Timestamps precise and UTC.",
+            ),
+            ConformanceTest(
+                test_id="CT-RK-003",
+                name="Audit Trail - Chain Integrity",
+                category=TestCategory.RECORD_KEEPING,
+                description="Verify audit trail is tamper-proof.",
+                rts_reference="MiFIR Article 25",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Audit trail with hash chain",
+                ],
+                test_steps=[
+                    "Write multiple audit records",
+                    "Verify hash chain integrity",
+                    "Attempt to modify record (should fail)",
+                ],
+                expected_result="Hash chain intact, tampering detected.",
+            ),
+            ConformanceTest(
+                test_id="CT-RK-004",
+                name="Retention - 5 Year Storage",
+                category=TestCategory.RECORD_KEEPING,
+                description="Verify records retained for 5 years.",
+                rts_reference="MiFIR Article 25(1)",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Retention policy configured",
+                ],
+                test_steps=[
+                    "Query retention policy settings",
+                    "Verify default retention >= 5 years",
+                    "Verify archival mechanism exists",
+                ],
+                expected_result="5-year retention configured.",
+            ),
+        ]
+    )
 
     # =========================================================================
     # STRESS TESTING (RTS 6 Article 8)
     # =========================================================================
 
-    tests.extend([
-        ConformanceTest(
-            test_id="CT-STR-001",
-            name="Stress Test - High Volume",
-            category=TestCategory.STRESS_TEST,
-            description="Verify system handles high message volumes.",
-            rts_reference="RTS 6 Article 8",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Stress test environment available",
-            ],
-            test_steps=[
-                "Generate 2x normal message volume",
-                "Monitor system performance",
-                "Verify no message loss",
-                "Verify latency within acceptable bounds",
-            ],
-            expected_result="System handles high volume gracefully.",
-        ),
-        ConformanceTest(
-            test_id="CT-STR-002",
-            name="Stress Test - Market Volatility",
-            category=TestCategory.STRESS_TEST,
-            description="Verify system handles volatile market conditions.",
-            rts_reference="RTS 6 Article 8",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Market data simulator available",
-            ],
-            test_steps=[
-                "Simulate high volatility market data",
-                "Verify risk controls respond appropriately",
-                "Verify no erroneous orders generated",
-            ],
-            expected_result="System stable under volatility.",
-        ),
-    ])
+    tests.extend(
+        [
+            ConformanceTest(
+                test_id="CT-STR-001",
+                name="Stress Test - High Volume",
+                category=TestCategory.STRESS_TEST,
+                description="Verify system handles high message volumes.",
+                rts_reference="RTS 6 Article 8",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Stress test environment available",
+                ],
+                test_steps=[
+                    "Generate 2x normal message volume",
+                    "Monitor system performance",
+                    "Verify no message loss",
+                    "Verify latency within acceptable bounds",
+                ],
+                expected_result="System handles high volume gracefully.",
+            ),
+            ConformanceTest(
+                test_id="CT-STR-002",
+                name="Stress Test - Market Volatility",
+                category=TestCategory.STRESS_TEST,
+                description="Verify system handles volatile market conditions.",
+                rts_reference="RTS 6 Article 8",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Market data simulator available",
+                ],
+                test_steps=[
+                    "Simulate high volatility market data",
+                    "Verify risk controls respond appropriately",
+                    "Verify no erroneous orders generated",
+                ],
+                expected_result="System stable under volatility.",
+            ),
+        ]
+    )
 
     # =========================================================================
     # BEST EXECUTION (MiFID II Article 27)
     # =========================================================================
 
-    tests.extend([
-        ConformanceTest(
-            test_id="CT-BE-001",
-            name="Best Execution - Policy Documented",
-            category=TestCategory.BEST_EXECUTION,
-            description="Verify best execution policy exists and is current.",
-            rts_reference="MiFID II Article 27",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "Best execution module enabled",
-            ],
-            test_steps=[
-                "Query best execution policy",
-                "Verify policy version and effective date",
-                "Verify factor weights defined",
-            ],
-            expected_result="Best execution policy current.",
-        ),
-        ConformanceTest(
-            test_id="CT-BE-002",
-            name="Best Execution - TCA Metrics",
-            category=TestCategory.BEST_EXECUTION,
-            description="Verify TCA metrics are calculated.",
-            rts_reference="MiFID II Article 27",
-            priority=TestPriority.MEDIUM,
-            preconditions=[
-                "TCA enabled",
-            ],
-            test_steps=[
-                "Execute a test trade",
-                "Generate post-trade analysis",
-                "Verify slippage and cost metrics calculated",
-            ],
-            expected_result="TCA metrics available.",
-        ),
-    ])
+    tests.extend(
+        [
+            ConformanceTest(
+                test_id="CT-BE-001",
+                name="Best Execution - Policy Documented",
+                category=TestCategory.BEST_EXECUTION,
+                description="Verify best execution policy exists and is current.",
+                rts_reference="MiFID II Article 27",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "Best execution module enabled",
+                ],
+                test_steps=[
+                    "Query best execution policy",
+                    "Verify policy version and effective date",
+                    "Verify factor weights defined",
+                ],
+                expected_result="Best execution policy current.",
+            ),
+            ConformanceTest(
+                test_id="CT-BE-002",
+                name="Best Execution - TCA Metrics",
+                category=TestCategory.BEST_EXECUTION,
+                description="Verify TCA metrics are calculated.",
+                rts_reference="MiFID II Article 27",
+                priority=TestPriority.MEDIUM,
+                preconditions=[
+                    "TCA enabled",
+                ],
+                test_steps=[
+                    "Execute a test trade",
+                    "Generate post-trade analysis",
+                    "Verify slippage and cost metrics calculated",
+                ],
+                expected_result="TCA metrics available.",
+            ),
+        ]
+    )
 
     # =========================================================================
     # TRANSACTION REPORTING (RTS 22)
     # =========================================================================
 
-    tests.extend([
-        ConformanceTest(
-            test_id="CT-TR-001",
-            name="Transaction Report - Field Completeness",
-            category=TestCategory.TRANSACTION_REPORTING,
-            description="Verify transaction reports contain all required fields.",
-            rts_reference="RTS 22",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "Transaction reporting enabled",
-            ],
-            test_steps=[
-                "Generate transaction report for test trade",
-                "Verify all 65 RTS 22 fields present",
-                "Verify LEI format correct",
-                "Verify ISIN format correct",
-            ],
-            expected_result="Report contains all required fields.",
-        ),
-        ConformanceTest(
-            test_id="CT-TR-002",
-            name="Transaction Report - T+1 Deadline",
-            category=TestCategory.TRANSACTION_REPORTING,
-            description="Verify reports submitted within T+1 deadline.",
-            rts_reference="MiFIR Article 26",
-            priority=TestPriority.CRITICAL,
-            preconditions=[
-                "ARM connectivity available",
-            ],
-            test_steps=[
-                "Execute test trade",
-                "Verify report queued immediately",
-                "Verify deadline monitoring active",
-            ],
-            expected_result="T+1 deadline monitoring active.",
-        ),
-    ])
+    tests.extend(
+        [
+            ConformanceTest(
+                test_id="CT-TR-001",
+                name="Transaction Report - Field Completeness",
+                category=TestCategory.TRANSACTION_REPORTING,
+                description="Verify transaction reports contain all required fields.",
+                rts_reference="RTS 22",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "Transaction reporting enabled",
+                ],
+                test_steps=[
+                    "Generate transaction report for test trade",
+                    "Verify all 65 RTS 22 fields present",
+                    "Verify LEI format correct",
+                    "Verify ISIN format correct",
+                ],
+                expected_result="Report contains all required fields.",
+            ),
+            ConformanceTest(
+                test_id="CT-TR-002",
+                name="Transaction Report - T+1 Deadline",
+                category=TestCategory.TRANSACTION_REPORTING,
+                description="Verify reports submitted within T+1 deadline.",
+                rts_reference="MiFIR Article 26",
+                priority=TestPriority.CRITICAL,
+                preconditions=[
+                    "ARM connectivity available",
+                ],
+                test_steps=[
+                    "Execute test trade",
+                    "Verify report queued immediately",
+                    "Verify deadline monitoring active",
+                ],
+                expected_result="T+1 deadline monitoring active.",
+            ),
+        ]
+    )
 
     # =========================================================================
     # BUSINESS CONTINUITY (RTS 6 Article 3)
     # =========================================================================
 
-    tests.extend([
-        ConformanceTest(
-            test_id="CT-BCP-001",
-            name="BCP - Plan Documented",
-            category=TestCategory.BUSINESS_CONTINUITY,
-            description="Verify business continuity plan exists.",
-            rts_reference="RTS 6 Article 3",
-            priority=TestPriority.HIGH,
-            preconditions=[
-                "BCP module enabled",
-            ],
-            test_steps=[
-                "Query BCP configuration",
-                "Verify scenarios defined",
-                "Verify recovery procedures documented",
-                "Verify emergency contacts available",
-            ],
-            expected_result="BCP fully documented.",
-        ),
-        ConformanceTest(
-            test_id="CT-BCP-002",
-            name="BCP - Recovery Time Objective",
-            category=TestCategory.BUSINESS_CONTINUITY,
-            description="Verify RTO is defined and achievable.",
-            rts_reference="RTS 6 Article 3",
-            priority=TestPriority.MEDIUM,
-            preconditions=[
-                "BCP configured",
-            ],
-            test_steps=[
-                "Query RTO settings",
-                "Verify RTO defined for critical systems",
-                "Verify backup systems available",
-            ],
-            expected_result="RTO defined and achievable.",
-        ),
-    ])
+    tests.extend(
+        [
+            ConformanceTest(
+                test_id="CT-BCP-001",
+                name="BCP - Plan Documented",
+                category=TestCategory.BUSINESS_CONTINUITY,
+                description="Verify business continuity plan exists.",
+                rts_reference="RTS 6 Article 3",
+                priority=TestPriority.HIGH,
+                preconditions=[
+                    "BCP module enabled",
+                ],
+                test_steps=[
+                    "Query BCP configuration",
+                    "Verify scenarios defined",
+                    "Verify recovery procedures documented",
+                    "Verify emergency contacts available",
+                ],
+                expected_result="BCP fully documented.",
+            ),
+            ConformanceTest(
+                test_id="CT-BCP-002",
+                name="BCP - Recovery Time Objective",
+                category=TestCategory.BUSINESS_CONTINUITY,
+                description="Verify RTO is defined and achievable.",
+                rts_reference="RTS 6 Article 3",
+                priority=TestPriority.MEDIUM,
+                preconditions=[
+                    "BCP configured",
+                ],
+                test_steps=[
+                    "Query RTO settings",
+                    "Verify RTO defined for critical systems",
+                    "Verify backup systems available",
+                ],
+                expected_result="RTO defined and achievable.",
+            ),
+        ]
+    )
 
     return tests
 

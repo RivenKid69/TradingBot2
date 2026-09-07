@@ -39,7 +39,7 @@ class TestIsFinalValidation(unittest.TestCase):
             high=Decimal("50100"),
             low=Decimal("49900"),
             close=Decimal("50050"),
-            is_final=True  # CLOSED BAR
+            is_final=True,  # CLOSED BAR
         )
 
         feats = fp.update(bar)
@@ -66,7 +66,7 @@ class TestIsFinalValidation(unittest.TestCase):
             high=Decimal("50100"),
             low=Decimal("49900"),
             close=Decimal("49500"),  # INTERMEDIATE PRICE!
-            is_final=False  # NOT CLOSED YET!
+            is_final=False,  # NOT CLOSED YET!
         )
 
         feats = fp.update(bar)
@@ -87,7 +87,7 @@ class TestIsFinalValidation(unittest.TestCase):
             high=Decimal("50100"),
             low=Decimal("49900"),
             close=Decimal("49500"),
-            is_final=False
+            is_final=False,
         )
         feats1 = fp.update(bar1)
         self.assertEqual(len(feats1), 0, "Intermediate update 1 must be rejected")
@@ -100,7 +100,7 @@ class TestIsFinalValidation(unittest.TestCase):
             high=Decimal("50200"),
             low=Decimal("49800"),
             close=Decimal("50100"),
-            is_final=False
+            is_final=False,
         )
         feats2 = fp.update(bar2)
         self.assertEqual(len(feats2), 0, "Intermediate update 2 must be rejected")
@@ -113,7 +113,7 @@ class TestIsFinalValidation(unittest.TestCase):
             high=Decimal("50200"),
             low=Decimal("49800"),
             close=Decimal("50050"),  # FINAL PRICE
-            is_final=True
+            is_final=True,
         )
         feats3 = fp.update(bar3)
         self.assertTrue(len(feats3) > 0, "Final bar must be processed")
@@ -131,12 +131,14 @@ class TestIsFinalValidation(unittest.TestCase):
             open=Decimal("50000"),
             high=Decimal("50100"),
             low=Decimal("49900"),
-            close=Decimal("50050")
+            close=Decimal("50050"),
             # is_final not specified - defaults to True in dataclass
         )
 
         feats = fp.update(bar)
-        self.assertTrue(len(feats) > 0, "Bar without is_final should be processed (defaults to True)")
+        self.assertTrue(
+            len(feats) > 0, "Bar without is_final should be processed (defaults to True)"
+        )
 
     def test_is_final_none_rejected(self):
         """EDGE CASE: is_final=None must be REJECTED (strict validation)."""
@@ -150,7 +152,7 @@ class TestIsFinalValidation(unittest.TestCase):
             high=Decimal("50100"),
             low=Decimal("49900"),
             close=Decimal("50050"),
-            is_final=None  # ← Edge case: explicitly None
+            is_final=None,  # ← Edge case: explicitly None
         )
 
         feats = fp.update(bar)
@@ -194,6 +196,7 @@ class TestDecisionDelayValidation(unittest.TestCase):
     def test_strict_mode_raises_error(self):
         """STRICT MODE: decision_delay_ms=0 must raise ValueError if STRICT_LEAK_GUARD=true."""
         import os
+
         old_value = os.environ.get("STRICT_LEAK_GUARD")
         try:
             # Enable strict mode
@@ -235,7 +238,7 @@ class TestTrainInferenceConsistency(unittest.TestCase):
                 high=Decimal(str(price + 1)),
                 low=Decimal(str(price - 1)),
                 close=Decimal(str(price)),
-                is_final=True
+                is_final=True,
             )
             feats = fp.update(bar)
 
@@ -246,8 +249,12 @@ class TestTrainInferenceConsistency(unittest.TestCase):
         expected_sma = sum(prices) / len(prices)
         actual_sma = feats["sma_1200"]
 
-        self.assertAlmostEqual(actual_sma, expected_sma, places=5,
-            msg=f"SMA_5 должно быть {expected_sma}, получили {actual_sma}")
+        self.assertAlmostEqual(
+            actual_sma,
+            expected_sma,
+            places=5,
+            msg=f"SMA_5 должно быть {expected_sma}, получили {actual_sma}",
+        )
 
     def test_lag_documentation(self):
         """Verify lag is ~window/2 as documented (Murphy 1999)."""
@@ -270,18 +277,24 @@ class TestForwardLookingPrevention(unittest.TestCase):
         fp = FeaturePipe(spec)
 
         non_final = Bar(
-            ts=1000, symbol="BTCUSDT",
-            open=Decimal("50000"), high=Decimal("50000"),
-            low=Decimal("50000"), close=Decimal("49000"),  # Wrong price!
-            is_final=False
+            ts=1000,
+            symbol="BTCUSDT",
+            open=Decimal("50000"),
+            high=Decimal("50000"),
+            low=Decimal("50000"),
+            close=Decimal("49000"),  # Wrong price!
+            is_final=False,
         )
         self.assertEqual(len(fp.update(non_final)), 0, "Non-final rejected")
 
         final = Bar(
-            ts=1000, symbol="BTCUSDT",
-            open=Decimal("50000"), high=Decimal("50000"),
-            low=Decimal("50000"), close=Decimal("50000"),  # Correct price
-            is_final=True
+            ts=1000,
+            symbol="BTCUSDT",
+            open=Decimal("50000"),
+            high=Decimal("50000"),
+            low=Decimal("50000"),
+            close=Decimal("50000"),  # Correct price
+            is_final=True,
         )
         feats = fp.update(final)
         self.assertTrue(len(feats) > 0, "Final processed")

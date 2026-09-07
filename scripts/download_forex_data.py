@@ -47,7 +47,7 @@ Columns in output:
     - symbol: Currency pair
     - session: Active session at bar time
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 
@@ -80,6 +80,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # =========================
 
+
 @dataclass
 class ForexDownloadConfig:
     """Configuration for forex data download."""
@@ -96,8 +97,8 @@ class ForexDownloadConfig:
 
     # Date range
     start_date: Optional[str] = None  # YYYY-MM-DD
-    end_date: Optional[str] = None    # YYYY-MM-DD
-    lookback_days: int = 365 * 3      # Default: 3 years
+    end_date: Optional[str] = None  # YYYY-MM-DD
+    lookback_days: int = 365 * 3  # Default: 3 years
 
     # Timeframe
     timeframe: str = "1h"  # 5s, 1m, 5m, 15m, 1h, 4h, 1d
@@ -107,11 +108,11 @@ class ForexDownloadConfig:
     output_format: str = "parquet"  # parquet or feather
 
     # Processing
-    filter_weekends: bool = True       # Remove weekend data (market closed)
-    include_spread: bool = True        # Include bid/ask prices
-    add_session_labels: bool = True    # Label bars with active session
+    filter_weekends: bool = True  # Remove weekend data (market closed)
+    include_spread: bool = True  # Include bid/ask prices
+    add_session_labels: bool = True  # Label bars with active session
     resample_to: Optional[str] = None  # e.g., "4h" to resample 1h to 4h
-    price_type: str = "mid"            # mid, bid, ask, bid_ask
+    price_type: str = "mid"  # mid, bid, ask, bid_ask
 
     # Rate limiting
     max_workers: int = 2  # Lower for OANDA due to rate limits
@@ -127,23 +128,35 @@ class ForexDownloadConfig:
 
 # Major pairs (highest liquidity)
 MAJOR_PAIRS = [
-    "EUR_USD", "USD_JPY", "GBP_USD", "USD_CHF",
-    "AUD_USD", "USD_CAD", "NZD_USD",
+    "EUR_USD",
+    "USD_JPY",
+    "GBP_USD",
+    "USD_CHF",
+    "AUD_USD",
+    "USD_CAD",
+    "NZD_USD",
 ]
 
 # Minor pairs (cross pairs without USD)
 MINOR_PAIRS = [
-    "EUR_GBP", "EUR_CHF", "EUR_JPY",
-    "GBP_CHF", "GBP_JPY",
+    "EUR_GBP",
+    "EUR_CHF",
+    "EUR_JPY",
+    "GBP_CHF",
+    "GBP_JPY",
     "CHF_JPY",
-    "AUD_JPY", "AUD_NZD",
+    "AUD_JPY",
+    "AUD_NZD",
     "NZD_JPY",
 ]
 
 # Exotic pairs (emerging market currencies)
 EXOTIC_PAIRS = [
-    "USD_TRY", "USD_ZAR", "USD_MXN",
-    "EUR_TRY", "EUR_ZAR",
+    "USD_TRY",
+    "USD_ZAR",
+    "USD_MXN",
+    "EUR_TRY",
+    "EUR_ZAR",
 ]
 
 # All supported pairs
@@ -152,8 +165,12 @@ ALL_PAIRS = MAJOR_PAIRS + MINOR_PAIRS + EXOTIC_PAIRS
 # Pip sizes for different currency pairs
 PIP_SIZES = {
     # JPY pairs have pip = 0.01
-    "USD_JPY": 0.01, "EUR_JPY": 0.01, "GBP_JPY": 0.01,
-    "CHF_JPY": 0.01, "AUD_JPY": 0.01, "NZD_JPY": 0.01,
+    "USD_JPY": 0.01,
+    "EUR_JPY": 0.01,
+    "GBP_JPY": 0.01,
+    "CHF_JPY": 0.01,
+    "AUD_JPY": 0.01,
+    "NZD_JPY": 0.01,
     "CAD_JPY": 0.01,
     # All other pairs have pip = 0.0001
 }
@@ -163,6 +180,7 @@ DEFAULT_PIP_SIZE = 0.0001
 # =========================
 # Forex Trading Calendar
 # =========================
+
 
 class ForexCalendar:
     """
@@ -176,10 +194,10 @@ class ForexCalendar:
 
     # Session times in UTC
     SESSIONS = {
-        "sydney": (dt_time(21, 0), dt_time(6, 0)),    # 21:00-06:00 UTC
-        "tokyo": (dt_time(0, 0), dt_time(9, 0)),      # 00:00-09:00 UTC
-        "london": (dt_time(7, 0), dt_time(16, 0)),    # 07:00-16:00 UTC
-        "new_york": (dt_time(12, 0), dt_time(21, 0)), # 12:00-21:00 UTC
+        "sydney": (dt_time(21, 0), dt_time(6, 0)),  # 21:00-06:00 UTC
+        "tokyo": (dt_time(0, 0), dt_time(9, 0)),  # 00:00-09:00 UTC
+        "london": (dt_time(7, 0), dt_time(16, 0)),  # 07:00-16:00 UTC
+        "new_york": (dt_time(12, 0), dt_time(21, 0)),  # 12:00-21:00 UTC
     }
 
     @classmethod
@@ -260,6 +278,7 @@ def get_pip_size(pair: str) -> float:
 # =========================
 # Data Download Functions
 # =========================
+
 
 def download_pair_oanda(
     pair: str,
@@ -343,16 +362,22 @@ def download_pair_oanda(
                     record["spread_pips"] = np.nan
 
                 if config.price_type == "bid_ask":
-                    record.update({
-                        "open_bid": float(bar.bid_open) if bar.bid_open is not None else np.nan,
-                        "high_bid": float(bar.bid_high) if bar.bid_high is not None else np.nan,
-                        "low_bid": float(bar.bid_low) if bar.bid_low is not None else np.nan,
-                        "close_bid": float(bar.bid_close) if bar.bid_close is not None else np.nan,
-                        "open_ask": float(bar.ask_open) if bar.ask_open is not None else np.nan,
-                        "high_ask": float(bar.ask_high) if bar.ask_high is not None else np.nan,
-                        "low_ask": float(bar.ask_low) if bar.ask_low is not None else np.nan,
-                        "close_ask": float(bar.ask_close) if bar.ask_close is not None else np.nan,
-                    })
+                    record.update(
+                        {
+                            "open_bid": float(bar.bid_open) if bar.bid_open is not None else np.nan,
+                            "high_bid": float(bar.bid_high) if bar.bid_high is not None else np.nan,
+                            "low_bid": float(bar.bid_low) if bar.bid_low is not None else np.nan,
+                            "close_bid": (
+                                float(bar.bid_close) if bar.bid_close is not None else np.nan
+                            ),
+                            "open_ask": float(bar.ask_open) if bar.ask_open is not None else np.nan,
+                            "high_ask": float(bar.ask_high) if bar.ask_high is not None else np.nan,
+                            "low_ask": float(bar.ask_low) if bar.ask_low is not None else np.nan,
+                            "close_ask": (
+                                float(bar.ask_close) if bar.ask_close is not None else np.nan
+                            ),
+                        }
+                    )
 
                 all_records.append(record)
 
@@ -371,7 +396,9 @@ def download_pair_oanda(
         df = pd.DataFrame(all_records)
 
         # Sort by timestamp
-        df = df.sort_values("timestamp").drop_duplicates(subset=["timestamp"]).reset_index(drop=True)
+        df = (
+            df.sort_values("timestamp").drop_duplicates(subset=["timestamp"]).reset_index(drop=True)
+        )
 
         # Add symbol column
         df["symbol"] = pair
@@ -433,10 +460,11 @@ def download_pair_dukascopy(
 
         logger.info(f"Downloading {pair} (Dukascopy): {start_dt.date()} to {end_dt.date()}")
         bars = adapter.get_bars(
-            symbol=pair, timeframe=config.timeframe,
+            symbol=pair,
+            timeframe=config.timeframe,
             start_ts=int(start_dt.timestamp() * 1000),
             end_ts=int(end_dt.timestamp() * 1000),
-            limit=10_000_000,   # keep the full range; adapter caps via max_hours
+            limit=10_000_000,  # keep the full range; adapter caps via max_hours
         )
         if not bars:
             return pair, None, "No data returned (weekend/holiday or out-of-range?)"
@@ -445,31 +473,41 @@ def download_pair_dukascopy(
         for bar in bars:
             record = {
                 "timestamp": bar.ts // 1000,
-                "open": float(bar.open), "high": float(bar.high),
-                "low": float(bar.low), "close": float(bar.close),
+                "open": float(bar.open),
+                "high": float(bar.high),
+                "low": float(bar.low),
+                "close": float(bar.close),
                 "volume": float(bar.volume_base),
                 "spread_pips": float(bar.volume_quote) if bar.volume_quote is not None else np.nan,
             }
             if config.price_type == "bid_ask":
-                record.update({
-                    "open_bid": float(bar.bid_open) if bar.bid_open is not None else np.nan,
-                    "high_bid": float(bar.bid_high) if bar.bid_high is not None else np.nan,
-                    "low_bid": float(bar.bid_low) if bar.bid_low is not None else np.nan,
-                    "close_bid": float(bar.bid_close) if bar.bid_close is not None else np.nan,
-                    "open_ask": float(bar.ask_open) if bar.ask_open is not None else np.nan,
-                    "high_ask": float(bar.ask_high) if bar.ask_high is not None else np.nan,
-                    "low_ask": float(bar.ask_low) if bar.ask_low is not None else np.nan,
-                    "close_ask": float(bar.ask_close) if bar.ask_close is not None else np.nan,
-                })
+                record.update(
+                    {
+                        "open_bid": float(bar.bid_open) if bar.bid_open is not None else np.nan,
+                        "high_bid": float(bar.bid_high) if bar.bid_high is not None else np.nan,
+                        "low_bid": float(bar.bid_low) if bar.bid_low is not None else np.nan,
+                        "close_bid": float(bar.bid_close) if bar.bid_close is not None else np.nan,
+                        "open_ask": float(bar.ask_open) if bar.ask_open is not None else np.nan,
+                        "high_ask": float(bar.ask_high) if bar.ask_high is not None else np.nan,
+                        "low_ask": float(bar.ask_low) if bar.ask_low is not None else np.nan,
+                        "close_ask": float(bar.ask_close) if bar.ask_close is not None else np.nan,
+                    }
+                )
             records.append(record)
 
-        df = pd.DataFrame(records).sort_values("timestamp").drop_duplicates(
-            subset=["timestamp"]).reset_index(drop=True)
+        df = (
+            pd.DataFrame(records)
+            .sort_values("timestamp")
+            .drop_duplicates(subset=["timestamp"])
+            .reset_index(drop=True)
+        )
         df["symbol"] = pair
         if config.add_session_labels:
             df["session"] = df["timestamp"].apply(
                 lambda ts: ForexCalendar.get_active_session(
-                    datetime.fromtimestamp(ts, tz=timezone.utc)))
+                    datetime.fromtimestamp(ts, tz=timezone.utc)
+                )
+            )
         if config.filter_weekends:
             df = _filter_weekends(df)
         if config.resample_to:
@@ -529,9 +567,15 @@ def _resample_bars(df: pd.DataFrame, target_timeframe: str) -> pd.DataFrame:
 
     # Map timeframe to pandas frequency
     freq_map = {
-        "5m": "5min", "15m": "15min", "30m": "30min",
-        "1h": "1h", "2h": "2h", "4h": "4h", "6h": "6h",
-        "1d": "1D", "1w": "1W",
+        "5m": "5min",
+        "15m": "15min",
+        "30m": "30min",
+        "1h": "1h",
+        "2h": "2h",
+        "4h": "4h",
+        "6h": "6h",
+        "1d": "1D",
+        "1w": "1W",
     }
 
     freq = freq_map.get(target_timeframe.lower())
@@ -581,6 +625,7 @@ def _resample_bars(df: pd.DataFrame, target_timeframe: str) -> pd.DataFrame:
 # File I/O
 # =========================
 
+
 def save_dataframe(
     df: pd.DataFrame,
     pair: str,
@@ -627,14 +672,18 @@ def load_pairs_from_file(filepath: str) -> List[str]:
         List of currency pairs
     """
     with open(filepath, "r") as f:
-        pairs = [line.strip().upper().replace("/", "_")
-                 for line in f if line.strip() and not line.startswith("#")]
+        pairs = [
+            line.strip().upper().replace("/", "_")
+            for line in f
+            if line.strip() and not line.startswith("#")
+        ]
     return pairs
 
 
 # =========================
 # Main Download Runner
 # =========================
+
 
 def download_all_pairs(config: ForexDownloadConfig) -> Dict[str, Any]:
     """
@@ -706,9 +755,7 @@ def download_all_pairs(config: ForexDownloadConfig) -> Dict[str, Any]:
         "total_failed": len(failed),
     }
 
-    logger.info(
-        f"Download complete: {len(success)} success, {len(failed)} failed"
-    )
+    logger.info(f"Download complete: {len(success)} success, {len(failed)} failed")
 
     return summary
 
@@ -716,6 +763,7 @@ def download_all_pairs(config: ForexDownloadConfig) -> Dict[str, Any]:
 # =========================
 # CLI
 # =========================
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
@@ -859,7 +907,8 @@ Examples:
         help="Redownload even if files exist",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose logging",
     )

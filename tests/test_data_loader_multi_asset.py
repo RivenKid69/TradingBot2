@@ -26,6 +26,7 @@ from unittest.mock import MagicMock, patch
 # Check for pyarrow availability (needed for parquet/feather tests)
 try:
     import pyarrow
+
     HAS_PYARROW = True
 except ImportError:
     HAS_PYARROW = False
@@ -55,21 +56,24 @@ from data_loader_multi_asset import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_crypto_df():
     """Create sample crypto DataFrame."""
     dates = pd.date_range("2025-01-01", periods=100, freq="4h", tz="UTC")
 
-    return pd.DataFrame({
-        "open_time": dates,
-        "open": np.random.uniform(40000, 50000, 100),
-        "high": np.random.uniform(45000, 55000, 100),
-        "low": np.random.uniform(35000, 45000, 100),
-        "close": np.random.uniform(40000, 50000, 100),
-        "volume": np.random.uniform(1000, 10000, 100),
-        "quote_volume": np.random.uniform(40000000, 500000000, 100),
-        "trades": np.random.randint(1000, 10000, 100),
-    })
+    return pd.DataFrame(
+        {
+            "open_time": dates,
+            "open": np.random.uniform(40000, 50000, 100),
+            "high": np.random.uniform(45000, 55000, 100),
+            "low": np.random.uniform(35000, 45000, 100),
+            "close": np.random.uniform(40000, 50000, 100),
+            "volume": np.random.uniform(1000, 10000, 100),
+            "quote_volume": np.random.uniform(40000000, 500000000, 100),
+            "trades": np.random.randint(1000, 10000, 100),
+        }
+    )
 
 
 @pytest.fixture
@@ -78,16 +82,18 @@ def sample_stock_df():
     # Create dates only during market hours (9:30 AM - 4:00 PM ET)
     dates = pd.date_range("2025-01-02 14:30:00", periods=50, freq="4h", tz="UTC")
 
-    return pd.DataFrame({
-        "timestamp": dates,
-        "open": np.random.uniform(150, 160, 50),
-        "high": np.random.uniform(155, 165, 50),
-        "low": np.random.uniform(145, 155, 50),
-        "close": np.random.uniform(150, 160, 50),
-        "volume": np.random.uniform(10000, 100000, 50),
-        "vwap": np.random.uniform(150, 160, 50),
-        "trade_count": np.random.randint(100, 1000, 50),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": dates,
+            "open": np.random.uniform(150, 160, 50),
+            "high": np.random.uniform(155, 165, 50),
+            "low": np.random.uniform(145, 155, 50),
+            "close": np.random.uniform(150, 160, 50),
+            "volume": np.random.uniform(10000, 100000, 50),
+            "vwap": np.random.uniform(150, 160, 50),
+            "trade_count": np.random.randint(100, 1000, 50),
+        }
+    )
 
 
 @pytest.fixture
@@ -129,6 +135,7 @@ def temp_parquet_file(sample_crypto_df):
 # Trading Hours Filter Tests
 # =============================================================================
 
+
 class TestFilterTradingHours:
     """Tests for trading hours filtering."""
 
@@ -168,14 +175,16 @@ class TestFilterTradingHours:
         # Create data with weekend dates
         dates = pd.date_range("2025-01-18", periods=10, freq="4h", tz="UTC")  # Saturday
 
-        df = pd.DataFrame({
-            "timestamp": dates,
-            "open": [100] * 10,
-            "high": [105] * 10,
-            "low": [95] * 10,
-            "close": [102] * 10,
-            "volume": [1000] * 10,
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": dates,
+                "open": [100] * 10,
+                "high": [105] * 10,
+                "low": [95] * 10,
+                "close": [102] * 10,
+                "volume": [1000] * 10,
+            }
+        )
 
         filtered = filter_trading_hours(
             df,
@@ -202,6 +211,7 @@ class TestFilterTradingHours:
 # =============================================================================
 # Timeframe Utilities Tests
 # =============================================================================
+
 
 class TestTimeframeUtilities:
     """Tests for timeframe conversion utilities."""
@@ -235,6 +245,7 @@ class TestTimeframeUtilities:
 # AssetClass and DataVendor Tests
 # =============================================================================
 
+
 class TestEnums:
     """Tests for enum classes."""
 
@@ -253,6 +264,7 @@ class TestEnums:
 # =============================================================================
 # DataFrame Validation Tests
 # =============================================================================
+
 
 class TestValidateData:
     """Tests for data validation."""
@@ -277,11 +289,13 @@ class TestValidateData:
 
     def test_missing_required_columns(self):
         """Test DataFrame missing required columns."""
-        df = pd.DataFrame({
-            "open": [100, 101],
-            "close": [102, 103],
-            # Missing timestamp, high, low, volume
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100, 101],
+                "close": [102, 103],
+                # Missing timestamp, high, low, volume
+            }
+        )
 
         is_valid, errors = validate_data(df, min_rows=1)
         # Should report missing columns
@@ -290,14 +304,16 @@ class TestValidateData:
 
     def test_all_nan_values(self):
         """Test DataFrame with all NaN values."""
-        df = pd.DataFrame({
-            "timestamp": [1704067200 + i * 3600 for i in range(5)],
-            "open": [np.nan] * 5,
-            "high": [np.nan] * 5,
-            "low": [np.nan] * 5,
-            "close": [np.nan] * 5,
-            "volume": [np.nan] * 5,
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [1704067200 + i * 3600 for i in range(5)],
+                "open": [np.nan] * 5,
+                "high": [np.nan] * 5,
+                "low": [np.nan] * 5,
+                "close": [np.nan] * 5,
+                "volume": [np.nan] * 5,
+            }
+        )
 
         is_valid, errors = validate_data(df, min_rows=1)
         # Should report NaN issues
@@ -308,6 +324,7 @@ class TestValidateData:
 # =============================================================================
 # Load From File Tests
 # =============================================================================
+
 
 @pyarrow_required
 class TestLoadFromFile:
@@ -344,6 +361,7 @@ class TestLoadFromFile:
 # =============================================================================
 # Multi-Asset Loading Tests
 # =============================================================================
+
 
 class TestLoadMultiAssetData:
     """Tests for multi-asset data loading."""
@@ -402,6 +420,7 @@ class TestLoadMultiAssetData:
 # Adapter Loading Tests
 # =============================================================================
 
+
 class TestLoadFromAdapter:
     """Tests for loading data from adapters."""
 
@@ -434,6 +453,7 @@ class TestLoadFromAdapter:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestMultiAssetIntegration:
     """Integration tests for multi-asset loading."""
@@ -490,18 +510,21 @@ class TestMultiAssetIntegration:
 # Edge Case Tests
 # =============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
     def test_handle_missing_timestamp_column(self):
         """Test handling DataFrame without timestamp column."""
-        df = pd.DataFrame({
-            "open": [100, 101],
-            "high": [105, 106],
-            "low": [95, 96],
-            "close": [102, 103],
-            "volume": [1000, 1100],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100, 101],
+                "high": [105, 106],
+                "low": [95, 96],
+                "close": [102, 103],
+                "volume": [1000, 1100],
+            }
+        )
 
         # Should handle gracefully via validate_data
         is_valid, errors = validate_data(df, min_rows=1)
@@ -535,14 +558,16 @@ class TestEdgeCases:
 
     def test_handle_extreme_values(self):
         """Test handling extreme price values."""
-        df = pd.DataFrame({
-            "timestamp": [1704067200 + i * 14400 for i in range(10)],
-            "open": [1e10] * 10,  # Very high price
-            "high": [1e10 * 1.1] * 10,
-            "low": [1e10 * 0.9] * 10,
-            "close": [1e10] * 10,
-            "volume": [1e15] * 10,  # Very high volume
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [1704067200 + i * 14400 for i in range(10)],
+                "open": [1e10] * 10,  # Very high price
+                "high": [1e10 * 1.1] * 10,
+                "low": [1e10 * 0.9] * 10,
+                "close": [1e10] * 10,
+                "volume": [1e15] * 10,  # Very high volume
+            }
+        )
 
         # Should handle without overflow
         is_valid, errors = validate_data(df, min_rows=1)
@@ -550,14 +575,16 @@ class TestEdgeCases:
 
     def test_handle_zero_volume(self):
         """Test handling zero volume bars."""
-        df = pd.DataFrame({
-            "timestamp": [1704067200 + i * 14400 for i in range(10)],
-            "open": [100.0] * 10,
-            "high": [105.0] * 10,
-            "low": [95.0] * 10,
-            "close": [102.0] * 10,
-            "volume": [0.0] * 10,  # Zero volume
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [1704067200 + i * 14400 for i in range(10)],
+                "open": [100.0] * 10,
+                "high": [105.0] * 10,
+                "low": [95.0] * 10,
+                "close": [102.0] * 10,
+                "volume": [0.0] * 10,  # Zero volume
+            }
+        )
 
         # Should handle zero volume
         is_valid, errors = validate_data(df, min_rows=1)

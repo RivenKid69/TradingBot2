@@ -1,4 +1,5 @@
 # EU Data Residency Configuration
+
 ## DORA Article 30(2)(b) Alignment (Design Specification)
 
 **Version**: 1.0
@@ -124,6 +125,7 @@ Article 30(2)(b) mandates contracts include:
 ### 5.1 Availability
 
 EU-Only configuration is available at:
+
 - **Standard Tier**: Included (default)
 - **Professional Tier**: Included (default)
 - **Enterprise Tier**: Included with dedicated region options
@@ -135,17 +137,20 @@ EU-Only configuration is available at:
 When EU-Only is enabled, the configuration is designed to:
 
 **Data Processing (design intent):**
+
 - Process client data within EU/EEA regions
 - Minimize client data transfers to non-EU jurisdictions (see exceptions in 5.3)
 - Process database queries in EU regions
 
 **Data Storage (design intent):**
+
 - Primary storage: Germany (Frankfurt)
 - Backup storage: Germany (Frankfurt) or Ireland
 - DR storage: Ireland (EU)
 - Avoid storage in non-EU regions (see exceptions in 5.3)
 
 **Data Transit:**
+
 - Encrypted in transit (TLS 1.3)
 - Routed through EU network paths where possible
 - CDN caches within EU Points of Presence where possible (see exceptions in 5.3)
@@ -254,6 +259,7 @@ Enterprise clients may request:
 ### 8.2 Configuration Request
 
 To request specific configuration:
+
 1. Submit configuration request via client portal
 2. Technical review (5 business days)
 3. Implementation proposal with timeline
@@ -278,6 +284,7 @@ To request specific configuration:
 ### 9.2 Client Verification
 
 Clients may verify EU data residency via:
+
 - API endpoint: `GET /api/v1/compliance/data-locations`
 - Monthly compliance report
 - On-demand audit request

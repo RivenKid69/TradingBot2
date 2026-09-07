@@ -45,17 +45,18 @@ def test_conservative_clipping_boundary() -> None:
     # Verify clamping behavior
     expected = [-20.0, -20.0, -15.0, 0.0, 15.0, 20.0, 20.0]
     for i, (actual, exp_val) in enumerate(zip(log_ratio_clamped.tolist(), expected)):
-        assert abs(actual - exp_val) < 1e-6, \
-            f"log_ratio[{i}] clamped incorrectly: got {actual}, expected {exp_val}"
+        assert (
+            abs(actual - exp_val) < 1e-6
+        ), f"log_ratio[{i}] clamped incorrectly: got {actual}, expected {exp_val}"
 
     # Verify exp(±20) is finite
     ratio = torch.exp(log_ratio_clamped)
-    assert torch.all(torch.isfinite(ratio)), \
-        f"exp(±20) should be finite: {ratio.tolist()}"
+    assert torch.all(torch.isfinite(ratio)), f"exp(±20) should be finite: {ratio.tolist()}"
 
     # Verify exp(20) ≈ 485M
-    assert abs(ratio[-1].item() - 4.85e8) < 1e6, \
-        f"exp(20) should be ≈4.85e8, got {ratio[-1].item():.2e}"
+    assert (
+        abs(ratio[-1].item() - 4.85e8) < 1e6
+    ), f"exp(20) should be ≈4.85e8, got {ratio[-1].item():.2e}"
 
 
 def test_old_aggressive_clipping_was_too_permissive() -> None:
@@ -71,8 +72,7 @@ def test_old_aggressive_clipping_was_too_permissive() -> None:
 
     # exp(±85) is astronomically large
     # exp(85) ≈ 8×10³⁶ (completely masks training instability)
-    assert ratio_old[-1].item() > 1e30, \
-        f"exp(85) ≈ 8×10³⁶, got {ratio_old[-1].item():.2e}"
+    assert ratio_old[-1].item() > 1e30, f"exp(85) ≈ 8×10³⁶, got {ratio_old[-1].item():.2e}"
 
     # At these scales, PPO clipping (clip_range=0.2) is meaningless
     clip_range = 0.2
@@ -93,8 +93,7 @@ def test_extreme_value_detection_threshold() -> None:
 
     # Simulate batch with various log_ratio values
     log_ratios = torch.tensor(
-        [-15.0, -10.5, -5.0, -0.1, 0.0, 0.1, 5.0, 10.5, 15.0],
-        dtype=torch.float32
+        [-15.0, -10.5, -5.0, -0.1, 0.0, 0.1, 5.0, 10.5, 15.0], dtype=torch.float32
     )
 
     # Detection threshold (|log_ratio| > 10 indicates severe instability)
@@ -104,8 +103,7 @@ def test_extreme_value_detection_threshold() -> None:
     # Verify detection
     expected_extreme = [True, True, False, False, False, False, False, True, True]
     for i, (detected, expected) in enumerate(zip(extreme_mask.tolist(), expected_extreme)):
-        assert detected == expected, \
-            f"log_ratio[{i}]={log_ratios[i].item()} detection mismatch"
+        assert detected == expected, f"log_ratio[{i}]={log_ratios[i].item()} detection mismatch"
 
     # Count extreme values
     extreme_count = extreme_mask.sum().item()
@@ -130,7 +128,9 @@ def test_log_ratio_statistics_calculation() -> None:
     log_ratio_count = int(log_ratios.numel())
 
     log_ratio_mean = log_ratio_sum / float(log_ratio_count)
-    raw_var = (log_ratio_sq_sum - log_ratio_count * log_ratio_mean**2) / (float(log_ratio_count) - 1.0)
+    raw_var = (log_ratio_sq_sum - log_ratio_count * log_ratio_mean**2) / (
+        float(log_ratio_count) - 1.0
+    )
     log_ratio_var = max(raw_var, 0.0)
     log_ratio_std = math.sqrt(log_ratio_var)
 
@@ -138,8 +138,7 @@ def test_log_ratio_statistics_calculation() -> None:
     log_ratio_max_abs = torch.max(torch.abs(log_ratios)).item()
 
     # Verify max_abs captures extreme value
-    assert log_ratio_max_abs == 15.0, \
-        f"max_abs should be 15.0, got {log_ratio_max_abs}"
+    assert log_ratio_max_abs == 15.0, f"max_abs should be 15.0, got {log_ratio_max_abs}"
 
     # Verify statistics are reasonable
     assert math.isfinite(log_ratio_mean), "mean should be finite"
@@ -153,12 +152,12 @@ def test_warning_levels() -> None:
 
     # Test cases: (log_ratio_max_abs, expected_warning_level)
     test_cases = [
-        (0.1, "healthy"),      # Healthy training
-        (0.5, "healthy"),      # Still healthy
-        (1.5, "concerning"),   # Concerning (> 1.0)
-        (5.0, "concerning"),   # Concerning
-        (10.5, "severe"),      # Severe (> 10.0)
-        (19.0, "severe"),      # Severe, approaching clip boundary
+        (0.1, "healthy"),  # Healthy training
+        (0.5, "healthy"),  # Still healthy
+        (1.5, "concerning"),  # Concerning (> 1.0)
+        (5.0, "concerning"),  # Concerning
+        (10.5, "severe"),  # Severe (> 10.0)
+        (19.0, "severe"),  # Severe, approaching clip boundary
     ]
 
     for max_abs, expected_level in test_cases:
@@ -170,8 +169,9 @@ def test_warning_levels() -> None:
         else:
             warning_level = "healthy"
 
-        assert warning_level == expected_level, \
-            f"log_ratio_max_abs={max_abs}: expected {expected_level}, got {warning_level}"
+        assert (
+            warning_level == expected_level
+        ), f"log_ratio_max_abs={max_abs}: expected {expected_level}, got {warning_level}"
 
 
 def test_extreme_fraction_calculation() -> None:
@@ -196,10 +196,10 @@ def test_extreme_fraction_calculation() -> None:
     extreme_fraction = float(extreme_count) / float(batch_size)
 
     # Verify
-    assert extreme_count >= num_extreme_inject, \
-        f"Should detect at least {num_extreme_inject} extreme values"
-    assert 0.0 < extreme_fraction < 0.1, \
-        f"Extreme fraction should be small, got {extreme_fraction}"
+    assert (
+        extreme_count >= num_extreme_inject
+    ), f"Should detect at least {num_extreme_inject} extreme values"
+    assert 0.0 < extreme_fraction < 0.1, f"Extreme fraction should be small, got {extreme_fraction}"
 
 
 def test_numerical_stability_exp_20() -> None:
@@ -210,17 +210,18 @@ def test_numerical_stability_exp_20() -> None:
     log_ratios = torch.tensor([-20.0, 20.0], dtype=torch.float32)
     ratios = torch.exp(log_ratios)
 
-    assert torch.all(torch.isfinite(ratios)), \
-        f"exp(±20) should be finite: {ratios.tolist()}"
+    assert torch.all(torch.isfinite(ratios)), f"exp(±20) should be finite: {ratios.tolist()}"
 
     # Verify values
     # exp(-20) ≈ 2.06×10⁻⁹
-    assert abs(ratios[0].item() - 2.06e-9) < 1e-10, \
-        f"exp(-20) should be ≈2.06e-9, got {ratios[0].item():.2e}"
+    assert (
+        abs(ratios[0].item() - 2.06e-9) < 1e-10
+    ), f"exp(-20) should be ≈2.06e-9, got {ratios[0].item():.2e}"
 
     # exp(20) ≈ 4.85×10⁸
-    assert abs(ratios[1].item() - 4.85e8) < 1e6, \
-        f"exp(20) should be ≈4.85e8, got {ratios[1].item():.2e}"
+    assert (
+        abs(ratios[1].item() - 4.85e8) < 1e6
+    ), f"exp(20) should be ≈4.85e8, got {ratios[1].item():.2e}"
 
 
 def test_monitoring_before_clamping() -> None:
@@ -238,12 +239,10 @@ def test_monitoring_before_clamping() -> None:
     max_abs_after = torch.max(torch.abs(log_ratios_clamped)).item()
 
     # Monitoring before clamping captures true max (25.0)
-    assert max_abs_before == 25.0, \
-        f"Should capture unclamped max=25.0, got {max_abs_before}"
+    assert max_abs_before == 25.0, f"Should capture unclamped max=25.0, got {max_abs_before}"
 
     # After clamping, max is 20.0
-    assert max_abs_after == 20.0, \
-        f"Clamped max should be 20.0, got {max_abs_after}"
+    assert max_abs_after == 20.0, f"Clamped max should be 20.0, got {max_abs_after}"
 
     # This demonstrates why monitoring must happen BEFORE clamping
 
@@ -263,12 +262,13 @@ def test_realistic_healthy_training_scenario() -> None:
     log_ratio_max_abs = torch.max(torch.abs(log_ratios)).item()
 
     # Verify healthy training characteristics
-    assert abs(log_ratio_mean) < 0.01, \
-        f"Healthy training should have mean≈0, got {log_ratio_mean}"
-    assert 0.03 < log_ratio_std < 0.07, \
-        f"Healthy training should have std≈0.05, got {log_ratio_std}"
-    assert log_ratio_max_abs < 0.2, \
-        f"Healthy training should have max_abs<0.2, got {log_ratio_max_abs}"
+    assert abs(log_ratio_mean) < 0.01, f"Healthy training should have mean≈0, got {log_ratio_mean}"
+    assert (
+        0.03 < log_ratio_std < 0.07
+    ), f"Healthy training should have std≈0.05, got {log_ratio_std}"
+    assert (
+        log_ratio_max_abs < 0.2
+    ), f"Healthy training should have max_abs<0.2, got {log_ratio_max_abs}"
 
     # No extreme values
     extreme_mask = torch.abs(log_ratios) > 10.0
@@ -309,8 +309,7 @@ def test_integration_with_ppo_loss() -> None:
     policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
 
     # Verify loss is finite
-    assert torch.isfinite(policy_loss), \
-        f"PPO loss should be finite, got {policy_loss.item()}"
+    assert torch.isfinite(policy_loss), f"PPO loss should be finite, got {policy_loss.item()}"
 
 
 def test_gradient_flow_with_conservative_clipping() -> None:
@@ -331,8 +330,9 @@ def test_gradient_flow_with_conservative_clipping() -> None:
     # Gradient should be zero because log_ratio_raw=25 is clamped to 20
     # (value is outside the active region)
     assert log_ratio_raw.grad is not None, "Gradient should be computed"
-    assert abs(log_ratio_raw.grad[0].item()) < 1e-6, \
-        "Gradient should be ~0 when clamped (this is expected behavior)"
+    assert (
+        abs(log_ratio_raw.grad[0].item()) < 1e-6
+    ), "Gradient should be ~0 when clamped (this is expected behavior)"
 
 
 def test_comparison_healthy_vs_unstable() -> None:
@@ -376,15 +376,13 @@ def test_approx_kl_relationship() -> None:
 
     # Verify relationship
     expected_kl = -log_ratio
-    assert torch.allclose(approx_kl, expected_kl, atol=1e-6), \
-        f"approx_kl should equal -log_ratio"
+    assert torch.allclose(approx_kl, expected_kl, atol=1e-6), f"approx_kl should equal -log_ratio"
 
     # In healthy training: |approx_kl| < 0.02 (OpenAI Spinning Up)
     # This means |log_ratio| < 0.02
     for i, lr in enumerate(log_ratio.tolist()):
         ak = approx_kl[i].item()
-        assert abs(ak + lr) < 1e-6, \
-            f"approx_kl[{i}]={ak} should equal -log_ratio[{i}]={-lr}"
+        assert abs(ak + lr) < 1e-6, f"approx_kl[{i}]={ak} should equal -log_ratio[{i}]={-lr}"
 
 
 if __name__ == "__main__":

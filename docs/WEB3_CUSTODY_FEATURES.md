@@ -14,6 +14,7 @@
 сохраняется и не применяется».
 
 Стало:
+
 - **Реальный gas oracle** — `eth_gasPrice` с публичного JSON-RPC узла
   (publicnode.com, без ключей) для ethereum/base/arbitrum/optimism/polygon.
   Вызов делает backend → браузерный CSP/offline не мешает.
@@ -39,6 +40,7 @@ breached, preflight `allow=False`.
 
 Стало: **настоящий клиент Fireblocks REST API** с корректной аутентификацией
 (это не заглушка — рабочий connector, нужен institutional-аккаунт Fireblocks):
+
 - **RS256-JWT**, подписанный RSA-ключом пользователя, с полным набором claim'ов
   Fireblocks: `uri` (путь+query), `nonce`, `iat`, `exp` (< ~55с), `sub`=apiKey,
   `bodyHash`=sha256(body). Заголовки `X-API-Key` + `Authorization: Bearer`.
@@ -96,6 +98,7 @@ Coinbase, Brave, Frame, Trust…) БЕЗ внешнего SDK, чисто чер
 нальными safeguard'ами для движения реальных денег.
 
 Клиент (`services/custody/fireblocks_client.py`):
+
 - `estimate_fee` → `POST /v1/transactions/estimate_fee` (реальная оценка);
 - `create_transaction` → `POST /v1/transactions` (MPC co-signing — на стороне
   Fireblocks по TAP-политике vault'а; мы аутентифицируем вызов JWT);
@@ -105,6 +108,7 @@ Coinbase, Brave, Frame, Trust…) БЕЗ внешнего SDK, чисто чер
   для идемпотентности; source/destination явными типами).
 
 Оркестрация (REST, `app.py`) — best practices движения денег:
+
 - **Two-step ceremony** (как CCEA live-trading): `POST …/withdraw/preview`
   (валидация + реальная estimate_fee + Gas Guard preflight + одноразовый
   `confirmation_token` + `externalTxId`) → `POST …/withdraw/submit` (тот же

@@ -8,6 +8,7 @@ See LSTM_STATE_RESET_AFTER_PBT_ANALYSIS.md for full analysis.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import pytest
@@ -25,6 +26,7 @@ RNNStates = namedtuple("RNNStates", ["pi", "vf"])
 
 class MockRecurrentPolicy(nn.Module):
     """Mock recurrent policy for testing LSTM state management."""
+
     def __init__(self, obs_dim: int = 10, action_dim: int = 4, lstm_hidden_size: int = 64):
         super().__init__()
         self.obs_dim = obs_dim
@@ -53,7 +55,7 @@ class MockRecurrentPolicy(nn.Module):
         self,
         obs: torch.Tensor,
         lstm_states: RNNStates,
-        episode_starts: Optional[torch.Tensor] = None
+        episode_starts: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, RNNStates]:
         """
         Forward pass with LSTM.
@@ -99,6 +101,7 @@ class MockDistributionalPPO:
 
     Only implements the parts relevant to LSTM state management.
     """
+
     def __init__(self, policy: MockRecurrentPolicy, device: str = "cpu"):
         self.policy = policy
         self.device = torch.device(device)
@@ -106,9 +109,7 @@ class MockDistributionalPPO:
         self.logger = None  # Mock logger
 
     def _clone_states_to_device(
-        self,
-        states: Optional[RNNStates],
-        device: torch.device
+        self, states: Optional[RNNStates], device: torch.device
     ) -> Optional[RNNStates]:
         """Clone states to device."""
         if states is None:
@@ -152,9 +153,10 @@ class TestLSTMStateResetAfterPBT:
         # This test checks the actual implementation
         try:
             from distributional_ppo import DistributionalPPO
-            assert hasattr(DistributionalPPO, "reset_lstm_states_to_initial"), (
-                "DistributionalPPO must have reset_lstm_states_to_initial method"
-            )
+
+            assert hasattr(
+                DistributionalPPO, "reset_lstm_states_to_initial"
+            ), "DistributionalPPO must have reset_lstm_states_to_initial method"
         except ImportError:
             pytest.skip("DistributionalPPO not importable (expected in some test environments)")
 
@@ -175,9 +177,9 @@ class TestLSTMStateResetAfterPBT:
 
         # Verify states are not zero
         pi_h_before = states_before_reset.pi[0]
-        assert not torch.allclose(pi_h_before, torch.zeros_like(pi_h_before)), (
-            "LSTM states should be non-zero after several predictions"
-        )
+        assert not torch.allclose(
+            pi_h_before, torch.zeros_like(pi_h_before)
+        ), "LSTM states should be non-zero after several predictions"
 
         # Reset LSTM states
         model.reset_lstm_states_to_initial()
@@ -186,18 +188,18 @@ class TestLSTMStateResetAfterPBT:
         states_after_reset = model._last_lstm_states
         init_states = policy.recurrent_initial_state
 
-        assert torch.allclose(states_after_reset.pi[0], init_states.pi[0]), (
-            "Policy LSTM hidden state should be reset to zero"
-        )
-        assert torch.allclose(states_after_reset.pi[1], init_states.pi[1]), (
-            "Policy LSTM cell state should be reset to zero"
-        )
-        assert torch.allclose(states_after_reset.vf[0], init_states.vf[0]), (
-            "Value LSTM hidden state should be reset to zero"
-        )
-        assert torch.allclose(states_after_reset.vf[1], init_states.vf[1]), (
-            "Value LSTM cell state should be reset to zero"
-        )
+        assert torch.allclose(
+            states_after_reset.pi[0], init_states.pi[0]
+        ), "Policy LSTM hidden state should be reset to zero"
+        assert torch.allclose(
+            states_after_reset.pi[1], init_states.pi[1]
+        ), "Policy LSTM cell state should be reset to zero"
+        assert torch.allclose(
+            states_after_reset.vf[0], init_states.vf[0]
+        ), "Value LSTM hidden state should be reset to zero"
+        assert torch.allclose(
+            states_after_reset.vf[1], init_states.vf[1]
+        ), "Value LSTM cell state should be reset to zero"
 
     def test_prediction_stability_after_weight_load_with_reset(self):
         """
@@ -240,15 +242,14 @@ class TestLSTMStateResetAfterPBT:
         # Verify LSTM states were reset (not same as before)
         lstm_states_after_reset = target_model._last_lstm_states
         assert not torch.allclose(
-            lstm_states_after_reset.pi[0],
-            lstm_states_before_exploit.pi[0]
+            lstm_states_after_reset.pi[0], lstm_states_before_exploit.pi[0]
         ), "LSTM states should be different after reset"
 
         # Verify states are now zero (initial)
         init_states = source_policy.recurrent_initial_state
-        assert torch.allclose(lstm_states_after_reset.pi[0], init_states.pi[0]), (
-            "LSTM states should be zero after reset"
-        )
+        assert torch.allclose(
+            lstm_states_after_reset.pi[0], init_states.pi[0]
+        ), "LSTM states should be zero after reset"
 
         # Run predictions and verify stability
         predictions = []
@@ -259,9 +260,9 @@ class TestLSTMStateResetAfterPBT:
 
         # Predictions should be stable (not diverging)
         action_variance = np.var([p[0] for p in predictions])
-        assert action_variance < 100.0, (
-            f"Actions should be stable after reset, but got variance={action_variance:.4f}"
-        )
+        assert (
+            action_variance < 100.0
+        ), f"Actions should be stable after reset, but got variance={action_variance:.4f}"
 
     def test_prediction_instability_without_reset(self):
         """
@@ -374,14 +375,8 @@ class TestLSTMStateResetAfterPBT:
         states_after_second_reset = copy.deepcopy(model._last_lstm_states)
 
         # States should be identical
-        assert torch.allclose(
-            states_after_first_reset.pi[0],
-            states_after_second_reset.pi[0]
-        )
-        assert torch.allclose(
-            states_after_first_reset.vf[0],
-            states_after_second_reset.vf[0]
-        )
+        assert torch.allclose(states_after_first_reset.pi[0], states_after_second_reset.pi[0])
+        assert torch.allclose(states_after_first_reset.vf[0], states_after_second_reset.vf[0])
 
 
 if __name__ == "__main__":

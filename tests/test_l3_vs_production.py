@@ -20,6 +20,7 @@ Since we don't have actual production data, these tests:
 import math
 import time
 import pytest
+
 pytest.importorskip("sortedcontainers")
 import numpy as np
 from typing import List, Dict, Optional, Tuple
@@ -97,25 +98,29 @@ def create_symmetric_orderbook(
     for i in range(levels):
         # Bids (decreasing prices)
         bid_price = mid_price - half_spread - i * 0.01
-        book.add_limit_order(LimitOrder(
-            order_id=f"bid_{i}",
-            price=bid_price,
-            qty=qty_per_level,
-            remaining_qty=qty_per_level,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id=f"bid_{i}",
+                price=bid_price,
+                qty=qty_per_level,
+                remaining_qty=qty_per_level,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         # Asks (increasing prices)
         ask_price = mid_price + half_spread + i * 0.01
-        book.add_limit_order(LimitOrder(
-            order_id=f"ask_{i}",
-            price=ask_price,
-            qty=qty_per_level,
-            remaining_qty=qty_per_level,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id=f"ask_{i}",
+                price=ask_price,
+                qty=qty_per_level,
+                remaining_qty=qty_per_level,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
     return book
 
@@ -157,7 +162,7 @@ def simulate_order_flow(
             fill_prices.append(result.avg_fill_price)
             fills += 1
         else:
-            fill_prices.append(float('nan'))
+            fill_prices.append(float("nan"))
 
         total += 1
 
@@ -183,9 +188,7 @@ class TestFillRateAccuracy:
         )
         engine = MatchingEngine()
 
-        _, _, fill_rate = simulate_order_flow(
-            book, engine, n_orders=100, size_mean=100.0
-        )
+        _, _, fill_rate = simulate_order_flow(book, engine, n_orders=100, size_mean=100.0)
 
         # In very liquid market, fill rate should be high
         assert fill_rate >= 0.95, f"Fill rate {fill_rate:.2%} below 95%"
@@ -217,9 +220,7 @@ class TestFillRateAccuracy:
         for seed in range(5):
             book = create_symmetric_orderbook()
             engine = MatchingEngine()
-            _, _, fill_rate = simulate_order_flow(
-                book, engine, n_orders=50, seed=seed
-            )
+            _, _, fill_rate = simulate_order_flow(book, engine, n_orders=50, seed=seed)
             fill_rates.append(fill_rate)
 
         # All runs should have similar fill rates (within 20%)
@@ -325,14 +326,16 @@ class TestQueuePositionError:
         # Create orders ahead
         orders_ahead = []
         for i in range(10):
-            orders_ahead.append(LimitOrder(
-                order_id=f"order_{i}",
-                price=100.0,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000 + i,
-                side=Side.BUY,
-            ))
+            orders_ahead.append(
+                LimitOrder(
+                    order_id=f"order_{i}",
+                    price=100.0,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000 + i,
+                    side=Side.BUY,
+                )
+            )
 
         # Our order
         our_order = LimitOrder(
@@ -463,24 +466,26 @@ class TestPnLCorrelation:
         volatility = 0.02
         mid_price = 100.0
 
-        ac_impact = ac_model.compute_total_impact(
-            order_qty, adv, volatility, mid_price
-        )
-        kyle_impact = kyle_model.compute_total_impact(
-            order_qty, adv, volatility, mid_price
-        )
+        ac_impact = ac_model.compute_total_impact(order_qty, adv, volatility, mid_price)
+        kyle_impact = kyle_model.compute_total_impact(order_qty, adv, volatility, mid_price)
 
         # Both models should produce non-negative impact cost
         assert ac_impact.impact_cost >= 0, f"AC impact cost {ac_impact.impact_cost} should be >= 0"
-        assert kyle_impact.impact_cost >= 0, f"Kyle impact cost {kyle_impact.impact_cost} should be >= 0"
+        assert (
+            kyle_impact.impact_cost >= 0
+        ), f"Kyle impact cost {kyle_impact.impact_cost} should be >= 0"
 
         # Both models should produce reasonable impact in basis points (< 100 bps for this size)
         # Almgren-Chriss typically gives realistic estimates
-        assert ac_impact.total_impact_bps < 100.0, f"AC impact {ac_impact.total_impact_bps:.1f} bps seems too high"
+        assert (
+            ac_impact.total_impact_bps < 100.0
+        ), f"AC impact {ac_impact.total_impact_bps:.1f} bps seems too high"
 
         # Kyle model impact should be finite and positive
         # With lambda=0.000001, impact = 0.000001 * 10000 * 10000 = 100 bps (1%)
-        assert 0 <= kyle_impact.total_impact_bps < 500.0, f"Kyle impact {kyle_impact.total_impact_bps:.1f} bps out of range"
+        assert (
+            0 <= kyle_impact.total_impact_bps < 500.0
+        ), f"Kyle impact {kyle_impact.total_impact_bps:.1f} bps out of range"
 
 
 # ==============================================================================
@@ -567,9 +572,7 @@ class TestL3vsL2Consistency:
             ask=book.best_ask,
             adv=10_000_000.0,
         )
-        bar_data = BarData(
-            open=100.0, high=101.0, low=99.0, close=100.0, volume=100000.0
-        )
+        bar_data = BarData(open=100.0, high=101.0, low=99.0, close=100.0, volume=100000.0)
         l2_fill = l2_provider.execute(order, market_state, bar_data)
 
         # Both should fill at ask or higher for buy orders
@@ -680,12 +683,18 @@ class TestFillProbabilityModels:
 
         # At front of queue with high volume
         front_poisson = poisson.compute_fill_probability(
-            queue_position=1, qty_ahead=0.0, order_qty=100.0,
-            time_horizon_sec=60.0, market_state=high_volume_state,
+            queue_position=1,
+            qty_ahead=0.0,
+            order_qty=100.0,
+            time_horizon_sec=60.0,
+            market_state=high_volume_state,
         )
         front_qr = queue_reactive.compute_fill_probability(
-            queue_position=1, qty_ahead=0.0, order_qty=100.0,
-            time_horizon_sec=60.0, market_state=high_volume_state,
+            queue_position=1,
+            qty_ahead=0.0,
+            order_qty=100.0,
+            time_horizon_sec=60.0,
+            market_state=high_volume_state,
         )
 
         # Both should predict high probability at front
@@ -749,8 +758,7 @@ class TestMarketImpactModels:
         # Crypto typically has higher impact due to lower liquidity
         # This test verifies parameters are different
         # ImpactParameters uses eta (temporary) and gamma (permanent) coefficients
-        assert equity_params.eta != crypto_params.eta or \
-               equity_params.gamma != crypto_params.gamma
+        assert equity_params.eta != crypto_params.eta or equity_params.gamma != crypto_params.gamma
 
 
 # ==============================================================================
@@ -796,9 +804,7 @@ class TestDarkPoolValidation:
                 timestamp_ns=1000,
                 side=Side.BUY,
             )
-            fill = simulator.attempt_dark_fill(
-                order, mid_price, lit_spread, 10_000_000.0, 0.02, 10
-            )
+            fill = simulator.attempt_dark_fill(order, mid_price, lit_spread, 10_000_000.0, 0.02, 10)
             if fill and fill.is_filled:
                 fills.append(fill)
 
@@ -864,9 +870,7 @@ class TestIntegrationValidation:
         # Execute a trade
         order = Order(symbol="BTC-USDT", side="BUY", qty=0.1, order_type="MARKET")
         market_state = MarketState(timestamp=0, bid=50000.0, ask=50010.0, adv=100_000_000.0)
-        bar_data = BarData(
-            open=50000.0, high=50100.0, low=49900.0, close=50050.0, volume=1000.0
-        )
+        bar_data = BarData(open=50000.0, high=50100.0, low=49900.0, close=50050.0, volume=1000.0)
 
         fill = crypto_provider.execute(order, market_state, bar_data)
 
@@ -913,8 +917,11 @@ class TestPerformanceValidation:
         start = time.perf_counter()
         for _ in range(n_ops):
             model.compute_fill_probability(
-                queue_position=5, qty_ahead=500.0, order_qty=100.0,
-                time_horizon_sec=60.0, market_state=market_state,
+                queue_position=5,
+                qty_ahead=500.0,
+                order_qty=100.0,
+                time_horizon_sec=60.0,
+                market_state=market_state,
             )
         elapsed = time.perf_counter() - start
 

@@ -81,19 +81,13 @@ class StrategyFSGuard:
         return False
 
     def _patched_open(self, file, mode="r", *args, **kwargs):  # type: ignore[override]
-        if (
-            self.mode == "read_only"
-            and self._is_write_mode(mode)
-            and self._is_strategy_frame()
-        ):
+        if self.mode == "read_only" and self._is_write_mode(mode) and self._is_strategy_frame():
             try:
                 target = Path(file).resolve()
             except Exception:
                 return self._orig_open(file, mode, *args, **kwargs)
             if not self._is_allowed_path(target):
-                raise PermissionError(
-                    f"Strategy write blocked by read-only guard: {target}"
-                )
+                raise PermissionError(f"Strategy write blocked by read-only guard: {target}")
         return self._orig_open(file, mode, *args, **kwargs)
 
     def _patched_path_open(self, path, mode="r", *args, **kwargs):  # type: ignore[override]

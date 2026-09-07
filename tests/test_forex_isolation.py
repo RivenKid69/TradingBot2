@@ -15,7 +15,7 @@ Key Isolation Properties:
 Test Count Target: 35 tests
 
 References:
-    - CLAUDE.md: Isolation verification requirements
+    - docs/PLATFORM_REFERENCE.md: Isolation verification requirements
     - docs/FOREX_INTEGRATION_PLAN.md: Phase 10 requirements
 """
 
@@ -29,6 +29,7 @@ from typing import Set, Dict, Any
 # =============================================================================
 # Import Isolation Tests
 # =============================================================================
+
 
 class TestImportIsolation:
     """Verify import isolation between asset classes."""
@@ -50,6 +51,7 @@ class TestImportIsolation:
         # Since we can't truly isolate in process, check that
         # forex_features doesn't have direct binance dependency
         import forex_features
+
         source_code = forex_features.__file__
 
         with open(source_code, "r", encoding="utf-8") as f:
@@ -61,6 +63,7 @@ class TestImportIsolation:
     def test_forex_features_no_alpaca_import(self):
         """Importing forex_features should not require alpaca."""
         import forex_features
+
         source_code = forex_features.__file__
 
         with open(source_code, "r", encoding="utf-8") as f:
@@ -101,6 +104,7 @@ class TestImportIsolation:
 # =============================================================================
 # Configuration Isolation Tests
 # =============================================================================
+
 
 class TestConfigurationIsolation:
     """Verify configuration isolation between asset classes."""
@@ -179,6 +183,7 @@ class TestConfigurationIsolation:
 # Error Isolation Tests
 # =============================================================================
 
+
 class TestErrorIsolation:
     """Verify error isolation - Forex errors don't break crypto/equity."""
 
@@ -252,6 +257,7 @@ class TestErrorIsolation:
 # =============================================================================
 # Disable Isolation Tests
 # =============================================================================
+
 
 class TestDisableIsolation:
     """Verify Forex can be disabled without side effects."""
@@ -341,6 +347,7 @@ class TestDisableIsolation:
 # Data Flow Isolation Tests
 # =============================================================================
 
+
 class TestDataFlowIsolation:
     """Verify data flow isolation between pipelines."""
 
@@ -367,13 +374,15 @@ class TestDataFlowIsolation:
         # Import equity feature config if exists
         try:
             from feature_config import EQUITY_FEATURES
+
             # Equity features should not include forex-specific features
-            equity_set = set(EQUITY_FEATURES) if hasattr(EQUITY_FEATURES, '__iter__') else set()
+            equity_set = set(EQUITY_FEATURES) if hasattr(EQUITY_FEATURES, "__iter__") else set()
             overlap = forex_specific & equity_set
             assert len(overlap) == 0, f"Forex features leaked into equity: {overlap}"
         except ImportError:
             # If no EQUITY_FEATURES defined, verify forex_features module is separate
             import forex_features
+
             assert forex_features is not None, "forex_features should be importable separately"
 
     def test_forex_risk_limits_separate_from_stock(self):
@@ -391,6 +400,7 @@ class TestDataFlowIsolation:
 # =============================================================================
 # Module Dependency Tests
 # =============================================================================
+
 
 class TestModuleDependency:
     """Verify module dependencies are correct."""
@@ -433,6 +443,7 @@ class TestModuleDependency:
 # Namespace Isolation Tests
 # =============================================================================
 
+
 class TestNamespaceIsolation:
     """Verify namespace isolation."""
 
@@ -468,6 +479,7 @@ class TestNamespaceIsolation:
 # =============================================================================
 # State Isolation Tests
 # =============================================================================
+
 
 class TestStateIsolation:
     """Verify state isolation between providers."""

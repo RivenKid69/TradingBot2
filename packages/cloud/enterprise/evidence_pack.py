@@ -39,18 +39,21 @@ from uuid import UUID, uuid4
 try:
     import boto3
     from botocore.exceptions import ClientError
+
     BOTO3_AVAILABLE = True
 except ImportError:
     BOTO3_AVAILABLE = False
 
 try:
     from google.cloud import storage as gcs_storage
+
     GCS_AVAILABLE = True
 except ImportError:
     GCS_AVAILABLE = False
 
 try:
     from azure.storage.blob import BlobServiceClient
+
     AZURE_AVAILABLE = True
 except ImportError:
     AZURE_AVAILABLE = False
@@ -64,12 +67,14 @@ except ImportError:
     SigningKey = None
     Signature = None
 
+
 # Environment detection for fail-closed behavior
 # Tech Debt: security-evidence-pack-signatures (TECH_DEBT_REGISTRY.md)
 def _is_production_environment() -> bool:
     """Check if running in production environment."""
     env = os.environ.get("CCEA_ENVIRONMENT", "development").lower()
     return env in ("production", "prod", "staging")
+
 
 def _allow_placeholder_signatures() -> bool:
     """
@@ -83,6 +88,7 @@ def _allow_placeholder_signatures() -> bool:
     # Explicit opt-in for development placeholder signatures
     return os.environ.get("CCEA_ALLOW_PLACEHOLDER_SIGNATURES", "0") == "1"
 
+
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -95,6 +101,7 @@ MAX_EXPORT_SIZE_BYTES: Final[int] = 10 * 1024 * 1024 * 1024  # 10GB
 
 class EvidenceType(Enum):
     """Types of evidence that can be exported."""
+
     # Artifacts
     ARTIFACT_DIGESTS = "artifact_digests"
     ARTIFACT_SIGNATURES = "artifact_signatures"
@@ -129,6 +136,7 @@ class EvidenceType(Enum):
 
 class ExportFormat(Enum):
     """Export format options."""
+
     JSON = "json"
     JSON_LINES = "jsonl"
     CSV = "csv"
@@ -137,6 +145,7 @@ class ExportFormat(Enum):
 
 class ExportDestination(Enum):
     """Export destination types."""
+
     LOCAL = "local"
     S3 = "s3"
     GCS = "gcs"
@@ -146,6 +155,7 @@ class ExportDestination(Enum):
 @dataclass
 class EvidencePackConfig:
     """Configuration for evidence pack export."""
+
     # Output settings
     output_path: Path = field(default_factory=lambda: Path.home() / ".ccea" / "evidence")
     output_format: ExportFormat = ExportFormat.JSON
@@ -199,6 +209,7 @@ class EvidencePackConfig:
 @dataclass
 class EvidenceItem:
     """A single piece of evidence."""
+
     type: EvidenceType
     id: str
     timestamp: datetime
@@ -225,6 +236,7 @@ class EvidenceItem:
 @dataclass
 class EvidencePack:
     """A complete evidence pack."""
+
     id: UUID = field(default_factory=uuid4)
     version: str = EVIDENCE_PACK_VERSION
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -436,7 +448,9 @@ class EvidencePackExporter:
                             f.write(signature)
 
                 # Create archive
-                archive_name = f"evidence-pack-{pack.id}-{pack.created_at.strftime('%Y%m%d-%H%M%S')}"
+                archive_name = (
+                    f"evidence-pack-{pack.id}-{pack.created_at.strftime('%Y%m%d-%H%M%S')}"
+                )
                 archive_path = self._create_archive(temp_path, archive_name)
 
                 pack.archive_path = archive_path
@@ -500,6 +514,7 @@ class EvidencePackExporter:
                     with gzip.open(pack_path, "rb") as f_in:
                         zip_content = f_in.read()
                     import io
+
                     with zipfile.ZipFile(io.BytesIO(zip_content), "r") as zf:
                         zf.extractall(temp_path)
                 else:
@@ -583,12 +598,14 @@ class EvidencePackExporter:
                 if end_date and created_at > end_date:
                     continue
 
-                packs.append({
-                    "id": pack_id,
-                    "path": str(archive_path),
-                    "created_at": created_at.isoformat(),
-                    "size_bytes": stat.st_size,
-                })
+                packs.append(
+                    {
+                        "id": pack_id,
+                        "path": str(archive_path),
+                        "created_at": created_at.isoformat(),
+                        "size_bytes": stat.st_size,
+                    }
+                )
 
             except Exception as e:
                 logger.debug(f"Error parsing pack {archive_path}: {e}")
@@ -838,11 +855,25 @@ class EvidencePackExporter:
 
         result = copy.deepcopy(data)
         sensitive_patterns = [
-            r"password", r"secret", r"key", r"token", r"credential",
-            r"api_key", r"private", r"ssn", r"social_security",
-            r"credit_card", r"card_number", r"cvv", r"expiry",
-            r"account.*number", r"routing.*number", r"email",
-            r"phone", r"address", r"ip_address",
+            r"password",
+            r"secret",
+            r"key",
+            r"token",
+            r"credential",
+            r"api_key",
+            r"private",
+            r"ssn",
+            r"social_security",
+            r"credit_card",
+            r"card_number",
+            r"cvv",
+            r"expiry",
+            r"account.*number",
+            r"routing.*number",
+            r"email",
+            r"phone",
+            r"address",
+            r"ip_address",
         ]
         pattern = re.compile("|".join(sensitive_patterns), re.IGNORECASE)
 
@@ -969,6 +1000,7 @@ class EvidencePackExporter:
                 "This is NOT suitable for production use."
             )
             import base64
+
             sig_data = f"CCEA-EVIDENCE-SIG::{checksum}::{datetime.now(timezone.utc).isoformat()}"
             return base64.b64encode(sig_data.encode()).decode()
 
@@ -979,8 +1011,7 @@ class EvidencePackExporter:
             signing_key = None
             if self.config.signing_key_path and self.config.signing_key_path.exists():
                 signing_key = signer.load_key(
-                    self.config.signing_key_path,
-                    key_id="evidence-pack-signer"
+                    self.config.signing_key_path, key_id="evidence-pack-signer"
                 )
             else:
                 # Generate ephemeral key (production should use persistent key)
@@ -992,7 +1023,7 @@ class EvidencePackExporter:
 
             # Sign the checksum
             signature = signer.sign(
-                checksum.encode('utf-8'),
+                checksum.encode("utf-8"),
                 signing_key,
                 payload_type="evidence-pack-checksum",
                 signer_id="ccea-evidence-pack-signer",
@@ -1028,9 +1059,7 @@ class EvidencePackExporter:
                     "SECURITY ERROR: Signature verification requires cryptography library "
                     "in production environment. Install with: pip install cryptography"
                 )
-            logger.warning(
-                "DEVELOPMENT MODE: Cryptography not available, verification skipped"
-            )
+            logger.warning("DEVELOPMENT MODE: Cryptography not available, verification skipped")
             return not _is_production_environment()  # False in prod, True in dev
 
         try:
@@ -1039,9 +1068,7 @@ class EvidencePackExporter:
             # Handle placeholder signatures - REJECT in production
             if "signature" not in sig_data:
                 if _is_production_environment():
-                    logger.error(
-                        "SECURITY ERROR: Placeholder signature rejected in production"
-                    )
+                    logger.error("SECURITY ERROR: Placeholder signature rejected in production")
                     return False
                 # Development: warn but accept placeholder
                 logger.warning("Accepting placeholder signature in development mode")
@@ -1053,13 +1080,10 @@ class EvidencePackExporter:
 
             # Load trusted key if available
             if self.config.signing_key_path and self.config.signing_key_path.exists():
-                key = signer.load_key(
-                    self.config.signing_key_path,
-                    key_id="evidence-pack-signer"
-                )
+                key = signer.load_key(self.config.signing_key_path, key_id="evidence-pack-signer")
                 signer.add_trusted_key(key)
 
-            return signer.verify(checksum.encode('utf-8'), sig_obj)
+            return signer.verify(checksum.encode("utf-8"), sig_obj)
 
         except Exception as e:
             logger.error(f"Signature verification failed: {e}")
@@ -1189,8 +1213,7 @@ class EvidencePackExporter:
         """
         if not AZURE_AVAILABLE:
             raise RuntimeError(
-                "azure-storage-blob not available. "
-                "Install with: pip install azure-storage-blob"
+                "azure-storage-blob not available. " "Install with: pip install azure-storage-blob"
             )
 
         if not pack.archive_path or not pack.archive_path.exists():
@@ -1219,9 +1242,7 @@ class EvidencePackExporter:
             blob_name = f"{prefix}/{pack.archive_path.name}"
             blob_client = container_client.get_blob_client(blob_name)
 
-            logger.info(
-                f"Uploading evidence pack to azure://{container_name}/{blob_name}"
-            )
+            logger.info(f"Uploading evidence pack to azure://{container_name}/{blob_name}")
 
             with open(pack.archive_path, "rb") as data:
                 blob_client.upload_blob(

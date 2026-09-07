@@ -26,8 +26,8 @@ from impl_panel import PanelBuilder, normalize_ts_ms
 
 
 # Реалистичные таймстемпы (иначе магнитудная эвристика спутает мелкие числа).
-T0_SEC = 1_700_000_000          # ~2023-11-14, секунды
-STEP_SEC = 3_600               # 1 час
+T0_SEC = 1_700_000_000  # ~2023-11-14, секунды
+STEP_SEC = 3_600  # 1 час
 T0_MS = T0_SEC * 1000
 
 
@@ -109,9 +109,7 @@ def test_from_frames_multiindex_and_sorted():
     assert cp.panel_symbols(panel) == ["AAA", "BBB"]
     assert cp.panel_timestamps(panel) == [t * 1000 for t in ts]
     # ts_ms — целочисленный уровень
-    assert pd.api.types.is_integer_dtype(
-        panel.index.get_level_values("ts_ms").dtype
-    )
+    assert pd.api.types.is_integer_dtype(panel.index.get_level_values("ts_ms").dtype)
 
 
 def test_from_frames_dedup_keeps_last():
@@ -202,11 +200,9 @@ def test_asof_join_is_point_in_time():
 
     bar0, bar1, bar2 = (t * 1000 for t in ts)
     # фундаментал опубликован МЕЖДУ барами (в мс, согласовано с панелью)
-    pub0 = bar0 + 1_800_000   # между bar0 и bar1
-    pub1 = bar1 + 1_400_000   # между bar1 и bar2
-    other = pd.DataFrame(
-        {"timestamp": [pub0, pub1], "symbol": ["AAA", "AAA"], "ep": [0.05, 0.06]}
-    )
+    pub0 = bar0 + 1_800_000  # между bar0 и bar1
+    pub1 = bar1 + 1_400_000  # между bar1 и bar2
+    other = pd.DataFrame({"timestamp": [pub0, pub1], "symbol": ["AAA", "AAA"], "ep": [0.05, 0.06]})
 
     joined = PanelBuilder.asof_join(panel, other, value_cols=["ep"])
     # bar0: ничего ещё не опубликовано → NaN (нет look-ahead)
@@ -225,9 +221,7 @@ def test_asof_join_publish_lag_blocks_lookahead():
     other = pd.DataFrame({"timestamp": [pub0], "symbol": ["AAA"], "ep": [0.05]})
 
     # лаг публикации 1 час сдвигает доступность за bar1 → виден только к bar2
-    joined = PanelBuilder.asof_join(
-        panel, other, value_cols=["ep"], publish_lag_ms=3_600_000
-    )
+    joined = PanelBuilder.asof_join(panel, other, value_cols=["ep"], publish_lag_ms=3_600_000)
     assert np.isnan(joined.loc[(bar0, "AAA"), "ep"])
     assert np.isnan(joined.loc[(bar1, "AAA"), "ep"])
     assert joined.loc[(bar2, "AAA"), "ep"] == pytest.approx(0.05)
@@ -243,7 +237,7 @@ def test_add_forward_returns():
     bar0, bar1, bar2 = (t * 1000 for t in ts)
     assert out.loc[(bar0, "AAA"), "fwd_return"] == pytest.approx(0.10)  # 110/100-1
     assert out.loc[(bar1, "AAA"), "fwd_return"] == pytest.approx(0.10)  # 121/110-1
-    assert np.isnan(out.loc[(bar2, "AAA"), "fwd_return"])               # последний → NaN
+    assert np.isnan(out.loc[(bar2, "AAA"), "fwd_return"])  # последний → NaN
 
 
 # ---------------------------------------------------------------------------

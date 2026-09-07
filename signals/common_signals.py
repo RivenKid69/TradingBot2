@@ -46,8 +46,15 @@ class ResidualMomentum(BaseSignal):
     residual_i = r_i − β_i·mkt; сигнал = накопленный residual за ``lookback`` (пропуск ``skip``).
     """
 
-    def __init__(self, name: str = "resid_mom", *, lookback: int = 252, skip: int = 21,
-                 beta_window: int = 60, price_col: str = "close") -> None:
+    def __init__(
+        self,
+        name: str = "resid_mom",
+        *,
+        lookback: int = 252,
+        skip: int = 21,
+        beta_window: int = 60,
+        price_col: str = "close",
+    ) -> None:
         self.name = name
         self.lookback = int(lookback)
         self.skip = int(skip)
@@ -63,8 +70,12 @@ class ResidualMomentum(BaseSignal):
         w = self.beta_window
         var_mkt = mkt.rolling(w).var()
         # rolling cov(r_i, mkt) = E[r_i·mkt] − E[r_i]·E[mkt]
-        cov = ret.mul(mkt, axis=0).rolling(w).mean().sub(
-            ret.rolling(w).mean().mul(mkt.rolling(w).mean(), axis=0))
+        cov = (
+            ret.mul(mkt, axis=0)
+            .rolling(w)
+            .mean()
+            .sub(ret.rolling(w).mean().mul(mkt.rolling(w).mean(), axis=0))
+        )
         beta = cov.div(var_mkt.replace(0.0, np.nan), axis=0)
         resid = ret.sub(beta.mul(mkt, axis=0))
         sig = resid.shift(self.skip).rolling(self.lookback - self.skip).sum()
@@ -84,8 +95,11 @@ class Seasonality(BaseSignal):
         if close is None:
             return _nan(panel, self.name)
         ret = close.pct_change()
-        months = pd.to_datetime(ret.index.get_level_values(0) if isinstance(ret.index, pd.MultiIndex)
-                                else ret.index, unit="ms", errors="coerce").month
+        months = pd.to_datetime(
+            ret.index.get_level_values(0) if isinstance(ret.index, pd.MultiIndex) else ret.index,
+            unit="ms",
+            errors="coerce",
+        ).month
         months = pd.Series(months, index=ret.index)
         out = pd.DataFrame(np.nan, index=ret.index, columns=ret.columns)
         for m in range(1, 13):
@@ -115,7 +129,9 @@ class Sentiment(BaseSignal):
 class Week52High(BaseSignal):
     """52-week-high momentum (George & Hwang): price / rolling-max(window) − 1."""
 
-    def __init__(self, name: str = "high_52w", *, window: int = 252, price_col: str = "close") -> None:
+    def __init__(
+        self, name: str = "high_52w", *, window: int = 252, price_col: str = "close"
+    ) -> None:
         self.name = name
         self.window = int(window)
         self.price_col = price_col
@@ -132,7 +148,9 @@ class Week52High(BaseSignal):
 class IdiosyncraticVol(BaseSignal):
     """Low idiosyncratic-vol anomaly: −rolling std остатков (после удаления рыночной беты)."""
 
-    def __init__(self, name: str = "idio_vol", *, window: int = 60, price_col: str = "close") -> None:
+    def __init__(
+        self, name: str = "idio_vol", *, window: int = 60, price_col: str = "close"
+    ) -> None:
         self.name = name
         self.window = int(window)
         self.price_col = price_col
@@ -145,8 +163,12 @@ class IdiosyncraticVol(BaseSignal):
         mkt = ret.mean(axis=1)
         w = self.window
         var_mkt = mkt.rolling(w).var()
-        cov = ret.mul(mkt, axis=0).rolling(w).mean().sub(
-            ret.rolling(w).mean().mul(mkt.rolling(w).mean(), axis=0))
+        cov = (
+            ret.mul(mkt, axis=0)
+            .rolling(w)
+            .mean()
+            .sub(ret.rolling(w).mean().mul(mkt.rolling(w).mean(), axis=0))
+        )
         beta = cov.div(var_mkt.replace(0.0, np.nan), axis=0)
         resid = ret.sub(beta.mul(mkt, axis=0))
         idio = resid.rolling(w).std()
@@ -186,6 +208,12 @@ def build_common_signal(kind: str, name: str, **kwargs: Any) -> BaseSignal:
 COMMON_SIGNAL_KINDS = tuple(_KINDS.keys())
 
 __all__ = [
-    "ResidualMomentum", "Seasonality", "Sentiment", "Week52High", "IdiosyncraticVol",
-    "COTPositioning", "build_common_signal", "COMMON_SIGNAL_KINDS",
+    "ResidualMomentum",
+    "Seasonality",
+    "Sentiment",
+    "Week52High",
+    "IdiosyncraticVol",
+    "COTPositioning",
+    "build_common_signal",
+    "COMMON_SIGNAL_KINDS",
 ]

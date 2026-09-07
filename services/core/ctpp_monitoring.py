@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class CTPPRiskLevel(Enum):
     """CTPP risk levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -37,6 +38,7 @@ class CTPPRiskLevel(Enum):
 
 class MonitoringStatus(Enum):
     """Monitoring status."""
+
     ACTIVE = "active"
     PAUSED = "paused"
     PENDING_REVIEW = "pending_review"
@@ -45,6 +47,7 @@ class MonitoringStatus(Enum):
 
 class RiskIndicator(Enum):
     """Risk indicator types."""
+
     DESIGNATION_STATUS = "designation_status"
     CONCENTRATION_LEVEL = "concentration_level"
     SERVICE_DEPENDENCY = "service_dependency"
@@ -111,6 +114,7 @@ DESIGNATED_CTPPS = [
 @dataclass
 class CTPPRiskAssessment:
     """CTPP risk assessment."""
+
     assessment_id: str = ""
     provider_name: str = ""
     provider_id: str = ""
@@ -154,6 +158,7 @@ class CTPPRiskAssessment:
 @dataclass
 class RiskMetric:
     """Risk metric measurement."""
+
     metric_id: str = ""
     provider_id: str = ""
     indicator: RiskIndicator = RiskIndicator.CONCENTRATION_LEVEL
@@ -181,6 +186,7 @@ class RiskMetric:
 @dataclass
 class RiskAlert:
     """CTPP risk alert."""
+
     alert_id: str = ""
     provider_name: str = ""
     provider_id: str = ""
@@ -204,6 +210,7 @@ class RiskAlert:
 @dataclass
 class CTPPMonitoringConfig:
     """Configuration for CTPPRiskMonitor."""
+
     auto_check_designations: bool = True
     concentration_warning_threshold: float = 30.0
     concentration_critical_threshold: float = 50.0
@@ -260,9 +267,9 @@ class CTPPRiskMonitor:
 
         # Determine overall risk
         avg_score = (
-            assessment.concentration_risk_score +
-            assessment.dependency_risk_score +
-            assessment.operational_risk_score
+            assessment.concentration_risk_score
+            + assessment.dependency_risk_score
+            + assessment.operational_risk_score
         ) / 3
 
         if avg_score >= 75:
@@ -275,7 +282,9 @@ class CTPPRiskMonitor:
             assessment.overall_risk_level = CTPPRiskLevel.LOW
 
         # Set next review date
-        next_review = datetime.now(timezone.utc) + timedelta(days=self.config.assessment_frequency_days)
+        next_review = datetime.now(timezone.utc) + timedelta(
+            days=self.config.assessment_frequency_days
+        )
         assessment.next_review_date = next_review.isoformat()
 
         with self._lock:
@@ -315,7 +324,11 @@ class CTPPRiskMonitor:
                     provider_name=assessment.provider_name,
                     provider_id=provider_id,
                     alert_type=f"{indicator.value}_threshold",
-                    severity=CTPPRiskLevel.CRITICAL if metric.status == "critical" else CTPPRiskLevel.HIGH,
+                    severity=(
+                        CTPPRiskLevel.CRITICAL
+                        if metric.status == "critical"
+                        else CTPPRiskLevel.HIGH
+                    ),
                     title=f"{indicator.value} threshold exceeded",
                     description=f"Value {value} exceeds {metric.status} threshold",
                     recommended_action="Review concentration risk mitigation measures",
@@ -397,7 +410,8 @@ class CTPPRiskMonitor:
         """Get high/critical risk providers."""
         with self._lock:
             return [
-                a for a in self._assessments.values()
+                a
+                for a in self._assessments.values()
                 if a.overall_risk_level in (CTPPRiskLevel.HIGH, CTPPRiskLevel.CRITICAL)
             ]
 
@@ -431,12 +445,14 @@ class CTPPRiskMonitor:
         updates = []
         for ctpp in self._ctpp_registry:
             if "Expected" not in ctpp.get("designation_date", ""):
-                updates.append({
-                    "provider": ctpp["name"],
-                    "designation_date": ctpp["designation_date"],
-                    "lead_overseer": ctpp["lead_overseer"],
-                    "status": "designated",
-                })
+                updates.append(
+                    {
+                        "provider": ctpp["name"],
+                        "designation_date": ctpp["designation_date"],
+                        "lead_overseer": ctpp["lead_overseer"],
+                        "status": "designated",
+                    }
+                )
         return updates
 
     def get_concentration_summary(self) -> Dict[str, Any]:
@@ -449,7 +465,11 @@ class CTPPRiskMonitor:
 
         total_dependency = sum(a.dependency_percentage for a in assessments)
         ctpp_count = sum(1 for a in assessments if a.is_designated_ctpp)
-        high_risk_count = sum(1 for a in assessments if a.overall_risk_level in (CTPPRiskLevel.HIGH, CTPPRiskLevel.CRITICAL))
+        high_risk_count = sum(
+            1
+            for a in assessments
+            if a.overall_risk_level in (CTPPRiskLevel.HIGH, CTPPRiskLevel.CRITICAL)
+        )
 
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -457,7 +477,9 @@ class CTPPRiskMonitor:
             "ctpp_providers": ctpp_count,
             "high_risk_providers": high_risk_count,
             "total_dependency_percent": round(total_dependency, 2),
-            "concentration_risk": "high" if total_dependency > 150 else "medium" if total_dependency > 100 else "low",
+            "concentration_risk": (
+                "high" if total_dependency > 150 else "medium" if total_dependency > 100 else "low"
+            ),
             "dora_compliance": {
                 "article_29": "monitored",
                 "articles_31_44": "applicable" if ctpp_count > 0 else "not_applicable",
@@ -480,8 +502,16 @@ class CTPPRiskMonitor:
                 },
             },
             "ctpp_registry": {
-                "designated": len([c for c in self._ctpp_registry if "Expected" not in c.get("designation_date", "")]),
-                "expected": len([c for c in self._ctpp_registry if "Expected" in c.get("designation_date", "")]),
+                "designated": len(
+                    [
+                        c
+                        for c in self._ctpp_registry
+                        if "Expected" not in c.get("designation_date", "")
+                    ]
+                ),
+                "expected": len(
+                    [c for c in self._ctpp_registry if "Expected" in c.get("designation_date", "")]
+                ),
             },
         }
 

@@ -154,9 +154,7 @@ def test_mkt_open_profile_alignment(monkeypatch: pytest.MonkeyPatch) -> None:
         "pipeline_stage_drop_count",
     ):
         monkeypatch.setattr(service_signal_runner, attr, dummy_metric)
-    monkeypatch.setattr(
-        service_signal_runner.monitoring, "inc_stage", lambda *args, **kwargs: None
-    )
+    monkeypatch.setattr(service_signal_runner.monitoring, "inc_stage", lambda *args, **kwargs: None)
     monkeypatch.setattr(
         service_signal_runner.monitoring, "inc_reason", lambda *args, **kwargs: None
     )
@@ -177,9 +175,7 @@ def test_mkt_open_profile_alignment(monkeypatch: pytest.MonkeyPatch) -> None:
         "throttle_queue_expired_count",
     ):
         monkeypatch.setattr(service_signal_runner.monitoring, attr, dummy_metric)
-    monkeypatch.setattr(
-        service_signal_runner.monitoring, "kill_switch_triggered", lambda: False
-    )
+    monkeypatch.setattr(service_signal_runner.monitoring, "kill_switch_triggered", lambda: False)
     monkeypatch.setattr(
         service_signal_runner.monitoring, "alert_zero_signals", lambda *a, **k: None
     )

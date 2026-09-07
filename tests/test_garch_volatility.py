@@ -246,9 +246,9 @@ def test_garch_properties():
 
     prices = [100.0]
     periods = [
-        (200, 0.01),   # 200 наблюдений с волатильностью 1%
-        (200, 0.05),   # 200 наблюдений с волатильностью 5%
-        (200, 0.01),   # 200 наблюдений с волатильностью 1%
+        (200, 0.01),  # 200 наблюдений с волатильностью 1%
+        (200, 0.05),  # 200 наблюдений с волатильностью 5%
+        (200, 0.01),  # 200 наблюдений с волатильностью 1%
     ]
 
     for n_obs, volatility in periods:
@@ -509,6 +509,7 @@ def main():
         except Exception as e:
             print(f"❌ ИСКЛЮЧЕНИЕ в {test_func.__name__}: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 
@@ -521,5 +522,6 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     success = main()
     sys.exit(0 if success else 1)

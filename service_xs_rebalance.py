@@ -51,14 +51,15 @@ logger = logging.getLogger(__name__)
 # Лимиты и план (чистая логика)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class RebalanceLimits:
     """Гардрейлы одного ребаланса (значения — консервативные default'ы)."""
 
-    max_turnover: float = 0.25          # Σ|Δnotional| ≤ max_turnover · equity
-    min_trade_notional: float = 25.0    # мелочь не торгуем
-    drift_band_bps: float = 25.0        # |Δw| < band → позицию не трогаем (no-trade band)
-    max_position_weight: float = 0.20   # клип целевого веса на инструмент
+    max_turnover: float = 0.25  # Σ|Δnotional| ≤ max_turnover · equity
+    min_trade_notional: float = 25.0  # мелочь не торгуем
+    drift_band_bps: float = 25.0  # |Δw| < band → позицию не трогаем (no-trade band)
+    max_position_weight: float = 0.20  # клип целевого веса на инструмент
     max_orders: int = 50
 
     @classmethod
@@ -76,10 +77,10 @@ class RebalanceLimits:
 @dataclass
 class PlannedOrder:
     symbol: str
-    qty: float          # знаковое: >0 купить, <0 продать
+    qty: float  # знаковое: >0 купить, <0 продать
     price: float
-    notional: float     # знаковое (qty·price)
-    kind: str           # increase | reduce | close_leg | open_leg
+    notional: float  # знаковое (qty·price)
+    kind: str  # increase | reduce | close_leg | open_leg
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -101,17 +102,28 @@ def plan_rebalance(
     clipped: List[Dict[str, Any]] = []
 
     if equity <= 0:
-        return {"orders": [], "skipped": [{"symbol": "*", "reason": "equity <= 0"}],
-                "clipped": [], "turnover_raw": 0.0, "turnover_planned": 0.0,
-                "scale": 1.0, "dropped_by_max_orders": []}
+        return {
+            "orders": [],
+            "skipped": [{"symbol": "*", "reason": "equity <= 0"}],
+            "clipped": [],
+            "turnover_raw": 0.0,
+            "turnover_planned": 0.0,
+            "scale": 1.0,
+            "dropped_by_max_orders": [],
+        }
 
     # 1) Клип целевых весов по концентрации.
     weights: Dict[str, float] = {}
     for sym, w in target_weights.items():
         w = float(w)
         if abs(w) > limits.max_position_weight:
-            clipped.append({"symbol": sym, "weight": w,
-                            "clipped_to": limits.max_position_weight * (1 if w > 0 else -1)})
+            clipped.append(
+                {
+                    "symbol": sym,
+                    "weight": w,
+                    "clipped_to": limits.max_position_weight * (1 if w > 0 else -1),
+                }
+            )
             w = limits.max_position_weight * (1 if w > 0 else -1)
         weights[str(sym)] = w
 
@@ -130,12 +142,14 @@ def plan_rebalance(
         delta = target_notional - current_notional
         drift_bps = abs(delta) / equity * 1e4
         if drift_bps < limits.drift_band_bps:
-            skipped.append({"symbol": sym, "reason": "drift_band",
-                            "drift_bps": round(drift_bps, 2)})
+            skipped.append(
+                {"symbol": sym, "reason": "drift_band", "drift_bps": round(drift_bps, 2)}
+            )
             continue
         if abs(delta) < limits.min_trade_notional:
-            skipped.append({"symbol": sym, "reason": "min_notional",
-                            "delta_notional": round(delta, 2)})
+            skipped.append(
+                {"symbol": sym, "reason": "min_notional", "delta_notional": round(delta, 2)}
+            )
             continue
         deltas[sym] = delta
 
@@ -168,7 +182,7 @@ def plan_rebalance(
 
     dropped: List[Dict[str, Any]] = []
     if len(orders) > limits.max_orders:
-        for o in orders[limits.max_orders:]:
+        for o in orders[limits.max_orders :]:
             dropped.append({"symbol": o.symbol, "qty": o.qty, "reason": "max_orders"})
         orders = orders[: limits.max_orders]
 
@@ -186,6 +200,7 @@ def plan_rebalance(
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
+
 
 def _last_prices(panel) -> Dict[str, float]:
     """Последние close по каждому символу из канонической панели (ts_ms, symbol)."""
@@ -255,6 +270,7 @@ def run_rebalance(
     # --- Гейты (fail-closed, до каких-либо расчётов) -------------------------
     try:
         import services.ops_kill_switch as _oks
+
         if _oks.tripped():
             return _finish("blocked", "kill switch активен — ребаланс запрещён")
     except Exception:
@@ -268,17 +284,23 @@ def run_rebalance(
 
     snap = supervisor.portfolio_snapshot()
     if not isinstance(snap, dict) or not snap.get("ok"):
-        return _finish("blocked", f"портфель Agent'а недоступен: {snap.get('error') if isinstance(snap, dict) else snap}")
+        return _finish(
+            "blocked",
+            f"портфель Agent'а недоступен: {snap.get('error') if isinstance(snap, dict) else snap}",
+        )
     is_paper = bool(snap.get("simulated"))
     broker = str(snap.get("broker") or "").strip().lower()
     record["broker"] = broker
     record["is_paper"] = is_paper
     if paper_only and not is_paper:
-        return _finish("blocked", "paper_only=true, а активный брокер — live; авто-ребаланс на live запрещён")
+        return _finish(
+            "blocked", "paper_only=true, а активный брокер — live; авто-ребаланс на live запрещён"
+        )
 
     # --- Конфиг (нужен ДО авторизации: мандат привязан к хешу конфига) --------
     try:
         from service_xs_pipeline import latest_target_weights, load_config_dict, load_panel
+
         with open(config_path, "r", encoding="utf-8") as fh:
             raw_cfg = yaml.safe_load(fh) or {}
         cfg = load_config_dict(raw_cfg)
@@ -296,10 +318,15 @@ def run_rebalance(
         if live_store is None:
             return _finish("blocked", "live-брокер, но хранилище авторизаций недоступно")
         from packages.agent.approval.live_trading_authorization import canonical_config_hash
+
         record["config_hash"] = canonical_config_hash(raw_cfg)
         precheck = live_store.check(
-            strategy_id=strategy_id, config=raw_cfg, broker=broker,
-            turnover=0.0, notional=0.0, n_orders=0,
+            strategy_id=strategy_id,
+            config=raw_cfg,
+            broker=broker,
+            turnover=0.0,
+            notional=0.0,
+            n_orders=0,
         )
         record["authorization"] = precheck.to_dict()
         if not precheck.allowed:
@@ -319,10 +346,13 @@ def run_rebalance(
     rl_checkpoint = getattr(getattr(cfg, "rl", None), "checkpoint", None)
     if rl_checkpoint:
         from services.model_signature_gate import ModelSignatureError, verify_model_artifact
+
         try:
             # live-брокер ⇒ строго enforce; paper ⇒ политика по env (default warn).
             verdict = verify_model_artifact(
-                rl_checkpoint, live=not is_paper, context="xs-rebalance",
+                rl_checkpoint,
+                live=not is_paper,
+                context="xs-rebalance",
             )
             record["signature"] = verdict.to_dict()
         except ModelSignatureError as exc:
@@ -343,8 +373,7 @@ def run_rebalance(
     equity = float(((snap.get("metrics") or {}).get("net_liquidation_value")) or 0.0)
     record["equity"] = equity
     holdings_qty = {
-        str(h.get("symbol")): float(h.get("qty", 0.0))
-        for h in (snap.get("holdings") or [])
+        str(h.get("symbol")): float(h.get("qty", 0.0)) for h in (snap.get("holdings") or [])
     }
     prices = _last_prices(panel)
 
@@ -358,14 +387,18 @@ def run_rebalance(
         return _finish("noop", "все дельты внутри no-trade band / min-notional — сделок нет")
 
     if dry_run:
-        return _finish("dry_run", f"план из {len(plan['orders'])} ордеров построен, отправка отключена")
+        return _finish(
+            "dry_run", f"план из {len(plan['orders'])} ордеров построен, отправка отключена"
+        )
 
     planned_notional = sum(abs(o.notional) for o in plan["orders"])
 
     # --- Финальная авторизация: точные числа плана против потолка/бюджета -----
     if not is_paper:
         final = live_store.check(
-            strategy_id=strategy_id, config=raw_cfg, broker=broker,
+            strategy_id=strategy_id,
+            config=raw_cfg,
+            broker=broker,
             turnover=float(plan["turnover_planned"]),
             notional=float(planned_notional),
             n_orders=len(plan["orders"]),
@@ -379,20 +412,27 @@ def run_rebalance(
     for order in plan["orders"]:
         try:
             res = supervisor.submit_rebalance_order(
-                order.symbol, order.qty, order.price,
+                order.symbol,
+                order.qty,
+                order.price,
                 strategy_id=strategy_id,
                 reason=f"XS rebalance {os.path.basename(config_path)}",
                 allow_live=(not is_paper),
             )
         except Exception as exc:
             res = {"ok": False, "error": f"exception: {exc}"}
-        record["executions"].append({**order.to_dict(), **{
-            "ok": bool(res.get("ok")),
-            "client_order_id": res.get("client_order_id"),
-            "broker_order_id": res.get("broker_order_id"),
-            "state": res.get("state"),
-            "error": res.get("error"),
-        }})
+        record["executions"].append(
+            {
+                **order.to_dict(),
+                **{
+                    "ok": bool(res.get("ok")),
+                    "client_order_id": res.get("client_order_id"),
+                    "broker_order_id": res.get("broker_order_id"),
+                    "state": res.get("state"),
+                    "error": res.get("error"),
+                },
+            }
+        )
         if res.get("ok"):
             ok_count += 1
 
@@ -417,7 +457,9 @@ def run_rebalance(
     result = _finish(status, reason)
     if alert_fn is not None and status == "ok":
         try:
-            alert_fn("xs_rebalance", f"XS-ребаланс OK: {reason}, turnover {plan['turnover_planned']:.2%}")
+            alert_fn(
+                "xs_rebalance", f"XS-ребаланс OK: {reason}, turnover {plan['turnover_planned']:.2%}"
+            )
         except Exception:
             pass
     return result
@@ -433,7 +475,9 @@ def _write_record(record: Dict[str, Any], out_dir: str) -> None:
         logger.exception("xs-rebalance: не удалось записать журнал решения")
 
 
-def load_last_record(out_dir: str = os.path.join("logs", "xs_rebalance")) -> Optional[Dict[str, Any]]:
+def load_last_record(
+    out_dir: str = os.path.join("logs", "xs_rebalance")
+) -> Optional[Dict[str, Any]]:
     path = os.path.join(out_dir, "last.json")
     if not os.path.exists(path):
         return None

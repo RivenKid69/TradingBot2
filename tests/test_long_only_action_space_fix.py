@@ -22,6 +22,7 @@ Test categories:
 
 import pytest
 import numpy as np
+
 torch = pytest.importorskip("torch")
 gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
@@ -44,16 +45,14 @@ from action_proto import ActionProto, ActionType
 # TEST FIXTURES
 # ============================================================================
 
+
 class MockEnvWithActionSpace(gym.Env):
     """Mock environment with configurable action_space."""
+
     def __init__(self, low: float = 0.0, high: float = 1.0):
         super().__init__()
-        self.action_space = spaces.Box(
-            low=low, high=high, shape=(1,), dtype=np.float32
-        )
-        self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(10,), dtype=np.float32
-        )
+        self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(10,), dtype=np.float32)
         self._last_action = None
 
     def step(self, action):
@@ -80,6 +79,7 @@ def mock_env_neg11():
 # ============================================================================
 # TEST 1: Wrapper Action Space Definition
 # ============================================================================
+
 
 class TestWrapperActionSpaceDefinition:
     """Verify LongOnlyActionWrapper correctly defines its action_space."""
@@ -114,8 +114,7 @@ class TestWrapperActionSpaceDefinition:
         wrapped = LongOnlyActionWrapper(mock_env_01)
 
         np.testing.assert_array_equal(
-            wrapped.observation_space.low,
-            mock_env_01.observation_space.low
+            wrapped.observation_space.low, mock_env_01.observation_space.low
         )
 
 
@@ -123,16 +122,20 @@ class TestWrapperActionSpaceDefinition:
 # TEST 2: Wrapper Transformation Correctness
 # ============================================================================
 
+
 class TestWrapperTransformation:
     """Verify LongOnlyActionWrapper correctly transforms [-1, 1] -> [0, 1]."""
 
-    @pytest.mark.parametrize("input_val,expected", [
-        (-1.0, 0.0),    # Full exit
-        (-0.5, 0.25),   # 25% position
-        (0.0, 0.5),     # 50% position
-        (0.5, 0.75),    # 75% position
-        (1.0, 1.0),     # Full position
-    ])
+    @pytest.mark.parametrize(
+        "input_val,expected",
+        [
+            (-1.0, 0.0),  # Full exit
+            (-0.5, 0.25),  # 25% position
+            (0.0, 0.5),  # 50% position
+            (0.5, 0.75),  # 75% position
+            (1.0, 1.0),  # Full position
+        ],
+    )
     def test_mapping_correctness(self, mock_env_01, input_val, expected):
         """Test linear mapping: (x + 1) / 2."""
         wrapped = LongOnlyActionWrapper(mock_env_01)
@@ -153,8 +156,9 @@ class TestWrapperTransformation:
             result = wrapped.action(action)
             expected = (val + 1.0) / 2.0
 
-            assert result[0] == pytest.approx(expected, abs=1e-6), \
-                f"Input {val}: got {result[0]}, expected {expected}"
+            assert result[0] == pytest.approx(
+                expected, abs=1e-6
+            ), f"Input {val}: got {result[0]}, expected {expected}"
 
     def test_output_bounds(self, mock_env_01):
         """Verify output is always in [0, 1]."""
@@ -167,8 +171,7 @@ class TestWrapperTransformation:
             action = np.array([val], dtype=np.float32)
             result = wrapped.action(action)
 
-            assert 0.0 <= result[0] <= 1.0, \
-                f"Input {val} produced out-of-bounds output {result[0]}"
+            assert 0.0 <= result[0] <= 1.0, f"Input {val} produced out-of-bounds output {result[0]}"
 
     def test_numpy_array_transformation(self, mock_env_01):
         """Test transformation with numpy arrays."""
@@ -205,6 +208,7 @@ class TestWrapperTransformation:
 # TEST 3: Position Expressiveness
 # ============================================================================
 
+
 class TestPositionExpressiveness:
     """Verify agent can express full range of positions."""
 
@@ -220,8 +224,7 @@ class TestPositionExpressiveness:
         action = np.array([-1.0], dtype=np.float32)
         result = wrapped.action(action)
 
-        assert result[0] == pytest.approx(0.0, abs=1e-6), \
-            "Agent cannot express 0% position!"
+        assert result[0] == pytest.approx(0.0, abs=1e-6), "Agent cannot express 0% position!"
 
     def test_can_express_full_position(self, mock_env_01):
         """Agent can express 100% position."""
@@ -245,13 +248,15 @@ class TestPositionExpressiveness:
             action = np.array([policy_output], dtype=np.float32)
             result = wrapped.action(action)
 
-            assert result[0] == pytest.approx(target_frac, abs=1e-6), \
-                f"Cannot achieve {target_pct}% position"
+            assert result[0] == pytest.approx(
+                target_frac, abs=1e-6
+            ), f"Cannot achieve {target_pct}% position"
 
 
 # ============================================================================
 # TEST 4: Regression Prevention
 # ============================================================================
+
 
 class TestRegressionPrevention:
     """Prevent regression to the broken behavior."""
@@ -268,8 +273,9 @@ class TestRegressionPrevention:
         action = np.array([0.0], dtype=np.float32)
         result = wrapped.action(action)
 
-        assert result[0] == pytest.approx(0.5, abs=1e-6), \
-            "Neutral action should give 50% position, not 75%!"
+        assert result[0] == pytest.approx(
+            0.5, abs=1e-6
+        ), "Neutral action should give 50% position, not 75%!"
 
     def test_old_bug_does_not_exist(self, mock_env_01):
         """
@@ -296,6 +302,7 @@ class TestRegressionPrevention:
 # ============================================================================
 # TEST 5: Integration with MockEnv
 # ============================================================================
+
 
 class TestIntegrationWithEnv:
     """Test full integration: wrapper -> env.step()."""
@@ -329,13 +336,15 @@ class TestIntegrationWithEnv:
             action = np.array([policy_action], dtype=np.float32)
             wrapped.step(action)
 
-            assert mock_env_01._last_action[0] == pytest.approx(expected_env_action, abs=1e-6), \
-                f"Policy action {policy_action} should give env action {expected_env_action}"
+            assert mock_env_01._last_action[0] == pytest.approx(
+                expected_env_action, abs=1e-6
+            ), f"Policy action {policy_action} should give env action {expected_env_action}"
 
 
 # ============================================================================
 # TEST 6: ScoreActionWrapper Interaction
 # ============================================================================
+
 
 class TestScoreActionWrapperInteraction:
     """Test that ScoreActionWrapper works correctly after LongOnlyActionWrapper."""
@@ -354,6 +363,7 @@ class TestScoreActionWrapperInteraction:
 # ============================================================================
 # TEST 7: Edge Cases
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""

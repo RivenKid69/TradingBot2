@@ -40,6 +40,7 @@ class AcknowledgmentType(Enum):
 
     Each type corresponds to specific user understanding requirements.
     """
+
     AI_SYSTEM_AWARENESS = "ai_system_awareness"
     RISK_UNDERSTANDING = "risk_understanding"
     LIMITATION_ACCEPTANCE = "limitation_acceptance"
@@ -50,6 +51,7 @@ class AcknowledgmentType(Enum):
 
 class AcknowledgmentStatus(Enum):
     """Status of an acknowledgment."""
+
     PENDING = "pending"
     ACKNOWLEDGED = "acknowledged"
     EXPIRED = "expired"
@@ -58,6 +60,7 @@ class AcknowledgmentStatus(Enum):
 
 class FeatureCategory(Enum):
     """Categories of platform features requiring acknowledgments."""
+
     REGISTRATION = "registration"
     STRATEGY_CREATION = "strategy_creation"
     BACKTESTING = "backtesting"
@@ -85,6 +88,7 @@ class UserAcknowledgment:
         text_hash: Hash of acknowledged text for verification
         metadata: Additional metadata
     """
+
     acknowledgment_id: str
     user_id: str
     acknowledgment_type: AcknowledgmentType
@@ -104,7 +108,7 @@ class UserAcknowledgment:
         text_content: str,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> "UserAcknowledgment":
         """
         Create new acknowledgment record.
@@ -134,7 +138,7 @@ class UserAcknowledgment:
             ip_address=ip_address,
             user_agent=user_agent,
             text_hash=text_hash,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -176,6 +180,7 @@ class UserAcknowledgment:
 @dataclass
 class AcknowledgmentAuditRecord:
     """Audit record for acknowledgment actions."""
+
     record_id: str
     acknowledgment_id: str
     user_id: str
@@ -464,11 +469,7 @@ class UserAcknowledgmentManager:
         self.audit_log: List[AcknowledgmentAuditRecord] = []
         self._feature_requirements = FEATURE_REQUIREMENTS.copy()
 
-    def get_required_acknowledgments(
-        self,
-        user_id: str,
-        feature: str
-    ) -> List[AcknowledgmentType]:
+    def get_required_acknowledgments(self, user_id: str, feature: str) -> List[AcknowledgmentType]:
         """
         Get acknowledgments required for a feature that user hasn't completed.
 
@@ -498,7 +499,7 @@ class UserAcknowledgmentManager:
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
         language: str = "en",
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> UserAcknowledgment:
         """
         Record user acknowledgment.
@@ -521,7 +522,7 @@ class UserAcknowledgmentManager:
             text_content=text,
             ip_address=ip_address,
             user_agent=user_agent,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         if user_id not in self.acknowledgments:
@@ -530,18 +531,13 @@ class UserAcknowledgmentManager:
 
         # Audit log
         self._log_action(
-            ack.acknowledgment_id,
-            user_id,
-            "created",
-            f"Acknowledged {ack_type.value}"
+            ack.acknowledgment_id, user_id, "created", f"Acknowledged {ack_type.value}"
         )
 
         return ack
 
     def check_feature_access(
-        self,
-        user_id: str,
-        feature: str
+        self, user_id: str, feature: str
     ) -> Tuple[bool, List[AcknowledgmentType]]:
         """
         Check if user can access feature (has all required acknowledgments).
@@ -556,11 +552,7 @@ class UserAcknowledgmentManager:
         missing = self.get_required_acknowledgments(user_id, feature)
         return (len(missing) == 0, missing)
 
-    def get_acknowledgment_text(
-        self,
-        ack_type: AcknowledgmentType,
-        language: str = "en"
-    ) -> str:
+    def get_acknowledgment_text(self, ack_type: AcknowledgmentType, language: str = "en") -> str:
         """
         Get acknowledgment text for display.
 
@@ -574,10 +566,7 @@ class UserAcknowledgmentManager:
         texts = ACKNOWLEDGMENT_TEXTS.get(ack_type, {})
         return texts.get(language, texts.get("en", ""))
 
-    def get_all_acknowledgment_texts(
-        self,
-        language: str = "en"
-    ) -> Dict[str, str]:
+    def get_all_acknowledgment_texts(self, language: str = "en") -> Dict[str, str]:
         """
         Get all acknowledgment texts.
 
@@ -593,9 +582,7 @@ class UserAcknowledgmentManager:
         }
 
     def get_user_acknowledgments(
-        self,
-        user_id: str,
-        ack_type: Optional[AcknowledgmentType] = None
+        self, user_id: str, ack_type: Optional[AcknowledgmentType] = None
     ) -> List[UserAcknowledgment]:
         """
         Get all acknowledgments for a user.
@@ -615,10 +602,7 @@ class UserAcknowledgmentManager:
         return acks
 
     def revoke_acknowledgment(
-        self,
-        user_id: str,
-        ack_type: AcknowledgmentType,
-        reason: str
+        self, user_id: str, ack_type: AcknowledgmentType, reason: str
     ) -> bool:
         """
         Revoke a user's acknowledgment.
@@ -636,15 +620,12 @@ class UserAcknowledgmentManager:
 
         revoked = False
         for ack in self.acknowledgments[user_id]:
-            if (ack.acknowledgment_type == ack_type and
-                    ack.status == AcknowledgmentStatus.ACKNOWLEDGED):
+            if (
+                ack.acknowledgment_type == ack_type
+                and ack.status == AcknowledgmentStatus.ACKNOWLEDGED
+            ):
                 ack.status = AcknowledgmentStatus.REVOKED
-                self._log_action(
-                    ack.acknowledgment_id,
-                    user_id,
-                    "revoked",
-                    reason
-                )
+                self._log_action(ack.acknowledgment_id, user_id, "revoked", reason)
                 revoked = True
 
         return revoked
@@ -679,7 +660,7 @@ class UserAcknowledgmentManager:
         self,
         user_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get audit trail for acknowledgments.
@@ -730,25 +711,14 @@ class UserAcknowledgmentManager:
         except ValueError:
             return [AcknowledgmentType.AI_SYSTEM_AWARENESS]
 
-    def _get_user_acknowledged_types(
-        self,
-        user_id: str
-    ) -> Set[AcknowledgmentType]:
+    def _get_user_acknowledged_types(self, user_id: str) -> Set[AcknowledgmentType]:
         """Get types user has already acknowledged and are still valid."""
         if user_id not in self.acknowledgments:
             return set()
-        return {
-            a.acknowledgment_type
-            for a in self.acknowledgments[user_id]
-            if a.is_valid()
-        }
+        return {a.acknowledgment_type for a in self.acknowledgments[user_id] if a.is_valid()}
 
     def _log_action(
-        self,
-        acknowledgment_id: str,
-        user_id: str,
-        action: str,
-        reason: Optional[str] = None
+        self, acknowledgment_id: str, user_id: str, action: str, reason: Optional[str] = None
     ) -> None:
         """Log action to audit trail."""
         record = AcknowledgmentAuditRecord(
@@ -814,10 +784,7 @@ def validate_acknowledgment(ack: UserAcknowledgment) -> Dict[str, bool]:
     }
 
 
-def get_acknowledgment_summary(
-    user_id: str,
-    manager: UserAcknowledgmentManager
-) -> Dict[str, Any]:
+def get_acknowledgment_summary(user_id: str, manager: UserAcknowledgmentManager) -> Dict[str, Any]:
     """
     Get summary of user's acknowledgment status.
 
@@ -836,11 +803,6 @@ def get_acknowledgment_summary(
         "total_acknowledged": len(acknowledged_types),
         "total_required": len(AcknowledgmentType),
         "acknowledged_types": [t.value for t in acknowledged_types],
-        "pending_types": [
-            t.value for t in AcknowledgmentType
-            if t not in acknowledged_types
-        ],
-        "can_access_live_trading": manager.check_feature_access(
-            user_id, "live_trading"
-        )[0],
+        "pending_types": [t.value for t in AcknowledgmentType if t not in acknowledged_types],
+        "can_access_live_trading": manager.check_feature_access(user_id, "live_trading")[0],
     }

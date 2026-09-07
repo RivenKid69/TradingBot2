@@ -38,18 +38,20 @@ def signed_model(tmp_path: Path, registry: ModelRegistry):
 
 # ------------------------------------------------------------- policy resolution
 
+
 def test_policy_resolution_order(monkeypatch):
     monkeypatch.delenv("RIVEN_MODEL_SIGNATURE_POLICY", raising=False)
-    assert resolve_policy(None, live=True) == "enforce"    # live default — fail-closed
-    assert resolve_policy(None, live=False) == "warn"      # research default
-    assert resolve_policy("off", live=True) == "off"       # явный аргумент сильнее
+    assert resolve_policy(None, live=True) == "enforce"  # live default — fail-closed
+    assert resolve_policy(None, live=False) == "warn"  # research default
+    assert resolve_policy("off", live=True) == "off"  # явный аргумент сильнее
     monkeypatch.setenv("RIVEN_MODEL_SIGNATURE_POLICY", "enforce")
-    assert resolve_policy(None, live=False) == "enforce"   # env сильнее default'а
+    assert resolve_policy(None, live=False) == "enforce"  # env сильнее default'а
     monkeypatch.setenv("RIVEN_MODEL_SIGNATURE_POLICY", "bogus")
-    assert resolve_policy(None, live=False) == "warn"      # мусор в env игнорируется
+    assert resolve_policy(None, live=False) == "warn"  # мусор в env игнорируется
 
 
 # ------------------------------------------------------------------ happy path
+
 
 def test_registered_signed_model_passes(registry, signed_model, monkeypatch):
     monkeypatch.delenv("RIVEN_REQUIRE_PRODUCTION_MODEL", raising=False)
@@ -73,6 +75,7 @@ def test_lookup_matches_by_digest_not_path(registry, signed_model, tmp_path):
 
 # ------------------------------------------------------------------ fail-closed
 
+
 def test_unregistered_model_enforce_raises(registry, tmp_path):
     rogue = tmp_path / "rogue.zip"
     rogue.write_bytes(b"totally-unsigned-payload")
@@ -95,6 +98,7 @@ def test_forged_signature_enforce_raises(registry, signed_model, tmp_path):
     src, mv = signed_model
     # Ломаем подпись в реестре (артефакт тот же, подпись — мусор).
     import json
+
     meta_path = os.path.join(registry.root, "test_alpha", "registry.json")
     data = json.loads(Path(meta_path).read_text(encoding="utf-8"))
     data["versions"][0]["artifact"]["signature"] = "00" * 64
@@ -110,6 +114,7 @@ def test_missing_file_enforce_raises(registry):
 
 
 # -------------------------------------------------------------------- политики
+
 
 def test_warn_returns_verdict_without_raising(registry, tmp_path):
     rogue = tmp_path / "rogue.zip"
@@ -135,6 +140,7 @@ def test_production_stage_requirement(registry, signed_model, monkeypatch):
 
 
 # --------------------------------------------------------- проводка в RL loader
+
 
 def test_rl_loader_gate_blocks_before_deserialization(tmp_path, monkeypatch):
     """В enforce-политике загрузчик обязан упасть ДО pickle-десериализации."""
@@ -169,8 +175,8 @@ def test_rl_loader_warn_mode_proceeds_to_load(tmp_path, monkeypatch):
 
     loader = make_sb3_distributional_loader(ppo_cls=_Recorder, live=False)  # warn
     monkeypatch.delenv("RIVEN_MODEL_SIGNATURE_POLICY", raising=False)
-    assert loader(str(rogue), "cpu") is None      # load упал → нейтральный сигнал (как раньше)
-    assert sentinel.get("loaded") is True         # но до load дошли: warn не блокирует
+    assert loader(str(rogue), "cpu") is None  # load упал → нейтральный сигнал (как раньше)
+    assert sentinel.get("loaded") is True  # но до load дошли: warn не блокирует
 
 
 def test_find_registry_entry_none_for_unknown(registry, tmp_path):

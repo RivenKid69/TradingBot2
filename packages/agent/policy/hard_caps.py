@@ -71,12 +71,16 @@ class HardCaps:
             absolute_max_position=Decimal(str(data.get("absolute_max_position", "10000000"))),
             absolute_max_position_pct=Decimal(str(data.get("absolute_max_position_pct", "1.0"))),
             absolute_max_daily_loss=Decimal(str(data.get("absolute_max_daily_loss", "1000000"))),
-            absolute_max_daily_loss_pct=Decimal(str(data.get("absolute_max_daily_loss_pct", "0.5"))),
+            absolute_max_daily_loss_pct=Decimal(
+                str(data.get("absolute_max_daily_loss_pct", "0.5"))
+            ),
             absolute_max_drawdown_pct=Decimal(str(data.get("absolute_max_drawdown_pct", "0.75"))),
             absolute_max_order_size=Decimal(str(data.get("absolute_max_order_size", "1000000"))),
             absolute_max_orders_per_second=int(data.get("absolute_max_orders_per_second", 10)),
             absolute_max_orders_per_day=int(data.get("absolute_max_orders_per_day", 100000)),
-            absolute_max_gross_exposure=Decimal(str(data.get("absolute_max_gross_exposure", "100000000"))),
+            absolute_max_gross_exposure=Decimal(
+                str(data.get("absolute_max_gross_exposure", "100000000"))
+            ),
             absolute_max_leverage=Decimal(str(data.get("absolute_max_leverage", "10"))),
             kill_switch_loss_pct=Decimal(str(data.get("kill_switch_loss_pct", "0.3"))),
             kill_switch_error_count=int(data.get("kill_switch_error_count", 10)),

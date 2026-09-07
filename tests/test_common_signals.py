@@ -9,8 +9,14 @@ import pytest
 
 from core_portfolio import SYMBOL_LEVEL, TS_LEVEL
 from signals.common_signals import (
-    COMMON_SIGNAL_KINDS, COTPositioning, IdiosyncraticVol, ResidualMomentum,
-    Seasonality, Sentiment, Week52High, build_common_signal,
+    COMMON_SIGNAL_KINDS,
+    COTPositioning,
+    IdiosyncraticVol,
+    ResidualMomentum,
+    Seasonality,
+    Sentiment,
+    Week52High,
+    build_common_signal,
 )
 
 
@@ -41,7 +47,7 @@ def test_residual_momentum_finite():
 
 
 def test_seasonality_pit_safe_finite():
-    p = _panel(n_bars=800)   # >2 года → есть прошлые те же месяцы
+    p = _panel(n_bars=800)  # >2 года → есть прошлые те же месяцы
     sig = Seasonality().compute_panel(p)
     assert sig.index.equals(p.index)
     assert np.isfinite(sig.dropna().to_numpy()).all()
@@ -63,7 +69,7 @@ def test_week52high_non_positive():
     p = _panel()
     sig = Week52High(window=200).compute_panel(p)
     vals = sig.dropna().to_numpy()
-    assert (vals <= 1e-9).all()       # цена ≤ rolling-max → прокси ≤ 0
+    assert (vals <= 1e-9).all()  # цена ≤ rolling-max → прокси ≤ 0
     assert np.isfinite(vals).all()
 
 
@@ -71,7 +77,7 @@ def test_idio_vol_negative():
     p = _panel()
     sig = IdiosyncraticVol(window=40).compute_panel(p)
     vals = sig.dropna().to_numpy()
-    assert (vals <= 1e-12).all()      # −std ≤ 0
+    assert (vals <= 1e-12).all()  # −std ≤ 0
     assert np.isfinite(vals).all()
 
 
@@ -84,24 +90,40 @@ def test_cot_byo_slot():
 
 def test_factory_and_kinds():
     assert set(COMMON_SIGNAL_KINDS) == {
-        "residual_momentum", "seasonality", "sentiment", "high_52w", "idio_vol", "cot"}
+        "residual_momentum",
+        "seasonality",
+        "sentiment",
+        "high_52w",
+        "idio_vol",
+        "cot",
+    }
     sig = build_common_signal("residual_momentum", "rm", lookback=60, skip=5)
     assert isinstance(sig, ResidualMomentum) and sig.name == "rm"
 
 
 def test_pipeline_integration():
     from service_xs_pipeline import XSConfig, build_signal_library, load_panel
-    cfg = XSConfig.model_validate({
-        "mode": "cross_sectional", "asset_class": "equity",
-        "data": {"source": "synthetic", "symbols": ["A", "B", "C", "D"], "synthetic_bars": 320},
-        "universe": {"type": "static", "symbols": ["A", "B", "C", "D"]},
-        "signals": [
-            {"name": "rm", "kind": "residual_momentum", "lookback": 120, "skip": 10, "transforms": ["zscore"]},
-            {"name": "seas", "kind": "seasonality", "transforms": ["zscore"]},
-            {"name": "h52", "kind": "high_52w", "lookback": 200, "transforms": ["zscore"]},
-            {"name": "iv", "kind": "idio_vol", "vol_window": 40, "transforms": ["zscore"]},
-        ],
-    })
+
+    cfg = XSConfig.model_validate(
+        {
+            "mode": "cross_sectional",
+            "asset_class": "equity",
+            "data": {"source": "synthetic", "symbols": ["A", "B", "C", "D"], "synthetic_bars": 320},
+            "universe": {"type": "static", "symbols": ["A", "B", "C", "D"]},
+            "signals": [
+                {
+                    "name": "rm",
+                    "kind": "residual_momentum",
+                    "lookback": 120,
+                    "skip": 10,
+                    "transforms": ["zscore"],
+                },
+                {"name": "seas", "kind": "seasonality", "transforms": ["zscore"]},
+                {"name": "h52", "kind": "high_52w", "lookback": 200, "transforms": ["zscore"]},
+                {"name": "iv", "kind": "idio_vol", "vol_window": 40, "transforms": ["zscore"]},
+            ],
+        }
+    )
     panel = load_panel(cfg)
     lib = build_signal_library(cfg)
     out = lib.compute(panel)

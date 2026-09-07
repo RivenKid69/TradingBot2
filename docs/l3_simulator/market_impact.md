@@ -5,6 +5,7 @@
 Market impact models estimate how trade execution affects prices. The L3 simulator implements three academically-validated models: Kyle (1985), Almgren-Chriss (2001), and Gatheral (2010).
 
 **Files**:
+
 - `lob/market_impact.py` (~1,150 lines) - Impact models
 - `lob/impact_effects.py` (~832 lines) - Effects on LOB
 - `lob/impact_calibration.py` (~1,059 lines) - Parameter estimation
@@ -12,12 +13,16 @@ Market impact models estimate how trade execution affects prices. The L3 simulat
 ## Impact Components
 
 ### Temporary Impact
+
 Price displacement during execution that reverses after completion.
+
 - Caused by immediate liquidity consumption
 - Decays over time
 
 ### Permanent Impact
+
 Lasting price change from information revealed by the trade.
+
 - Persists after execution
 - Represents true price discovery
 
@@ -46,11 +51,13 @@ print(f"New mid: {result.expected_price:.2f}")
 ```
 
 **Formula**:
+
 ```
 ΔP = λ × sign(Q) × |Q|
 ```
 
 Where:
+
 - `λ` = Kyle lambda (price impact coefficient)
 - `Q` = Order quantity
 
@@ -88,12 +95,14 @@ print(f"Impact cost: ${result.impact_cost:.2f}")
 ```
 
 **Formulas**:
+
 ```
 Temporary: η × σ × (Q/V)^δ × 10000 bps
 Permanent: γ × (Q/V) × 10000 bps
 ```
 
 Where:
+
 - `η` = Temporary impact coefficient
 - `γ` = Permanent impact coefficient
 - `δ` = Impact exponent (typically 0.5)

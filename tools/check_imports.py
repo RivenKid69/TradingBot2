@@ -41,11 +41,36 @@ ALLOWED: Dict[str, Set[str]] = {
 
 # Модули, которые считаем внешними (разрешены везде)
 EXTERNAL_WHITELIST_PREFIXES = (
-    "numpy", "pandas", "scipy", "sklearn", "matplotlib", "ta", "decimal",
-    "pydantic", "typing", "dataclasses", "enum", "collections", "time", "datetime",
-    "pathlib", "functools", "itertools", "json", "yaml", "asyncio", "logging", "os", "sys",
-    "re", "importlib", "inspect", "argparse", "typing_extensions",
+    "numpy",
+    "pandas",
+    "scipy",
+    "sklearn",
+    "matplotlib",
+    "ta",
+    "decimal",
+    "pydantic",
+    "typing",
+    "dataclasses",
+    "enum",
+    "collections",
+    "time",
+    "datetime",
+    "pathlib",
+    "functools",
+    "itertools",
+    "json",
+    "yaml",
+    "asyncio",
+    "logging",
+    "os",
+    "sys",
+    "re",
+    "importlib",
+    "inspect",
+    "argparse",
+    "typing_extensions",
 )
+
 
 def detect_layer(filename: str) -> Optional[str]:
     rel = filename.lstrip("./")
@@ -58,8 +83,19 @@ def detect_layer(filename: str) -> Optional[str]:
     if base in ("prepare_and_run.py", "app.py"):
         return "scripts"
     # impl: известные имена существующих реализаций
-    if base in ("execution_sim.py", "binance_ws.py", "binance_public.py", "sim_adapter.py",
-                "quantizer.py", "fees.py", "slippage.py", "latency.py", "risk.py", "risk_guard.py", "event_bus.py"):
+    if base in (
+        "execution_sim.py",
+        "binance_ws.py",
+        "binance_public.py",
+        "sim_adapter.py",
+        "quantizer.py",
+        "fees.py",
+        "slippage.py",
+        "latency.py",
+        "risk.py",
+        "risk_guard.py",
+        "event_bus.py",
+    ):
         return "impl"
     # core: новые core_* + существующие core_constants.*
     if base.startswith("core") or base in ("core_constants.py", "coreprice_scale.py"):

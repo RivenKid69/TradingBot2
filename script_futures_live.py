@@ -144,7 +144,20 @@ def detect_futures_type(config: Dict[str, Any]) -> FuturesType:
         if first_symbol.endswith(("USDT", "BUSD", "USD")):
             return FuturesType.CRYPTO_PERPETUAL
         # CME patterns: ES, NQ, GC, CL, etc.
-        if first_symbol in ("ES", "NQ", "YM", "RTY", "GC", "SI", "CL", "NG", "6E", "6J", "ZN", "ZB"):
+        if first_symbol in (
+            "ES",
+            "NQ",
+            "YM",
+            "RTY",
+            "GC",
+            "SI",
+            "CL",
+            "NG",
+            "6E",
+            "6J",
+            "ZN",
+            "ZB",
+        ):
             return FuturesType.INDEX_FUTURES
 
     # Default to crypto perpetual
@@ -198,6 +211,7 @@ def apply_defaults(config: Dict[str, Any], futures_type: FuturesType) -> Dict[st
 # ============================================================================
 # ADAPTER CREATION
 # ============================================================================
+
 
 def create_market_data_adapter(config: Dict[str, Any], futures_type: FuturesType):
     """
@@ -331,6 +345,7 @@ def create_signal_provider(config: Dict[str, Any]):
 # CALLBACKS
 # ============================================================================
 
+
 def create_event_callbacks(config: Dict[str, Any]) -> Dict[LiveRunnerEvent, List]:
     """Create event callbacks based on configuration."""
     callbacks = {}
@@ -364,6 +379,7 @@ def create_event_callbacks(config: Dict[str, Any]) -> Dict[LiveRunnerEvent, List
 # ============================================================================
 # MAIN RUNNER
 # ============================================================================
+
 
 class FuturesLiveApplication:
     """Main application class for futures live trading."""
@@ -427,7 +443,9 @@ class FuturesLiveApplication:
             enable_margin_monitoring=bool(self._config.get("enable_margin_monitoring", True)),
             enable_funding_tracking=bool(self._config.get("enable_funding_tracking", True)),
             enable_adl_monitoring=bool(self._config.get("enable_adl_monitoring", True)),
-            enable_circuit_breaker_monitoring=bool(self._config.get("enable_circuit_breaker_monitoring", True)),
+            enable_circuit_breaker_monitoring=bool(
+                self._config.get("enable_circuit_breaker_monitoring", True)
+            ),
             max_reconnect_attempts=int(self._config.get("max_reconnect_attempts", 10)),
             strict_mode=bool(self._config.get("strict_mode", True)),
             max_leverage=int(self._config.get("max_leverage", 10)),
@@ -539,6 +557,7 @@ def signal_handler(signum, frame):
 # ============================================================================
 # CLI
 # ============================================================================
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""

@@ -34,12 +34,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ChildSlice:
     symbol: str
-    side: str            # BUY | SELL
-    qty: float           # абсолютное кол-во в этом слайсе
-    notional: float      # |qty|*price
+    side: str  # BUY | SELL
+    qty: float  # абсолютное кол-во в этом слайсе
+    notional: float  # |qty|*price
     slice_index: int
     n_slices: int
-    weight: float        # доля родительской заявки
+    weight: float  # доля родительской заявки
     est_cost_bps: float  # импакт+спред этого слайса (bps)
 
 
@@ -47,11 +47,11 @@ class ChildSlice:
 class SymbolTrade:
     symbol: str
     side: str
-    qty: float                 # абсолютное кол-во (родитель)
-    notional: float            # |qty|*price
-    participation: float       # |notional| / adv
-    est_cost_bps: float        # средневзвешенный импакт+спред (bps)
-    est_cost: float            # стоимость в валюте
+    qty: float  # абсолютное кол-во (родитель)
+    notional: float  # |qty|*price
+    participation: float  # |notional| / adv
+    est_cost_bps: float  # средневзвешенный импакт+спред (bps)
+    est_cost: float  # стоимость в валюте
     slices: List[ChildSlice] = field(default_factory=list)
 
 
@@ -66,14 +66,23 @@ class RebalancePlan:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "algo": self.algo, "n_slices": self.n_slices,
-            "total_notional": self.total_notional, "total_est_cost": self.total_est_cost,
+            "algo": self.algo,
+            "n_slices": self.n_slices,
+            "total_notional": self.total_notional,
+            "total_est_cost": self.total_est_cost,
             "total_est_cost_bps": self.total_est_cost_bps,
             "trades": [
-                {"symbol": t.symbol, "side": t.side, "qty": t.qty, "notional": t.notional,
-                 "participation": t.participation, "est_cost_bps": t.est_cost_bps,
-                 "est_cost": t.est_cost, "n_slices": len(t.slices),
-                 "slices": [s.__dict__ for s in t.slices]}
+                {
+                    "symbol": t.symbol,
+                    "side": t.side,
+                    "qty": t.qty,
+                    "notional": t.notional,
+                    "participation": t.participation,
+                    "est_cost_bps": t.est_cost_bps,
+                    "est_cost": t.est_cost,
+                    "n_slices": len(t.slices),
+                    "slices": [s.__dict__ for s in t.slices],
+                }
                 for t in self.trades
             ],
         }
@@ -96,14 +105,14 @@ class RebalanceScheduler:
         *,
         algo: str = "TWAP",
         n_slices: int = 6,
-        participation: float = 0.10,        # POV: целевое участие на слайс
-        spread_bps: float = 2.0,            # half-spread (bps) добавляется к импакту
-        impact_coef: float = 0.1,           # k в AC: bps = k*sqrt(participation)*1e4
+        participation: float = 0.10,  # POV: целевое участие на слайс
+        spread_bps: float = 2.0,  # half-spread (bps) добавляется к импакту
+        impact_coef: float = 0.1,  # k в AC: bps = k*sqrt(participation)*1e4
         max_pov_slices: int = 50,
-        min_trade_notional: float = 0.0,    # игнор мелких дельт
+        min_trade_notional: float = 0.0,  # игнор мелких дельт
         volume_profile: Optional[Sequence[float]] = None,
         impact_fn: Optional[Callable[[float], float]] = None,  # participation->bps (DI)
-        urgency: float = 2.0,               # IS: κ·T (0 → TWAP; больше → быстрее в начале)
+        urgency: float = 2.0,  # IS: κ·T (0 → TWAP; больше → быстрее в начале)
     ) -> None:
         self.algo = str(algo).upper()
         self.n_slices = int(n_slices)
@@ -112,7 +121,9 @@ class RebalanceScheduler:
         self.impact_coef = float(impact_coef)
         self.max_pov_slices = int(max_pov_slices)
         self.min_trade_notional = float(min_trade_notional)
-        self.volume_profile = np.asarray(volume_profile, dtype="float64") if volume_profile is not None else None
+        self.volume_profile = (
+            np.asarray(volume_profile, dtype="float64") if volume_profile is not None else None
+        )
         self._impact_fn = impact_fn
         self.urgency = float(urgency)
 
@@ -134,9 +145,9 @@ class RebalanceScheduler:
         kT = max(0.0, float(self.urgency))
         if kT < 1e-6 or n == 1:
             return np.ones(n) / n
-        t = np.linspace(0.0, 1.0, n + 1)             # fractional time grid
+        t = np.linspace(0.0, 1.0, n + 1)  # fractional time grid
         x = np.sinh(kT * (1.0 - t)) / math.sinh(kT)  # remaining holdings (x0=1, xn=0)
-        trades = x[:-1] - x[1:]                       # per-interval traded fraction
+        trades = x[:-1] - x[1:]  # per-interval traded fraction
         s = float(trades.sum())
         return trades / s if s > 0 else np.ones(n) / n
 
@@ -150,10 +161,16 @@ class RebalanceScheduler:
             if self.participation <= 0:
                 k = self.n_slices
             else:
-                k = int(min(self.max_pov_slices, max(1, math.ceil(participation / self.participation))))
+                k = int(
+                    min(self.max_pov_slices, max(1, math.ceil(participation / self.participation)))
+                )
             return np.ones(k) / k
         if algo == "VWAP":
-            prof = self.volume_profile if self.volume_profile is not None else _ushape_profile(self.n_slices)
+            prof = (
+                self.volume_profile
+                if self.volume_profile is not None
+                else _ushape_profile(self.n_slices)
+            )
             prof = np.asarray(prof, dtype="float64")
             return prof / prof.sum()
         # TWAP (default): равные слайсы
@@ -171,7 +188,11 @@ class RebalanceScheduler:
     ) -> RebalancePlan:
         """Построить план ребаланса с нарезкой и оценкой импакта."""
         wt = w_target.astype("float64").dropna()
-        w0 = (w_current if w_current is not None else pd.Series(0.0, index=wt.index)).reindex(wt.index).fillna(0.0)
+        w0 = (
+            (w_current if w_current is not None else pd.Series(0.0, index=wt.index))
+            .reindex(wt.index)
+            .fillna(0.0)
+        )
         px = prices.reindex(wt.index)
         equity = float(equity)
 
@@ -189,7 +210,11 @@ class RebalanceScheduler:
                 continue
             qty = abs(notional) / price
             side = "BUY" if dw > 0 else "SELL"
-            adv_v = float(adv[sym]) if (adv is not None and sym in adv.index and float(adv[sym]) > 0) else 0.0
+            adv_v = (
+                float(adv[sym])
+                if (adv is not None and sym in adv.index and float(adv[sym]) > 0)
+                else 0.0
+            )
             participation = (abs(notional) / adv_v) if adv_v > 0 else 0.0
 
             weights = self._slice_weights(participation)
@@ -202,23 +227,41 @@ class RebalanceScheduler:
                 cbps = self._impact_bps(slice_part)
                 slice_cost = slice_notional * cbps / 1e4
                 sym_cost += slice_cost
-                slices.append(ChildSlice(
-                    symbol=sym, side=side, qty=qty * float(wgt), notional=slice_notional,
-                    slice_index=i, n_slices=n, weight=float(wgt), est_cost_bps=cbps,
-                ))
+                slices.append(
+                    ChildSlice(
+                        symbol=sym,
+                        side=side,
+                        qty=qty * float(wgt),
+                        notional=slice_notional,
+                        slice_index=i,
+                        n_slices=n,
+                        weight=float(wgt),
+                        est_cost_bps=cbps,
+                    )
+                )
             eff_bps = (sym_cost / abs(notional) * 1e4) if abs(notional) > 0 else 0.0
-            trades.append(SymbolTrade(
-                symbol=sym, side=side, qty=qty, notional=abs(notional),
-                participation=participation, est_cost_bps=eff_bps, est_cost=sym_cost,
-                slices=slices,
-            ))
+            trades.append(
+                SymbolTrade(
+                    symbol=sym,
+                    side=side,
+                    qty=qty,
+                    notional=abs(notional),
+                    participation=participation,
+                    est_cost_bps=eff_bps,
+                    est_cost=sym_cost,
+                    slices=slices,
+                )
+            )
             total_notional += abs(notional)
             total_cost += sym_cost
 
         total_bps = (total_cost / total_notional * 1e4) if total_notional > 0 else 0.0
         return RebalancePlan(
-            algo=self.algo, n_slices=self.n_slices, trades=trades,
-            total_notional=total_notional, total_est_cost=total_cost,
+            algo=self.algo,
+            n_slices=self.n_slices,
+            trades=trades,
+            total_notional=total_notional,
+            total_est_cost=total_cost,
             total_est_cost_bps=total_bps,
         )
 

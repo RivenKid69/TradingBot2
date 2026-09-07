@@ -193,15 +193,21 @@ class ApprovalManager:
                     artifact_digest=data.get("artifact_digest"),
                     diff_summary=data.get("diff_summary"),
                     status=ApprovalStatus(data.get("status", "pending")),
-                    created_at=datetime.fromisoformat(data["created_at"])
-                    if data.get("created_at")
-                    else datetime.utcnow(),
-                    expires_at=datetime.fromisoformat(data["expires_at"])
-                    if data.get("expires_at")
-                    else None,
-                    decided_at=datetime.fromisoformat(data["decided_at"])
-                    if data.get("decided_at")
-                    else None,
+                    created_at=(
+                        datetime.fromisoformat(data["created_at"])
+                        if data.get("created_at")
+                        else datetime.utcnow()
+                    ),
+                    expires_at=(
+                        datetime.fromisoformat(data["expires_at"])
+                        if data.get("expires_at")
+                        else None
+                    ),
+                    decided_at=(
+                        datetime.fromisoformat(data["decided_at"])
+                        if data.get("decided_at")
+                        else None
+                    ),
                     evidence_hash=data.get("evidence_hash"),
                     decision_reason=data.get("decision_reason"),
                 )
@@ -258,10 +264,12 @@ class ApprovalManager:
                 artifact_digest=artifact_digest,
                 status=ApprovalStatus.APPROVED,
                 decided_at=datetime.utcnow(),
-                evidence_hash=compute_evidence_hash({
-                    "command_type": command_type,
-                    "auto_approved": True,
-                }),
+                evidence_hash=compute_evidence_hash(
+                    {
+                        "command_type": command_type,
+                        "auto_approved": True,
+                    }
+                ),
                 decision_reason="Auto-approved by local policy",
             )
             self._history.append(request)
@@ -286,7 +294,9 @@ class ApprovalManager:
 
         # Generate diff summary
         if config_digest_old and config_digest_new:
-            request.diff_summary = f"Config change: {config_digest_old[:8]}... -> {config_digest_new[:8]}..."
+            request.diff_summary = (
+                f"Config change: {config_digest_old[:8]}... -> {config_digest_new[:8]}..."
+            )
         elif artifact_digest:
             request.diff_summary = f"Artifact change: {artifact_digest[:16]}..."
 
@@ -336,14 +346,16 @@ class ApprovalManager:
         request.status = ApprovalStatus.APPROVED
         request.decided_at = datetime.utcnow()
         request.decision_reason = reason
-        request.evidence_hash = compute_evidence_hash({
-            "request_id": str(request_id),
-            "command_type": request.command_type,
-            "config_digest_new": request.config_digest_new,
-            "artifact_digest": request.artifact_digest,
-            "decided_by": decided_by,
-            "decided_at": request.decided_at.isoformat(),
-        })
+        request.evidence_hash = compute_evidence_hash(
+            {
+                "request_id": str(request_id),
+                "command_type": request.command_type,
+                "config_digest_new": request.config_digest_new,
+                "artifact_digest": request.artifact_digest,
+                "decided_by": decided_by,
+                "decided_at": request.decided_at.isoformat(),
+            }
+        )
 
         # Move to history
         self._history.append(request)
@@ -391,16 +403,18 @@ class ApprovalManager:
         request.status = ApprovalStatus.DENIED
         request.decided_at = datetime.utcnow()
         request.decision_reason = reason
-        request.evidence_hash = compute_evidence_hash({
-            "request_id": str(request_id),
-            "command_type": request.command_type,
-            "config_digest_new": request.config_digest_new,
-            "artifact_digest": request.artifact_digest,
-            "approved": False,
-            "decided_by": decided_by,
-            "decided_at": request.decided_at.isoformat(),
-            "reason": reason,
-        })
+        request.evidence_hash = compute_evidence_hash(
+            {
+                "request_id": str(request_id),
+                "command_type": request.command_type,
+                "config_digest_new": request.config_digest_new,
+                "artifact_digest": request.artifact_digest,
+                "approved": False,
+                "decided_by": decided_by,
+                "decided_at": request.decided_at.isoformat(),
+                "reason": reason,
+            }
+        )
 
         # Move to history
         self._history.append(request)
@@ -436,8 +450,10 @@ class ApprovalManager:
         if req is None:
             return None
 
-        ok = self.approve(request_id, reason=reason, decided_by=decided_by) if approved else self.deny(
-            request_id, reason=reason, decided_by=decided_by
+        ok = (
+            self.approve(request_id, reason=reason, decided_by=decided_by)
+            if approved
+            else self.deny(request_id, reason=reason, decided_by=decided_by)
         )
         if not ok:
             return None

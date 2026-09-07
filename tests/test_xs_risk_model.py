@@ -68,7 +68,9 @@ def _synthetic_factor_data():
     B = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, -1.0], [2.0, 0.5]])  # 5×2
     R = F @ B.T  # T×N, без шума → r = B f
     syms = [f"S{i}" for i in range(N)]
-    r_wide = pd.DataFrame(R, index=pd.Index(range(T), name="ts_ms"), columns=pd.Index(syms, name="symbol"))
+    r_wide = pd.DataFrame(
+        R, index=pd.Index(range(T), name="ts_ms"), columns=pd.Index(syms, name="symbol")
+    )
     B_df = pd.DataFrame(B, index=syms, columns=["f1", "f2"])
     return F, B, R, r_wide, B_df
 
@@ -144,5 +146,7 @@ def test_accepts_panel_multiindex_input():
     cov_r = Rd.T @ Rd / R.shape[0]
     # колонки могут идти в другом порядке — сравним через выравнивание
     sigma = model.cov()
-    cov_r_df = pd.DataFrame(cov_r, index=r_wide.columns, columns=r_wide.columns).loc[sigma.index, sigma.columns]
+    cov_r_df = pd.DataFrame(cov_r, index=r_wide.columns, columns=r_wide.columns).loc[
+        sigma.index, sigma.columns
+    ]
     assert np.allclose(sigma.to_numpy(), cov_r_df.to_numpy(), atol=1e-8)

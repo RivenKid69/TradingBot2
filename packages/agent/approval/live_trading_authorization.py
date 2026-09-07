@@ -54,7 +54,7 @@ STATUS_EXHAUSTED = "exhausted"
 
 # Жёсткие верхние границы, которые оператор не может превысить даже вручную
 # (defense-in-depth: даже опечатка в токене не откроет неограниченный мандат).
-HARD_MAX_TTL_SEC = 7 * 24 * 3600          # мандат живёт максимум неделю
+HARD_MAX_TTL_SEC = 7 * 24 * 3600  # мандат живёт максимум неделю
 HARD_MAX_NOTIONAL_PER_REBALANCE = 5_000_000.0
 HARD_MAX_TURNOVER = 1.0
 
@@ -68,8 +68,9 @@ def canonical_config_hash(config: Any) -> str:
             return config.lower()
         payload = config.encode("utf-8")
     else:
-        payload = json.dumps(config, sort_keys=True, separators=(",", ":"),
-                             ensure_ascii=False).encode("utf-8")
+        payload = json.dumps(
+            config, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 
 
@@ -85,7 +86,8 @@ class LimitCeiling:
         return LimitCeiling(
             max_turnover=min(float(self.max_turnover), HARD_MAX_TURNOVER),
             max_notional_per_rebalance=min(
-                float(self.max_notional_per_rebalance), HARD_MAX_NOTIONAL_PER_REBALANCE),
+                float(self.max_notional_per_rebalance), HARD_MAX_NOTIONAL_PER_REBALANCE
+            ),
             max_orders_per_rebalance=int(self.max_orders_per_rebalance),
         )
 
@@ -137,17 +139,21 @@ class LiveTradingAuthorization:
     def from_dict(cls, d: Dict[str, Any]) -> "LiveTradingAuthorization":
         lc = d.get("limit_ceiling") or {}
         return cls(
-            auth_id=d["auth_id"], strategy_id=d["strategy_id"],
-            config_hash=d["config_hash"], broker=d["broker"],
+            auth_id=d["auth_id"],
+            strategy_id=d["strategy_id"],
+            config_hash=d["config_hash"],
+            broker=d["broker"],
             limit_ceiling=LimitCeiling(**lc),
-            granted_at=float(d["granted_at"]), expires_at=float(d["expires_at"]),
+            granted_at=float(d["granted_at"]),
+            expires_at=float(d["expires_at"]),
             granted_by=d.get("granted_by", "local_operator"),
             status=d.get("status", STATUS_ACTIVE),
             max_total_notional=d.get("max_total_notional"),
             max_rebalances=d.get("max_rebalances"),
             consumed_notional=float(d.get("consumed_notional", 0.0)),
             consumed_rebalances=int(d.get("consumed_rebalances", 0)),
-            revoked_at=d.get("revoked_at"), revoke_reason=d.get("revoke_reason"),
+            revoked_at=d.get("revoked_at"),
+            revoke_reason=d.get("revoke_reason"),
             note=d.get("note", ""),
         )
 
@@ -198,6 +204,7 @@ class LiveTradingAuthorizationStore:
     def _init_chain(self, audit_key: Optional[bytes]) -> None:
         try:
             from packages.agent.audit.hash_chain import HashChain
+
             self._chain = HashChain(key=audit_key)
         except Exception:  # pragma: no cover - hash_chain всегда доступен
             self._chain = None
@@ -211,8 +218,12 @@ class LiveTradingAuthorizationStore:
         }
         if self._chain is not None:
             rec = self._chain.append(entry)
-            entry = {**entry, "seq": rec.seq, "entry_hash": rec.entry_hash,
-                     "prev_hash": rec.prev_hash}
+            entry = {
+                **entry,
+                "seq": rec.seq,
+                "entry_hash": rec.entry_hash,
+                "prev_hash": rec.prev_hash,
+            }
         try:
             os.makedirs(os.path.dirname(self.audit_path) or ".", exist_ok=True)
             with open(self.audit_path, "a", encoding="utf-8") as f:
@@ -240,6 +251,7 @@ class LiveTradingAuthorizationStore:
                 # Rebuild in-memory audit chain so head_hash продолжает цепочку.
                 if self._chain is not None and os.path.exists(self.audit_path):
                     from packages.agent.audit.hash_chain import HashChain
+
                     chain = HashChain(key=self._audit_key)
                     with open(self.audit_path, "r", encoding="utf-8") as af:
                         for line in af:
@@ -248,8 +260,13 @@ class LiveTradingAuthorizationStore:
                                 continue
                             try:
                                 rec = json.loads(line)
-                                chain.append({k: v for k, v in rec.items()
-                                              if k not in ("seq", "entry_hash", "prev_hash")})
+                                chain.append(
+                                    {
+                                        k: v
+                                        for k, v in rec.items()
+                                        if k not in ("seq", "entry_hash", "prev_hash")
+                                    }
+                                )
                             except Exception:
                                 continue
                     self._chain = chain
@@ -259,10 +276,14 @@ class LiveTradingAuthorizationStore:
     def _save(self) -> None:
         with self._lock:
             from services.utils_app import atomic_write_json
-            atomic_write_json(self.state_path, {
-                "updated_at": _iso(self._time()),
-                "auths": [a.to_dict() for a in self._auths.values()],
-            })
+
+            atomic_write_json(
+                self.state_path,
+                {
+                    "updated_at": _iso(self._time()),
+                    "auths": [a.to_dict() for a in self._auths.values()],
+                },
+            )
 
     # ------------------------------------------------------------- grant
 
@@ -290,8 +311,14 @@ class LiveTradingAuthorizationStore:
         if str(broker).strip().lower() == "sim_paper":
             return {"ok": False, "error": "sim_paper не требует авторизации live-торговли"}
         if not secrets.compare_digest(str(confirmation_token), str(expected_token)):
-            self._audit("REJECT_GRANT", {"strategy_id": strategy_id, "broker": broker,
-                                         "reason": "confirmation token mismatch"})
+            self._audit(
+                "REJECT_GRANT",
+                {
+                    "strategy_id": strategy_id,
+                    "broker": broker,
+                    "reason": "confirmation token mismatch",
+                },
+            )
             return {"ok": False, "error": "подтверждающий токен не совпал — мандат не выдан"}
         ttl = max(60, min(int(ttl_sec), HARD_MAX_TTL_SEC))
         ceiling = limit_ceiling.clamp_to_hard()
@@ -313,23 +340,38 @@ class LiveTradingAuthorizationStore:
         with self._lock:
             # Один активный мандат на (strategy_id, broker): новый вытесняет старый.
             for old in self._auths.values():
-                if (old.strategy_id == auth.strategy_id and old.broker == auth.broker
-                        and old.status == STATUS_ACTIVE):
+                if (
+                    old.strategy_id == auth.strategy_id
+                    and old.broker == auth.broker
+                    and old.status == STATUS_ACTIVE
+                ):
                     old.status = STATUS_REVOKED
                     old.revoked_at = now
                     old.revoke_reason = "superseded by new grant"
                     self._audit("SUPERSEDE", {"auth_id": old.auth_id})
             self._auths[auth.auth_id] = auth
             self._save()
-        self._audit("GRANT", {
-            "auth_id": auth.auth_id, "strategy_id": auth.strategy_id,
-            "broker": auth.broker, "config_hash": auth.config_hash,
-            "expires_at": auth.expires_at, "ceiling": ceiling.to_dict(),
-            "max_total_notional": auth.max_total_notional,
-            "max_rebalances": auth.max_rebalances, "granted_by": granted_by,
-        })
-        logger.warning("live-auth: GRANTED %s strategy=%s broker=%s ttl=%ds",
-                       auth.auth_id, auth.strategy_id, auth.broker, ttl)
+        self._audit(
+            "GRANT",
+            {
+                "auth_id": auth.auth_id,
+                "strategy_id": auth.strategy_id,
+                "broker": auth.broker,
+                "config_hash": auth.config_hash,
+                "expires_at": auth.expires_at,
+                "ceiling": ceiling.to_dict(),
+                "max_total_notional": auth.max_total_notional,
+                "max_rebalances": auth.max_rebalances,
+                "granted_by": granted_by,
+            },
+        )
+        logger.warning(
+            "live-auth: GRANTED %s strategy=%s broker=%s ttl=%ds",
+            auth.auth_id,
+            auth.strategy_id,
+            auth.broker,
+            ttl,
+        )
         return {"ok": True, "authorization": auth.public_view(now)}
 
     # ------------------------------------------------------------- revoke
@@ -387,15 +429,32 @@ class LiveTradingAuthorizationStore:
         with self._lock:
             auth = self._active_for(strategy_id, broker, now)
             if auth is None:
-                self._audit("REJECT", {"strategy_id": strategy_id, "broker": broker,
-                                       "reason": "no active authorization"})
-                return AuthCheck(False, "нет активной авторизации live-торговли для этой стратегии/брокера")
+                self._audit(
+                    "REJECT",
+                    {
+                        "strategy_id": strategy_id,
+                        "broker": broker,
+                        "reason": "no active authorization",
+                    },
+                )
+                return AuthCheck(
+                    False, "нет активной авторизации live-торговли для этой стратегии/брокера"
+                )
             if auth.config_hash != cfg_hash:
-                self._audit("REJECT", {"auth_id": auth.auth_id, "reason": "config hash mismatch",
-                                       "expected": auth.config_hash, "got": cfg_hash})
-                return AuthCheck(False,
-                                 "конфиг стратегии изменился с момента авторизации — требуется повторная авторизация",
-                                 auth.auth_id)
+                self._audit(
+                    "REJECT",
+                    {
+                        "auth_id": auth.auth_id,
+                        "reason": "config hash mismatch",
+                        "expected": auth.config_hash,
+                        "got": cfg_hash,
+                    },
+                )
+                return AuthCheck(
+                    False,
+                    "конфиг стратегии изменился с момента авторизации — требуется повторная авторизация",
+                    auth.auth_id,
+                )
             c = auth.limit_ceiling
             if turnover > c.max_turnover + 1e-9:
                 return self._reject_limit(auth, "turnover", turnover, c.max_turnover)
@@ -405,8 +464,10 @@ class LiveTradingAuthorizationStore:
                 return self._reject_limit(auth, "orders", n_orders, c.max_orders_per_rebalance)
             if auth.max_rebalances is not None and auth.consumed_rebalances >= auth.max_rebalances:
                 return AuthCheck(False, "исчерпан бюджет ребалансов мандата", auth.auth_id)
-            if (auth.max_total_notional is not None
-                    and auth.consumed_notional + notional > auth.max_total_notional + 1e-6):
+            if (
+                auth.max_total_notional is not None
+                and auth.consumed_notional + notional > auth.max_total_notional + 1e-6
+            ):
                 return AuthCheck(False, "исчерпан нотиональный бюджет мандата", auth.auth_id)
             return AuthCheck(True, "авторизовано", auth.auth_id, effective_ceiling=c)
 
@@ -422,25 +483,37 @@ class LiveTradingAuthorizationStore:
             exhausted = False
             if auth.max_rebalances is not None and auth.consumed_rebalances >= auth.max_rebalances:
                 exhausted = True
-            if (auth.max_total_notional is not None
-                    and auth.consumed_notional >= auth.max_total_notional):
+            if (
+                auth.max_total_notional is not None
+                and auth.consumed_notional >= auth.max_total_notional
+            ):
                 exhausted = True
             if exhausted:
                 auth.status = STATUS_EXHAUSTED
             self._save()
-        self._audit("CONSUME", {"auth_id": auth_id, "notional": round(float(notional), 2),
-                                "n_orders": int(n_orders),
-                                "consumed_notional": round(auth.consumed_notional, 2),
-                                "consumed_rebalances": auth.consumed_rebalances,
-                                "exhausted": exhausted})
-        return {"ok": True, "exhausted": exhausted,
+        self._audit(
+            "CONSUME",
+            {
+                "auth_id": auth_id,
+                "notional": round(float(notional), 2),
+                "n_orders": int(n_orders),
                 "consumed_notional": round(auth.consumed_notional, 2),
-                "consumed_rebalances": auth.consumed_rebalances}
+                "consumed_rebalances": auth.consumed_rebalances,
+                "exhausted": exhausted,
+            },
+        )
+        return {
+            "ok": True,
+            "exhausted": exhausted,
+            "consumed_notional": round(auth.consumed_notional, 2),
+            "consumed_rebalances": auth.consumed_rebalances,
+        }
 
     # ----------------------------------------------------------- helpers
 
-    def _active_for(self, strategy_id: str, broker: str,
-                    now: float) -> Optional[LiveTradingAuthorization]:
+    def _active_for(
+        self, strategy_id: str, broker: str, now: float
+    ) -> Optional[LiveTradingAuthorization]:
         expired_any = False
         result = None
         for auth in self._auths.values():
@@ -457,13 +530,21 @@ class LiveTradingAuthorizationStore:
             self._save()
         return result
 
-    def _reject_limit(self, auth: LiveTradingAuthorization, kind: str,
-                      value: float, ceiling: float) -> AuthCheck:
-        self._audit("REJECT", {"auth_id": auth.auth_id, "reason": f"{kind} exceeds ceiling",
-                               "value": value, "ceiling": ceiling})
-        return AuthCheck(False,
-                         f"{kind}={value:.4g} превышает потолок мандата {ceiling:.4g}",
-                         auth.auth_id)
+    def _reject_limit(
+        self, auth: LiveTradingAuthorization, kind: str, value: float, ceiling: float
+    ) -> AuthCheck:
+        self._audit(
+            "REJECT",
+            {
+                "auth_id": auth.auth_id,
+                "reason": f"{kind} exceeds ceiling",
+                "value": value,
+                "ceiling": ceiling,
+            },
+        )
+        return AuthCheck(
+            False, f"{kind}={value:.4g} превышает потолок мандата {ceiling:.4g}", auth.auth_id
+        )
 
     def status(self) -> Dict[str, Any]:
         now = self._time()
@@ -478,8 +559,11 @@ class LiveTradingAuthorizationStore:
             if changed:
                 self._save()
             active = [a.public_view(now) for a in self._auths.values() if a.is_active(now)]
-            recent = sorted((a.public_view(now) for a in self._auths.values()),
-                            key=lambda d: d["granted_at"], reverse=True)[:20]
+            recent = sorted(
+                (a.public_view(now) for a in self._auths.values()),
+                key=lambda d: d["granted_at"],
+                reverse=True,
+            )[:20]
         audit = self.verify_audit()
         return {
             "active": active,
@@ -491,6 +575,7 @@ class LiveTradingAuthorizationStore:
 
 def _iso(ts: float) -> str:
     from datetime import datetime, timezone
+
     return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat(timespec="seconds")
 
 

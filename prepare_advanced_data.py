@@ -7,12 +7,16 @@ Fetches the Fear & Greed index and writes a normalized CSV at:
 Run as:
     python prepare_advanced_data.py
 """
-import os, time, csv, json
+import os
+import time
+import csv
+import json
 import requests
 
 OUT_DIR = os.path.join("data")
 OUT_PATH = os.path.join(OUT_DIR, "fear_greed.csv")
 API = "https://api.alternative.me/fng/"
+
 
 def fetch_fng(limit: int = 0) -> list:
     # limit=0 means "all available"
@@ -31,6 +35,7 @@ def fetch_fng(limit: int = 0) -> list:
     # Dedup & sort
     rows = sorted({(ts, val) for ts, val in rows})
     return rows
+
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -79,10 +84,13 @@ def main():
     tmp = OUT_PATH + ".tmp"
     with open(tmp, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["timestamp","fear_greed_value"])
+        w.writerow(["timestamp", "fear_greed_value"])
         w.writerows(all_rows)
     os.replace(tmp, OUT_PATH)
-    print(f"✓ Fear & Greed updated at {OUT_PATH} (+{len(new_rows)} new rows, total {len(all_rows)}).")
+    print(
+        f"✓ Fear & Greed updated at {OUT_PATH} (+{len(new_rows)} new rows, total {len(all_rows)})."
+    )
+
 
 if __name__ == "__main__":
     main()

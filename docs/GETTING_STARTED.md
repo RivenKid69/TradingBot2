@@ -23,12 +23,14 @@ Welcome! This guide will take you from zero to running your first backtest in un
 ## Prerequisites
 
 ### System Requirements
+
 - **OS**: Windows 10/11, macOS 10.15+, or Linux (Ubuntu 20.04+)
 - **Python**: 3.10 or 3.12 (recommended)
 - **RAM**: 8GB minimum, 16GB recommended
 - **Storage**: 10GB free space
 
 ### Knowledge Requirements
+
 - Basic Python knowledge (functions, classes)
 - Understanding of systematic trading concepts (orders, fills, profit/loss)
 - Familiarity with ML/RL concepts is helpful but not required
@@ -69,6 +71,7 @@ python scripts/quickstart.py check crypto_momentum
 ```
 
 **Expected output:**
+
 ```
 ✓ Python version: 3.12.0
 ✓ Dependencies installed
@@ -98,6 +101,7 @@ python scripts/quickstart.py list
 ```
 
 **Output:**
+
 ```
 Available Presets:
 ┌─────────────────┬─────────────┬───────────────────────┬────────────┐
@@ -118,6 +122,7 @@ python scripts/quickstart.py info crypto_momentum
 ```
 
 **Output:**
+
 ```
 Preset: crypto_momentum
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -144,6 +149,7 @@ python scripts/quickstart.py run crypto_momentum
 ```
 
 **Example output (hypothetical, for illustration purposes only):**
+
 ```
 Loading data... ████████████████████ 100%
 Running backtest...
@@ -219,6 +225,7 @@ results/crypto_momentum_2024-12-04/
 ### Why Train?
 
 Pre-built strategies use fixed rules. Training creates an ML model that:
+
 - Adapts to changing market conditions
 - Learns optimal position sizing
 - Discovers patterns in data
@@ -244,6 +251,7 @@ python scripts/quickstart.py train crypto_momentum
 ```
 
 **Example output (hypothetical):**
+
 ```
 Starting training...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -334,6 +342,7 @@ OANDA_ACCOUNT_ID=your_account_id
 **CCEA Architecture Note**: In production, live trading runs through the local Agent daemon which manages your credentials securely. The Cloud platform manages research, backtesting, and lifecycle - it **does not** store your API keys or execute orders.
 
 **Development/Testing (via script_live.py):**
+
 ```bash
 # For development/testing only (not production CCEA architecture)
 # Crypto (Binance Testnet)
@@ -344,6 +353,7 @@ python script_live.py --config configs/config_live_alpaca.yaml --paper --dry-run
 ```
 
 **Production (via local Agent daemon):**
+
 ```bash
 # See docs/agent/INSTALLATION.md for full Agent setup
 python -m packages.agent.daemon.agentd --config configs/agent.yaml
@@ -356,12 +366,14 @@ python -m packages.agent.daemon.agentd --config configs/agent.yaml
 **Only proceed after extensive paper trading and thorough risk assessment.**
 
 **Production CCEA Architecture** (Recommended):
+
 1. Deploy local Agent daemon (credentials stay on YOUR machine)
 2. Cloud sends lifecycle commands only (start/stop/deploy)
 3. See `docs/agent/INSTALLATION.md` for setup
 4. See `docs/runbooks/KILL_SWITCH.md` for emergency procedures
 
 **Development/Testing Only:**
+
 ```bash
 # NOT for production - use Agent daemon instead
 python script_live.py --config configs/config_live.yaml --dry-run
@@ -385,6 +397,7 @@ python script_live.py --config configs/config_live.yaml --dry-run
 ### Level 1: Customize Strategies
 
 1. Modify parameters in preset configs:
+
    ```yaml
    # configs/quickstart/crypto_momentum.yaml
    strategy:
@@ -393,6 +406,7 @@ python script_live.py --config configs/config_live.yaml --dry-run
    ```
 
 2. Run backtest with modified config:
+
    ```bash
    python script_backtest.py --config configs/quickstart/crypto_momentum.yaml
    ```
@@ -400,6 +414,7 @@ python script_live.py --config configs/config_live.yaml --dry-run
 ### Level 2: Create Custom Strategies
 
 1. Create strategy file:
+
    ```python
    # strategies/my_strategy.py
    from strategies.base import BaseStrategy
@@ -570,12 +585,14 @@ The platform includes alignment/evidence tooling designed to support customer pr
 > **Note**: "Toolkit Ready" means compliance tools have been implemented and designed to help align with regulatory requirements. Independent certification or audit has not been performed. Consult qualified legal/compliance advisors for compliance assessment.
 
 **Privacy by Design (CCEA Architecture):**
+
 - Your broker credentials stay in your local Agent (Cloud is designed not to store or receive them; verify via architecture review)
 - Cloud is designed not to execute trades or store API keys (verify via CI guardrails)
 - Telemetry designed to be redacted before transmission (verify via CI tests); raw order events require explicit opt-in
 - EU data residency by design for EU customers (design target; deployment- and contract-specific; enterprise: on-prem/customer-managed options available)
 
 For details, see:
+
 - [Privacy Policy](legal/PRIVACY_POLICY.md)
 - [GDPR Compliance Summary](compliance/GDPR_COMPLIANCE_SUMMARY.md)
 - [CCEA Privacy](architecture/CCEA_PRIVACY.md)
@@ -608,7 +625,7 @@ You've completed the getting started guide. You now know how to:
 | Deep dive into architecture | [ARCHITECTURE.md](../ARCHITECTURE.md) |
 | Understand execution models | [docs/bar_execution.md](bar_execution.md) |
 | Advanced training options | [docs/UPGD_INTEGRATION.md](UPGD_INTEGRATION.md) |
-| Full API reference | [claude.md](../claude.md) |
+| Full API reference | [PLATFORM_REFERENCE.md](PLATFORM_REFERENCE.md) |
 
 ---
 

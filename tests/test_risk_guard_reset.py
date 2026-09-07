@@ -1,7 +1,10 @@
-import pathlib, sys
+import pathlib
+import sys
+
 sys.path.append(str(pathlib.Path(__file__).resolve().parent.parent))
 from risk_guard import RiskGuard, RiskConfig, RiskEvent
 from action_proto import ActionProto, ActionType
+
 
 class DummyState:
     def __init__(self):

@@ -1,4 +1,5 @@
 # On-Call Capacity Validation
+
 ## SLA Notification Tier Assessment
 
 **Version**: 1.1
@@ -39,11 +40,13 @@ This document validates our current on-call capacity and sets achievable notific
 ### 2.3 Current Coverage
 
 **Business Hours (Current Default)**:
+
 - Monday-Friday: 9:00 - 18:00 CET
 - Minimum 2 engineers available
 - Response capability: Full
 
 **After Hours (Emergency Only)**:
+
 - Pager system for critical incidents
 - Single on-call engineer
 - Response: Triage and escalation
@@ -65,6 +68,7 @@ Based on capacity assessment, the following notification SLA targets are defined
 | After-hours for Critical | Best effort (next morning) | Pager for escalation (when available) |
 
 **Capacity Validation (Target State)**:
+
 - [ ] 2+ engineers during business hours (target; current team scaling in progress)
 - [ ] Monitoring alerts configured (target; tooling deployment in progress)
 - [ ] Escalation procedures documented (documented; validation pending)
@@ -80,6 +84,7 @@ Based on capacity assessment, the following notification SLA targets are defined
 | Coverage Hours | 7am-11pm CET Mon-Fri | On-call rotation |
 
 **Prerequisites to Offer**:
+
 - [ ] Establish on-call rotation (Option B)
 - [ ] Minimum 3 engineers in rotation
 - [ ] Pager duty compensation structure
@@ -97,6 +102,7 @@ Based on capacity assessment, the following notification SLA targets are defined
 | Coverage Hours | 24/7/365 | Dedicated team |
 
 **Prerequisites to Offer**:
+
 - [ ] 24/7 on-call rotation (Option C minimum)
 - [ ] Minimum 4 engineers in rotation
 - [ ] NOC capability or equivalent
@@ -143,16 +149,19 @@ Based on capacity assessment, the following notification SLA targets are defined
 ### 5.2 Remediation Roadmap
 
 **Phase 1 (Current)**: Standard Tier Only
+
 - Maintain current business hours coverage
 - Pager for critical emergencies
 - Clear documentation of limitations
 
 **Phase 2 (Q2 2025)**: Professional Tier
+
 - Establish on-call rotation
 - Add 1 engineer to team
 - Extended hours coverage
 
 **Phase 3 (Q4 2025)**: Enterprise Tier
+
 - 24/7 on-call rotation
 - Add 2+ engineers
 - Consider managed NOC partnership
@@ -164,6 +173,7 @@ Based on capacity assessment, the following notification SLA targets are defined
 ### 6.1 Pre-Sales Disclosure
 
 Sales team MUST disclose to prospective clients:
+
 - Current coverage hours
 - After-hours response limitations
 - SLA tier availability
@@ -192,6 +202,7 @@ with formal notification by 10:00 CET the following business day.
 ### 6.3 Status Page
 
 Public status page displays:
+
 - Current system status
 - Coverage hours
 - Scheduled maintenance

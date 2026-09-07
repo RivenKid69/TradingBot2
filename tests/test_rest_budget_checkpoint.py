@@ -63,6 +63,7 @@ def test_load_checkpoint_disabled(tmp_path: Path) -> None:
 
 def test_save_checkpoint_non_serialisable(tmp_path: Path) -> None:
     session = _session(tmp_path)
+
     class Dummy:
         pass
 

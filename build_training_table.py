@@ -20,16 +20,35 @@ def _read_df(path: str) -> pd.DataFrame:
 
 
 def main():
-    p = argparse.ArgumentParser(description="Build training table with asof-merge and leak protection.")
-    p.add_argument("--base", required=True, help="CSV/Parquet: базовая таблица фичей/сигналов. Должна содержать ts_ms, symbol.")
-    p.add_argument("--sources", nargs="*", default=[], help="JSON-строки спецификаций asof-источников. Пример: '{\"name\":\"book\",\"path\":\"book.parquet\",\"time_col\":\"ts_ms\",\"keys\":[\"symbol\"],\"direction\":\"backward\",\"tolerance_ms\":14400000}'")
-    p.add_argument("--prices", required=True, help="CSV/Parquet: таблица цен с колонками ts_ms, symbol, price (или другой столбец цен).")
+    p = argparse.ArgumentParser(
+        description="Build training table with asof-merge and leak protection."
+    )
+    p.add_argument(
+        "--base",
+        required=True,
+        help="CSV/Parquet: базовая таблица фичей/сигналов. Должна содержать ts_ms, symbol.",
+    )
+    p.add_argument(
+        "--sources",
+        nargs="*",
+        default=[],
+        help='JSON-строки спецификаций asof-источников. Пример: \'{"name":"book","path":"book.parquet","time_col":"ts_ms","keys":["symbol"],"direction":"backward","tolerance_ms":14400000}\'',
+    )
+    p.add_argument(
+        "--prices",
+        required=True,
+        help="CSV/Parquet: таблица цен с колонками ts_ms, symbol, price (или другой столбец цен).",
+    )
     p.add_argument("--price-col", default="price", help="Название колонки цены в prices.")
     p.add_argument(
-        "--decision-delay-ms", type=int, default=8000,
+        "--decision-delay-ms",
+        type=int,
+        default=8000,
         help="Задержка решения; безопасный default 8000 ms предотвращает совпадение feature/target timestamp.",
     )
-    p.add_argument("--label-horizon-ms", type=int, default=14400000)  # Changed from 60000 (1m) to 14400000 (4h)
+    p.add_argument(
+        "--label-horizon-ms", type=int, default=14400000
+    )  # Changed from 60000 (1m) to 14400000 (4h)
     p.add_argument("--label-returns", choices=["log", "arith"], default="log")
     p.add_argument("--out", required=True, help="Выходной CSV/Parquet (.parquet по расширению).")
     args = p.parse_args()
@@ -97,7 +116,13 @@ def main():
                     prices["ts_ms"] = prices[ts_candidate]
             except Exception:
                 prices["ts_ms"] = pd.to_datetime(prices[ts_candidate]).astype("int64") // 1000000
-    lb = LabelBuilder(LabelConfig(horizon_ms=int(args.label_horizon_ms), price_col=args.price_col, returns=args.label_returns))
+    lb = LabelBuilder(
+        LabelConfig(
+            horizon_ms=int(args.label_horizon_ms),
+            price_col=args.price_col,
+            returns=args.label_returns,
+        )
+    )
     out = lb.build(merged, prices, ts_col="ts_ms", symbol_col="symbol")
 
     # сохранить

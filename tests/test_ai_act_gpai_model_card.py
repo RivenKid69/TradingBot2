@@ -124,7 +124,7 @@ class TestModelLimitation:
         limitation = ModelLimitation(
             limitation_type=LimitationType.TECHNICAL,
             description="Requires 100ms latency",
-            severity="medium"
+            severity="medium",
         )
         assert limitation.limitation_type == LimitationType.TECHNICAL
         assert limitation.description == "Requires 100ms latency"
@@ -136,7 +136,7 @@ class TestModelLimitation:
             limitation_type=LimitationType.PERFORMANCE,
             description="May fail in extreme markets",
             severity="high",
-            mitigation="Implement kill switch"
+            mitigation="Implement kill switch",
         )
         assert limitation.mitigation == "Implement kill switch"
 
@@ -146,7 +146,7 @@ class TestModelLimitation:
             limitation_type=LimitationType.TECHNICAL,
             description="Test",
             severity="low",
-            affected_uses=["trading"]
+            affected_uses=["trading"],
         )
         data = limitation.to_dict()
         assert data["limitation_type"] == "technical"
@@ -159,12 +159,7 @@ class TestPerformanceMetric:
 
     def test_create_metric(self):
         """Test creating a performance metric."""
-        metric = PerformanceMetric(
-            name="Sharpe Ratio",
-            value=1.5,
-            unit="",
-            context="BTC 2020-2024"
-        )
+        metric = PerformanceMetric(name="Sharpe Ratio", value=1.5, unit="", context="BTC 2020-2024")
         assert metric.name == "Sharpe Ratio"
         assert metric.value == 1.5
         assert metric.context == "BTC 2020-2024"
@@ -172,22 +167,14 @@ class TestPerformanceMetric:
     def test_metric_with_confidence_interval(self):
         """Test metric with confidence interval."""
         metric = PerformanceMetric(
-            name="Sharpe",
-            value=1.2,
-            unit="",
-            context="Test",
-            confidence_interval=(0.9, 1.5)
+            name="Sharpe", value=1.2, unit="", context="Test", confidence_interval=(0.9, 1.5)
         )
         assert metric.confidence_interval == (0.9, 1.5)
 
     def test_metric_to_dict(self):
         """Test metric serialization."""
         metric = PerformanceMetric(
-            name="Win Rate",
-            value=52.0,
-            unit="%",
-            context="Test",
-            dataset=EvaluationDataset.TEST
+            name="Win Rate", value=52.0, unit="%", context="Test", dataset=EvaluationDataset.TEST
         )
         data = metric.to_dict()
         assert data["name"] == "Win Rate"
@@ -205,7 +192,7 @@ class TestBiasAssessment:
             bias_type="Temporal",
             description="Better in trending markets",
             impact="May generate false signals",
-            mitigation_status="Partially mitigated"
+            mitigation_status="Partially mitigated",
         )
         assert bias.bias_type == "Temporal"
         assert "trending" in bias.description
@@ -217,7 +204,7 @@ class TestBiasAssessment:
             description="Test",
             impact="Test impact",
             mitigation_status="Documented",
-            affected_groups=["Users"]
+            affected_groups=["Users"],
         )
         data = bias.to_dict()
         assert data["bias_type"] == "Asset"
@@ -230,9 +217,7 @@ class TestEthicalConsideration:
     def test_create_consideration(self):
         """Test creating ethical consideration."""
         eth = EthicalConsideration(
-            category="Financial Risk",
-            description="May cause losses",
-            guidance="Use with caution"
+            category="Financial Risk", description="May cause losses", guidance="Use with caution"
         )
         assert eth.category == "Financial Risk"
         assert eth.guidance == "Use with caution"
@@ -243,7 +228,7 @@ class TestEthicalConsideration:
             category="Test",
             description="Test desc",
             guidance="Test guidance",
-            relevant_articles=["Article 50"]
+            relevant_articles=["Article 50"],
         )
         data = eth.to_dict()
         assert data["category"] == "Test"
@@ -260,7 +245,7 @@ class TestDownstreamRequirement:
             description="Implement kill switch",
             article_reference="Article 14(4)(f)",
             mandatory=True,
-            implementation_guidance="Add stop button"
+            implementation_guidance="Add stop button",
         )
         assert req.requirement_id == "DR-001"
         assert req.mandatory is True
@@ -273,7 +258,7 @@ class TestDownstreamRequirement:
             description="Log outputs",
             article_reference="Article 12",
             mandatory=True,
-            implementation_guidance="Store for 5 years"
+            implementation_guidance="Store for 5 years",
         )
         data = req.to_dict()
         assert data["requirement_id"] == "DR-002"
@@ -478,7 +463,7 @@ class TestFactoryFunctions:
             model_name="Custom Model",
             model_version="1.0",
             provider="Test",
-            release_date=datetime.utcnow()
+            release_date=datetime.utcnow(),
         )
         manager = create_model_card_manager(model_card=custom_card)
         assert manager.current_card.model_name == "Custom Model"
@@ -517,10 +502,7 @@ class TestValidateModelCard:
     def test_validate_incomplete_card(self):
         """Test validation of incomplete card."""
         card = GPAIModelCard(
-            model_name="",
-            model_version="",
-            provider="",
-            release_date=datetime.utcnow()
+            model_name="", model_version="", provider="", release_date=datetime.utcnow()
         )
         result = validate_model_card(card)
         assert result["has_identity"] is False
@@ -614,6 +596,7 @@ class TestSerialization:
         json_str = manager.get_model_card_json()
 
         import json
+
         data = json.loads(json_str)
         restored = GPAIModelCard.from_dict(data)
 
@@ -626,10 +609,7 @@ class TestEdgeCases:
     def test_empty_model_card(self):
         """Test model card with minimal data."""
         card = GPAIModelCard(
-            model_name="Test",
-            model_version="1.0",
-            provider="Test",
-            release_date=datetime.utcnow()
+            model_name="Test", model_version="1.0", provider="Test", release_date=datetime.utcnow()
         )
         doc = card.generate_card()
         assert "GPAI Model Card" in doc
@@ -638,10 +618,7 @@ class TestEdgeCases:
     def test_manager_with_empty_card(self):
         """Test manager with minimal card."""
         card = GPAIModelCard(
-            model_name="Empty",
-            model_version="0.1",
-            provider="Test",
-            release_date=datetime.utcnow()
+            model_name="Empty", model_version="0.1", provider="Test", release_date=datetime.utcnow()
         )
         manager = create_model_card_manager(model_card=card)
         result = manager.validate_compliance()

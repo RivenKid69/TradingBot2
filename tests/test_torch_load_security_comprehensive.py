@@ -12,12 +12,14 @@ Test Coverage:
 4. PBT scheduler security
 5. Inference script security
 """
+
 import os
 import pickle
 import tempfile
 from pathlib import Path
 import re
 import pytest
+
 torch = pytest.importorskip("torch")
 import pytest
 import numpy as np
@@ -33,6 +35,7 @@ class MaliciousPayload:
     Test payload that executes code during unpickling.
     Used to verify that malicious checkpoints are blocked.
     """
+
     def __reduce__(self):
         global EXPLOIT_EXECUTED, EXPLOIT_DATA
         EXPLOIT_EXECUTED = True
@@ -43,10 +46,10 @@ class MaliciousPayload:
 def create_safe_checkpoint(path: Path):
     """Create a legitimate checkpoint with only tensors."""
     state_dict = {
-        'layer1.weight': torch.randn(10, 5),
-        'layer1.bias': torch.randn(10),
-        'layer2.weight': torch.randn(5, 3),
-        'layer2.bias': torch.randn(5),
+        "layer1.weight": torch.randn(10, 5),
+        "layer1.bias": torch.randn(10),
+        "layer2.weight": torch.randn(5, 3),
+        "layer2.bias": torch.randn(5),
     }
     torch.save(state_dict, path)
     return state_dict
@@ -55,8 +58,8 @@ def create_safe_checkpoint(path: Path):
 def create_malicious_checkpoint(path: Path):
     """Create a checkpoint with malicious payload."""
     state_dict = {
-        'layer1.weight': torch.randn(10, 5),
-        'malicious': MaliciousPayload(),
+        "layer1.weight": torch.randn(10, 5),
+        "malicious": MaliciousPayload(),
     }
     torch.save(state_dict, path)
 
@@ -84,24 +87,26 @@ class TestProductionCodeSecurity:
             if not full_path.exists():
                 pytest.skip(f"Production file not found: {file_path}")
 
-            content = full_path.read_text(encoding='utf-8')
+            content = full_path.read_text(encoding="utf-8")
 
             # Find all torch.load() calls
-            pattern = r'torch\.load\s*\([^)]*\)'
+            pattern = r"torch\.load\s*\([^)]*\)"
             matches = re.finditer(pattern, content)
 
             for match in matches:
                 call = match.group(0)
 
                 # Check if this call has weights_only=True or is part of safe pattern
-                if 'weights_only=True' not in call and 'weights_only=False' not in call:
+                if "weights_only=True" not in call and "weights_only=False" not in call:
                     # Missing weights_only parameter entirely - vulnerable!
-                    vulnerable_calls.append({
-                        'file': file_path,
-                        'call': call,
-                        'line': content[:match.start()].count('\n') + 1,
-                    })
-                elif 'weights_only=False' in call:
+                    vulnerable_calls.append(
+                        {
+                            "file": file_path,
+                            "call": call,
+                            "line": content[: match.start()].count("\n") + 1,
+                        }
+                    )
+                elif "weights_only=False" in call:
                     # Check if it has a safe fallback pattern (try/except with security comment)
                     # Expand context window to capture the entire try/except block
                     start_pos = max(0, match.start() - 1000)
@@ -112,20 +117,26 @@ class TestProductionCodeSecurity:
                     # 1. There's a try/except with weights_only=True first
                     # 2. There's a security comment explaining why
                     context_lower = context.lower()
-                    has_security_comment = 'security' in context_lower
-                    has_weights_only_true_attempt = 'weights_only=True' in context
-                    has_fallback_pattern = 'except' in context and 'fallback' in context_lower
-                    has_warnings_warn = 'warnings.warn' in context or 'userwarning' in context_lower
+                    has_security_comment = "security" in context_lower
+                    has_weights_only_true_attempt = "weights_only=True" in context
+                    has_fallback_pattern = "except" in context and "fallback" in context_lower
+                    has_warnings_warn = "warnings.warn" in context or "userwarning" in context_lower
 
                     # Safe if has security comment AND (weights_only=True attempt OR fallback pattern with warning)
-                    is_safe = has_security_comment and has_weights_only_true_attempt and (has_fallback_pattern or has_warnings_warn)
+                    is_safe = (
+                        has_security_comment
+                        and has_weights_only_true_attempt
+                        and (has_fallback_pattern or has_warnings_warn)
+                    )
 
                     if not is_safe:
-                        vulnerable_calls.append({
-                            'file': file_path,
-                            'call': call,
-                            'line': content[:match.start()].count('\n') + 1,
-                        })
+                        vulnerable_calls.append(
+                            {
+                                "file": file_path,
+                                "call": call,
+                                "line": content[: match.start()].count("\n") + 1,
+                            }
+                        )
 
         if vulnerable_calls:
             msg = "\nVulnerable torch.load() calls found:\n"
@@ -175,12 +186,12 @@ class TestProductionCodeSecurity:
 
         # Verify safe checkpoint loaded
         assert new_state is not None, "Expected checkpoint to be loaded during exploitation"
-        assert 'layer1.weight' in new_state
+        assert "layer1.weight" in new_state
 
         # Verify no malicious code executed
-        assert not EXPLOIT_EXECUTED, (
-            "Malicious code was executed! PBT scheduler is not using weights_only=True correctly."
-        )
+        assert (
+            not EXPLOIT_EXECUTED
+        ), "Malicious code was executed! PBT scheduler is not using weights_only=True correctly."
 
     def test_pbt_scheduler_blocks_malicious_checkpoint(self, tmp_path):
         """
@@ -221,9 +232,9 @@ class TestProductionCodeSecurity:
             scheduler.exploit_and_explore(population[1])
 
         # Verify malicious code was NOT executed
-        assert not EXPLOIT_EXECUTED, (
-            "CRITICAL: Malicious code was executed! weights_only=True is not working."
-        )
+        assert (
+            not EXPLOIT_EXECUTED
+        ), "CRITICAL: Malicious code was executed! weights_only=True is not working."
 
 
 class TestInferSignalsSecurity:
@@ -240,8 +251,8 @@ class TestInferSignalsSecurity:
         # Test direct loading with weights_only=True
         loaded_state = torch.load(checkpoint_path, weights_only=True)
 
-        assert 'layer1.weight' in loaded_state
-        assert torch.allclose(loaded_state['layer1.weight'], safe_state['layer1.weight'])
+        assert "layer1.weight" in loaded_state
+        assert torch.allclose(loaded_state["layer1.weight"], safe_state["layer1.weight"])
 
     def test_infer_signals_has_fallback_mechanism(self):
         """
@@ -257,9 +268,9 @@ class TestInferSignalsSecurity:
         source = inspect.getsource(infer_signals._load_model)
 
         # Verify the security pattern exists
-        assert 'weights_only=True' in source, "Missing weights_only=True attempt"
-        assert 'weights_only=False' in source, "Missing weights_only=False fallback"
-        assert 'warnings.warn' in source or 'UserWarning' in source, "Missing security warning"
+        assert "weights_only=True" in source, "Missing weights_only=True attempt"
+        assert "weights_only=False" in source, "Missing weights_only=False fallback"
+        assert "warnings.warn" in source or "UserWarning" in source, "Missing security warning"
 
 
 class TestCheckpointCompatibility:
@@ -273,8 +284,8 @@ class TestCheckpointCompatibility:
         # Load with weights_only=True (secure)
         loaded_state = torch.load(checkpoint_path, weights_only=True)
 
-        assert 'layer1.weight' in loaded_state
-        assert torch.allclose(loaded_state['layer1.weight'], safe_state['layer1.weight'])
+        assert "layer1.weight" in loaded_state
+        assert torch.allclose(loaded_state["layer1.weight"], safe_state["layer1.weight"])
 
     def test_malicious_checkpoint_blocked_with_weights_only(self, tmp_path):
         """Test that malicious checkpoints are blocked with weights_only=True."""
@@ -290,9 +301,9 @@ class TestCheckpointCompatibility:
             torch.load(checkpoint_path, weights_only=True)
 
         # Verify exploit did NOT execute
-        assert not EXPLOIT_EXECUTED, (
-            "CRITICAL: Malicious code executed even with weights_only=True!"
-        )
+        assert (
+            not EXPLOIT_EXECUTED
+        ), "CRITICAL: Malicious code executed even with weights_only=True!"
 
 
 class TestTestFileSecurity:
@@ -320,10 +331,10 @@ class TestTestFileSecurity:
             if not full_path.exists():
                 continue
 
-            content = full_path.read_text(encoding='utf-8')
+            content = full_path.read_text(encoding="utf-8")
 
             # Find torch.load() calls with weights_only=False
-            pattern = r'torch\.load\s*\([^)]*weights_only=False[^)]*\)'
+            pattern = r"torch\.load\s*\([^)]*weights_only=False[^)]*\)"
             matches = re.finditer(pattern, content)
 
             for match in matches:
@@ -332,12 +343,14 @@ class TestTestFileSecurity:
                 end_pos = min(len(content), match.end() + 100)
                 context = content[start_pos:end_pos]
 
-                if 'Security' not in context and 'security' not in context:
-                    undocumented_unsafe_loads.append({
-                        'file': file_path,
-                        'line': content[:match.start()].count('\n') + 1,
-                        'call': match.group(0)[:100],
-                    })
+                if "Security" not in context and "security" not in context:
+                    undocumented_unsafe_loads.append(
+                        {
+                            "file": file_path,
+                            "line": content[: match.start()].count("\n") + 1,
+                            "call": match.group(0)[:100],
+                        }
+                    )
 
         if undocumented_unsafe_loads:
             msg = "\nTest files with undocumented weights_only=False:\n"
@@ -357,8 +370,8 @@ class TestRegressionPrevention:
         checkpoint_path = tmp_path / "checkpoint.pt"
 
         state_dict = {
-            'weights': torch.randn(10, 10),
-            'biases': torch.randn(10),
+            "weights": torch.randn(10, 10),
+            "biases": torch.randn(10),
         }
 
         # Save
@@ -367,8 +380,8 @@ class TestRegressionPrevention:
         # Load with weights_only=True should work
         loaded = torch.load(checkpoint_path, weights_only=True)
 
-        assert 'weights' in loaded
-        assert torch.allclose(loaded['weights'], state_dict['weights'])
+        assert "weights" in loaded
+        assert torch.allclose(loaded["weights"], state_dict["weights"])
 
     def test_full_model_save_incompatible_with_weights_only(self, tmp_path):
         """

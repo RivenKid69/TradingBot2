@@ -29,7 +29,7 @@ def calculate_parkinson_volatility(ohlc_bars: List[Dict[str, float]], n: int) ->
 
             if high > 0 and low > 0 and high >= low:
                 log_hl = math.log(high / low)
-                sum_sq += log_hl ** 2
+                sum_sq += log_hl**2
                 valid_bars += 1
 
         # Требуем минимум 2 валидных бара и минимум 80% от запрошенного окна
@@ -69,10 +69,10 @@ def test_formula_uses_valid_bars():
 
     # Правильная формула (valid_bars)
     sum_sq = (
-        math.log(110.0 / 100.0) ** 2 +
-        math.log(120.0 / 110.0) ** 2 +
-        math.log(130.0 / 120.0) ** 2 +
-        math.log(140.0 / 130.0) ** 2
+        math.log(110.0 / 100.0) ** 2
+        + math.log(120.0 / 110.0) ** 2
+        + math.log(130.0 / 120.0) ** 2
+        + math.log(140.0 / 130.0) ** 2
     )
     expected_correct = math.sqrt(sum_sq / (4 * valid_bars_count * math.log(2)))
 
@@ -169,7 +169,7 @@ def test_statistical_properties():
         print(f"  Диапазон {(r-1)*100:4.0f}%: σ = {vol:.6f}")
 
     for i in range(len(vols) - 1):
-        assert vols[i] < vols[i+1], "Волатильность должна расти"
+        assert vols[i] < vols[i + 1], "Волатильность должна расти"
 
     # Масштабная инвариантность
     print("\nМасштабная инвариантность (5% диапазон):")
@@ -266,7 +266,7 @@ def test_real_world_scenarios():
     print("\n✓ Weekend gaps (10/14 = 71%): None (< 80%)")
 
     # Crypto 24/7 (100% валидных)
-    crypto_bars = [{"high": 101.0 + i*0.1, "low": 100.0 + i*0.1} for i in range(168)]
+    crypto_bars = [{"high": 101.0 + i * 0.1, "low": 100.0 + i * 0.1} for i in range(168)]
     result_crypto = calculate_parkinson_volatility(crypto_bars, 168)
     assert result_crypto is not None
     print(f"✓ Crypto 24/7 (168h): σ = {result_crypto:.6f}")

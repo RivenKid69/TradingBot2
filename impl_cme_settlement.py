@@ -43,8 +43,10 @@ logger = logging.getLogger(__name__)
 # Settlement Times by Product
 # =========================
 
+
 class SettlementTimeZone(str, Enum):
     """Time zone for settlement times."""
+
     CENTRAL = "CT"  # Chicago (CME)
     EASTERN = "ET"  # New York
 
@@ -102,9 +104,11 @@ DEFAULT_SETTLEMENT_TIME_ET = (15, 30)
 # Settlement Models
 # =========================
 
+
 @dataclass
 class VariationMarginPayment:
     """Daily variation margin payment/receipt."""
+
     symbol: str
     position_side: PositionSide
     position_qty: Decimal
@@ -121,6 +125,7 @@ class VariationMarginPayment:
 @dataclass
 class SettlementRecord:
     """Record of a settlement event."""
+
     symbol: str
     settlement_price: Decimal
     settlement_date: date
@@ -133,6 +138,7 @@ class SettlementRecord:
 @dataclass
 class DailySettlementReport:
     """Daily settlement report for an account."""
+
     settlement_date: date
     timestamp_ms: int
     total_variation_margin: Decimal
@@ -143,6 +149,7 @@ class DailySettlementReport:
 # =========================
 # CME Settlement Engine
 # =========================
+
 
 class CMESettlementEngine:
     """
@@ -196,10 +203,7 @@ class CMESettlementEngine:
         Returns:
             (hour, minute) in Eastern Time
         """
-        return SETTLEMENT_TIMES_ET.get(
-            symbol.upper(),
-            DEFAULT_SETTLEMENT_TIME_ET
-        )
+        return SETTLEMENT_TIMES_ET.get(symbol.upper(), DEFAULT_SETTLEMENT_TIME_ET)
 
     def calculate_variation_margin(
         self,
@@ -235,10 +239,7 @@ class CMESettlementEngine:
         symbol = position.symbol.upper()
 
         # Get previous settlement price (or use entry price if first settlement)
-        previous_price = self._last_settlement_prices.get(
-            symbol,
-            position.entry_price
-        )
+        previous_price = self._last_settlement_prices.get(symbol, position.entry_price)
 
         # Calculate price change
         price_change = settlement_price - previous_price
@@ -516,6 +517,7 @@ class CMESettlementEngine:
 # =========================
 # Convenience Functions
 # =========================
+
 
 def create_settlement_engine() -> CMESettlementEngine:
     """Create a new CME settlement engine."""

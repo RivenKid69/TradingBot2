@@ -42,19 +42,23 @@ router = APIRouter()
 # ============================================================================
 
 # Valid telemetry levels
-VALID_TELEMETRY_LEVELS = frozenset([
-    TelemetryLevel.AGGREGATED.value,
-    TelemetryLevel.DETAILED_NON_SENSITIVE.value,
-    TelemetryLevel.RAW_ORDER_EVENTS.value,
-])
+VALID_TELEMETRY_LEVELS = frozenset(
+    [
+        TelemetryLevel.AGGREGATED.value,
+        TelemetryLevel.DETAILED_NON_SENSITIVE.value,
+        TelemetryLevel.RAW_ORDER_EVENTS.value,
+    ]
+)
 
 # Valid alert severities
-VALID_ALERT_SEVERITIES = frozenset([
-    AlertSeverity.INFO.value,
-    AlertSeverity.WARNING.value,
-    AlertSeverity.ERROR.value,
-    AlertSeverity.CRITICAL.value,
-])
+VALID_ALERT_SEVERITIES = frozenset(
+    [
+        AlertSeverity.INFO.value,
+        AlertSeverity.WARNING.value,
+        AlertSeverity.ERROR.value,
+        AlertSeverity.CRITICAL.value,
+    ]
+)
 
 # Default redaction version
 DEFAULT_REDACTION_VERSION = "1.0.0"
@@ -63,6 +67,7 @@ DEFAULT_REDACTION_VERSION = "1.0.0"
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 async def _verify_workspace_access(
     session,
@@ -112,9 +117,7 @@ async def _verify_agent_access(
     """
     Verify access to an agent and return the agent if accessible.
     """
-    result = await session.execute(
-        select(Agent).where(Agent.id == agent_id)
-    )
+    result = await session.execute(select(Agent).where(Agent.id == agent_id))
     agent = result.scalar_one_or_none()
 
     if agent is None:
@@ -132,6 +135,7 @@ async def _verify_agent_access(
 # ============================================================================
 # Telemetry Event Request/Response Models
 # ============================================================================
+
 
 class TelemetryEventCreate(BaseModel):
     """Create telemetry event request."""
@@ -201,6 +205,7 @@ class TelemetryEventBatchResponse(BaseModel):
 # ============================================================================
 # Alert Request/Response Models
 # ============================================================================
+
 
 class AlertCreate(BaseModel):
     """Create alert request."""
@@ -283,6 +288,7 @@ class AlertStatsResponse(BaseModel):
 # ============================================================================
 # Telemetry Event Endpoints
 # ============================================================================
+
 
 @router.get(
     "/events",
@@ -456,8 +462,10 @@ async def create_telemetry_event(
                 )
 
         # Enforce redaction for non-aggregated events
-        if (request.telemetry_level != TelemetryLevel.AGGREGATED.value
-            and not request.redaction_applied):
+        if (
+            request.telemetry_level != TelemetryLevel.AGGREGATED.value
+            and not request.redaction_applied
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="redaction_applied must be True for non-aggregated telemetry levels",
@@ -523,9 +531,7 @@ async def create_telemetry_events_batch(
 
         # Validate all events and collect agent info
         agent_ids = set(e.agent_id for e in request.events)
-        agents_result = await session.execute(
-            select(Agent).where(Agent.id.in_(agent_ids))
-        )
+        agents_result = await session.execute(select(Agent).where(Agent.id.in_(agent_ids)))
         agents = {a.id: a for a in agents_result.scalars().all()}
 
         # Verify all agents exist and belong to same workspace
@@ -618,9 +624,7 @@ async def get_telemetry_event(
                 detail="Permission required: telemetry:read",
             )
 
-        result = await session.execute(
-            select(TelemetryEvent).where(TelemetryEvent.id == event_id)
-        )
+        result = await session.execute(select(TelemetryEvent).where(TelemetryEvent.id == event_id))
         event = result.scalar_one_or_none()
 
         if event is None:
@@ -667,6 +671,7 @@ async def list_telemetry_levels(
 # ============================================================================
 # Alert Endpoints
 # ============================================================================
+
 
 @router.get(
     "/alerts",
@@ -928,9 +933,7 @@ async def get_alert_stats(
                 workspace_filter = Alert.workspace_id.in_(workspace_ids)
 
         # Total count
-        total_result = await session.execute(
-            select(func.count(Alert.id)).where(workspace_filter)
-        )
+        total_result = await session.execute(select(func.count(Alert.id)).where(workspace_filter))
         total = total_result.scalar() or 0
 
         # Count by severity
@@ -943,17 +946,13 @@ async def get_alert_stats(
 
         # Unacknowledged count
         unack_result = await session.execute(
-            select(func.count(Alert.id)).where(
-                and_(workspace_filter, Alert.acknowledged == False)
-            )
+            select(func.count(Alert.id)).where(and_(workspace_filter, Alert.acknowledged == False))
         )
         unacknowledged = unack_result.scalar() or 0
 
         # Unresolved count
         unres_result = await session.execute(
-            select(func.count(Alert.id)).where(
-                and_(workspace_filter, Alert.resolved == False)
-            )
+            select(func.count(Alert.id)).where(and_(workspace_filter, Alert.resolved == False))
         )
         unresolved = unres_result.scalar() or 0
 
@@ -1005,9 +1004,7 @@ async def get_alert(
                 detail="Permission required: alert:read",
             )
 
-        result = await session.execute(
-            select(Alert).where(Alert.id == alert_id)
-        )
+        result = await session.execute(select(Alert).where(Alert.id == alert_id))
         alert = result.scalar_one_or_none()
 
         if alert is None:
@@ -1063,9 +1060,7 @@ async def acknowledge_alert(
                 detail="Permission required: alert:acknowledge",
             )
 
-        result = await session.execute(
-            select(Alert).where(Alert.id == alert_id)
-        )
+        result = await session.execute(select(Alert).where(Alert.id == alert_id))
         alert = result.scalar_one_or_none()
 
         if alert is None:
@@ -1135,9 +1130,7 @@ async def resolve_alert(
                 detail="Permission required: alert:resolve",
             )
 
-        result = await session.execute(
-            select(Alert).where(Alert.id == alert_id)
-        )
+        result = await session.execute(select(Alert).where(Alert.id == alert_id))
         alert = result.scalar_one_or_none()
 
         if alert is None:

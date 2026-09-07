@@ -1,0 +1,62 @@
+CustodiaCloud — Quantitative Research & Execution Platform
+Copyright 2024-2026 Sultan Suyunbayev
+
+This product includes software developed by Sultan Suyunbayev.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License in the LICENSE file distributed with this work, or at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+--------------------------------------------------------------------------------
+THIRD-PARTY COMPONENTS
+--------------------------------------------------------------------------------
+
+The following third-party components are redistributed with this work under
+`web_assets/`. Each remains under its own licence; the Apache-2.0 licence above
+does not apply to them.
+
+Chart.js (web_assets/chart.umd.min.js)
+    Copyright (c) 2014-2022 Chart.js Contributors
+    MIT License — https://github.com/chartjs/Chart.js/blob/master/LICENSE.md
+
+Tailwind CSS (web_assets/tailwindcss.js)
+    Copyright (c) Tailwind Labs, Inc.
+    MIT License — https://github.com/tailwindlabs/tailwindcss/blob/master/LICENSE
+
+Font Awesome Free (web_assets/fontawesome/)
+    Copyright (c) Fonticons, Inc.
+    Icons: CC BY 4.0 · Fonts: SIL OFL 1.1 · Code: MIT
+    https://fontawesome.com/license/free
+
+Inter (web_assets/fonts/inter-*.woff2)
+    Copyright (c) 2016-2020 The Inter Project Authors
+    SIL Open Font License 1.1 — https://github.com/rsms/inter/blob/master/LICENSE.txt
+
+JetBrains Mono (web_assets/fonts/jetbrains-*.woff2)
+    Copyright (c) 2020 The JetBrains Mono Project Authors
+    SIL Open Font License 1.1 — https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt
+
+Monaco Editor 0.39.0 (web_assets/monaco/)
+    Copyright (c) Microsoft Corporation
+    MIT License — https://github.com/microsoft/vscode/blob/main/LICENSE.txt
+    Vendored rather than loaded from a CDN: the desktop shell is offline-first,
+    and tests/test_desktop_e2e.py asserts the UI makes no external requests.
+
+The following third-party component is not vendored here; it is fetched at build
+time and is listed for attribution only.
+
+Tauri (desktop/src-tauri/)
+    Copyright (c) 2019-2024 Tauri Programme within The Commons Conservancy
+    Apache-2.0 OR MIT — https://github.com/tauri-apps/tauri
+    Declared as a build dependency; sources are fetched by Cargo.
+
+Python and Rust runtime dependencies are declared in `requirements*.txt`,
+`pyproject.toml` and `desktop/src-tauri/Cargo.toml` and are not vendored into
+this repository. Their licences are those of the respective upstream projects.

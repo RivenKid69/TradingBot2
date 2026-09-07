@@ -148,7 +148,9 @@ def test_weight_normalizers_accept_multiple_formats() -> None:
         "XRPUSDT": pytest.approx(0.05),
     }
 
-    normalized = impl_bar_executor._normalize_weights({"btcusdt": 1.2, "ethusdt": -0.5, "adausdt": 0.3})
+    normalized = impl_bar_executor._normalize_weights(
+        {"btcusdt": 1.2, "ethusdt": -0.5, "adausdt": 0.3}
+    )
     assert normalized == {
         "BTCUSDT": pytest.approx(1.0),
         "ETHUSDT": pytest.approx(0.0),
@@ -157,7 +159,9 @@ def test_weight_normalizers_accept_multiple_formats() -> None:
 
 
 def test_portfolio_state_methods_preserve_original() -> None:
-    state = PortfolioState(symbol="BTCUSDT", weight=0.1, equity_usd=100.0, price=Decimal("100"), ts=1)
+    state = PortfolioState(
+        symbol="BTCUSDT", weight=0.1, equity_usd=100.0, price=Decimal("100"), ts=1
+    )
     bar_state = state.with_bar(
         types.SimpleNamespace(ts=2),
         Decimal("105"),

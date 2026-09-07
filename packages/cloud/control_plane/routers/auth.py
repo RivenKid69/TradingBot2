@@ -163,7 +163,7 @@ class AgentEnrollResponse(BaseModel):
     workspace_id: UUID
     org_id: UUID
     cloud_public_key: Optional[str] = None  # Design Doc 10.2: For command verification
-    cloud_key_id: Optional[str] = None      # Design Doc 15.2: Key version identifier
+    cloud_key_id: Optional[str] = None  # Design Doc 15.2: Key version identifier
     cloud_key_fingerprint: Optional[str] = None  # For key verification
 
 
@@ -230,6 +230,7 @@ def _generate_totp_secret() -> str:
     """Generate a new TOTP secret."""
     try:
         import pyotp
+
         return pyotp.random_base32()
     except ImportError:
         # Fallback if pyotp not installed
@@ -252,6 +253,7 @@ def _verify_totp(secret: str, code: str) -> bool:
     """
     try:
         import pyotp
+
         totp = pyotp.TOTP(secret)
         return totp.verify(code, valid_window=1)  # Allow 1 window tolerance
     except ImportError:
@@ -268,6 +270,7 @@ def _generate_provisioning_uri(secret: str, email: str) -> str:
     """Generate TOTP provisioning URI for QR code."""
     try:
         import pyotp
+
         totp = pyotp.TOTP(secret)
         return totp.provisioning_uri(name=email, issuer_name="CCEA Platform")
     except ImportError:
@@ -282,6 +285,7 @@ def _generate_backup_codes(count: int = 10) -> list[str]:
 def _hash_backup_codes(codes: list[str]) -> str:
     """Hash backup codes for storage."""
     import json
+
     # Store hashed versions
     hashed = [hashlib.sha256(c.encode()).hexdigest() for c in codes]
     return json.dumps(hashed)
@@ -290,6 +294,7 @@ def _hash_backup_codes(codes: list[str]) -> str:
 def _verify_backup_code(stored_hash: str, code: str) -> bool:
     """Verify a backup code against stored hashes."""
     import json
+
     try:
         hashed_codes = json.loads(stored_hash)
         code_hash = hashlib.sha256(code.upper().encode()).hexdigest()
@@ -582,9 +587,7 @@ async def setup_mfa(current_user: UserDep) -> MFASetupResponse:
     """
     async with get_session() as session:
         # Find user
-        result = await session.execute(
-            select(User).where(User.id == current_user.id)
-        )
+        result = await session.execute(select(User).where(User.id == current_user.id))
         user = result.scalar_one_or_none()
 
         if not user:
@@ -633,9 +636,7 @@ async def confirm_mfa(request: MFASetupRequest, current_user: UserDep) -> dict:
     """
     async with get_session() as session:
         # Find user
-        result = await session.execute(
-            select(User).where(User.id == current_user.id)
-        )
+        result = await session.execute(select(User).where(User.id == current_user.id))
         user = result.scalar_one_or_none()
 
         if not user or not user.mfa_secret:
@@ -674,9 +675,7 @@ async def disable_mfa(request: MFASetupRequest, current_user: UserDep) -> dict:
     """
     async with get_session() as session:
         # Find user
-        result = await session.execute(
-            select(User).where(User.id == current_user.id)
-        )
+        result = await session.execute(select(User).where(User.id == current_user.id))
         user = result.scalar_one_or_none()
 
         if not user or not user.mfa_enabled:
@@ -711,6 +710,7 @@ async def disable_mfa(request: MFASetupRequest, current_user: UserDep) -> dict:
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="User logout",
     description="Invalidate current session.",
 )
@@ -871,6 +871,7 @@ class CloudPublicKeyResponse(BaseModel):
     Design Doc 10.2, 15.2: Agents need Cloud's public key to verify
     command signatures. Key rotation is supported via key_id versioning.
     """
+
     key_id: str
     algorithm: str
     public_key_pem: str

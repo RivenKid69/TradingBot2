@@ -68,35 +68,20 @@ class TestRunner:
         test_suites = [
             (
                 "tests/test_upgd_deep_validation.py",
-                "UPGD Deep Validation - Core optimizer mechanics"
+                "UPGD Deep Validation - Core optimizer mechanics",
             ),
             (
                 "tests/test_upgd_pbt_twin_critics_variance_integration.py",
-                "Full Integration - UPGD + PBT + Twin Critics + VGS"
+                "Full Integration - UPGD + PBT + Twin Critics + VGS",
             ),
-            (
-                "tests/test_upgd_integration.py",
-                "UPGD Integration - PPO integration tests"
-            ),
-            (
-                "tests/test_variance_gradient_scaler.py",
-                "Variance Gradient Scaler - Unit tests"
-            ),
-            (
-                "tests/test_vgs_integration.py",
-                "VGS Integration - Integration with training"
-            ),
-            (
-                "tests/test_pbt_scheduler.py",
-                "PBT Scheduler - Population-based training"
-            ),
-            (
-                "tests/test_twin_critics.py",
-                "Twin Critics - Basic functionality"
-            ),
+            ("tests/test_upgd_integration.py", "UPGD Integration - PPO integration tests"),
+            ("tests/test_variance_gradient_scaler.py", "Variance Gradient Scaler - Unit tests"),
+            ("tests/test_vgs_integration.py", "VGS Integration - Integration with training"),
+            ("tests/test_pbt_scheduler.py", "PBT Scheduler - Population-based training"),
+            ("tests/test_twin_critics.py", "Twin Critics - Basic functionality"),
             (
                 "tests/test_twin_critics_integration.py",
-                "Twin Critics Integration - Full integration"
+                "Twin Critics Integration - Full integration",
             ),
         ]
 
@@ -104,22 +89,26 @@ class TestRunner:
             # Check if test file exists
             if not Path(test_file).exists():
                 print(f"\n⚠ SKIPPED: {test_file} (file not found)")
-                self.results.append({
-                    "file": test_file,
-                    "description": description,
-                    "status": "SKIPPED",
-                    "output": "File not found"
-                })
+                self.results.append(
+                    {
+                        "file": test_file,
+                        "description": description,
+                        "status": "SKIPPED",
+                        "output": "File not found",
+                    }
+                )
                 continue
 
             success, output = self.run_test_suite(test_file, description)
 
-            self.results.append({
-                "file": test_file,
-                "description": description,
-                "status": "PASSED" if success else "FAILED",
-                "output": output
-            })
+            self.results.append(
+                {
+                    "file": test_file,
+                    "description": description,
+                    "status": "PASSED" if success else "FAILED",
+                    "output": output,
+                }
+            )
 
         self.total_time = time.time() - self.start_time
 
@@ -150,7 +139,7 @@ class TestRunner:
                     print(f"  File: {result['file']}")
                     print(f"\n  Last 50 lines of output:")
                     print("  " + "-" * 76)
-                    lines = result['output'].split('\n')
+                    lines = result["output"].split("\n")
                     for line in lines[-50:]:
                         print(f"  {line}")
 
@@ -171,7 +160,7 @@ class TestRunner:
 
     def save_report(self, filename: str = "test_report.txt"):
         """Save detailed test report to file."""
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             f.write("COMPREHENSIVE TEST REPORT\n")
             f.write("=" * 80 + "\n")
             f.write(f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -183,7 +172,7 @@ class TestRunner:
                 f.write(f"File: {result['file']}\n")
                 f.write(f"Status: {result['status']}\n")
                 f.write("-" * 80 + "\n")
-                f.write(result['output'])
+                f.write(result["output"])
                 f.write("\n\n")
 
         print(f"\nDetailed report saved to: {filename}")

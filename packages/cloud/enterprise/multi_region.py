@@ -50,6 +50,7 @@ MAX_RETRY_ATTEMPTS: Final[int] = 3
 
 class RegionStatus(str, Enum):
     """Region health status."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -59,6 +60,7 @@ class RegionStatus(str, Enum):
 
 class ReplicationMode(str, Enum):
     """Replication modes."""
+
     ASYNC = "async"  # Asynchronous replication (default)
     SYNC = "sync"  # Synchronous (write to all before ack)
     SEMI_SYNC = "semi_sync"  # Wait for at least one replica
@@ -66,6 +68,7 @@ class ReplicationMode(str, Enum):
 
 class ConflictResolution(str, Enum):
     """Conflict resolution strategies."""
+
     LAST_WRITE_WINS = "last_write_wins"
     FIRST_WRITE_WINS = "first_write_wins"
     MANUAL = "manual"
@@ -74,6 +77,7 @@ class ConflictResolution(str, Enum):
 
 class ReplicationState(str, Enum):
     """Replication state for an item."""
+
     PENDING = "pending"
     REPLICATING = "replicating"
     REPLICATED = "replicated"
@@ -89,6 +93,7 @@ class ReplicationState(str, Enum):
 @dataclass
 class Region:
     """Represents a geographic region."""
+
     region_id: str
     name: str
     display_name: str
@@ -136,7 +141,9 @@ class Region:
             "is_primary": self.is_primary,
             "is_writable": self.is_writable,
             "data_residency_zones": self.data_residency_zones,
-            "last_health_check": self.last_health_check.isoformat() if self.last_health_check else None,
+            "last_health_check": (
+                self.last_health_check.isoformat() if self.last_health_check else None
+            ),
             "replication_lag_seconds": self.replication_lag_seconds,
             "pending_replications": self.pending_replications,
         }
@@ -145,6 +152,7 @@ class Region:
 @dataclass
 class ReplicationItem:
     """Item to be replicated across regions."""
+
     item_id: str = field(default_factory=lambda: str(uuid4()))
     item_type: str = ""  # artifact, config, metadata
     item_key: str = ""  # unique identifier
@@ -185,6 +193,7 @@ class ReplicationItem:
 @dataclass
 class ReplicationEvent:
     """Event in the replication log."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     event_type: str = ""  # created, updated, deleted, replicated
     item_id: str = ""
@@ -212,6 +221,7 @@ class ReplicationEvent:
 @dataclass
 class ReplicationConfig:
     """Multi-region replication configuration."""
+
     # Regions
     primary_region: str = "us-east-1"
     replica_regions: List[str] = field(default_factory=list)
@@ -247,6 +257,7 @@ class ReplicationConfig:
 @dataclass
 class ReplicationStats:
     """Replication statistics."""
+
     total_items: int = 0
     replicated_items: int = 0
     pending_items: int = 0
@@ -475,12 +486,14 @@ class MultiRegionReplicator:
                 await self._pending_queue.put((item, target, content))
 
         # Log event
-        self._log_event(ReplicationEvent(
-            event_type="created" if not existing else "updated",
-            item_id=item.item_id,
-            item_key=item_key,
-            source_region=source or "",
-        ))
+        self._log_event(
+            ReplicationEvent(
+                event_type="created" if not existing else "updated",
+                item_id=item.item_id,
+                item_key=item_key,
+                source_region=source or "",
+            )
+        )
 
         return item
 
@@ -523,12 +536,14 @@ class MultiRegionReplicator:
         if cascade:
             # Queue deletion to all regions
             for region_id in item.region_states.keys():
-                self._log_event(ReplicationEvent(
-                    event_type="deleted",
-                    item_id=item.item_id,
-                    item_key=item_key,
-                    target_region=region_id,
-                ))
+                self._log_event(
+                    ReplicationEvent(
+                        event_type="deleted",
+                        item_id=item.item_id,
+                        item_key=item_key,
+                        target_region=region_id,
+                    )
+                )
 
         return True
 
@@ -744,14 +759,16 @@ class MultiRegionReplicator:
                 item.region_states[target_region] = ReplicationState.REPLICATED
                 item.region_timestamps[target_region] = datetime.now(timezone.utc)
 
-                self._log_event(ReplicationEvent(
-                    event_type="replicated",
-                    item_id=item.item_id,
-                    item_key=item.item_key,
-                    source_region=item.source_region,
-                    target_region=target_region,
-                    success=True,
-                ))
+                self._log_event(
+                    ReplicationEvent(
+                        event_type="replicated",
+                        item_id=item.item_id,
+                        item_key=item.item_key,
+                        source_region=item.source_region,
+                        target_region=target_region,
+                        success=True,
+                    )
+                )
 
                 # Update region metrics
                 region = self._regions.get(target_region)
@@ -767,15 +784,17 @@ class MultiRegionReplicator:
                 else:
                     item.region_states[target_region] = ReplicationState.FAILED
 
-                    self._log_event(ReplicationEvent(
-                        event_type="replicated",
-                        item_id=item.item_id,
-                        item_key=item.item_key,
-                        source_region=item.source_region,
-                        target_region=target_region,
-                        success=False,
-                        error_message=str(e),
-                    ))
+                    self._log_event(
+                        ReplicationEvent(
+                            event_type="replicated",
+                            item_id=item.item_id,
+                            item_key=item.item_key,
+                            source_region=item.source_region,
+                            target_region=target_region,
+                            success=False,
+                            error_message=str(e),
+                        )
+                    )
 
                     logger.error(f"Replication failed: {item.item_key} -> {target_region}: {e}")
                     return False
@@ -878,7 +897,7 @@ class MultiRegionReplicator:
         self._events.append(event)
 
         if len(self._events) > self._max_events:
-            self._events = self._events[-self._max_events // 2:]
+            self._events = self._events[-self._max_events // 2 :]
 
     def get_events(
         self,

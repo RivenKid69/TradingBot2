@@ -62,6 +62,7 @@ SAFE_ID_CHARS: Final[str] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY
 
 class IsolationViolationType(Enum):
     """Types of isolation violations."""
+
     PATH_TRAVERSAL = auto()
     CROSS_TENANT_ACCESS = auto()
     UNAUTHORIZED_RESOURCE = auto()
@@ -98,6 +99,7 @@ class IsolatedJobContext:
 
     Contains all necessary isolation parameters and verified credentials.
     """
+
     # Identity
     tenant_id: str
     job_id: str
@@ -177,6 +179,7 @@ class TenantNamespace:
 
     Contains all tenant-specific resources and isolation boundaries.
     """
+
     tenant_id: str
 
     # Paths
@@ -217,6 +220,7 @@ class TenantNamespace:
 @dataclass
 class ViolationRecord:
     """Record of an isolation violation."""
+
     violation_id: str = field(default_factory=lambda: str(uuid4()))
     violation_type: IsolationViolationType = IsolationViolationType.PATH_TRAVERSAL
     tenant_id: str = ""
@@ -818,7 +822,7 @@ class TenantJobIsolation:
 
         self._violations.append(record)
         if len(self._violations) > self._max_violations:
-            self._violations = self._violations[-self._max_violations:]
+            self._violations = self._violations[-self._max_violations :]
 
         self._stats["violations_blocked"] += 1
 

@@ -177,9 +177,7 @@ class RestBudgetSession:
         self._enabled = True if enabled_flag is None else bool(enabled_flag)
 
         concurrency_cfg = _get_attr(cfg, "concurrency", None)
-        workers_val = self._coerce_positive_int(
-            _get_attr(concurrency_cfg, "workers", None)
-        )
+        workers_val = self._coerce_positive_int(_get_attr(concurrency_cfg, "workers", None))
         self._max_workers = workers_val
         batch_val = self._coerce_positive_int(_get_attr(cfg, "batch_size", None))
         self.batch_size = batch_val
@@ -276,9 +274,7 @@ class RestBudgetSession:
             jitter_value = 0.0
         self._jitter_min_ms, self._jitter_max_ms = self._parse_jitter(jitter_value)
 
-        cooldown_value = _get_attr(
-            cfg, "cooldown_s", _get_attr(cfg, "cooldown_sec", None)
-        )
+        cooldown_value = _get_attr(cfg, "cooldown_s", _get_attr(cfg, "cooldown_sec", None))
         if cooldown_value is None and global_cfg is not None:
             cooldown_value = _get_attr(
                 global_cfg,
@@ -394,9 +390,7 @@ class RestBudgetSession:
     @staticmethod
     def _make_bucket(spec: Any) -> TokenBucket | None:
         def _is_disabled(candidate: Any) -> bool:
-            enabled_flag = RestBudgetSession._interpret_bool(
-                _get_attr(candidate, "enabled", None)
-            )
+            enabled_flag = RestBudgetSession._interpret_bool(_get_attr(candidate, "enabled", None))
             disabled_flag = RestBudgetSession._interpret_bool(
                 _get_attr(candidate, "disabled", None)
             )
@@ -496,9 +490,7 @@ class RestBudgetSession:
 
     @staticmethod
     def _sanitize_cache_token(token: str) -> str:
-        return "".join(
-            ch if ch.isalnum() or ch in {"_", "-", "."} else "_" for ch in token
-        )
+        return "".join(ch if ch.isalnum() or ch in {"_", "-", "."} else "_" for ch in token)
 
     def _endpoint_variants(self, key: str) -> set[str]:
         variants = {key.strip()}
@@ -720,10 +712,7 @@ class RestBudgetSession:
             cleaned = "-".join(
                 filter(
                     None,
-                    (
-                        self._sanitize_cache_token(val.replace(" ", "_"))
-                        for val in bucket
-                    ),
+                    (self._sanitize_cache_token(val.replace(" ", "_")) for val in bucket),
                 )
             )
             if cleaned:
@@ -852,10 +841,9 @@ class RestBudgetSession:
         method_upper = method.upper()
         override = endpoint or budget
         key = self._resolve_endpoint_key(method_upper, url, override)
-        _, _, hit = self._cache_lookup(
-            method_upper, url, params, key, load_payload=False
-        )
+        _, _, hit = self._cache_lookup(method_upper, url, params, key, load_payload=False)
         return hit
+
     def _next_jitter(self) -> float:
         if self._jitter_max_ms <= 0.0:
             return 0.0
@@ -1047,10 +1035,7 @@ class RestBudgetSession:
         target_scale = max(target_scale, 0.05)
         new_rps = baseline_rps * target_scale
         new_burst = baseline_burst * target_scale
-        if (
-            abs(new_rps - bucket.rps) < 1e-9
-            and abs(new_burst - bucket.burst) < 1e-9
-        ):
+        if abs(new_rps - bucket.rps) < 1e-9 and abs(new_burst - bucket.burst) < 1e-9:
             return
         bucket.adjust_rate(rps=new_rps, burst=new_burst)
 
@@ -1254,9 +1239,7 @@ class RestBudgetSession:
         path.parent.mkdir(parents=True, exist_ok=True)
         prefix = f".{path.stem}.ckpt."
         try:
-            fd, tmp_name = tempfile.mkstemp(
-                dir=str(path.parent), prefix=prefix, suffix=".tmp"
-            )
+            fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=prefix, suffix=".tmp")
         except OSError as exc:
             logger.warning("Failed to create checkpoint temp file in %s: %s", path.parent, exc)
             return
@@ -1432,9 +1415,7 @@ class RestBudgetSession:
         cache_key: str | None = None
         cache_hit = False
         if self._cache_mode != "off" and self._cache_dir is not None:
-            cache_key, cached_payload, cache_hit = self._cache_lookup(
-                "GET", url, params, key
-            )
+            cache_key, cached_payload, cache_hit = self._cache_lookup("GET", url, params, key)
             if cache_hit:
                 self._record_cache_hit(stats_key)
                 self._store_last_response_metadata(
@@ -1739,9 +1720,7 @@ class RestBudgetSession:
             pass
         prefix = f".{target.stem}.stats."
         try:
-            fd, tmp_name = tempfile.mkstemp(
-                dir=str(target.parent), prefix=prefix, suffix=".tmp"
-            )
+            fd, tmp_name = tempfile.mkstemp(dir=str(target.parent), prefix=prefix, suffix=".tmp")
         except OSError as exc:
             logger.warning("Failed to create stats temp file in %s: %s", target.parent, exc)
             return
@@ -1757,7 +1736,6 @@ class RestBudgetSession:
                 os.remove(tmp_name)
             except OSError:
                 pass
-
 
 
 DAY_MS = 86_400_000
@@ -1788,9 +1766,7 @@ def iter_time_chunks(
         current = stop
 
 
-def split_time_range(
-    start_ms: int, end_ms: int, *, chunk_days: int = 30
-) -> list[tuple[int, int]]:
+def split_time_range(start_ms: int, end_ms: int, *, chunk_days: int = 30) -> list[tuple[int, int]]:
     """Return a list of ``(start, end)`` chunks covering the range."""
 
     return list(iter_time_chunks(start_ms, end_ms, chunk_days=chunk_days))

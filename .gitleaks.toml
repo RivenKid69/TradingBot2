@@ -1,0 +1,39 @@
+# gitleaks configuration.
+#
+# The scan had never run in CI — the installer URL returned 404 — so this is the
+# first pass over the tree. Of the 147 hits, none were real: they are the
+# detect-secrets baseline, which by design records the lines it has already
+# reviewed, and the fixtures the redaction and DLP tests need in order to have
+# something to redact. Everything outside those paths is still scanned.
+#
+# Path patterns accept either separator so that a local Windows run and the
+# Linux CI run agree.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Paths whose 'secrets' exist so that tests have something to catch"
+
+paths = [
+  # detect-secrets' own record of reviewed findings
+  '''(^|[\\/])\.secrets\.baseline$''',
+  # redaction, DLP and telemetry tests need plausible-looking credentials
+  '''(^|[\\/])tests[\\/]''',
+  # vendored front-end assets
+  '''(^|[\\/])web_assets[\\/]''',
+  # local development and build directories, present only in a working tree
+  '''(^|[\\/])\.venv[\\/]''',
+  '''(^|[\\/])\.ruff_cache[\\/]''',
+  '''(^|[\\/])node_modules[\\/]''',
+  '''(^|[\\/])__pycache__[\\/]''',
+]
+
+regexes = [
+  # documentation placeholders
+  '''abc123def456''',
+  '''abc123456789''',
+  '''32_byte_key_for_aes256''',
+  # AWS's own documented example key
+  '''AKIAIOSFODNN7EXAMPLE''',
+]

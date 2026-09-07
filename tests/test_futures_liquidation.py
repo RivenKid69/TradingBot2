@@ -49,6 +49,7 @@ from core_futures import (
 # FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def btc_brackets() -> List[LeverageBracket]:
     """Standard BTC-like leverage brackets."""
@@ -182,6 +183,7 @@ def cross_margin_positions() -> List[FuturesPosition]:
 # ADL QUEUE POSITION TESTS
 # ============================================================================
 
+
 class TestADLQueuePosition:
     """Tests for ADLQueuePosition dataclass."""
 
@@ -242,8 +244,11 @@ class TestADLQueuePosition:
     def test_adl_risk_level_critical(self):
         """Rank 5 should be CRITICAL."""
         pos = ADLQueuePosition(
-            symbol="BTCUSDT", side="LONG", rank=5,
-            percentile=99.0, margin_ratio=Decimal("3.0"),
+            symbol="BTCUSDT",
+            side="LONG",
+            rank=5,
+            percentile=99.0,
+            margin_ratio=Decimal("3.0"),
             pnl_ratio=Decimal("1.0"),
         )
 
@@ -252,8 +257,11 @@ class TestADLQueuePosition:
     def test_adl_risk_level_high(self):
         """Rank 4 should be HIGH."""
         pos = ADLQueuePosition(
-            symbol="BTCUSDT", side="LONG", rank=4,
-            percentile=80.0, margin_ratio=Decimal("2.5"),
+            symbol="BTCUSDT",
+            side="LONG",
+            rank=4,
+            percentile=80.0,
+            margin_ratio=Decimal("2.5"),
             pnl_ratio=Decimal("0.5"),
         )
 
@@ -262,8 +270,11 @@ class TestADLQueuePosition:
     def test_adl_risk_level_medium(self):
         """Rank 3 should be MEDIUM."""
         pos = ADLQueuePosition(
-            symbol="BTCUSDT", side="LONG", rank=3,
-            percentile=50.0, margin_ratio=Decimal("2.0"),
+            symbol="BTCUSDT",
+            side="LONG",
+            rank=3,
+            percentile=50.0,
+            margin_ratio=Decimal("2.0"),
             pnl_ratio=Decimal("0.2"),
         )
 
@@ -272,8 +283,11 @@ class TestADLQueuePosition:
     def test_adl_risk_level_low(self):
         """Rank 1-2 should be LOW."""
         pos = ADLQueuePosition(
-            symbol="BTCUSDT", side="LONG", rank=1,
-            percentile=10.0, margin_ratio=Decimal("5.0"),
+            symbol="BTCUSDT",
+            side="LONG",
+            rank=1,
+            percentile=10.0,
+            margin_ratio=Decimal("5.0"),
             pnl_ratio=Decimal("0.05"),
         )
 
@@ -283,6 +297,7 @@ class TestADLQueuePosition:
 # ============================================================================
 # INSURANCE FUND STATE TESTS
 # ============================================================================
+
 
 class TestInsuranceFundState:
     """Tests for InsuranceFundState dataclass."""
@@ -312,6 +327,7 @@ class TestInsuranceFundState:
 # ============================================================================
 # LIQUIDATION RESULT TESTS
 # ============================================================================
+
 
 class TestLiquidationResult:
     """Tests for LiquidationResult dataclass."""
@@ -352,6 +368,7 @@ class TestLiquidationResult:
 # CROSS MARGIN LIQUIDATION ORDERING TESTS
 # ============================================================================
 
+
 class TestCrossMarginLiquidationOrdering:
     """Tests for CrossMarginLiquidationOrdering."""
 
@@ -362,43 +379,33 @@ class TestCrossMarginLiquidationOrdering:
 
     def test_init_with_custom_priority(self):
         """Should accept custom priority."""
-        ordering = CrossMarginLiquidationOrdering(
-            priority=LiquidationPriority.LARGEST_POSITION
-        )
+        ordering = CrossMarginLiquidationOrdering(priority=LiquidationPriority.LARGEST_POSITION)
         assert ordering.priority == LiquidationPriority.LARGEST_POSITION
 
     def test_order_positions_highest_loss_first(self, cross_margin_positions):
         """Should order positions by loss (most negative first)."""
-        ordering = CrossMarginLiquidationOrdering(
-            priority=LiquidationPriority.HIGHEST_LOSS_FIRST
-        )
+        ordering = CrossMarginLiquidationOrdering(priority=LiquidationPriority.HIGHEST_LOSS_FIRST)
 
         mark_prices = {
             "BTCUSDT": Decimal("48000"),  # Long losing, short winning
-            "ETHUSDT": Decimal("2800"),   # Long losing
+            "ETHUSDT": Decimal("2800"),  # Long losing
         }
 
-        ordered = ordering.order_positions_for_liquidation(
-            cross_margin_positions, mark_prices
-        )
+        ordered = ordering.order_positions_for_liquidation(cross_margin_positions, mark_prices)
 
         # First should be position with biggest loss
         assert len(ordered) == 3
 
     def test_order_positions_largest_first(self, cross_margin_positions):
         """Should order positions by notional (largest first)."""
-        ordering = CrossMarginLiquidationOrdering(
-            priority=LiquidationPriority.LARGEST_POSITION
-        )
+        ordering = CrossMarginLiquidationOrdering(priority=LiquidationPriority.LARGEST_POSITION)
 
         mark_prices = {
             "BTCUSDT": Decimal("50000"),
             "ETHUSDT": Decimal("3000"),
         }
 
-        ordered = ordering.order_positions_for_liquidation(
-            cross_margin_positions, mark_prices
-        )
+        ordered = ordering.order_positions_for_liquidation(cross_margin_positions, mark_prices)
 
         # BTC long (50000) should be first
         assert ordered[0].symbol == "BTCUSDT"
@@ -406,36 +413,28 @@ class TestCrossMarginLiquidationOrdering:
 
     def test_order_positions_oldest_first(self, cross_margin_positions):
         """Should order positions by timestamp (oldest first)."""
-        ordering = CrossMarginLiquidationOrdering(
-            priority=LiquidationPriority.OLDEST_POSITION
-        )
+        ordering = CrossMarginLiquidationOrdering(priority=LiquidationPriority.OLDEST_POSITION)
 
         mark_prices = {
             "BTCUSDT": Decimal("50000"),
             "ETHUSDT": Decimal("3000"),
         }
 
-        ordered = ordering.order_positions_for_liquidation(
-            cross_margin_positions, mark_prices
-        )
+        ordered = ordering.order_positions_for_liquidation(cross_margin_positions, mark_prices)
 
         # First position has timestamp 1700000000000
         assert ordered[0].timestamp_ms == 1700000000000
 
     def test_order_positions_highest_leverage_first(self, cross_margin_positions):
         """Should order positions by leverage (highest first)."""
-        ordering = CrossMarginLiquidationOrdering(
-            priority=LiquidationPriority.HIGHEST_LEVERAGE
-        )
+        ordering = CrossMarginLiquidationOrdering(priority=LiquidationPriority.HIGHEST_LEVERAGE)
 
         mark_prices = {
             "BTCUSDT": Decimal("50000"),
             "ETHUSDT": Decimal("3000"),
         }
 
-        ordered = ordering.order_positions_for_liquidation(
-            cross_margin_positions, mark_prices
-        )
+        ordered = ordering.order_positions_for_liquidation(cross_margin_positions, mark_prices)
 
         # ETH has highest leverage (20x)
         assert ordered[0].leverage == 20
@@ -446,15 +445,13 @@ class TestCrossMarginLiquidationOrdering:
         ordered = ordering.order_positions_for_liquidation([], {})
         assert len(ordered) == 0
 
-    def test_select_positions_to_liquidate(
-        self, cross_margin_positions, margin_calculator
-    ):
+    def test_select_positions_to_liquidate(self, cross_margin_positions, margin_calculator):
         """Should select minimum positions to restore margin."""
         ordering = CrossMarginLiquidationOrdering()
 
         mark_prices = {
             "BTCUSDT": Decimal("45000"),  # Loss
-            "ETHUSDT": Decimal("2700"),   # Loss
+            "ETHUSDT": Decimal("2700"),  # Loss
         }
 
         to_liquidate = ordering.select_positions_to_liquidate(
@@ -472,6 +469,7 @@ class TestCrossMarginLiquidationOrdering:
 # ============================================================================
 # LIQUIDATION ENGINE TESTS
 # ============================================================================
+
 
 class TestLiquidationEngineInit:
     """Tests for LiquidationEngine initialization."""
@@ -505,9 +503,7 @@ class TestLiquidationEngineInit:
 class TestLiquidationEngineCheckLiquidation:
     """Tests for liquidation detection."""
 
-    def test_check_liquidation_safe_position(
-        self, liquidation_engine, long_position
-    ):
+    def test_check_liquidation_safe_position(self, liquidation_engine, long_position):
         """Should not trigger for safe position."""
         result = liquidation_engine.check_liquidation(
             position=long_position,
@@ -517,9 +513,7 @@ class TestLiquidationEngineCheckLiquidation:
 
         assert result is None
 
-    def test_check_liquidation_danger_zone(
-        self, liquidation_engine, long_position
-    ):
+    def test_check_liquidation_danger_zone(self, liquidation_engine, long_position):
         """Should trigger for position in danger zone."""
         # Price drops significantly
         result = liquidation_engine.check_liquidation(
@@ -531,9 +525,7 @@ class TestLiquidationEngineCheckLiquidation:
         # May or may not trigger depending on exact margin ratio
         # This tests the logic flow
 
-    def test_check_liquidation_zero_qty(
-        self, liquidation_engine
-    ):
+    def test_check_liquidation_zero_qty(self, liquidation_engine):
         """Should return None for zero quantity position."""
         zero_position = FuturesPosition(
             symbol="BTCUSDT",
@@ -558,9 +550,7 @@ class TestLiquidationEngineCheckLiquidation:
 class TestLiquidationEnginePartialLiquidation:
     """Tests for partial liquidation."""
 
-    def test_check_partial_liquidation_safe(
-        self, liquidation_engine, long_position
-    ):
+    def test_check_partial_liquidation_safe(self, liquidation_engine, long_position):
         """Should not trigger partial liq for safe position."""
         result = liquidation_engine.check_partial_liquidation(
             position=long_position,
@@ -570,9 +560,7 @@ class TestLiquidationEnginePartialLiquidation:
 
         assert result is None
 
-    def test_check_partial_liquidation_zero_qty(
-        self, liquidation_engine
-    ):
+    def test_check_partial_liquidation_zero_qty(self, liquidation_engine):
         """Should return None for zero quantity."""
         zero_position = FuturesPosition(
             symbol="BTCUSDT",
@@ -597,9 +585,7 @@ class TestLiquidationEnginePartialLiquidation:
 class TestLiquidationEngineExecuteLiquidation:
     """Tests for liquidation execution."""
 
-    def test_execute_liquidation_long_loss(
-        self, liquidation_engine, long_position
-    ):
+    def test_execute_liquidation_long_loss(self, liquidation_engine, long_position):
         """Should execute liquidation for losing long."""
         initial_fund = liquidation_engine.insurance_fund_balance
 
@@ -614,9 +600,7 @@ class TestLiquidationEngineExecuteLiquidation:
         assert len(result.events) == 1
         assert result.events[0].side == "SELL"  # Long liquidation = sell
 
-    def test_execute_liquidation_short_loss(
-        self, liquidation_engine, short_position
-    ):
+    def test_execute_liquidation_short_loss(self, liquidation_engine, short_position):
         """Should execute liquidation for losing short."""
         result = liquidation_engine.execute_liquidation(
             position=short_position,
@@ -628,9 +612,7 @@ class TestLiquidationEngineExecuteLiquidation:
         assert result.triggered is True
         assert result.events[0].side == "BUY"  # Short liquidation = buy
 
-    def test_execute_liquidation_zero_qty(
-        self, liquidation_engine
-    ):
+    def test_execute_liquidation_zero_qty(self, liquidation_engine):
         """Should return not triggered for zero qty."""
         zero_position = FuturesPosition(
             symbol="BTCUSDT",
@@ -673,9 +655,7 @@ class TestLiquidationEngineExecuteLiquidation:
 class TestLiquidationEngineBankruptcyPrice:
     """Tests for bankruptcy price calculation."""
 
-    def test_calculate_bankruptcy_price_long(
-        self, liquidation_engine, long_position
-    ):
+    def test_calculate_bankruptcy_price_long(self, liquidation_engine, long_position):
         """Should calculate bankruptcy price for long."""
         bankruptcy = liquidation_engine.calculate_bankruptcy_price(
             position=long_position,
@@ -685,9 +665,7 @@ class TestLiquidationEngineBankruptcyPrice:
         # Long bankruptcy: entry - margin/qty = 50000 - 5000/1 = 45000
         assert bankruptcy == Decimal("45000")
 
-    def test_calculate_bankruptcy_price_short(
-        self, liquidation_engine, short_position
-    ):
+    def test_calculate_bankruptcy_price_short(self, liquidation_engine, short_position):
         """Should calculate bankruptcy price for short."""
         bankruptcy = liquidation_engine.calculate_bankruptcy_price(
             position=short_position,
@@ -697,9 +675,7 @@ class TestLiquidationEngineBankruptcyPrice:
         # Short bankruptcy: entry + margin/qty = 60000 + 1500/0.5 = 63000
         assert bankruptcy == Decimal("63000")
 
-    def test_calculate_bankruptcy_price_zero_qty(
-        self, liquidation_engine
-    ):
+    def test_calculate_bankruptcy_price_zero_qty(self, liquidation_engine):
         """Should return 0 for zero quantity."""
         zero_position = FuturesPosition(
             symbol="BTCUSDT",
@@ -719,9 +695,7 @@ class TestLiquidationEngineBankruptcyPrice:
 
         assert bankruptcy == Decimal("0")
 
-    def test_calculate_bankruptcy_price_cross_margin(
-        self, liquidation_engine
-    ):
+    def test_calculate_bankruptcy_price_cross_margin(self, liquidation_engine):
         """Should use wallet balance for cross margin."""
         cross_position = FuturesPosition(
             symbol="BTCUSDT",
@@ -746,9 +720,7 @@ class TestLiquidationEngineBankruptcyPrice:
 class TestLiquidationEngineWarningLevels:
     """Tests for margin warning level detection."""
 
-    def test_warning_level_safe(
-        self, liquidation_engine, long_position
-    ):
+    def test_warning_level_safe(self, liquidation_engine, long_position):
         """Should return SAFE for healthy position."""
         level = liquidation_engine.get_margin_warning_level(
             position=long_position,
@@ -758,9 +730,7 @@ class TestLiquidationEngineWarningLevels:
 
         assert level == "SAFE"
 
-    def test_warning_level_warning(
-        self, liquidation_engine
-    ):
+    def test_warning_level_warning(self, liquidation_engine):
         """Should return WARNING for position approaching danger."""
         risky_position = FuturesPosition(
             symbol="BTCUSDT",
@@ -788,12 +758,11 @@ class TestLiquidationEngineWarningLevels:
 # ADL SIMULATOR TESTS
 # ============================================================================
 
+
 class TestADLSimulatorBuildQueue:
     """Tests for ADL queue building."""
 
-    def test_build_adl_queue_basic(
-        self, adl_simulator, profitable_long, long_position
-    ):
+    def test_build_adl_queue_basic(self, adl_simulator, profitable_long, long_position):
         """Should build ADL queue for opposite side positions."""
         positions = [profitable_long, long_position]
 
@@ -809,9 +778,7 @@ class TestADLSimulatorBuildQueue:
         # Should be sorted by rank descending
         assert queue[0].rank >= queue[1].rank
 
-    def test_build_adl_queue_empty_no_opposite_side(
-        self, adl_simulator, long_position
-    ):
+    def test_build_adl_queue_empty_no_opposite_side(self, adl_simulator, long_position):
         """Should return empty queue if no opposite side positions."""
         positions = [long_position]
 
@@ -826,9 +793,7 @@ class TestADLSimulatorBuildQueue:
 
         assert len(queue) == 0
 
-    def test_build_adl_queue_different_symbols(
-        self, adl_simulator, long_position
-    ):
+    def test_build_adl_queue_different_symbols(self, adl_simulator, long_position):
         """Should only include positions for same symbol."""
         eth_position = FuturesPosition(
             symbol="ETHUSDT",
@@ -858,9 +823,7 @@ class TestADLSimulatorBuildQueue:
 class TestADLSimulatorGetQueue:
     """Tests for getting cached ADL queue."""
 
-    def test_get_adl_queue_cached(
-        self, adl_simulator, long_position
-    ):
+    def test_get_adl_queue_cached(self, adl_simulator, long_position):
         """Should return cached queue after build."""
         positions = [long_position]
 
@@ -877,9 +840,7 @@ class TestADLSimulatorGetQueue:
 
         assert len(cached) == 1
 
-    def test_get_adl_queue_empty_not_built(
-        self, adl_simulator
-    ):
+    def test_get_adl_queue_empty_not_built(self, adl_simulator):
         """Should return empty list if not built."""
         queue = adl_simulator.get_adl_queue("BTCUSDT", "LONG")
         assert len(queue) == 0
@@ -888,9 +849,7 @@ class TestADLSimulatorGetQueue:
 class TestADLSimulatorExecuteADL:
     """Tests for ADL execution."""
 
-    def test_execute_adl_basic(
-        self, adl_simulator, profitable_long
-    ):
+    def test_execute_adl_basic(self, adl_simulator, profitable_long):
         """Should execute ADL on profitable positions."""
         positions = [profitable_long]
 
@@ -910,9 +869,7 @@ class TestADLSimulatorExecuteADL:
 class TestADLSimulatorIndicator:
     """Tests for ADL indicator (UI lights)."""
 
-    def test_get_adl_indicator_profitable_high_leverage(
-        self, adl_simulator, profitable_long
-    ):
+    def test_get_adl_indicator_profitable_high_leverage(self, adl_simulator, profitable_long):
         """Profitable high-leverage should have high indicator."""
         positions = [profitable_long]
 
@@ -928,6 +885,7 @@ class TestADLSimulatorIndicator:
 # ============================================================================
 # FACTORY FUNCTION TESTS
 # ============================================================================
+
 
 class TestCreateLiquidationEngine:
     """Tests for create_liquidation_engine factory."""
@@ -971,12 +929,11 @@ class TestCreateLiquidationEngine:
 # INTEGRATION TESTS
 # ============================================================================
 
+
 class TestIntegrationScenarios:
     """Integration tests for realistic scenarios."""
 
-    def test_cascade_liquidation_scenario(
-        self, liquidation_engine, margin_calculator
-    ):
+    def test_cascade_liquidation_scenario(self, liquidation_engine, margin_calculator):
         """Test cascade liquidation in cross margin."""
         # Multiple positions, one getting liquidated may save others
         positions = [
@@ -1019,9 +976,7 @@ class TestIntegrationScenarios:
         # At least one position should be selected
         assert len(to_liquidate) >= 0
 
-    def test_insurance_fund_depletion_triggers_adl(
-        self, margin_calculator
-    ):
+    def test_insurance_fund_depletion_triggers_adl(self, margin_calculator):
         """Large loss should deplete insurance and trigger ADL."""
         # Start with small insurance fund
         engine = LiquidationEngine(

@@ -135,6 +135,7 @@ def _check_pnl_reconciliation(expected: float, recomputed: float) -> None:
         _PNL_RECONCILE_ABS_TOL,
     )
 
+
 _SIM_MULT_COUNTER = Counter(
     "sim_hour_of_week_multiplier_total",
     "Simulator liquidity multiplier applications per hour of week",
@@ -249,9 +250,7 @@ except Exception:  # минимальная замена на случай от�
                 if len(other) != len(self):
                     raise ValueError("array length mismatch")
                 return _Array(op(a, b) for a, b in zip(self._data, other._data))
-            if isinstance(other, Sequence) and not isinstance(
-                other, (str, bytes, bytearray)
-            ):
+            if isinstance(other, Sequence) and not isinstance(other, (str, bytes, bytearray)):
                 other_list = _to_float_list(other)
                 if len(other_list) != len(self._data):
                     raise ValueError("array length mismatch")
@@ -327,11 +326,13 @@ except Exception:  # минимальная замена на случай от�
 try:  # предпочитаем реальные числовые коды действий, если модуль доступен
     from action_proto import ActionType as _ExternalActionType  # type: ignore
 except Exception:
+
     class ActionType(IntEnum):
         HOLD = 0
         MARKET = 1
         LIMIT = 2
         CANCEL_ALL = 3
+
 else:
     ActionType = _ExternalActionType  # type: ignore
 
@@ -352,6 +353,7 @@ class ExecAction:
 
     See docs/ACTION_SPACE_CRITICAL_GUIDE.md for details.
     """
+
     action_type: int
     volume_frac: float = 0.0  # TARGET position ∈ [-1, 1], NOT delta!
     price_offset_ticks: int = 0
@@ -361,9 +363,7 @@ class ExecAction:
     client_tag: Optional[str] = None
 
 
-def _normalize_ttl_steps(
-    ttl_steps: Any, ttl_ms: Any, step_ms: Optional[int]
-) -> int:
+def _normalize_ttl_steps(ttl_steps: Any, ttl_ms: Any, step_ms: Optional[int]) -> int:
     """Convert raw TTL payload into simulator steps."""
 
     ttl_steps_val: Optional[float]
@@ -537,6 +537,7 @@ try:
         wrap_legacy_slippage_config,
         wrap_legacy_fees_model,
     )
+
     _HAS_EXECUTION_PROVIDERS = True
 except Exception:  # pragma: no cover - fallback for isolated testing
     _HAS_EXECUTION_PROVIDERS = False
@@ -807,11 +808,9 @@ class SymbolFilterSnapshot:
         pf = data.get("PRICE_FILTER", {}) if isinstance(data, Mapping) else {}
         ls = data.get("LOT_SIZE", {}) if isinstance(data, Mapping) else {}
         mn = data.get("MIN_NOTIONAL", {}) if isinstance(data, Mapping) else {}
-        pp = (
-            data.get("PERCENT_PRICE_BY_SIDE", {})
-            if isinstance(data, Mapping)
-            else {}
-        ) or (data.get("PERCENT_PRICE", {}) if isinstance(data, Mapping) else {})
+        pp = (data.get("PERCENT_PRICE_BY_SIDE", {}) if isinstance(data, Mapping) else {}) or (
+            data.get("PERCENT_PRICE", {}) if isinstance(data, Mapping) else {}
+        )
 
         def _flt(block: Mapping[str, Any], key: str, default: float) -> float:
             if not isinstance(block, Mapping):
@@ -985,16 +984,12 @@ class SimStepReport:
             except Exception:
                 reason_payload = dict(self.reason)
         else:
-            reason_payload = {
-                str(k): v for k, v in getattr(self.reason, "__dict__", {}).items()
-            }
+            reason_payload = {str(k): v for k, v in getattr(self.reason, "__dict__", {}).items()}
 
         return {
             "trades": trades_payload,
             "cancelled_ids": list(self.cancelled_ids),
-            "cancelled_reasons": {
-                int(k): str(v) for k, v in self.cancelled_reasons.items()
-            },
+            "cancelled_reasons": {int(k): str(v) for k, v in self.cancelled_reasons.items()},
             "new_order_ids": list(self.new_order_ids),
             "fee_total": float(self.fee_total),
             "new_order_pos": list(self.new_order_pos),
@@ -1010,12 +1005,8 @@ class SimStepReport:
             "mtm_price": float(self.mtm_price),
             "risk_events": [re.__dict__ for re in self.risk_events],
             "risk_paused_until_ms": int(self.risk_paused_until_ms),
-            "spread_bps": (
-                float(self.spread_bps) if self.spread_bps is not None else None
-            ),
-            "vol_factor": (
-                float(self.vol_factor) if self.vol_factor is not None else None
-            ),
+            "spread_bps": (float(self.spread_bps) if self.spread_bps is not None else None),
+            "vol_factor": (float(self.vol_factor) if self.vol_factor is not None else None),
             "liquidity": float(self.liquidity) if self.liquidity is not None else None,
             "latency_p50_ms": float(self.latency_p50_ms),
             "latency_p95_ms": float(self.latency_p95_ms),
@@ -1038,9 +1029,7 @@ class SimStepReport:
             "maker_share": float(self.maker_share),
             "expected_fee_bps": float(self.expected_fee_bps),
             "expected_spread_bps": (
-                float(self.expected_spread_bps)
-                if self.expected_spread_bps is not None
-                else None
+                float(self.expected_spread_bps) if self.expected_spread_bps is not None else None
             ),
             "expected_cost_components": cost_components,
         }
@@ -1064,15 +1053,11 @@ class _TradeCostResult:
         return {
             "bps": float(self.bps) if self.bps is not None else None,
             "mid": float(self.mid) if self.mid is not None else None,
-            "base_price": (
-                float(self.base_price) if self.base_price is not None else None
-            ),
+            "base_price": (float(self.base_price) if self.base_price is not None else None),
             "inputs": copy.deepcopy(self.inputs),
             "metrics": copy.deepcopy(self.metrics),
             "expected_spread_bps": (
-                float(self.expected_spread_bps)
-                if self.expected_spread_bps is not None
-                else None
+                float(self.expected_spread_bps) if self.expected_spread_bps is not None else None
             ),
             "latency_timeout_ratio": float(self.latency_timeout_ratio),
             "execution_profile": str(self.execution_profile),
@@ -1315,11 +1300,7 @@ class ExecutionSimulator:
                 return ExecutionSimulator._plain_mapping(data)
         if hasattr(obj, "__dict__"):
             try:
-                return {
-                    str(k): v
-                    for k, v in vars(obj).items()
-                    if not str(k).startswith("_")
-                }
+                return {str(k): v for k, v in vars(obj).items() if not str(k).startswith("_")}
             except Exception:
                 return {}
         return {}
@@ -1333,9 +1314,7 @@ class ExecutionSimulator:
         return text.upper()
 
     @classmethod
-    def _normalize_filters_payload(
-        cls, filters: Mapping[str, Any]
-    ) -> Dict[str, Dict[str, Any]]:
+    def _normalize_filters_payload(cls, filters: Mapping[str, Any]) -> Dict[str, Dict[str, Any]]:
         normalized: Dict[str, Dict[str, Any]] = {}
         if not isinstance(filters, Mapping):
             return normalized
@@ -1462,9 +1441,7 @@ class ExecutionSimulator:
                 self.cfg = SimpleNamespace(
                     strict_filters=bool(strict),
                     enforce_percent_price_by_side=bool(enforce),
-                    quantize_mode=str(quantize_mode)
-                    if quantize_mode is not None
-                    else "inward",
+                    quantize_mode=str(quantize_mode) if quantize_mode is not None else "inward",
                 )
 
                 filters_payload: Dict[str, Dict[str, Any]] = {}
@@ -1497,9 +1474,7 @@ class ExecutionSimulator:
                     except Exception:
                         meta_map = {}
                 meta_map.setdefault("strict_filters_active", bool(strict))
-                meta_map.setdefault(
-                    "enforce_percent_price_by_side_active", bool(enforce)
-                )
+                meta_map.setdefault("enforce_percent_price_by_side_active", bool(enforce))
                 self.filters_metadata = meta_map
 
             def validate_order(
@@ -1600,9 +1575,8 @@ class ExecutionSimulator:
                         if min_candidate is None:
                             min_section = mapping.get("MIN_NOTIONAL")
                             if isinstance(min_section, Mapping):
-                                min_candidate = (
-                                    min_section.get("minNotional")
-                                    or min_section.get("min_notional")
+                                min_candidate = min_section.get("minNotional") or min_section.get(
+                                    "min_notional"
                                 )
                         coerced = _coerce_float(min_candidate)
                         if coerced is not None:
@@ -1611,9 +1585,8 @@ class ExecutionSimulator:
                     if multiplier_up is None:
                         mu_candidate: Any = mapping.get("multiplier_up")
                         if mu_candidate is None:
-                            ppbs_section = (
-                                mapping.get("PERCENT_PRICE_BY_SIDE")
-                                or mapping.get("PERCENT_PRICE")
+                            ppbs_section = mapping.get("PERCENT_PRICE_BY_SIDE") or mapping.get(
+                                "PERCENT_PRICE"
                             )
                             if isinstance(ppbs_section, Mapping):
                                 mu_candidate = (
@@ -1628,9 +1601,8 @@ class ExecutionSimulator:
                     if multiplier_down is None:
                         md_candidate: Any = mapping.get("multiplier_down")
                         if md_candidate is None:
-                            ppbs_section = (
-                                mapping.get("PERCENT_PRICE_BY_SIDE")
-                                or mapping.get("PERCENT_PRICE")
+                            ppbs_section = mapping.get("PERCENT_PRICE_BY_SIDE") or mapping.get(
+                                "PERCENT_PRICE"
                             )
                             if isinstance(ppbs_section, Mapping):
                                 md_candidate = (
@@ -1796,9 +1768,7 @@ class ExecutionSimulator:
 
         return _LegacyQuantizerAttachment()
 
-    def _update_quantizer_metadata(
-        self, metadata: Optional[Mapping[str, Any]]
-    ) -> Dict[str, Any]:
+    def _update_quantizer_metadata(self, metadata: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
         meta_map: Dict[str, Any] = {}
         if isinstance(metadata, Mapping):
             try:
@@ -1968,11 +1938,7 @@ class ExecutionSimulator:
                     return _convert_to_plain_mapping(data)
             if hasattr(obj, "__dict__"):
                 try:
-                    return {
-                        str(k): v
-                        for k, v in vars(obj).items()
-                        if not str(k).startswith("_")
-                    }
+                    return {str(k): v for k, v in vars(obj).items() if not str(k).startswith("_")}
                 except Exception:
                     return {}
             return {}
@@ -2024,9 +1990,7 @@ class ExecutionSimulator:
         self._capacity_bar_ts: Optional[int] = None
         self.run_id: str = str(getattr(run_config, "run_id", "sim") or "sim")
         self.step_ms: int = (
-            int(getattr(run_config, "step_ms", 1000))
-            if run_config is not None
-            else 1000
+            int(getattr(run_config, "step_ms", 1000)) if run_config is not None else 1000
         )
         if self.step_ms <= 0:
             self.step_ms = 1
@@ -2063,7 +2027,12 @@ class ExecutionSimulator:
             if bars_val is not None and math.isfinite(bars_val) and bars_val > 0.0:
                 adv_bars_override_cfg = bars_val
         adv_store_obj = adv_store
-        if adv_enabled_cfg and adv_store_obj is None and ADVStore is not None and adv_cfg is not None:
+        if (
+            adv_enabled_cfg
+            and adv_store_obj is None
+            and ADVStore is not None
+            and adv_cfg is not None
+        ):
             try:
                 adv_store_obj = ADVStore(adv_cfg)
             except Exception:
@@ -2153,11 +2122,7 @@ class ExecutionSimulator:
 
             filters_dict = dict(filters_payload or {})
             filters_dict = self._normalize_filters_payload(filters_dict)
-            metadata_dict = (
-                dict(metadata_payload)
-                if isinstance(metadata_payload, Mapping)
-                else {}
-            )
+            metadata_dict = dict(metadata_payload) if isinstance(metadata_payload, Mapping) else {}
             self.filters = filters_dict
 
             if not filters_dict or Quantizer is None:
@@ -2187,9 +2152,7 @@ class ExecutionSimulator:
             )
             wrapper_meta = getattr(wrapper, "filters_metadata", None)
             metadata_for_attach = (
-                dict(wrapper_meta)
-                if isinstance(wrapper_meta, Mapping)
-                else dict(metadata_dict)
+                dict(wrapper_meta) if isinstance(wrapper_meta, Mapping) else dict(metadata_dict)
             )
             self.attach_quantizer(
                 impl=wrapper,
@@ -2241,9 +2204,7 @@ class ExecutionSimulator:
             _legacy_setup()
 
         # комиссии и funding
-        self.fees = (
-            FeesModel.from_dict(fees_config or {}) if FeesModel is not None else None
-        )
+        self.fees = FeesModel.from_dict(fees_config or {}) if FeesModel is not None else None
         self.fees_config_payload: Dict[str, Any] = {}
         self.fees_metadata: Dict[str, Any] = {}
         self.fees_expected_payload: Dict[str, Any] = {}
@@ -2309,9 +2270,7 @@ class ExecutionSimulator:
             share_cfg = MakerTakerShareSettings.parse(share_block)
             if share_cfg is not None:
                 try:
-                    share_payload = share_cfg.to_sim_payload(
-                        maker_fee_bps, taker_fee_bps
-                    )
+                    share_payload = share_cfg.to_sim_payload(maker_fee_bps, taker_fee_bps)
                 except Exception:
                     share_payload = None
         if share_payload is None and isinstance(share_block, Mapping):
@@ -2481,9 +2440,7 @@ class ExecutionSimulator:
 
         # исполнители
         self._execution_cfg = dict(execution_config or {})
-        self.execution_profile = (
-            str(execution_profile) if execution_profile is not None else ""
-        )
+        self.execution_profile = str(execution_profile) if execution_profile is not None else ""
         self.execution_params: dict = dict(execution_params or {})
         ttl_normalized = _normalize_ttl_steps(
             self.execution_params.get("ttl_steps"),
@@ -2582,9 +2539,7 @@ class ExecutionSimulator:
             elif hasattr(cfg_src, "__dict__"):
                 try:
                     payload = {
-                        str(k): v
-                        for k, v in vars(cfg_src).items()
-                        if not str(k).startswith("_")
+                        str(k): v for k, v in vars(cfg_src).items() if not str(k).startswith("_")
                     }
                 except Exception:
                     payload = {}
@@ -2597,13 +2552,9 @@ class ExecutionSimulator:
                     clip_map = _convert_to_plain_mapping(clip_payload)
                     if clip_map:
                         if clip_enabled_cfg is None and "enabled" in clip_map:
-                            clip_enabled_cfg = self._bool_from_any(
-                                clip_map.get("enabled")
-                            )
+                            clip_enabled_cfg = self._bool_from_any(clip_map.get("enabled"))
                         if strict_open_cfg is None and "strict_open_fill" in clip_map:
-                            strict_open_cfg = self._bool_from_any(
-                                clip_map.get("strict_open_fill")
-                            )
+                            strict_open_cfg = self._bool_from_any(clip_map.get("strict_open_fill"))
             _update_bar_capacity_cfg(payload)
             _update_bar_capacity_cfg(cfg_src)
 
@@ -2659,9 +2610,7 @@ class ExecutionSimulator:
             )
             for key in log_flag_keys:
                 if key in self._execution_intrabar_cfg:
-                    self._intrabar_log_warnings = bool(
-                        self._execution_intrabar_cfg.get(key)
-                    )
+                    self._intrabar_log_warnings = bool(self._execution_intrabar_cfg.get(key))
                     if self._intrabar_log_warnings:
                         break
 
@@ -2758,9 +2707,7 @@ class ExecutionSimulator:
             if timing_cfg is not None:
                 timeframe_val = getattr(timing_cfg, "timeframe_ms", None)
                 try:
-                    timeframe_int = (
-                        int(timeframe_val) if timeframe_val is not None else None
-                    )
+                    timeframe_int = int(timeframe_val) if timeframe_val is not None else None
                 except (TypeError, ValueError):
                     timeframe_int = None
                 if timeframe_int is not None and timeframe_int > 0:
@@ -2769,9 +2716,7 @@ class ExecutionSimulator:
                 if close_lag_val is None and isinstance(timing_cfg, Mapping):
                     close_lag_val = timing_cfg.get("close_lag_ms")
                 try:
-                    close_lag_int = (
-                        int(close_lag_val) if close_lag_val is not None else None
-                    )
+                    close_lag_int = int(close_lag_val) if close_lag_val is not None else None
                 except (TypeError, ValueError):
                     close_lag_int = None
                 if close_lag_int is not None:
@@ -2780,9 +2725,7 @@ class ExecutionSimulator:
                     self._timing_close_lag_ms = close_lag_int
         override_close_lag = None
         try:
-            override_close_lag = (
-                int(close_lag_ms) if close_lag_ms is not None else None
-            )
+            override_close_lag = int(close_lag_ms) if close_lag_ms is not None else None
         except (TypeError, ValueError):
             override_close_lag = None
         if override_close_lag is not None:
@@ -2834,9 +2777,7 @@ class ExecutionSimulator:
                 if not payload and hasattr(src, "__dict__"):
                     try:
                         payload = {
-                            str(k): v
-                            for k, v in vars(src).items()
-                            if not str(k).startswith("_")
+                            str(k): v for k, v in vars(src).items() if not str(k).startswith("_")
                         }
                     except Exception:
                         payload = {}
@@ -2897,9 +2838,7 @@ class ExecutionSimulator:
         else:
             self.volatility_cache = None
 
-        self.latency = (
-            LatencyModel(**latency_kwargs) if LatencyModel is not None else None
-        )
+        self.latency = LatencyModel(**latency_kwargs) if LatencyModel is not None else None
 
         lat_cfg_payload: Dict[str, Any] = {}
         refresh_cfg = latency_cfg_for_impl.get("refresh_period_days")
@@ -2924,11 +2863,7 @@ class ExecutionSimulator:
         self.latency_config_payload = lat_cfg_payload
 
         # риск-менеджер
-        self.risk = (
-            RiskManager.from_dict(risk_config or {})
-            if RiskManager is not None
-            else None
-        )
+        self.risk = RiskManager.from_dict(risk_config or {}) if RiskManager is not None else None
 
         # состояние позиции и PnL
         self.position_qty: float = 0.0
@@ -3023,8 +2958,7 @@ class ExecutionSimulator:
 
         # сезонность ликвидности и спреда по часам недели
         self.use_seasonality = bool(
-            getattr(run_config, "use_seasonality", use_seasonality)
-            and seasonality_enabled()
+            getattr(run_config, "use_seasonality", use_seasonality) and seasonality_enabled()
         )
         self.seasonality_interpolate = bool(
             getattr(run_config, "seasonality_interpolate", seasonality_interpolate)
@@ -3098,13 +3032,9 @@ class ExecutionSimulator:
             override_path = seasonality_override_path
             if run_config is not None:
                 if liq_override is None:
-                    liq_override = getattr(
-                        run_config, "liquidity_seasonality_override", None
-                    )
+                    liq_override = getattr(run_config, "liquidity_seasonality_override", None)
                 if spread_override is None:
-                    spread_override = getattr(
-                        run_config, "spread_seasonality_override", None
-                    )
+                    spread_override = getattr(run_config, "spread_seasonality_override", None)
                 if override_path is None:
                     override_path = getattr(
                         run_config, "liquidity_seasonality_override_path", None
@@ -3130,9 +3060,7 @@ class ExecutionSimulator:
                 def _reload(data: Dict[str, np.ndarray]) -> None:
                     try:
                         self.load_seasonality_multipliers(data)
-                        seasonality_logger.info(
-                            "Reloaded seasonality multipliers from %s", path
-                        )
+                        seasonality_logger.info("Reloaded seasonality multipliers from %s", path)
                     except Exception:
                         seasonality_logger.exception(
                             "Failed to reload seasonality multipliers from %s", path
@@ -3181,9 +3109,7 @@ class ExecutionSimulator:
             strict_open_fill=strict_param,
         )
         if self.execution_profile == "LIMIT_MID_BPS":
-            self.limit_offset_bps = float(
-                self.execution_params.get("limit_offset_bps", 0.0)
-            )
+            self.limit_offset_bps = float(self.execution_params.get("limit_offset_bps", 0.0))
             self.ttl_steps = int(self.execution_params.get("ttl_steps", 0))
             self.tif = str(self.execution_params.get("tif", "GTC")).upper()
         self._build_executor()
@@ -3338,8 +3264,7 @@ class ExecutionSimulator:
             ts_open=int(ts_ms),
             timeframe_ms=(
                 int(timeframe_ms)
-                if timeframe_ms is not None
-                and isinstance(timeframe_ms, (int, float))
+                if timeframe_ms is not None and isinstance(timeframe_ms, (int, float))
                 else None
             ),
             open=self._float_or_none(bar_open),
@@ -3424,11 +3349,15 @@ class ExecutionSimulator:
                 "_next_open_ready_fee_total",
                 self._next_open_ready_fee_total + fee_total,
             )
-            self._next_open_metrics["filled"] = self._next_open_metrics.get("filled", 0) + len(trades)
+            self._next_open_metrics["filled"] = self._next_open_metrics.get("filled", 0) + len(
+                trades
+            )
         if cancelled:
             self._next_open_cancelled.extend(cancelled)
             self._next_open_cancelled_reasons.update(cancelled_reasons)
-            self._next_open_metrics["cancelled"] = self._next_open_metrics.get("cancelled", 0) + len(cancelled)
+            self._next_open_metrics["cancelled"] = self._next_open_metrics.get(
+                "cancelled", 0
+            ) + len(cancelled)
         if risk_events:
             self._next_open_ready_risk_events.extend(risk_events)
         if status:
@@ -3437,9 +3366,7 @@ class ExecutionSimulator:
             self._next_open_ready_reason = reason
         object.__setattr__(self, "_next_open_last_flush_ts", int(ts_ms))
 
-    def _flush_next_open_orders(
-        self, snapshot: _NextBarSnapshot
-    ) -> Tuple[
+    def _flush_next_open_orders(self, snapshot: _NextBarSnapshot) -> Tuple[
         List[ExecTrade],
         List[int],
         Dict[int, str],
@@ -3455,9 +3382,8 @@ class ExecutionSimulator:
         fee_total = 0.0
         open_price = self._float_or_none(snapshot.open)
         if (
-            (open_price is None or not math.isfinite(open_price))
-            and self._next_h1_open_price is not None
-        ):
+            open_price is None or not math.isfinite(open_price)
+        ) and self._next_h1_open_price is not None:
             open_price = self._float_or_none(self._next_h1_open_price)
         high_price = self._float_or_none(snapshot.high)
         low_price = self._float_or_none(snapshot.low)
@@ -3632,7 +3558,7 @@ class ExecutionSimulator:
             #   - Slippage: разница между expected и actual price (market impact)
             #   - Fee: процент от actual fill price (биржевая комиссия)
             #
-            # Reference: CLAUDE.md → "НЕ БАГИ" → #17
+            # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #17
             # ═══════════════════════════════════════════════════════════════════════
             fee = self._compute_trade_fee(
                 side=state.side,
@@ -3851,9 +3777,7 @@ class ExecutionSimulator:
             except (TypeError, ValueError):
                 report.expected_fee_bps = 0.0
         report.expected_spread_bps = (
-            float(expected_spread_bps)
-            if expected_spread_bps is not None
-            else None
+            float(expected_spread_bps) if expected_spread_bps is not None else None
         )
         report.expected_cost_components = dict(cost_components)
         if not status:
@@ -3979,9 +3903,7 @@ class ExecutionSimulator:
             filters=filters_payload,
         )
         meta = getattr(wrapper, "filters_metadata", None)
-        metadata_payload = (
-            dict(meta) if isinstance(meta, Mapping) else {}
-        )
+        metadata_payload = dict(meta) if isinstance(meta, Mapping) else {}
         self.attach_quantizer(
             impl=wrapper,
             metadata=metadata_payload,
@@ -4165,9 +4087,7 @@ class ExecutionSimulator:
             return None
         return val
 
-    def _load_adv_base_dataset(
-        self, path: str
-    ) -> Tuple[Dict[str, float], Dict[str, Any]]:
+    def _load_adv_base_dataset(self, path: str) -> Tuple[Dict[str, float], Dict[str, Any]]:
         dataset: Dict[str, float] = {}
         meta: Dict[str, Any] = {}
         floors_map: Dict[str, float] = {}
@@ -4253,9 +4173,7 @@ class ExecutionSimulator:
                         if not floor_symbol:
                             continue
                         _record_floor(floor_symbol, raw_value)
-        if isinstance(payload, Sequence) and not isinstance(
-            payload, (str, bytes, bytearray)
-        ):
+        if isinstance(payload, Sequence) and not isinstance(payload, (str, bytes, bytearray)):
             for item in payload:
                 sub_mapping = _as_mapping(item)
                 if sub_mapping:
@@ -5013,14 +4931,14 @@ class ExecutionSimulator:
             if expected_payload is None:
                 expected_payload = self._extract_fee_expected(payload)
 
-        self.set_fees_config(config_payload, metadata=metadata_payload, expected_payload=expected_payload)
+        self.set_fees_config(
+            config_payload, metadata=metadata_payload, expected_payload=expected_payload
+        )
 
         if share_payload is not None:
             self.set_fees_config(None, share_payload=share_payload)
 
-    def _extract_fee_config_payload(
-        self, payload: Mapping[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    def _extract_fee_config_payload(self, payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
         candidates = (
             payload.get("fees_config_payload"),
             payload.get("config"),
@@ -5052,9 +4970,7 @@ class ExecutionSimulator:
             return ExecutionSimulator._plain_mapping(subset)
         return None
 
-    def _extract_fee_metadata(
-        self, payload: Mapping[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    def _extract_fee_metadata(self, payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
         for key in ("fees_metadata", "metadata", "meta"):
             candidate = payload.get(key)
             if isinstance(candidate, Mapping):
@@ -5063,9 +4979,7 @@ class ExecutionSimulator:
                     return normalised
         return None
 
-    def _extract_fee_expected(
-        self, payload: Mapping[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    def _extract_fee_expected(self, payload: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
         for key in ("fees_expected_payload", "expected"):
             candidate = payload.get(key)
             if isinstance(candidate, Mapping):
@@ -5074,9 +4988,7 @@ class ExecutionSimulator:
                     return normalised
         return None
 
-    def _apply_maker_taker_share_payload(
-        self, payload: Optional[Mapping[str, Any]]
-    ) -> None:
+    def _apply_maker_taker_share_payload(self, payload: Optional[Mapping[str, Any]]) -> None:
         if payload is None:
             self._maker_taker_share_cfg = None
             self._maker_taker_share_enabled = False
@@ -5107,9 +5019,7 @@ class ExecutionSimulator:
             else None
         )
         expected_payload = (
-            self.fees_expected_payload
-            if isinstance(self.fees_expected_payload, Mapping)
-            else None
+            self.fees_expected_payload if isinstance(self.fees_expected_payload, Mapping) else None
         )
 
         share_candidates: List[Any] = []
@@ -5143,12 +5053,8 @@ class ExecutionSimulator:
         maker_fee = None
         taker_fee = None
         if share_payload:
-            maker_fee = ExecutionSimulator._trade_cost_float(
-                share_payload.get("maker_fee_bps")
-            )
-            taker_fee = ExecutionSimulator._trade_cost_float(
-                share_payload.get("taker_fee_bps")
-            )
+            maker_fee = ExecutionSimulator._trade_cost_float(share_payload.get("maker_fee_bps"))
+            taker_fee = ExecutionSimulator._trade_cost_float(share_payload.get("taker_fee_bps"))
         if maker_fee is None or taker_fee is None:
             if expected_payload:
                 if maker_fee is None:
@@ -5160,9 +5066,7 @@ class ExecutionSimulator:
                         expected_payload.get("taker_fee_bps")
                     )
         if maker_fee is not None and taker_fee is not None:
-            fee_candidates.append(
-                maker_share_val * maker_fee + (1.0 - maker_share_val) * taker_fee
-            )
+            fee_candidates.append(maker_share_val * maker_fee + (1.0 - maker_share_val) * taker_fee)
 
         expected_fee_val: Optional[float] = None
         for candidate in fee_candidates:
@@ -5322,14 +5226,10 @@ class ExecutionSimulator:
             return float(value)
         return None
 
-    def _fallback_fee_rate(
-        self, symbol: Optional[str], is_maker: bool
-    ) -> Optional[float]:
+    def _fallback_fee_rate(self, symbol: Optional[str], is_maker: bool) -> Optional[float]:
         key = "maker_fee_bps" if is_maker else "taker_fee_bps"
         if isinstance(self.fees_expected_payload, Mapping):
-            candidate = ExecutionSimulator._trade_cost_float(
-                self.fees_expected_payload.get(key)
-            )
+            candidate = ExecutionSimulator._trade_cost_float(self.fees_expected_payload.get(key))
             if candidate is not None and candidate >= 0.0:
                 return float(candidate)
         symbol_key = ExecutionSimulator._fees_symbol_key(symbol)
@@ -5381,9 +5281,7 @@ class ExecutionSimulator:
                     raw_rate = None
                 rate_bps = ExecutionSimulator._trade_cost_float(raw_rate)
                 if rate_bps is not None:
-                    discount = self._resolve_fee_discount_multiplier(
-                        symbol, is_maker, fee_model
-                    )
+                    discount = self._resolve_fee_discount_multiplier(symbol, is_maker, fee_model)
                     rate_bps = float(rate_bps * discount)
         if rate_bps is None:
             rate_bps = self._fallback_fee_rate(symbol, is_maker)
@@ -5411,9 +5309,7 @@ class ExecutionSimulator:
                     self.fees_rounding = {}
                 settlement_payload = mapping.get("settlement")
                 if isinstance(settlement_payload, Mapping):
-                    self.fees_settlement = ExecutionSimulator._plain_mapping(
-                        settlement_payload
-                    )
+                    self.fees_settlement = ExecutionSimulator._plain_mapping(settlement_payload)
                 else:
                     self.fees_settlement = {}
                 self.fees_commission_steps = {}
@@ -5503,9 +5399,7 @@ class ExecutionSimulator:
             if step_val is not None and step_val > 0.0:
                 return float(step_val)
         if isinstance(self.fees_rounding, Mapping):
-            rounding_step = ExecutionSimulator._trade_cost_float(
-                self.fees_rounding.get("step")
-            )
+            rounding_step = ExecutionSimulator._trade_cost_float(self.fees_rounding.get("step"))
             if rounding_step is not None and rounding_step > 0.0:
                 return float(rounding_step)
         return None
@@ -5569,11 +5463,7 @@ class ExecutionSimulator:
             info["currency"] = normalised_fee
         if settlement_amount is not None and math.isfinite(settlement_amount):
             info["settlement_amount"] = float(settlement_amount)
-        if (
-            conversion_rate is not None
-            and math.isfinite(conversion_rate)
-            and conversion_rate > 0.0
-        ):
+        if conversion_rate is not None and math.isfinite(conversion_rate) and conversion_rate > 0.0:
             info["conversion_rate"] = float(conversion_rate)
         if requires_conversion and info:
             info["requires_conversion"] = True
@@ -5595,9 +5485,7 @@ class ExecutionSimulator:
             settlement_amount = ExecutionSimulator._trade_cost_float(
                 last_info.get("settlement_amount")
             )
-            conversion_rate = ExecutionSimulator._trade_cost_float(
-                last_info.get("conversion_rate")
-            )
+            conversion_rate = ExecutionSimulator._trade_cost_float(last_info.get("conversion_rate"))
 
         quote_equivalent = ExecutionSimulator._trade_cost_float(
             getattr(self, "_fees_last_quote_equivalent", None)
@@ -5633,11 +5521,7 @@ class ExecutionSimulator:
                 if converted:
                     self.fees_cum += converted
         else:
-            if (
-                fee_currency
-                and quote_currency
-                and fee_currency != quote_currency
-            ):
+            if fee_currency and quote_currency and fee_currency != quote_currency:
                 amount = settlement_amount
                 if amount is None:
                     amount = fee_value
@@ -5737,9 +5621,7 @@ class ExecutionSimulator:
         if not self._slippage_share_enabled:
             return taker_val
         share_val = self._trade_cost_share(maker_share, self._slippage_share_default)
-        maker_val = self._trade_cost_non_negative(
-            maker_bps, self._slippage_spread_cost_maker_bps
-        )
+        maker_val = self._trade_cost_non_negative(maker_bps, self._slippage_spread_cost_maker_bps)
         expected = share_val * maker_val + (1.0 - share_val) * taker_val
         if not math.isfinite(expected):
             expected = taker_val
@@ -5957,9 +5839,7 @@ class ExecutionSimulator:
                 maker_override, self._slippage_spread_cost_maker_bps
             )
             metrics_out["spread_cost_maker_bps"] = maker_cost_val
-            share_val = self._trade_cost_share(
-                share_override, self._slippage_share_default
-            )
+            share_val = self._trade_cost_share(share_override, self._slippage_share_default)
             if share_override is not None or self._slippage_share_enabled:
                 metrics_out["maker_share"] = share_val
             expected_override_val = self._trade_cost_float(expected_override)
@@ -6142,9 +6022,7 @@ class ExecutionSimulator:
         side_key = str(side).upper()
         liquidity_key = str(liquidity).lower()
         if liquidity_key not in ("maker", "taker") and logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                "fee role fallback side=%s liquidity=%s", side_key, liquidity_key
-            )
+            logger.debug("fee role fallback side=%s liquidity=%s", side_key, liquidity_key)
 
         try:
             price_val = float(price)
@@ -6317,9 +6195,7 @@ class ExecutionSimulator:
                         requires_conversion_flag = bool(
                             getattr(fee_val, "requires_bnb_conversion", False)
                         )
-                        mode_candidate = getattr(
-                            fee_val, "settlement_mode", settlement_mode
-                        )
+                        mode_candidate = getattr(fee_val, "settlement_mode", settlement_mode)
                         if isinstance(mode_candidate, str) and mode_candidate:
                             settlement_mode = mode_candidate.strip().lower()
                         currency_candidate = getattr(
@@ -6352,9 +6228,7 @@ class ExecutionSimulator:
                         )
                         if settlement_currency_norm is None and use_bnb_settlement:
                             settlement_currency_norm = "BNB"
-                        quote_currency_norm = ExecutionSimulator._normalise_currency(
-                            quote_currency
-                        )
+                        quote_currency_norm = ExecutionSimulator._normalise_currency(quote_currency)
                         fee_currency = quote_currency_norm
                         settlement_record_amount: Optional[float] = None
                         inferred_conversion_rate: Optional[float] = None
@@ -6367,11 +6241,7 @@ class ExecutionSimulator:
                             else:
                                 if not math.isfinite(conversion_rate) or conversion_rate <= 0.0:
                                     conversion_rate = None
-                        if (
-                            conversion_rate is None
-                            and bnb_rate is not None
-                            and use_bnb_settlement
-                        ):
+                        if conversion_rate is None and bnb_rate is not None and use_bnb_settlement:
                             try:
                                 conversion_rate = float(bnb_rate)
                             except (TypeError, ValueError):
@@ -6383,9 +6253,7 @@ class ExecutionSimulator:
                             settlement_amount = fee_out
                             fee_quote_equivalent = float(settlement_amount * conversion_rate)
                             if math.isfinite(fee_quote_equivalent):
-                                self._fees_last_quote_equivalent = float(
-                                    fee_quote_equivalent
-                                )
+                                self._fees_last_quote_equivalent = float(fee_quote_equivalent)
                                 fee_out = float(settlement_amount)
                                 needs_conversion = False
                             else:
@@ -6419,7 +6287,10 @@ class ExecutionSimulator:
                             except (TypeError, ValueError, ZeroDivisionError):
                                 inferred_conversion_rate = None
                             else:
-                                if not math.isfinite(inferred_conversion_rate) or inferred_conversion_rate <= 0.0:
+                                if (
+                                    not math.isfinite(inferred_conversion_rate)
+                                    or inferred_conversion_rate <= 0.0
+                                ):
                                     inferred_conversion_rate = None
                         if conversion_rate is None and inferred_conversion_rate is not None:
                             conversion_rate = float(inferred_conversion_rate)
@@ -6574,9 +6445,7 @@ class ExecutionSimulator:
             share_enabled = bool(share_cfg.get("enabled", share_enabled))
 
         expected_payload = (
-            self.fees_expected_payload
-            if isinstance(self.fees_expected_payload, Mapping)
-            else None
+            self.fees_expected_payload if isinstance(self.fees_expected_payload, Mapping) else None
         )
 
         share_default = float(getattr(self, "_expected_maker_share", 0.0))
@@ -6599,12 +6468,8 @@ class ExecutionSimulator:
         maker_fee_val = None
         taker_fee_val = None
         if isinstance(share_cfg, Mapping):
-            maker_fee_val = ExecutionSimulator._trade_cost_float(
-                share_cfg.get("maker_fee_bps")
-            )
-            taker_fee_val = ExecutionSimulator._trade_cost_float(
-                share_cfg.get("taker_fee_bps")
-            )
+            maker_fee_val = ExecutionSimulator._trade_cost_float(share_cfg.get("maker_fee_bps"))
+            taker_fee_val = ExecutionSimulator._trade_cost_float(share_cfg.get("taker_fee_bps"))
         if expected_payload is not None:
             if maker_fee_val is None:
                 maker_fee_val = ExecutionSimulator._trade_cost_float(
@@ -6622,8 +6487,7 @@ class ExecutionSimulator:
             expected_fee_candidates.append(expected_payload.get("expected_fee_bps"))
         if maker_fee_val is not None and taker_fee_val is not None:
             expected_fee_candidates.append(
-                maker_share_out * maker_fee_val
-                + (1.0 - maker_share_out) * taker_fee_val
+                maker_share_out * maker_fee_val + (1.0 - maker_share_out) * taker_fee_val
             )
         expected_fee_candidates.append(self._expected_fee_bps)
 
@@ -6980,9 +6844,7 @@ class ExecutionSimulator:
                     adv_cap = max(0.0, float(adv_cap))
                     self._last_adv_bar_capacity = adv_cap
             if adv_cap is not None:
-                self._last_liquidity = self._combine_liquidity(
-                    self._last_liquidity, adv_cap
-                )
+                self._last_liquidity = self._combine_liquidity(self._last_liquidity, adv_cap)
         default = self._default_spread_bps()
         if default is not None:
             return float(default)
@@ -7057,10 +6919,7 @@ class ExecutionSimulator:
                 sbps = float(spread_bps)
             except (TypeError, ValueError):
                 sbps = None
-        elif (
-            compute_spread_bps_from_quotes is not None
-            and self.slippage_cfg is not None
-        ):
+        elif compute_spread_bps_from_quotes is not None and self.slippage_cfg is not None:
             sbps = compute_spread_bps_from_quotes(
                 bid=self._last_bid, ask=self._last_ask, cfg=self.slippage_cfg
             )
@@ -7110,9 +6969,7 @@ class ExecutionSimulator:
 
         range_ratio_bps_val: Optional[float] = None
         if metrics is not None:
-            range_ratio_bps_val = self._non_negative_float(
-                metrics.get("range_ratio_bps")
-            )
+            range_ratio_bps_val = self._non_negative_float(metrics.get("range_ratio_bps"))
             if range_ratio_bps_val is None:
                 range_ratio_hint = self._non_negative_float(metrics.get("range_ratio"))
                 if range_ratio_hint is not None:
@@ -7210,9 +7067,7 @@ class ExecutionSimulator:
                 if trade_price is not None:
                     self._next_h1_open_price = float(trade_price)
                 self._snapshot_hour = hour
-            price_tick = (
-                trade_price if trade_price is not None else self._last_ref_price
-            )
+            price_tick = trade_price if trade_price is not None else self._last_ref_price
             qty_tick = trade_qty if trade_qty is not None else liquidity
             if price_tick is not None and qty_tick is not None:
                 self._vwap_on_tick(int(ts_ms), float(price_tick), float(qty_tick))
@@ -7231,9 +7086,7 @@ class ExecutionSimulator:
             try:
                 callback(regime)
             except Exception:
-                logger.debug(
-                    "Market regime listener %r failed", callback, exc_info=True
-                )
+                logger.debug("Market regime listener %r failed", callback, exc_info=True)
 
     def register_market_regime_listener(self, callback: Callable[[Any], None]) -> None:
         if not callable(callback):
@@ -7243,9 +7096,7 @@ class ExecutionSimulator:
             try:
                 callback(self._last_market_regime)
             except Exception:
-                logger.debug(
-                    "Market regime listener %r failed on replay", callback, exc_info=True
-                )
+                logger.debug("Market regime listener %r failed on replay", callback, exc_info=True)
 
     def set_market_regime_hint(self, regime: Any) -> None:
         if regime is None:
@@ -7459,9 +7310,7 @@ class ExecutionSimulator:
             return 0.0
         return min(val, cap_val)
 
-    def _limit_optional_by_intrabar_volume(
-        self, value: Optional[float]
-    ) -> Optional[float]:
+    def _limit_optional_by_intrabar_volume(self, value: Optional[float]) -> Optional[float]:
         """Limit optional liquidity values by remaining intrabar volume."""
 
         if value is None:
@@ -7472,20 +7321,14 @@ class ExecutionSimulator:
     def _effective_liquidity_cap(self) -> Optional[float]:
         """Combine last-liquidity estimate with intrabar profile cap."""
 
-        return self._combine_liquidity(
-            self._last_liquidity, self._available_intrabar_volume()
-        )
+        return self._combine_liquidity(self._last_liquidity, self._available_intrabar_volume())
 
-    def _current_bar_window(
-        self, ts: int
-    ) -> tuple[Optional[int], Optional[int], Optional[int]]:
+    def _current_bar_window(self, ts: int) -> tuple[Optional[int], Optional[int], Optional[int]]:
         timeframe_snapshot = self._intrabar_path_timeframe_ms
         if timeframe_snapshot is None:
             timeframe_snapshot = self._resolve_intrabar_timeframe(ts)
         try:
-            timeframe_int = (
-                int(timeframe_snapshot) if timeframe_snapshot is not None else None
-            )
+            timeframe_int = int(timeframe_snapshot) if timeframe_snapshot is not None else None
         except (TypeError, ValueError):
             timeframe_int = None
         if timeframe_int is not None and timeframe_int <= 0:
@@ -7558,9 +7401,7 @@ class ExecutionSimulator:
             cadence_map[id(child)] = step
         return cadence_map, bar_end_offset
 
-    def _insert_child_ordered(
-        self, queue: List[MarketChild], child: MarketChild
-    ) -> None:
+    def _insert_child_ordered(self, queue: List[MarketChild], child: MarketChild) -> None:
         offset = self._child_offset(child)
         offsets = [self._child_offset(item) for item in queue]
         idx = bisect.bisect_right(offsets, offset)
@@ -7722,21 +7563,14 @@ class ExecutionSimulator:
             if isinstance(entry, Mapping):
                 data = dict(entry)
                 ts_raw = (
-                    data.get("ts")
-                    or data.get("timestamp")
-                    or data.get("ts_ms")
-                    or data.get("time")
+                    data.get("ts") or data.get("timestamp") or data.get("ts_ms") or data.get("time")
                 )
                 if ts_raw is None:
                     ts_raw = data.get("offset_ms")
                 if ts_raw is None:
                     ts_raw = data.get("fraction")
                 price_raw = data.get("price") or data.get("px") or data.get("p")
-                volume_raw = (
-                    data.get("volume")
-                    or data.get("qty")
-                    or data.get("quantity")
-                )
+                volume_raw = data.get("volume") or data.get("qty") or data.get("quantity")
             elif isinstance(entry, Sequence) and not isinstance(entry, (str, bytes)):
                 seq = list(entry)
                 if seq:
@@ -7837,9 +7671,7 @@ class ExecutionSimulator:
         self._intrabar_path_bar_ts = int(bar_ts_int)
         self._intrabar_path_start_ts = int(start_ts)
         self._intrabar_path_timeframe_ms = int(timeframe)
-        self._intrabar_path_total_volume = (
-            float(volume_total) if volume_total > 0.0 else None
-        )
+        self._intrabar_path_total_volume = float(volume_total) if volume_total > 0.0 else None
         self._intrabar_volume_used = 0.0
 
         if logger.isEnabledFor(logging.DEBUG):
@@ -7920,7 +7752,9 @@ class ExecutionSimulator:
                             weight = 0.0
                         if weight > 1.0:
                             weight = 1.0
-                        price = float(prev_price) + (float(price_val) - float(prev_price)) * float(weight)
+                        price = float(prev_price) + (float(price_val) - float(prev_price)) * float(
+                            weight
+                        )
                     break
                 prev_ts, prev_price = ts_val, price_val
 
@@ -7970,7 +7804,9 @@ class ExecutionSimulator:
                     hint = val
         if hint <= 0.0 and self._last_vol_factor is not None:
             try:
-                ref_price = float(self._last_ref_price) if self._last_ref_price is not None else None
+                ref_price = (
+                    float(self._last_ref_price) if self._last_ref_price is not None else None
+                )
             except (TypeError, ValueError):
                 ref_price = None
             if ref_price is not None and math.isfinite(ref_price) and ref_price > 0.0:
@@ -8318,9 +8154,7 @@ class ExecutionSimulator:
         else:
             self._executor = TakerExecutor()
 
-    def _vwap_on_tick(
-        self, ts_ms: int, price: Optional[float], volume: Optional[float]
-    ) -> None:
+    def _vwap_on_tick(self, ts_ms: int, price: Optional[float], volume: Optional[float]) -> None:
         hour = int(ts_ms // HOUR_MS)
         if self._vwap_hour is None:
             self._vwap_hour = hour
@@ -8336,9 +8170,7 @@ class ExecutionSimulator:
             self._vwap_pv += float(price) * float(volume)
             self._vwap_vol += float(volume)
 
-    def _update_vol_series(
-        self, metric: str, value: float
-    ) -> Optional[Dict[str, float]]:
+    def _update_vol_series(self, metric: str, value: float) -> Optional[Dict[str, float]]:
         if not metric:
             return None
         try:
@@ -8744,11 +8576,7 @@ class ExecutionSimulator:
         """
         Возвращает нереализованный PnL относительно средней цены позиции.
         """
-        if (
-            mark_price is None
-            or self._avg_entry_price is None
-            or self.position_qty == 0.0
-        ):
+        if mark_price is None or self._avg_entry_price is None or self.position_qty == 0.0:
             return 0.0
         mp = float(mark_price)
         ap = float(self._avg_entry_price)
@@ -8757,9 +8585,7 @@ class ExecutionSimulator:
         else:
             return float((ap - mp) * (-self.position_qty))
 
-    def _recompute_pnl_from_log(
-        self, mark_price: Optional[float]
-    ) -> tuple[float, float]:
+    def _recompute_pnl_from_log(self, mark_price: Optional[float]) -> tuple[float, float]:
         """Пере вычислить реализованный и нереализованный PnL из журнала трейдов."""
         pos = 0.0
         avg: Optional[float] = None
@@ -8822,9 +8648,7 @@ class ExecutionSimulator:
         return float(realized), float(unrl)
 
     # ---- очередь ----
-    def _submit_next_open(
-        self, proto: ExecAction, now_ts: Optional[int] = None
-    ) -> int:
+    def _submit_next_open(self, proto: ExecAction, now_ts: Optional[int] = None) -> int:
         cid = self._next_cli_id
         self._next_cli_id += 1
         atype = int(getattr(proto, "action_type", ActionType.HOLD))
@@ -8886,9 +8710,7 @@ class ExecutionSimulator:
                 if post_risk_rejection is not None:
                     self._record_filter_rejection(post_risk_rejection, "MARKET")
                 reason_code = (
-                    post_risk_rejection.code
-                    if post_risk_rejection is not None
-                    else "FILTER"
+                    post_risk_rejection.code if post_risk_rejection is not None else "FILTER"
                 )
                 self._next_open_cancelled.append(cid)
                 self._next_open_cancelled_reasons[cid] = str(reason_code)
@@ -9114,9 +8936,7 @@ class ExecutionSimulator:
             if ref_val is not None and ref_val > 0.0:
                 clamp_error: Optional[FilterRejectionReason] = None
                 try:
-                    normalized = float(
-                        quantizer.clamp_notional(self.symbol, ref_val, normalized)
-                    )
+                    normalized = float(quantizer.clamp_notional(self.symbol, ref_val, normalized))
                 except ValueError as exc:
                     clamp_error = FilterRejectionReason(
                         code="MIN_NOTIONAL",
@@ -9174,9 +8994,7 @@ class ExecutionSimulator:
                     )
                 if ref_val is not None and ref_val > 0.0 and alt_qty > 0.0:
                     try:
-                        alt_qty = float(
-                            quantizer.clamp_notional(self.symbol, ref_val, alt_qty)
-                        )
+                        alt_qty = float(quantizer.clamp_notional(self.symbol, ref_val, alt_qty))
                     except ValueError as exc:
                         return 0.0, FilterRejectionReason(
                             code="MIN_NOTIONAL",
@@ -9210,9 +9028,7 @@ class ExecutionSimulator:
             if normalized > qty + qty_limit_tol:
                 requested_qty = min(qty, remaining)
                 try:
-                    capped_qty = float(
-                        quantizer.quantize_qty(self.symbol, requested_qty)
-                    )
+                    capped_qty = float(quantizer.quantize_qty(self.symbol, requested_qty))
                 except ValueError as exc:
                     return 0.0, FilterRejectionReason(
                         code="LOT_SIZE",
@@ -9243,16 +9059,9 @@ class ExecutionSimulator:
                             "quantity": capped_qty,
                         },
                     )
-                if (
-                    ref_val is not None
-                    and ref_val > 0.0
-                    and min_notional > 0.0
-                ):
+                if ref_val is not None and ref_val > 0.0 and min_notional > 0.0:
                     capped_notional = abs(ref_val * capped_qty)
-                    if (
-                        not math.isfinite(capped_notional)
-                        or capped_notional + 1e-12 < min_notional
-                    ):
+                    if not math.isfinite(capped_notional) or capped_notional + 1e-12 < min_notional:
                         return 0.0, FilterRejectionReason(
                             code="MIN_NOTIONAL",
                             message="Notional below minimum",
@@ -9306,13 +9115,9 @@ class ExecutionSimulator:
         if qty_step > 0.0:
             snapped = self._snap_qty_with_tolerance(candidate, qty_step, qty_tol)
             if abs(snapped - candidate) > qty_tol:
-                capacity_limited = remaining > 0.0 and (
-                    remaining - original_candidate
-                ) <= qty_tol
+                capacity_limited = remaining > 0.0 and (remaining - original_candidate) <= qty_tol
                 if capacity_limited:
-                    alt_candidate = self._snap_qty_with_tolerance(
-                        remaining, qty_step, qty_tol
-                    )
+                    alt_candidate = self._snap_qty_with_tolerance(remaining, qty_step, qty_tol)
                     if abs(alt_candidate - remaining) <= qty_tol and alt_candidate > 0.0:
                         snapped = alt_candidate
                     else:
@@ -9354,9 +9159,7 @@ class ExecutionSimulator:
         requested_qty = min(qty, remaining)
         if candidate > qty + qty_tol:
             if qty_step > 0.0:
-                clamped_candidate = self._snap_qty_with_tolerance(
-                    requested_qty, qty_step, qty_tol
-                )
+                clamped_candidate = self._snap_qty_with_tolerance(requested_qty, qty_step, qty_tol)
                 if clamped_candidate <= 0.0:
                     return 0.0, FilterRejectionReason(
                         code="LOT_SIZE",
@@ -9409,12 +9212,8 @@ class ExecutionSimulator:
 
         effective_price = ref_val if ref_val is not None else 0.0
         notional = abs(effective_price * candidate)
-        if (
-            min_notional > 0.0
-            and (
-                not math.isfinite(notional)
-                or notional + base_tolerance < min_notional
-            )
+        if min_notional > 0.0 and (
+            not math.isfinite(notional) or notional + base_tolerance < min_notional
         ):
             return 0.0, FilterRejectionReason(
                 code="MIN_NOTIONAL",
@@ -9505,9 +9304,7 @@ class ExecutionSimulator:
             for key, value in component.items():
                 normalized[str(key)] = ExecutionSimulator._normalize_reason_component(value)
             return normalized
-        if isinstance(component, Sequence) and not isinstance(
-            component, (str, bytes, bytearray)
-        ):
+        if isinstance(component, Sequence) and not isinstance(component, (str, bytes, bytearray)):
             return [ExecutionSimulator._normalize_reason_component(item) for item in component]
         return component
 
@@ -9599,9 +9396,7 @@ class ExecutionSimulator:
         if math.isfinite(raw_price) and math.isfinite(price_quantized):
             if abs(price_quantized - raw_price) > price_tolerance:
                 try:
-                    _QUANTIZED_PRICE_COUNTER.labels(
-                        symbol=symbol, order_type=order_label
-                    ).inc()
+                    _QUANTIZED_PRICE_COUNTER.labels(symbol=symbol, order_type=order_label).inc()
                 except Exception:
                     pass
         # For quantity: use fixed tolerance since qty values are typically small
@@ -9609,9 +9404,7 @@ class ExecutionSimulator:
         if math.isfinite(raw_qty) and math.isfinite(qty_quantized):
             if abs(qty_quantized - raw_qty) > qty_tolerance:
                 try:
-                    _QUANTIZED_QTY_COUNTER.labels(
-                        symbol=symbol, order_type=order_label
-                    ).inc()
+                    _QUANTIZED_QTY_COUNTER.labels(symbol=symbol, order_type=order_label).inc()
                 except Exception:
                     pass
 
@@ -9722,11 +9515,7 @@ class ExecutionSimulator:
         filters = self._current_symbol_filters()
         validations_enabled = bool(self.strict_filters and filters is not None)
         ref_val = self._finite_float(ref_price)
-        price_for_quant = (
-            float(ref_val)
-            if ref_val is not None and math.isfinite(ref_val)
-            else 0.0
-        )
+        price_for_quant = float(ref_val) if ref_val is not None and math.isfinite(ref_val) else 0.0
 
         result = self._invoke_quantize_order(
             side=side,
@@ -9877,9 +9666,7 @@ class ExecutionSimulator:
             return 0.0, reason
 
         if filters.qty_step > 0.0:
-            snapped_qty = self._snap_qty_with_tolerance(
-                qty_quantized, filters.qty_step, qty_tol
-            )
+            snapped_qty = self._snap_qty_with_tolerance(qty_quantized, filters.qty_step, qty_tol)
             if abs(qty_quantized - snapped_qty) > qty_tol:
                 reason = FilterRejectionReason(
                     code="LOT_SIZE",
@@ -9974,10 +9761,7 @@ class ExecutionSimulator:
                 )
                 return 0.0, reason
 
-            if (
-                filters.qty_max < float("inf")
-                and qty_for_notional - qty_tol > filters.qty_max
-            ):
+            if filters.qty_max < float("inf") and qty_for_notional - qty_tol > filters.qty_max:
                 reason = FilterRejectionReason(
                     code="LOT_SIZE",
                     message="Quantity above maximum",
@@ -10004,10 +9788,7 @@ class ExecutionSimulator:
                     return 0.0, reason
 
         notional = abs(ref_val * qty_for_notional)
-        if (
-            not math.isfinite(notional)
-            or notional + base_tolerance < filters.min_notional
-        ):
+        if not math.isfinite(notional) or notional + base_tolerance < filters.min_notional:
             reason = FilterRejectionReason(
                 code="MIN_NOTIONAL",
                 message="Notional below minimum",
@@ -10036,9 +9817,7 @@ class ExecutionSimulator:
         ref_ppbs = self._resolve_filter_reference(ref_price)
         enforce_ppbs = bool(self.enforce_ppbs and validations_enabled)
         ref_for_quant = (
-            float(ref_ppbs)
-            if ref_ppbs is not None and math.isfinite(ref_ppbs)
-            else price_raw
+            float(ref_ppbs) if ref_ppbs is not None and math.isfinite(ref_ppbs) else price_raw
         )
 
         result = self._invoke_quantize_order(
@@ -10143,9 +9922,7 @@ class ExecutionSimulator:
             qty_quantized = float(qty_raw)
             if quantizer is not None:
                 try:
-                    price_quantized = float(
-                        self.quantizer.quantize_price(self.symbol, price_raw)
-                    )
+                    price_quantized = float(self.quantizer.quantize_price(self.symbol, price_raw))
                 except Exception as exc:
                     reason = FilterRejectionReason(
                         code="PRICE_FILTER",
@@ -10158,9 +9935,7 @@ class ExecutionSimulator:
                     )
                     return 0.0, 0.0, reason
                 try:
-                    qty_quantized = float(
-                        self.quantizer.quantize_qty(self.symbol, qty_raw)
-                    )
+                    qty_quantized = float(self.quantizer.quantize_qty(self.symbol, qty_raw))
                 except Exception as exc:
                     reason = FilterRejectionReason(
                         code="LOT_SIZE",
@@ -10335,9 +10110,7 @@ class ExecutionSimulator:
             return price_quantized, 0.0, reason
 
         if filters.qty_step > 0.0:
-            snapped_qty = self._snap_qty_with_tolerance(
-                qty_quantized, filters.qty_step, qty_tol
-            )
+            snapped_qty = self._snap_qty_with_tolerance(qty_quantized, filters.qty_step, qty_tol)
             if abs(qty_quantized - snapped_qty) > qty_tol:
                 reason = FilterRejectionReason(
                     code="LOT_SIZE",
@@ -10387,9 +10160,7 @@ class ExecutionSimulator:
             if quantizer is not None:
                 try:
                     qty_for_notional = float(
-                        quantizer.clamp_notional(
-                            self.symbol, price_for_notional, qty_quantized
-                        )
+                        quantizer.clamp_notional(self.symbol, price_for_notional, qty_quantized)
                     )
                 except ValueError as exc:
                     reason = FilterRejectionReason(
@@ -10442,10 +10213,7 @@ class ExecutionSimulator:
                 )
                 return price_quantized, 0.0, reason
 
-            if (
-                filters.qty_max < float("inf")
-                and qty_for_notional - qty_tol > filters.qty_max
-            ):
+            if filters.qty_max < float("inf") and qty_for_notional - qty_tol > filters.qty_max:
                 reason = FilterRejectionReason(
                     code="LOT_SIZE",
                     message="Quantity above maximum",
@@ -10473,10 +10241,7 @@ class ExecutionSimulator:
                     )
                     return price_quantized, 0.0, reason
             notional = abs(price_for_notional * qty_for_notional)
-            if (
-                not math.isfinite(notional)
-                or notional + base_tolerance < filters.min_notional
-            ):
+            if not math.isfinite(notional) or notional + base_tolerance < filters.min_notional:
                 reason = FilterRejectionReason(
                     code="MIN_NOTIONAL",
                     message="Notional below minimum",
@@ -10705,22 +10470,14 @@ class ExecutionSimulator:
                 side = "BUY" if is_buy else "SELL"
                 qty_raw = abs(float(getattr(proto, "volume_frac", 0.0)))
                 parent_latency_src: Any = (
-                    p.intrabar_latency_ms
-                    if p.intrabar_latency_ms is not None
-                    else p.lat_ms
+                    p.intrabar_latency_ms if p.intrabar_latency_ms is not None else p.lat_ms
                 )
                 parent_latency = self._intrabar_latency_ms(parent_latency_src)
                 parent_timeframe = self._resolve_intrabar_timeframe(ts)
-                parent_fraction = self._intrabar_time_fraction(
-                    parent_latency, parent_timeframe
-                )
+                parent_fraction = self._intrabar_time_fraction(parent_latency, parent_timeframe)
                 ref_market: Optional[float] = None
-                intrabar_parent_ref = self._intrabar_reference_price(
-                    side, parent_fraction
-                )
-                if intrabar_parent_ref is not None and math.isfinite(
-                    float(intrabar_parent_ref)
-                ):
+                intrabar_parent_ref = self._intrabar_reference_price(side, parent_fraction)
+                if intrabar_parent_ref is not None and math.isfinite(float(intrabar_parent_ref)):
                     ref_market = float(intrabar_parent_ref)
                 else:
                     try:
@@ -10731,9 +10488,7 @@ class ExecutionSimulator:
                     _cancel(p.client_order_id)
                     continue
 
-                qty_total, rejection = self._apply_filters_market(
-                    side, qty_raw, ref_market
-                )
+                qty_total, rejection = self._apply_filters_market(side, qty_raw, ref_market)
                 if rejection is not None or qty_total <= 0.0:
                     self._log_filter_rejection(rejection)
                     if rejection is not None:
@@ -10745,9 +10500,7 @@ class ExecutionSimulator:
                             )
                         )
                         self._record_filter_rejection(rejection, "MARKET")
-                    reason_code = (
-                        rejection.code if rejection is not None else "FILTER"
-                    )
+                    reason_code = rejection.code if rejection is not None else "FILTER"
                     _cancel(p.client_order_id, reason_code)
                     continue
 
@@ -10795,9 +10548,7 @@ class ExecutionSimulator:
                                     order_type="MARKET",
                                 )
                             )
-                            self._record_filter_rejection(
-                                post_risk_rejection, "MARKET"
-                            )
+                            self._record_filter_rejection(post_risk_rejection, "MARKET")
                         reason_code = (
                             post_risk_rejection.code
                             if post_risk_rejection is not None
@@ -10809,13 +10560,9 @@ class ExecutionSimulator:
                     qty_total = float(qty_validated)
 
                 cap_base_per_bar = self._reset_bar_capacity_if_needed(ts)
-                cap_enforced = bool(
-                    self._bar_cap_base_enabled and cap_base_per_bar > 0.0
-                )
+                cap_enforced = bool(self._bar_cap_base_enabled and cap_base_per_bar > 0.0)
                 symbol_key = str(self.symbol).upper() if self.symbol is not None else ""
-                used_base_now = max(
-                    0.0, float(self._used_base_in_bar.get(symbol_key, 0.0))
-                )
+                used_base_now = max(0.0, float(self._used_base_in_bar.get(symbol_key, 0.0)))
                 if cap_enforced:
                     remaining_total = max(0.0, cap_base_per_bar - used_base_now)
                     if remaining_total <= 0.0:
@@ -10906,13 +10653,9 @@ class ExecutionSimulator:
                 notional = abs(qty_total) * float(ref_market)
                 executor = self._executor
                 if executor is None:
-                    thr = float(
-                        self._execution_cfg.get("notional_threshold", float("inf"))
-                    )
+                    thr = float(self._execution_cfg.get("notional_threshold", float("inf")))
                     if notional > thr:
-                        algo = str(
-                            self._execution_cfg.get("large_order_algo", "TWAP")
-                        ).upper()
+                        algo = str(self._execution_cfg.get("large_order_algo", "TWAP")).upper()
                         executor = make_executor(algo, self._execution_cfg)
                     else:
                         executor = TakerExecutor()
@@ -11012,9 +10755,7 @@ class ExecutionSimulator:
                         p.lat_ms, child_offset_ms=child_offset
                     )
                     child_timeframe = self._resolve_intrabar_timeframe(base_ts)
-                    child_fraction = self._intrabar_time_fraction(
-                        child_latency, child_timeframe
-                    )
+                    child_fraction = self._intrabar_time_fraction(child_latency, child_timeframe)
                     order_seq = self._next_order_seq()
                     intrabar_child_price, intrabar_clipped, intrabar_frac = (
                         self._compute_intrabar_price(
@@ -11061,15 +10802,14 @@ class ExecutionSimulator:
                         0.0, float(self._used_base_in_bar.get(symbol_key, 0.0))
                     )
                     if cap_enforced:
-                        remaining_base = max(
-                            0.0, cap_base_per_bar - used_base_before_child
-                        )
+                        remaining_base = max(0.0, cap_base_per_bar - used_base_before_child)
                         fill_qty_base = min(q_child, remaining_base)
                     else:
                         remaining_base = float("inf")
                         fill_qty_base = q_child
 
                     if self.quantizer is not None:
+
                         def _abort_child(reason: FilterRejectionReason) -> bool:
                             self._log_filter_rejection(reason)
                             filter_rejections_step.append(
@@ -11086,9 +10826,7 @@ class ExecutionSimulator:
 
                         quant_error = None
                         try:
-                            fill_qty_base = self.quantizer.quantize_qty(
-                                self.symbol, fill_qty_base
-                            )
+                            fill_qty_base = self.quantizer.quantize_qty(self.symbol, fill_qty_base)
                         except ValueError as exc:
                             if logger.isEnabledFor(logging.DEBUG):
                                 logger.debug(
@@ -11228,9 +10966,7 @@ class ExecutionSimulator:
                                     quant_error = FilterRejectionReason(
                                         code="LOT_SIZE",
                                         message=str(exc),
-                                        constraint={
-                                            "quantity": max(0.0, remaining_base)
-                                        },
+                                        constraint={"quantity": max(0.0, remaining_base)},
                                     )
                                 except Exception as exc:
                                     if logger.isEnabledFor(logging.DEBUG):
@@ -11307,9 +11043,7 @@ class ExecutionSimulator:
 
                     fill_qty_base = self._limit_by_intrabar_volume(fill_qty_base)
                     if cap_enforced:
-                        remaining_base = max(
-                            0.0, cap_base_per_bar - used_base_before_child
-                        )
+                        remaining_base = max(0.0, cap_base_per_bar - used_base_before_child)
                         fill_qty_base = min(fill_qty_base, remaining_base)
 
                     if cap_enforced and fill_qty_base <= 0.0:
@@ -11369,14 +11103,9 @@ class ExecutionSimulator:
                             else ref_child_price
                         )
                         filled_price = (
-                            float(base_price)
-                            if base_price is not None
-                            else float(ref_child_price)
+                            float(base_price) if base_price is not None else float(ref_child_price)
                         )
-                    elif (
-                        str(getattr(self, "execution_profile", "")).upper()
-                        == "MKT_OPEN_NEXT_H1"
-                    ):
+                    elif str(getattr(self, "execution_profile", "")).upper() == "MKT_OPEN_NEXT_H1":
                         if self._next_h1_open_price is not None:
                             filled_price = float(self._next_h1_open_price)
                         else:
@@ -11386,20 +11115,14 @@ class ExecutionSimulator:
                     else:
                         if side == "BUY":
                             base_price = (
-                                self._last_ask
-                                if self._last_ask is not None
-                                else ref_child_price
+                                self._last_ask if self._last_ask is not None else ref_child_price
                             )
                         else:
                             base_price = (
-                                self._last_bid
-                                if self._last_bid is not None
-                                else ref_child_price
+                                self._last_bid if self._last_bid is not None else ref_child_price
                             )
                         filled_price = (
-                            float(base_price)
-                            if base_price is not None
-                            else float(ref_child_price)
+                            float(base_price) if base_price is not None else float(ref_child_price)
                         )
 
                     # слиппедж на ребёнка
@@ -11408,9 +11131,7 @@ class ExecutionSimulator:
                     vf = self._last_vol_factor
                     liq_override = child.liquidity_hint
                     liq = (
-                        float(liq_override)
-                        if (liq_override is not None)
-                        else self._last_liquidity
+                        float(liq_override) if (liq_override is not None) else self._last_liquidity
                     )
                     liq = self._limit_optional_by_intrabar_volume(liq)
                     pre_slip_price = float(filled_price)
@@ -11462,9 +11183,7 @@ class ExecutionSimulator:
                             trade_cost=trade_cost,
                         )
                     elif fallback_slip is not None:
-                        blended = self._blend_expected_spread(
-                            taker_bps=fallback_slip
-                        )
+                        blended = self._blend_expected_spread(taker_bps=fallback_slip)
                         if blended is None:
                             slip_bps = float(fallback_slip)
                         else:
@@ -11485,9 +11204,11 @@ class ExecutionSimulator:
                                 "intrabar fill lat=%sms t=%.4f price=%.6f base_clip=%s final_clip=%s final=%.6f seq=%s",
                                 int(lat_ms),
                                 float(intrabar_frac),
-                                float(intrabar_base_price)
-                                if intrabar_base_price is not None
-                                else float(ref_child_price),
+                                (
+                                    float(intrabar_base_price)
+                                    if intrabar_base_price is not None
+                                    else float(ref_child_price)
+                                ),
                                 bool(intrabar_clipped),
                                 bool(final_clip),
                                 float(filled_price),
@@ -11519,9 +11240,7 @@ class ExecutionSimulator:
 
                     fill_qty_base = self._limit_by_intrabar_volume(fill_qty_base)
                     if cap_enforced:
-                        remaining_base = max(
-                            0.0, cap_base_per_bar - used_base_before_child
-                        )
+                        remaining_base = max(0.0, cap_base_per_bar - used_base_before_child)
                         fill_qty_base = min(fill_qty_base, remaining_base)
 
                     q_child = float(fill_qty_base)
@@ -11553,9 +11272,7 @@ class ExecutionSimulator:
                     self._fees_apply_to_cumulative(fee)
 
                     # обновить позицию с расчётом реализованного PnL
-                    _ = self._apply_trade_inventory(
-                        side=side, price=filled_price, qty=q_child
-                    )
+                    _ = self._apply_trade_inventory(side=side, price=filled_price, qty=q_child)
 
                     trade = ExecTrade(
                         ts=self._trade_timestamp_with_close_lag(ts_fill),
@@ -11590,9 +11307,7 @@ class ExecutionSimulator:
                         )
                     remaining_capacity: Optional[float] = None
                     if cap_enforced:
-                        remaining_capacity = max(
-                            0.0, cap_base_per_bar - used_base_after_child
-                        )
+                        remaining_capacity = max(0.0, cap_base_per_bar - used_base_after_child)
                     self._schedule_child_remainder(
                         child_queue,
                         cadence_map,
@@ -11609,15 +11324,11 @@ class ExecutionSimulator:
                 side = "BUY" if is_buy else "SELL"
                 qty_raw = abs(float(getattr(proto, "volume_frac", 0.0)))
                 limit_latency_src: Any = (
-                    p.intrabar_latency_ms
-                    if p.intrabar_latency_ms is not None
-                    else p.lat_ms
+                    p.intrabar_latency_ms if p.intrabar_latency_ms is not None else p.lat_ms
                 )
                 limit_latency = self._intrabar_latency_ms(limit_latency_src)
                 limit_timeframe = self._resolve_intrabar_timeframe(ts)
-                limit_fraction = self._intrabar_time_fraction(
-                    limit_latency, limit_timeframe
-                )
+                limit_fraction = self._intrabar_time_fraction(limit_latency, limit_timeframe)
                 order_seq = self._next_order_seq()
                 (
                     limit_intrabar_price,
@@ -11631,9 +11342,7 @@ class ExecutionSimulator:
                     order_seq=order_seq,
                 )
                 ref_limit: Optional[float] = None
-                if limit_intrabar_price is not None and math.isfinite(
-                    float(limit_intrabar_price)
-                ):
+                if limit_intrabar_price is not None and math.isfinite(float(limit_intrabar_price)):
                     ref_limit = float(limit_intrabar_price)
                 else:
                     try:
@@ -11672,18 +11381,14 @@ class ExecutionSimulator:
                     new_order_ids.append(int(p.client_order_id))
                     new_order_pos.append(0)
                     if ttl_steps > 0:
-                        self._ttl_orders.append(
-                            (int(p.client_order_id), int(ttl_steps))
-                        )
+                        self._ttl_orders.append((int(p.client_order_id), int(ttl_steps)))
 
                 if abs_price is None:
                     _register_unfilled_limit()
                     continue
 
                 if not explicit_price:
-                    side_best = (
-                        self._last_ask if side == "BUY" else self._last_bid
-                    )
+                    side_best = self._last_ask if side == "BUY" else self._last_bid
                     if side_best is None:
                         _register_unfilled_limit()
                         continue
@@ -11702,20 +11407,14 @@ class ExecutionSimulator:
                             )
                         )
                         self._record_filter_rejection(rejection, "LIMIT")
-                    reason_code = (
-                        rejection.code if rejection is not None else "FILTER"
-                    )
+                    reason_code = rejection.code if rejection is not None else "FILTER"
                     _cancel(p.client_order_id, reason_code)
                     continue
 
                 qty_initial_limit = float(qty_q)
                 cap_base_per_bar = self._reset_bar_capacity_if_needed(ts)
-                cap_enforced = bool(
-                    self._bar_cap_base_enabled and cap_base_per_bar > 0.0
-                )
-                symbol_key = (
-                    str(self.symbol).upper() if self.symbol is not None else ""
-                )
+                cap_enforced = bool(self._bar_cap_base_enabled and cap_base_per_bar > 0.0)
+                symbol_key = str(self.symbol).upper() if self.symbol is not None else ""
 
                 filled = False
                 maker_fill = False
@@ -11728,9 +11427,7 @@ class ExecutionSimulator:
                 # For high-value assets (BTC at $100,000), fixed 1e-12 tolerance
                 # is smaller than machine epsilon (~2.2e-11), causing missed fills.
                 # See: _compute_price_tolerance docstring for details.
-                tolerance = self._compute_price_tolerance(
-                    limit_price_value, intrabar_fill_price
-                )
+                tolerance = self._compute_price_tolerance(limit_price_value, intrabar_fill_price)
                 best_bid = self._finite_float(self._last_bid)
                 best_ask = self._finite_float(self._last_ask)
                 if best_bid is None and best_ask is None:
@@ -11766,7 +11463,7 @@ class ExecutionSimulator:
                             #   - Если bar_low = 100.5 → filled = False (цена не достигла)
                             #
                             # Это КОРРЕКТНАЯ симуляция maker orders. Не путать с taker fills!
-                            # Reference: CLAUDE.md → "НЕ БАГИ" → #16
+                            # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #16
                             # ═══════════════════════════════════════════════════════════════
                             filled_price = float(price_q)
                             liquidity_role = "maker"
@@ -11801,9 +11498,7 @@ class ExecutionSimulator:
                                 filled = False
 
                 if filled and liquidity_role == "taker":
-                    used_base_before = max(
-                        0.0, float(self._used_base_in_bar.get(symbol_key, 0.0))
-                    )
+                    used_base_before = max(0.0, float(self._used_base_in_bar.get(symbol_key, 0.0)))
                     remaining_base = (
                         max(0.0, cap_base_per_bar - used_base_before)
                         if cap_enforced
@@ -11830,16 +11525,12 @@ class ExecutionSimulator:
                             _cancel(p.client_order_id, "BAR_CAPACITY_BASE")
                             continue
                     else:
-                        filled_price, final_clip = self._clip_to_bar_range(
-                            filled_price
-                        )
+                        filled_price, final_clip = self._clip_to_bar_range(filled_price)
                         if cap_enforced and exec_qty > 0.0:
-                            normalized_qty, norm_rejection = (
-                                self._normalize_capacity_quantity(
-                                    exec_qty,
-                                    remaining_base=remaining_base,
-                                    ref_price=filled_price,
-                                )
+                            normalized_qty, norm_rejection = self._normalize_capacity_quantity(
+                                exec_qty,
+                                remaining_base=remaining_base,
+                                ref_price=filled_price,
                             )
                             if norm_rejection is not None or normalized_qty <= 0.0:
                                 if norm_rejection is not None:
@@ -11852,9 +11543,7 @@ class ExecutionSimulator:
                                             extra={"source": "BAR_CAPACITY"},
                                         )
                                     )
-                                    self._record_filter_rejection(
-                                        norm_rejection, "LIMIT"
-                                    )
+                                    self._record_filter_rejection(norm_rejection, "LIMIT")
                                     cancel_code = (
                                         norm_rejection.code
                                         if getattr(norm_rejection, "code", None)
@@ -11884,9 +11573,11 @@ class ExecutionSimulator:
                                     "intrabar fill lat=%sms t=%.4f price=%.6f base_clip=%s final_clip=%s final=%.6f seq=%s",
                                     int(limit_latency),
                                     float(limit_intrabar_frac),
-                                    float(intrabar_base_price)
-                                    if intrabar_base_price is not None
-                                    else float(price_q),
+                                    (
+                                        float(intrabar_base_price)
+                                        if intrabar_base_price is not None
+                                        else float(price_q)
+                                    ),
                                     bool(limit_intrabar_clipped),
                                     bool(final_clip),
                                     float(filled_price),
@@ -11901,24 +11592,14 @@ class ExecutionSimulator:
                         )
                         fee_total += float(fee)
                         self._fees_apply_to_cumulative(fee)
-                        _ = self._apply_trade_inventory(
-                            side=side, price=filled_price, qty=exec_qty
-                        )
-                        used_base_after = max(
-                            0.0, float(used_base_before + float(exec_qty))
-                        )
+                        _ = self._apply_trade_inventory(side=side, price=filled_price, qty=exec_qty)
+                        used_base_after = max(0.0, float(used_base_before + float(exec_qty)))
                         self._used_base_in_bar[symbol_key] = used_base_after
                         fill_ratio = (
-                            float(exec_qty) / qty_initial_limit
-                            if qty_initial_limit > 0.0
-                            else 0.0
+                            float(exec_qty) / qty_initial_limit if qty_initial_limit > 0.0 else 0.0
                         )
-                        capacity_reason = (
-                            "BAR_CAPACITY_BASE" if truncated_by_capacity else ""
-                        )
-                        exec_status = (
-                            "PARTIAL" if truncated_by_capacity else "FILLED"
-                        )
+                        capacity_reason = "BAR_CAPACITY_BASE" if truncated_by_capacity else ""
+                        exec_status = "PARTIAL" if truncated_by_capacity else "FILLED"
                         sbps = self._last_spread_bps
                         trade = ExecTrade(
                             ts=self._trade_timestamp_with_close_lag(ts),
@@ -11953,14 +11634,18 @@ class ExecutionSimulator:
                             )
                         remaining_capacity = None
                         if cap_enforced:
-                            remaining_capacity = max(
-                                0.0, cap_base_per_bar - used_base_after_child
-                            )
+                            remaining_capacity = max(0.0, cap_base_per_bar - used_base_after_child)
+                        # BUG: `plan_queue` and `original_planned_qty` are not bound in
+                        # this scope — this block was copied from the child-execution
+                        # path further down, where both exist. Reaching it raises
+                        # NameError. Left as-is pending a decision on whether the
+                        # limit path should schedule a child remainder at all; see
+                        # docs/AUDIT_2026-09.md section 9.2.
                         self._schedule_child_remainder(
-                            plan_queue,
+                            plan_queue,  # noqa: F821
                             cadence_map,
                             child=child,
-                            planned_qty=original_planned_qty,
+                            planned_qty=original_planned_qty,  # noqa: F821
                             executed_qty=float(exec_qty),
                             original_hint=hint_original,
                             bar_end_offset=bar_end_offset,
@@ -11982,9 +11667,7 @@ class ExecutionSimulator:
                         _cancel(p.client_order_id, tif)
                         continue
                     maker_qty_initial = float(qty_q)
-                    used_base_before = max(
-                        0.0, float(self._used_base_in_bar.get(symbol_key, 0.0))
-                    )
+                    used_base_before = max(0.0, float(self._used_base_in_bar.get(symbol_key, 0.0)))
                     remaining_base = (
                         max(0.0, cap_base_per_bar - used_base_before)
                         if cap_enforced
@@ -12008,16 +11691,12 @@ class ExecutionSimulator:
                             )
                         maker_fill = False
                     else:
-                        filled_price, final_clip = self._clip_to_bar_range(
-                            filled_price
-                        )
+                        filled_price, final_clip = self._clip_to_bar_range(filled_price)
                         if cap_enforced and qty_exec > 0.0:
-                            normalized_qty, norm_rejection = (
-                                self._normalize_capacity_quantity(
-                                    qty_exec,
-                                    remaining_base=remaining_base,
-                                    ref_price=filled_price,
-                                )
+                            normalized_qty, norm_rejection = self._normalize_capacity_quantity(
+                                qty_exec,
+                                remaining_base=remaining_base,
+                                ref_price=filled_price,
                             )
                             if norm_rejection is not None or normalized_qty <= 0.0:
                                 if norm_rejection is not None:
@@ -12030,9 +11709,7 @@ class ExecutionSimulator:
                                             extra={"source": "BAR_CAPACITY"},
                                         )
                                     )
-                                    self._record_filter_rejection(
-                                        norm_rejection, "LIMIT"
-                                    )
+                                    self._record_filter_rejection(norm_rejection, "LIMIT")
                                     cancel_code = (
                                         norm_rejection.code
                                         if getattr(norm_rejection, "code", None)
@@ -12057,9 +11734,11 @@ class ExecutionSimulator:
                                     "intrabar fill lat=%sms t=%.4f price=%.6f base_clip=%s final_clip=%s final=%.6f seq=%s",
                                     int(limit_latency),
                                     float(limit_intrabar_frac),
-                                    float(intrabar_base_price)
-                                    if intrabar_base_price is not None
-                                    else float(price_q),
+                                    (
+                                        float(intrabar_base_price)
+                                        if intrabar_base_price is not None
+                                        else float(price_q)
+                                    ),
                                     bool(limit_intrabar_clipped),
                                     bool(final_clip),
                                     float(filled_price),
@@ -12074,22 +11753,12 @@ class ExecutionSimulator:
                         )
                         fee_total += float(fee)
                         self._fees_apply_to_cumulative(fee)
-                        _ = self._apply_trade_inventory(
-                            side=side, price=filled_price, qty=qty_q
-                        )
-                        used_base_after = max(
-                            0.0, float(used_base_before + float(qty_q))
-                        )
+                        _ = self._apply_trade_inventory(side=side, price=filled_price, qty=qty_q)
+                        used_base_after = max(0.0, float(used_base_before + float(qty_q)))
                         self._used_base_in_bar[symbol_key] = used_base_after
-                        fill_ratio = (
-                            qty_q / maker_qty_initial if maker_qty_initial > 0.0 else 0.0
-                        )
-                        capacity_reason = (
-                            "BAR_CAPACITY_BASE" if truncated_by_capacity else ""
-                        )
-                        exec_status = (
-                            "PARTIAL" if truncated_by_capacity else "FILLED"
-                        )
+                        fill_ratio = qty_q / maker_qty_initial if maker_qty_initial > 0.0 else 0.0
+                        capacity_reason = "BAR_CAPACITY_BASE" if truncated_by_capacity else ""
+                        exec_status = "PARTIAL" if truncated_by_capacity else "FILLED"
                         sbps = self._last_spread_bps
                         trade = ExecTrade(
                             ts=self._trade_timestamp_with_close_lag(ts),
@@ -12124,14 +11793,18 @@ class ExecutionSimulator:
                             )
                         remaining_capacity = None
                         if cap_enforced:
-                            remaining_capacity = max(
-                                0.0, cap_base_per_bar - used_base_after
-                            )
+                            remaining_capacity = max(0.0, cap_base_per_bar - used_base_after)
+                        # BUG: `plan_queue` and `original_planned_qty` are not bound in
+                        # this scope — this block was copied from the child-execution
+                        # path further down, where both exist. Reaching it raises
+                        # NameError. Left as-is pending a decision on whether the
+                        # limit path should schedule a child remainder at all; see
+                        # docs/AUDIT_2026-09.md section 9.2.
                         self._schedule_child_remainder(
-                            plan_queue,
+                            plan_queue,  # noqa: F821
                             cadence_map,
                             child=child,
-                            planned_qty=original_planned_qty,
+                            planned_qty=original_planned_qty,  # noqa: F821
                             executed_qty=float(qty_q),
                             original_hint=hint_original,
                             bar_end_offset=bar_end_offset,
@@ -12156,9 +11829,7 @@ class ExecutionSimulator:
                                 if hasattr(self.lob, "set_order_ttl"):
                                     try:
                                         ttl_set = bool(
-                                            self.lob.set_order_ttl(
-                                                int(oid), int(ttl_steps)
-                                            )
+                                            self.lob.set_order_ttl(int(oid), int(ttl_steps))
                                         )
                                     except Exception:
                                         ttl_set = False
@@ -12170,9 +11841,7 @@ class ExecutionSimulator:
                     new_order_ids.append(int(p.client_order_id))
                     new_order_pos.append(0)
                     if ttl_steps > 0:
-                        self._ttl_orders.append(
-                            (int(p.client_order_id), int(ttl_steps))
-                        )
+                        self._ttl_orders.append((int(p.client_order_id), int(ttl_steps)))
                 continue
 
             if atype == ActionType.CANCEL_ALL:
@@ -12293,9 +11962,7 @@ class ExecutionSimulator:
                     )
 
             # комиссия
-            fee = self._compute_trade_fee(
-                side=side, price=filled_price, qty=qty, liquidity="taker"
-            )
+            fee = self._compute_trade_fee(side=side, price=filled_price, qty=qty, liquidity="taker")
             fee_total += float(fee)
             self._fees_apply_to_cumulative(fee)
 
@@ -12398,19 +12065,11 @@ class ExecutionSimulator:
 
         if trades:
             last_trade = trades[-1]
-            report.cap_base_per_bar = float(
-                getattr(last_trade, "cap_base_per_bar", 0.0)
-            )
-            report.used_base_before = float(
-                getattr(last_trade, "used_base_before", 0.0)
-            )
-            report.used_base_after = float(
-                getattr(last_trade, "used_base_after", 0.0)
-            )
+            report.cap_base_per_bar = float(getattr(last_trade, "cap_base_per_bar", 0.0))
+            report.used_base_before = float(getattr(last_trade, "used_base_before", 0.0))
+            report.used_base_after = float(getattr(last_trade, "used_base_after", 0.0))
             report.fill_ratio = float(getattr(last_trade, "fill_ratio", 0.0))
-            report.capacity_reason = str(
-                getattr(last_trade, "capacity_reason", "") or ""
-            )
+            report.capacity_reason = str(getattr(last_trade, "capacity_reason", "") or "")
             report.exec_status = str(getattr(last_trade, "exec_status", "") or "")
         else:
             cap_val = locals().get("cap_base_per_bar", 0.0)  # type: ignore[arg-type]
@@ -12442,9 +12101,7 @@ class ExecutionSimulator:
         else:
             report.expected_fee_bps = 0.0
         report.expected_spread_bps = (
-            float(expected_spread_bps)
-            if expected_spread_bps is not None
-            else None
+            float(expected_spread_bps) if expected_spread_bps is not None else None
         )
         report.expected_cost_components = dict(cost_components)
 
@@ -12471,9 +12128,7 @@ class ExecutionSimulator:
         return report
 
     # Совместимость с интерфейсами некоторых обёрток
-    def _finalize_close_lag_report(
-        self, report: SimStepReport, ts_int: int
-    ) -> SimStepReport:
+    def _finalize_close_lag_report(self, report: SimStepReport, ts_int: int) -> SimStepReport:
         pending_queue = self._close_lag_pending
         ready_report: Optional[SimStepReport] = None
         while pending_queue:
@@ -12651,9 +12306,7 @@ class ExecutionSimulator:
         self._last_vol_raw = metrics
         range_ratio_bps_val: Optional[float] = None
         if metrics is not None:
-            range_ratio_bps_val = self._non_negative_float(
-                metrics.get("range_ratio_bps")
-            )
+            range_ratio_bps_val = self._non_negative_float(metrics.get("range_ratio_bps"))
             if range_ratio_bps_val is None:
                 ratio_hint = self._non_negative_float(metrics.get("range_ratio"))
                 if ratio_hint is not None:
@@ -12676,9 +12329,7 @@ class ExecutionSimulator:
         if timeframe_hint is None:
             timeframe_hint = self._resolve_intrabar_timeframe(ts)
         adv_capacity = self._adv_bar_capacity(self.symbol, timeframe_hint)
-        adv_capacity_norm = (
-            max(0.0, float(adv_capacity)) if adv_capacity is not None else None
-        )
+        adv_capacity_norm = max(0.0, float(adv_capacity)) if adv_capacity is not None else None
         if (
             adv_capacity_norm is not None
             and adv_capacity_norm <= 0.0
@@ -12695,10 +12346,7 @@ class ExecutionSimulator:
         self._last_bar_low = bar_low_val
         self._last_bar_close = bar_close_val
         base_spread: Optional[float] = None
-        if (
-            compute_spread_bps_from_quotes is not None
-            and self.slippage_cfg is not None
-        ):
+        if compute_spread_bps_from_quotes is not None and self.slippage_cfg is not None:
             try:
                 base_spread = compute_spread_bps_from_quotes(
                     bid=self._last_bid,
@@ -12797,22 +12445,14 @@ class ExecutionSimulator:
                 ref_parent = self._last_ref_price
                 parent_latency = self._intrabar_latency_ms(0)
                 parent_timeframe = self._resolve_intrabar_timeframe(ts)
-                parent_fraction = self._intrabar_time_fraction(
-                    parent_latency, parent_timeframe
-                )
+                parent_fraction = self._intrabar_time_fraction(parent_latency, parent_timeframe)
                 ref_market: Optional[float] = None
-                intrabar_parent_ref = self._intrabar_reference_price(
-                    side, parent_fraction
-                )
-                if intrabar_parent_ref is not None and math.isfinite(
-                    float(intrabar_parent_ref)
-                ):
+                intrabar_parent_ref = self._intrabar_reference_price(side, parent_fraction)
+                if intrabar_parent_ref is not None and math.isfinite(float(intrabar_parent_ref)):
                     ref_market = float(intrabar_parent_ref)
                 else:
                     try:
-                        ref_market = (
-                            float(ref_parent) if ref_parent is not None else None
-                        )
+                        ref_market = float(ref_parent) if ref_parent is not None else None
                     except (TypeError, ValueError):
                         ref_market = None
                 if ref_market is None or not math.isfinite(ref_market):
@@ -12820,9 +12460,7 @@ class ExecutionSimulator:
                     continue
 
                 # применить фильтры рынка (квантизация/minNotional и т.п. внутри вспом. функции)
-                qty_total, rejection = self._apply_filters_market(
-                    side, qty_raw, ref_market
-                )
+                qty_total, rejection = self._apply_filters_market(side, qty_raw, ref_market)
                 if rejection is not None or qty_total <= 0.0:
                     self._log_filter_rejection(rejection)
                     if rejection is not None:
@@ -12834,9 +12472,7 @@ class ExecutionSimulator:
                             )
                         )
                         self._record_filter_rejection(rejection, "MARKET")
-                    reason_code = (
-                        rejection.code if rejection is not None else "FILTER"
-                    )
+                    reason_code = rejection.code if rejection is not None else "FILTER"
                     _cancel(cli_id, reason_code)
                     continue
 
@@ -12880,9 +12516,7 @@ class ExecutionSimulator:
                                     order_type="MARKET",
                                 )
                             )
-                            self._record_filter_rejection(
-                                post_risk_rejection, "MARKET"
-                            )
+                            self._record_filter_rejection(post_risk_rejection, "MARKET")
                         reason_code = (
                             post_risk_rejection.code
                             if post_risk_rejection is not None
@@ -12894,13 +12528,9 @@ class ExecutionSimulator:
                     qty_total = float(qty_validated)
 
                 cap_base_per_bar = self._reset_bar_capacity_if_needed(ts)
-                cap_enforced = bool(
-                    self._bar_cap_base_enabled and cap_base_per_bar > 0.0
-                )
+                cap_enforced = bool(self._bar_cap_base_enabled and cap_base_per_bar > 0.0)
                 symbol_key = str(self.symbol).upper() if self.symbol is not None else ""
-                used_base_now = max(
-                    0.0, float(self._used_base_in_bar.get(symbol_key, 0.0))
-                )
+                used_base_now = max(0.0, float(self._used_base_in_bar.get(symbol_key, 0.0)))
                 if cap_enforced:
                     remaining_total = max(0.0, cap_base_per_bar - used_base_now)
                     if remaining_total <= 0.0:
@@ -12986,9 +12616,7 @@ class ExecutionSimulator:
                     cap_base_per_bar = 0.0
 
                 # планирование исполнения
-                executor = (
-                    self._executor if self._executor is not None else TakerExecutor()
-                )
+                executor = self._executor if self._executor is not None else TakerExecutor()
                 timeframe_int, bar_start_ts, bar_end_ts = self._current_bar_window(ts)
                 snapshot = {
                     "bid": self._last_bid,
@@ -13030,9 +12658,7 @@ class ExecutionSimulator:
                     idx += 1
                     child_offset = self._child_offset(child)
                     base_ts = int(ts + child_offset)
-                    original_planned_qty = max(
-                        0.0, float(getattr(child, "qty", 0.0))
-                    )
+                    original_planned_qty = max(0.0, float(getattr(child, "qty", 0.0)))
                     q_child = self._limit_by_intrabar_volume(original_planned_qty)
                     if q_child <= 0.0:
                         continue
@@ -13104,9 +12730,7 @@ class ExecutionSimulator:
                         latency_payload, child_offset_ms=child_offset
                     )
                     child_timeframe = self._resolve_intrabar_timeframe(base_ts)
-                    child_fraction = self._intrabar_time_fraction(
-                        child_latency, child_timeframe
-                    )
+                    child_fraction = self._intrabar_time_fraction(child_latency, child_timeframe)
                     order_seq = self._next_order_seq()
                     intrabar_child_price, intrabar_clipped, intrabar_frac = (
                         self._compute_intrabar_price(
@@ -13129,15 +12753,14 @@ class ExecutionSimulator:
                         0.0, float(self._used_base_in_bar.get(symbol_key, 0.0))
                     )
                     if cap_enforced:
-                        remaining_base = max(
-                            0.0, cap_base_per_bar - used_base_before_child
-                        )
+                        remaining_base = max(0.0, cap_base_per_bar - used_base_before_child)
                         fill_qty_base = min(q_child, remaining_base)
                     else:
                         remaining_base = float("inf")
                         fill_qty_base = q_child
 
                     if self.quantizer is not None:
+
                         def _abort_child(reason: FilterRejectionReason) -> bool:
                             self._log_filter_rejection(reason)
                             filter_rejections_step.append(
@@ -13154,9 +12777,7 @@ class ExecutionSimulator:
 
                         quant_error = None
                         try:
-                            fill_qty_base = self.quantizer.quantize_qty(
-                                self.symbol, fill_qty_base
-                            )
+                            fill_qty_base = self.quantizer.quantize_qty(self.symbol, fill_qty_base)
                         except ValueError as exc:
                             if logger.isEnabledFor(logging.DEBUG):
                                 logger.debug(
@@ -13296,9 +12917,7 @@ class ExecutionSimulator:
                                     quant_error = FilterRejectionReason(
                                         code="LOT_SIZE",
                                         message=str(exc),
-                                        constraint={
-                                            "quantity": max(0.0, remaining_base)
-                                        },
+                                        constraint={"quantity": max(0.0, remaining_base)},
                                     )
                                 except Exception as exc:
                                     if logger.isEnabledFor(logging.DEBUG):
@@ -13375,9 +12994,7 @@ class ExecutionSimulator:
 
                     fill_qty_base = self._limit_by_intrabar_volume(fill_qty_base)
                     if cap_enforced:
-                        remaining_base = max(
-                            0.0, cap_base_per_bar - used_base_before_child
-                        )
+                        remaining_base = max(0.0, cap_base_per_bar - used_base_before_child)
                         fill_qty_base = min(fill_qty_base, remaining_base)
 
                     if cap_enforced and fill_qty_base <= 0.0:
@@ -13436,33 +13053,24 @@ class ExecutionSimulator:
                             else ref_child_price
                         )
                         filled_price = (
-                            float(base_price)
-                            if base_price is not None
-                            else float(ref_child_price)
+                            float(base_price) if base_price is not None else float(ref_child_price)
                         )
                     elif (
-                        str(getattr(self, "execution_profile", "")).upper()
-                        == "MKT_OPEN_NEXT_H1"
+                        str(getattr(self, "execution_profile", "")).upper() == "MKT_OPEN_NEXT_H1"
                         and self._next_h1_open_price is not None
                     ):
                         filled_price = float(self._next_h1_open_price)
                     else:
                         if side == "BUY":
                             base_price = (
-                                self._last_ask
-                                if self._last_ask is not None
-                                else ref_child_price
+                                self._last_ask if self._last_ask is not None else ref_child_price
                             )
                         else:
                             base_price = (
-                                self._last_bid
-                                if self._last_bid is not None
-                                else ref_child_price
+                                self._last_bid if self._last_bid is not None else ref_child_price
                             )
                         filled_price = (
-                            float(base_price)
-                            if base_price is not None
-                            else float(ref_child_price)
+                            float(base_price) if base_price is not None else float(ref_child_price)
                         )
                     slip_bps = 0.0
                     sbps = self._last_spread_bps
@@ -13507,9 +13115,7 @@ class ExecutionSimulator:
                             trade_cost=trade_cost,
                         )
                     elif fallback_slip is not None:
-                        blended = self._blend_expected_spread(
-                            taker_bps=fallback_slip
-                        )
+                        blended = self._blend_expected_spread(taker_bps=fallback_slip)
                         if blended is None:
                             slip_bps = float(fallback_slip)
                         else:
@@ -13530,9 +13136,11 @@ class ExecutionSimulator:
                                 "intrabar fill lat=%sms t=%.4f price=%.6f base_clip=%s final_clip=%s final=%.6f seq=%s",
                                 int(lat_ms),
                                 float(intrabar_frac),
-                                float(intrabar_base_price)
-                                if intrabar_base_price is not None
-                                else float(ref_child_price),
+                                (
+                                    float(intrabar_base_price)
+                                    if intrabar_base_price is not None
+                                    else float(ref_child_price)
+                                ),
                                 bool(intrabar_clipped),
                                 bool(final_clip),
                                 float(filled_price),
@@ -13564,9 +13172,7 @@ class ExecutionSimulator:
 
                     fill_qty_base = self._limit_by_intrabar_volume(fill_qty_base)
                     if cap_enforced:
-                        remaining_base = max(
-                            0.0, cap_base_per_bar - used_base_before_child
-                        )
+                        remaining_base = max(0.0, cap_base_per_bar - used_base_before_child)
                         fill_qty_base = min(fill_qty_base, remaining_base)
 
                     q_child = float(fill_qty_base)
@@ -13598,9 +13204,7 @@ class ExecutionSimulator:
                     self._fees_apply_to_cumulative(fee)
 
                     # инвентарь + реализованный PnL
-                    _ = self._apply_trade_inventory(
-                        side=side, price=filled_price, qty=q_child
-                    )
+                    _ = self._apply_trade_inventory(side=side, price=filled_price, qty=q_child)
 
                     # запись трейда
                     trade = ExecTrade(
@@ -13651,9 +13255,7 @@ class ExecutionSimulator:
             self.funding_cum += float(fc)
 
         # PnL/mark
-        mark_p = self._mark_price(
-            ref=self._last_ref_price, bid=self._last_bid, ask=self._last_ask
-        )
+        mark_p = self._mark_price(ref=self._last_ref_price, bid=self._last_bid, ask=self._last_ask)
         unrl = self._unrealized_pnl(mark_p)
         eq = float(self.realized_pnl_cum + unrl - self.fees_cum + self.funding_cum)
         if self._trade_log:

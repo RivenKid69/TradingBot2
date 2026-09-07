@@ -162,6 +162,7 @@ INCIDENT OCCURS
 Standard contract templates for EU financial entity clients are designed to include:
 
 **Article 30(2) - All Contracts (template provisions):**
+
 - [ ] Clear service description
 - [ ] Data processing/storage locations
 - [ ] Availability, authenticity, integrity, confidentiality provisions
@@ -173,6 +174,7 @@ Standard contract templates for EU financial entity clients are designed to incl
 - [ ] Training participation commitment
 
 **Article 30(3) - Critical Functions (Addendum, if applicable):**
+
 - [ ] Full SLA with quantitative targets
 - [ ] Extended notice periods
 - [ ] Enhanced reporting obligations
@@ -188,6 +190,7 @@ Standard contract templates for EU financial entity clients are designed to incl
 ### 4.2 Subcontractor Requirements
 
 Our subcontractor contracts are designed to require:
+
 - Meeting equivalent security standards
 - Allowing audit rights flow-through
 - Complying with data location restrictions

@@ -46,6 +46,7 @@ class SAPPOConfig:
         epsilon_final: Final epsilon value for schedule
         max_updates: Optional override for epsilon schedule duration (computed from model if None)
     """
+
     enabled: bool = True
     perturbation: PerturbationConfig = None
     adversarial_ratio: float = 0.5
@@ -71,7 +72,9 @@ class SAPPOConfig:
         if self.warmup_updates < 0:
             raise ValueError(f"warmup_updates must be >= 0, got {self.warmup_updates}")
         if self.epsilon_schedule not in ("constant", "linear", "cosine"):
-            raise ValueError(f"epsilon_schedule must be 'constant', 'linear', or 'cosine', got {self.epsilon_schedule}")
+            raise ValueError(
+                f"epsilon_schedule must be 'constant', 'linear', or 'cosine', got {self.epsilon_schedule}"
+            )
 
 
 class StateAdversarialPPO:
@@ -118,7 +121,7 @@ class StateAdversarialPPO:
             dist_output = self.model.policy.get_distribution(obs, lstm_states, episode_starts)
         else:
             dist_output = self.model.policy.get_distribution(obs)
-            
+
         if isinstance(dist_output, tuple):
             return dist_output[0]
         return dist_output
@@ -164,7 +167,9 @@ class StateAdversarialPPO:
                 self._total_adversarial_samples / total_samples if total_samples > 0 else 0.0
             ),
             "sa_ppo/robust_kl_penalty": (
-                self._total_robust_kl_penalty / self._update_count if self._update_count > 0 else 0.0
+                self._total_robust_kl_penalty / self._update_count
+                if self._update_count > 0
+                else 0.0
             ),
             "sa_ppo/current_epsilon": self._get_current_epsilon(),
             "sa_ppo/attack_count": perturbation_stats.get("attack_count", 0),
@@ -215,8 +220,8 @@ class StateAdversarialPPO:
         is_num = lambda x: isinstance(x, (int, float)) and not hasattr(x, "mock_add_spec")
 
         # Priority 2: Compute from total_timesteps and n_steps
-        total_timesteps = getattr(self.model, 'total_timesteps', None)
-        n_steps = getattr(self.model, 'n_steps', None)
+        total_timesteps = getattr(self.model, "total_timesteps", None)
+        n_steps = getattr(self.model, "n_steps", None)
 
         if is_num(total_timesteps) and is_num(n_steps) and n_steps > 0:
             max_updates = int(total_timesteps // n_steps)
@@ -227,7 +232,7 @@ class StateAdversarialPPO:
             return max_updates
 
         # Priority 3: Infer from current progress (assume halfway through training)
-        num_timesteps = getattr(self.model, 'num_timesteps', 0)
+        num_timesteps = getattr(self.model, "num_timesteps", 0)
         if is_num(num_timesteps) and num_timesteps > 0 and is_num(n_steps) and n_steps > 0:
             estimated_max = int((num_timesteps * 2) // n_steps)
             logger.warning(
@@ -290,7 +295,17 @@ class StateAdversarialPPO:
         if not self.is_adversarial_enabled:
             # Fall back to standard training
             return self._compute_standard_loss(
-                states, actions, advantages, returns, old_log_probs, old_values, clip_range, ent_coef, vf_coef, lstm_states, episode_starts
+                states,
+                actions,
+                advantages,
+                returns,
+                old_log_probs,
+                old_values,
+                clip_range,
+                ent_coef,
+                vf_coef,
+                lstm_states,
+                episode_starts,
             )
 
         batch_size = states.size(0)
@@ -358,7 +373,9 @@ class StateAdversarialPPO:
         log_probs = dist.log_prob(actions_combined)
         ratio = torch.exp(log_probs - old_log_probs_combined)
         clipped_ratio = torch.clamp(ratio, 1.0 - clip_range, 1.0 + clip_range)
-        policy_loss = -torch.min(ratio * advantages_combined, clipped_ratio * advantages_combined).mean()
+        policy_loss = -torch.min(
+            ratio * advantages_combined, clipped_ratio * advantages_combined
+        ).mean()
 
         # Compute entropy for exploration
         entropy = dist.entropy()
@@ -373,7 +390,9 @@ class StateAdversarialPPO:
                 values = self._predict_values(s_perturbed, lstm_states_adv, episode_starts_adv)
                 return nn.functional.mse_loss(values, returns_adv.view_as(values))
 
-            delta_value = self.perturbation_gen.generate_perturbation(states_adv_base, value_loss_fn)
+            delta_value = self.perturbation_gen.generate_perturbation(
+                states_adv_base, value_loss_fn
+            )
             states_adv_value = states_adv_base + delta_value
 
             # Combine for value computation
@@ -390,9 +409,13 @@ class StateAdversarialPPO:
         if self.config.robust_kl_coef > 0 and num_adversarial > 0:
             # Get distributions from clean and adversarial states
             with torch.no_grad():
-                dist_clean = self._get_distribution(states_adv_base, lstm_states_adv, episode_starts_adv)
+                dist_clean = self._get_distribution(
+                    states_adv_base, lstm_states_adv, episode_starts_adv
+                )
 
-            dist_adv = self._get_distribution(states_adv_perturbed, lstm_states_adv, episode_starts_adv)
+            dist_adv = self._get_distribution(
+                states_adv_perturbed, lstm_states_adv, episode_starts_adv
+            )
 
             # Compute KL divergence: KL(clean || adversarial)
             # Use analytical KL divergence when available (exact for Gaussian)
@@ -416,19 +439,27 @@ class StateAdversarialPPO:
         # Total loss with entropy regularization (CRITICAL FIX)
         # Standard PPO loss includes entropy to encourage exploration and prevent policy collapse
         # References: Schulman et al. (2017) "Proximal Policy Optimization Algorithms"
-        total_loss = policy_loss + ent_coef * entropy_loss + vf_coef * value_loss + robust_kl_penalty
+        total_loss = (
+            policy_loss + ent_coef * entropy_loss + vf_coef * value_loss + robust_kl_penalty
+        )
 
         # Info dict
-        info.update({
-            "sa_ppo/policy_loss": policy_loss.item(),
-            "sa_ppo/value_loss": value_loss.item(),
-            "sa_ppo/entropy_loss": entropy_loss.item(),
-            "sa_ppo/entropy": -entropy_loss.item(),  # Actual entropy value (positive)
-            "sa_ppo/robust_kl_penalty": robust_kl_penalty if isinstance(robust_kl_penalty, float) else robust_kl_penalty.item(),
-            "sa_ppo/kl_method": kl_method,  # Log KL computation method (analytical/monte_carlo)
-            "sa_ppo/num_adversarial": num_adversarial,
-            "sa_ppo/num_clean": num_clean,
-        })
+        info.update(
+            {
+                "sa_ppo/policy_loss": policy_loss.item(),
+                "sa_ppo/value_loss": value_loss.item(),
+                "sa_ppo/entropy_loss": entropy_loss.item(),
+                "sa_ppo/entropy": -entropy_loss.item(),  # Actual entropy value (positive)
+                "sa_ppo/robust_kl_penalty": (
+                    robust_kl_penalty
+                    if isinstance(robust_kl_penalty, float)
+                    else robust_kl_penalty.item()
+                ),
+                "sa_ppo/kl_method": kl_method,  # Log KL computation method (analytical/monte_carlo)
+                "sa_ppo/num_adversarial": num_adversarial,
+                "sa_ppo/num_clean": num_clean,
+            }
+        )
 
         return total_loss, info
 
@@ -514,7 +545,10 @@ class StateAdversarialPPO:
             epsilon = epsilon_init + (epsilon_final - epsilon_init) * progress
         elif self.config.epsilon_schedule == "cosine":
             import math
-            epsilon = epsilon_final + 0.5 * (epsilon_init - epsilon_final) * (1 + math.cos(math.pi * progress))
+
+            epsilon = epsilon_final + 0.5 * (epsilon_init - epsilon_final) * (
+                1 + math.cos(math.pi * progress)
+            )
         else:  # constant
             epsilon = epsilon_init
 
@@ -561,10 +595,12 @@ class StateAdversarialPPO:
         if not self.is_adversarial_enabled:
             # Return original states with all-zero mask (all clean)
             sample_mask = torch.zeros(states.size(0), device=states.device, dtype=torch.float32)
-            info.update({
-                "sa_ppo/num_adversarial": 0,
-                "sa_ppo/num_clean": states.size(0),
-            })
+            info.update(
+                {
+                    "sa_ppo/num_adversarial": 0,
+                    "sa_ppo/num_clean": states.size(0),
+                }
+            )
             return states, sample_mask, info
 
         batch_size = states.size(0)
@@ -611,16 +647,21 @@ class StateAdversarialPPO:
         states_combined = torch.cat([states_clean, states_adv_perturbed], dim=0)
 
         # Create sample mask (0 = clean, 1 = adversarial)
-        sample_mask = torch.cat([
-            torch.zeros(num_clean, device=states.device, dtype=torch.float32),
-            torch.ones(num_adversarial, device=states.device, dtype=torch.float32),
-        ], dim=0)
+        sample_mask = torch.cat(
+            [
+                torch.zeros(num_clean, device=states.device, dtype=torch.float32),
+                torch.ones(num_adversarial, device=states.device, dtype=torch.float32),
+            ],
+            dim=0,
+        )
 
         # Info dict
-        info.update({
-            "sa_ppo/num_adversarial": num_adversarial,
-            "sa_ppo/num_clean": num_clean,
-        })
+        info.update(
+            {
+                "sa_ppo/num_adversarial": num_adversarial,
+                "sa_ppo/num_clean": num_clean,
+            }
+        )
 
         return states_combined, sample_mask, info
 
@@ -661,7 +702,9 @@ class StateAdversarialPPO:
 
         # Get distributions from clean and adversarial states
         with torch.no_grad():
-            dist_clean = self._get_distribution(states_clean, lstm_states_clean, episode_starts_clean)
+            dist_clean = self._get_distribution(
+                states_clean, lstm_states_clean, episode_starts_clean
+            )
 
         dist_adv = self._get_distribution(states_adv, lstm_states_adv, episode_starts_adv)
 
@@ -689,10 +732,12 @@ class StateAdversarialPPO:
         robust_kl_penalty = float((self.config.robust_kl_coef * kl_div).item())
         self._total_robust_kl_penalty += robust_kl_penalty
 
-        info.update({
-            "sa_ppo/robust_kl_penalty": robust_kl_penalty,
-            "sa_ppo/kl_method": kl_method,
-            "sa_ppo/kl_divergence": float(kl_div.item()),
-        })
+        info.update(
+            {
+                "sa_ppo/robust_kl_penalty": robust_kl_penalty,
+                "sa_ppo/kl_method": kl_method,
+                "sa_ppo/kl_divergence": float(kl_div.item()),
+            }
+        )
 
         return robust_kl_penalty, info

@@ -30,7 +30,16 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from core_models import Order, ExecReport, Position, Side, OrderType, TimeInForce, ExecStatus, Liquidity
+from core_models import (
+    Order,
+    ExecReport,
+    Position,
+    Side,
+    OrderType,
+    TimeInForce,
+    ExecStatus,
+    Liquidity,
+)
 from core_futures import (
     FuturesPosition,
     FuturesAccountState,
@@ -52,6 +61,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FuturesOrderResult(OrderResult):
     """Extended order result for futures."""
+
     position_side: Optional[str] = None
     realized_pnl: Decimal = Decimal("0")
     margin_impact: Decimal = Decimal("0")
@@ -116,9 +126,12 @@ class BinanceFuturesOrderExecutionAdapter(OrderExecutionAdapter):
         """Lazy initialization of REST session."""
         if self._session is None:
             from services.rest_budget import RestBudgetSession
-            self._session = RestBudgetSession({
-                "timeout": int(self._config.get("timeout", 30)),
-            })
+
+            self._session = RestBudgetSession(
+                {
+                    "timeout": int(self._config.get("timeout", 30)),
+                }
+            )
         return self._session
 
     def _do_connect(self) -> None:
@@ -527,7 +540,13 @@ class BinanceFuturesOrderExecutionAdapter(OrderExecutionAdapter):
                     params["price"] = str(price)
                 params["timeInForce"] = time_in_force.upper()
 
-            if order_type.upper() in ("STOP", "STOP_MARKET", "TAKE_PROFIT", "TAKE_PROFIT_MARKET", "TRAILING_STOP_MARKET"):
+            if order_type.upper() in (
+                "STOP",
+                "STOP_MARKET",
+                "TAKE_PROFIT",
+                "TAKE_PROFIT_MARKET",
+                "TRAILING_STOP_MARKET",
+            ):
                 if stop_price:
                     params["stopPrice"] = str(stop_price)
                 params["workingType"] = working_type.upper()
@@ -670,7 +689,9 @@ class BinanceFuturesOrderExecutionAdapter(OrderExecutionAdapter):
 
                 # Determine margin mode
                 margin_type_str = str(item.get("marginType", "cross")).lower()
-                margin_mode = MarginMode.ISOLATED if margin_type_str == "isolated" else MarginMode.CROSS
+                margin_mode = (
+                    MarginMode.ISOLATED if margin_type_str == "isolated" else MarginMode.CROSS
+                )
 
                 positions[symbol] = FuturesPosition(
                     symbol=symbol,
@@ -747,8 +768,12 @@ class BinanceFuturesOrderExecutionAdapter(OrderExecutionAdapter):
                 available_balance=Decimal(str(response.get("availableBalance", "0"))),
                 total_initial_margin=Decimal(str(response.get("totalInitialMargin", "0"))),
                 total_maint_margin=Decimal(str(response.get("totalMaintMargin", "0"))),
-                total_position_initial_margin=Decimal(str(response.get("totalPositionInitialMargin", "0"))),
-                total_open_order_initial_margin=Decimal(str(response.get("totalOpenOrderInitialMargin", "0"))),
+                total_position_initial_margin=Decimal(
+                    str(response.get("totalPositionInitialMargin", "0"))
+                ),
+                total_open_order_initial_margin=Decimal(
+                    str(response.get("totalOpenOrderInitialMargin", "0"))
+                ),
                 max_withdraw_amount=Decimal(str(response.get("maxWithdrawAmount", "0"))),
                 positions=positions,
                 asset="USDT",
@@ -871,7 +896,9 @@ class BinanceFuturesOrderExecutionAdapter(OrderExecutionAdapter):
             client_order_id=client_order_id,
             status=status,
             filled_qty=Decimal(str(response.get("executedQty", "0"))),
-            filled_price=Decimal(str(response.get("avgPrice", "0"))) if response.get("avgPrice") else None,
+            filled_price=(
+                Decimal(str(response.get("avgPrice", "0"))) if response.get("avgPrice") else None
+            ),
             raw_response=response,
         )
 
@@ -893,7 +920,9 @@ class BinanceFuturesOrderExecutionAdapter(OrderExecutionAdapter):
         client_order_id = str(response.get("clientOrderId", ""))
         status = str(response.get("status", ""))
         filled_qty = Decimal(str(response.get("executedQty", "0")))
-        avg_price = Decimal(str(response.get("avgPrice", "0"))) if response.get("avgPrice") else None
+        avg_price = (
+            Decimal(str(response.get("avgPrice", "0"))) if response.get("avgPrice") else None
+        )
 
         # Create FuturesFill if filled
         futures_fill = None

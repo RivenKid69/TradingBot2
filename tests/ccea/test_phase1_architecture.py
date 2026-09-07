@@ -33,12 +33,14 @@ class TestCanonicalAgentStack:
     def test_packages_agent_is_importable(self):
         """packages.agent must be importable."""
         import packages.agent
+
         assert hasattr(packages.agent, "__version__")
         assert packages.agent.ZONE == "agent"
 
     def test_packages_agent_has_required_components(self):
         """packages.agent must declare required components."""
         import packages.agent
+
         required = [
             "LocalVault",
             "PolicyFirewall",
@@ -51,6 +53,7 @@ class TestCanonicalAgentStack:
     def test_packages_agent_version_is_2_or_higher(self):
         """Canonical agent version should be 2.0.0+."""
         import packages.agent
+
         major = int(packages.agent.__version__.split(".")[0])
         assert major >= 2, "Canonical agent should be version 2.0.0+"
 
@@ -68,15 +71,12 @@ class TestDeprecatedAgentStack:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             import ccea.agent
+
             # Reload to ensure warning is emitted
             importlib.reload(ccea.agent)
 
-            deprecation_warnings = [
-                x for x in w if issubclass(x.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) > 0, (
-                "ccea.agent should emit DeprecationWarning"
-            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) > 0, "ccea.agent should emit DeprecationWarning"
             assert "deprecated" in str(deprecation_warnings[0].message).lower()
 
 
@@ -85,20 +85,30 @@ class TestCanonicalCloudStack:
 
     def test_packages_cloud_control_plane_exists(self):
         """packages.cloud.control_plane must exist."""
-        control_plane_path = Path(__file__).parent.parent.parent / "packages" / "cloud" / "control_plane"
+        control_plane_path = (
+            Path(__file__).parent.parent.parent / "packages" / "cloud" / "control_plane"
+        )
         assert control_plane_path.exists(), "packages/cloud/control_plane must exist"
         assert (control_plane_path / "app.py").exists(), "FastAPI app must exist"
         assert (control_plane_path / "models.py").exists(), "SQLAlchemy models must exist"
 
     def test_packages_cloud_has_routers(self):
         """packages.cloud.control_plane must have routers."""
-        routers_path = Path(__file__).parent.parent.parent / "packages" / "cloud" / "control_plane" / "routers"
+        routers_path = (
+            Path(__file__).parent.parent.parent / "packages" / "cloud" / "control_plane" / "routers"
+        )
         assert routers_path.exists(), "routers directory must exist"
         assert len(list(routers_path.glob("*.py"))) > 0, "routers must contain modules"
 
     def test_packages_cloud_has_services(self):
         """packages.cloud.control_plane must have services."""
-        services_path = Path(__file__).parent.parent.parent / "packages" / "cloud" / "control_plane" / "services"
+        services_path = (
+            Path(__file__).parent.parent.parent
+            / "packages"
+            / "cloud"
+            / "control_plane"
+            / "services"
+        )
         assert services_path.exists(), "services directory must exist"
 
 
@@ -115,14 +125,13 @@ class TestDeprecatedControlPlaneStack:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             import ccea.control_plane
+
             importlib.reload(ccea.control_plane)
 
-            deprecation_warnings = [
-                x for x in w if issubclass(x.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) > 0, (
-                "ccea.control_plane should emit DeprecationWarning"
-            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert (
+                len(deprecation_warnings) > 0
+            ), "ccea.control_plane should emit DeprecationWarning"
             assert "deprecated" in str(deprecation_warnings[0].message).lower()
 
 
@@ -163,9 +172,9 @@ class TestBuildArtifactZoneSeparation:
         prohibited = ["packages/agent", "ccea/agent", "ccea/control_plane"]
         for path in cloud_paths:
             for prohibited_path in prohibited:
-                assert prohibited_path not in path, (
-                    f"Cloud spec should not include {prohibited_path}"
-                )
+                assert (
+                    prohibited_path not in path
+                ), f"Cloud spec should not include {prohibited_path}"
 
     def test_agent_spec_excludes_cloud_modules(self, build_script_path: Path):
         """Agent distribution spec must not include cloud-specific modules."""
@@ -190,9 +199,9 @@ class TestBuildArtifactZoneSeparation:
         prohibited = ["packages/cloud"]
         for path in agent_paths:
             for prohibited_path in prohibited:
-                assert prohibited_path not in path, (
-                    f"Agent spec should not include {prohibited_path}"
-                )
+                assert (
+                    prohibited_path not in path
+                ), f"Agent spec should not include {prohibited_path}"
 
 
 class TestMakefileNoDoublePaths:
@@ -257,9 +266,7 @@ class TestCIWorkflowsNoDoublePaths:
         for i, line in enumerate(lines):
             # Check for problematic patterns that could build wrong artifact
             if "pip install" in line and "ccea_agent" in line and "cloud" in line.lower():
-                pytest.fail(
-                    f"Line {i+1}: Potential cross-zone install in CI: {line}"
-                )
+                pytest.fail(f"Line {i+1}: Potential cross-zone install in CI: {line}")
 
 
 class TestDocumentationConsistency:
@@ -295,9 +302,9 @@ class TestDocumentationConsistency:
         content = readme_md.read_text()
         # Check that script_live.py is mentioned in context of development/testing
         script_live_pattern = r"script_live\.py.*(development|testing|dry-run)"
-        assert re.search(script_live_pattern, content, re.IGNORECASE), (
-            "README should indicate script_live.py is for development/testing"
-        )
+        assert re.search(
+            script_live_pattern, content, re.IGNORECASE
+        ), "README should indicate script_live.py is for development/testing"
 
 
 class TestLegacyStacksDocumented:
@@ -310,9 +317,7 @@ class TestLegacyStacksDocumented:
 
     def test_legacy_docs_exist(self, legacy_docs_path: Path):
         """Legacy stacks documentation must exist."""
-        assert legacy_docs_path.exists(), (
-            "docs/archive/LEGACY_STACKS.md must exist"
-        )
+        assert legacy_docs_path.exists(), "docs/archive/LEGACY_STACKS.md must exist"
 
     def test_legacy_docs_covers_ccea_agent(self, legacy_docs_path: Path):
         """Legacy docs must cover ccea.agent deprecation."""

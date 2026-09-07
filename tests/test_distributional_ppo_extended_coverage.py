@@ -33,6 +33,7 @@ from distributional_ppo import (
 # Additional DistributionalPPO Static Methods
 # =============================================================================
 
+
 class TestDistributionalPPORobustStdFromReturns:
     """Tests for DistributionalPPO._robust_std_from_returns."""
 
@@ -105,8 +106,6 @@ class TestDistributionalPPOExtractRmsStats:
         assert result is None
 
 
-
-
 class TestDistributionalPPOSmoothValueTargetScale:
     """Tests for DistributionalPPO._smooth_value_target_scale."""
 
@@ -120,8 +119,6 @@ class TestDistributionalPPOSmoothValueTargetScale:
         result = algo._smooth_value_target_scale(1.0, 2.0)
         # Should be between old and new
         assert 1.0 <= result <= 2.0
-
-
 
 
 class TestDistributionalPPOToRawReturns:
@@ -232,8 +229,6 @@ class TestDistributionalPPOGetCvarNormalizationParams:
         assert scale == 100.0
 
 
-
-
 class TestPopArtControllerEvaluateHoldout:
     """Tests for PopArtController._evaluate_holdout."""
 
@@ -280,8 +275,6 @@ class TestPopArtControllerEvaluateHoldout:
         assert isinstance(result, dppo.PopArtHoldoutEvaluation)
         assert math.isfinite(result.ev_before) or math.isnan(result.ev_before)
         assert math.isfinite(result.ev_after) or math.isnan(result.ev_after)
-
-
 
 
 class TestSafeExplainedVarianceAdditional:
@@ -356,10 +349,12 @@ class TestCalculateCvarAdditional:
         assert result.item() <= 0  # Should be negative or zero
 
     def test_batch_processing(self):
-        probs = torch.tensor([
-            [0.25, 0.25, 0.25, 0.25],
-            [0.5, 0.3, 0.15, 0.05],
-        ])
+        probs = torch.tensor(
+            [
+                [0.25, 0.25, 0.25, 0.25],
+                [0.5, 0.3, 0.15, 0.05],
+            ]
+        )
         atoms = torch.tensor([-2.0, -1.0, 1.0, 2.0])
         alpha = 0.5
 

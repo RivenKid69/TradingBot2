@@ -89,7 +89,7 @@ class TestDatasetInfo:
             assets_covered=["BTC", "ETH"],
             update_frequency="1-minute",
             source_provider="Test Provider",
-            preprocessing=["Normalization", "Outlier removal"]
+            preprocessing=["Normalization", "Outlier removal"],
         )
 
     def test_create_dataset_info(self, sample_dataset):
@@ -259,7 +259,7 @@ class TestTrainingDataSummaryManager:
             assets_covered=["TEST"],
             update_frequency="daily",
             source_provider="Test",
-            preprocessing=["Test"]
+            preprocessing=["Test"],
         )
         manager.add_dataset(new_dataset)
 
@@ -280,7 +280,7 @@ class TestTrainingDataSummaryManager:
             assets_covered=["TEST"],
             update_frequency="once",
             source_provider="Internal",
-            preprocessing=["None"]
+            preprocessing=["None"],
         )
         manager.add_dataset(new_dataset)
 
@@ -354,7 +354,7 @@ class TestValidateDatasetInfo:
             assets_covered=["TEST"],
             update_frequency="daily",
             source_provider="Provider",
-            preprocessing=["Step 1"]
+            preprocessing=["Step 1"],
         )
         result = validate_dataset_info(dataset)
         assert result["all_valid"] is True
@@ -372,7 +372,7 @@ class TestValidateDatasetInfo:
             assets_covered=["TEST"],
             update_frequency="daily",
             source_provider="Provider",
-            preprocessing=["Step 1"]
+            preprocessing=["Step 1"],
         )
         result = validate_dataset_info(dataset)
         assert result["has_name"] is False
@@ -391,7 +391,7 @@ class TestValidateDatasetInfo:
             assets_covered=["TEST"],
             update_frequency="daily",
             source_provider="Provider",
-            preprocessing=["Step 1"]
+            preprocessing=["Step 1"],
         )
         result = validate_dataset_info(dataset)
         assert result["has_time_range"] is False
@@ -409,7 +409,7 @@ class TestValidateDatasetInfo:
             assets_covered=["TEST"],
             update_frequency="daily",
             source_provider="Provider",
-            preprocessing=["Step 1"]
+            preprocessing=["Step 1"],
         )
         result = validate_dataset_info(dataset)
         assert result["has_valid_size"] is False
@@ -427,7 +427,7 @@ class TestValidateDatasetInfo:
             assets_covered=["TEST"],
             update_frequency="daily",
             source_provider="Provider",
-            preprocessing=[]
+            preprocessing=[],
         )
         result = validate_dataset_info(dataset)
         assert result["has_preprocessing"] is False
@@ -517,7 +517,10 @@ class TestArticle53dCompliance:
         assert summary.model_version in doc
 
         # Should include quantitative metrics (formatted with commas)
-        assert f"{summary.total_training_samples:,}" in doc or str(summary.total_training_samples) in doc
+        assert (
+            f"{summary.total_training_samples:,}" in doc
+            or str(summary.total_training_samples) in doc
+        )
 
         # Should include dataset details (names are in the summary)
         for dataset in summary.datasets:
@@ -539,25 +542,20 @@ class TestDatasetCategories:
 
     def test_market_data_present(self, summary):
         """Test market data datasets are present."""
-        market_datasets = [
-            d for d in summary.datasets
-            if d.category == DataCategory.MARKET_DATA
-        ]
+        market_datasets = [d for d in summary.datasets if d.category == DataCategory.MARKET_DATA]
         assert len(market_datasets) > 0
 
     def test_synthetic_data_present(self, summary):
         """Test synthetic data is present."""
         synthetic_datasets = [
-            d for d in summary.datasets
-            if d.category == DataCategory.SYNTHETIC_DATA
+            d for d in summary.datasets if d.category == DataCategory.SYNTHETIC_DATA
         ]
         assert len(synthetic_datasets) > 0
 
     def test_technical_indicators_present(self, summary):
         """Test technical indicators dataset is present."""
         tech_datasets = [
-            d for d in summary.datasets
-            if d.category == DataCategory.TECHNICAL_INDICATORS
+            d for d in summary.datasets if d.category == DataCategory.TECHNICAL_INDICATORS
         ]
         assert len(tech_datasets) > 0
 
@@ -577,7 +575,7 @@ class TestEdgeCases:
             training_period_start=datetime(2020, 1, 1),
             training_period_end=datetime(2024, 1, 1),
             data_quality_measures=["Test measure"],
-            bias_mitigation_steps=["Test step"]
+            bias_mitigation_steps=["Test step"],
         )
         doc = summary.generate_public_summary()
         assert "Training Data Summary" in doc
@@ -595,7 +593,7 @@ class TestEdgeCases:
             assets_covered=["TEST"],
             update_frequency="daily",
             source_provider="Provider",
-            preprocessing=["Step 1"]
+            preprocessing=["Step 1"],
         )
         summary = TrainingDataSummary(
             model_name="Test",
@@ -607,7 +605,7 @@ class TestEdgeCases:
             training_period_start=datetime(2020, 1, 1),
             training_period_end=datetime(2024, 1, 1),
             data_quality_measures=["Test"],
-            bias_mitigation_steps=["Test"]
+            bias_mitigation_steps=["Test"],
         )
         doc = summary.generate_public_summary()
         assert "Test/Dataset:v1.0 (beta)" in doc

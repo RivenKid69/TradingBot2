@@ -22,50 +22,60 @@ from typing import Any, Dict, Final, FrozenSet, List, Optional, Set
 # ============================================================================
 
 # Allowed command types (Cloud -> Agent)
-ALLOWED_COMMAND_TYPES: Final[FrozenSet[str]] = frozenset({
-    "REQUEST_START_RUN",
-    "REQUEST_STOP_RUN",
-    "REQUEST_PAUSE_RUN",
-    "REQUEST_UPGRADE_ARTIFACT",
-    "REQUEST_UPDATE_CONFIG",
-    "REQUEST_ROTATE_AGENT_SESSION",
-    "REQUEST_EXPORT_LOGS",
-})
+ALLOWED_COMMAND_TYPES: Final[FrozenSet[str]] = frozenset(
+    {
+        "REQUEST_START_RUN",
+        "REQUEST_STOP_RUN",
+        "REQUEST_PAUSE_RUN",
+        "REQUEST_UPGRADE_ARTIFACT",
+        "REQUEST_UPDATE_CONFIG",
+        "REQUEST_ROTATE_AGENT_SESSION",
+        "REQUEST_EXPORT_LOGS",
+    }
+)
 
 # Allowed message types (bidirectional)
-ALLOWED_MESSAGE_TYPES: Final[FrozenSet[str]] = frozenset({
-    "HEARTBEAT",
-    "POLL_COMMANDS",
-    "COMMAND_BATCH",
-    "COMMAND_ACK",
-    "COMMAND_APPROVAL",
-    "COMMAND_RESULT",
-    "TELEMETRY",
-})
+ALLOWED_MESSAGE_TYPES: Final[FrozenSet[str]] = frozenset(
+    {
+        "HEARTBEAT",
+        "POLL_COMMANDS",
+        "COMMAND_BATCH",
+        "COMMAND_ACK",
+        "COMMAND_APPROVAL",
+        "COMMAND_RESULT",
+        "TELEMETRY",
+    }
+)
 
 # Commands that require local approval
-APPROVAL_REQUIRED_COMMANDS: Final[FrozenSet[str]] = frozenset({
-    "REQUEST_START_RUN",
-    "REQUEST_UPGRADE_ARTIFACT",
-    "REQUEST_UPDATE_CONFIG",  # if trading_impacting
-    "REQUEST_ROTATE_AGENT_SESSION",
-    "REQUEST_EXPORT_LOGS",
-})
+APPROVAL_REQUIRED_COMMANDS: Final[FrozenSet[str]] = frozenset(
+    {
+        "REQUEST_START_RUN",
+        "REQUEST_UPGRADE_ARTIFACT",
+        "REQUEST_UPDATE_CONFIG",  # if trading_impacting
+        "REQUEST_ROTATE_AGENT_SESSION",
+        "REQUEST_EXPORT_LOGS",
+    }
+)
 
 # Commands that are safety operations (no approval needed)
-SAFETY_COMMANDS: Final[FrozenSet[str]] = frozenset({
-    "REQUEST_STOP_RUN",
-    "REQUEST_PAUSE_RUN",
-})
+SAFETY_COMMANDS: Final[FrozenSet[str]] = frozenset(
+    {
+        "REQUEST_STOP_RUN",
+        "REQUEST_PAUSE_RUN",
+    }
+)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class ProtocolChange:
     """Represents a protocol change."""
+
     change_type: str  # 'added', 'removed', 'modified'
     element_type: str  # 'command', 'message', 'field'
     element_name: str
@@ -80,6 +90,7 @@ class ProtocolChange:
 @dataclass
 class ProtocolCheckResult:
     """Result of protocol validation."""
+
     changes: List[ProtocolChange] = field(default_factory=list)
     requires_security_review: bool = False
     new_commands: Set[str] = field(default_factory=set)
@@ -96,6 +107,7 @@ class ProtocolCheckResult:
 # ============================================================================
 # Validation Functions
 # ============================================================================
+
 
 def validate_command_type(command_type: str) -> tuple[bool, str]:
     """
@@ -244,33 +256,39 @@ def check_protocol_changes(
         is_valid, reason = validate_command_type(cmd)
 
         if not is_valid:
-            result.add_change(ProtocolChange(
-                change_type="added",
-                element_type="command",
-                element_name=cmd,
-                details=reason,
-                requires_security_review=True,
-            ))
+            result.add_change(
+                ProtocolChange(
+                    change_type="added",
+                    element_type="command",
+                    element_name=cmd,
+                    details=reason,
+                    requires_security_review=True,
+                )
+            )
             result.passed = False
         else:
-            result.add_change(ProtocolChange(
-                change_type="added",
-                element_type="command",
-                element_name=cmd,
-                details="New command in allowlist",
-                requires_security_review=True,  # All new commands need review
-            ))
+            result.add_change(
+                ProtocolChange(
+                    change_type="added",
+                    element_type="command",
+                    element_name=cmd,
+                    details="New command in allowlist",
+                    requires_security_review=True,  # All new commands need review
+                )
+            )
 
     # Check for removed commands
     removed_commands = base_commands - new_commands
     for cmd in removed_commands:
         result.removed_commands.add(cmd)
-        result.add_change(ProtocolChange(
-            change_type="removed",
-            element_type="command",
-            element_name=cmd,
-            requires_security_review=False,
-        ))
+        result.add_change(
+            ProtocolChange(
+                change_type="removed",
+                element_type="command",
+                element_name=cmd,
+                requires_security_review=False,
+            )
+        )
 
     # Extract message types
     base_messages = extract_message_types(base_schema)
@@ -283,21 +301,25 @@ def check_protocol_changes(
         is_valid, reason = validate_message_type(msg)
 
         if not is_valid:
-            result.add_change(ProtocolChange(
-                change_type="added",
-                element_type="message",
-                element_name=msg,
-                details=reason,
-                requires_security_review=True,
-            ))
+            result.add_change(
+                ProtocolChange(
+                    change_type="added",
+                    element_type="message",
+                    element_name=msg,
+                    details=reason,
+                    requires_security_review=True,
+                )
+            )
             result.passed = False
         else:
-            result.add_change(ProtocolChange(
-                change_type="added",
-                element_type="message",
-                element_name=msg,
-                requires_security_review=True,
-            ))
+            result.add_change(
+                ProtocolChange(
+                    change_type="added",
+                    element_type="message",
+                    element_name=msg,
+                    requires_security_review=True,
+                )
+            )
 
     return result
 
@@ -320,25 +342,29 @@ def validate_protocol_allowlist(schema: Dict[str, Any]) -> ProtocolCheckResult:
     for cmd in commands:
         is_valid, reason = validate_command_type(cmd)
         if not is_valid:
-            result.add_change(ProtocolChange(
-                change_type="invalid",
-                element_type="command",
-                element_name=cmd,
-                details=reason,
-                requires_security_review=True,
-            ))
+            result.add_change(
+                ProtocolChange(
+                    change_type="invalid",
+                    element_type="command",
+                    element_name=cmd,
+                    details=reason,
+                    requires_security_review=True,
+                )
+            )
             result.passed = False
 
     for msg in messages:
         is_valid, reason = validate_message_type(msg)
         if not is_valid:
-            result.add_change(ProtocolChange(
-                change_type="invalid",
-                element_type="message",
-                element_name=msg,
-                details=reason,
-                requires_security_review=True,
-            ))
+            result.add_change(
+                ProtocolChange(
+                    change_type="invalid",
+                    element_type="message",
+                    element_name=msg,
+                    details=reason,
+                    requires_security_review=True,
+                )
+            )
             result.passed = False
 
     return result
@@ -348,13 +374,12 @@ def validate_protocol_allowlist(schema: Dict[str, Any]) -> ProtocolCheckResult:
 # CLI Interface
 # ============================================================================
 
+
 def main() -> int:
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Protocol Validation"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Protocol Validation")
     parser.add_argument(
         "--schema",
         type=Path,

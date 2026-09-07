@@ -34,6 +34,7 @@ This runbook provides a general framework for responding to security incidents, 
    - P3/P4: Schedule response
 
 3. **Initial assessment**
+
    ```bash
    # Quick status check
    ccea-agent status
@@ -48,6 +49,7 @@ This runbook provides a general framework for responding to security incidents, 
    - P3/P4: Monitor
 
 2. **Isolate affected systems**
+
    ```bash
    # If security incident
    ccea-agent stop --immediate
@@ -57,6 +59,7 @@ This runbook provides a general framework for responding to security incidents, 
    ```
 
 3. **Preserve evidence**
+
    ```bash
    # Export logs
    ccea-agent logs export --output incident_logs_$(date +%Y%m%d_%H%M%S).tar.gz
@@ -68,6 +71,7 @@ This runbook provides a general framework for responding to security incidents, 
 ### Phase 3: Investigation (15 min - 2 hours)
 
 1. **Gather information**
+
    ```bash
    # Recent audit logs
    ccea-admin audit query --from "1 hour ago"
@@ -96,6 +100,7 @@ This runbook provides a general framework for responding to security incidents, 
    - Apply patches/configuration changes
 
 2. **Verify resolution**
+
    ```bash
    # Run diagnostics
    ccea-agent doctor --verbose
@@ -108,6 +113,7 @@ This runbook provides a general framework for responding to security incidents, 
    ```
 
 3. **Restore service**
+
    ```bash
    # Resume operation
    ccea-agent start
@@ -143,6 +149,7 @@ This runbook provides a general framework for responding to security incidents, 
 ### Suspected Credential Theft
 
 1. **Immediate actions**
+
    ```bash
    # Revoke all agents
    ccea-admin agents revoke --all --reason "security_incident"
@@ -163,6 +170,7 @@ This runbook provides a general framework for responding to security incidents, 
 ### Unauthorized Access Detected
 
 1. **Containment**
+
    ```bash
    # Disable affected user
    ccea-admin users disable --user-id user_xyz

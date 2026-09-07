@@ -33,6 +33,7 @@ import pytest
 # Test: Protocol Versioning Negotiation (Design Doc 10.3/10.4)
 # ============================================================================
 
+
 class TestProtocolVersioning:
     """Tests for protocol version negotiation."""
 
@@ -115,6 +116,7 @@ class TestProtocolVersioning:
 # Test: Research Execution Service (Design Doc 15.3)
 # ============================================================================
 
+
 class TestResearchExecutionService:
     """Tests for research execution service."""
 
@@ -182,6 +184,7 @@ class TestResearchExecutionService:
 # Test: Governance DB Service
 # ============================================================================
 
+
 class TestGovernanceDBService:
     """Tests for governance DB integration."""
 
@@ -232,6 +235,7 @@ class TestGovernanceDBService:
 # Test: Enterprise Config (Design Doc Phase 9)
 # ============================================================================
 
+
 class TestEnterpriseConfig:
     """Tests for enterprise/airgapped configuration."""
 
@@ -242,10 +246,13 @@ class TestEnterpriseConfig:
             EnvVar,
         )
 
-        with patch.dict(os.environ, {
-            EnvVar.AIR_GAPPED_MODE.value: "true",
-            EnvVar.OFFLINE_VERIFICATION.value: "true",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                EnvVar.AIR_GAPPED_MODE.value: "true",
+                EnvVar.OFFLINE_VERIFICATION.value: "true",
+            },
+        ):
             config = AirGappedConfig.from_env()
             assert config.enabled is True
             assert config.offline_verification is True
@@ -305,6 +312,7 @@ class TestEnterpriseConfig:
 # ============================================================================
 # Test: Preflight Manifest Permissions (Design Doc 9.2, 2.1)
 # ============================================================================
+
 
 class TestPreflightManifestPermissions:
     """Tests for preflight manifest permission checks."""
@@ -413,6 +421,7 @@ class TestPreflightManifestPermissions:
 # Test: Degraded Mode LIVE Policy (Design Doc 9.6, 13.2)
 # ============================================================================
 
+
 class TestDegradedModeLivePolicy:
     """Tests for degraded mode LIVE-specific policies."""
 
@@ -493,6 +502,7 @@ class TestDegradedModeLivePolicy:
 # Test: ChangeClass Vocabulary Unification
 # ============================================================================
 
+
 class TestChangeClassVocabulary:
     """Tests for unified ChangeClass vocabulary."""
 
@@ -535,6 +545,7 @@ class TestChangeClassVocabulary:
 # Test: Guardrails Path Fixes
 # ============================================================================
 
+
 class TestGuardrailsPaths:
     """Tests for guardrails path fixes."""
 
@@ -555,7 +566,7 @@ class TestGuardrailsPaths:
         from ccea.guardrails.design_doc_check import compute_sha256
 
         # Create temp file
-        with tempfile.NamedTemporaryFile(delete=False, mode='w') as f:
+        with tempfile.NamedTemporaryFile(delete=False, mode="w") as f:
             f.write("test content")
             temp_path = Path(f.name)
 
@@ -570,6 +581,7 @@ class TestGuardrailsPaths:
 # ============================================================================
 # Test: Deprecated Module CI Guardrail
 # ============================================================================
+
 
 class TestDeprecatedModuleGuardrail:
     """Tests for deprecated module CI guardrail."""
@@ -587,6 +599,7 @@ class TestDeprecatedModuleGuardrail:
 
             # Clear any cached imports
             import sys
+
             if "ccea.agent" in sys.modules:
                 del sys.modules["ccea.agent"]
 
@@ -611,6 +624,7 @@ class TestDeprecatedModuleGuardrail:
 # Integration Tests
 # ============================================================================
 
+
 class TestIntegration:
     """Integration tests for combined functionality."""
 
@@ -622,12 +636,14 @@ class TestIntegration:
             PreflightCheckType,
         )
 
-        checker = PreflightChecker(config=PreflightConfig(
-            skip_broker_check=True,
-            skip_network_check=True,
-            skip_time_sync=True,
-            require_vault_unlocked=False,
-        ))
+        checker = PreflightChecker(
+            config=PreflightConfig(
+                skip_broker_check=True,
+                skip_network_check=True,
+                skip_time_sync=True,
+                require_vault_unlocked=False,
+            )
+        )
 
         manifest = {
             "schema_version": "1.0.0",

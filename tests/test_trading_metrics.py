@@ -57,7 +57,7 @@ class TestDownsideStd:
     def test_downside_std_mixed(self):
         returns = np.array([0.01, -0.01, 0.02, -0.02, 0.03, -0.03])
         result = _compute_downside_std(returns)
-        expected = math.sqrt(np.mean(np.minimum(returns, 0.0)**2))
+        expected = math.sqrt(np.mean(np.minimum(returns, 0.0) ** 2))
         assert abs(result - expected) < 1e-10
 
     def test_downside_std_all_positive(self):
@@ -266,7 +266,7 @@ class TestTradingMetricsAccumulator:
 
         equity = 100.0
         for ret in [0.01, -0.005, 0.02, -0.01, 0.015]:
-            equity *= (1 + ret)
+            equity *= 1 + ret
             acc.add_step(ret, equity=equity)
 
         metrics = acc.summary()
@@ -435,9 +435,9 @@ class TestIntegration:
             for step in range(episode_length):
                 # Random return with slight positive drift
                 ret = np.random.normal(0.0002, 0.01)
-                equity *= (1 + ret)
+                equity *= 1 + ret
 
-                is_end = (step == episode_length - 1)
+                is_end = step == episode_length - 1
                 acc.add_step(ret, equity=equity, is_episode_end=is_end)
 
         metrics = acc.summary()

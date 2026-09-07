@@ -27,6 +27,7 @@ from cryptography.hazmat.backends import default_backend
 
 class KeyAlgorithm(str, Enum):
     """Supported key algorithms."""
+
     ED25519 = "ed25519"
     ECDSA_P256 = "ecdsa-p256"
 
@@ -42,6 +43,7 @@ class KeyPair:
         public_key: Public key object (safe to share)
         key_id: Optional key identifier
     """
+
     algorithm: KeyAlgorithm
     private_key: PrivateKeyTypes
     public_key: PublicKeyTypes

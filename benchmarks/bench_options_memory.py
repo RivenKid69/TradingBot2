@@ -559,7 +559,7 @@ class OptionsMemoryBenchmark:
                 # Weight towards ATM
                 idx = min(
                     int(abs(atm_strike - 300 + (time.perf_counter() * 100) % 50)),
-                    len(series_keys) - 1
+                    len(series_keys) - 1,
                 )
                 key, strike = series_keys[idx % len(series_keys)]
 
@@ -629,9 +629,7 @@ class OptionsMemoryBenchmark:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Options Memory Architecture Benchmarks"
-    )
+    parser = argparse.ArgumentParser(description="Options Memory Architecture Benchmarks")
     parser.add_argument(
         "--full",
         action="store_true",

@@ -6,6 +6,7 @@ now returns 3 values instead of 2, and old code needs to be updated.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 from adversarial.pbt_scheduler import PBTScheduler, PBTConfig, HyperparamConfig
 
@@ -51,8 +52,9 @@ def test_exploit_and_explore_returns_three_values():
 
     # Verify types
     assert isinstance(new_hyperparams, dict), "new_hyperparams should be dict"
-    assert checkpoint_format is None or isinstance(checkpoint_format, str), \
-        "checkpoint_format should be None or str"
+    assert checkpoint_format is None or isinstance(
+        checkpoint_format, str
+    ), "checkpoint_format should be None or str"
 
     print("✅ CONFIRMED: exploit_and_explore() returns 3 values")
     print(f"   - new_parameters: {type(new_parameters)}")
@@ -126,7 +128,7 @@ def test_correct_usage_with_v2_checkpoint():
             model_parameters={  # ✅ NEW: Use model_parameters
                 "policy": {"weight": torch.randn(2, 2)},
                 "vgs_state": mock_vgs_state,
-            }
+            },
         )
 
     worst_member = population[0]
@@ -139,8 +141,9 @@ def test_correct_usage_with_v2_checkpoint():
 
     # Verify v2 checkpoint format was used
     if new_parameters is not None:
-        assert checkpoint_format == "v2_full_parameters", \
-            f"Expected v2_full_parameters, got {checkpoint_format}"
+        assert (
+            checkpoint_format == "v2_full_parameters"
+        ), f"Expected v2_full_parameters, got {checkpoint_format}"
 
         # Verify VGS state is included
         assert "vgs_state" in new_parameters, "VGS state should be in parameters"

@@ -39,6 +39,7 @@ from services.core.risk_controls.realtime_monitor import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def config():
     """Default configuration for testing."""
@@ -77,6 +78,7 @@ def mock_kill_switch_callback():
 # =============================================================================
 # Test ComplianceAlert
 # =============================================================================
+
 
 class TestComplianceAlert:
     """Tests for ComplianceAlert data class."""
@@ -119,6 +121,7 @@ class TestComplianceAlert:
 # Test MonitoringMetrics
 # =============================================================================
 
+
 class TestMonitoringMetrics:
     """Tests for MonitoringMetrics data class."""
 
@@ -154,6 +157,7 @@ class TestMonitoringMetrics:
 # Test RealTimeMonitor Initialization
 # =============================================================================
 
+
 class TestMonitorInitialization:
     """Tests for monitor initialization."""
 
@@ -173,6 +177,7 @@ class TestMonitorInitialization:
 # =============================================================================
 # Test Alert Generation
 # =============================================================================
+
 
 class TestAlertGeneration:
     """Tests for alert generation."""
@@ -225,6 +230,7 @@ class TestAlertGeneration:
 # Test Alert Rate Limiting
 # =============================================================================
 
+
 class TestAlertRateLimiting:
     """Tests for alert rate limiting."""
 
@@ -250,6 +256,7 @@ class TestAlertRateLimiting:
 # =============================================================================
 # Test Alert Deduplication
 # =============================================================================
+
 
 class TestAlertDeduplication:
     """Tests for alert deduplication."""
@@ -279,6 +286,7 @@ class TestAlertDeduplication:
 # Test OTR Monitoring
 # =============================================================================
 
+
 class TestOTRMonitoring:
     """Tests for order-to-trade ratio monitoring."""
 
@@ -303,6 +311,7 @@ class TestOTRMonitoring:
 # Test P&L Monitoring
 # =============================================================================
 
+
 class TestPnLMonitoring:
     """Tests for P&L monitoring."""
 
@@ -324,6 +333,7 @@ class TestPnLMonitoring:
 # Test Position Monitoring
 # =============================================================================
 
+
 class TestPositionMonitoring:
     """Tests for position monitoring."""
 
@@ -342,6 +352,7 @@ class TestPositionMonitoring:
 # =============================================================================
 # Test Latency Monitoring
 # =============================================================================
+
 
 class TestLatencyMonitoring:
     """Tests for latency monitoring."""
@@ -369,6 +380,7 @@ class TestLatencyMonitoring:
 # Test Clock Drift Monitoring
 # =============================================================================
 
+
 class TestClockDriftMonitoring:
     """Tests for clock drift monitoring per RTS 25."""
 
@@ -384,6 +396,7 @@ class TestClockDriftMonitoring:
 # =============================================================================
 # Test System Health Monitoring
 # =============================================================================
+
 
 class TestSystemHealthMonitoring:
     """Tests for system health monitoring."""
@@ -405,6 +418,7 @@ class TestSystemHealthMonitoring:
 # =============================================================================
 # Test Alert Management
 # =============================================================================
+
 
 class TestAlertManagement:
     """Tests for alert management."""
@@ -500,6 +514,7 @@ class TestAlertManagement:
 # Test Escalation and Kill Switch
 # =============================================================================
 
+
 class TestEscalation:
     """Tests for alert escalation."""
 
@@ -539,6 +554,7 @@ class TestEscalation:
 # Test Statistics and Reporting
 # =============================================================================
 
+
 class TestStatisticsAndReporting:
     """Tests for statistics and compliance reporting."""
 
@@ -576,6 +592,7 @@ class TestStatisticsAndReporting:
 # =============================================================================
 # Test Async Operations
 # =============================================================================
+
 
 class TestAsyncOperations:
     """Tests for async operations."""
@@ -620,6 +637,7 @@ class TestAsyncOperations:
 # Test Sync Operations
 # =============================================================================
 
+
 class TestSyncOperations:
     """Tests for sync (background thread) operations."""
 
@@ -640,6 +658,7 @@ class TestSyncOperations:
 # =============================================================================
 # Test Factory Function
 # =============================================================================
+
 
 class TestFactoryFunction:
     """Tests for factory function."""
@@ -671,6 +690,7 @@ class TestFactoryFunction:
 # =============================================================================
 # Test RTS 6 Compliance
 # =============================================================================
+
 
 class TestRTS6Compliance:
     """Tests for RTS 6 Article 17 compliance."""

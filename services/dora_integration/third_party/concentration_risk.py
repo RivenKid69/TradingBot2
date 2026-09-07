@@ -77,8 +77,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ConcentrationType(Enum):
     """Types of ICT concentration risk."""
+
     PROVIDER = "provider"  # Single provider for multiple services
     GEOGRAPHIC = "geographic"  # Data/services concentrated geographically
     SERVICE = "service"  # Critical services on limited providers
@@ -90,6 +92,7 @@ class ConcentrationType(Enum):
 
 class RiskLevel(Enum):
     """Risk level classification."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -98,6 +101,7 @@ class RiskLevel(Enum):
 
 class MitigationStatus(Enum):
     """Mitigation measure status."""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     IMPLEMENTED = "implemented"
@@ -107,6 +111,7 @@ class MitigationStatus(Enum):
 
 class AssessmentScope(Enum):
     """Assessment scope level."""
+
     ENTITY = "entity"
     SUB_CONSOLIDATED = "sub_consolidated"
     CONSOLIDATED = "consolidated"
@@ -114,6 +119,7 @@ class AssessmentScope(Enum):
 
 class SubstitutabilityLevel(Enum):
     """Provider substitutability classification."""
+
     EASILY_SUBSTITUTABLE = "easily_substitutable"
     SUBSTITUTABLE_WITH_EFFORT = "substitutable_with_effort"
     DIFFICULT_TO_SUBSTITUTE = "difficult_to_substitute"
@@ -124,11 +130,13 @@ class SubstitutabilityLevel(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ProviderDependency:
     """
     Provider dependency information.
     """
+
     provider_id: str = ""
     provider_name: str = ""
     provider_country: str = ""
@@ -162,6 +170,7 @@ class ConcentrationMetric:
     """
     Single concentration metric.
     """
+
     metric_id: str = ""
     metric_name: str = ""
     metric_type: ConcentrationType = ConcentrationType.PROVIDER
@@ -201,6 +210,7 @@ class ConcentrationRisk:
     """
     Identified concentration risk.
     """
+
     risk_id: str = ""
     risk_name: str = ""
     risk_type: ConcentrationType = ConcentrationType.PROVIDER
@@ -262,6 +272,7 @@ class MitigationMeasure:
     """
     Concentration risk mitigation measure.
     """
+
     measure_id: str = ""
     risk_id: str = ""  # Related risk
     measure_name: str = ""
@@ -305,6 +316,7 @@ class ConcentrationAssessment:
     """
     Comprehensive concentration risk assessment.
     """
+
     assessment_id: str = ""
     assessment_date: str = ""
     assessed_by: str = ""
@@ -351,6 +363,7 @@ class DependencyMap:
     """
     Provider dependency map for visualization and analysis.
     """
+
     map_id: str = ""
     generated_date: str = ""
 
@@ -379,6 +392,7 @@ class DependencyMap:
 # =============================================================================
 # Configuration
 # =============================================================================
+
 
 @dataclass
 class ConcentrationRiskConfig:
@@ -417,6 +431,7 @@ class ConcentrationRiskConfig:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class DORAConcentrationRisk:
     """
@@ -546,7 +561,7 @@ class DORAConcentrationRisk:
             self._dependencies[provider_id] = dependency
 
             # Update indexes
-            for func in (critical_functions or []):
+            for func in critical_functions or []:
                 self._providers_by_function[func].add(provider_id)
 
             for country in (data_processing_countries or []) + (data_storage_countries or []):
@@ -555,12 +570,15 @@ class DORAConcentrationRisk:
             for service in services:
                 self._services_by_provider[provider_id].add(service)
 
-        self._log_event("dependency_added", {
-            "provider_id": provider_id,
-            "provider_name": provider_name,
-            "services_count": len(services),
-            "critical_functions": critical_functions or [],
-        })
+        self._log_event(
+            "dependency_added",
+            {
+                "provider_id": provider_id,
+                "provider_name": provider_name,
+                "services_count": len(services),
+                "critical_functions": critical_functions or [],
+            },
+        )
 
         return dependency
 
@@ -584,11 +602,7 @@ class DORAConcentrationRisk:
         """Get all providers supporting a function."""
         with self._lock:
             provider_ids = self._providers_by_function.get(function_name, set())
-            return [
-                self._dependencies[pid]
-                for pid in provider_ids
-                if pid in self._dependencies
-            ]
+            return [self._dependencies[pid] for pid in provider_ids if pid in self._dependencies]
 
     def get_providers_in_country(
         self,
@@ -597,11 +611,7 @@ class DORAConcentrationRisk:
         """Get all providers with data in a country."""
         with self._lock:
             provider_ids = self._providers_by_country.get(country.upper(), set())
-            return [
-                self._dependencies[pid]
-                for pid in provider_ids
-                if pid in self._dependencies
-            ]
+            return [self._dependencies[pid] for pid in provider_ids if pid in self._dependencies]
 
     # =========================================================================
     # Concentration Metrics
@@ -622,36 +632,43 @@ class DORAConcentrationRisk:
 
             # 1. Provider concentration (HHI)
             provider_hhi = self._calculate_provider_hhi()
-            metrics.append(ConcentrationMetric(
-                metric_name="Provider Concentration (HHI)",
-                metric_type=ConcentrationType.PROVIDER,
-                dimension="service_distribution",
-                current_value=provider_hhi,
-                threshold_warning=1500,
-                threshold_critical=self.config.hhi_threshold_concentrated,
-                unit="hhi_points",
-                notes="Herfindahl-Hirschman Index for provider concentration",
-            ))
+            metrics.append(
+                ConcentrationMetric(
+                    metric_name="Provider Concentration (HHI)",
+                    metric_type=ConcentrationType.PROVIDER,
+                    dimension="service_distribution",
+                    current_value=provider_hhi,
+                    threshold_warning=1500,
+                    threshold_critical=self.config.hhi_threshold_concentrated,
+                    unit="hhi_points",
+                    notes="Herfindahl-Hirschman Index for provider concentration",
+                )
+            )
 
             # 2. Top provider dependency
             top_provider = self._get_top_provider()
             if top_provider:
-                top_pct = (top_provider.services_count / max(1, sum(
-                    d.services_count for d in dependencies
-                ))) * 100
-                metrics.append(ConcentrationMetric(
-                    metric_name=f"Top Provider Dependency ({top_provider.provider_name})",
-                    metric_type=ConcentrationType.PROVIDER,
-                    dimension="single_provider",
-                    current_value=top_pct,
-                    threshold_warning=self.config.provider_concentration_warning_pct,
-                    threshold_critical=self.config.provider_concentration_critical_pct,
-                    unit="percentage",
-                    contributing_factors=[{
-                        "provider": top_provider.provider_name,
-                        "services": top_provider.services_count,
-                    }],
-                ))
+                top_pct = (
+                    top_provider.services_count
+                    / max(1, sum(d.services_count for d in dependencies))
+                ) * 100
+                metrics.append(
+                    ConcentrationMetric(
+                        metric_name=f"Top Provider Dependency ({top_provider.provider_name})",
+                        metric_type=ConcentrationType.PROVIDER,
+                        dimension="single_provider",
+                        current_value=top_pct,
+                        threshold_warning=self.config.provider_concentration_warning_pct,
+                        threshold_critical=self.config.provider_concentration_critical_pct,
+                        unit="percentage",
+                        contributing_factors=[
+                            {
+                                "provider": top_provider.provider_name,
+                                "services": top_provider.services_count,
+                            }
+                        ],
+                    )
+                )
 
             # 3. Geographic concentration
             geo_metrics = self._calculate_geographic_concentration()
@@ -665,35 +682,41 @@ class DORAConcentrationRisk:
             ctpp_count = sum(1 for d in dependencies if d.is_ctpp)
             if ctpp_count > 0:
                 ctpp_pct = (ctpp_count / len(dependencies)) * 100
-                metrics.append(ConcentrationMetric(
-                    metric_name="CTPP Provider Ratio",
-                    metric_type=ConcentrationType.PROVIDER,
-                    dimension="ctpp_dependency",
-                    current_value=ctpp_pct,
-                    threshold_warning=30.0,
-                    threshold_critical=50.0,
-                    unit="percentage",
-                    notes="Percentage of providers that are designated CTPPs",
-                ))
+                metrics.append(
+                    ConcentrationMetric(
+                        metric_name="CTPP Provider Ratio",
+                        metric_type=ConcentrationType.PROVIDER,
+                        dimension="ctpp_dependency",
+                        current_value=ctpp_pct,
+                        threshold_warning=30.0,
+                        threshold_critical=50.0,
+                        unit="percentage",
+                        notes="Percentage of providers that are designated CTPPs",
+                    )
+                )
 
             # 6. Substitutability analysis
             non_substitutable = sum(
-                1 for d in dependencies
-                if d.substitutability in [
+                1
+                for d in dependencies
+                if d.substitutability
+                in [
                     SubstitutabilityLevel.DIFFICULT_TO_SUBSTITUTE,
-                    SubstitutabilityLevel.NOT_SUBSTITUTABLE
+                    SubstitutabilityLevel.NOT_SUBSTITUTABLE,
                 ]
             )
             non_sub_pct = (non_substitutable / len(dependencies)) * 100
-            metrics.append(ConcentrationMetric(
-                metric_name="Non-Substitutable Providers",
-                metric_type=ConcentrationType.PROVIDER,
-                dimension="substitutability",
-                current_value=non_sub_pct,
-                threshold_warning=20.0,
-                threshold_critical=40.0,
-                unit="percentage",
-            ))
+            metrics.append(
+                ConcentrationMetric(
+                    metric_name="Non-Substitutable Providers",
+                    metric_type=ConcentrationType.PROVIDER,
+                    dimension="substitutability",
+                    current_value=non_sub_pct,
+                    threshold_warning=20.0,
+                    threshold_critical=40.0,
+                    unit="percentage",
+                )
+            )
 
             # 7. Subcontractor concentration
             sub_metrics = self._calculate_subcontractor_concentration()
@@ -703,11 +726,14 @@ class DORAConcentrationRisk:
             for m in metrics:
                 self._metrics[m.metric_id] = m
 
-        self._log_event("metrics_calculated", {
-            "metrics_count": len(metrics),
-            "critical_count": sum(1 for m in metrics if m.status == "critical"),
-            "warning_count": sum(1 for m in metrics if m.status == "warning"),
-        })
+        self._log_event(
+            "metrics_calculated",
+            {
+                "metrics_count": len(metrics),
+                "critical_count": sum(1 for m in metrics if m.status == "critical"),
+                "warning_count": sum(1 for m in metrics if m.status == "warning"),
+            },
+        )
 
         return metrics
 
@@ -721,10 +747,7 @@ class DORAConcentrationRisk:
         if total_services == 0:
             return 0.0
 
-        hhi = sum(
-            ((d.services_count / total_services) * 100) ** 2
-            for d in dependencies
-        )
+        hhi = sum(((d.services_count / total_services) * 100) ** 2 for d in dependencies)
         return hhi
 
     def _get_top_provider(self) -> Optional[ProviderDependency]:
@@ -753,34 +776,38 @@ class DORAConcentrationRisk:
         if country_counts:
             top_country = max(country_counts.items(), key=lambda x: x[1])
             top_pct = (top_country[1] / total) * 100
-            metrics.append(ConcentrationMetric(
-                metric_name=f"Geographic Concentration ({top_country[0]})",
-                metric_type=ConcentrationType.GEOGRAPHIC,
-                dimension="top_country",
-                current_value=top_pct,
-                threshold_warning=self.config.geographic_concentration_warning_pct,
-                threshold_critical=self.config.geographic_concentration_critical_pct,
-                unit="percentage",
-                contributing_factors=[
-                    {"country": c, "count": v}
-                    for c, v in sorted(country_counts.items(), key=lambda x: -x[1])[:5]
-                ],
-            ))
+            metrics.append(
+                ConcentrationMetric(
+                    metric_name=f"Geographic Concentration ({top_country[0]})",
+                    metric_type=ConcentrationType.GEOGRAPHIC,
+                    dimension="top_country",
+                    current_value=top_pct,
+                    threshold_warning=self.config.geographic_concentration_warning_pct,
+                    threshold_critical=self.config.geographic_concentration_critical_pct,
+                    unit="percentage",
+                    contributing_factors=[
+                        {"country": c, "count": v}
+                        for c, v in sorted(country_counts.items(), key=lambda x: -x[1])[:5]
+                    ],
+                )
+            )
 
         # EU vs non-EU concentration
         eu_countries = self._get_eu_countries()
         eu_count = sum(v for k, v in country_counts.items() if k in eu_countries)
         eu_pct = (eu_count / total) * 100 if total > 0 else 0
-        metrics.append(ConcentrationMetric(
-            metric_name="EU Data Concentration",
-            metric_type=ConcentrationType.GEOGRAPHIC,
-            dimension="eu_vs_non_eu",
-            current_value=eu_pct,
-            threshold_warning=0,  # Not necessarily a warning
-            threshold_critical=0,
-            unit="percentage",
-            notes="Percentage of data in EU countries",
-        ))
+        metrics.append(
+            ConcentrationMetric(
+                metric_name="EU Data Concentration",
+                metric_type=ConcentrationType.GEOGRAPHIC,
+                dimension="eu_vs_non_eu",
+                current_value=eu_pct,
+                threshold_warning=0,  # Not necessarily a warning
+                threshold_critical=0,
+                unit="percentage",
+                notes="Percentage of data in EU countries",
+            )
+        )
 
         return metrics
 
@@ -800,17 +827,19 @@ class DORAConcentrationRisk:
             is_warning = count <= self.config.single_function_dependency_warning
             is_critical = count <= self.config.single_function_dependency_critical
 
-            metrics.append(ConcentrationMetric(
-                metric_name=f"Function Provider Count: {func}",
-                metric_type=ConcentrationType.SERVICE,
-                dimension="function_coverage",
-                current_value=count,
-                threshold_warning=self.config.min_providers_per_critical_function,
-                threshold_critical=1,  # Single point of failure
-                unit="count",
-                status="critical" if count <= 1 else ("warning" if count < 2 else "normal"),
-                contributing_factors=[{"providers": providers}],
-            ))
+            metrics.append(
+                ConcentrationMetric(
+                    metric_name=f"Function Provider Count: {func}",
+                    metric_type=ConcentrationType.SERVICE,
+                    dimension="function_coverage",
+                    current_value=count,
+                    threshold_warning=self.config.min_providers_per_critical_function,
+                    threshold_critical=1,  # Single point of failure
+                    unit="count",
+                    status="critical" if count <= 1 else ("warning" if count < 2 else "normal"),
+                    contributing_factors=[{"providers": providers}],
+                )
+            )
 
         return metrics
 
@@ -834,16 +863,18 @@ class DORAConcentrationRisk:
             top_pct = (top_sub[1] / total_providers) * 100 if total_providers > 0 else 0
 
             if top_pct > 10:  # Only report if significant
-                metrics.append(ConcentrationMetric(
-                    metric_name=f"Common Subcontractor ({top_sub[0]})",
-                    metric_type=ConcentrationType.SUBCONTRACTOR,
-                    dimension="shared_subcontractor",
-                    current_value=top_pct,
-                    threshold_warning=20.0,
-                    threshold_critical=40.0,
-                    unit="percentage",
-                    notes="Percentage of providers using this subcontractor",
-                ))
+                metrics.append(
+                    ConcentrationMetric(
+                        metric_name=f"Common Subcontractor ({top_sub[0]})",
+                        metric_type=ConcentrationType.SUBCONTRACTOR,
+                        dimension="shared_subcontractor",
+                        current_value=top_pct,
+                        threshold_warning=20.0,
+                        threshold_critical=40.0,
+                        unit="percentage",
+                        notes="Percentage of providers using this subcontractor",
+                    )
+                )
 
         return metrics
 
@@ -900,10 +931,13 @@ class DORAConcentrationRisk:
             for risk in risks:
                 self._risks[risk.risk_id] = risk
 
-        self._log_event("risks_identified", {
-            "total_risks": len(risks),
-            "critical_risks": sum(1 for r in risks if r.risk_level == RiskLevel.CRITICAL),
-        })
+        self._log_event(
+            "risks_identified",
+            {
+                "total_risks": len(risks),
+                "critical_risks": sum(1 for r in risks if r.risk_level == RiskLevel.CRITICAL),
+            },
+        )
 
         return risks
 
@@ -922,7 +956,7 @@ class DORAConcentrationRisk:
             risk_name=f"Concentration Risk: {metric.metric_name}",
             risk_type=metric.metric_type,
             description=f"Concentration metric '{metric.metric_name}' is in {metric.status} status. "
-                       f"Current value: {metric.current_value:.1f} {metric.unit}",
+            f"Current value: {metric.current_value:.1f} {metric.unit}",
             likelihood=likelihood,
             impact=impact,
             concentration_factor=metric.current_value,
@@ -944,7 +978,7 @@ class DORAConcentrationRisk:
                     risk_name=f"Single Point of Failure: {func}",
                     risk_type=ConcentrationType.SERVICE,
                     description=f"Critical function '{func}' depends on single provider "
-                               f"'{provider.provider_name if provider else provider_id}'",
+                    f"'{provider.provider_name if provider else provider_id}'",
                     likelihood=4,
                     impact=5,
                     affected_providers=[provider_id],
@@ -1139,60 +1173,68 @@ class DORAConcentrationRisk:
             suggestions = []
 
             if risk.risk_type == ConcentrationType.PROVIDER:
-                suggestions.extend([
-                    {
-                        "type": "diversify",
-                        "name": "Provider Diversification",
-                        "description": "Identify and onboard additional providers",
-                        "expected_effort": "high",
-                    },
-                    {
-                        "type": "exit_plan",
-                        "name": "Exit Strategy Enhancement",
-                        "description": "Develop detailed exit plan for concentrated provider",
-                        "expected_effort": "medium",
-                    },
-                ])
+                suggestions.extend(
+                    [
+                        {
+                            "type": "diversify",
+                            "name": "Provider Diversification",
+                            "description": "Identify and onboard additional providers",
+                            "expected_effort": "high",
+                        },
+                        {
+                            "type": "exit_plan",
+                            "name": "Exit Strategy Enhancement",
+                            "description": "Develop detailed exit plan for concentrated provider",
+                            "expected_effort": "medium",
+                        },
+                    ]
+                )
 
             if risk.risk_type == ConcentrationType.GEOGRAPHIC:
-                suggestions.extend([
-                    {
-                        "type": "diversify",
-                        "name": "Geographic Diversification",
-                        "description": "Distribute data across multiple regions",
-                        "expected_effort": "high",
-                    },
-                    {
-                        "type": "monitoring",
-                        "name": "Regional Monitoring",
-                        "description": "Implement monitoring for geographic region issues",
-                        "expected_effort": "low",
-                    },
-                ])
+                suggestions.extend(
+                    [
+                        {
+                            "type": "diversify",
+                            "name": "Geographic Diversification",
+                            "description": "Distribute data across multiple regions",
+                            "expected_effort": "high",
+                        },
+                        {
+                            "type": "monitoring",
+                            "name": "Regional Monitoring",
+                            "description": "Implement monitoring for geographic region issues",
+                            "expected_effort": "low",
+                        },
+                    ]
+                )
 
             if risk.risk_type == ConcentrationType.SERVICE:
-                suggestions.extend([
-                    {
-                        "type": "alternative",
-                        "name": "Alternative Provider Setup",
-                        "description": "Configure standby with alternative provider",
-                        "expected_effort": "high",
-                    },
-                    {
-                        "type": "monitoring",
-                        "name": "Enhanced SLA Monitoring",
-                        "description": "Implement strict SLA monitoring",
-                        "expected_effort": "low",
-                    },
-                ])
+                suggestions.extend(
+                    [
+                        {
+                            "type": "alternative",
+                            "name": "Alternative Provider Setup",
+                            "description": "Configure standby with alternative provider",
+                            "expected_effort": "high",
+                        },
+                        {
+                            "type": "monitoring",
+                            "name": "Enhanced SLA Monitoring",
+                            "description": "Implement strict SLA monitoring",
+                            "expected_effort": "low",
+                        },
+                    ]
+                )
 
             # Generic suggestions
-            suggestions.append({
-                "type": "acceptance",
-                "name": "Risk Acceptance (with controls)",
-                "description": "Accept risk with enhanced monitoring and contingency",
-                "expected_effort": "low",
-            })
+            suggestions.append(
+                {
+                    "type": "acceptance",
+                    "name": "Risk Acceptance (with controls)",
+                    "description": "Accept risk with enhanced monitoring and contingency",
+                    "expected_effort": "low",
+                }
+            )
 
             return suggestions
 
@@ -1240,7 +1282,9 @@ class DORAConcentrationRisk:
                 assessment.risks_by_type[type_key] = assessment.risks_by_type.get(type_key, 0) + 1
 
                 level_key = r.risk_level.value
-                assessment.risks_by_level[level_key] = assessment.risks_by_level.get(level_key, 0) + 1
+                assessment.risks_by_level[level_key] = (
+                    assessment.risks_by_level.get(level_key, 0) + 1
+                )
 
             # Determine overall level
             if assessment.risks_by_level.get("critical", 0) > 0:
@@ -1254,9 +1298,7 @@ class DORAConcentrationRisk:
 
             # Key concentration areas
             critical_metrics = self.get_critical_metrics()
-            assessment.key_concentration_areas = [
-                m.metric_name for m in critical_metrics
-            ]
+            assessment.key_concentration_areas = [m.metric_name for m in critical_metrics]
 
             # Generate recommendations
             assessment.recommendations = self._generate_recommendations(risks, metrics)
@@ -1264,12 +1306,15 @@ class DORAConcentrationRisk:
             # Store assessment
             self._assessments[assessment.assessment_id] = assessment
 
-        self._log_event("assessment_completed", {
-            "assessment_id": assessment.assessment_id,
-            "scope": scope.value,
-            "risks_count": len(risks),
-            "overall_level": assessment.overall_concentration_level.value,
-        })
+        self._log_event(
+            "assessment_completed",
+            {
+                "assessment_id": assessment.assessment_id,
+                "scope": scope.value,
+                "risks_count": len(risks),
+                "overall_level": assessment.overall_concentration_level.value,
+            },
+        )
 
         return assessment
 
@@ -1284,44 +1329,54 @@ class DORAConcentrationRisk:
         # Check for critical risks
         critical_risks = [r for r in risks if r.risk_level == RiskLevel.CRITICAL]
         if critical_risks:
-            recommendations.append({
-                "priority": "critical",
-                "recommendation": f"Address {len(critical_risks)} critical concentration risks immediately",
-                "risks": [r.risk_name for r in critical_risks],
-            })
+            recommendations.append(
+                {
+                    "priority": "critical",
+                    "recommendation": f"Address {len(critical_risks)} critical concentration risks immediately",
+                    "risks": [r.risk_name for r in critical_risks],
+                }
+            )
 
         # Check for single points of failure
         spof_risks = [r for r in risks if "Single Point of Failure" in r.risk_name]
         if spof_risks:
-            recommendations.append({
-                "priority": "high",
-                "recommendation": "Eliminate single points of failure for critical functions",
-                "affected_functions": [r.affected_functions for r in spof_risks],
-            })
+            recommendations.append(
+                {
+                    "priority": "high",
+                    "recommendation": "Eliminate single points of failure for critical functions",
+                    "affected_functions": [r.affected_functions for r in spof_risks],
+                }
+            )
 
         # Check for geographic concentration
         geo_risks = [r for r in risks if r.risk_type == ConcentrationType.GEOGRAPHIC]
         if geo_risks:
-            recommendations.append({
-                "priority": "medium",
-                "recommendation": "Review and diversify geographic distribution of data",
-                "countries": list(set(c for r in geo_risks for c in r.affected_countries)),
-            })
+            recommendations.append(
+                {
+                    "priority": "medium",
+                    "recommendation": "Review and diversify geographic distribution of data",
+                    "countries": list(set(c for r in geo_risks for c in r.affected_countries)),
+                }
+            )
 
         # Check for limited alternatives
         non_substitutable = [
-            d for d in self._dependencies.values()
-            if d.substitutability in [
+            d
+            for d in self._dependencies.values()
+            if d.substitutability
+            in [
                 SubstitutabilityLevel.DIFFICULT_TO_SUBSTITUTE,
-                SubstitutabilityLevel.NOT_SUBSTITUTABLE
+                SubstitutabilityLevel.NOT_SUBSTITUTABLE,
             ]
         ]
         if non_substitutable:
-            recommendations.append({
-                "priority": "medium",
-                "recommendation": "Develop alternatives for non-substitutable providers",
-                "providers": [d.provider_name for d in non_substitutable],
-            })
+            recommendations.append(
+                {
+                    "priority": "medium",
+                    "recommendation": "Develop alternatives for non-substitutable providers",
+                    "providers": [d.provider_name for d in non_substitutable],
+                }
+            )
 
         return recommendations
 
@@ -1338,10 +1393,7 @@ class DORAConcentrationRisk:
         with self._lock:
             if not self._assessments:
                 return None
-            return max(
-                self._assessments.values(),
-                key=lambda a: a.assessment_date
-            )
+            return max(self._assessments.values(), key=lambda a: a.assessment_date)
 
     # =========================================================================
     # Dependency Mapping
@@ -1371,8 +1423,7 @@ class DORAConcentrationRisk:
                 total = sum(len(v) for v in dep_map.countries.values())
                 if total > 0:
                     dep_map.geographic_hhi = sum(
-                        ((len(v) / total) * 100) ** 2
-                        for v in dep_map.countries.values()
+                        ((len(v) / total) * 100) ** 2 for v in dep_map.countries.values()
                     )
 
             return dep_map
@@ -1391,12 +1442,9 @@ class DORAConcentrationRisk:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "dependencies": {
                     "total_providers": len(self._dependencies),
-                    "ctpp_providers": sum(
-                        1 for d in self._dependencies.values() if d.is_ctpp
-                    ),
+                    "ctpp_providers": sum(1 for d in self._dependencies.values() if d.is_ctpp),
                     "critical_function_providers": sum(
-                        1 for d in self._dependencies.values()
-                        if d.critical_services_count > 0
+                        1 for d in self._dependencies.values() if d.critical_services_count > 0
                     ),
                 },
                 "metrics": {
@@ -1420,19 +1468,21 @@ class DORAConcentrationRisk:
                 "mitigations": {
                     "total": len(self._mitigations),
                     "in_progress": sum(
-                        1 for m in self._mitigations.values()
+                        1
+                        for m in self._mitigations.values()
                         if m.status == MitigationStatus.IN_PROGRESS
                     ),
                     "implemented": sum(
-                        1 for m in self._mitigations.values()
+                        1
+                        for m in self._mitigations.values()
                         if m.status in [MitigationStatus.IMPLEMENTED, MitigationStatus.VERIFIED]
                     ),
                 },
                 "compliance_indicators": {
-                    "no_critical_concentration": len(self.get_risks_by_level(RiskLevel.CRITICAL)) == 0,
+                    "no_critical_concentration": len(self.get_risks_by_level(RiskLevel.CRITICAL))
+                    == 0,
                     "no_single_points_of_failure": all(
-                        len(pids) > 1
-                        for pids in self._providers_by_function.values()
+                        len(pids) > 1 for pids in self._providers_by_function.values()
                     ),
                     "all_risks_have_mitigation": all(
                         len(r.mitigation_measures) > 0
@@ -1449,9 +1499,33 @@ class DORAConcentrationRisk:
     def _get_eu_countries(self) -> Set[str]:
         """Get set of EU country codes."""
         return {
-            "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-            "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
-            "PL", "PT", "RO", "SK", "SI", "ES", "SE"
+            "AT",
+            "BE",
+            "BG",
+            "HR",
+            "CY",
+            "CZ",
+            "DK",
+            "EE",
+            "FI",
+            "FR",
+            "DE",
+            "GR",
+            "HU",
+            "IE",
+            "IT",
+            "LV",
+            "LT",
+            "LU",
+            "MT",
+            "NL",
+            "PL",
+            "PT",
+            "RO",
+            "SK",
+            "SI",
+            "ES",
+            "SE",
         }
 
     def _log_event(
@@ -1469,7 +1543,9 @@ class DORAConcentrationRisk:
             "data": data,
         }
 
-        log_file = self._log_path / f"concentration_events_{datetime.now().strftime('%Y%m%d')}.jsonl"
+        log_file = (
+            self._log_path / f"concentration_events_{datetime.now().strftime('%Y%m%d')}.jsonl"
+        )
         try:
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(event, default=str) + "\n")
@@ -1480,6 +1556,7 @@ class DORAConcentrationRisk:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_concentration_risk(
     config: Optional[ConcentrationRiskConfig] = None,

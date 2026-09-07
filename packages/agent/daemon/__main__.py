@@ -136,6 +136,7 @@ def build_daemon_config(
     Returns:
         DaemonConfig instance
     """
+
     # Helper to get value with priority
     def get_value(key: str, env_var: str, default: Any = None) -> Any:
         # CLI args have highest priority
@@ -170,6 +171,7 @@ def build_daemon_config(
         # floats via str() so the hard-cap thresholds are exact (0.30, not
         # 0.2999999…) and never mix float/Decimal in downstream arithmetic.
         from decimal import Decimal as _Decimal
+
         kill_switch_cfg = KillSwitchConfig(
             max_daily_loss_pct=_Decimal(str(ks_config.get("max_daily_loss_pct", 0.30))),
             max_drawdown_pct=_Decimal(str(ks_config.get("max_drawdown_pct", 0.50))),
@@ -245,13 +247,21 @@ def build_daemon_config(
     # Build main config
     return DaemonConfig(
         agent_id=get_value("agent_id", "CCEA_AGENT_ID", agent_config.get("agent_id")),
-        agent_name=get_value("agent_name", "CCEA_AGENT_NAME", agent_config.get("name", "ccea-agent")),
+        agent_name=get_value(
+            "agent_name", "CCEA_AGENT_NAME", agent_config.get("name", "ccea-agent")
+        ),
         agent_version=agent_config.get("version", __version__),
-        cloud_endpoint=get_value("cloud_endpoint", "CCEA_CLOUD_ENDPOINT", cloud_config.get("endpoint")),
+        cloud_endpoint=get_value(
+            "cloud_endpoint", "CCEA_CLOUD_ENDPOINT", cloud_config.get("endpoint")
+        ),
         cloud_timeout_seconds=cloud_config.get("timeout_seconds", 30),
         heartbeat_interval_seconds=cloud_config.get("heartbeat_interval_seconds", 30),
-        cloud_enrollment_token=get_value("enrollment_token", "CCEA_ENROLLMENT_TOKEN", cloud_config.get("enrollment_token")),
-        cloud_access_token=get_value("access_token", "CCEA_ACCESS_TOKEN", cloud_config.get("access_token")),
+        cloud_enrollment_token=get_value(
+            "enrollment_token", "CCEA_ENROLLMENT_TOKEN", cloud_config.get("enrollment_token")
+        ),
+        cloud_access_token=get_value(
+            "access_token", "CCEA_ACCESS_TOKEN", cloud_config.get("access_token")
+        ),
         data_dir=data_dir,
         state_file=agent_config.get("state_file", "daemon_state.json"),
         kill_switch_config=kill_switch_cfg,
@@ -406,7 +416,8 @@ For more information, see: docs/agent/INSTALLATION.md
 
     # Config file
     parser.add_argument(
-        "-c", "--config",
+        "-c",
+        "--config",
         type=Path,
         default=None,
         help="Path to YAML config file (default: from CCEA_AGENT_CONFIG env)",
@@ -548,6 +559,7 @@ def main(args: Optional[list] = None) -> int:
     # Dump config if requested
     if parsed_args.dump_config:
         import json
+
         print(json.dumps(daemon_config.to_dict(), indent=2, default=str))
         return 0
 

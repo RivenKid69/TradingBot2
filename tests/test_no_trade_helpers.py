@@ -14,15 +14,18 @@ def test_parse_daily_windows_min_valid_and_invalid():
 
 
 def test_in_funding_buffer_with_midnight_and_day_marks():
-    ts_minutes = np.array([
-        0,          # exactly at midnight
-        5,          # within buffer after midnight
-        475,        # 7:55, 5 min before 8h mark
-        495,        # 8:15, outside 10 min buffer
-        951,        # 15:51, 9 min before 16h mark
-        971,        # 16:11, outside buffer
-        1435,       # 23:55, far from midnight mark
-    ], dtype=np.int64)
+    ts_minutes = np.array(
+        [
+            0,  # exactly at midnight
+            5,  # within buffer after midnight
+            475,  # 7:55, 5 min before 8h mark
+            495,  # 8:15, outside 10 min buffer
+            951,  # 15:51, 9 min before 16h mark
+            971,  # 16:11, outside buffer
+            1435,  # 23:55, far from midnight mark
+        ],
+        dtype=np.int64,
+    )
     ts_ms = ts_minutes * 60_000
     mask = _in_funding_buffer(ts_ms, 10)
     expected = np.array([True, True, True, False, True, False, True])

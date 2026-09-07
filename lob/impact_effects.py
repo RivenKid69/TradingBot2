@@ -57,8 +57,10 @@ from lob.market_impact import (
 # Enums and Constants
 # ==============================================================================
 
+
 class QuoteShiftType(IntEnum):
     """Type of quote shift after impact."""
+
     SYMMETRIC = 1  # Both bid and ask shift equally
     ASYMMETRIC = 2  # Only aggressed side shifts
     WIDENING = 3  # Spread widens (both move outward)
@@ -67,6 +69,7 @@ class QuoteShiftType(IntEnum):
 
 class LiquidityReaction(IntEnum):
     """Market maker reaction type."""
+
     REPLENISH = 1  # Add liquidity at new levels
     WITHDRAW = 2  # Remove liquidity (adverse selection)
     NEUTRAL = 3  # No change
@@ -75,6 +78,7 @@ class LiquidityReaction(IntEnum):
 
 class MomentumSignal(IntEnum):
     """Momentum detection signal."""
+
     NONE = 0
     WEAK_CONTINUATION = 1
     STRONG_CONTINUATION = 2
@@ -85,6 +89,7 @@ class MomentumSignal(IntEnum):
 # ==============================================================================
 # Data Classes
 # ==============================================================================
+
 
 @dataclass
 class QuoteShiftResult:
@@ -99,6 +104,7 @@ class QuoteShiftResult:
         new_spread_bps: New spread in basis points
         shift_type: Type of shift applied
     """
+
     new_bid: Optional[float] = None
     new_ask: Optional[float] = None
     bid_shift_bps: float = 0.0
@@ -122,6 +128,7 @@ class LiquidityReactionResult:
         new_depth_ask: New ask depth
         imbalance_change: Change in book imbalance
     """
+
     reaction_type: LiquidityReaction = LiquidityReaction.NEUTRAL
     orders_added: int = 0
     orders_removed: int = 0
@@ -145,6 +152,7 @@ class MomentumResult:
         recent_trade_imbalance: Net buy/sell imbalance in recent trades
         price_velocity: Rate of price change
     """
+
     signal: MomentumSignal = MomentumSignal.NONE
     continuation_probability: float = 0.5
     reversal_probability: float = 0.5
@@ -165,6 +173,7 @@ class AdverseSelectionResult:
         recommended_spread_bps: Recommended minimum spread
         confidence: Confidence level
     """
+
     adverse_selection_bps: float = 0.0
     information_probability: float = 0.0
     toxic_flow_indicator: float = 0.0
@@ -186,6 +195,7 @@ class ImpactEffectConfig:
         spread_widen_factor: Factor to widen spread during impact
         tick_size: Minimum price increment
     """
+
     quote_shift_fraction: float = 0.5  # 50% of impact shifts quotes
     replenish_rate: float = 100.0  # qty per second
     replenish_delay_ms: int = 100  # 100ms delay
@@ -198,6 +208,7 @@ class ImpactEffectConfig:
 # ==============================================================================
 # Impact Effects Engine
 # ==============================================================================
+
 
 class ImpactEffects:
     """
@@ -646,6 +657,7 @@ class ImpactEffects:
 # LOB Impact Simulator
 # ==============================================================================
 
+
 class LOBImpactSimulator:
     """
     High-level simulator that combines impact models with LOB state.
@@ -764,6 +776,7 @@ class LOBImpactSimulator:
 # ==============================================================================
 # Factory Functions
 # ==============================================================================
+
 
 def create_impact_effects(
     model_type: str = "almgren_chriss",

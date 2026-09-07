@@ -87,7 +87,7 @@ class TestInMemoryDisclaimerStorage:
             disclaimer_version="1.0.0",
             acknowledged_at=datetime.now(timezone.utc),
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
         storage.save(ack)
 
@@ -104,7 +104,7 @@ class TestInMemoryDisclaimerStorage:
             disclaimer_version="1.0.0",
             acknowledged_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
         ack2 = DisclaimerAcknowledgment(
             acknowledgment_id="ack_002",
@@ -113,7 +113,7 @@ class TestInMemoryDisclaimerStorage:
             disclaimer_version="2.0.0",
             acknowledged_at=datetime(2024, 6, 1, tzinfo=timezone.utc),
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
         storage.save(ack1)
         storage.save(ack2)
@@ -136,7 +136,7 @@ class TestInMemoryDisclaimerStorage:
                 disclaimer_version="1.0.0",
                 acknowledged_at=datetime.now(timezone.utc),
                 ip_address="127.0.0.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
             storage.save(ack)
 
@@ -153,7 +153,7 @@ class TestInMemoryDisclaimerStorage:
                 disclaimer_version="1.0.0",
                 acknowledged_at=datetime.now(timezone.utc),
                 ip_address="127.0.0.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
             storage.save(ack)
 
@@ -173,9 +173,7 @@ class TestDisclaimerService:
 
     def test_fresh_user_has_no_acknowledgment(self, service):
         """Verify fresh user has no acknowledgments."""
-        assert not service.has_valid_acknowledgment(
-            "new_user", DisclaimerType.PRE_LIVE_TRADING
-        )
+        assert not service.has_valid_acknowledgment("new_user", DisclaimerType.PRE_LIVE_TRADING)
 
     def test_acknowledgment_recorded(self, service):
         """Verify acknowledgment is properly recorded."""
@@ -183,7 +181,7 @@ class TestDisclaimerService:
             user_id="user_001",
             disclaimer_type=DisclaimerType.PRE_LIVE_TRADING,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         assert ack is not None
@@ -198,12 +196,10 @@ class TestDisclaimerService:
             user_id="user_001",
             disclaimer_type=DisclaimerType.PRE_LIVE_TRADING,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
-        assert service.has_valid_acknowledgment(
-            "user_001", DisclaimerType.PRE_LIVE_TRADING
-        )
+        assert service.has_valid_acknowledgment("user_001", DisclaimerType.PRE_LIVE_TRADING)
 
     def test_version_change_requires_reacknowledgment(self, service):
         """Verify version change invalidates previous acknowledgment."""
@@ -211,16 +207,14 @@ class TestDisclaimerService:
             user_id="user_001",
             disclaimer_type=DisclaimerType.PRE_LIVE_TRADING,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Change the current version
         service.update_disclaimer_version(DisclaimerType.PRE_LIVE_TRADING, "2.0.0")
 
         # Should now require re-acknowledgment
-        assert not service.has_valid_acknowledgment(
-            "user_001", DisclaimerType.PRE_LIVE_TRADING
-        )
+        assert not service.has_valid_acknowledgment("user_001", DisclaimerType.PRE_LIVE_TRADING)
 
     def test_require_acknowledgment_raises_when_missing(self, service):
         """Verify require_acknowledgment raises for unacknowledged disclaimer."""
@@ -235,7 +229,7 @@ class TestDisclaimerService:
             user_id="user_001",
             disclaimer_type=DisclaimerType.PRE_LIVE_TRADING,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Should not raise
@@ -248,12 +242,12 @@ class TestDisclaimerService:
             user_id="user_001",
             disclaimer_type=DisclaimerType.TERMS_OF_SERVICE,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         pending = service.get_pending_disclaimers(
             "user_001",
-            required_types=[DisclaimerType.TERMS_OF_SERVICE, DisclaimerType.PRE_LIVE_TRADING]
+            required_types=[DisclaimerType.TERMS_OF_SERVICE, DisclaimerType.PRE_LIVE_TRADING],
         )
 
         assert DisclaimerType.PRE_LIVE_TRADING in pending
@@ -277,7 +271,7 @@ class TestDisclaimerService:
                 user_id="user_001",
                 disclaimer_type=dtype,
                 ip_address="127.0.0.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
 
         acks = service.get_user_acknowledgments("user_001")
@@ -289,16 +283,14 @@ class TestDisclaimerService:
             user_id="user_001",
             disclaimer_type=DisclaimerType.PRE_LIVE_TRADING,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         deleted = service.delete_user_acknowledgments("user_001")
         assert deleted == 1
 
         # Should no longer have valid acknowledgment
-        assert not service.has_valid_acknowledgment(
-            "user_001", DisclaimerType.PRE_LIVE_TRADING
-        )
+        assert not service.has_valid_acknowledgment("user_001", DisclaimerType.PRE_LIVE_TRADING)
 
     def test_acknowledgment_report(self, service):
         """Verify get_acknowledgment_report generates correct report."""
@@ -306,7 +298,7 @@ class TestDisclaimerService:
             user_id="user_001",
             disclaimer_type=DisclaimerType.PRE_LIVE_TRADING,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         report = service.get_acknowledgment_report("user_001")
@@ -334,7 +326,7 @@ class TestAcknowledgmentSerialization:
             ip_address="127.0.0.1",
             user_agent="Mozilla/5.0",
             consent_text_hash="abc123",
-            metadata={"extra": "data"}
+            metadata={"extra": "data"},
         )
 
         data = ack.to_dict()
@@ -366,8 +358,7 @@ class TestDisclaimerNotAcknowledgedError:
     def test_custom_message(self):
         """Verify custom message is used."""
         error = DisclaimerNotAcknowledgedError(
-            DisclaimerType.PRE_LIVE_TRADING,
-            "Custom error message"
+            DisclaimerType.PRE_LIVE_TRADING, "Custom error message"
         )
         assert error.message == "Custom error message"
 
@@ -392,7 +383,7 @@ class TestHelperFunctions:
             user_id="user_001",
             disclaimer_type=DisclaimerType.PRE_LIVE_TRADING,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
         # Should not raise
         require_live_trading_acknowledgment(service, "user_001")
@@ -408,7 +399,7 @@ class TestHelperFunctions:
             user_id="user_001",
             disclaimer_type=DisclaimerType.STRATEGY_DEPLOYMENT,
             ip_address="127.0.0.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
         # Should not raise
         require_strategy_deployment_acknowledgment(service, "user_001")
@@ -443,7 +434,7 @@ class TestAllDisclaimerTypes:
                 user_id="user_001",
                 disclaimer_type=dtype,
                 ip_address="127.0.0.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
             assert ack is not None
             assert service.has_valid_acknowledgment("user_001", dtype)

@@ -46,8 +46,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class IncidentClassificationType(Enum):
     """Incident classification types per DORA Article 18."""
+
     MAJOR = "major"
     SIGNIFICANT = "significant"
     MINOR = "minor"
@@ -55,6 +57,7 @@ class IncidentClassificationType(Enum):
 
 class ClientType(Enum):
     """Client types for impact assessment."""
+
     RETAIL = "retail"
     PROFESSIONAL = "professional"
     ELIGIBLE_COUNTERPARTY = "eligible_counterparty"
@@ -64,6 +67,7 @@ class ClientType(Enum):
 
 class DataType(Enum):
     """Data types for breach assessment."""
+
     PERSONAL_DATA = "personal_data"
     FINANCIAL_DATA = "financial_data"
     CONFIDENTIAL_BUSINESS = "confidential_business"
@@ -74,6 +78,7 @@ class DataType(Enum):
 
 class CriticalServiceType(Enum):
     """Critical service types per DORA Article 3(22)."""
+
     ORDER_EXECUTION = "order_execution"
     MARKET_DATA = "market_data"
     RISK_MONITORING = "risk_monitoring"
@@ -88,6 +93,7 @@ class CriticalServiceType(Enum):
 
 class MajorIncidentTrigger(Enum):
     """Triggers for major incident classification per CDR 2024/1772."""
+
     CRITICAL_SERVICE_BREACH = "critical_service_breach"
     MULTIPLE_CRITERIA_THRESHOLD = "multiple_criteria_threshold"
     RECURRING_INCIDENTS = "recurring_incidents"
@@ -100,6 +106,7 @@ class MajorIncidentTrigger(Enum):
 
 class ReputationalImpactLevel(Enum):
     """Reputational impact levels."""
+
     NONE = "none"
     LOW = "low"
     MEDIUM = "medium"
@@ -111,6 +118,7 @@ class ReputationalImpactLevel(Enum):
 # Data Structures - Classification Criteria
 # =============================================================================
 
+
 @dataclass
 class ClassificationThresholds:
     """
@@ -118,6 +126,7 @@ class ClassificationThresholds:
 
     These are the thresholds used to determine if an incident is major.
     """
+
     # Client impact thresholds (Article 18(1)(a))
     retail_client_count: int = 5000
     professional_client_count: int = 100
@@ -151,6 +160,7 @@ class ClientImpactAssessment:
     """
     Client impact assessment per Article 18(1)(a).
     """
+
     # Counts by client type
     retail_clients_affected: int = 0
     professional_clients_affected: int = 0
@@ -174,9 +184,9 @@ class ClientImpactAssessment:
         """Check if any client threshold is exceeded."""
         thresholds = ClassificationThresholds()
         return (
-            self.retail_clients_affected >= thresholds.retail_client_count or
-            self.professional_clients_affected >= thresholds.professional_client_count or
-            self.counterparties_affected >= thresholds.counterparty_count
+            self.retail_clients_affected >= thresholds.retail_client_count
+            or self.professional_clients_affected >= thresholds.professional_client_count
+            or self.counterparties_affected >= thresholds.counterparty_count
         )
 
 
@@ -185,6 +195,7 @@ class DurationAssessment:
     """
     Duration assessment per Article 18(1)(b).
     """
+
     incident_start: str = ""
     incident_end: str = ""
     service_disruption_start: str = ""
@@ -203,8 +214,8 @@ class DurationAssessment:
         """Check if duration threshold is exceeded."""
         thresholds = ClassificationThresholds()
         return (
-            self.total_duration_hours >= thresholds.duration_hours or
-            self.service_unavailability_hours >= thresholds.duration_hours
+            self.total_duration_hours >= thresholds.duration_hours
+            or self.service_unavailability_hours >= thresholds.duration_hours
         )
 
 
@@ -213,6 +224,7 @@ class GeographicAssessment:
     """
     Geographic spread assessment per Article 18(1)(c).
     """
+
     # Affected EU member states (ISO 3166-1 alpha-2)
     member_states_affected: List[str] = field(default_factory=list)
 
@@ -239,6 +251,7 @@ class DataLossAssessment:
     """
     Data loss assessment per Article 18(1)(d).
     """
+
     # Data compromised
     data_compromised: bool = False
     data_types_affected: List[DataType] = field(default_factory=list)
@@ -260,11 +273,7 @@ class DataLossAssessment:
     @property
     def is_material(self) -> bool:
         """Check if data loss is material."""
-        return (
-            self.data_compromised or
-            self.data_integrity_affected or
-            self.includes_personal_data
-        )
+        return self.data_compromised or self.data_integrity_affected or self.includes_personal_data
 
 
 @dataclass
@@ -272,6 +281,7 @@ class CriticalServiceAssessment:
     """
     Critical service impact assessment per Article 18(1)(e).
     """
+
     # Affected critical services
     critical_services_affected: List[CriticalServiceType] = field(default_factory=list)
 
@@ -292,8 +302,7 @@ class CriticalServiceAssessment:
     def has_impact(self) -> bool:
         """Check if critical services are affected."""
         return (
-            len(self.critical_services_affected) > 0 or
-            self.affects_critical_or_important_functions
+            len(self.critical_services_affected) > 0 or self.affects_critical_or_important_functions
         )
 
 
@@ -302,6 +311,7 @@ class EconomicImpactAssessment:
     """
     Economic impact assessment per Article 18(1)(g).
     """
+
     # Direct costs
     direct_financial_losses_eur: float = 0.0
     remediation_costs_eur: float = 0.0
@@ -325,14 +335,14 @@ class EconomicImpactAssessment:
     def calculate_total(self) -> float:
         """Calculate total economic impact."""
         self.total_estimated_impact_eur = (
-            self.direct_financial_losses_eur +
-            self.remediation_costs_eur +
-            self.recovery_costs_eur +
-            self.regulatory_fines_eur +
-            self.legal_costs_eur +
-            self.lost_revenue_eur +
-            self.compensation_to_clients_eur +
-            self.reputational_damage_estimate_eur
+            self.direct_financial_losses_eur
+            + self.remediation_costs_eur
+            + self.recovery_costs_eur
+            + self.regulatory_fines_eur
+            + self.legal_costs_eur
+            + self.lost_revenue_eur
+            + self.compensation_to_clients_eur
+            + self.reputational_damage_estimate_eur
         )
         return self.total_estimated_impact_eur
 
@@ -349,6 +359,7 @@ class ReputationalAssessment:
     """
     Reputational impact assessment per Article 18(1)(h).
     """
+
     impact_level: ReputationalImpactLevel = ReputationalImpactLevel.NONE
 
     # Media/public attention
@@ -368,10 +379,7 @@ class ReputationalAssessment:
     @property
     def is_significant(self) -> bool:
         """Check if reputational impact is significant."""
-        return self.impact_level in (
-            ReputationalImpactLevel.HIGH,
-            ReputationalImpactLevel.SEVERE
-        )
+        return self.impact_level in (ReputationalImpactLevel.HIGH, ReputationalImpactLevel.SEVERE)
 
 
 @dataclass
@@ -379,6 +387,7 @@ class RecurringIncidentAssessment:
     """
     Recurring incident assessment per Article 18(2).
     """
+
     # Related incidents
     related_incident_ids: List[str] = field(default_factory=list)
     incidents_same_root_cause: int = 0
@@ -400,10 +409,7 @@ class RecurringIncidentAssessment:
     def exceeds_threshold(self) -> bool:
         """Check if recurring threshold is exceeded."""
         thresholds = ClassificationThresholds()
-        return (
-            self.same_root_cause and
-            self.incidents_same_root_cause >= thresholds.recurring_count
-        )
+        return self.same_root_cause and self.incidents_same_root_cause >= thresholds.recurring_count
 
 
 @dataclass
@@ -411,6 +417,7 @@ class MaliciousAccessAssessment:
     """
     Malicious/unauthorized access assessment per CDR 2024/1772.
     """
+
     is_malicious: bool = False
     is_unauthorized_access: bool = False
 
@@ -433,11 +440,13 @@ class MaliciousAccessAssessment:
 # Main Classification Result
 # =============================================================================
 
+
 @dataclass
 class IncidentClassificationResult:
     """
     Complete incident classification result per Article 18.
     """
+
     classification_id: str = ""
     incident_id: str = ""
 
@@ -458,7 +467,9 @@ class IncidentClassificationResult:
     critical_services: CriticalServiceAssessment = field(default_factory=CriticalServiceAssessment)
     economic_impact: EconomicImpactAssessment = field(default_factory=EconomicImpactAssessment)
     reputational_impact: ReputationalAssessment = field(default_factory=ReputationalAssessment)
-    recurring_assessment: RecurringIncidentAssessment = field(default_factory=RecurringIncidentAssessment)
+    recurring_assessment: RecurringIncidentAssessment = field(
+        default_factory=RecurringIncidentAssessment
+    )
     malicious_access: MaliciousAccessAssessment = field(default_factory=MaliciousAccessAssessment)
 
     # Notification requirements
@@ -480,7 +491,9 @@ class IncidentClassificationResult:
 
     def __post_init__(self):
         if not self.classification_id:
-            self.classification_id = f"CLS-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.classification_id = (
+                f"CLS-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.classified_at:
             self.classified_at = datetime.now(timezone.utc).isoformat()
 
@@ -489,9 +502,11 @@ class IncidentClassificationResult:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class IncidentClassificationConfig:
     """Configuration for incident classification."""
+
     # Custom thresholds (override defaults)
     thresholds: Optional[ClassificationThresholds] = None
 
@@ -513,6 +528,7 @@ class IncidentClassificationConfig:
 # =============================================================================
 # Main Classification Engine
 # =============================================================================
+
 
 class DORAIncidentClassification:
     """
@@ -693,9 +709,8 @@ class DORAIncidentClassification:
         triggers = []
 
         # Check critical service + malicious access
-        if (
-            result.critical_services.has_impact and
-            (result.malicious_access.is_malicious or result.malicious_access.is_unauthorized_access)
+        if result.critical_services.has_impact and (
+            result.malicious_access.is_malicious or result.malicious_access.is_unauthorized_access
         ):
             triggers.append(MajorIncidentTrigger.CRITICAL_SERVICE_BREACH)
 
@@ -772,7 +787,9 @@ class DORAIncidentClassification:
                 parts.append("\nNo major criteria thresholds exceeded.")
 
         if result.requires_notification:
-            parts.append(f"\nNotification required: Yes (within {result.notification_deadline_hours}h)")
+            parts.append(
+                f"\nNotification required: Yes (within {result.notification_deadline_hours}h)"
+            )
         else:
             parts.append("\nNotification required: No")
 
@@ -1009,9 +1026,7 @@ class DORAIncidentClassification:
                 if cls.incident_id == incident_id:
                     continue
 
-                cls_time = datetime.fromisoformat(
-                    cls.classified_at.replace("Z", "+00:00")
-                )
+                cls_time = datetime.fromisoformat(cls.classified_at.replace("Z", "+00:00"))
 
                 if cls_time < period_start:
                     continue
@@ -1075,19 +1090,18 @@ class DORAIncidentClassification:
         if not period_end:
             period_end = datetime.now(timezone.utc).isoformat()
         if not period_start:
-            period_start = (
-                datetime.now(timezone.utc) - timedelta(days=30)
-            ).isoformat()
+            period_start = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
 
         start_dt = datetime.fromisoformat(period_start.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(period_end.replace("Z", "+00:00"))
 
         with self._lock:
             period_classifications = [
-                c for c in self._classifications.values()
-                if start_dt <= datetime.fromisoformat(
-                    c.classified_at.replace("Z", "+00:00")
-                ) <= end_dt
+                c
+                for c in self._classifications.values()
+                if start_dt
+                <= datetime.fromisoformat(c.classified_at.replace("Z", "+00:00"))
+                <= end_dt
             ]
 
         by_type = {
@@ -1121,12 +1135,12 @@ class DORAIncidentClassification:
             "notifications_required": sum(
                 1 for c in period_classifications if c.requires_notification
             ),
-            "common_triggers": dict(sorted(
-                trigger_counts.items(), key=lambda x: x[1], reverse=True
-            )[:5]),
-            "common_criteria": dict(sorted(
-                criteria_counts.items(), key=lambda x: x[1], reverse=True
-            )[:5]),
+            "common_triggers": dict(
+                sorted(trigger_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+            ),
+            "common_criteria": dict(
+                sorted(criteria_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+            ),
         }
 
     def export_classification(
@@ -1193,6 +1207,7 @@ class DORAIncidentClassification:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_incident_classification(
     config: Optional[IncidentClassificationConfig] = None,

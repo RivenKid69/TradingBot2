@@ -32,12 +32,14 @@ Uses the operating system's secure credential storage:
 | Windows | Credential Manager (DPAPI) |
 
 **Advantages:**
+
 - Protected by OS-level security
 - Integrates with biometrics (Touch ID, Windows Hello)
 - No separate master key needed
 - Hardware-backed on supported devices
 
 **Configuration:**
+
 ```yaml
 vault:
   backend: keychain
@@ -48,6 +50,7 @@ vault:
 For environments without keychain support:
 
 **Configuration:**
+
 ```yaml
 vault:
   backend: encrypted_file
@@ -56,6 +59,7 @@ vault:
 ```
 
 **Encryption:**
+
 - Algorithm: AES-256-GCM
 - Key derivation: PBKDF2-HMAC-SHA256 (100,000 iterations)
 - Unique salt per vault (16 bytes)
@@ -67,6 +71,7 @@ vault:
 ### Adding Broker Credentials
 
 **Interactive:**
+
 ```bash
 ccea-agent vault add-broker
 # Prompts for:
@@ -78,6 +83,7 @@ ccea-agent vault add-broker
 ```
 
 **Non-interactive:**
+
 ```bash
 ccea-agent vault add-broker \
   --broker binance \
@@ -87,6 +93,7 @@ ccea-agent vault add-broker \
 ```
 
 **From environment:**
+
 ```bash
 export BINANCE_API_KEY="your_api_key"
 export BINANCE_API_SECRET="your_api_secret"
@@ -154,6 +161,7 @@ ccea-agent vault add-broker \
 ```
 
 **Selecting Account for Deployment:**
+
 ```yaml
 # deployment config
 broker:
@@ -214,6 +222,7 @@ ccea-agent vault rotate-key
 ### DO
 
 1. **Use OS keychain when available**
+
    ```yaml
    vault:
      backend: keychain
@@ -229,11 +238,13 @@ ccea-agent vault rotate-key
    - Different strategies
 
 4. **Rotate credentials regularly**
+
    ```bash
    ccea-agent vault rotate-credentials --id cred_abc
    ```
 
 5. **Audit vault access**
+
    ```bash
    ccea-agent vault audit-log
    ```
@@ -413,6 +424,7 @@ ccea-agent vault reset           # Reset vault (DANGER)
 ---
 
 **Related Documentation:**
+
 - [Installation](./INSTALLATION.md)
 - [Risk Controls](./RISK_CONTROLS.md)
 - [Security Trust Center](../security/TRUST_CENTER.md)

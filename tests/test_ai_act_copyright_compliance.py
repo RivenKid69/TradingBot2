@@ -106,7 +106,7 @@ class TestDataSourceRecord:
             source_name="Test Data",
             source_type=DataSourceType.PUBLIC_MARKET_DATA,
             copyright_status=CopyrightStatus.NOT_APPLICABLE,
-            provider="Test Provider"
+            provider="Test Provider",
         )
         assert source.source_id == "test"
         assert source.source_type == DataSourceType.PUBLIC_MARKET_DATA
@@ -121,7 +121,7 @@ class TestDataSourceRecord:
             copyright_status=CopyrightStatus.LICENSED,
             provider="Provider",
             license_type="Commercial",
-            license_url="https://example.com/license"
+            license_url="https://example.com/license",
         )
         assert source.license_type == "Commercial"
         assert source.license_url is not None
@@ -133,7 +133,7 @@ class TestDataSourceRecord:
             source_name="Test",
             source_type=DataSourceType.SYNTHETIC,
             copyright_status=CopyrightStatus.NOT_APPLICABLE,
-            provider="Internal"
+            provider="Internal",
         )
         assert source.opt_out_checked is False
         assert source.data_category == "market_data"
@@ -146,7 +146,7 @@ class TestDataSourceRecord:
             source_name="Test Data",
             source_type=DataSourceType.PUBLIC_MARKET_DATA,
             copyright_status=CopyrightStatus.NOT_APPLICABLE,
-            provider="Provider"
+            provider="Provider",
         )
         data = source.to_dict()
         assert data["source_id"] == "test"
@@ -160,7 +160,7 @@ class TestDataSourceRecord:
             source_name="Test Data",
             source_type=DataSourceType.PUBLIC_MARKET_DATA,
             copyright_status=CopyrightStatus.NOT_APPLICABLE,
-            provider="Provider"
+            provider="Provider",
         )
         data = original.to_dict()
         restored = DataSourceRecord.from_dict(data)
@@ -181,7 +181,7 @@ class TestOptOutCheck:
             check_date=datetime.utcnow(),
             mechanism_checked="robots.txt",
             opt_out_found=False,
-            action_taken="proceeded"
+            action_taken="proceeded",
         )
         assert check.check_id == "check1"
         assert check.opt_out_found is False
@@ -196,7 +196,7 @@ class TestOptOutCheck:
             mechanism_checked="robots.txt",
             opt_out_found=False,
             action_taken="proceeded",
-            evidence_hash="abc123"
+            evidence_hash="abc123",
         )
         assert check.evidence_hash == "abc123"
 
@@ -208,7 +208,7 @@ class TestOptOutCheck:
             check_date=datetime.utcnow(),
             mechanism_checked="robots.txt",
             opt_out_found=False,
-            action_taken="proceeded"
+            action_taken="proceeded",
         )
         data = check.to_dict()
         assert "check_id" in data
@@ -235,7 +235,7 @@ class TestCopyrightComplianceManager:
             source_name="New Data",
             source_type=DataSourceType.OPEN_DATA,
             copyright_status=CopyrightStatus.PUBLIC_DOMAIN,
-            provider="Open Data Provider"
+            provider="Open Data Provider",
         )
         source_id = manager.register_data_source(source)
         assert source_id == "new_source"
@@ -243,19 +243,13 @@ class TestCopyrightComplianceManager:
 
     def test_update_data_source(self, manager):
         """Test updating existing data source."""
-        result = manager.update_data_source(
-            "binance_ohlcv",
-            {"description": "Updated description"}
-        )
+        result = manager.update_data_source("binance_ohlcv", {"description": "Updated description"})
         assert result is True
         assert manager.data_sources["binance_ohlcv"].description == "Updated description"
 
     def test_update_nonexistent_source(self, manager):
         """Test updating nonexistent source fails."""
-        result = manager.update_data_source(
-            "nonexistent",
-            {"description": "Test"}
-        )
+        result = manager.update_data_source("nonexistent", {"description": "Test"})
         assert result is False
 
     def test_remove_data_source(self, manager):
@@ -265,7 +259,7 @@ class TestCopyrightComplianceManager:
             source_name="Remove Me",
             source_type=DataSourceType.SYNTHETIC,
             copyright_status=CopyrightStatus.NOT_APPLICABLE,
-            provider="Internal"
+            provider="Internal",
         )
         manager.register_data_source(source)
         assert "to_remove" in manager.data_sources
@@ -281,10 +275,7 @@ class TestCopyrightComplianceManager:
 
     def test_check_opt_out(self, manager):
         """Test opt-out check recording."""
-        check = manager.check_opt_out(
-            source_id="binance_ohlcv",
-            mechanism="robots.txt"
-        )
+        check = manager.check_opt_out(source_id="binance_ohlcv", mechanism="robots.txt")
         assert check is not None
         assert check.mechanism_checked == "robots.txt"
         assert manager.data_sources["binance_ohlcv"].opt_out_checked
@@ -292,9 +283,7 @@ class TestCopyrightComplianceManager:
     def test_check_opt_out_with_evidence(self, manager):
         """Test opt-out check with evidence hash."""
         check = manager.check_opt_out(
-            source_id="binance_ohlcv",
-            mechanism="robots.txt",
-            content_hash="abc123"
+            source_id="binance_ohlcv", mechanism="robots.txt", content_hash="abc123"
         )
         assert check.evidence_hash == "abc123"
 
@@ -324,18 +313,12 @@ class TestCopyrightComplianceManager:
     def test_get_sources_by_status(self, manager):
         """Test filtering sources by copyright status."""
         sources = manager.get_sources_by_status(CopyrightStatus.NOT_APPLICABLE)
-        assert all(
-            s.copyright_status == CopyrightStatus.NOT_APPLICABLE
-            for s in sources
-        )
+        assert all(s.copyright_status == CopyrightStatus.NOT_APPLICABLE for s in sources)
 
     def test_get_sources_by_type(self, manager):
         """Test filtering sources by type."""
         sources = manager.get_sources_by_type(DataSourceType.PUBLIC_MARKET_DATA)
-        assert all(
-            s.source_type == DataSourceType.PUBLIC_MARKET_DATA
-            for s in sources
-        )
+        assert all(s.source_type == DataSourceType.PUBLIC_MARKET_DATA for s in sources)
 
     def test_get_opt_out_checks(self, manager):
         """Test getting opt-out check records."""
@@ -366,7 +349,7 @@ class TestRightsHolderRequests:
             requester_name="John Doe",
             requester_email="john@example.com",
             request_type="information",
-            content_description="Market data usage inquiry"
+            content_description="Market data usage inquiry",
         )
         assert request is not None
         assert request.requester_name == "John Doe"
@@ -380,7 +363,7 @@ class TestRightsHolderRequests:
                 requester_name="Test",
                 requester_email="test@example.com",
                 request_type=req_type,
-                content_description="Test request"
+                content_description="Test request",
             )
             assert request.request_type == req_type
 
@@ -463,7 +446,7 @@ class TestValidateSourceRecord:
             source_name="Test",
             source_type=DataSourceType.PUBLIC_MARKET_DATA,
             copyright_status=CopyrightStatus.NOT_APPLICABLE,
-            provider="Provider"
+            provider="Provider",
         )
         result = validate_source_record(source)
         assert result["all_valid"] is True
@@ -476,7 +459,7 @@ class TestValidateSourceRecord:
             source_type=DataSourceType.LICENSED_DATA,
             copyright_status=CopyrightStatus.LICENSED,
             provider="Provider",
-            license_type=None  # Missing!
+            license_type=None,  # Missing!
         )
         result = validate_source_record(source)
         assert result["has_license_type"] is False
@@ -490,7 +473,7 @@ class TestValidateSourceRecord:
             source_type=DataSourceType.LICENSED_DATA,
             copyright_status=CopyrightStatus.LICENSED,
             provider="Provider",
-            license_type="Commercial"
+            license_type="Commercial",
         )
         result = validate_source_record(source)
         assert result["has_license_type"] is True
@@ -531,7 +514,7 @@ class TestArticle53cCompliance:
             source_type=DataSourceType.OPEN_DATA,
             copyright_status=CopyrightStatus.PUBLIC_DOMAIN,
             provider="Test Provider",
-            description="Test data source"
+            description="Test data source",
         )
         manager.register_data_source(source)
 
@@ -592,7 +575,7 @@ class TestEdgeCases:
             source_name="Test",
             source_type=DataSourceType.SYNTHETIC,
             copyright_status=CopyrightStatus.NOT_APPLICABLE,
-            provider="Internal"
+            provider="Internal",
         )
         manager.register_data_source(source)
         assert "" in manager.data_sources
@@ -604,7 +587,7 @@ class TestEdgeCases:
             source_name="Test",
             source_type=DataSourceType.SYNTHETIC,
             copyright_status=CopyrightStatus.NOT_APPLICABLE,
-            provider="Internal"
+            provider="Internal",
         )
         manager.register_data_source(source)
         assert "test/source:v1" in manager.data_sources

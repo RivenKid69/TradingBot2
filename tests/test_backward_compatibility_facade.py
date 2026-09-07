@@ -37,7 +37,7 @@ class TestFacadeDeprecationWarning:
         import sys
 
         # Remove from cache to ensure fresh import
-        modules_to_remove = [k for k in sys.modules.keys() if k.startswith('services.compliance')]
+        modules_to_remove = [k for k in sys.modules.keys() if k.startswith("services.compliance")]
         for mod in modules_to_remove:
             if mod in sys.modules:
                 del sys.modules[mod]
@@ -48,19 +48,20 @@ class TestFacadeDeprecationWarning:
 
             # Should have at least one deprecation warning
             deprecation_warnings = [
-                x for x in w
+                x
+                for x in w
                 if issubclass(x.category, DeprecationWarning)
                 and "services.compliance is deprecated" in str(x.message)
             ]
-            assert len(deprecation_warnings) >= 1, (
-                "Expected deprecation warning for services.compliance"
-            )
+            assert (
+                len(deprecation_warnings) >= 1
+            ), "Expected deprecation warning for services.compliance"
 
     def test_deprecation_message_contains_migration_info(self) -> None:
         """Verify deprecation message includes migration guidance."""
         import sys
 
-        modules_to_remove = [k for k in sys.modules.keys() if k.startswith('services.compliance')]
+        modules_to_remove = [k for k in sys.modules.keys() if k.startswith("services.compliance")]
         for mod in modules_to_remove:
             if mod in sys.modules:
                 del sys.modules[mod]
@@ -80,6 +81,7 @@ class TestFacadeDeprecationWarning:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             import services.compliance
+
             assert services.compliance.__version__ == "8.0.0"
 
     def test_deprecated_flag_is_true(self) -> None:
@@ -87,6 +89,7 @@ class TestFacadeDeprecationWarning:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             import services.compliance
+
             assert services.compliance.__deprecated__ is True
 
 
@@ -103,6 +106,7 @@ class TestCoreReexports:
     def test_kill_switch_imports(self) -> None:
         """Test EnhancedKillSwitch import."""
         from services.compliance import EnhancedKillSwitch, create_enhanced_kill_switch
+
         assert EnhancedKillSwitch is not None
         assert callable(create_enhanced_kill_switch)
 
@@ -114,6 +118,7 @@ class TestCoreReexports:
             AuditEventType,
             create_audit_trail_writer,
         )
+
         assert AuditTrailWriter is not None
         assert AuditRecord is not None
         assert AuditEventType is not None
@@ -125,6 +130,7 @@ class TestCoreReexports:
             PreTradeCheckResult,
             create_pre_trade_controls,
         )
+
         assert PreTradeControls is not None
         assert PreTradeCheckResult is not None
 
@@ -135,6 +141,7 @@ class TestCoreReexports:
             ComplianceAlert,
             AlertSeverity,
         )
+
         assert RealTimeMonitor is not None
         assert ComplianceAlert is not None
 
@@ -145,6 +152,7 @@ class TestCoreReexports:
             create_business_continuity_plan,
             get_standard_bcp_scenarios,
         )
+
         assert BusinessContinuityPlan is not None
         assert callable(create_business_continuity_plan)
 
@@ -155,6 +163,7 @@ class TestCoreReexports:
             ClockSyncStatus,
             create_compliance_clock,
         )
+
         assert ComplianceClock is not None
         assert ClockSyncStatus is not None
 
@@ -166,6 +175,7 @@ class TestCoreReexports:
             FileAuditStorage,
             create_audit_storage,
         )
+
         assert MemoryAuditStorage is not None
         assert SQLiteAuditStorage is not None
 
@@ -176,6 +186,7 @@ class TestCoreReexports:
             RetentionPeriod,
             create_retention_manager,
         )
+
         assert RetentionManager is not None
         assert RetentionPeriod is not None
 
@@ -197,6 +208,7 @@ class TestIntegrationReexports:
             BestExecutionPolicy,
             create_best_execution_analyzer,
         )
+
         assert BestExecutionAnalyzer is not None
         assert BestExecutionPolicy is not None
 
@@ -207,6 +219,7 @@ class TestIntegrationReexports:
             TCAMetricType,
             create_tca_wrapper,
         )
+
         assert TCAComplianceWrapper is not None
         assert TCAMetricType is not None
 
@@ -217,6 +230,7 @@ class TestIntegrationReexports:
             SmartOrderRouter,
             VenueMetricType,
         )
+
         assert VenueAnalyzer is not None
         assert SmartOrderRouter is not None
 
@@ -227,6 +241,7 @@ class TestIntegrationReexports:
             OTRLevel,
             create_otr_monitor,
         )
+
         assert OTRMonitor is not None
         assert OTRLevel is not None
 
@@ -237,6 +252,7 @@ class TestIntegrationReexports:
             AlgorithmRecord,
             create_algorithm_registry,
         )
+
         assert AlgorithmRegistry is not None
         assert AlgorithmRecord is not None
 
@@ -247,6 +263,7 @@ class TestIntegrationReexports:
             ConformanceTestSuite,
             TestResult,
         )
+
         assert ConformanceTestRunner is not None
         assert ConformanceTestSuite is not None
 
@@ -257,6 +274,7 @@ class TestIntegrationReexports:
             TestScenario,
             get_all_standard_scenarios,
         )
+
         assert ScenarioExecutor is not None
         assert TestScenario is not None
 
@@ -267,6 +285,7 @@ class TestIntegrationReexports:
             ConformanceCertificate,
             create_certificate_manager,
         )
+
         assert CertificateManager is not None
         assert ConformanceCertificate is not None
 
@@ -277,6 +296,7 @@ class TestIntegrationReexports:
             ExecutionQualityReport,
             create_report_generator,
         )
+
         assert ExecutionQualityReportGenerator is not None
         assert ExecutionQualityReport is not None
 
@@ -299,6 +319,7 @@ class TestArchiveReexports:
             LEIRecord,
             create_lei_manager,
         )
+
         assert LEIManager is not None
         assert LEIRecord is not None
 
@@ -309,6 +330,7 @@ class TestArchiveReexports:
             GLEIFResponse,
             create_gleif_client,
         )
+
         assert GLEIFClient is not None
         assert GLEIFResponse is not None
 
@@ -319,6 +341,7 @@ class TestArchiveReexports:
             TransactionReportBuilder,
             BuySellIndicator,
         )
+
         assert TransactionReport is not None
         assert TransactionReportBuilder is not None
 
@@ -329,6 +352,7 @@ class TestArchiveReexports:
             MockARMClient,
             create_arm_client,
         )
+
         assert ARMClient is not None
         assert MockARMClient is not None
 
@@ -339,6 +363,7 @@ class TestArchiveReexports:
             PipelineStatus,
             create_reporting_pipeline,
         )
+
         assert TransactionReportingPipeline is not None
         assert PipelineStatus is not None
 
@@ -349,6 +374,7 @@ class TestArchiveReexports:
             create_annual_assessment,
             get_rts6_assessment_template,
         )
+
         assert AnnualSelfAssessment is not None
         assert callable(create_annual_assessment)
 
@@ -359,6 +385,7 @@ class TestArchiveReexports:
             PolicyDocument,
             create_governance_framework,
         )
+
         assert GovernanceFramework is not None
         assert PolicyDocument is not None
 
@@ -369,6 +396,7 @@ class TestArchiveReexports:
             NCANotification,
             create_nca_notification_manager,
         )
+
         assert NCANotificationManager is not None
         assert NCANotification is not None
 
@@ -386,6 +414,7 @@ class TestBackwardCompatibilityAliases:
     def test_clock_sync_compliance_config_alias(self) -> None:
         """Test ClockSyncComplianceConfig alias exists."""
         from services.compliance import ClockSyncComplianceConfig, TimeSyncConfig
+
         assert ClockSyncComplianceConfig is TimeSyncConfig
 
 
@@ -399,13 +428,10 @@ class TestNewImportPaths:
             from services.core.risk_controls import EnhancedKillSwitch
 
             # Check no deprecation warnings from core
-            deprecation_warnings = [
-                x for x in w
-                if issubclass(x.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) == 0, (
-                "Core imports should not produce deprecation warnings"
-            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert (
+                len(deprecation_warnings) == 0
+            ), "Core imports should not produce deprecation warnings"
 
     def test_integration_imports_no_warning(self) -> None:
         """Verify integration imports don't produce deprecation warnings."""
@@ -414,13 +440,10 @@ class TestNewImportPaths:
             from services.algo_integration import BestExecutionAnalyzer
 
             # Check no deprecation warnings from integration
-            deprecation_warnings = [
-                x for x in w
-                if issubclass(x.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) == 0, (
-                "Integration imports should not produce deprecation warnings"
-            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert (
+                len(deprecation_warnings) == 0
+            ), "Integration imports should not produce deprecation warnings"
 
     @_archive_only
     def test_archive_imports_emit_warning(self) -> None:
@@ -428,8 +451,9 @@ class TestNewImportPaths:
         import sys
 
         # Clear module cache
-        modules_to_remove = [k for k in sys.modules.keys()
-                           if k.startswith('services.archive.mifid_financial_entity')]
+        modules_to_remove = [
+            k for k in sys.modules.keys() if k.startswith("services.archive.mifid_financial_entity")
+        ]
         for mod in modules_to_remove:
             if mod in sys.modules:
                 del sys.modules[mod]
@@ -439,13 +463,10 @@ class TestNewImportPaths:
             from services.archive.mifid_financial_entity import LEIManager
 
             # Archive should produce deprecation warning
-            deprecation_warnings = [
-                x for x in w
-                if issubclass(x.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) >= 1, (
-                "Archive imports should produce deprecation warnings"
-            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert (
+                len(deprecation_warnings) >= 1
+            ), "Archive imports should produce deprecation warnings"
 
 
 class TestStarImport:

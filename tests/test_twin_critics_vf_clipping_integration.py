@@ -17,6 +17,7 @@ Key aspects tested:
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 import warnings
 from unittest.mock import Mock, MagicMock, patch
@@ -88,17 +89,21 @@ class TestTwinCriticsVFClippingQuantile:
         params = list(sig.parameters.keys())
 
         # Method must accept separate old quantiles for each critic
-        assert "old_quantiles_critic1" in params, (
-            "Method must accept old_quantiles_critic1 for independent VF clipping"
-        )
-        assert "old_quantiles_critic2" in params, (
-            "Method must accept old_quantiles_critic2 for independent VF clipping"
-        )
+        assert (
+            "old_quantiles_critic1" in params
+        ), "Method must accept old_quantiles_critic1 for independent VF clipping"
+        assert (
+            "old_quantiles_critic2" in params
+        ), "Method must accept old_quantiles_critic2 for independent VF clipping"
 
         # Verify rollout data has separate old values
         data = rollout_data_with_separate_old_values
-        assert data.old_value_quantiles_critic1 is not None, "Test data must have critic1 old quantiles"
-        assert data.old_value_quantiles_critic2 is not None, "Test data must have critic2 old quantiles"
+        assert (
+            data.old_value_quantiles_critic1 is not None
+        ), "Test data must have critic1 old quantiles"
+        assert (
+            data.old_value_quantiles_critic2 is not None
+        ), "Test data must have critic2 old quantiles"
 
     def test_fallback_to_shared_old_values_when_separate_unavailable(
         self, config, rollout_data_without_separate_old_values
@@ -127,9 +132,9 @@ class TestTwinCriticsVFClippingQuantile:
 
         # The implementation should handle None values (fallback logic is internal)
         # This is verified by comprehensive tests in test_twin_critics_vf_clipping_all_modes.py
-        assert "old_quantiles_critic1" in sig.parameters, (
-            "Method must have old_quantiles_critic1 parameter for fallback handling"
-        )
+        assert (
+            "old_quantiles_critic1" in sig.parameters
+        ), "Method must have old_quantiles_critic1 parameter for fallback handling"
 
     def test_runtime_warning_when_separate_old_values_missing(
         self, config, rollout_data_without_separate_old_values
@@ -145,15 +150,15 @@ class TestTwinCriticsVFClippingQuantile:
         data = rollout_data_without_separate_old_values
 
         # Verify the test data correctly represents the "missing separate values" scenario
-        assert data.old_value_quantiles_critic1 is None, (
-            "Test fixture must set critic1 old quantiles to None"
-        )
-        assert data.old_value_quantiles_critic2 is None, (
-            "Test fixture must set critic2 old quantiles to None"
-        )
-        assert data.old_value_quantiles is not None, (
-            "Test fixture must provide shared old quantiles for fallback"
-        )
+        assert (
+            data.old_value_quantiles_critic1 is None
+        ), "Test fixture must set critic1 old quantiles to None"
+        assert (
+            data.old_value_quantiles_critic2 is None
+        ), "Test fixture must set critic2 old quantiles to None"
+        assert (
+            data.old_value_quantiles is not None
+        ), "Test fixture must provide shared old quantiles for fallback"
 
         # The actual warning behavior is tested in comprehensive integration tests
         # See: test_twin_critics_vf_clipping_all_modes.py
@@ -166,7 +171,7 @@ class TestTwinCriticsVFClippingQuantile:
         # Create mock losses
         batch_size = 4
         loss_unclipped = torch.tensor([1.0, 5.0, 2.0, 3.0])  # Per-sample losses
-        loss_clipped = torch.tensor([2.0, 3.0, 4.0, 1.0])    # Per-sample losses
+        loss_clipped = torch.tensor([2.0, 3.0, 4.0, 1.0])  # Per-sample losses
 
         # Correct PPO semantics: element-wise max, then mean
         loss_correct = torch.mean(torch.max(loss_unclipped, loss_clipped))
@@ -175,12 +180,14 @@ class TestTwinCriticsVFClippingQuantile:
         loss_incorrect = torch.max(loss_unclipped.mean(), loss_clipped.mean())
 
         # Verify they differ (this proves element-wise max is necessary)
-        assert not torch.isclose(loss_correct, loss_incorrect), \
-            "Element-wise max and max-of-means should differ for this example"
+        assert not torch.isclose(
+            loss_correct, loss_incorrect
+        ), "Element-wise max and max-of-means should differ for this example"
 
         # Expected: mean([2.0, 5.0, 4.0, 3.0]) = 3.5
-        assert torch.isclose(loss_correct, torch.tensor(3.5)), \
-            f"Expected 3.5, got {loss_correct.item()}"
+        assert torch.isclose(
+            loss_correct, torch.tensor(3.5)
+        ), f"Expected 3.5, got {loss_correct.item()}"
 
     def test_independent_clipping_for_each_critic(self):
         """
@@ -203,30 +210,38 @@ class TestTwinCriticsVFClippingQuantile:
 
         # Expected clipped quantiles (independent clipping)
         # Q1_clipped = Q1_old + clip(Q1_current - Q1_old, -0.5, +0.5)
-        Q1_clipped_expected = torch.tensor([
-            [1.5, 2.5, 3.5],  # [1.0+0.5, 2.0+0.5, 3.0+0.5]
-            [4.5, 5.5, 6.5],  # [4.0+0.5, 5.0+0.5, 6.0+0.5]
-        ])
+        Q1_clipped_expected = torch.tensor(
+            [
+                [1.5, 2.5, 3.5],  # [1.0+0.5, 2.0+0.5, 3.0+0.5]
+                [4.5, 5.5, 6.5],  # [4.0+0.5, 5.0+0.5, 6.0+0.5]
+            ]
+        )
 
         # Q2_clipped = Q2_old + clip(Q2_current - Q2_old, -0.5, +0.5)
-        Q2_clipped_expected = torch.tensor([
-            [2.0, 3.0, 4.0],  # [1.5+0.5, 2.5+0.5, 3.5+0.5]
-            [5.0, 6.0, 7.0],  # [4.5+0.5, 5.5+0.5, 6.5+0.5]
-        ])
+        Q2_clipped_expected = torch.tensor(
+            [
+                [2.0, 3.0, 4.0],  # [1.5+0.5, 2.5+0.5, 3.5+0.5]
+                [5.0, 6.0, 7.0],  # [4.5+0.5, 5.5+0.5, 6.5+0.5]
+            ]
+        )
 
         # Compute clipped quantiles
         Q1_clipped = Q1_old + torch.clamp(Q1_current - Q1_old, min=-clip_delta, max=clip_delta)
         Q2_clipped = Q2_old + torch.clamp(Q2_current - Q2_old, min=-clip_delta, max=clip_delta)
 
         # Verify independent clipping
-        assert torch.allclose(Q1_clipped, Q1_clipped_expected), \
-            f"Q1 clipping incorrect: {Q1_clipped} != {Q1_clipped_expected}"
-        assert torch.allclose(Q2_clipped, Q2_clipped_expected), \
-            f"Q2 clipping incorrect: {Q2_clipped} != {Q2_clipped_expected}"
+        assert torch.allclose(
+            Q1_clipped, Q1_clipped_expected
+        ), f"Q1 clipping incorrect: {Q1_clipped} != {Q1_clipped_expected}"
+        assert torch.allclose(
+            Q2_clipped, Q2_clipped_expected
+        ), f"Q2 clipping incorrect: {Q2_clipped} != {Q2_clipped_expected}"
 
         # Verify that using shared old values would give DIFFERENT (incorrect) result
         Q_old_min = torch.min(Q1_old, Q2_old)
-        Q1_clipped_shared = Q_old_min + torch.clamp(Q1_current - Q_old_min, min=-clip_delta, max=clip_delta)
+        Q1_clipped_shared = Q_old_min + torch.clamp(
+            Q1_current - Q_old_min, min=-clip_delta, max=clip_delta
+        )
 
         # Verify that shared old values != Q1_old (otherwise test is meaningless)
         has_difference = not torch.allclose(Q_old_min, Q1_old)
@@ -235,14 +250,16 @@ class TestTwinCriticsVFClippingQuantile:
         # (but independent clipping is still mathematically correct)
         if has_difference:
             # Should NOT match independent clipping when old values differ
-            assert not torch.allclose(Q1_clipped, Q1_clipped_shared), \
-                "Independent clipping should differ from shared old values clipping when old values differ"
+            assert not torch.allclose(
+                Q1_clipped, Q1_clipped_shared
+            ), "Independent clipping should differ from shared old values clipping when old values differ"
         else:
             # Test is inconclusive but we can still verify correctness
             print("Warning: Q_old_min == Q1_old for this example, test inconclusive")
             # At minimum, verify the clipping formula is correct
-            assert torch.allclose(Q1_clipped, Q1_clipped_expected), \
-                "Clipping formula must be correct even when old values coincide"
+            assert torch.allclose(
+                Q1_clipped, Q1_clipped_expected
+            ), "Clipping formula must be correct even when old values coincide"
 
 
 class TestTwinCriticsVFClippingCategorical:
@@ -300,15 +317,15 @@ class TestTwinCriticsVFClippingCategorical:
         params = list(sig.parameters.keys())
 
         # Method must accept separate old probs for categorical critics
-        assert "old_probs_critic1" in params, (
-            "Method must accept old_probs_critic1 for categorical VF clipping"
-        )
-        assert "old_probs_critic2" in params, (
-            "Method must accept old_probs_critic2 for categorical VF clipping"
-        )
-        assert "target_distribution" in params, (
-            "Method must accept target_distribution for categorical cross-entropy"
-        )
+        assert (
+            "old_probs_critic1" in params
+        ), "Method must accept old_probs_critic1 for categorical VF clipping"
+        assert (
+            "old_probs_critic2" in params
+        ), "Method must accept old_probs_critic2 for categorical VF clipping"
+        assert (
+            "target_distribution" in params
+        ), "Method must accept target_distribution for categorical cross-entropy"
 
         # Verify rollout data has separate old probs
         data = rollout_data_with_separate_old_probs
@@ -338,14 +355,20 @@ class TestTwinCriticsVFClippingCategorical:
         mean2_clipped_expected = torch.tensor([2.0, 3.0])  # [1.5+0.5, 2.5+0.5]
 
         # Compute clipped means
-        mean1_clipped = mean1_old + torch.clamp(mean1_current - mean1_old, min=-clip_delta, max=clip_delta)
-        mean2_clipped = mean2_old + torch.clamp(mean2_current - mean2_old, min=-clip_delta, max=clip_delta)
+        mean1_clipped = mean1_old + torch.clamp(
+            mean1_current - mean1_old, min=-clip_delta, max=clip_delta
+        )
+        mean2_clipped = mean2_old + torch.clamp(
+            mean2_current - mean2_old, min=-clip_delta, max=clip_delta
+        )
 
         # Verify independent clipping
-        assert torch.allclose(mean1_clipped, mean1_clipped_expected), \
-            f"Mean1 clipping incorrect: {mean1_clipped} != {mean1_clipped_expected}"
-        assert torch.allclose(mean2_clipped, mean2_clipped_expected), \
-            f"Mean2 clipping incorrect: {mean2_clipped} != {mean2_clipped_expected}"
+        assert torch.allclose(
+            mean1_clipped, mean1_clipped_expected
+        ), f"Mean1 clipping incorrect: {mean1_clipped} != {mean1_clipped_expected}"
+        assert torch.allclose(
+            mean2_clipped, mean2_clipped_expected
+        ), f"Mean2 clipping incorrect: {mean2_clipped} != {mean2_clipped_expected}"
 
 
 class TestBackwardCompatibility:
@@ -362,9 +385,9 @@ class TestBackwardCompatibility:
         from distributional_ppo import DistributionalPPO
 
         # Verify the standard (non-twin) critic loss methods exist
-        assert hasattr(DistributionalPPO, "_compute_critic_loss"), (
-            "Standard critic loss method must exist for backward compatibility"
-        )
+        assert hasattr(
+            DistributionalPPO, "_compute_critic_loss"
+        ), "Standard critic loss method must exist for backward compatibility"
 
         # The twin critics method name indicates it's specifically for twin critics
         method = getattr(DistributionalPPO, "_twin_critics_vf_clipping_loss", None)
@@ -372,9 +395,9 @@ class TestBackwardCompatibility:
 
         # Verify docstring mentions Twin Critics specifically
         docstring = method.__doc__ or ""
-        assert "Twin Critics" in docstring, (
-            "Method docstring must clarify it's for Twin Critics only"
-        )
+        assert (
+            "Twin Critics" in docstring
+        ), "Method docstring must clarify it's for Twin Critics only"
 
     def test_twin_critics_without_vf_clipping_unchanged(self):
         """
@@ -390,9 +413,9 @@ class TestBackwardCompatibility:
         sig = inspect.signature(DistributionalPPO._twin_critics_vf_clipping_loss)
         params = list(sig.parameters.keys())
 
-        assert "clip_delta" in params, (
-            "Method must accept clip_delta to allow disabling VF clipping"
-        )
+        assert (
+            "clip_delta" in params
+        ), "Method must accept clip_delta to allow disabling VF clipping"
 
         # When clip_range_vf=None in config, this method shouldn't be called
         # That control flow is tested in the comprehensive training tests

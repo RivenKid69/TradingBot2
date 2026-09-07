@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class ScanType(Enum):
     """Security scan types."""
+
     SAST = "sast"
     DAST = "dast"
     SCA = "sca"  # Software Composition Analysis
@@ -41,6 +42,7 @@ class ScanType(Enum):
 
 class ScanStatus(Enum):
     """Scan status."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -50,6 +52,7 @@ class ScanStatus(Enum):
 
 class VulnerabilitySeverity(Enum):
     """Vulnerability severity levels."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -59,6 +62,7 @@ class VulnerabilitySeverity(Enum):
 
 class GateDecision(Enum):
     """Gate decision outcomes."""
+
     PASS = "pass"
     FAIL = "fail"
     WARN = "warn"
@@ -68,6 +72,7 @@ class GateDecision(Enum):
 @dataclass
 class SecurityScanResult:
     """Security scan result."""
+
     scan_id: str = ""
     scan_type: ScanType = ScanType.SAST
     status: ScanStatus = ScanStatus.COMPLETED
@@ -106,6 +111,7 @@ class SecurityScanResult:
 @dataclass
 class SecurityGate:
     """Security gate definition."""
+
     gate_id: str = ""
     name: str = ""
     description: str = ""
@@ -136,6 +142,7 @@ class SecurityGate:
 @dataclass
 class GatePolicy:
     """Security gate policy."""
+
     policy_id: str = ""
     name: str = ""
     gates: List[SecurityGate] = field(default_factory=list)
@@ -150,11 +157,12 @@ class GatePolicy:
 @dataclass
 class SecurityGatesConfig:
     """Configuration for SecurityGatesManager."""
+
     default_max_critical: int = 0
     default_max_high: int = 0
-    enabled_scan_types: List[ScanType] = field(default_factory=lambda: [
-        ScanType.SAST, ScanType.SCA, ScanType.SECRET_SCAN
-    ])
+    enabled_scan_types: List[ScanType] = field(
+        default_factory=lambda: [ScanType.SAST, ScanType.SCA, ScanType.SECRET_SCAN]
+    )
     log_all_events: bool = True
     log_path: str = "logs/core/security_gates"
     alert_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None

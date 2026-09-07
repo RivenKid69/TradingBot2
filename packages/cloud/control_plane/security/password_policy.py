@@ -24,38 +24,128 @@ from typing import Any, Dict, Final, FrozenSet, List, Optional, Set
 # Common Weak Passwords (Top 100 from breaches)
 # ============================================================================
 
-COMMON_WEAK_PASSWORDS: Final[FrozenSet[str]] = frozenset({
-    "password", "123456", "12345678", "qwerty", "abc123",
-    "monkey", "1234567", "letmein", "trustno1", "dragon",
-    "baseball", "iloveyou", "master", "sunshine", "ashley",
-    "bailey", "shadow", "123123", "654321", "superman",
-    "qazwsx", "michael", "football", "password1", "password123",
-    "batman", "login", "admin", "passw0rd", "welcome",
-    "hello", "charlie", "donald", "1qaz2wsx", "qwerty123",
-    "starwars", "whatever", "ninja", "princess", "solo",
-    "666666", "lovely", "freedom", "121212", "hottie",
-    "zxcvbn", "zxcvbnm", "internet", "cheese", "pepper",
-    "joshua", "hunter", "2000", "andrea", "soccer",
-    "tiger", "summer", "killer", "access", "andrew",
-    "banana", "ranger", "batman123", "soccer123", "football123",
-    "baseball123", "sunshine123", "princess123", "welcome1",
-    "welcome123", "qwerty1", "qwerty12", "letmein1", "letmein123",
-    "123456789", "1234567890", "0987654321", "password12",
-    "12345", "1234", "111111", "000000", "password!",
-    "passw0rd!", "p@ssw0rd", "p@ssword", "p@ssword1", "p@ssw0rd1",
-    "admin123", "admin1234", "administrator", "root", "root123",
-    "toor", "changeme", "changeit", "temp", "test",
-    "test123", "testing", "testing123", "guest", "guest123",
-    "default", "default123", "user", "user123", "demo",
-})
+COMMON_WEAK_PASSWORDS: Final[FrozenSet[str]] = frozenset(
+    {
+        "password",
+        "123456",
+        "12345678",
+        "qwerty",
+        "abc123",
+        "monkey",
+        "1234567",
+        "letmein",
+        "trustno1",
+        "dragon",
+        "baseball",
+        "iloveyou",
+        "master",
+        "sunshine",
+        "ashley",
+        "bailey",
+        "shadow",
+        "123123",
+        "654321",
+        "superman",
+        "qazwsx",
+        "michael",
+        "football",
+        "password1",
+        "password123",
+        "batman",
+        "login",
+        "admin",
+        "passw0rd",
+        "welcome",
+        "hello",
+        "charlie",
+        "donald",
+        "1qaz2wsx",
+        "qwerty123",
+        "starwars",
+        "whatever",
+        "ninja",
+        "princess",
+        "solo",
+        "666666",
+        "lovely",
+        "freedom",
+        "121212",
+        "hottie",
+        "zxcvbn",
+        "zxcvbnm",
+        "internet",
+        "cheese",
+        "pepper",
+        "joshua",
+        "hunter",
+        "2000",
+        "andrea",
+        "soccer",
+        "tiger",
+        "summer",
+        "killer",
+        "access",
+        "andrew",
+        "banana",
+        "ranger",
+        "batman123",
+        "soccer123",
+        "football123",
+        "baseball123",
+        "sunshine123",
+        "princess123",
+        "welcome1",
+        "welcome123",
+        "qwerty1",
+        "qwerty12",
+        "letmein1",
+        "letmein123",
+        "123456789",
+        "1234567890",
+        "0987654321",
+        "password12",
+        "12345",
+        "1234",
+        "111111",
+        "000000",
+        "password!",
+        "passw0rd!",
+        "p@ssw0rd",
+        "p@ssword",
+        "p@ssword1",
+        "p@ssw0rd1",
+        "admin123",
+        "admin1234",
+        "administrator",
+        "root",
+        "root123",
+        "toor",
+        "changeme",
+        "changeit",
+        "temp",
+        "test",
+        "test123",
+        "testing",
+        "testing123",
+        "guest",
+        "guest123",
+        "default",
+        "default123",
+        "user",
+        "user123",
+        "demo",
+    }
+)
 
 
 # ============================================================================
 # Policy Classes
 # ============================================================================
 
+
 class PolicyViolationType(str, Enum):
     """Types of password policy violations."""
+
     TOO_SHORT = "too_short"
     TOO_LONG = "too_long"
     NO_UPPERCASE = "no_uppercase"
@@ -73,6 +163,7 @@ class PolicyViolationType(str, Enum):
 @dataclass
 class PasswordPolicyViolation:
     """A violation of password policy."""
+
     violation_type: PolicyViolationType
     message: str
     severity: str = "error"  # error, warning
@@ -89,6 +180,7 @@ class PasswordPolicyViolation:
 @dataclass
 class PasswordValidationResult:
     """Result of password validation."""
+
     valid: bool
     violations: List[PasswordPolicyViolation] = field(default_factory=list)
     strength_score: int = 0  # 0-100
@@ -119,6 +211,7 @@ class PasswordPolicy:
     - Block common/leaked passwords
     - Allow all characters including spaces
     """
+
     # Length requirements
     min_length: int = 12  # NIST recommends 8+, we use 12 for security
     max_length: int = 128  # Reasonable maximum
@@ -166,6 +259,7 @@ DEFAULT_PASSWORD_POLICY = PasswordPolicy()
 # Password Validator
 # ============================================================================
 
+
 class PasswordValidator:
     """
     Validates passwords against policy.
@@ -209,81 +303,103 @@ class PasswordValidator:
 
         # Length checks
         if len(password) < self._policy.min_length:
-            result.add_violation(PasswordPolicyViolation(
-                violation_type=PolicyViolationType.TOO_SHORT,
-                message=f"Password must be at least {self._policy.min_length} characters",
-            ))
+            result.add_violation(
+                PasswordPolicyViolation(
+                    violation_type=PolicyViolationType.TOO_SHORT,
+                    message=f"Password must be at least {self._policy.min_length} characters",
+                )
+            )
 
         if len(password) > self._policy.max_length:
-            result.add_violation(PasswordPolicyViolation(
-                violation_type=PolicyViolationType.TOO_LONG,
-                message=f"Password must be at most {self._policy.max_length} characters",
-            ))
+            result.add_violation(
+                PasswordPolicyViolation(
+                    violation_type=PolicyViolationType.TOO_LONG,
+                    message=f"Password must be at most {self._policy.max_length} characters",
+                )
+            )
 
         # Complexity checks
         if self._policy.require_uppercase and not any(c.isupper() for c in password):
-            result.add_violation(PasswordPolicyViolation(
-                violation_type=PolicyViolationType.NO_UPPERCASE,
-                message="Password must contain at least one uppercase letter",
-            ))
+            result.add_violation(
+                PasswordPolicyViolation(
+                    violation_type=PolicyViolationType.NO_UPPERCASE,
+                    message="Password must contain at least one uppercase letter",
+                )
+            )
 
         if self._policy.require_lowercase and not any(c.islower() for c in password):
-            result.add_violation(PasswordPolicyViolation(
-                violation_type=PolicyViolationType.NO_LOWERCASE,
-                message="Password must contain at least one lowercase letter",
-            ))
+            result.add_violation(
+                PasswordPolicyViolation(
+                    violation_type=PolicyViolationType.NO_LOWERCASE,
+                    message="Password must contain at least one lowercase letter",
+                )
+            )
 
         if self._policy.require_digit and not any(c.isdigit() for c in password):
-            result.add_violation(PasswordPolicyViolation(
-                violation_type=PolicyViolationType.NO_DIGIT,
-                message="Password must contain at least one digit",
-            ))
+            result.add_violation(
+                PasswordPolicyViolation(
+                    violation_type=PolicyViolationType.NO_DIGIT,
+                    message="Password must contain at least one digit",
+                )
+            )
 
         if self._policy.require_special and not any(c in self._special_chars for c in password):
-            result.add_violation(PasswordPolicyViolation(
-                violation_type=PolicyViolationType.NO_SPECIAL,
-                message="Password must contain at least one special character",
-            ))
+            result.add_violation(
+                PasswordPolicyViolation(
+                    violation_type=PolicyViolationType.NO_SPECIAL,
+                    message="Password must contain at least one special character",
+                )
+            )
 
         # Common password check
         if self._policy.check_common_passwords:
             if password.lower() in COMMON_WEAK_PASSWORDS:
-                result.add_violation(PasswordPolicyViolation(
-                    violation_type=PolicyViolationType.COMMON_PASSWORD,
-                    message="Password is too common and easily guessed",
-                ))
+                result.add_violation(
+                    PasswordPolicyViolation(
+                        violation_type=PolicyViolationType.COMMON_PASSWORD,
+                        message="Password is too common and easily guessed",
+                    )
+                )
 
         # Sequential characters check
         if self._policy.check_sequential_chars:
             if self._has_sequential_chars(password, self._policy.max_sequential_chars):
-                result.add_violation(PasswordPolicyViolation(
-                    violation_type=PolicyViolationType.SEQUENTIAL_CHARS,
-                    message=f"Password cannot contain more than {self._policy.max_sequential_chars} sequential characters",
-                ))
+                result.add_violation(
+                    PasswordPolicyViolation(
+                        violation_type=PolicyViolationType.SEQUENTIAL_CHARS,
+                        message=f"Password cannot contain more than {self._policy.max_sequential_chars} sequential characters",
+                    )
+                )
 
         # Repeated characters check
         if self._policy.check_repeated_chars:
             if self._has_repeated_chars(password, self._policy.max_repeated_chars):
-                result.add_violation(PasswordPolicyViolation(
-                    violation_type=PolicyViolationType.REPEATED_CHARS,
-                    message=f"Password cannot contain more than {self._policy.max_repeated_chars} repeated characters",
-                ))
+                result.add_violation(
+                    PasswordPolicyViolation(
+                        violation_type=PolicyViolationType.REPEATED_CHARS,
+                        message=f"Password cannot contain more than {self._policy.max_repeated_chars} repeated characters",
+                    )
+                )
 
         # Context checks
         if self._policy.check_contains_email and email:
             email_local = email.split("@")[0].lower()
             if len(email_local) >= 3 and email_local in password.lower():
-                result.add_violation(PasswordPolicyViolation(
-                    violation_type=PolicyViolationType.CONTAINS_EMAIL,
-                    message="Password cannot contain your email address",
-                ))
+                result.add_violation(
+                    PasswordPolicyViolation(
+                        violation_type=PolicyViolationType.CONTAINS_EMAIL,
+                        message="Password cannot contain your email address",
+                    )
+                )
 
         if self._policy.check_contains_username and username:
             if len(username) >= 3 and username.lower() in password.lower():
-                result.add_violation(PasswordPolicyViolation(
-                    violation_type=PolicyViolationType.CONTAINS_USERNAME,
-                    message="Password cannot contain your username",
-                ))
+                result.add_violation(
+                    PasswordPolicyViolation(
+                        violation_type=PolicyViolationType.CONTAINS_USERNAME,
+                        message="Password cannot contain your username",
+                    )
+                )
 
         # Calculate strength score
         result.strength_score = self._calculate_strength(password)
@@ -298,13 +414,13 @@ class PasswordValidator:
 
         # Check for ascending sequences
         for i in range(len(password) - max_seq):
-            chars = [ord(c) for c in password[i:i + max_seq + 1].lower()]
+            chars = [ord(c) for c in password[i : i + max_seq + 1].lower()]
             if all(chars[j] + 1 == chars[j + 1] for j in range(len(chars) - 1)):
                 return True
 
         # Check for descending sequences
         for i in range(len(password) - max_seq):
-            chars = [ord(c) for c in password[i:i + max_seq + 1].lower()]
+            chars = [ord(c) for c in password[i : i + max_seq + 1].lower()]
             if all(chars[j] - 1 == chars[j + 1] for j in range(len(chars) - 1)):
                 return True
 
@@ -316,7 +432,7 @@ class PasswordValidator:
             return False
 
         for i in range(len(password) - max_repeat):
-            if len(set(password[i:i + max_repeat + 1].lower())) == 1:
+            if len(set(password[i : i + max_repeat + 1].lower())) == 1:
                 return True
 
         return False

@@ -54,7 +54,9 @@ def default_funding_history(symbol: str, *, limit: int = 1000) -> List[Any]:
         return []
 
 
-def default_perp_closes(symbols: Sequence[str], timeframe: str, *, limit: int = 1000) -> pd.DataFrame:
+def default_perp_closes(
+    symbols: Sequence[str], timeframe: str, *, limit: int = 1000
+) -> pd.DataFrame:
     """Перп-close с Binance (long df[publish_ts, symbol, perp_close]); graceful."""
     rows = []
     try:
@@ -82,15 +84,28 @@ def default_perp_closes(symbols: Sequence[str], timeframe: str, *, limit: int = 
 class FundingEnricher(AsofEnricher):
     """funding_rate из истории Binance (PIT as-of, publish_lag=0)."""
 
-    def __init__(self, *, history_fn: Optional[Callable[..., List[Any]]] = None,
-                 vendor: str = "binance", publish_lag_ms: int = 0, limit: int = 1000) -> None:
+    def __init__(
+        self,
+        *,
+        history_fn: Optional[Callable[..., List[Any]]] = None,
+        vendor: str = "binance",
+        publish_lag_ms: int = 0,
+        limit: int = 1000,
+    ) -> None:
         self._history_fn = history_fn or default_funding_history
         self._limit = int(limit)
         super().__init__(
-            self._long_provider, columns=["funding_rate"], publish_ts_col="publish_ts",
+            self._long_provider,
+            columns=["funding_rate"],
+            publish_ts_col="publish_ts",
             publish_lag_ms=publish_lag_ms,
-            meta=DataSourceMeta(name="binance:funding", vendor=vendor, kind="enrich",
-                                pit_quality=PIT_TRUE, notes="Historical funding (observable at fundingTime)."),
+            meta=DataSourceMeta(
+                name="binance:funding",
+                vendor=vendor,
+                kind="enrich",
+                pit_quality=PIT_TRUE,
+                notes="Historical funding (observable at fundingTime).",
+            ),
         )
 
     def _long_provider(self, symbols: Sequence[str]) -> pd.DataFrame:
@@ -111,15 +126,26 @@ class FundingEnricher(AsofEnricher):
 class BasisEnricher:
     """basis = perp_close / spot_close − 1 (оба наблюдаемы на баре → PIT-true)."""
 
-    def __init__(self, *, perp_provider: Optional[Callable[..., pd.DataFrame]] = None,
-                 timeframe: str = "1d", spot_col: str = "close", vendor: str = "binance",
-                 limit: int = 1000) -> None:
+    def __init__(
+        self,
+        *,
+        perp_provider: Optional[Callable[..., pd.DataFrame]] = None,
+        timeframe: str = "1d",
+        spot_col: str = "close",
+        vendor: str = "binance",
+        limit: int = 1000,
+    ) -> None:
         self._perp_provider = perp_provider or default_perp_closes
         self.timeframe = timeframe
         self.spot_col = spot_col
         self._limit = int(limit)
-        self.meta = DataSourceMeta(name="binance:basis", vendor=vendor, kind="enrich",
-                                   pit_quality=PIT_TRUE, notes="Spot-perp basis (both closes observable).")
+        self.meta = DataSourceMeta(
+            name="binance:basis",
+            vendor=vendor,
+            kind="enrich",
+            pit_quality=PIT_TRUE,
+            notes="Spot-perp basis (both closes observable).",
+        )
 
     def columns(self) -> List[str]:
         return ["basis"]
@@ -131,30 +157,59 @@ class BasisEnricher:
         except TypeError:
             long = self._perp_provider(symbols, self.timeframe)
         if long is None or len(long) == 0 or self.spot_col not in panel.columns:
-            out = panel.copy(); out["basis"] = np.nan
+            out = panel.copy()
+            out["basis"] = np.nan
             return out
-        joined = PanelBuilder.asof_join(panel, long, value_cols=["perp_close"],
-                                        ts_col="publish_ts", symbol_col="symbol", publish_lag_ms=0)
-        joined["basis"] = joined["perp_close"].astype("float64") / joined[self.spot_col].astype("float64") - 1.0
+        joined = PanelBuilder.asof_join(
+            panel,
+            long,
+            value_cols=["perp_close"],
+            ts_col="publish_ts",
+            symbol_col="symbol",
+            publish_lag_ms=0,
+        )
+        joined["basis"] = (
+            joined["perp_close"].astype("float64") / joined[self.spot_col].astype("float64") - 1.0
+        )
         return joined.drop(columns=["perp_close"], errors="ignore")
 
 
 class MarketCapEnricher:
     """mcap: статич. снимок (pit=approx) ИЛИ PIT-история через history_fn (publish_ts)."""
 
-    def __init__(self, mcaps: Optional[Mapping[str, float]] = None, *,
-                 history_fn: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None,
-                 vendor: str = "static", publish_lag_ms: int = 0) -> None:
+    def __init__(
+        self,
+        mcaps: Optional[Mapping[str, float]] = None,
+        *,
+        history_fn: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None,
+        vendor: str = "static",
+        publish_lag_ms: int = 0,
+    ) -> None:
         self._mcaps = mcaps
         self._history_fn = history_fn
         if history_fn is not None:
-            self._impl = AsofEnricher(history_fn, columns=["mcap"], publish_ts_col="publish_ts",
-                                      publish_lag_ms=publish_lag_ms,
-                                      meta=DataSourceMeta(name="mcap:history", vendor=vendor, kind="enrich",
-                                                          pit_quality=PIT_TRUE, notes="Historical market cap (PIT)."))
+            self._impl = AsofEnricher(
+                history_fn,
+                columns=["mcap"],
+                publish_ts_col="publish_ts",
+                publish_lag_ms=publish_lag_ms,
+                meta=DataSourceMeta(
+                    name="mcap:history",
+                    vendor=vendor,
+                    kind="enrich",
+                    pit_quality=PIT_TRUE,
+                    notes="Historical market cap (PIT).",
+                ),
+            )
         else:
-            self._impl = ColumnMapEnricher(mcaps or {}, "mcap", vendor=vendor, pit_quality=PIT_APPROX,
-                                           name="mcap:snapshot", notes="Market cap snapshot (no history).")
+            self._impl = ColumnMapEnricher(
+                mcaps or {},
+                "mcap",
+                vendor=vendor,
+                pit_quality=PIT_APPROX,
+                name="mcap:snapshot",
+                notes="Market cap snapshot (no history).",
+            )
         self.meta = self._impl.meta
 
     def columns(self) -> List[str]:
@@ -182,7 +237,11 @@ def build_crypto_enricher(name: str, cfg: Any) -> Optional[Any]:
 
 
 __all__ = [
-    "FundingEnricher", "BasisEnricher", "MarketCapEnricher",
-    "default_funding_history", "default_perp_closes",
-    "CRYPTO_ENRICHERS", "build_crypto_enricher",
+    "FundingEnricher",
+    "BasisEnricher",
+    "MarketCapEnricher",
+    "default_funding_history",
+    "default_perp_closes",
+    "CRYPTO_ENRICHERS",
+    "build_crypto_enricher",
 ]

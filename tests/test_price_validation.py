@@ -28,6 +28,7 @@ import math
 # Try to import the compiled Cython module
 try:
     from obs_builder import build_observation_vector
+
     HAS_OBS_BUILDER = True
 except ImportError:
     HAS_OBS_BUILDER = False
@@ -100,8 +101,9 @@ class TestPriceValidation:
         error_msg = str(exc_info.value)
         assert "NaN" in error_msg, "Error should mention NaN"
         assert "price" in error_msg.lower(), "Error should mention price parameter"
-        assert "corrupted" in error_msg.lower() or "missing" in error_msg.lower(), \
-            "Error should explain data corruption"
+        assert (
+            "corrupted" in error_msg.lower() or "missing" in error_msg.lower()
+        ), "Error should explain data corruption"
 
     def test_nan_prev_price_raises_error(self):
         """Test 3: NaN prev_price should raise ValueError."""
@@ -290,29 +292,32 @@ class TestPriceValidation:
         params["bb_upper"] = 52000.0
 
         # Add some norm_cols data (CVD, GARCH, etc.)
-        params["norm_cols_values"] = np.array([
-            0.5,   # cvd_24h
-            0.3,   # cvd_7d
-            0.025, # yang_zhang_48h
-            0.030, # yang_zhang_7d
-            0.028, # garch_200h
-            0.032, # garch_14d
-            0.001, # ret_12h
-            0.002, # ret_24h
-            0.0005, # ret_4h
-            50000.0, # sma_12000
-            0.035, # yang_zhang_30d
-            0.022, # parkinson_48h
-            0.028, # parkinson_7d
-            0.040, # garch_30d
-            0.52,  # taker_buy_ratio
-            0.51,  # taker_buy_ratio_sma_24h
-            0.50,  # taker_buy_ratio_sma_8h
-            0.53,  # taker_buy_ratio_sma_16h
-            0.01,  # taker_buy_ratio_momentum_4h
-            0.02,  # taker_buy_ratio_momentum_8h
-            0.015, # taker_buy_ratio_momentum_12h
-        ], dtype=np.float32)
+        params["norm_cols_values"] = np.array(
+            [
+                0.5,  # cvd_24h
+                0.3,  # cvd_7d
+                0.025,  # yang_zhang_48h
+                0.030,  # yang_zhang_7d
+                0.028,  # garch_200h
+                0.032,  # garch_14d
+                0.001,  # ret_12h
+                0.002,  # ret_24h
+                0.0005,  # ret_4h
+                50000.0,  # sma_12000
+                0.035,  # yang_zhang_30d
+                0.022,  # parkinson_48h
+                0.028,  # parkinson_7d
+                0.040,  # garch_30d
+                0.52,  # taker_buy_ratio
+                0.51,  # taker_buy_ratio_sma_24h
+                0.50,  # taker_buy_ratio_sma_8h
+                0.53,  # taker_buy_ratio_sma_16h
+                0.01,  # taker_buy_ratio_momentum_4h
+                0.02,  # taker_buy_ratio_momentum_8h
+                0.015,  # taker_buy_ratio_momentum_12h
+            ],
+            dtype=np.float32,
+        )
 
         # Execute
         build_observation_vector(**params)
@@ -330,8 +335,12 @@ class TestPriceValidation:
         # CRITICAL: No NaN or Inf anywhere in the observation
         nan_count = np.sum(np.isnan(obs))
         inf_count = np.sum(np.isinf(obs))
-        assert nan_count == 0, f"Found {nan_count} NaN values in observation: {np.where(np.isnan(obs))}"
-        assert inf_count == 0, f"Found {inf_count} Inf values in observation: {np.where(np.isinf(obs))}"
+        assert (
+            nan_count == 0
+        ), f"Found {nan_count} NaN values in observation: {np.where(np.isnan(obs))}"
+        assert (
+            inf_count == 0
+        ), f"Found {inf_count} Inf values in observation: {np.where(np.isinf(obs))}"
 
         # Verify all derived computations worked correctly
         # These are the 15+ computations that depend on price being valid
@@ -414,9 +423,10 @@ class TestPriceValidationErrorMessages:
         error_msg = str(exc_info.value)
 
         # Should contain these diagnostic keywords
-        assert any(keyword in error_msg.lower() for keyword in
-                  ["data", "corrupted", "missing", "integrity", "check"]), \
-            "Error should provide diagnostic context"
+        assert any(
+            keyword in error_msg.lower()
+            for keyword in ["data", "corrupted", "missing", "integrity", "check"]
+        ), "Error should provide diagnostic context"
 
     def test_error_message_for_zero_price_is_clear(self):
         """Test 20: Zero price error should clearly explain the issue."""
@@ -430,9 +440,9 @@ class TestPriceValidationErrorMessages:
 
         # Should mention that zero is invalid and why
         assert "positive" in error_msg.lower(), "Should explain positive requirement"
-        assert any(keyword in error_msg.lower() for keyword in
-                  ["invalid", "error", "zero"]), \
-            "Should clearly identify the problem"
+        assert any(
+            keyword in error_msg.lower() for keyword in ["invalid", "error", "zero"]
+        ), "Should clearly identify the problem"
 
 
 class TestPortfolioValidation:

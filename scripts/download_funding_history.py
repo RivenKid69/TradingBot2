@@ -42,17 +42,26 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from binance_public import BinancePublicClient
 from utils_time import parse_time_to_ms
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Popular perpetual futures pairs
 POPULAR_SYMBOLS = [
-    "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
-    "ADAUSDT", "DOGEUSDT", "AVAXUSDT", "DOTUSDT", "LINKUSDT",
-    "MATICUSDT", "LTCUSDT", "NEARUSDT", "UNIUSDT", "ATOMUSDT",
+    "BTCUSDT",
+    "ETHUSDT",
+    "BNBUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ADAUSDT",
+    "DOGEUSDT",
+    "AVAXUSDT",
+    "DOTUSDT",
+    "LINKUSDT",
+    "MATICUSDT",
+    "LTCUSDT",
+    "NEARUSDT",
+    "UNIUSDT",
+    "ATOMUSDT",
 ]
 
 
@@ -86,10 +95,7 @@ def fetch_funding_history(
     while current_ms < end_ms:
         try:
             batch = client.get_funding(
-                symbol=symbol,
-                start_ms=current_ms,
-                end_ms=end_ms,
-                limit=limit
+                symbol=symbol, start_ms=current_ms, end_ms=end_ms, limit=limit
             )
         except Exception as e:
             logger.error(f"Error fetching funding rates: {e}")
@@ -149,11 +155,7 @@ def fetch_mark_price_history(
     while current_ms < end_ms:
         try:
             batch = client.get_mark_klines(
-                symbol=symbol,
-                interval=interval,
-                start_ms=current_ms,
-                end_ms=end_ms,
-                limit=limit
+                symbol=symbol, interval=interval, start_ms=current_ms, end_ms=end_ms, limit=limit
             )
         except Exception as e:
             logger.error(f"Error fetching mark klines: {e}")
@@ -228,26 +230,32 @@ def mark_klines_to_dataframe(
         DataFrame with OHLCV columns
     """
     if not klines:
-        return pd.DataFrame(columns=[
-            "ts_ms", "symbol", "mark_open", "mark_high",
-            "mark_low", "mark_close"
-        ])
+        return pd.DataFrame(
+            columns=["ts_ms", "symbol", "mark_open", "mark_high", "mark_low", "mark_close"]
+        )
 
     cols = [
-        "open_time", "open", "high", "low", "close", "ignore",
-        "close_time", "ignore2", "ignore3", "ignore4", "ignore5", "ignore6"
+        "open_time",
+        "open",
+        "high",
+        "low",
+        "close",
+        "ignore",
+        "close_time",
+        "ignore2",
+        "ignore3",
+        "ignore4",
+        "ignore5",
+        "ignore6",
     ]
-    df = pd.DataFrame(klines, columns=cols[:len(klines[0])])
+    df = pd.DataFrame(klines, columns=cols[: len(klines[0])])
     df["ts_ms"] = df["open_time"].astype("int64")
     df["symbol"] = symbol.upper()
 
     result = df[["ts_ms", "symbol", "open", "high", "low", "close"]].copy()
-    result = result.rename(columns={
-        "open": "mark_open",
-        "high": "mark_high",
-        "low": "mark_low",
-        "close": "mark_close"
-    })
+    result = result.rename(
+        columns={"open": "mark_open", "high": "mark_high", "low": "mark_low", "close": "mark_close"}
+    )
 
     for col in ["mark_open", "mark_high", "mark_low", "mark_close"]:
         result[col] = pd.to_numeric(result[col], errors="coerce")
@@ -286,9 +294,7 @@ def download_symbol_data(
     result = {"funding_count": 0, "mark_count": 0}
 
     # Download funding rates
-    funding_records = fetch_funding_history(
-        client, symbol, start_ms, end_ms, limit, sleep_ms
-    )
+    funding_records = fetch_funding_history(client, symbol, start_ms, end_ms, limit, sleep_ms)
     funding_df = funding_to_dataframe(funding_records, symbol)
 
     if not funding_df.empty:
@@ -327,70 +333,30 @@ Examples:
 
     # Download popular pairs with mark price
     python scripts/download_funding_history.py --popular --start 2024-01-01 --with-mark
-        """
+        """,
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--symbol",
-        type=str,
-        help="Single futures symbol (e.g., BTCUSDT)"
-    )
-    group.add_argument(
-        "--symbols",
-        nargs="+",
-        type=str,
-        help="Multiple futures symbols"
-    )
-    group.add_argument(
-        "--popular",
-        action="store_true",
-        help="Download popular futures pairs"
-    )
+    group.add_argument("--symbol", type=str, help="Single futures symbol (e.g., BTCUSDT)")
+    group.add_argument("--symbols", nargs="+", type=str, help="Multiple futures symbols")
+    group.add_argument("--popular", action="store_true", help="Download popular futures pairs")
 
+    parser.add_argument("--start", required=True, help="Start date (YYYY-MM-DD or unix ms)")
+    parser.add_argument("--end", default=None, help="End date (default: now)")
     parser.add_argument(
-        "--start",
-        required=True,
-        help="Start date (YYYY-MM-DD or unix ms)"
+        "--out-dir", default="data/futures", help="Output directory (default: data/futures)"
+    )
+    parser.add_argument("--with-mark", action="store_true", help="Also download mark price klines")
+    parser.add_argument(
+        "--mark-interval", default="4h", help="Mark price kline interval (default: 4h)"
     )
     parser.add_argument(
-        "--end",
-        default=None,
-        help="End date (default: now)"
+        "--limit", type=int, default=1000, help="Records per request (default: 1000)"
     )
     parser.add_argument(
-        "--out-dir",
-        default="data/futures",
-        help="Output directory (default: data/futures)"
+        "--sleep-ms", type=int, default=350, help="Sleep between requests in ms (default: 350)"
     )
-    parser.add_argument(
-        "--with-mark",
-        action="store_true",
-        help="Also download mark price klines"
-    )
-    parser.add_argument(
-        "--mark-interval",
-        default="4h",
-        help="Mark price kline interval (default: 4h)"
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=1000,
-        help="Records per request (default: 1000)"
-    )
-    parser.add_argument(
-        "--sleep-ms",
-        type=int,
-        default=350,
-        help="Sleep between requests in ms (default: 350)"
-    )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Verbose output"
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
 

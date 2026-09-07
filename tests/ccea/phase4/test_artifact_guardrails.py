@@ -118,18 +118,22 @@ class TestGuardrailReport:
         """Test report summary."""
         report = GuardrailReport()
 
-        report.add(GuardrailCheck(
-            name="err",
-            result=CheckResult.FAILED,
-            severity=CheckSeverity.ERROR,
-            message="Error",
-        ))
-        report.add(GuardrailCheck(
-            name="warn",
-            result=CheckResult.FAILED,
-            severity=CheckSeverity.WARNING,
-            message="Warning",
-        ))
+        report.add(
+            GuardrailCheck(
+                name="err",
+                result=CheckResult.FAILED,
+                severity=CheckSeverity.ERROR,
+                message="Error",
+            )
+        )
+        report.add(
+            GuardrailCheck(
+                name="warn",
+                result=CheckResult.FAILED,
+                severity=CheckSeverity.WARNING,
+                message="Warning",
+            )
+        )
 
         summary = report.summary()
 
@@ -256,7 +260,7 @@ class TestArtifactGuardrails:
                 "side": "BUY",
                 "quantity": 100,
                 "price": 50.0,
-            }
+            },
         }
         path = tmp_path / "manifest.json"
         path.write_text(json.dumps(manifest))
@@ -300,10 +304,13 @@ class TestArtifactGuardrails:
         """Test secrets check when secrets found."""
         artifact_path = tmp_path / "artifact.zip"
         with zipfile.ZipFile(artifact_path, "w") as zf:
-            zf.writestr("config.py", '''
+            zf.writestr(
+                "config.py",
+                """
 api_key = "AKIAIOSFODNN7EXAMPLE"
 password = "secret123456789"
-''')
+""",
+            )
 
         guardrails = ArtifactGuardrails()
         check = guardrails._check_no_secrets(artifact_path)
@@ -385,9 +392,7 @@ class TestRunArtifactGuardrails:
         manifest_path = tmp_path / "manifest.json"
         manifest_path.write_text(json.dumps(manifest))
 
-        passed, report = run_artifact_guardrails(
-            artifact_path, manifest_path, strict=True
-        )
+        passed, report = run_artifact_guardrails(artifact_path, manifest_path, strict=True)
 
         assert passed is True
 
@@ -403,9 +408,7 @@ class TestRunArtifactGuardrails:
         manifest_path = tmp_path / "manifest.json"
         manifest_path.write_text(json.dumps(manifest))
 
-        passed, report = run_artifact_guardrails(
-            artifact_path, manifest_path, strict=True
-        )
+        passed, report = run_artifact_guardrails(artifact_path, manifest_path, strict=True)
 
         assert passed is False
         assert report.total_errors > 0

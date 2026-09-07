@@ -34,20 +34,22 @@ logger = logging.getLogger(__name__)
 
 class SOC2Category(Enum):
     """SOC2 Trust Services Categories."""
-    CC_SECURITY = "CC"           # Common Criteria - Security
-    AVAILABILITY = "A"           # Availability
+
+    CC_SECURITY = "CC"  # Common Criteria - Security
+    AVAILABILITY = "A"  # Availability
     PROCESSING_INTEGRITY = "PI"  # Processing Integrity
-    CONFIDENTIALITY = "C"        # Confidentiality
-    PRIVACY = "P"                # Privacy
+    CONFIDENTIALITY = "C"  # Confidentiality
+    PRIVACY = "P"  # Privacy
 
 
 class DORAArticle(Enum):
     """DORA Article references."""
-    ART_5 = "Article 5"    # Governance
-    ART_6 = "Article 6"    # ICT Risk Management Framework
-    ART_7 = "Article 7"    # ICT Systems, Protocols and Tools
-    ART_8 = "Article 8"    # Identification
-    ART_9 = "Article 9"    # Protection and Prevention
+
+    ART_5 = "Article 5"  # Governance
+    ART_6 = "Article 6"  # ICT Risk Management Framework
+    ART_7 = "Article 7"  # ICT Systems, Protocols and Tools
+    ART_8 = "Article 8"  # Identification
+    ART_9 = "Article 9"  # Protection and Prevention
     ART_10 = "Article 10"  # Detection
     ART_11 = "Article 11"  # Response and Recovery
     ART_12 = "Article 12"  # Backup Policies
@@ -63,6 +65,7 @@ class DORAArticle(Enum):
 
 class ControlStatus(Enum):
     """Control implementation status."""
+
     IMPLEMENTED = "implemented"
     PARTIALLY_IMPLEMENTED = "partially_implemented"
     PLANNED = "planned"
@@ -72,6 +75,7 @@ class ControlStatus(Enum):
 
 class EvidenceStatus(Enum):
     """Evidence collection status."""
+
     COLLECTED = "collected"
     PENDING = "pending"
     NOT_REQUIRED = "not_required"
@@ -81,6 +85,7 @@ class EvidenceStatus(Enum):
 @dataclass
 class ControlMapping:
     """Mapping between SOC2 and DORA controls."""
+
     mapping_id: str = ""
     soc2_control: str = ""  # e.g., "CC6.1"
     soc2_category: SOC2Category = SOC2Category.CC_SECURITY
@@ -99,6 +104,7 @@ class ControlMapping:
 @dataclass
 class SharedControl:
     """Shared control between SOC2 and DORA."""
+
     control_id: str = ""
     name: str = ""
     description: str = ""
@@ -117,6 +123,7 @@ class SharedControl:
 @dataclass
 class EvidenceRequirement:
     """Evidence requirement for audit."""
+
     evidence_id: str = ""
     name: str = ""
     description: str = ""
@@ -135,6 +142,7 @@ class EvidenceRequirement:
 @dataclass
 class ComplianceGap:
     """Identified compliance gap."""
+
     gap_id: str = ""
     framework: str = ""  # SOC2, DORA, or both
     control_reference: str = ""
@@ -153,6 +161,7 @@ class ComplianceGap:
 @dataclass
 class SOC2DORAMappingConfig:
     """Configuration for SOC2DORAMapper."""
+
     log_all_events: bool = True
     log_path: str = "logs/core/soc2_dora"
 
@@ -356,8 +365,7 @@ class SOC2DORAMapper:
                 for cat in SOC2Category
             },
             "by_dora_article": {
-                art.value: sum(1 for m in mappings if m.dora_article == art)
-                for art in DORAArticle
+                art.value: sum(1 for m in mappings if m.dora_article == art) for art in DORAArticle
             },
             "shared_evidence_count": sum(1 for m in mappings if m.shared_evidence),
             "gaps": {

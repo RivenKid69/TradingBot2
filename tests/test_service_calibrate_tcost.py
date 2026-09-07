@@ -45,29 +45,33 @@ from service_calibrate_tcost import (
 @pytest.fixture
 def sample_data():
     """Sample market data for calibration."""
-    return pd.DataFrame({
-        "ts_ms": [1000, 2000, 3000, 4000, 5000],
-        "symbol": ["BTCUSDT"] * 5,
-        "open": [99.5, 100.5, 101.5, 102.5, 103.5],
-        "high": [100.5, 101.5, 102.5, 103.5, 104.5],
-        "low": [99.0, 100.0, 101.0, 102.0, 103.0],
-        "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-        "ref_price": [100.0, 101.0, 102.0, 103.0, 104.0],
-        "volume": [1000.0, 1100.0, 900.0, 1200.0, 1000.0],
-        "number_of_trades": [100, 110, 90, 120, 100],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1000, 2000, 3000, 4000, 5000],
+            "symbol": ["BTCUSDT"] * 5,
+            "open": [99.5, 100.5, 101.5, 102.5, 103.5],
+            "high": [100.5, 101.5, 102.5, 103.5, 104.5],
+            "low": [99.0, 100.0, 101.0, 102.0, 103.0],
+            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "ref_price": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "volume": [1000.0, 1100.0, 900.0, 1200.0, 1000.0],
+            "number_of_trades": [100, 110, 90, 120, 100],
+        }
+    )
 
 
 @pytest.fixture
 def sample_data_with_ret():
     """Sample data with ret_1m column."""
-    df = pd.DataFrame({
-        "ts_ms": [1000, 2000, 3000, 4000, 5000],
-        "symbol": ["BTCUSDT"] * 5,
-        "ref_price": [100.0, 101.0, 102.0, 103.0, 104.0],
-        "ret_1m": [0.01, -0.005, 0.01, 0.005, -0.003],
-        "volume": [1000.0] * 5,
-    })
+    df = pd.DataFrame(
+        {
+            "ts_ms": [1000, 2000, 3000, 4000, 5000],
+            "symbol": ["BTCUSDT"] * 5,
+            "ref_price": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "ret_1m": [0.01, -0.005, 0.01, 0.005, -0.003],
+            "volume": [1000.0] * 5,
+        }
+    )
     return df
 
 
@@ -112,11 +116,13 @@ def test_tcost_calibrate_config_custom():
 
 def test_safe_abs_log_ret():
     """Test _safe_abs_log_ret function."""
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT", "BTCUSDT", "BTCUSDT"],
-        "ts_ms": [1000, 2000, 3000],
-        "ref_price": [100.0, 101.0, 99.0],
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT", "BTCUSDT", "BTCUSDT"],
+            "ts_ms": [1000, 2000, 3000],
+            "ref_price": [100.0, 101.0, 99.0],
+        }
+    )
 
     result = _safe_abs_log_ret(df, "symbol", "ts_ms", "ref_price")
 
@@ -132,11 +138,13 @@ def test_safe_abs_log_ret():
 
 def test_safe_abs_log_ret_with_zeros():
     """Test _safe_abs_log_ret with zero prices."""
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT", "BTCUSDT"],
-        "ts_ms": [1000, 2000],
-        "ref_price": [0.0, 100.0],
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT", "BTCUSDT"],
+            "ts_ms": [1000, 2000],
+            "ref_price": [0.0, 100.0],
+        }
+    )
 
     result = _safe_abs_log_ret(df, "symbol", "ts_ms", "ref_price")
 
@@ -160,7 +168,7 @@ def test_compute_vol_bps_ret_1m_mode(sample_data_with_ret):
 
     # Should use abs(ret_1m) * 10000
     assert result.iloc[0] == pytest.approx(100.0, abs=1.0)  # 0.01 * 10000
-    assert result.iloc[1] == pytest.approx(50.0, abs=1.0)   # 0.005 * 10000
+    assert result.iloc[1] == pytest.approx(50.0, abs=1.0)  # 0.005 * 10000
 
 
 def test_compute_vol_bps_fallback(sample_data):
@@ -176,9 +184,11 @@ def test_compute_vol_bps_fallback(sample_data):
 
 def test_compute_illq_ratio():
     """Test _compute_illq_ratio function."""
-    df = pd.DataFrame({
-        "number_of_trades": [100, 90, 110, 80, 100],
-    })
+    df = pd.DataFrame(
+        {
+            "number_of_trades": [100, 90, 110, 80, 100],
+        }
+    )
 
     result = _compute_illq_ratio(df, "number_of_trades", 100.0)
 
@@ -195,9 +205,11 @@ def test_compute_illq_ratio():
 
 def test_compute_illq_ratio_no_column():
     """Test _compute_illq_ratio with missing liquidity column."""
-    df = pd.DataFrame({
-        "volume": [1000, 1100, 900],
-    })
+    df = pd.DataFrame(
+        {
+            "volume": [1000, 1100, 900],
+        }
+    )
 
     result = _compute_illq_ratio(df, "number_of_trades", 100.0)
 
@@ -207,9 +219,11 @@ def test_compute_illq_ratio_no_column():
 
 def test_compute_illq_ratio_fallback_ones():
     """Test _compute_illq_ratio fallback to ones."""
-    df = pd.DataFrame({
-        "price": [100.0, 101.0, 102.0],
-    })
+    df = pd.DataFrame(
+        {
+            "price": [100.0, 101.0, 102.0],
+        }
+    )
 
     result = _compute_illq_ratio(df, "nonexistent", 100.0)
 
@@ -243,9 +257,11 @@ def test_target_spread_bps_invalid_mode(sample_data):
 
 def test_target_spread_bps_missing_columns():
     """Test _target_spread_bps with missing required columns."""
-    df = pd.DataFrame({
-        "ref_price": [100.0],
-    })
+    df = pd.DataFrame(
+        {
+            "ref_price": [100.0],
+        }
+    )
 
     with pytest.raises(ValueError, match="требуются колонки"):
         _target_spread_bps(df, "ref_price", "hl", 0.25)
@@ -257,13 +273,15 @@ def test_target_spread_bps_missing_columns():
 def test_fit_linear_nonneg():
     """Test _fit_linear_nonneg function."""
     # Simple linear problem: y = 2x1 + 3x2
-    X = np.array([
-        [1, 2, 3],
-        [1, 4, 1],
-        [1, 1, 5],
-        [1, 3, 2],
-    ])
-    y = np.array([2*2 + 3*3, 2*4 + 3*1, 2*1 + 3*5, 2*3 + 3*2])
+    X = np.array(
+        [
+            [1, 2, 3],
+            [1, 4, 1],
+            [1, 1, 5],
+            [1, 3, 2],
+        ]
+    )
+    y = np.array([2 * 2 + 3 * 3, 2 * 4 + 3 * 1, 2 * 1 + 3 * 5, 2 * 3 + 3 * 2])
 
     coef = _fit_linear_nonneg(X, y)
 
@@ -277,11 +295,13 @@ def test_fit_linear_nonneg():
 def test_fit_linear_nonneg_negative_clipping():
     """Test _fit_linear_nonneg clips negative coefficients."""
     # Problem that might produce negative coefficients
-    X = np.array([
-        [1, -2],
-        [1, -4],
-        [1, -1],
-    ])
+    X = np.array(
+        [
+            [1, -2],
+            [1, -4],
+            [1, -1],
+        ]
+    )
     y = np.array([5, 10, 2])
 
     coef = _fit_linear_nonneg(X, y)
@@ -331,12 +351,14 @@ def test_calibrate_basic(sample_data):
 
 def test_calibrate_insufficient_data():
     """Test calibrate with insufficient data."""
-    df = pd.DataFrame({
-        "ref_price": [100.0],
-        "high": [101.0],
-        "low": [99.0],
-        "volume": [1000.0],
-    })
+    df = pd.DataFrame(
+        {
+            "ref_price": [100.0],
+            "high": [101.0],
+            "low": [99.0],
+            "volume": [1000.0],
+        }
+    )
 
     # Should raise error due to insufficient data
     with pytest.raises(ValueError, match="Недостаточно данных"):
@@ -664,14 +686,16 @@ def test_from_config(sample_data):
 
 def test_calibrate_all_zeros():
     """Test calibrate with all zero target values."""
-    df = pd.DataFrame({
-        "ref_price": [100.0] * 5,
-        "high": [100.0] * 5,
-        "low": [100.0] * 5,
-        "open": [100.0] * 5,
-        "close": [100.0] * 5,
-        "volume": [1000.0] * 5,
-    })
+    df = pd.DataFrame(
+        {
+            "ref_price": [100.0] * 5,
+            "high": [100.0] * 5,
+            "low": [100.0] * 5,
+            "open": [100.0] * 5,
+            "close": [100.0] * 5,
+            "volume": [1000.0] * 5,
+        }
+    )
 
     # All zero spread → insufficient data after filtering
     with pytest.raises(ValueError, match="Недостаточно данных"):

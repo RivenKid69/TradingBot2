@@ -56,12 +56,14 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class DORAEntityType(Enum):
     """
     Entity types subject to DORA per Article 2(1).
 
     Each value corresponds to a specific paragraph in Article 2(1).
     """
+
     # Article 2(1)(a-u)
     CREDIT_INSTITUTION = "credit_institution"  # (a)
     PAYMENT_INSTITUTION = "payment_institution"  # (b)
@@ -92,6 +94,7 @@ class DORAEntityType(Enum):
 
 class DORAScopeResult(Enum):
     """Result of DORA scope verification."""
+
     IN_SCOPE = "in_scope"
     OUT_OF_SCOPE = "out_of_scope"
     PARTIALLY_IN_SCOPE = "partially_in_scope"  # Some exemptions apply
@@ -102,6 +105,7 @@ class DORAScopeResult(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class EntityAuthorization:
     """
@@ -109,6 +113,7 @@ class EntityAuthorization:
 
     Used to determine which DORA entity type applies.
     """
+
     # Basic identification
     legal_name: str
     lei: Optional[str] = None  # Legal Entity Identifier (ISO 17442)
@@ -136,6 +141,7 @@ class ScopeVerification:
 
     Documents whether and how DORA applies to an entity.
     """
+
     verification_id: str = ""
     verification_date: str = ""
 
@@ -346,6 +352,7 @@ ENTITY_TYPE_INFO = {
 # Main DORA Scope Class
 # =============================================================================
 
+
 class DORAScope:
     """
     DORA Article 2 - Scope verification.
@@ -437,7 +444,10 @@ class DORAScope:
             )
             verification.notes = info.get("notes", "")
 
-        if entity_type in (DORAEntityType.INVESTMENT_FIRM, DORAEntityType.CRYPTO_ASSET_SERVICE_PROVIDER):
+        if entity_type in (
+            DORAEntityType.INVESTMENT_FIRM,
+            DORAEntityType.CRYPTO_ASSET_SERVICE_PROVIDER,
+        ):
             verification.notes = info.get("notes", "")
 
         # Check for activities
@@ -585,6 +595,7 @@ class DORAScope:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_scope_verifier() -> DORAScope:
     """

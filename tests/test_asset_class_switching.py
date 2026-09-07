@@ -22,6 +22,7 @@ import yaml
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def crypto_config() -> Dict[str, Any]:
     """Sample crypto configuration."""
@@ -81,24 +82,28 @@ def equity_config() -> Dict[str, Any]:
 # Test AssetClass Enum
 # =============================================================================
 
+
 class TestAssetClassEnum:
     """Tests for AssetClass enumeration."""
 
     def test_crypto_enum_exists(self):
         """Test crypto asset class exists."""
         from execution_providers import AssetClass
+
         assert hasattr(AssetClass, "CRYPTO")
         assert AssetClass.CRYPTO.value == "crypto"
 
     def test_equity_enum_exists(self):
         """Test equity asset class exists."""
         from execution_providers import AssetClass
+
         assert hasattr(AssetClass, "EQUITY")
         assert AssetClass.EQUITY.value == "equity"
 
     def test_futures_enum_exists(self):
         """Test futures asset class exists."""
         from execution_providers import AssetClass
+
         assert hasattr(AssetClass, "FUTURES")
 
     def test_asset_class_from_string(self):
@@ -119,6 +124,7 @@ class TestAssetClassEnum:
 # =============================================================================
 # Test Provider Auto-Selection
 # =============================================================================
+
 
 class TestProviderAutoSelection:
     """Tests for automatic provider selection based on asset_class."""
@@ -200,6 +206,7 @@ class TestProviderAutoSelection:
 # Test Slippage Profile Switching
 # =============================================================================
 
+
 class TestSlippageProfileSwitching:
     """Tests for slippage profile switching between asset classes."""
 
@@ -268,6 +275,7 @@ class TestSlippageProfileSwitching:
 # Test Fee Provider Switching
 # =============================================================================
 
+
 class TestFeeProviderSwitching:
     """Tests for fee provider switching between asset classes."""
 
@@ -311,6 +319,7 @@ class TestFeeProviderSwitching:
 # Test Config Validation
 # =============================================================================
 
+
 class TestConfigValidation:
     """Tests for config validation and compatibility."""
 
@@ -348,6 +357,7 @@ class TestConfigValidation:
 # =============================================================================
 # Test Backward Compatibility
 # =============================================================================
+
 
 class TestBackwardCompatibility:
     """Tests for backward compatibility with crypto-only configs."""
@@ -404,13 +414,14 @@ class TestBackwardCompatibility:
 # Test Config File Reading
 # =============================================================================
 
+
 class TestConfigFileReading:
     """Tests for reading config files with asset_class."""
 
     def test_config_train_has_asset_class(self):
         """Test config_train.yaml has asset_class."""
         try:
-            with open("configs/config_train.yaml", "r", encoding='utf-8') as f:
+            with open("configs/config_train.yaml", "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
             assert "asset_class" in config
             assert config["asset_class"] == "crypto"
@@ -420,7 +431,7 @@ class TestConfigFileReading:
     def test_config_sim_has_asset_class(self):
         """Test config_sim.yaml has asset_class."""
         try:
-            with open("configs/config_sim.yaml", "r", encoding='utf-8') as f:
+            with open("configs/config_sim.yaml", "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
             assert "asset_class" in config
             assert config["asset_class"] == "crypto"
@@ -430,7 +441,7 @@ class TestConfigFileReading:
     def test_config_train_stocks_has_equity(self):
         """Test config_train_stocks.yaml has equity asset_class."""
         try:
-            with open("configs/config_train_stocks.yaml", "r", encoding='utf-8') as f:
+            with open("configs/config_train_stocks.yaml", "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
             assert "asset_class" in config
             assert config["asset_class"] == "equity"
@@ -440,7 +451,7 @@ class TestConfigFileReading:
     def test_asset_class_defaults_exists(self):
         """Test asset_class_defaults.yaml exists."""
         try:
-            with open("configs/asset_class_defaults.yaml", "r", encoding='utf-8') as f:
+            with open("configs/asset_class_defaults.yaml", "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
             assert "crypto" in config
             assert "equity" in config
@@ -451,6 +462,7 @@ class TestConfigFileReading:
 # =============================================================================
 # Test Switching at Runtime
 # =============================================================================
+
 
 class TestRuntimeSwitching:
     """Tests for switching asset class at runtime."""
@@ -511,13 +523,14 @@ class TestRuntimeSwitching:
 # Test Provider Mapping
 # =============================================================================
 
+
 class TestProviderMapping:
     """Tests for provider mapping documentation."""
 
     def test_provider_mapping_in_defaults(self):
         """Test provider_mapping section in defaults config."""
         try:
-            with open("configs/asset_class_defaults.yaml", "r", encoding='utf-8') as f:
+            with open("configs/asset_class_defaults.yaml", "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
             assert "provider_mapping" in config
@@ -536,7 +549,7 @@ class TestProviderMapping:
     def test_data_vendor_mapping_in_defaults(self):
         """Test data_vendor_mapping section in defaults config."""
         try:
-            with open("configs/asset_class_defaults.yaml", "r", encoding='utf-8') as f:
+            with open("configs/asset_class_defaults.yaml", "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
             assert "data_vendor_mapping" in config
@@ -555,13 +568,14 @@ class TestProviderMapping:
 # Test Asset Class Consistency
 # =============================================================================
 
+
 class TestAssetClassConsistency:
     """Tests for consistency across components."""
 
     def test_slippage_profile_matches_asset_class(self):
         """Test slippage profile matches asset class defaults."""
         try:
-            with open("configs/slippage.yaml", "r", encoding='utf-8') as f:
+            with open("configs/slippage.yaml", "r", encoding="utf-8") as f:
                 slippage_config = yaml.safe_load(f)
 
             # Check profiles exist

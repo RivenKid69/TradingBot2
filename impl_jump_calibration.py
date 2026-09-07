@@ -74,8 +74,10 @@ _DEFAULT_JUMP_THRESHOLD_SIGMAS = 3.0
 # Enums and Data Classes
 # =============================================================================
 
+
 class CalibrationMethod(Enum):
     """Calibration method selection."""
+
     OPTION_PRICES = "option_prices"
     HISTORICAL_MOMENTS = "historical_moments"
     HISTORICAL_MLE = "historical_mle"
@@ -84,6 +86,7 @@ class CalibrationMethod(Enum):
 
 class OptimizationMethod(Enum):
     """Optimization algorithm selection."""
+
     L_BFGS_B = "L-BFGS-B"
     NELDER_MEAD = "Nelder-Mead"
     POWELL = "Powell"
@@ -94,6 +97,7 @@ class OptimizationMethod(Enum):
 @dataclass
 class CalibrationInput:
     """Input data for jump calibration."""
+
     # Option data (for option price calibration)
     option_prices: Optional[np.ndarray] = None
     strikes: Optional[np.ndarray] = None
@@ -115,6 +119,7 @@ class CalibrationInput:
 @dataclass
 class CalibrationResult:
     """Result of jump parameter calibration."""
+
     # Calibrated parameters
     jump_params: JumpParams
 
@@ -146,6 +151,7 @@ class CalibrationResult:
 @dataclass
 class JumpDetectionResult:
     """Result of jump detection from historical returns."""
+
     jump_times: np.ndarray  # Indices of detected jumps
     jump_sizes: np.ndarray  # Sizes of detected jumps
     n_jumps: int
@@ -156,6 +162,7 @@ class JumpDetectionResult:
 # =============================================================================
 # Jump-Diffusion Pricing (internal, for calibration)
 # =============================================================================
+
 
 def _merton_price(
     spot: float,
@@ -203,9 +210,7 @@ def _merton_price(
         poisson_prob_sum += poisson_prob
 
         # Adjusted volatility and rate for n jumps
-        sigma_n = math.sqrt(
-            volatility * volatility + n * sigma_j * sigma_j / time_to_expiry
-        )
+        sigma_n = math.sqrt(volatility * volatility + n * sigma_j * sigma_j / time_to_expiry)
 
         # Risk-neutral drift adjustment
         r_n = (
@@ -217,8 +222,7 @@ def _merton_price(
 
         # Black-Scholes price with adjusted parameters
         bs_price = _black_scholes_internal(
-            spot, strike, time_to_expiry, r_n + dividend_yield,
-            dividend_yield, sigma_n, is_call
+            spot, strike, time_to_expiry, r_n + dividend_yield, dividend_yield, sigma_n, is_call
         )
 
         price += poisson_prob * bs_price
@@ -271,6 +275,7 @@ def _black_scholes_internal(
 # =============================================================================
 # Jump Detection from Historical Returns
 # =============================================================================
+
 
 def detect_jumps(
     returns: np.ndarray,
@@ -339,6 +344,7 @@ def detect_jumps(
 # =============================================================================
 # Historical Calibration Methods
 # =============================================================================
+
 
 def calibrate_from_moments(
     returns: np.ndarray,
@@ -414,14 +420,14 @@ def calibrate_from_moments(
     # Calculate fit quality metrics
     # Compare empirical and model moments
     model_mean = mu_j_est * lambda_est * dt
-    model_var = (diffusion_vol ** 2 + lambda_est * (sigma_j_est ** 2 + mu_j_est ** 2)) * dt
+    model_var = (diffusion_vol**2 + lambda_est * (sigma_j_est**2 + mu_j_est**2)) * dt
 
     empirical_mean = float(np.mean(returns))
     empirical_var = float(np.var(returns, ddof=1))
 
     # Simple R² approximation
     ss_res = (empirical_mean - model_mean) ** 2 + (empirical_var - model_var) ** 2
-    ss_tot = empirical_mean ** 2 + empirical_var ** 2 + 1e-10
+    ss_tot = empirical_mean**2 + empirical_var**2 + 1e-10
     r_squared = max(0.0, 1.0 - ss_res / ss_tot)
 
     # RMSE on standardized returns
@@ -492,12 +498,14 @@ def calibrate_from_mle(
 
     # Initial parameters: [sigma, lambda, mu_j, sigma_j]
     sigma_init = float(np.std(returns, ddof=1) / math.sqrt(dt))
-    x0 = np.array([
-        sigma_init,
-        initial_guess.lambda_intensity,
-        initial_guess.mu_jump,
-        initial_guess.sigma_jump,
-    ])
+    x0 = np.array(
+        [
+            sigma_init,
+            initial_guess.lambda_intensity,
+            initial_guess.mu_jump,
+            initial_guess.sigma_jump,
+        ]
+    )
 
     def negative_log_likelihood(params: np.ndarray) -> float:
         """Negative log-likelihood for optimization."""
@@ -516,11 +524,7 @@ def calibrate_from_mle(
 
             for k in range(max_jumps + 1):
                 # Poisson probability
-                poisson_prob = (
-                    math.exp(-lambda_ * dt)
-                    * (lambda_ * dt) ** k
-                    / math.factorial(k)
-                )
+                poisson_prob = math.exp(-lambda_ * dt) * (lambda_ * dt) ** k / math.factorial(k)
 
                 if poisson_prob < 1e-15:
                     break
@@ -576,23 +580,25 @@ def calibrate_from_mle(
 
     # Approximate R² using pseudo-R²
     # Compare to null model (no jumps)
-    null_ll = -0.5 * n * (
-        math.log(2 * math.pi * sigma_opt ** 2 * dt)
-        + np.sum((returns - np.mean(returns)) ** 2) / (sigma_opt ** 2 * dt * n)
+    null_ll = (
+        -0.5
+        * n
+        * (
+            math.log(2 * math.pi * sigma_opt**2 * dt)
+            + np.sum((returns - np.mean(returns)) ** 2) / (sigma_opt**2 * dt * n)
+        )
     )
 
     pseudo_r2 = max(0.0, 1.0 - ll / (null_ll - 1e-10)) if null_ll < 0 else 0.0
 
     # RMSE from model fit
     model_mean = mu_j_opt * lambda_opt * dt
-    model_std = math.sqrt(sigma_opt ** 2 * dt + lambda_opt * (sigma_j_opt ** 2 + mu_j_opt ** 2) * dt)
+    model_std = math.sqrt(sigma_opt**2 * dt + lambda_opt * (sigma_j_opt**2 + mu_j_opt**2) * dt)
 
     empirical_mean = float(np.mean(returns))
     empirical_std = float(np.std(returns, ddof=1))
 
-    rmse = math.sqrt(
-        (empirical_mean - model_mean) ** 2 + (empirical_std - model_std) ** 2
-    ) / 2
+    rmse = math.sqrt((empirical_mean - model_mean) ** 2 + (empirical_std - model_std) ** 2) / 2
 
     mape = abs((empirical_std - model_std) / (empirical_std + 1e-10))
 
@@ -618,6 +624,7 @@ def calibrate_from_mle(
 # =============================================================================
 # Option Price Calibration
 # =============================================================================
+
 
 def calibrate_from_options(
     option_prices: np.ndarray,
@@ -688,7 +695,7 @@ def calibrate_from_options(
     if weights is None:
         # Vega-weighted by default (ATM options weighted more)
         moneyness = spot / strikes
-        weights = np.exp(-0.5 * (np.log(moneyness)) ** 2 / (0.1 ** 2))
+        weights = np.exp(-0.5 * (np.log(moneyness)) ** 2 / (0.1**2))
         sum_weights = np.sum(weights)
         if sum_weights <= 0.0:
             raise CalibrationError("Sum of calculated weights is zero or negative")
@@ -708,11 +715,13 @@ def calibrate_from_options(
             sigma_jump=0.15,
         )
 
-    x0 = np.array([
-        initial_guess.lambda_intensity,
-        initial_guess.mu_jump,
-        initial_guess.sigma_jump,
-    ])
+    x0 = np.array(
+        [
+            initial_guess.lambda_intensity,
+            initial_guess.mu_jump,
+            initial_guess.sigma_jump,
+        ]
+    )
 
     def objective(params: np.ndarray) -> float:
         """Weighted sum of squared errors."""
@@ -797,10 +806,10 @@ def calibrate_from_options(
         residuals[i] = model_price - option_prices[i]
 
     # Metrics
-    rmse = float(np.sqrt(np.mean(residuals ** 2)))
+    rmse = float(np.sqrt(np.mean(residuals**2)))
     mape = float(np.mean(np.abs(residuals) / (option_prices + 1e-10)))
 
-    ss_res = float(np.sum(residuals ** 2))
+    ss_res = float(np.sum(residuals**2))
     ss_tot = float(np.sum((option_prices - np.mean(option_prices)) ** 2))
     r_squared = max(0.0, 1.0 - ss_res / (ss_tot + 1e-10))
 
@@ -823,6 +832,7 @@ def calibrate_from_options(
 # =============================================================================
 # Hybrid Calibration
 # =============================================================================
+
 
 def calibrate_hybrid(
     calibration_input: CalibrationInput,
@@ -847,10 +857,7 @@ def calibrate_hybrid(
     start_time = time.perf_counter()
 
     # Validate inputs
-    has_historical = (
-        calibration_input.returns is not None
-        and calibration_input.dt is not None
-    )
+    has_historical = calibration_input.returns is not None and calibration_input.dt is not None
     has_options = (
         calibration_input.option_prices is not None
         and calibration_input.strikes is not None
@@ -916,17 +923,10 @@ def calibrate_hybrid(
     else:
         # Weighted average
         combined_lambda = sum(
-            w * r.jump_params.lambda_intensity
-            for w, r in zip(weights_used, results)
+            w * r.jump_params.lambda_intensity for w, r in zip(weights_used, results)
         )
-        combined_mu_j = sum(
-            w * r.jump_params.mu_jump
-            for w, r in zip(weights_used, results)
-        )
-        combined_sigma_j = sum(
-            w * r.jump_params.sigma_jump
-            for w, r in zip(weights_used, results)
-        )
+        combined_mu_j = sum(w * r.jump_params.mu_jump for w, r in zip(weights_used, results))
+        combined_sigma_j = sum(w * r.jump_params.sigma_jump for w, r in zip(weights_used, results))
 
         combined_rmse = sum(w * r.rmse for w, r in zip(weights_used, results))
         combined_mape = sum(w * r.mape for w, r in zip(weights_used, results))
@@ -956,6 +956,7 @@ def calibrate_hybrid(
 # =============================================================================
 # Calibration Diagnostics
 # =============================================================================
+
 
 def compute_calibration_diagnostics(
     result: CalibrationResult,
@@ -1036,6 +1037,7 @@ def compute_calibration_diagnostics(
 # High-Level Calibration Interface
 # =============================================================================
 
+
 class JumpCalibrator:
     """
     High-level interface for jump parameter calibration.
@@ -1112,6 +1114,7 @@ class JumpCalibrator:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_calibrator() -> JumpCalibrator:
     """Create a new JumpCalibrator instance."""

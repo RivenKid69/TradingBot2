@@ -29,28 +29,43 @@ class TestIndicatorShiftList:
     def test_shift_list_includes_volatility_indicators(self):
         """Verify yang_zhang, parkinson, garch prefixes are handled."""
         # Create mock dataframe with volatility indicators
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000, 4000, 5000],
-            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-            "yang_zhang_48h": [0.1, 0.2, 0.3, 0.4, 0.5],
-            "yang_zhang_7d": [0.15, 0.25, 0.35, 0.45, 0.55],
-            "parkinson_48h": [0.08, 0.18, 0.28, 0.38, 0.48],
-            "parkinson_7d": [0.12, 0.22, 0.32, 0.42, 0.52],
-            "garch_200h": [0.05, 0.15, 0.25, 0.35, 0.45],
-            "garch_14d": [0.07, 0.17, 0.27, 0.37, 0.47],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000, 4000, 5000],
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "yang_zhang_48h": [0.1, 0.2, 0.3, 0.4, 0.5],
+                "yang_zhang_7d": [0.15, 0.25, 0.35, 0.45, 0.55],
+                "parkinson_48h": [0.08, 0.18, 0.28, 0.38, 0.48],
+                "parkinson_7d": [0.12, 0.22, 0.32, 0.42, 0.52],
+                "garch_200h": [0.05, 0.15, 0.25, 0.35, 0.45],
+                "garch_14d": [0.07, 0.17, 0.27, 0.37, 0.47],
+            }
+        )
 
         # Extract the shifting logic from trading_patchnew.py
         _indicators_to_shift = [
-            "rsi", "macd", "macd_signal", "momentum", "atr", "cci",
-            "obv", "bb_lower", "bb_upper", "taker_buy_ratio",
+            "rsi",
+            "macd",
+            "macd_signal",
+            "momentum",
+            "atr",
+            "cci",
+            "obv",
+            "bb_lower",
+            "bb_upper",
+            "taker_buy_ratio",
         ]
 
         _sma_cols = [col for col in df.columns if col.startswith("sma_")]
         _indicators_to_shift.extend(_sma_cols)
 
         _pattern_prefixes = [
-            "yang_zhang_", "parkinson_", "garch_", "ret_", "cvd_", "taker_buy_ratio_",
+            "yang_zhang_",
+            "parkinson_",
+            "garch_",
+            "ret_",
+            "cvd_",
+            "taker_buy_ratio_",
         ]
         for _prefix in _pattern_prefixes:
             _prefix_cols = [col for col in df.columns if col.startswith(_prefix)]
@@ -66,13 +81,15 @@ class TestIndicatorShiftList:
 
     def test_shift_list_includes_returns(self):
         """Verify ret_* prefix indicators are handled."""
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000],
-            "close": [100.0, 101.0, 102.0],
-            "ret_4h": [0.01, 0.02, 0.03],
-            "ret_12h": [0.02, 0.04, 0.06],
-            "ret_24h": [0.03, 0.06, 0.09],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000],
+                "close": [100.0, 101.0, 102.0],
+                "ret_4h": [0.01, 0.02, 0.03],
+                "ret_12h": [0.02, 0.04, 0.06],
+                "ret_24h": [0.03, 0.06, 0.09],
+            }
+        )
 
         _indicators_to_shift = []
         _pattern_prefixes = ["ret_"]
@@ -86,12 +103,14 @@ class TestIndicatorShiftList:
 
     def test_shift_list_includes_cvd(self):
         """Verify cvd_* prefix indicators are handled."""
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000],
-            "close": [100.0, 101.0, 102.0],
-            "cvd_24h": [1000.0, 2000.0, 3000.0],
-            "cvd_7d": [5000.0, 6000.0, 7000.0],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000],
+                "close": [100.0, 101.0, 102.0],
+                "cvd_24h": [1000.0, 2000.0, 3000.0],
+                "cvd_7d": [5000.0, 6000.0, 7000.0],
+            }
+        )
 
         _indicators_to_shift = []
         _pattern_prefixes = ["cvd_"]
@@ -104,15 +123,17 @@ class TestIndicatorShiftList:
 
     def test_shift_list_includes_taker_buy_ratio_derivatives(self):
         """Verify taker_buy_ratio_* prefix indicators are handled."""
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000],
-            "close": [100.0, 101.0, 102.0],
-            "taker_buy_ratio": [0.5, 0.6, 0.7],  # base value
-            "taker_buy_ratio_sma_8h": [0.52, 0.58, 0.65],
-            "taker_buy_ratio_sma_24h": [0.51, 0.57, 0.64],
-            "taker_buy_ratio_momentum_4h": [0.01, 0.02, 0.03],
-            "taker_buy_ratio_momentum_12h": [0.02, 0.04, 0.06],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000],
+                "close": [100.0, 101.0, 102.0],
+                "taker_buy_ratio": [0.5, 0.6, 0.7],  # base value
+                "taker_buy_ratio_sma_8h": [0.52, 0.58, 0.65],
+                "taker_buy_ratio_sma_24h": [0.51, 0.57, 0.64],
+                "taker_buy_ratio_momentum_4h": [0.01, 0.02, 0.03],
+                "taker_buy_ratio_momentum_12h": [0.02, 0.04, 0.06],
+            }
+        )
 
         _indicators_to_shift = ["taker_buy_ratio"]
         _pattern_prefixes = ["taker_buy_ratio_"]
@@ -132,13 +153,15 @@ class TestShiftBehavior:
 
     def test_indicators_shifted_by_one(self):
         """Verify that indicators are shifted by 1 row."""
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000, 4000, 5000],
-            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-            "yang_zhang_48h": [0.1, 0.2, 0.3, 0.4, 0.5],
-            "ret_12h": [0.01, 0.02, 0.03, 0.04, 0.05],
-            "cvd_24h": [100.0, 200.0, 300.0, 400.0, 500.0],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000, 4000, 5000],
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "yang_zhang_48h": [0.1, 0.2, 0.3, 0.4, 0.5],
+                "ret_12h": [0.01, 0.02, 0.03, 0.04, 0.05],
+                "cvd_24h": [100.0, 200.0, 300.0, 400.0, 500.0],
+            }
+        )
 
         # Apply shift logic from trading_patchnew.py
         _pattern_prefixes = ["yang_zhang_", "ret_", "cvd_"]
@@ -172,14 +195,16 @@ class TestShiftBehavior:
         - At time t, model sees indicator computed from close[t-1] (no look-ahead)
         """
         # Create dataframe simulating training data
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000],
-            "close": [100.0, 110.0, 120.0],  # Price increases
-            # ret_4h = log(close[t] / close[t-1]) - but this is pre-computed
-            # without shift: at t=2, model sees ret_4h=0.095 (computed from close[2])
-            # with shift: at t=2, model sees ret_4h=0.095 shifted, so it sees value from t=1
-            "ret_4h": [np.nan, 0.0953, 0.0870],  # log returns
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000],
+                "close": [100.0, 110.0, 120.0],  # Price increases
+                # ret_4h = log(close[t] / close[t-1]) - but this is pre-computed
+                # without shift: at t=2, model sees ret_4h=0.095 (computed from close[2])
+                # with shift: at t=2, model sees ret_4h=0.095 shifted, so it sees value from t=1
+                "ret_4h": [np.nan, 0.0953, 0.0870],  # log returns
+            }
+        )
 
         original_ret_4h = df["ret_4h"].copy()
 
@@ -205,17 +230,19 @@ class TestTradingEnvIntegration:
             pytest.skip("TradingEnv not available")
 
         # Create test dataframe with indicators
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000, 4000, 5000],
-            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-            "open": [99.5, 100.5, 101.5, 102.5, 103.5],
-            "high": [101.0, 102.0, 103.0, 104.0, 105.0],
-            "low": [99.0, 100.0, 101.0, 102.0, 103.0],
-            "volume": [1000, 1100, 1200, 1300, 1400],
-            "yang_zhang_48h": [0.1, 0.2, 0.3, 0.4, 0.5],
-            "garch_200h": [0.05, 0.15, 0.25, 0.35, 0.45],
-            "ret_12h": [0.01, 0.02, 0.03, 0.04, 0.05],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000, 4000, 5000],
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "open": [99.5, 100.5, 101.5, 102.5, 103.5],
+                "high": [101.0, 102.0, 103.0, 104.0, 105.0],
+                "low": [99.0, 100.0, 101.0, 102.0, 103.0],
+                "volume": [1000, 1100, 1200, 1300, 1400],
+                "yang_zhang_48h": [0.1, 0.2, 0.3, 0.4, 0.5],
+                "garch_200h": [0.05, 0.15, 0.25, 0.35, 0.45],
+                "ret_12h": [0.01, 0.02, 0.03, 0.04, 0.05],
+            }
+        )
 
         # Store original values for comparison
         original_yang_zhang = df["yang_zhang_48h"].copy()
@@ -230,15 +257,11 @@ class TestTradingEnvIntegration:
             )
 
             # After TradingEnv init, indicators should be shifted
-            assert pd.isna(env.df["yang_zhang_48h"].iloc[0]), (
-                "yang_zhang_48h[0] should be NaN after shift"
-            )
-            assert pd.isna(env.df["garch_200h"].iloc[0]), (
-                "garch_200h[0] should be NaN after shift"
-            )
-            assert pd.isna(env.df["ret_12h"].iloc[0]), (
-                "ret_12h[0] should be NaN after shift"
-            )
+            assert pd.isna(
+                env.df["yang_zhang_48h"].iloc[0]
+            ), "yang_zhang_48h[0] should be NaN after shift"
+            assert pd.isna(env.df["garch_200h"].iloc[0]), "garch_200h[0] should be NaN after shift"
+            assert pd.isna(env.df["ret_12h"].iloc[0]), "ret_12h[0] should be NaN after shift"
 
             # Values should be shifted by 1
             assert env.df["yang_zhang_48h"].iloc[1] == original_yang_zhang.iloc[0]

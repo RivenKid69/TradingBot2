@@ -24,6 +24,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: Placeholder signature verification always returned `True`, bypassing artifact integrity checks.
 
 **Fix Applied**:
+
 - Implemented fail-closed behavior (returns `False` instead of `True`)
 - Added development bypass requiring explicit env var `CCEA_SKIP_SIGNATURE_VERIFICATION=DEVELOPMENT_ONLY`
 - Added metric emission for monitoring (`signature_verification_failed`, `signature_verification_skipped`)
@@ -41,6 +42,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: When cryptography library unavailable, placeholder SHA256 signature was used instead of proper Ed25519.
 
 **Fix Applied**:
+
 - `_sign_payload()` now raises `RuntimeError` if cryptography unavailable
 - `_verify_signature()` returns `False` (fail-closed) if cryptography unavailable
 - Error messages reference CCEA Design Doc Section 15.2
@@ -58,6 +60,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: MFA verification returned `True` when pyotp not installed, allowing bypass.
 
 **Fix Applied**:
+
 - `_verify_totp()` now returns `False` (fail-closed) when pyotp unavailable
 - Error logged with clear message about required package
 
@@ -76,6 +79,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Resolution**: Documented as acceptable for single-instance deployments.
 
 **Control Artifact**: `docs/security/DISTRIBUTED_SECURITY_REQUIREMENTS.md` created with:
+
 - Production requirements for multi-instance deployments
 - Redis migration path
 - Metrics for monitoring
@@ -91,6 +95,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Resolution**: Docstring updated with production requirements.
 
 **Control Artifact**: `docs/security/DISTRIBUTED_SECURITY_REQUIREMENTS.md` documents:
+
 - Single-instance vs multi-instance considerations
 - Redis migration requirements
 - Revocation propagation monitoring
@@ -106,6 +111,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Resolution**: Docstring updated with production requirements and security note.
 
 **Control Artifact**: `docs/security/DISTRIBUTED_SECURITY_REQUIREMENTS.md` documents:
+
 - Redis backend requirement for multi-instance
 - Atomic operation requirements
 - Bypass risk without distributed state
@@ -123,6 +129,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Resolution**: Already controlled in registry with existing artifacts.
 
 **Control Artifacts**:
+
 - Header documentation with refactoring status
 - `tests/COMPREHENSIVE_TEST_REPORT.md`
 - Static analysis via `radon cc`
@@ -151,6 +158,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: TIF conformance tests were placeholders with GTEST_SKIP.
 
 **Fix Applied**:
+
 - Implemented real GTC tests (GTCOrderRemainsOnBook, GTCPartialFillRemainsOnBook)
 - Implemented real POST_ONLY tests (PostOnlyRejectsCrossingOrder, PostOnlyAcceptsNonCrossingOrder)
 - IOC tests remain skipped pending T2b implementation
@@ -166,6 +174,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: Feature isolation tests were `assert True` placeholders.
 
 **Fix Applied**:
+
 - Implemented actual feature registry checking for crypto/forex isolation
 - Tests now verify forex-specific features don't appear in crypto feature sets
 - Graceful handling when feature registry not fully implemented
@@ -183,6 +192,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: obs_builder fallback to legacy creates inconsistent observation distributions.
 
 **Fix Applied**:
+
 - Added fallback counter with periodic logging
 - Emit metrics on fallback (`obs_builder_fallback_count`, `error_type`)
 - Warning for high fallback rates
@@ -198,6 +208,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: Quantizer fallback to legacy filters changes execution behavior.
 
 **Fix Applied**:
+
 - Enhanced logging with metrics emission
 - Warning about execution simulation result differences
 
@@ -214,6 +225,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: Documentation claimed CI workflows exist that might not be present.
 
 **Resolution**: Verified that CI workflow files exist:
+
 - `.github/workflows/build-and-test.yml`
 - `.github/workflows/security-sast.yml`
 - `.github/workflows/docs-quality.yml`
@@ -231,6 +243,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 **Issue**: On-call resources marked as "planned/TBD".
 
 **Resolution**: Already properly controlled as soft OK:
+
 - Document explicitly states planned status
 - Remediation roadmap with Phase 1/2/3 timelines
 - SLA tiers based on actual capacity
@@ -270,6 +283,7 @@ This report documents the closure of 15 technical debt items across Security, Ar
 ## Test Results
 
 Tests were not executed as part of this closure. The changes are:
+
 - Fail-closed security controls (will cause test failures if dependencies missing)
 - Enhanced logging/metrics (backward compatible)
 - New C++ tests (require OrderBook build)

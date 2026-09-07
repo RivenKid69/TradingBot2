@@ -25,6 +25,7 @@ import pandas as pd
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_stock_df() -> pd.DataFrame:
     """Create sample stock DataFrame for testing."""
@@ -33,14 +34,16 @@ def sample_stock_df() -> pd.DataFrame:
 
     prices = 150 + np.cumsum(np.random.randn(100) * 2)
 
-    return pd.DataFrame({
-        "timestamp": dates,
-        "open": prices - np.random.rand(100) * 0.5,
-        "high": prices + np.random.rand(100) * 1.0,
-        "low": prices - np.random.rand(100) * 1.0,
-        "close": prices,
-        "volume": np.random.randint(1000000, 10000000, 100),
-    }).set_index("timestamp")
+    return pd.DataFrame(
+        {
+            "timestamp": dates,
+            "open": prices - np.random.rand(100) * 0.5,
+            "high": prices + np.random.rand(100) * 1.0,
+            "low": prices - np.random.rand(100) * 1.0,
+            "close": prices,
+            "volume": np.random.randint(1000000, 10000000, 100),
+        }
+    ).set_index("timestamp")
 
 
 @pytest.fixture
@@ -54,14 +57,16 @@ def sample_sector_etf_data() -> Dict[str, pd.DataFrame]:
         base_price = {"XLK": 180, "XLF": 40, "XLE": 90, "XLV": 140, "SPY": 470}[etf]
         prices = base_price + np.cumsum(np.random.randn(60) * 1.5)
 
-        etf_data[etf] = pd.DataFrame({
-            "timestamp": dates,
-            "open": prices - np.random.rand(60) * 0.3,
-            "high": prices + np.random.rand(60) * 0.5,
-            "low": prices - np.random.rand(60) * 0.5,
-            "close": prices,
-            "volume": np.random.randint(500000, 5000000, 60),
-        }).set_index("timestamp")
+        etf_data[etf] = pd.DataFrame(
+            {
+                "timestamp": dates,
+                "open": prices - np.random.rand(60) * 0.3,
+                "high": prices + np.random.rand(60) * 0.5,
+                "low": prices - np.random.rand(60) * 0.5,
+                "close": prices,
+                "volume": np.random.randint(500000, 5000000, 60),
+            }
+        ).set_index("timestamp")
 
     return etf_data
 
@@ -81,6 +86,7 @@ def alpaca_config() -> Dict[str, Any]:
 # =============================================================================
 # SECTION 1: OPTIONS TRADING TESTS
 # =============================================================================
+
 
 class TestOptionContract:
     """Tests for OptionContract class."""
@@ -372,6 +378,7 @@ class TestOptionsExecution:
 # SECTION 2: SHORT SELLING RULES TESTS
 # =============================================================================
 
+
 class TestShortSellingRules:
     """Tests for short selling rules integration."""
 
@@ -499,6 +506,7 @@ class TestPDTTracker:
 # SECTION 3: SECTOR MOMENTUM TESTS
 # =============================================================================
 
+
 class TestSectorMomentumService:
     """Tests for sector momentum calculation."""
 
@@ -575,9 +583,7 @@ class TestSectorMomentumService:
             mock_service = MockService.return_value
             mock_service.get_sector_momentum.return_value = (0.5, True)
 
-            df = enrich_dataframe_with_sector_momentum(
-                sample_stock_df, "AAPL", mock_service
-            )
+            df = enrich_dataframe_with_sector_momentum(sample_stock_df, "AAPL", mock_service)
 
             assert "sector_momentum" in df.columns
             assert (df["sector_momentum"] == 0.5).all()
@@ -609,6 +615,7 @@ class TestSectorDataLoader:
 # =============================================================================
 # SECTION 4: STOCK FEATURES INTEGRATION
 # =============================================================================
+
 
 class TestStockFeaturesIntegration:
     """Tests for stock features in observation space."""
@@ -722,6 +729,7 @@ class TestStockFeaturesIntegration:
 # SECTION 5: CRYPTO BACKWARD COMPATIBILITY
 # =============================================================================
 
+
 class TestCryptoBackwardCompatibility:
     """Tests to ensure crypto functionality is not broken."""
 
@@ -810,6 +818,7 @@ class TestCryptoBackwardCompatibility:
 # SECTION 6: OBSERVATION SPACE TESTS
 # =============================================================================
 
+
 class TestObservationSpaceIntegration:
     """Tests for observation space with stock features."""
 
@@ -837,6 +846,7 @@ class TestObservationSpaceIntegration:
 # =============================================================================
 # SECTION 7: EXCHANGE INFO INTEGRATION
 # =============================================================================
+
 
 class TestExchangeInfoIntegration:
     """Tests for exchange info with shortability."""
@@ -877,6 +887,7 @@ class TestExchangeInfoIntegration:
 # =============================================================================
 # SECTION 8: INTEGRATION TESTS
 # =============================================================================
+
 
 class TestL3IntegrationScenarios:
     """Integration tests for L3 stock simulation scenarios."""

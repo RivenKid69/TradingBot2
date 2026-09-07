@@ -253,6 +253,7 @@ def main():
     except Exception as e:
         print(f"❌ Fix 1 test failed with exception: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("Fix 1: Selective dropna", False))
 
@@ -261,6 +262,7 @@ def main():
     except Exception as e:
         print(f"❌ Fix 2 test failed with exception: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("Fix 2: Data quality warnings", False))
 
@@ -269,6 +271,7 @@ def main():
     except Exception as e:
         print(f"❌ Fix 3 test failed with exception: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("Fix 3: Consistent NaN handling", False))
 

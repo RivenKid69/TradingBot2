@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import math
 import time
+from datetime import date
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
@@ -54,15 +55,16 @@ _SQRT_2PI = math.sqrt(2.0 * math.pi)
 _INV_SQRT_2 = 1.0 / math.sqrt(2.0)
 
 # Numerical tolerances
-_MIN_TIME = 1e-10          # Minimum time to avoid division by zero
-_MIN_VOLATILITY = 1e-10    # Minimum volatility to avoid division by zero
-_MIN_SPOT = 1e-10          # Minimum spot to avoid division by zero
-_MIN_STRIKE = 1e-10        # Minimum strike
+_MIN_TIME = 1e-10  # Minimum time to avoid division by zero
+_MIN_VOLATILITY = 1e-10  # Minimum volatility to avoid division by zero
+_MIN_SPOT = 1e-10  # Minimum spot to avoid division by zero
+_MIN_STRIKE = 1e-10  # Minimum strike
 
 
 # =============================================================================
 # Standard Normal Distribution Functions
 # =============================================================================
+
 
 def _norm_cdf(x: float) -> float:
     """
@@ -95,6 +97,7 @@ def _norm_pdf(x: float) -> float:
 # =============================================================================
 # Black-Scholes d1, d2 Calculation
 # =============================================================================
+
 
 def _compute_d1_d2(
     spot: float,
@@ -133,7 +136,10 @@ def _compute_d1_d2(
     sqrt_t = math.sqrt(time_to_expiry)
     vol_sqrt_t = volatility * sqrt_t
 
-    d1 = (math.log(spot / strike) + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry) / vol_sqrt_t
+    d1 = (
+        math.log(spot / strike)
+        + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry
+    ) / vol_sqrt_t
     d2 = d1 - vol_sqrt_t
 
     return d1, d2
@@ -142,6 +148,7 @@ def _compute_d1_d2(
 # =============================================================================
 # First-Order Greeks
 # =============================================================================
+
 
 def compute_delta(
     spot: float,
@@ -381,6 +388,7 @@ def compute_rho(
 # Second-Order Greeks
 # =============================================================================
 
+
 def compute_vanna(
     spot: float,
     strike: float,
@@ -523,6 +531,7 @@ def compute_charm(
 # =============================================================================
 # Third-Order Greeks
 # =============================================================================
+
 
 def compute_speed(
     spot: float,
@@ -704,6 +713,7 @@ def compute_ultima(
 # Combined Greeks Calculation
 # =============================================================================
 
+
 def compute_all_greeks(
     spot: float,
     strike: float,
@@ -757,16 +767,22 @@ def compute_all_greeks(
     # Compute all Greeks
     delta = compute_delta(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call)
     gamma = compute_gamma(spot, strike, time_to_expiry, rate, dividend_yield, volatility)
-    theta = compute_theta(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, per_day=True)
+    theta = compute_theta(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, per_day=True
+    )
     vega = compute_vega(spot, strike, time_to_expiry, rate, dividend_yield, volatility)
     rho = compute_rho(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call)
 
     vanna = compute_vanna(spot, strike, time_to_expiry, rate, dividend_yield, volatility)
     volga = compute_volga(spot, strike, time_to_expiry, rate, dividend_yield, volatility)
-    charm = compute_charm(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, per_day=True)
+    charm = compute_charm(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, per_day=True
+    )
 
     speed = compute_speed(spot, strike, time_to_expiry, rate, dividend_yield, volatility)
-    color = compute_color(spot, strike, time_to_expiry, rate, dividend_yield, volatility, per_day=True)
+    color = compute_color(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, per_day=True
+    )
     zomma = compute_zomma(spot, strike, time_to_expiry, rate, dividend_yield, volatility)
     ultima = compute_ultima(spot, strike, time_to_expiry, rate, dividend_yield, volatility)
 
@@ -799,7 +815,7 @@ def compute_greeks_for_contract(
     volatility: float,
     rate: float,
     dividend_yield: float = 0.0,
-    valuation_date: Optional['date'] = None,
+    valuation_date: Optional["date"] = None,
 ) -> GreeksResult:
     """
     Compute all Greeks for an options contract.
@@ -835,6 +851,7 @@ def compute_greeks_for_contract(
 # Greeks Validation / Numerical Differentiation
 # =============================================================================
 
+
 def validate_greeks_numerically(
     spot: float,
     strike: float,
@@ -843,11 +860,11 @@ def validate_greeks_numerically(
     dividend_yield: float,
     volatility: float,
     is_call: bool,
-    h_spot: float = 0.01,      # Bump size for spot (as fraction)
-    h_vol: float = 0.001,      # Bump size for vol (absolute)
-    h_time: float = 1/365,     # Bump size for time (1 day)
-    h_rate: float = 0.0001,    # Bump size for rate (1 bp)
-    tolerance: float = 0.01,   # Relative tolerance (1%)
+    h_spot: float = 0.01,  # Bump size for spot (as fraction)
+    h_vol: float = 0.001,  # Bump size for vol (absolute)
+    h_time: float = 1 / 365,  # Bump size for time (1 day)
+    h_rate: float = 0.0001,  # Bump size for rate (1 bp)
+    tolerance: float = 0.01,  # Relative tolerance (1%)
 ) -> dict:
     """
     Validate analytical Greeks against numerical differentiation.
@@ -876,7 +893,9 @@ def validate_greeks_numerically(
     results = {}
 
     # Compute analytical Greeks
-    greeks = compute_all_greeks(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call)
+    greeks = compute_all_greeks(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call
+    )
 
     # Helper for central difference
     def central_diff(f, x, h):
@@ -884,17 +903,31 @@ def validate_greeks_numerically(
 
     # Validate Delta
     def price_at_spot(s):
-        return black_scholes_price(s, strike, time_to_expiry, rate, dividend_yield, volatility, is_call)
+        return black_scholes_price(
+            s, strike, time_to_expiry, rate, dividend_yield, volatility, is_call
+        )
 
     delta_h = spot * h_spot
     delta_num = central_diff(price_at_spot, spot, delta_h)
     delta_err = abs(greeks.delta - delta_num) / max(abs(delta_num), 1e-10)
-    results["delta"] = {"analytical": greeks.delta, "numerical": delta_num, "error": delta_err, "passed": delta_err < tolerance}
+    results["delta"] = {
+        "analytical": greeks.delta,
+        "numerical": delta_num,
+        "error": delta_err,
+        "passed": delta_err < tolerance,
+    }
 
     # Validate Gamma (second derivative)
-    gamma_num = (price_at_spot(spot + delta_h) - 2 * price_at_spot(spot) + price_at_spot(spot - delta_h)) / (delta_h ** 2)
+    gamma_num = (
+        price_at_spot(spot + delta_h) - 2 * price_at_spot(spot) + price_at_spot(spot - delta_h)
+    ) / (delta_h**2)
     gamma_err = abs(greeks.gamma - gamma_num) / max(abs(gamma_num), 1e-10)
-    results["gamma"] = {"analytical": greeks.gamma, "numerical": gamma_num, "error": gamma_err, "passed": gamma_err < tolerance}
+    results["gamma"] = {
+        "analytical": greeks.gamma,
+        "numerical": gamma_num,
+        "error": gamma_err,
+        "passed": gamma_err < tolerance,
+    }
 
     # Validate Vega
     def price_at_vol(v):
@@ -903,7 +936,12 @@ def validate_greeks_numerically(
     # Vega analytical is per 0.01, numerical is per h_vol
     vega_num = central_diff(price_at_vol, volatility, h_vol) * 0.01
     vega_err = abs(greeks.vega - vega_num) / max(abs(vega_num), 1e-10)
-    results["vega"] = {"analytical": greeks.vega, "numerical": vega_num, "error": vega_err, "passed": vega_err < tolerance}
+    results["vega"] = {
+        "analytical": greeks.vega,
+        "numerical": vega_num,
+        "error": vega_err,
+        "passed": vega_err < tolerance,
+    }
 
     # Validate Theta
     def price_at_time(t):
@@ -914,16 +952,28 @@ def validate_greeks_numerically(
     # Theta analytical is per day, need to convert
     theta_num = -central_diff(price_at_time, time_to_expiry, h_time) / 365.0
     theta_err = abs(greeks.theta - theta_num) / max(abs(theta_num), 1e-10)
-    results["theta"] = {"analytical": greeks.theta, "numerical": theta_num, "error": theta_err, "passed": theta_err < tolerance}
+    results["theta"] = {
+        "analytical": greeks.theta,
+        "numerical": theta_num,
+        "error": theta_err,
+        "passed": theta_err < tolerance,
+    }
 
     # Validate Rho
     def price_at_rate(r):
-        return black_scholes_price(spot, strike, time_to_expiry, r, dividend_yield, volatility, is_call)
+        return black_scholes_price(
+            spot, strike, time_to_expiry, r, dividend_yield, volatility, is_call
+        )
 
     # Rho analytical is per 0.01
     rho_num = central_diff(price_at_rate, rate, h_rate) * 0.01
     rho_err = abs(greeks.rho - rho_num) / max(abs(rho_num), 1e-10)
-    results["rho"] = {"analytical": greeks.rho, "numerical": rho_num, "error": rho_err, "passed": rho_err < tolerance}
+    results["rho"] = {
+        "analytical": greeks.rho,
+        "numerical": rho_num,
+        "error": rho_err,
+        "passed": rho_err < tolerance,
+    }
 
     return results
 

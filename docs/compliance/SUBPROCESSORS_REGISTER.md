@@ -16,6 +16,7 @@
 > **Note on Exceptions**: Certain ancillary services (e.g., transactional email) may involve non-EU processing under SCCs/DPF. See SUBCONTRACTOR_REGISTER.md for details and transfer impact assessments.
 
 This design commitment:
+
 - Is intended to become a binding DPA term upon contract execution
 - Is designed to be enforced by automated EU-only drift checks (test coverage available)
 - Is planned to be verified quarterly through subprocessor audits (when operational)
@@ -45,6 +46,7 @@ This design commitment:
 **Data Categories (when deployed)**: User accounts, strategies, telemetry, artifacts, audit logs
 
 **EU Residency Controls (to be implemented upon deployment):**
+
 - Region lock via IAM policies (not yet configured)
 - AWS GDPR DPA: [Standard AWS DPA available](https://aws.amazon.com/compliance/gdpr-center/) (execution upon deployment)
 - Evidence exports: AWS Config/CloudTrail (available upon deployment)
@@ -67,6 +69,7 @@ For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMEN
 | Auth | EU (Germany) | Authentication (if used) |
 
 **EU Residency Evidence (planned configuration; verify upon deployment):**
+
 - Data Center: EU (Germany) — planned
 - GDPR DPA: Standard DPA available via Supabase
 - Data residency commitment: [Supabase Privacy](https://supabase.com/privacy)
@@ -90,6 +93,7 @@ For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMEN
 | Tax | EU (Ireland) | VAT information |
 
 **EU Residency Evidence:**
+
 - Legal Entity: Stripe Payments Europe, Limited (Ireland)
 - Data Processing: configured for EU-region processing where supported by the vendor (deployment-dependent; verify in vendor documentation and contract)
 - PCI DSS Level 1 (vendor-reported; verify directly with Stripe as part of client/vendor due diligence; not a CustodiaCloud certification claim)
@@ -98,6 +102,7 @@ For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMEN
 - Next Review: 2025-04-15
 
 **Data Minimization (design goal):**
+
 - Payment card numbers are designed not to be stored by the platform (tokenization via Stripe; verify in deployment configuration)
 - Only tokenized references designed to be stored
 - Billing email stored for invoicing
@@ -117,6 +122,7 @@ For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMEN
 | Simple Email Service | eu-west-1 (Ireland) | Transactional emails |
 
 **EU Residency Evidence:**
+
 - AWS Region: `eu-west-1` (Dublin, Ireland)
 - Covered under AWS DPA
 - Last Review: 2025-01-15
@@ -135,6 +141,7 @@ For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMEN
 | Email API | EU | Transactional emails |
 
 **EU Residency Evidence (planned configuration; verify upon deployment):**
+
 - Processing Region: EU
 - GDPR DPA: Standard DPA available via Twilio
 - Last Review: To be scheduled upon deployment
@@ -156,6 +163,7 @@ For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMEN
 | Performance | EU (Germany) | Transaction traces |
 
 **EU Residency Evidence (planned configuration; verify upon deployment):**
+
 - Data Center: EU (Germany) — planned
 - GDPR DPA: Standard DPA available via Sentry
 - Data scrubbing: Enabled (PII removal) — design target
@@ -163,6 +171,7 @@ For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMEN
 - Next Review: To be scheduled upon deployment
 
 **Data Minimization:**
+
 - PII scrubbing enabled by default
 - No user identifiers in error reports
 - Stack traces stripped of sensitive context
@@ -359,6 +368,7 @@ For customer due diligence and audits, the following evidence is available:
 > **Note**: Customer access process will be established upon first customer contract execution.
 
 Upon operational commencement, customers will be able to request:
+
 - Current subprocessor list (this document)
 - EU-only drift check reports (when available)
 - DPA summaries (full copies under NDA)

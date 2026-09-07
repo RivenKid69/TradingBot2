@@ -1,14 +1,14 @@
 # Closed Questions & Not-Bugs Reference
 
-> **Extracted from `CLAUDE.md`.** These are code patterns that LOOK like bugs under static analysis but are CORRECT and intentional, plus previously-investigated questions that are settled.
+> These are code patterns that LOOK like bugs under static analysis but are CORRECT and intentional, plus previously-investigated questions that are settled.
 >
-> **For AI assistants:** Before "fixing" something in these areas, read the relevant entry here. Do NOT reopen closed questions or "correct" intentional patterns.
+> Before "fixing" something in these areas, read the relevant entry here first — these are settled questions, not open defects.
 
 ---
 
 ## ✅ FAQ: Закрытые вопросы (НЕ ПЕРЕОТКРЫВАТЬ!)
 
-Эти вопросы были тщательно проанализированы. Подробности: [archive/2025_11/reports_2025_11_25_cleanup/root_reports/CONCEPTUAL_ANALYSIS_REPORT_2025_11_24.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CONCEPTUAL_ANALYSIS_REPORT_2025_11_24.md)
+Эти вопросы были тщательно проанализированы. Подробности: archive/2025_11/reports_2025_11_25_cleanup/root_reports/CONCEPTUAL_ANALYSIS_REPORT_2025_11_24.md
 
 | Вопрос | Ответ |
 |--------|-------|
@@ -41,7 +41,7 @@
 | "tanh в potential shaping нарушает Ng theorem?" | ⚠️ **НЕ баг**. Ng et al. (1999) разрешает ЛЮБУЮ функцию Φ(s). tanh(net_worth) валиден. |
 | "gap_filled look-ahead bias?" | ⚠️ **НЕ баг**. Feature shifting (shift(1)) применяется ПОСЛЕ вычисления. См. features_pipeline.py:441-442. |
 | "Earnings unbounded future window?" | ⚠️ **Документация**. Пользователь обязан гарантировать актуальность earnings calendar. Не code bug. |
-| "γ не синхронизирован между env и model?" | ⚠️ **Documented**. CLAUDE.md: "reward.gamma == model.params.gamma (оба = 0.99)". Конфигурационная ответственность пользователя. |
+| "γ не синхронизирован между env и model?" | ⚠️ **Documented**. [PLATFORM_REFERENCE.md](PLATFORM_REFERENCE.md): "reward.gamma == model.params.gamma (оба = 0.99)". Конфигурационная ответственность пользователя. |
 | "3 уровня reward clipping создают non-monotonic value?" | ⚠️ **НЕ баг**. Разные клипы: (1) ratio→log safety, (2) final bounds. Служат разным целям. См. #59. |
 | "Long-only reward=0 при pos=0 асимметричен?" | ⚠️ **By design**. `reward = log(ratio) × position`. При pos=0 агент не участвовал → reward=0 корректен. |
 | "L2 ADV не учитывает intraday seasonality?" | ⚠️ **By design**. L2 simple/fast; L2+ has `tod_curve`. См. #54. |
@@ -83,6 +83,7 @@ total_grad_norm = torch.nn.utils.clip_grad_norm_(...)
 ```
 
 **Почему это НЕ баг**: VGS **уменьшает** градиенты (scaling_factor < 1.0, см. variance_gradient_scaler.py:446). Порядок корректен:
+
 1. VGS снижает variance высокошумных градиентов
 2. clip_grad_norm защищает от оставшихся выбросов
 
@@ -125,6 +126,7 @@ critic_loss_unclipped_per_sample = (loss_critic_1 + loss_critic_2) / 2.0
 ```
 
 **Почему это НЕ баг**: Без VF clipping нет необходимости в `max(clipped, unclipped)`. Простое усреднение losses двух critics корректно. Когда VF clipping **включён**, используется правильная логика (строки 11168-11170):
+
 ```python
 loss_c1_final = torch.max(loss_c1_unclipped, loss_c1_clipped)
 loss_c2_final = torch.max(loss_c2_unclipped, loss_c2_clipped)
@@ -133,7 +135,7 @@ critic_loss = torch.mean((loss_c1_final + loss_c2_final) / 2.0)
 
 ---
 
-### 6. close_orig vs _close_shifted маркеры (features_pipeline.py, trading_patchnew.py)
+### 6. close_orig vs_close_shifted маркеры (features_pipeline.py, trading_patchnew.py)
 
 ```python
 # features_pipeline.py:329-331 -- пропускает shift если close_orig есть
@@ -149,6 +151,7 @@ elif "close" in self.df.columns and "_close_shifted" not in self.df.columns:
 ```
 
 **Почему это НЕ баг**: Проверка `close_orig` идёт **раньше** проверки `_close_shifted`. Если данные пришли с `close_orig` (уже сдвинуты), shift НЕ применяется повторно. Два маркера имеют разную семантику:
+
 - `close_orig` -- оригинальная цена ДО shift (для анализа)
 - `_close_shifted` -- флаг что shift уже применён
 
@@ -166,6 +169,7 @@ else:
 ```
 
 **Почему это корректно** (исправлено 2025-11-25):
+
 1. В CLOSE_TO_OPEN режиме: `next_signal_pos ≠ agent_signal_pos` из-за 1-bar delay
 2. `signal_pos_next` показывает **фактическую** позицию после шага (используется для reward)
 3. `signal_pos_requested` показывает **намерение** агента (для debugging/анализа)
@@ -184,6 +188,7 @@ normalized_advantages = (adv - adv_mean) / (adv_std + EPSILON)
 ```
 
 **Почему это НЕ баг**:
+
 1. `ddof=1` для несмещённой оценки дисперсии (Bessel's correction)
 2. Если `n_samples == 1`, `std` будет `NaN`
 3. Код защищён проверкой на строках 8444-8445: `if not np.isfinite(adv_std): skip`
@@ -206,6 +211,7 @@ else:
 ```
 
 **Почему это НЕ баг**: Это **КРИТИЧЕСКИЙ FIX** (2025-11-25):
+
 1. `LongOnlyActionWrapper` устанавливает `action_space = [-1, 1]`
 2. Policy детектирует это и использует `tanh` (выход [-1, 1])
 3. Wrapper маппит [-1, 1] → [0, 1] для TradingEnv
@@ -225,12 +231,14 @@ obs = self._mediator._build_observation(row=next_row, state=state, mark_price=ne
 ```
 
 **Почему это КОРРЕКТНО** (исправлено 2025-11-25):
+
 1. **Gymnasium семантика**: `step(a)` возвращает `(s_{t+1}, r_t, ...)` -- observation **после** действия
 2. До фикса: reset() и step()#1 возвращали obs из одной строки (row[0]) -- дубликат!
 3. После фикса: reset() → row[0], step()#1 → row[1], step()#2 → row[2]
 4. Terminal case: при next_idx >= len(df), используется последняя доступная строка
 
 **Влияние бага на training**:
+
 - Sample efficiency: ~1% loss (1 бесполезный transition на эпизод)
 - LSTM: первые два hidden state обновления от идентичного входа
 - Первый step reward: всегда 0 (log(price[0]/price[0])=0)
@@ -250,12 +258,14 @@ else:
 ```
 
 **Почему это КОРРЕКТНО** (исправлено 2025-11-25):
+
 1. **CLOSE_TO_OPEN семантика**: действие агента исполняется на **следующем** баре
 2. До фикса: в SIGNAL_ONLY позиция обновлялась мгновенно → look-ahead bias
 3. После фикса: даже в SIGNAL_ONLY режиме позиция задерживается на 1 бар
 4. Reward = log(price_change) × position → позиция должна соответствовать реальному timing'у
 
 **Влияние бага на training**:
+
 - Training Sharpe: inflated на ~10-30% vs reality
 - Look-ahead bias: reward за позицию, которой ещё нет
 - Training/Live gap: увеличен из-за нереалистичных rewards
@@ -275,6 +285,7 @@ reward_raw_fraction = math.log(ratio_clipped) * prev_signal_pos
 ```
 
 **Почему это BY DESIGN (НЕ баг)**:
+
 1. **Физика delayed execution**: в CLOSE_TO_OPEN действие исполняется на **следующем** баре
 2. При reset() устанавливается `_pending_action = HOLD(0.0)` -- первое действие
 3. Step #1: prev_pos = 0 (initial), action = HOLD(0.0) → reward × 0 = 0
@@ -284,6 +295,7 @@ reward_raw_fraction = math.log(ratio_clipped) * prev_signal_pos
 **Семантика**: Reward отражает позицию, которая **РЕАЛЬНО была** во время движения цены, а не намерение агента. Это корректно для реалистичного trading simulation.
 
 **Влияние на training**:
+
 - Короткие эпизоды (< 5 баров) получают мало ненулевых rewards
 - ~2/N долевая потеря sample efficiency для N-bar эпизодов
 - Это **НЕ влияет на качество обучения** -- агент учится правильной семантике
@@ -301,12 +313,14 @@ terminated = bool(getattr(state, "is_bankrupt", False))  # всегда False
 ```
 
 **Почему это BY DESIGN (НЕ баг)**:
+
 1. **Signal_only режим**: агент учится генерировать сигналы без реального execution
 2. Нет реальных позиций → нет реального capital at risk → нет банкротства
 3. Reward = log(price_change) × signal_position -- чисто сигнальный training
 4. Эпизоды заканчиваются через **truncation** (`max_steps`), НЕ termination
 
 **Альтернатива**: Добавить "виртуальное банкротство"?
+
 - Это усложнит семантику без реальной пользы
 - Сигнальный режим не симулирует капитал -- банкротство не имеет смысла
 - Если нужна проверка drawdown → используйте real execution mode
@@ -334,10 +348,12 @@ mapped = self._map_to_long_only(action.volume_frac)  # (x+1)/2
 | 1.0 | 1.0 | 100% long |
 
 **ЧАСТАЯ ОШИБКА**: передача `ActionProto(volume_frac=0.5)` с ожиданием "50% позиции"
+
 - 0.5 в [-1,1] маппится в 0.75 в [0,1] -- это **75%**, не 50%!
 - Для 50% позиции передавайте `volume_frac=0.0`
 
 **Почему wrapper всегда применяет маппинг**:
+
 - Wrapper НЕ ЗНАЕТ семантику входящего ActionProto
 - Он ВСЕГДА преобразует [-1,1] → [0,1] согласно API
 - Если вам нужно передать [0,1] напрямую -- НЕ используйте LongOnlyActionWrapper
@@ -370,11 +386,13 @@ if self._reward_signal_only:
 5. **После фикса**: market data t+1, signal_pos t+1 → согласованы
 
 **Reward НЕ затронут**:
+
 - Reward = `log(price_change) × prev_signal_pos_for_reward`
 - Reward использует позицию, которая **РЕАЛЬНО была** во время price change
 - Это корректно и не изменилось
 
 **Влияние бага на training**:
+
 - MDP violation: observation не отражало результат действия
 - LSTM confusion: hidden state обновлялся с несогласованным входом
 - Sample inefficiency: agent не видел эффект своих действий в obs
@@ -409,6 +427,7 @@ fee = self._compute_trade_fee(price=filled_price, ...)  # Fee от actual fill p
 ```
 
 **Почему это НЕ баг (НЕ double-counting)**:
+
 - **Slippage**: разница между expected и actual price (market impact)
 - **Fee**: процент от actual fill price (биржевая комиссия)
 
@@ -487,6 +506,7 @@ def _trip() -> None:
 ```
 
 **Почему это НЕ баг**: Crash recovery обеспечивается **дублированием**:
+
 - Если flag write упал → state содержит `tripped=True`
 - Если _save_state упал → flag file существует
 - При старте проверяются ОБА
@@ -527,6 +547,7 @@ reward_price_curr = self._resolve_reward_price(row_idx, row)  # Current step
 ```
 
 **Почему это НЕ баг (GYMNASIUM SEMANTICS)**:
+
 - `step(action)` returns `(s_{t+1}, r_t, ...)` по стандарту Gymnasium
 - `s_{t+1}`: observation из next_row (будущее состояние)
 - `r_t`: reward за текущий переход (текущие цены)
@@ -548,6 +569,7 @@ else:  # LSTM
 ```
 
 **Почему это НЕ баг (BY DESIGN)**:
+
 - GRU проще (одно hidden state) → обрабатывается локально
 - LSTM сложнее (h, c states) → делегируется в базовый класс sb3_contrib
 - `_process_sequence` внутри делает тот же reshape для episode_starts
@@ -563,6 +585,7 @@ if group["adaptive_noise"]:
 ```
 
 **Почему это НЕ баг**:
+
 1. **Default mode bypasses EMA**: `instant_noise_scale=True` (default) использует `current_grad_norm` напрямую
 2. Строки 215-219: `if group["instant_noise_scale"]: grad_norm_for_noise = current_grad_norm`
 3. EMA используется ТОЛЬКО для legacy mode и diagnostics
@@ -596,6 +619,7 @@ else:
 ```
 
 **Почему это BY DESIGN (корректный risk management)**:
+
 - **Position INCREASE** → нужен safety margin (slippage, fees, market impact)
 - **Position DECREASE** → риск уменьшается, дополнительный buffer не нужен
 - Это стандартная практика: консервативность при открытии, не при закрытии позиций
@@ -615,6 +639,7 @@ def _maybe_reset_all(now: float) -> None:
 ```
 
 **Почему это НЕ баг**:
+
 1. `_last_ts[k] = 0.0` означает "последний reset в Unix epoch"
 2. При первом вызове `record_error()` в time > 60s: counter сбрасывается до 0, затем инкрементируется до 1
 3. При вызове в time < 60s: counter просто инкрементируется до 1
@@ -701,6 +726,7 @@ sigma = sigma_min + (sigma_max - sigma_min) * torch.sigmoid(self.unconstrained_l
 ```
 
 **Почему это НЕ баг (standard PPO practice)**:
+
 - **σ = 0.2**: near-deterministic actions (exploitation phase)
 - **σ = 1.5**: high exploration
 - Работает для обоих: tanh [-1,1] и sigmoid [0,1] выходов
@@ -719,6 +745,7 @@ is_constant = (not np.isfinite(s)) or (s == 0.0)
 ```
 
 **Почему это НЕ баг (practical for typical datasets)**:
+
 1. `nanmean`/`nanstd` **игнорируют NaN** при вычислении
 2. Shifted data имеет NaN только в первых ~20 rows
 3. Типичный training dataset: 10,000+ rows
@@ -741,6 +768,7 @@ next_mark_price = self._resolve_reward_price(obs_row_idx, next_row)  # NEXT row 
 ```
 
 **Почему это НЕ баг**:
+
 1. `mark_price` (from caller) используется для **текущего** net_worth (line 979)
 2. `next_mark_price` вычисляется для **следующей** строки (Gymnasium semantics: obs = s_{t+1})
 3. Это **разные rows** с разными ценами -- повторное вычисление НЕОБХОДИМО
@@ -759,6 +787,7 @@ ratio_clipped = float(np.clip(ratio_price, ratio_clip_floor, ratio_clip_ceiling)
 ```
 
 **Почему это BY DESIGN (НЕ баг)**:
+
 1. Variable named "ratio_clipped" for **API consistency** -- info dict always has this key
 2. In signal_only: ratio is **sanitized** (NaN→1.0) but not bounds-clipped
 3. Signal-only mode doesn't simulate extreme price moves -- clipping unnecessary
@@ -775,6 +804,7 @@ if isinstance(action, np.ndarray):
 ```
 
 **Почему это НЕ баг (корректное поведение)**:
+
 1. Empty array contains **nothing to map** -- no elements to transform
 2. Mapping formula `(arr + 1.0) / 2.0` on empty array would still produce empty array
 3. Early return preserves type and is more efficient
@@ -792,6 +822,7 @@ def _log_sigmoid_jacobian_from_raw(self, raw: torch.Tensor) -> torch.Tensor:
 ```
 
 **Почему это НЕ баг**:
+
 1. Method is **explicitly marked DEPRECATED** in comment
 2. Delegates to correctly-named `_log_activation_jacobian`
 3. Kept for **backwards compatibility** -- external code may reference it
@@ -811,6 +842,7 @@ entropy_estimate = -(entropy_accum / float(samples))
 ```
 
 **Почему это НЕ проблема**:
+
 1. Monte Carlo entropy variance scales as O(1/n) -- 4 samples gives ~25% relative error
 2. **ent_coef = 0.001** (from configs) -- entropy contributes tiny fraction to loss
 3. Impact on total loss: `0.001 × entropy × (1 ± 0.25)` ≈ negligible
@@ -827,6 +859,7 @@ if reduction not in ("none", "mean", "sum"):
 ```
 
 **Почему это НЕ баг (стандартный API design)**:
+
 1. Follows **PyTorch convention** -- exact string matching, no normalization
 2. `torch.nn.functional.mse_loss(reduction="Mean")` also raises error
 3. Case sensitivity is **intentional** for API strictness
@@ -847,6 +880,7 @@ else:
 ```
 
 **Почему это НЕ баг (defense-in-depth)**:
+
 1. `bb_valid` checks **indicator computed** -- not that bb_width is finite
 2. Edge case: bb_valid=True but bb_width=inf from overflow in upstream calc
 3. Comment in code explicitly says "Additional safety" -- **intentional redundancy**
@@ -864,6 +898,7 @@ ma20 = self._get_safe_float(row, "sma_5040", float('nan'))
 ```
 
 **Почему это BY DESIGN (НЕ баг)**:
+
 1. Variable name is **legacy** from feature schema (feature_config.py)
 2. Renaming would break:
    - Feature parity checks
@@ -887,6 +922,7 @@ self._twin_critic_loss_count = 0
 ```
 
 **Почему это НЕ memory leak**:
+
 1. Accumulators are **RESET** at line 12288-12290 after logging
 2. Reset happens at end of each train() iteration
 3. Float values can't overflow in practice (values << 1e308)
@@ -901,6 +937,7 @@ adv_std = float(np.std(advantages_flat, ddof=1))  # Sample std with Bessel corre
 ```
 
 **Почему это minor inconsistency (НЕ баг)**:
+
 1. SB3 uses `ddof=0` (population std), our code uses `ddof=1` (sample std)
 2. Difference: factor √(n/(n-1)) ≈ 1.0005 for n=10000
 3. For typical batch sizes (n>1000): difference < 0.1%
@@ -923,6 +960,7 @@ has_vgs = 'vgs_state' in checkpoint_data
 ```
 
 **Почему это НЕ race condition**:
+
 1. Each PBT worker has **its own model and VGS instance**
 2. Checkpoints are saved to **unique files** per worker
 3. torch.save/load are atomic at OS level
@@ -941,6 +979,7 @@ has_vgs = 'vgs_state' in checkpoint_data
 ```
 
 **Почему это documented trade-off (НЕ баг)**:
+
 1. **Already documented** in code with accuracy notes
 2. Numerical integration over discrete quantiles has inherent error
 3. Error decreases with N: N=51 gives ~5%, N=101 gives ~2%
@@ -958,6 +997,7 @@ winsorize_percentiles: Tuple[float, float] = (1.0, 99.0)
 ```
 
 **Почему это configurable (НЕ issue)**:
+
 1. Default [1%, 99%] clips 2% of extreme values
 2. For crypto with fat tails: can adjust to [0.5%, 99.5%] or [0.1%, 99.9%]
 3. This is a **configurable parameter**, not hardcoded limitation
@@ -973,6 +1013,7 @@ winsorize_percentiles: Tuple[float, float] = (1.0, 99.0)
 ```
 
 **Почему это BY DESIGN (performance trade-off)**:
+
 1. `boundscheck=False` is a **deliberate Cython optimization** for critical path
 2. The `build_observation_vector` Python wrapper validates all inputs before calling C version
 3. Array size is determined by `compute_n_features()` which ensures consistency with observation_space
@@ -993,6 +1034,7 @@ if side_key == "BUY":
 ```
 
 **Почему это НЕ проблема (already has market impact model)**:
+
 1. Slippage module уже включает **market impact term**: `k * sqrt(participation_ratio)` (impl_slippage.py:2342)
 2. Это стиль **Almgren-Chriss** square-root impact model
 3. `participation_ratio = order_notional / ADV` учитывает размер ордера
@@ -1018,6 +1060,7 @@ if ratio > 1.0:
 ```
 
 **Почему это НЕ "silent" clamping**:
+
 1. Warning **IS** logged when `_intrabar_log_warnings=True`
 2. Default `False` для performance (production не нуждается в verbose logging)
 3. Throttling предотвращает log spam
@@ -1037,6 +1080,7 @@ if ratio > 1.0:
 ```
 
 **Почему это BY DESIGN (not a bug)**:
+
 1. **Documented design choice**: модуль работает с/без external LOB
 2. Full LOB simulation = significant computational overhead
 3. Queue position tracking добавит complexity без proportional benefit
@@ -1058,6 +1102,7 @@ if market.adv is not None and market.adv > 0:
 ```
 
 **Почему это BY DESIGN (L2 vs L2+ trade-off)**:
+
 1. L2 (`StatisticalSlippageProvider`) is intentionally **simple and fast** for rapid backtesting
 2. L2+ (`CryptoParametricSlippageProvider`) has `tod_curve` at lines 785-792 with Asia/EU/US session factors (0.70-1.15)
 3. L2+ applies TOD adjustment to slippage, effectively capturing intraday effects
@@ -1065,6 +1110,7 @@ if market.adv is not None and market.adv > 0:
 5. Users requiring accurate intraday cost estimation should use L2+ or L3
 
 **Fidelity Level Selection**:
+
 - **L2**: Quick backtests, strategy screening (±30-50% cost error acceptable)
 - **L2+**: Production cost estimation (TOD, imbalance, funding, whale detection)
 - **L3**: HFT research, queue position tracking, fill probability models
@@ -1081,6 +1127,7 @@ base_cost = half_spread + impact_term  # Single-term model
 ```
 
 **Почему это BY DESIGN (L2 vs L3 trade-off)**:
+
 1. L2 uses **simplified Almgren-Chriss**: `k * √participation` -- temporary impact only
 2. L3 has full separation in `lob/market_impact.py`:
    - `AlmgrenChrissModel`: `temp = η * σ * (Q/V)^0.5`, `perm = γ * (Q/V)`
@@ -1101,6 +1148,7 @@ if spread is None or not math.isfinite(spread) or spread < 0:
 ```
 
 **Почему это BY DESIGN**:
+
 1. L2 uses market spread if available in `MarketState.get_spread_bps()`
 2. L2+ adds volatility-based adjustments via `vol_regime_multipliers` (0.8-1.5x)
 3. L2+ has order book `imbalance_penalty_max` (up to 30% extra cost)
@@ -1119,6 +1167,7 @@ if intrabar_fill_price is not None and intrabar_fill_price <= limit_price_value 
 ```
 
 **Почему это BY DESIGN (L2 vs L3 trade-off)**:
+
 1. L2 uses **binary fill logic**: price touches limit → filled
 2. L3 has probabilistic models in `lob/fill_probability.py`:
    - `PoissonFillModel`: `P(fill in T) = 1 - exp(-λT / position)`
@@ -1138,6 +1187,7 @@ whale_threshold: float = 0.01  # 1% of ADV
 ```
 
 **Почему это CONFIGURABLE (not a bug)**:
+
 1. Threshold is **participation ratio** (order/ADV), already normalized by ADV
 2. 1% default is reasonable: $100M order on $10B ADV is whale behavior
 3. For low-ADV altcoins: use `CryptoParametricConfig(whale_threshold=0.005)` (0.5%)
@@ -1145,6 +1195,7 @@ whale_threshold: float = 0.01  # 1% of ADV
 5. Configuration profiles exist: `default`, `conservative`, `aggressive`, `altcoin`, `stablecoin`
 
 **Usage**:
+
 ```python
 # For low-liquidity altcoins
 config = CryptoParametricConfig(whale_threshold=0.005)  # 0.5%
@@ -1180,6 +1231,7 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
    - These are independent code paths, not stacked operations
 
 **Value function remains monotonic** because:
+
 - Both clips are defensive (rarely triggered in normal operation)
 - First clip applies BEFORE log → preserves log's monotonicity
 - Second clip applies AFTER all computations → bounds extreme outliers only
@@ -1187,4 +1239,3 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 **Референс**: Standard numerical programming practice, Schulman et al. (2017) PPO
 
 ---
-

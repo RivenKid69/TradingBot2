@@ -43,58 +43,55 @@ BYPASS_PATTERNS: List[Tuple[Pattern, str, str]] = [
     (
         re.compile(r"redaction\s*=\s*False", re.IGNORECASE),
         "disable_redaction",
-        "Direct redaction disable attempt"
+        "Direct redaction disable attempt",
     ),
     (
         re.compile(r"redaction_enabled\s*=\s*False", re.IGNORECASE),
         "disable_redaction",
-        "Setting redaction_enabled to False"
+        "Setting redaction_enabled to False",
     ),
     (
         re.compile(r"skip_redaction\s*=\s*True", re.IGNORECASE),
         "skip_redaction",
-        "Attempting to skip redaction"
+        "Attempting to skip redaction",
     ),
     (
         re.compile(r"bypass_redaction\s*=\s*True", re.IGNORECASE),
         "bypass_redaction",
-        "Attempting to bypass redaction"
+        "Attempting to bypass redaction",
     ),
     (
         re.compile(r"disable_redaction\s*=\s*True", re.IGNORECASE),
         "disable_redaction",
-        "Attempting to disable redaction"
+        "Attempting to disable redaction",
     ),
-
     # Feature flag bypass attempts
     (
         re.compile(r"feature_flag.*redaction.*false", re.IGNORECASE),
         "feature_flag_bypass",
-        "Feature flag attempting to disable redaction"
+        "Feature flag attempting to disable redaction",
     ),
     (
         re.compile(r"if\s+not\s+.*redaction", re.IGNORECASE),
         "conditional_bypass",
-        "Conditional bypass of redaction"
+        "Conditional bypass of redaction",
     ),
-
     # Environment variable bypass
     (
         re.compile(r"os\.getenv.*DISABLE.*REDACTION", re.IGNORECASE),
         "env_var_bypass",
-        "Environment variable attempting to disable redaction"
+        "Environment variable attempting to disable redaction",
     ),
     (
         re.compile(r"os\.environ.*SKIP.*REDACTION", re.IGNORECASE),
         "env_var_bypass",
-        "Environment variable attempting to skip redaction"
+        "Environment variable attempting to skip redaction",
     ),
-
     # Configuration bypass
     (
         re.compile(r"config.*redaction.*disabled", re.IGNORECASE),
         "config_bypass",
-        "Configuration attempting to disable redaction"
+        "Configuration attempting to disable redaction",
     ),
 ]
 
@@ -115,26 +112,30 @@ SCAN_PATTERNS: List[str] = [
 ]
 
 # Excluded paths (test files, documentation)
-EXCLUDED_PATHS: FrozenSet[str] = frozenset({
-    "tests/",
-    "test_",
-    "_test.py",
-    "docs/",
-    "__pycache__/",
-    ".git/",
-    "node_modules/",
-    "venv/",
-    ".venv/",
-})
+EXCLUDED_PATHS: FrozenSet[str] = frozenset(
+    {
+        "tests/",
+        "test_",
+        "_test.py",
+        "docs/",
+        "__pycache__/",
+        ".git/",
+        "node_modules/",
+        "venv/",
+        ".venv/",
+    }
+)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class RedactionViolation:
     """A redaction enforcement violation."""
+
     file_path: str
     line_number: int
     violation_type: str
@@ -146,6 +147,7 @@ class RedactionViolation:
 @dataclass
 class RedactionEnforcementResult:
     """Result of redaction enforcement check."""
+
     passed: bool
     message: str
     violations: List[RedactionViolation] = field(default_factory=list)
@@ -157,6 +159,7 @@ class RedactionEnforcementResult:
 # ============================================================================
 # File Finding Functions
 # ============================================================================
+
 
 def find_python_files() -> List[Path]:
     """Find all Python files to check."""
@@ -202,6 +205,7 @@ def find_config_files() -> List[Path]:
 # Verification Functions
 # ============================================================================
 
+
 def verify_redaction_middleware() -> Tuple[bool, List[RedactionViolation]]:
     """
     Verify that redaction middleware is properly implemented and non-bypassable.
@@ -214,13 +218,15 @@ def verify_redaction_middleware() -> Tuple[bool, List[RedactionViolation]]:
     # Check main redaction file
     redaction_path = Path("ccea/telemetry/redaction.py")
     if not redaction_path.exists():
-        violations.append(RedactionViolation(
-            file_path=str(redaction_path),
-            line_number=0,
-            violation_type="missing_file",
-            message="Core redaction module not found",
-            code_snippet="",
-        ))
+        violations.append(
+            RedactionViolation(
+                file_path=str(redaction_path),
+                line_number=0,
+                violation_type="missing_file",
+                message="Core redaction module not found",
+                code_snippet="",
+            )
+        )
         return False, violations
 
     try:
@@ -237,13 +243,15 @@ def verify_redaction_middleware() -> Tuple[bool, List[RedactionViolation]]:
 
         for element, error_msg in required_elements:
             if element not in content:
-                violations.append(RedactionViolation(
-                    file_path=str(redaction_path),
-                    line_number=0,
-                    violation_type="missing_enforcement",
-                    message=error_msg,
-                    code_snippet=element,
-                ))
+                violations.append(
+                    RedactionViolation(
+                        file_path=str(redaction_path),
+                        line_number=0,
+                        violation_type="missing_enforcement",
+                        message=error_msg,
+                        code_snippet=element,
+                    )
+                )
 
         # Check that disable() does nothing
         if "def disable(self)" in content:
@@ -255,24 +263,28 @@ def verify_redaction_middleware() -> Tuple[bool, List[RedactionViolation]]:
                         # Check body is just 'pass' or docstring + pass
                         body = [n for n in node.body if not isinstance(n, ast.Expr)]
                         if len(body) > 1:
-                            violations.append(RedactionViolation(
-                                file_path=str(redaction_path),
-                                line_number=node.lineno,
-                                violation_type="dangerous_disable",
-                                message="disable() method must be a no-op (only pass statement)",
-                                code_snippet="disable() should do nothing",
-                            ))
+                            violations.append(
+                                RedactionViolation(
+                                    file_path=str(redaction_path),
+                                    line_number=node.lineno,
+                                    violation_type="dangerous_disable",
+                                    message="disable() method must be a no-op (only pass statement)",
+                                    code_snippet="disable() should do nothing",
+                                )
+                            )
             except SyntaxError:
                 pass
 
     except Exception as e:
-        violations.append(RedactionViolation(
-            file_path=str(redaction_path),
-            line_number=0,
-            violation_type="read_error",
-            message=f"Error reading file: {e}",
-            code_snippet="",
-        ))
+        violations.append(
+            RedactionViolation(
+                file_path=str(redaction_path),
+                line_number=0,
+                violation_type="read_error",
+                message=f"Error reading file: {e}",
+                code_snippet="",
+            )
+        )
 
     return len(violations) == 0, violations
 
@@ -307,13 +319,15 @@ def check_bypass_patterns(file_path: Path) -> List[RedactionViolation]:
                 if "must" in line.lower() and "not" in line.lower():
                     continue
 
-                violations.append(RedactionViolation(
-                    file_path=str(file_path),
-                    line_number=line_num,
-                    violation_type=violation_type,
-                    message=message,
-                    code_snippet=line.strip()[:100],
-                ))
+                violations.append(
+                    RedactionViolation(
+                        file_path=str(file_path),
+                        line_number=line_num,
+                        violation_type=violation_type,
+                        message=message,
+                        code_snippet=line.strip()[:100],
+                    )
+                )
 
     return violations
 
@@ -349,13 +363,15 @@ def check_feature_flag_safety() -> Tuple[bool, List[RedactionViolation]]:
                 if re.search(r"redaction", line, re.IGNORECASE):
                     # Check if it's a flag that could disable redaction
                     if re.search(r"(disable|skip|bypass|off)", line, re.IGNORECASE):
-                        violations.append(RedactionViolation(
-                            file_path=str(flag_file),
-                            line_number=line_num,
-                            violation_type="feature_flag_bypass",
-                            message="Feature flag that could disable redaction is forbidden",
-                            code_snippet=line.strip()[:100],
-                        ))
+                        violations.append(
+                            RedactionViolation(
+                                file_path=str(flag_file),
+                                line_number=line_num,
+                                violation_type="feature_flag_bypass",
+                                message="Feature flag that could disable redaction is forbidden",
+                                code_snippet=line.strip()[:100],
+                            )
+                        )
 
         except Exception:
             pass
@@ -377,13 +393,15 @@ def check_config_files() -> List[RedactionViolation]:
             for line_num, line in enumerate(lines, 1):
                 # Check for redaction disable in config
                 if re.search(r"redaction.*:\s*(false|off|disabled)", line, re.IGNORECASE):
-                    violations.append(RedactionViolation(
-                        file_path=str(file_path),
-                        line_number=line_num,
-                        violation_type="config_bypass",
-                        message="Configuration cannot disable redaction",
-                        code_snippet=line.strip()[:100],
-                    ))
+                    violations.append(
+                        RedactionViolation(
+                            file_path=str(file_path),
+                            line_number=line_num,
+                            violation_type="config_bypass",
+                            message="Configuration cannot disable redaction",
+                            code_snippet=line.strip()[:100],
+                        )
+                    )
 
         except Exception:
             pass
@@ -394,6 +412,7 @@ def check_config_files() -> List[RedactionViolation]:
 # ============================================================================
 # Main Check Function
 # ============================================================================
+
 
 def check_redaction_enforcement() -> RedactionEnforcementResult:
     """
@@ -450,6 +469,7 @@ def check_redaction_enforcement() -> RedactionEnforcementResult:
 # Runtime Enforcement API
 # ============================================================================
 
+
 class RedactionEnforcer:
     """
     Runtime enforcer that ensures redaction is always active.
@@ -488,6 +508,7 @@ class RedactionEnforcer:
         """
         # Log the attempt (in production, this would alert security)
         import logging
+
         logging.getLogger(__name__).warning(
             "SECURITY: Attempt to disable redaction was blocked. "
             "Redaction cannot be disabled per Design Doc 13.3."
@@ -526,6 +547,7 @@ def assert_redaction_enabled() -> None:
 # ============================================================================
 # Main Entry Point
 # ============================================================================
+
 
 def main() -> int:
     """Main entry point for CI."""

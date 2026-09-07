@@ -104,9 +104,7 @@ async def sample_artifact(
 
 
 @pytest.fixture
-async def enrolled_agent(
-    db_session: AsyncSession, sample_workspace: Workspace
-) -> Agent:
+async def enrolled_agent(db_session: AsyncSession, sample_workspace: Workspace) -> Agent:
     """Create an enrolled agent for tests."""
     agent = Agent(
         workspace_id=sample_workspace.id,
@@ -122,9 +120,7 @@ async def enrolled_agent(
 
 
 @pytest.fixture
-async def sample_config_blob(
-    db_session: AsyncSession, sample_workspace: Workspace
-) -> ConfigBlob:
+async def sample_config_blob(db_session: AsyncSession, sample_workspace: Workspace) -> ConfigBlob:
     """Create a sample config blob."""
     config_blob = ConfigBlob(
         workspace_id=sample_workspace.id,

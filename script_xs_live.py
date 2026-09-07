@@ -45,8 +45,11 @@ def _build_paper_agent_client(prices, equity, n_slices, slice_interval_s):
     clk = [0.0]
     broker = SimBrokerConnector(prices, equity=equity)
     stack = build_live_stack(
-        broker, n_slices=n_slices, symbols=list(prices),
-        slice_interval_s=slice_interval_s, clock=lambda: clk[0],
+        broker,
+        n_slices=n_slices,
+        symbols=list(prices),
+        slice_interval_s=slice_interval_s,
+        clock=lambda: clk[0],
     )
     return stack, broker, clk
 
@@ -56,14 +59,30 @@ def main(argv=None) -> int:
     p.add_argument("--config", required=True)
     p.add_argument("--equity", type=float, default=100_000.0)
     p.add_argument("--ts-ms", type=int, default=0)
-    p.add_argument("--dry-run", dest="dry_run", action="store_true", default=True,
-                   help="form Intents only, do not execute (default)")
-    p.add_argument("--execute", dest="dry_run", action="store_false",
-                   help="execute via the local Agent (PAPER sim broker by default)")
-    p.add_argument("--broker", default="sim", choices=["sim"],
-                   help="execution broker (sim = paper). Real brokers run via the Agent daemon + vault.")
-    p.add_argument("--prices-json", default="",
-                   help="JSON {symbol: price} to size paper orders (required with --execute)")
+    p.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        default=True,
+        help="form Intents only, do not execute (default)",
+    )
+    p.add_argument(
+        "--execute",
+        dest="dry_run",
+        action="store_false",
+        help="execute via the local Agent (PAPER sim broker by default)",
+    )
+    p.add_argument(
+        "--broker",
+        default="sim",
+        choices=["sim"],
+        help="execution broker (sim = paper). Real brokers run via the Agent daemon + vault.",
+    )
+    p.add_argument(
+        "--prices-json",
+        default="",
+        help="JSON {symbol: price} to size paper orders (required with --execute)",
+    )
     p.add_argument("--n-slices", type=int, default=1, help=">1 enables TWAP child-order slicing")
     p.add_argument("--slice-interval-s", type=float, default=1.0)
     p.add_argument("--pump-steps", type=int, default=16)
@@ -73,10 +92,14 @@ def main(argv=None) -> int:
     weights = latest_target_weights(cfg)
 
     o = cfg.optimizer
-    guard = PortfolioRiskGuard(PortfolioRiskLimits(
-        gross_max=o.gross_max, net_max=(abs(o.net_target) + 0.05) if o.net_target is not None else None,
-        max_position=o.max_position, max_turnover=o.max_turnover,
-    ))
+    guard = PortfolioRiskGuard(
+        PortfolioRiskLimits(
+            gross_max=o.gross_max,
+            net_max=(abs(o.net_target) + 0.05) if o.net_target is not None else None,
+            max_position=o.max_position,
+            max_turnover=o.max_turnover,
+        )
+    )
 
     if args.dry_run:
         runner = CrossSectionalLiveRunner(risk_guard=guard)  # no agent_client → dry-run
@@ -90,7 +113,8 @@ def main(argv=None) -> int:
         print(json.dumps({"error": "--execute requires --prices-json {symbol: price}"}, indent=2))
         return 2
     stack, broker, clk = _build_paper_agent_client(
-        prices, args.equity, args.n_slices, args.slice_interval_s)
+        prices, args.equity, args.n_slices, args.slice_interval_s
+    )
     runner = CrossSectionalLiveRunner(
         risk_guard=guard,
         agent_client=stack["agent_client"],

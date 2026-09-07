@@ -1,4 +1,5 @@
 """Debug script to trace VGS state loading."""
+
 import tempfile
 from pathlib import Path
 import gymnasium as gym
@@ -57,6 +58,7 @@ with tempfile.TemporaryDirectory() as tmp_dir:
 
     # Patch _restore_vgs_state to add print
     original_restore = DistributionalPPO._restore_vgs_state
+
     def patched_restore(self, state):
         print(f"   [DEBUG] _restore_vgs_state called!")
         print(f"   [DEBUG] state is None: {state is None}")

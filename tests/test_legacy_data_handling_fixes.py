@@ -64,7 +64,7 @@ class TestFeaturePipelineLoadDefault:
                     "winsorize_percentiles": [1.0, 99.0],
                     "strict_idempotency": True,
                     # NOTE: preserve_close_orig is intentionally MISSING
-                }
+                },
             }
 
             artifact_path = os.path.join(tmpdir, "preproc_pipeline.json")
@@ -75,8 +75,9 @@ class TestFeaturePipelineLoadDefault:
             loaded_pipeline = FeaturePipeline.load(artifact_path)
 
             # CRITICAL: preserve_close_orig should default to True (not False!)
-            assert loaded_pipeline.preserve_close_orig is True, \
-                "Legacy artifact without preserve_close_orig should default to True"
+            assert (
+                loaded_pipeline.preserve_close_orig is True
+            ), "Legacy artifact without preserve_close_orig should default to True"
 
     def test_load_legacy_artifact_stats_only_format(self):
         """
@@ -85,9 +86,7 @@ class TestFeaturePipelineLoadDefault:
         """
         with tempfile.TemporaryDirectory() as tmpdir:
             # Very old format: just stats, no config or metadata wrapper
-            legacy_stats_only = {
-                "close": {"mean": 100.0, "std": 10.0, "is_constant": False}
-            }
+            legacy_stats_only = {"close": {"mean": 100.0, "std": 10.0, "is_constant": False}}
 
             artifact_path = os.path.join(tmpdir, "old_pipeline.json")
             with open(artifact_path, "w") as f:
@@ -97,8 +96,9 @@ class TestFeaturePipelineLoadDefault:
             loaded_pipeline = FeaturePipeline.load(artifact_path)
 
             # Even old format should get the constructor default
-            assert loaded_pipeline.preserve_close_orig is True, \
-                "Stats-only artifact should get default preserve_close_orig=True"
+            assert (
+                loaded_pipeline.preserve_close_orig is True
+            ), "Stats-only artifact should get default preserve_close_orig=True"
 
     def test_load_preserves_explicit_false_value(self):
         """
@@ -110,7 +110,7 @@ class TestFeaturePipelineLoadDefault:
                 "metadata": {},
                 "config": {
                     "preserve_close_orig": False,  # Explicit False
-                }
+                },
             }
 
             artifact_path = os.path.join(tmpdir, "pipeline.json")
@@ -120,8 +120,9 @@ class TestFeaturePipelineLoadDefault:
             loaded_pipeline = FeaturePipeline.load(artifact_path)
 
             # Explicit False should be preserved
-            assert loaded_pipeline.preserve_close_orig is False, \
-                "Explicit preserve_close_orig=False should be preserved"
+            assert (
+                loaded_pipeline.preserve_close_orig is False
+            ), "Explicit preserve_close_orig=False should be preserved"
 
     def test_load_preserves_explicit_true_value(self):
         """
@@ -133,7 +134,7 @@ class TestFeaturePipelineLoadDefault:
                 "metadata": {},
                 "config": {
                     "preserve_close_orig": True,  # Explicit True
-                }
+                },
             }
 
             artifact_path = os.path.join(tmpdir, "pipeline.json")
@@ -143,8 +144,9 @@ class TestFeaturePipelineLoadDefault:
             loaded_pipeline = FeaturePipeline.load(artifact_path)
 
             # Explicit True should be preserved
-            assert loaded_pipeline.preserve_close_orig is True, \
-                "Explicit preserve_close_orig=True should be preserved"
+            assert (
+                loaded_pipeline.preserve_close_orig is True
+            ), "Explicit preserve_close_orig=True should be preserved"
 
     def test_save_load_roundtrip_preserves_flag(self):
         """Test that save/load roundtrip preserves preserve_close_orig correctly."""
@@ -162,8 +164,9 @@ class TestFeaturePipelineLoadDefault:
             loaded = FeaturePipeline.load(save_path)
 
             # Should preserve the True value
-            assert loaded.preserve_close_orig is True, \
-                "Save/load roundtrip should preserve preserve_close_orig=True"
+            assert (
+                loaded.preserve_close_orig is True
+            ), "Save/load roundtrip should preserve preserve_close_orig=True"
 
     def test_constructor_and_load_defaults_match(self):
         """
@@ -185,15 +188,14 @@ class TestFeaturePipelineLoadDefault:
             load_default = FeaturePipeline.load(artifact_path)
 
         # Both should have same default
-        assert constructor_default.preserve_close_orig == load_default.preserve_close_orig, \
-            f"Constructor default ({constructor_default.preserve_close_orig}) must match " \
+        assert constructor_default.preserve_close_orig == load_default.preserve_close_orig, (
+            f"Constructor default ({constructor_default.preserve_close_orig}) must match "
             f"load() default ({load_default.preserve_close_orig})"
+        )
 
         # And both should be True
-        assert constructor_default.preserve_close_orig is True, \
-            "Constructor default should be True"
-        assert load_default.preserve_close_orig is True, \
-            "Load default should be True"
+        assert constructor_default.preserve_close_orig is True, "Constructor default should be True"
+        assert load_default.preserve_close_orig is True, "Load default should be True"
 
 
 class TestMidPriceNaNHandling:
@@ -201,26 +203,31 @@ class TestMidPriceNaNHandling:
 
     def _create_shifted_data_without_close_orig(self, n_rows: int = 5) -> pd.DataFrame:
         """Create data that simulates legacy shifted data without close_orig."""
-        df = pd.DataFrame({
-            "open": [100.0 + i for i in range(n_rows)],
-            "high": [102.0 + i for i in range(n_rows)],
-            "low": [98.0 + i for i in range(n_rows)],
-            "close": [np.nan] + [100.0 + i for i in range(n_rows - 1)],  # Shifted: NaN at index 0
-            "volume": [1000.0] * n_rows,
-            "_close_shifted": [True] * n_rows,  # Marker that data is already shifted
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0 + i for i in range(n_rows)],
+                "high": [102.0 + i for i in range(n_rows)],
+                "low": [98.0 + i for i in range(n_rows)],
+                "close": [np.nan]
+                + [100.0 + i for i in range(n_rows - 1)],  # Shifted: NaN at index 0
+                "volume": [1000.0] * n_rows,
+                "_close_shifted": [True] * n_rows,  # Marker that data is already shifted
+            }
+        )
         return df
 
     def _create_proper_data_with_close_orig(self, n_rows: int = 5) -> pd.DataFrame:
         """Create properly processed data with close_orig."""
-        df = pd.DataFrame({
-            "open": [100.0 + i for i in range(n_rows)],
-            "high": [102.0 + i for i in range(n_rows)],
-            "low": [98.0 + i for i in range(n_rows)],
-            "close": [np.nan] + [100.0 + i for i in range(n_rows - 1)],  # Shifted
-            "close_orig": [100.0 + i for i in range(n_rows)],  # Original unshifted
-            "volume": [1000.0] * n_rows,
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0 + i for i in range(n_rows)],
+                "high": [102.0 + i for i in range(n_rows)],
+                "low": [98.0 + i for i in range(n_rows)],
+                "close": [np.nan] + [100.0 + i for i in range(n_rows - 1)],  # Shifted
+                "close_orig": [100.0 + i for i in range(n_rows)],  # Original unshifted
+                "volume": [1000.0] * n_rows,
+            }
+        )
         return df
 
     def test_mid_price_fallback_to_open_on_nan_close(self):
@@ -261,12 +268,17 @@ class TestMidPriceNaNHandling:
             mid = float(row.get(price_key, row.get("price", 0.0)))
 
             # Check if _close_actual protection works
-            if price_key == "close" and hasattr(env, "_close_actual") and len(env._close_actual) > row_idx:
+            if (
+                price_key == "close"
+                and hasattr(env, "_close_actual")
+                and len(env._close_actual) > row_idx
+            ):
                 mid = float(env._close_actual.iloc[row_idx])
 
             # mid should be NaN here (from shifted close)
-            assert math.isnan(mid) or mid == 0.0, \
-                f"Mid should be NaN/0 from shifted close, got {mid}"
+            assert (
+                math.isnan(mid) or mid == 0.0
+            ), f"Mid should be NaN/0 from shifted close, got {mid}"
 
             # Now test fallback logic
             if not math.isfinite(mid) or mid <= 0.0:
@@ -275,8 +287,9 @@ class TestMidPriceNaNHandling:
                     fallback_mid = float(row.get("open"))
 
                 # open price should be valid
-                assert fallback_mid is not None and math.isfinite(fallback_mid) and fallback_mid > 0.0, \
-                    f"Open price fallback should be valid, got {fallback_mid}"
+                assert (
+                    fallback_mid is not None and math.isfinite(fallback_mid) and fallback_mid > 0.0
+                ), f"Open price fallback should be valid, got {fallback_mid}"
 
                 # This is the expected behavior
                 mid = fallback_mid
@@ -302,8 +315,9 @@ class TestMidPriceNaNHandling:
         mid = float(close_actual.iloc[row_idx])
 
         # close_orig[0] should be valid (100.0)
-        assert math.isfinite(mid) and mid > 0.0, \
-            f"With close_orig, mid should be valid at index 0, got {mid}"
+        assert (
+            math.isfinite(mid) and mid > 0.0
+        ), f"With close_orig, mid should be valid at index 0, got {mid}"
         assert mid == 100.0, f"Mid should be close_orig[0]=100.0, got {mid}"
 
 
@@ -317,14 +331,16 @@ class TestRewardPriceFallbackLogging:
         from trading_patchnew import TradingEnv
 
         # Check that the counter attribute exists after initialization
-        df = pd.DataFrame({
-            "open": [100.0, 101.0, 102.0],
-            "high": [102.0, 103.0, 104.0],
-            "low": [98.0, 99.0, 100.0],
-            "close": [100.0, 101.0, 102.0],
-            "close_orig": [100.0, 101.0, 102.0],
-            "volume": [1000.0] * 3,
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 101.0, 102.0],
+                "high": [102.0, 103.0, 104.0],
+                "low": [98.0, 99.0, 100.0],
+                "close": [100.0, 101.0, 102.0],
+                "close_orig": [100.0, 101.0, 102.0],
+                "volume": [1000.0] * 3,
+            }
+        )
 
         try:
             # Minimal TradingEnv creation
@@ -334,8 +350,7 @@ class TestRewardPriceFallbackLogging:
             # Reset should set it to 0
             env._reward_price_fallback_count = 0  # This is what _init_state does
 
-            assert env._reward_price_fallback_count == 0, \
-                "Fallback counter should be reset to 0"
+            assert env._reward_price_fallback_count == 0, "Fallback counter should be reset to 0"
         except Exception as e:
             pytest.skip(f"Could not test fallback counter: {e}")
 
@@ -357,10 +372,10 @@ class TestRewardPriceFallbackLogging:
                 logged_times.append(i)
                 fallback_count += 1
 
-        assert len(logged_times) == 3, \
-            f"Should only log {max_logs} times, logged {len(logged_times)}"
-        assert logged_times == [0, 1, 2], \
-            "Should log first 3 occurrences"
+        assert (
+            len(logged_times) == 3
+        ), f"Should only log {max_logs} times, logged {len(logged_times)}"
+        assert logged_times == [0, 1, 2], "Should log first 3 occurrences"
 
     def test_resolve_reward_price_returns_zero_with_no_fallback(self, caplog):
         """
@@ -372,13 +387,15 @@ class TestRewardPriceFallbackLogging:
         from trading_patchnew import TradingEnv
 
         # Create env with invalid price data
-        df = pd.DataFrame({
-            "open": [np.nan, np.nan, np.nan],
-            "high": [np.nan, np.nan, np.nan],
-            "low": [np.nan, np.nan, np.nan],
-            "close": [np.nan, np.nan, np.nan],  # All NaN
-            "volume": [1000.0] * 3,
-        })
+        df = pd.DataFrame(
+            {
+                "open": [np.nan, np.nan, np.nan],
+                "high": [np.nan, np.nan, np.nan],
+                "low": [np.nan, np.nan, np.nan],
+                "close": [np.nan, np.nan, np.nan],  # All NaN
+                "volume": [1000.0] * 3,
+            }
+        )
 
         try:
             env = TradingEnv.__new__(TradingEnv)
@@ -402,7 +419,11 @@ class TestRewardPriceFallbackLogging:
             assert candidate is None, f"Candidate should be None with NaN data, got {candidate}"
 
             # Check fallback logic
-            if candidate is None or not math.isfinite(candidate or float('nan')) or (candidate or 0.0) <= 0.0:
+            if (
+                candidate is None
+                or not math.isfinite(candidate or float("nan"))
+                or (candidate or 0.0) <= 0.0
+            ):
                 prev_price = env._last_reward_price
                 if not (math.isfinite(prev_price) and prev_price > 0.0):
                     result = 0.0
@@ -438,7 +459,7 @@ class TestIntegrationLegacyDataHandling:
                     "winsorize_percentiles": [1.0, 99.0],
                     "strict_idempotency": True,
                     # preserve_close_orig missing - should default to True after fix
-                }
+                },
             }
 
             artifact_path = os.path.join(tmpdir, "legacy_pipeline.json")
@@ -449,26 +470,31 @@ class TestIntegrationLegacyDataHandling:
             pipeline = FeaturePipeline.load(artifact_path)
 
             # Verify default is True
-            assert pipeline.preserve_close_orig is True, \
-                "Legacy artifact should have preserve_close_orig=True after fix"
+            assert (
+                pipeline.preserve_close_orig is True
+            ), "Legacy artifact should have preserve_close_orig=True after fix"
 
             # Transform some data
-            df = pd.DataFrame({
-                "close": [100.0, 101.0, 102.0, 103.0],
-                "volume": [1000.0, 1100.0, 1200.0, 1300.0],
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [100.0, 101.0, 102.0, 103.0],
+                    "volume": [1000.0, 1100.0, 1200.0, 1300.0],
+                }
+            )
 
             df_transformed = pipeline.transform_df(df.copy())
 
             # close_orig should be created
-            assert "close_orig" in df_transformed.columns, \
-                "close_orig should be created by legacy artifact after fix"
+            assert (
+                "close_orig" in df_transformed.columns
+            ), "close_orig should be created by legacy artifact after fix"
 
             # close_orig should have original values
             expected_orig = [100.0, 101.0, 102.0, 103.0]
             actual_orig = df_transformed["close_orig"].tolist()
-            assert np.allclose(actual_orig, expected_orig), \
-                f"close_orig should have original values {expected_orig}, got {actual_orig}"
+            assert np.allclose(
+                actual_orig, expected_orig
+            ), f"close_orig should have original values {expected_orig}, got {actual_orig}"
 
     def test_end_to_end_no_nan_mid_with_proper_pipeline(self):
         """
@@ -477,23 +503,27 @@ class TestIntegrationLegacyDataHandling:
         # Create pipeline with default settings (preserve_close_orig=True)
         pipeline = FeaturePipeline()
 
-        df = pd.DataFrame({
-            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-            "open": [99.5, 100.5, 101.5, 102.5, 103.5],
-            "high": [102.0, 103.0, 104.0, 105.0, 106.0],
-            "low": [98.0, 99.0, 100.0, 101.0, 102.0],
-            "volume": [1000.0, 1100.0, 1200.0, 1300.0, 1400.0],
-        })
+        df = pd.DataFrame(
+            {
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "open": [99.5, 100.5, 101.5, 102.5, 103.5],
+                "high": [102.0, 103.0, 104.0, 105.0, 106.0],
+                "low": [98.0, 99.0, 100.0, 101.0, 102.0],
+                "volume": [1000.0, 1100.0, 1200.0, 1300.0, 1400.0],
+            }
+        )
 
         pipeline.fit({"test": df})
         df_transformed = pipeline.transform_df(df.copy())
 
         # Verify close_orig exists and has no NaN at index 0
         assert "close_orig" in df_transformed.columns
-        assert not math.isnan(df_transformed["close_orig"].iloc[0]), \
-            "close_orig[0] should not be NaN"
-        assert df_transformed["close_orig"].iloc[0] == 100.0, \
-            f"close_orig[0] should be 100.0, got {df_transformed['close_orig'].iloc[0]}"
+        assert not math.isnan(
+            df_transformed["close_orig"].iloc[0]
+        ), "close_orig[0] should not be NaN"
+        assert (
+            df_transformed["close_orig"].iloc[0] == 100.0
+        ), f"close_orig[0] should be 100.0, got {df_transformed['close_orig'].iloc[0]}"
 
 
 if __name__ == "__main__":

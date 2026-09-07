@@ -44,7 +44,7 @@ def test_pit_leak_scan_clean():
     panel = _panel(8, extra={"iv": iv})
     long = pd.DataFrame({"publish_ts": [(T0 + 4 * STEP) * 1000], "symbol": ["AAA"], "iv": [0.2]})
     leaks = pit_leak_scan(panel, long, value_col="iv")
-    assert leaks == []                                  # чисто
+    assert leaks == []  # чисто
 
 
 def test_pit_leak_scan_catches_lookahead():
@@ -62,6 +62,7 @@ def test_pit_leak_scan_catches_lookahead():
 def test_signal_columns_lineage():
     panel = _panel(5, extra={"funding_rate": -0.001})
     from signals.crypto_signals import FundingCarry
+
     assert signal_columns(FundingCarry("fc"), panel) == ["funding_rate"]
     assert signal_columns(MomentumSignal("m", price_col="close"), panel) == ["close"]
 
@@ -71,10 +72,14 @@ def test_signal_columns_lineage():
 # ---------------------------------------------------------------------------
 def test_trust_trusted_when_all_pit_true():
     panel = _panel(6, extra={"funding_rate": -0.001})
-    prov = [ColumnProvenance("close", "binance", "binance", PIT_TRUE),
-            ColumnProvenance("funding_rate", "binance:funding", "binance", PIT_TRUE)]
+    prov = [
+        ColumnProvenance("close", "binance", "binance", PIT_TRUE),
+        ColumnProvenance("funding_rate", "binance:funding", "binance", PIT_TRUE),
+    ]
     from signals.crypto_signals import FundingCarry
-    lib = SignalLibrary(); lib.register(FundingCarry("fc"))
+
+    lib = SignalLibrary()
+    lib.register(FundingCarry("fc"))
     rep = data_trust_report(panel, prov, signal_library=lib)
     assert rep["trust_verdict"] == "trusted"
     assert rep["pit_violations"] == []
@@ -83,25 +88,33 @@ def test_trust_trusted_when_all_pit_true():
 
 def test_trust_untrusted_when_signal_uses_none_column():
     panel = _panel(6, extra={"iv": 0.2, "realized_vol": 0.1})
-    prov = [ColumnProvenance("close", "p", "yahoo", PIT_TRUE),
-            ColumnProvenance("iv", "yfinance:chain", "yfinance", PIT_NONE),   # снимок!
-            ColumnProvenance("realized_vol", "computed", "computed", PIT_TRUE)]
+    prov = [
+        ColumnProvenance("close", "p", "yahoo", PIT_TRUE),
+        ColumnProvenance("iv", "yfinance:chain", "yfinance", PIT_NONE),  # снимок!
+        ColumnProvenance("realized_vol", "computed", "computed", PIT_TRUE),
+    ]
     from signals.options_signals import VolRiskPremium
-    lib = SignalLibrary(); lib.register(VolRiskPremium("vrp"))
+
+    lib = SignalLibrary()
+    lib.register(VolRiskPremium("vrp"))
     rep = data_trust_report(panel, prov, signal_library=lib)
-    assert rep["trust_verdict"] == "untrusted"          # VRP читает iv (none)
+    assert rep["trust_verdict"] == "untrusted"  # VRP читает iv (none)
     assert "vrp" in rep["pit_violations"]
     assert rep["signal_lineage"]["vrp"]["backtest_safe"] is False
 
 
 def test_trust_caution_when_approx():
     panel = _panel(6, extra={"mcap": 1000.0})
-    prov = [ColumnProvenance("close", "p", "binance", PIT_TRUE),
-            ColumnProvenance("mcap", "static:mcap", "static", PIT_APPROX)]
+    prov = [
+        ColumnProvenance("close", "p", "binance", PIT_TRUE),
+        ColumnProvenance("mcap", "static:mcap", "static", PIT_APPROX),
+    ]
     from signals.crypto_signals import Size
-    lib = SignalLibrary(); lib.register(Size("sz"))
+
+    lib = SignalLibrary()
+    lib.register(Size("sz"))
     rep = data_trust_report(panel, prov, signal_library=lib)
-    assert rep["trust_verdict"] == "caution"            # mcap=approx
+    assert rep["trust_verdict"] == "caution"  # mcap=approx
 
 
 # ---------------------------------------------------------------------------
@@ -109,12 +122,15 @@ def test_trust_caution_when_approx():
 # ---------------------------------------------------------------------------
 def test_run_backtest_carries_data_trust():
     from service_xs_pipeline import XSConfig, run_backtest
-    cfg = XSConfig.model_validate({
-        "asset_class": "crypto",
-        "data": {"source": "synthetic", "symbols": ["BTC", "ETH", "SOL"], "synthetic_bars": 60},
-        "signals": [{"name": "mom", "kind": "crypto_momentum", "lookback": 20, "skip": 1}],
-        "backtest": {"rebalance_every": 5, "cov_lookback": 20, "min_cov_obs": 10},
-    })
+
+    cfg = XSConfig.model_validate(
+        {
+            "asset_class": "crypto",
+            "data": {"source": "synthetic", "symbols": ["BTC", "ETH", "SOL"], "synthetic_bars": 60},
+            "signals": [{"name": "mom", "kind": "crypto_momentum", "lookback": 20, "skip": 1}],
+            "backtest": {"rebalance_every": 5, "cov_lookback": 20, "min_cov_obs": 10},
+        }
+    )
     out = run_backtest(cfg)
     assert "data_trust" in out and out["data_trust"] is not None
     # синтетика → close pit=none → momentum зависит → untrusted (honest)
@@ -126,13 +142,18 @@ def test_api_data_trust():
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
     from xs_api import register_xs_routes
-    app = FastAPI(); register_xs_routes(app)
+
+    app = FastAPI()
+    register_xs_routes(app)
     client = TestClient(app)
-    r = client.post("/api/xs/data_trust", json={
-        "asset_class": "crypto",
-        "data": {"source": "synthetic", "symbols": ["BTC", "ETH"]},
-        "signals": [{"name": "mom", "kind": "crypto_momentum", "lookback": 20}],
-    })
+    r = client.post(
+        "/api/xs/data_trust",
+        json={
+            "asset_class": "crypto",
+            "data": {"source": "synthetic", "symbols": ["BTC", "ETH"]},
+            "signals": [{"name": "mom", "kind": "crypto_momentum", "lookback": 20}],
+        },
+    )
     assert r.status_code == 200
     data = r.json()
     assert "trust_verdict" in data and "signal_lineage" in data and "pit_violations" in data

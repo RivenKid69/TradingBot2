@@ -55,16 +55,19 @@ class CredentialType(Enum):
 
 class CredentialVaultError(Exception):
     """Base exception for credential vault errors."""
+
     pass
 
 
 class InvalidMasterKeyError(CredentialVaultError):
     """Raised when master key is invalid."""
+
     pass
 
 
 class CredentialDecryptionError(CredentialVaultError):
     """Raised when decryption fails (tampering, wrong key, etc.)."""
+
     pass
 
 
@@ -123,7 +126,9 @@ class EncryptedCredential:
             ciphertext=bytes.fromhex(data["ciphertext"]),
             nonce=bytes.fromhex(data["nonce"]),
             created_at=datetime.fromisoformat(data["created_at"]),
-            last_accessed=datetime.fromisoformat(data["last_accessed"]) if data.get("last_accessed") else None,
+            last_accessed=(
+                datetime.fromisoformat(data["last_accessed"]) if data.get("last_accessed") else None
+            ),
             access_count=data.get("access_count", 0),
             metadata=data.get("metadata", {}),
         )
@@ -165,11 +170,7 @@ class CredentialVault:
     # Master key size (256 bits / 32 bytes for AES-256)
     MASTER_KEY_SIZE = 32
 
-    def __init__(
-        self,
-        master_key: bytes,
-        kdf_iterations: int = DEFAULT_KDF_ITERATIONS
-    ):
+    def __init__(self, master_key: bytes, kdf_iterations: int = DEFAULT_KDF_ITERATIONS):
         """Initialize the credential vault with a master key."""
         if not isinstance(master_key, bytes):
             raise InvalidMasterKeyError("Master key must be bytes")
@@ -212,10 +213,7 @@ class CredentialVault:
         return kdf.derive(self._master_key)
 
     def _generate_credential_id(
-        self,
-        user_id: str,
-        broker: str,
-        credential_type: CredentialType
+        self, user_id: str, broker: str, credential_type: CredentialType
     ) -> str:
         """
         Generate a deterministic credential ID.
@@ -227,10 +225,7 @@ class CredentialVault:
         return hashlib.sha256(data).hexdigest()[:16]
 
     def _build_associated_data(
-        self,
-        user_id: str,
-        broker: str,
-        credential_type: CredentialType
+        self, user_id: str, broker: str, credential_type: CredentialType
     ) -> bytes:
         """
         Build associated data for authenticated encryption.
@@ -246,7 +241,7 @@ class CredentialVault:
         credential_type: CredentialType,
         broker: str,
         plaintext: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> EncryptedCredential:
         """
         Encrypt a broker credential.
@@ -288,9 +283,7 @@ class CredentialVault:
 
         # Encrypt with authentication
         ciphertext = aesgcm.encrypt(
-            nonce=nonce,
-            data=plaintext.encode("utf-8"),
-            associated_data=associated_data
+            nonce=nonce, data=plaintext.encode("utf-8"), associated_data=associated_data
         )
 
         # Generate credential ID
@@ -304,14 +297,11 @@ class CredentialVault:
             ciphertext=ciphertext,
             nonce=nonce,
             created_at=datetime.now(timezone.utc),
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
     def decrypt(
-        self,
-        credential: EncryptedCredential,
-        purpose: str,
-        source_ip: Optional[str] = None
+        self, credential: EncryptedCredential, purpose: str, source_ip: Optional[str] = None
     ) -> str:
         """
         Decrypt a broker credential.
@@ -342,17 +332,13 @@ class CredentialVault:
 
         # Build associated data (must match encryption)
         associated_data = self._build_associated_data(
-            credential.user_id,
-            credential.broker,
-            credential.credential_type
+            credential.user_id, credential.broker, credential.credential_type
         )
 
         try:
             # Decrypt and verify authentication tag
             plaintext_bytes = aesgcm.decrypt(
-                nonce=credential.nonce,
-                data=credential.ciphertext,
-                associated_data=associated_data
+                nonce=credential.nonce, data=credential.ciphertext, associated_data=associated_data
             )
         except Exception as e:
             # Log failed attempt
@@ -361,7 +347,7 @@ class CredentialVault:
                 purpose=purpose,
                 source_ip=source_ip,
                 success=False,
-                error=str(e)
+                error=str(e),
             )
             raise CredentialDecryptionError(
                 f"Failed to decrypt credential {credential.credential_id}: "
@@ -369,12 +355,7 @@ class CredentialVault:
             ) from e
 
         # Log successful access
-        self._log_access(
-            credential=credential,
-            purpose=purpose,
-            source_ip=source_ip,
-            success=True
-        )
+        self._log_access(credential=credential, purpose=purpose, source_ip=source_ip, success=True)
 
         # Update credential metadata
         credential.last_accessed = datetime.now(timezone.utc)
@@ -388,7 +369,7 @@ class CredentialVault:
         purpose: str,
         source_ip: Optional[str] = None,
         success: bool = True,
-        error: Optional[str] = None
+        error: Optional[str] = None,
     ) -> None:
         """Log credential access for audit trail."""
         log_entry = {
@@ -425,11 +406,7 @@ class CredentialVault:
             from persistent storage after this operation.
         """
         # Log the deletion
-        self._log_access(
-            credential=credential,
-            purpose="DELETION",
-            success=True
-        )
+        self._log_access(credential=credential, purpose="DELETION", success=True)
 
         # Overwrite sensitive data with random bytes
         credential.ciphertext = secrets.token_bytes(len(credential.ciphertext))
@@ -441,7 +418,7 @@ class CredentialVault:
         self,
         credential: EncryptedCredential,
         new_plaintext: str,
-        purpose: str = "credential_rotation"
+        purpose: str = "credential_rotation",
     ) -> EncryptedCredential:
         """
         Rotate a credential with a new value.
@@ -458,11 +435,7 @@ class CredentialVault:
             New EncryptedCredential with updated ciphertext
         """
         # Log the rotation
-        self._log_access(
-            credential=credential,
-            purpose=purpose,
-            success=True
-        )
+        self._log_access(credential=credential, purpose=purpose, success=True)
 
         # Create new encrypted credential
         new_credential = self.encrypt(
@@ -470,7 +443,7 @@ class CredentialVault:
             credential_type=credential.credential_type,
             broker=credential.broker,
             plaintext=new_plaintext,
-            metadata=credential.metadata
+            metadata=credential.metadata,
         )
 
         # Preserve access count history
@@ -486,7 +459,7 @@ class CredentialVault:
         user_id: Optional[str] = None,
         credential_id: Optional[str] = None,
         since: Optional[datetime] = None,
-        success_only: bool = False
+        success_only: bool = False,
     ) -> List[Dict[str, Any]]:
         """
         Get access log entries, optionally filtered.
@@ -548,11 +521,7 @@ class CredentialVault:
         """
         return secrets.token_bytes(CredentialVault.MASTER_KEY_SIZE)
 
-    def verify_credential(
-        self,
-        credential: EncryptedCredential,
-        expected_plaintext: str
-    ) -> bool:
+    def verify_credential(self, credential: EncryptedCredential, expected_plaintext: str) -> bool:
         """
         Verify a credential matches an expected value.
 
@@ -569,8 +538,7 @@ class CredentialVault:
         try:
             decrypted = self.decrypt(credential, purpose="verification")
             return secrets.compare_digest(
-                decrypted.encode("utf-8"),
-                expected_plaintext.encode("utf-8")
+                decrypted.encode("utf-8"), expected_plaintext.encode("utf-8")
             )
         except CredentialDecryptionError:
             return False

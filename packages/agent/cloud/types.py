@@ -53,8 +53,12 @@ class PendingCommand:
             requires_approval=bool(data.get("requires_approval", False)),
             deployment_id=UUID(str(data["deployment_id"])) if data.get("deployment_id") else None,
             run_id=UUID(str(data["run_id"])) if data.get("run_id") else None,
-            expires_at=datetime.fromisoformat(data["expires_at"]) if data.get("expires_at") else None,
-            created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None,
+            expires_at=(
+                datetime.fromisoformat(data["expires_at"]) if data.get("expires_at") else None
+            ),
+            created_at=(
+                datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None
+            ),
         )
 
 
@@ -77,4 +81,3 @@ class CommandPollResult:
     commands: List[PendingCommand]
     has_more: bool
     poll_again_after_sec: int
-

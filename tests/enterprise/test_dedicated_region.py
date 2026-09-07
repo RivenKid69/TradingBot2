@@ -314,7 +314,12 @@ class TestDedicatedRegionService:
         """Test validating valid data location."""
         service = DedicatedRegionService()
         region = service.create_dedicated_region(
-            "c1", "C1", DedicatedRegionType.SINGLE_TENANT, "eu-central-1", "aws", "admin",
+            "c1",
+            "C1",
+            DedicatedRegionType.SINGLE_TENANT,
+            "eu-central-1",
+            "aws",
+            "admin",
             data_residency_id="eu_default",
         )
 
@@ -330,7 +335,12 @@ class TestDedicatedRegionService:
         """Test validating invalid data location."""
         service = DedicatedRegionService()
         region = service.create_dedicated_region(
-            "c1", "C1", DedicatedRegionType.SINGLE_TENANT, "eu-central-1", "aws", "admin",
+            "c1",
+            "C1",
+            DedicatedRegionType.SINGLE_TENANT,
+            "eu-central-1",
+            "aws",
+            "admin",
             data_residency_id="eu_default",
         )
 
@@ -416,7 +426,12 @@ class TestDedicatedRegionService:
         """Test getting region status."""
         service = DedicatedRegionService()
         region = service.create_dedicated_region(
-            "c1", "Bank ABC", DedicatedRegionType.SINGLE_TENANT, "eu-central-1", "aws", "admin",
+            "c1",
+            "Bank ABC",
+            DedicatedRegionType.SINGLE_TENANT,
+            "eu-central-1",
+            "aws",
+            "admin",
             compliance_regimes=[ComplianceRegime.DORA, ComplianceRegime.GDPR],
         )
         service.deploy_to_region(region.region_id, "1.0.0", "admin")
@@ -438,7 +453,12 @@ class TestDedicatedRegionService:
         """Test getting compliance report."""
         service = DedicatedRegionService()
         region = service.create_dedicated_region(
-            "c1", "Bank ABC", DedicatedRegionType.SINGLE_TENANT, "eu-central-1", "aws", "admin",
+            "c1",
+            "Bank ABC",
+            DedicatedRegionType.SINGLE_TENANT,
+            "eu-central-1",
+            "aws",
+            "admin",
             data_residency_id="germany",
             compliance_regimes=[ComplianceRegime.DORA, ComplianceRegime.BAFIN],
         )

@@ -19,6 +19,7 @@ import numpy as np
 
 try:
     from obs_builder import build_observation_vector
+
     HAVE_OBS_BUILDER = True
 except ImportError:
     HAVE_OBS_BUILDER = False
@@ -115,12 +116,13 @@ class TestBBPositionSymmetricClipping:
             norm_cols_values=self.norm_cols,
             norm_cols_validity=self.norm_cols_validity,
             enable_validity_flags=True,
-            out_features=self.out_features
+            out_features=self.out_features,
         )
 
         bb_position = self.out_features[self.bb_position_idx]
-        assert abs(bb_position - bb_position_expected) < 0.01, \
-            f"Price at middle should give bb_position = {bb_position_expected:.2f}, got {bb_position:.4f}"
+        assert (
+            abs(bb_position - bb_position_expected) < 0.01
+        ), f"Price at middle should give bb_position = {bb_position_expected:.2f}, got {bb_position:.4f}"
 
     def test_price_at_upper_band_returns_one(self):
         """
@@ -162,12 +164,13 @@ class TestBBPositionSymmetricClipping:
             norm_cols_values=self.norm_cols,
             norm_cols_validity=self.norm_cols_validity,
             enable_validity_flags=True,
-            out_features=self.out_features
+            out_features=self.out_features,
         )
 
         bb_position = self.out_features[self.bb_position_idx]
-        assert abs(bb_position - bb_position_expected) < 0.01, \
-            f"Price at upper band should give bb_position = {bb_position_expected:.2f}, got {bb_position:.4f}"
+        assert (
+            abs(bb_position - bb_position_expected) < 0.01
+        ), f"Price at upper band should give bb_position = {bb_position_expected:.2f}, got {bb_position:.4f}"
 
     def test_price_at_lower_band_returns_zero(self):
         """
@@ -209,12 +212,13 @@ class TestBBPositionSymmetricClipping:
             norm_cols_values=self.norm_cols,
             norm_cols_validity=self.norm_cols_validity,
             enable_validity_flags=True,
-            out_features=self.out_features
+            out_features=self.out_features,
         )
 
         bb_position = self.out_features[self.bb_position_idx]
-        assert abs(bb_position - bb_position_expected) < 0.01, \
-            f"Price at lower band should give bb_position = {bb_position_expected:.2f}, got {bb_position:.4f}"
+        assert (
+            abs(bb_position - bb_position_expected) < 0.01
+        ), f"Price at lower band should give bb_position = {bb_position_expected:.2f}, got {bb_position:.4f}"
 
     def test_price_above_upper_band_clips_to_one(self):
         """
@@ -261,19 +265,21 @@ class TestBBPositionSymmetricClipping:
             norm_cols_values=self.norm_cols,
             norm_cols_validity=self.norm_cols_validity,
             enable_validity_flags=True,
-            out_features=self.out_features
+            out_features=self.out_features,
         )
 
         bb_position = self.out_features[self.bb_position_idx]
 
         # NEW BEHAVIOR: Should clip to 1.0 (not 2.0)
-        assert abs(bb_position - 1.0) < 0.01, \
-            f"Extreme bullish breakout should clip to 1.0 (NEW), got {bb_position:.4f}. " \
+        assert abs(bb_position - 1.0) < 0.01, (
+            f"Extreme bullish breakout should clip to 1.0 (NEW), got {bb_position:.4f}. "
             f"OLD behavior would give 2.0."
+        )
 
         # Verify it's NOT the old behavior
-        assert abs(bb_position - 2.0) > 0.5, \
-            f"bb_position should NOT be 2.0 (old behavior), got {bb_position:.4f}"
+        assert (
+            abs(bb_position - 2.0) > 0.5
+        ), f"bb_position should NOT be 2.0 (old behavior), got {bb_position:.4f}"
 
     def test_price_below_lower_band_clips_to_minus_one(self):
         """
@@ -319,14 +325,15 @@ class TestBBPositionSymmetricClipping:
             norm_cols_values=self.norm_cols,
             norm_cols_validity=self.norm_cols_validity,
             enable_validity_flags=True,
-            out_features=self.out_features
+            out_features=self.out_features,
         )
 
         bb_position = self.out_features[self.bb_position_idx]
 
         # Should clip to -1.0 (symmetric extreme)
-        assert abs(bb_position - (-1.0)) < 0.01, \
-            f"Extreme bearish breakout should clip to -1.0, got {bb_position:.4f}"
+        assert (
+            abs(bb_position - (-1.0)) < 0.01
+        ), f"Extreme bearish breakout should clip to -1.0, got {bb_position:.4f}"
 
     def test_symmetric_range_property(self):
         """
@@ -372,7 +379,7 @@ class TestBBPositionSymmetricClipping:
             norm_cols_values=self.norm_cols,
             norm_cols_validity=self.norm_cols_validity,
             enable_validity_flags=True,
-            out_features=self.out_features
+            out_features=self.out_features,
         )
 
         bb_pos_bullish = self.out_features[self.bb_position_idx]
@@ -415,18 +422,23 @@ class TestBBPositionSymmetricClipping:
             norm_cols_values=self.norm_cols,
             norm_cols_validity=self.norm_cols_validity,
             enable_validity_flags=True,
-            out_features=self.out_features
+            out_features=self.out_features,
         )
 
         bb_pos_bearish = self.out_features[self.bb_position_idx]
 
         # CRITICAL: Symmetric property
-        assert abs(bb_pos_bullish - 1.0) < 0.01, f"Bullish extreme should be 1.0, got {bb_pos_bullish:.4f}"
-        assert abs(bb_pos_bearish - (-1.0)) < 0.01, f"Bearish extreme should be -1.0, got {bb_pos_bearish:.4f}"
+        assert (
+            abs(bb_pos_bullish - 1.0) < 0.01
+        ), f"Bullish extreme should be 1.0, got {bb_pos_bullish:.4f}"
+        assert (
+            abs(bb_pos_bearish - (-1.0)) < 0.01
+        ), f"Bearish extreme should be -1.0, got {bb_pos_bearish:.4f}"
 
         # Magnitudes should be equal (symmetric)
-        assert abs(abs(bb_pos_bullish) - abs(bb_pos_bearish)) < 0.01, \
-            f"Extremes should be symmetric: |{bb_pos_bullish:.4f}| vs |{bb_pos_bearish:.4f}|"
+        assert (
+            abs(abs(bb_pos_bullish) - abs(bb_pos_bearish)) < 0.01
+        ), f"Extremes should be symmetric: |{bb_pos_bullish:.4f}| vs |{bb_pos_bearish:.4f}|"
 
         # OLD BUG: bullish would be 2.0, bearish -1.0 → asymmetric (2x bias)
         # NEW FIX: both are 1.0 and -1.0 → symmetric (no bias)
@@ -479,19 +491,21 @@ class TestBBPositionSymmetricClipping:
                 norm_cols_values=self.norm_cols,
                 norm_cols_validity=self.norm_cols_validity,
                 enable_validity_flags=True,
-                out_features=self.out_features
+                out_features=self.out_features,
             )
 
             bb_position = self.out_features[self.bb_position_idx]
 
             # CRITICAL: Must be <= 1.0 (NEW behavior)
-            assert bb_position <= 1.0, \
-                f"bb_position should be <= 1.0 for price={price:.1f}, got {bb_position:.4f}. " \
+            assert bb_position <= 1.0, (
+                f"bb_position should be <= 1.0 for price={price:.1f}, got {bb_position:.4f}. "
                 f"OLD BUG: would allow values up to 2.0"
+            )
 
             # Should actually be exactly 1.0 for all extreme cases
-            assert abs(bb_position - 1.0) < 0.01, \
-                f"Extreme bullish should clip to exactly 1.0, got {bb_position:.4f}"
+            assert (
+                abs(bb_position - 1.0) < 0.01
+            ), f"Extreme bullish should clip to exactly 1.0, got {bb_position:.4f}"
 
     def test_no_value_below_minus_one(self):
         """
@@ -538,18 +552,20 @@ class TestBBPositionSymmetricClipping:
                 norm_cols_values=self.norm_cols,
                 norm_cols_validity=self.norm_cols_validity,
                 enable_validity_flags=True,
-                out_features=self.out_features
+                out_features=self.out_features,
             )
 
             bb_position = self.out_features[self.bb_position_idx]
 
             # CRITICAL: Must be >= -1.0
-            assert bb_position >= -1.0, \
-                f"bb_position should be >= -1.0 for price={price:.1f}, got {bb_position:.4f}"
+            assert (
+                bb_position >= -1.0
+            ), f"bb_position should be >= -1.0 for price={price:.1f}, got {bb_position:.4f}"
 
             # Should actually be exactly -1.0 for all extreme cases
-            assert abs(bb_position - (-1.0)) < 0.01, \
-                f"Extreme bearish should clip to exactly -1.0, got {bb_position:.4f}"
+            assert (
+                abs(bb_position - (-1.0)) < 0.01
+            ), f"Extreme bearish should clip to exactly -1.0, got {bb_position:.4f}"
 
     def test_nan_bands_returns_neutral_fallback(self):
         """
@@ -588,14 +604,15 @@ class TestBBPositionSymmetricClipping:
             norm_cols_values=self.norm_cols,
             norm_cols_validity=self.norm_cols_validity,
             enable_validity_flags=True,
-            out_features=self.out_features
+            out_features=self.out_features,
         )
 
         bb_position = self.out_features[self.bb_position_idx]
 
         # Should return neutral fallback 0.5
-        assert abs(bb_position - 0.5) < 0.01, \
-            f"NaN bands should give neutral fallback 0.5, got {bb_position:.4f}"
+        assert (
+            abs(bb_position - 0.5) < 0.01
+        ), f"NaN bands should give neutral fallback 0.5, got {bb_position:.4f}"
 
 
 if __name__ == "__main__":

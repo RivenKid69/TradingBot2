@@ -11,6 +11,7 @@ excluding no-trade windows and masked-out transitions.
 
 import pytest
 import numpy as np
+
 torch = pytest.importorskip("torch")
 gym = pytest.importorskip("gymnasium")
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -26,8 +27,10 @@ def simple_env():
     Uses Pendulum-v1 which has continuous action space (Box),
     required by CustomActorCriticPolicy.
     """
+
     def make_env():
         return gym.make("Pendulum-v1")
+
     return DummyVecEnv([make_env])
 
 
@@ -77,7 +80,7 @@ class TestMaskedKLComputation:
         mask = torch.rand(rollout_buffer.buffer_size, rollout_buffer.n_envs) > 0.5
 
         # Inject the mask into rollout data
-        with patch.object(ppo_model.rollout_buffer, 'get', wraps=rollout_buffer.get) as mock_get:
+        with patch.object(ppo_model.rollout_buffer, "get", wraps=rollout_buffer.get) as mock_get:
             # Mock the rollout data to include a mask
             original_get = rollout_buffer.get
 
@@ -92,7 +95,7 @@ class TestMaskedKLComputation:
             # Track KL computations during training
             kl_values = []
 
-            with patch.object(ppo_model, '_update_learning_rate') as mock_lr_update:
+            with patch.object(ppo_model, "_update_learning_rate") as mock_lr_update:
                 # Train for one more step to trigger KL computation
                 ppo_model.learn(total_timesteps=128)
 
@@ -100,9 +103,9 @@ class TestMaskedKLComputation:
                 assert mock_lr_update.called, "Learning rate scheduler should be called"
 
                 # Get the logged KL divergence
-                if hasattr(ppo_model.logger, 'name_to_value'):
-                    if 'train/approx_kl' in ppo_model.logger.name_to_value:
-                        kl_value = ppo_model.logger.name_to_value['train/approx_kl']
+                if hasattr(ppo_model.logger, "name_to_value"):
+                    if "train/approx_kl" in ppo_model.logger.name_to_value:
+                        kl_value = ppo_model.logger.name_to_value["train/approx_kl"]
                         kl_values.append(kl_value)
 
         # Verify that KL was computed correctly
@@ -130,7 +133,7 @@ class TestMaskedKLComputation:
         num_total = mask.numel()
 
         # Train with mask
-        with patch.object(ppo_model.rollout_buffer, 'get') as mock_get:
+        with patch.object(ppo_model.rollout_buffer, "get") as mock_get:
             # Create mock rollout data with mask
             rollout_data = MagicMock()
             rollout_data.mask = mask.flatten()
@@ -170,12 +173,12 @@ class TestMaskedKLComputation:
 
         # First, train without mask and record KL
         ppo_model.learn(total_timesteps=128)
-        if hasattr(ppo_model.logger, 'name_to_value'):
-            if 'train/approx_kl' in ppo_model.logger.name_to_value:
-                kl_without_mask = ppo_model.logger.name_to_value['train/approx_kl']
+        if hasattr(ppo_model.logger, "name_to_value"):
+            if "train/approx_kl" in ppo_model.logger.name_to_value:
+                kl_without_mask = ppo_model.logger.name_to_value["train/approx_kl"]
 
         # Then, train with mask and record KL
-        with patch.object(rollout_buffer, 'get', wraps=rollout_buffer.get) as mock_get:
+        with patch.object(rollout_buffer, "get", wraps=rollout_buffer.get) as mock_get:
             original_get = rollout_buffer.get
 
             def get_with_mask(batch_size=None):
@@ -186,17 +189,17 @@ class TestMaskedKLComputation:
             mock_get.side_effect = get_with_mask
 
             ppo_model.learn(total_timesteps=128)
-            if hasattr(ppo_model.logger, 'name_to_value'):
-                if 'train/approx_kl' in ppo_model.logger.name_to_value:
-                    kl_with_mask = ppo_model.logger.name_to_value['train/approx_kl']
+            if hasattr(ppo_model.logger, "name_to_value"):
+                if "train/approx_kl" in ppo_model.logger.name_to_value:
+                    kl_with_mask = ppo_model.logger.name_to_value["train/approx_kl"]
 
         # We expect the KL values to be different (mask affects computation)
         # Verify learn() completed and logger state is valid
-        assert hasattr(ppo_model, 'logger'), "PPO model should have logger after learn()"
+        assert hasattr(ppo_model, "logger"), "PPO model should have logger after learn()"
         # kl_with_mask may be None or a number - both are valid outcomes
-        assert kl_with_mask is None or isinstance(kl_with_mask, (int, float)), (
-            "KL value should be None or numeric"
-        )
+        assert kl_with_mask is None or isinstance(
+            kl_with_mask, (int, float)
+        ), "KL value should be None or numeric"
 
     def test_kl_computation_with_zero_valid_samples(self, ppo_model):
         """
@@ -213,7 +216,7 @@ class TestMaskedKLComputation:
         # Create a mask that excludes ALL samples
         mask = torch.zeros(rollout_buffer.buffer_size, rollout_buffer.n_envs, dtype=torch.bool)
 
-        with patch.object(rollout_buffer, 'get', wraps=rollout_buffer.get) as mock_get:
+        with patch.object(rollout_buffer, "get", wraps=rollout_buffer.get) as mock_get:
             original_get = rollout_buffer.get
 
             def get_with_zero_mask(batch_size=None):
@@ -228,13 +231,15 @@ class TestMaskedKLComputation:
                 ppo_model.learn(total_timesteps=128)
                 # If we reach here, the code handled zero samples correctly
                 # Verify model is still in valid state
-                assert ppo_model.policy is not None, "Policy should exist after handling zero samples"
+                assert (
+                    ppo_model.policy is not None
+                ), "Policy should exist after handling zero samples"
             except Exception as e:
                 # If an exception is raised, it should be a specific expected one
                 # (e.g., "No valid samples"), not a crash
-                assert "valid" in str(e).lower() or "empty" in str(e).lower(), (
-                    f"Expected graceful handling of zero samples, got: {e}"
-                )
+                assert (
+                    "valid" in str(e).lower() or "empty" in str(e).lower()
+                ), f"Expected graceful handling of zero samples, got: {e}"
 
     def test_kl_values_are_finite(self, ppo_model):
         """
@@ -250,7 +255,7 @@ class TestMaskedKLComputation:
         rollout_buffer = ppo_model.rollout_buffer
         mask = torch.rand(rollout_buffer.buffer_size, rollout_buffer.n_envs) > 0.3
 
-        with patch.object(rollout_buffer, 'get', wraps=rollout_buffer.get) as mock_get:
+        with patch.object(rollout_buffer, "get", wraps=rollout_buffer.get) as mock_get:
             original_get = rollout_buffer.get
 
             def get_with_mask(batch_size=None):
@@ -264,9 +269,9 @@ class TestMaskedKLComputation:
             ppo_model.learn(total_timesteps=256)
 
             # Check that logged KL values are finite
-            if hasattr(ppo_model.logger, 'name_to_value'):
+            if hasattr(ppo_model.logger, "name_to_value"):
                 for key, value in ppo_model.logger.name_to_value.items():
-                    if 'kl' in key.lower():
+                    if "kl" in key.lower():
                         assert np.isfinite(value), f"KL metric {key} should be finite, got {value}"
 
 
@@ -286,12 +291,14 @@ class TestKLImpactOnScheduler:
         # Track scheduler calls
         scheduler_kl_values = []
 
-        with patch.object(ppo_model, '_handle_kl_divergence', wraps=ppo_model._handle_kl_divergence) as mock_scheduler:
+        with patch.object(
+            ppo_model, "_handle_kl_divergence", wraps=ppo_model._handle_kl_divergence
+        ) as mock_scheduler:
             # Create a mask
             rollout_buffer = ppo_model.rollout_buffer
             mask = torch.rand(rollout_buffer.buffer_size, rollout_buffer.n_envs) > 0.5
 
-            with patch.object(rollout_buffer, 'get', wraps=rollout_buffer.get) as mock_get:
+            with patch.object(rollout_buffer, "get", wraps=rollout_buffer.get) as mock_get:
                 original_get = rollout_buffer.get
 
                 def get_with_mask(batch_size=None):
@@ -315,10 +322,12 @@ class TestKLImpactOnScheduler:
 
         # Verify scheduler received valid KL values
         if len(scheduler_kl_values) > 0:
-            assert all(np.isfinite(kl) for kl in scheduler_kl_values), \
-                "Scheduler should receive finite KL values"
-            assert all(kl >= 0 for kl in scheduler_kl_values), \
-                "KL divergence should be non-negative"
+            assert all(
+                np.isfinite(kl) for kl in scheduler_kl_values
+            ), "Scheduler should receive finite KL values"
+            assert all(
+                kl >= 0 for kl in scheduler_kl_values
+            ), "KL divergence should be non-negative"
 
 
 class TestKLImpactOnEarlyStopping:
@@ -344,7 +353,7 @@ class TestKLImpactOnEarlyStopping:
         # Track whether early stopping was triggered
         early_stop_triggered = False
 
-        with patch.object(rollout_buffer, 'get', wraps=rollout_buffer.get) as mock_get:
+        with patch.object(rollout_buffer, "get", wraps=rollout_buffer.get) as mock_get:
             original_get = rollout_buffer.get
 
             def get_with_mask(batch_size=None):
@@ -362,9 +371,9 @@ class TestKLImpactOnEarlyStopping:
                 ppo_model.learn(total_timesteps=256)
 
                 # Check if early stopping was logged
-                if hasattr(ppo_model.logger, 'name_to_value'):
-                    if 'train/n_updates' in ppo_model.logger.name_to_value:
-                        n_updates = ppo_model.logger.name_to_value['train/n_updates']
+                if hasattr(ppo_model.logger, "name_to_value"):
+                    if "train/n_updates" in ppo_model.logger.name_to_value:
+                        n_updates = ppo_model.logger.name_to_value["train/n_updates"]
                         # If updates < n_epochs, early stopping was triggered
                         early_stop_triggered = n_updates < ppo_model.n_epochs
             finally:
@@ -395,7 +404,7 @@ class TestMaskConsistency:
         rollout_buffer = ppo_model.rollout_buffer
         mask = torch.rand(rollout_buffer.buffer_size, rollout_buffer.n_envs) > 0.5
 
-        with patch.object(rollout_buffer, 'get', wraps=rollout_buffer.get) as mock_get:
+        with patch.object(rollout_buffer, "get", wraps=rollout_buffer.get) as mock_get:
             original_get = rollout_buffer.get
 
             def get_with_mask(batch_size=None):
@@ -409,11 +418,11 @@ class TestMaskConsistency:
             ppo_model.learn(total_timesteps=256)
 
             # Verify all KL metrics are logged
-            if hasattr(ppo_model.logger, 'name_to_value'):
+            if hasattr(ppo_model.logger, "name_to_value"):
                 kl_metrics = {
                     key: value
                     for key, value in ppo_model.logger.name_to_value.items()
-                    if 'kl' in key.lower()
+                    if "kl" in key.lower()
                 }
 
                 # All KL metrics should be finite
@@ -421,9 +430,9 @@ class TestMaskConsistency:
                     assert np.isfinite(value), f"KL metric {key} should be finite"
 
                 # If both main and raw KL are present, verify they're both valid
-                if 'train/approx_kl' in kl_metrics and 'train/approx_kl_raw' in kl_metrics:
-                    main_kl = kl_metrics['train/approx_kl']
-                    raw_kl = kl_metrics['train/approx_kl_raw']
+                if "train/approx_kl" in kl_metrics and "train/approx_kl_raw" in kl_metrics:
+                    main_kl = kl_metrics["train/approx_kl"]
+                    raw_kl = kl_metrics["train/approx_kl_raw"]
                     assert main_kl >= 0, "Main KL should be non-negative"
                     assert raw_kl >= 0, "Raw KL should be non-negative"
 

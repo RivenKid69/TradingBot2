@@ -24,8 +24,10 @@ from typing import Final, List, Optional, Set
 # Constants
 # ============================================================================
 
+
 class ZoneType(str, Enum):
     """Module zone classification."""
+
     SHARED = "shared"
     AGENT = "agent"
     CLOUD = "cloud"
@@ -96,9 +98,11 @@ CLOUD_MODULES: Final[List[str]] = [
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class ImportViolation:
     """Represents an import boundary violation."""
+
     file_path: str
     line_number: int
     module_imported: str
@@ -117,6 +121,7 @@ class ImportViolation:
 @dataclass
 class CheckResult:
     """Result of import boundary check."""
+
     violations: List[ImportViolation] = field(default_factory=list)
     files_checked: int = 0
     passed: bool = True
@@ -129,6 +134,7 @@ class CheckResult:
 # ============================================================================
 # Zone Classification
 # ============================================================================
+
 
 def matches_pattern(module: str, patterns: List[str]) -> bool:
     """Check if module matches any of the patterns."""
@@ -163,6 +169,7 @@ def get_zone_for_module(module_name: str) -> ZoneType:
 # ============================================================================
 # Import Extraction
 # ============================================================================
+
 
 def extract_imports_from_file(file_path: Path) -> List[tuple[str, int]]:
     """
@@ -200,6 +207,7 @@ def extract_imports_from_file(file_path: Path) -> List[tuple[str, int]]:
 # ============================================================================
 # Cloud Import Check
 # ============================================================================
+
 
 def check_cloud_imports(
     directory: Path,
@@ -241,26 +249,30 @@ def check_cloud_imports(
         for module, line in imports:
             # Check against prohibited modules
             if matches_pattern(module, prohibited_modules):
-                result.add_violation(ImportViolation(
-                    file_path=str(py_file),
-                    line_number=line,
-                    module_imported=module,
-                    reason="trading/execution module prohibited in Cloud",
-                    zone_from=ZoneType.CLOUD,
-                    zone_to=ZoneType.AGENT,
-                ))
+                result.add_violation(
+                    ImportViolation(
+                        file_path=str(py_file),
+                        line_number=line,
+                        module_imported=module,
+                        reason="trading/execution module prohibited in Cloud",
+                        zone_from=ZoneType.CLOUD,
+                        zone_to=ZoneType.AGENT,
+                    )
+                )
 
             # Check against prohibited packages
             for pkg in prohibited_packages:
                 if module == pkg or module.startswith(f"{pkg}."):
-                    result.add_violation(ImportViolation(
-                        file_path=str(py_file),
-                        line_number=line,
-                        module_imported=module,
-                        reason=f"package '{pkg}' prohibited in Cloud",
-                        zone_from=ZoneType.CLOUD,
-                        zone_to=ZoneType.AGENT,
-                    ))
+                    result.add_violation(
+                        ImportViolation(
+                            file_path=str(py_file),
+                            line_number=line,
+                            module_imported=module,
+                            reason=f"package '{pkg}' prohibited in Cloud",
+                            zone_from=ZoneType.CLOUD,
+                            zone_to=ZoneType.AGENT,
+                        )
+                    )
 
     return result
 
@@ -291,14 +303,16 @@ def check_agent_imports(directory: Path) -> CheckResult:
 
         for module, line in imports:
             if matches_pattern(module, prohibited_in_agent):
-                result.add_violation(ImportViolation(
-                    file_path=str(py_file),
-                    line_number=line,
-                    module_imported=module,
-                    reason="Cloud internal module prohibited in Agent",
-                    zone_from=ZoneType.AGENT,
-                    zone_to=ZoneType.CLOUD,
-                ))
+                result.add_violation(
+                    ImportViolation(
+                        file_path=str(py_file),
+                        line_number=line,
+                        module_imported=module,
+                        reason="Cloud internal module prohibited in Agent",
+                        zone_from=ZoneType.AGENT,
+                        zone_to=ZoneType.CLOUD,
+                    )
+                )
 
     return result
 
@@ -307,13 +321,12 @@ def check_agent_imports(directory: Path) -> CheckResult:
 # CLI Interface
 # ============================================================================
 
+
 def main() -> int:
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Import Boundary Check"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Import Boundary Check")
     parser.add_argument(
         "--target",
         choices=["cloud", "agent", "all"],

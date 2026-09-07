@@ -24,11 +24,12 @@ from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Union
 
 class RedactionAction(str, Enum):
     """Redaction action types."""
-    MASK = "MASK"           # Replace with ***
-    HASH = "HASH"           # Replace with hash
-    REMOVE = "REMOVE"       # Remove entirely
-    TRUNCATE = "TRUNCATE"   # Truncate to N chars
-    ANONYMIZE = "ANONYMIZE" # Anonymize (e.g., IP -> X.X.X.X)
+
+    MASK = "MASK"  # Replace with ***
+    HASH = "HASH"  # Replace with hash
+    REMOVE = "REMOVE"  # Remove entirely
+    TRUNCATE = "TRUNCATE"  # Truncate to N chars
+    ANONYMIZE = "ANONYMIZE"  # Anonymize (e.g., IP -> X.X.X.X)
 
 
 @dataclass
@@ -36,6 +37,7 @@ class RedactionRule:
     """
     Redaction rule definition.
     """
+
     name: str
     pattern: Union[str, Pattern]
     action: RedactionAction = RedactionAction.MASK
@@ -75,7 +77,6 @@ MANDATORY_REDACTION_RULES: List[RedactionRule] = [
         replacement="Bearer [TOKEN]",
         priority=5,
     ),
-
     # Account Identifiers
     RedactionRule(
         name="account_id",
@@ -91,7 +92,6 @@ MANDATORY_REDACTION_RULES: List[RedactionRule] = [
         replacement="[BROKER_ACCOUNT]",
         priority=15,
     ),
-
     # IP Addresses
     RedactionRule(
         name="ipv4_address",
@@ -107,7 +107,6 @@ MANDATORY_REDACTION_RULES: List[RedactionRule] = [
         replacement="[IPv6]",
         priority=30,
     ),
-
     # Email Addresses
     RedactionRule(
         name="email",
@@ -116,7 +115,6 @@ MANDATORY_REDACTION_RULES: List[RedactionRule] = [
         replacement="[EMAIL]",
         priority=25,
     ),
-
     # Private Keys
     RedactionRule(
         name="private_key",
@@ -125,7 +123,6 @@ MANDATORY_REDACTION_RULES: List[RedactionRule] = [
         replacement="[PRIVATE_KEY_REMOVED]",
         priority=1,
     ),
-
     # Environment Variables (common secret patterns)
     RedactionRule(
         name="env_var_secret",
@@ -138,16 +135,31 @@ MANDATORY_REDACTION_RULES: List[RedactionRule] = [
 
 # Field names that should always be redacted
 SENSITIVE_FIELD_NAMES: Set[str] = {
-    "password", "secret", "token", "api_key", "apikey", "api_secret",
-    "private_key", "credential", "auth", "authorization",
-    "access_key", "secret_key", "session_token", "bearer",
-    "account_number", "routing_number", "ssn", "tax_id",
+    "password",
+    "secret",
+    "token",
+    "api_key",
+    "apikey",
+    "api_secret",
+    "private_key",
+    "credential",
+    "auth",
+    "authorization",
+    "access_key",
+    "secret_key",
+    "session_token",
+    "bearer",
+    "account_number",
+    "routing_number",
+    "ssn",
+    "tax_id",
 }
 
 
 # ============================================================================
 # Redaction Functions
 # ============================================================================
+
 
 def redact_string(
     value: str,
@@ -250,6 +262,7 @@ def _redact_recursive(
 # Redaction Middleware
 # ============================================================================
 
+
 class RedactionMiddleware:
     """
     Mandatory redaction middleware.
@@ -329,6 +342,7 @@ class RedactionMiddleware:
 # ============================================================================
 # Validation
 # ============================================================================
+
 
 def validate_no_secrets(data: Any) -> List[str]:
     """

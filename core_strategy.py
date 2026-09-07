@@ -1,4 +1,5 @@
 """Core strategy contract and protocol."""
+
 from __future__ import annotations
 
 import warnings
@@ -66,14 +67,13 @@ class Decision:
         else:
             v = abs(v)
         return ActionProto(
-            action_type=(
-                ActionType.MARKET if self.price_offset_ticks == 0 else ActionType.LIMIT
-            ),
+            action_type=(ActionType.MARKET if self.price_offset_ticks == 0 else ActionType.LIMIT),
             volume_frac=v,
             price_offset_ticks=int(self.price_offset_ticks),
             tif=str(self.tif),
             client_tag=self.client_tag,
         )
+
 
 __all__ = ["Strategy", "Decision"]
 

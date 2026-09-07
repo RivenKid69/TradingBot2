@@ -45,6 +45,7 @@ class MetricType(Enum):
 
     Categories based on EU AI Act and trading-specific requirements.
     """
+
     # Performance Metrics
     SHARPE_RATIO = auto()
     SORTINO_RATIO = auto()
@@ -73,6 +74,7 @@ class MetricType(Enum):
 
 class MetricStatus(Enum):
     """Status of a metric relative to declared thresholds."""
+
     EXCEEDS_EXPECTED = "exceeds_expected"
     MEETS_EXPECTED = "meets_expected"
     MEETS_MINIMUM = "meets_minimum"
@@ -99,6 +101,7 @@ class AccuracyMetric:
         unit: Unit of measurement (e.g., "ratio", "percentage")
         higher_is_better: Whether higher values indicate better performance
     """
+
     metric_type: MetricType
     name: str
     description: str
@@ -163,8 +166,7 @@ class AccuracyMetric:
             )
         elif status == MetricStatus.MEETS_EXPECTED:
             return (
-                f"{self.name}: {current_value:.4f} {self.unit} - GOOD. "
-                f"Within expected range."
+                f"{self.name}: {current_value:.4f} {self.unit} - GOOD. " f"Within expected range."
             )
         elif status == MetricStatus.MEETS_MINIMUM:
             return (
@@ -202,6 +204,7 @@ class MetricMeasurement:
         confidence_interval: Optional (lower, upper) confidence bounds
         metadata: Additional measurement context
     """
+
     metric_type: MetricType
     value: float
     timestamp: datetime = field(default_factory=datetime.utcnow)
@@ -230,6 +233,7 @@ class DeclaredAccuracyMetrics:
         limitations: Known limitations affecting accuracy
         regulatory_notes: Additional regulatory compliance notes
     """
+
     declaration_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     system_name: str = "TradingBot2"
     system_version: str = "1.0.0"
@@ -266,33 +270,37 @@ class DeclaredAccuracyMetrics:
         ]
 
         for metric in self.metrics:
-            lines.extend([
-                f"Metric: {metric.name}",
-                f"  Type: {metric.metric_type.name}",
-                f"  Description: {metric.description}",
-                f"  Expected Value: {metric.expected_value} {metric.unit}",
-                f"  Minimum Acceptable: {metric.minimum_value} {metric.unit}",
-            ])
+            lines.extend(
+                [
+                    f"Metric: {metric.name}",
+                    f"  Type: {metric.metric_type.name}",
+                    f"  Description: {metric.description}",
+                    f"  Expected Value: {metric.expected_value} {metric.unit}",
+                    f"  Minimum Acceptable: {metric.minimum_value} {metric.unit}",
+                ]
+            )
             if metric.critical_value is not None:
-                lines.append(
-                    f"  Critical Threshold: {metric.critical_value} {metric.unit}"
-                )
-            lines.extend([
-                f"  Measurement Method: {metric.measurement_method}",
-                f"  Measurement Window: {metric.measurement_window}",
-                "",
-            ])
+                lines.append(f"  Critical Threshold: {metric.critical_value} {metric.unit}")
+            lines.extend(
+                [
+                    f"  Measurement Method: {metric.measurement_method}",
+                    f"  Measurement Window: {metric.measurement_window}",
+                    "",
+                ]
+            )
 
-        lines.extend([
-            "-" * 70,
-            "MEASUREMENT CONDITIONS",
-            "-" * 70,
-            self.measurement_conditions or "Standard market conditions.",
-            "",
-            "-" * 70,
-            "KNOWN LIMITATIONS",
-            "-" * 70,
-        ])
+        lines.extend(
+            [
+                "-" * 70,
+                "MEASUREMENT CONDITIONS",
+                "-" * 70,
+                self.measurement_conditions or "Standard market conditions.",
+                "",
+                "-" * 70,
+                "KNOWN LIMITATIONS",
+                "-" * 70,
+            ]
+        )
 
         if self.limitations:
             for i, limitation in enumerate(self.limitations, 1):
@@ -300,15 +308,17 @@ class DeclaredAccuracyMetrics:
         else:
             lines.append("  No specific limitations declared.")
 
-        lines.extend([
-            "",
-            "-" * 70,
-            "REGULATORY COMPLIANCE NOTES",
-            "-" * 70,
-            self.regulatory_notes or "System complies with EU AI Act Article 15 requirements.",
-            "",
-            "=" * 70,
-        ])
+        lines.extend(
+            [
+                "",
+                "-" * 70,
+                "REGULATORY COMPLIANCE NOTES",
+                "-" * 70,
+                self.regulatory_notes or "System complies with EU AI Act Article 15 requirements.",
+                "",
+                "=" * 70,
+            ]
+        )
 
         return "\n".join(lines)
 
@@ -353,8 +363,7 @@ class AccuracyMonitor:
 
         # Current status cache
         self._current_status: Dict[MetricType, MetricStatus] = {
-            m.metric_type: MetricStatus.NOT_MEASURED
-            for m in self._declared_metrics.metrics
+            m.metric_type: MetricStatus.NOT_MEASURED for m in self._declared_metrics.metrics
         }
 
         # Statistics
@@ -437,8 +446,7 @@ class AccuracyMonitor:
 
                 # Trim history if needed
                 if len(self._history[metric_type]) > self._history_limit:
-                    self._history[metric_type] = \
-                        self._history[metric_type][-self._history_limit:]
+                    self._history[metric_type] = self._history[metric_type][-self._history_limit :]
             else:
                 self._history[metric_type] = [measurement]
 
@@ -447,15 +455,15 @@ class AccuracyMonitor:
             # Evaluate and potentially alert
             if metric_type in self._metrics_by_type:
                 metric = self._metrics_by_type[metric_type]
-                old_status = self._current_status.get(
-                    metric_type, MetricStatus.NOT_MEASURED
-                )
+                old_status = self._current_status.get(metric_type, MetricStatus.NOT_MEASURED)
                 new_status = metric.evaluate_value(value)
                 self._current_status[metric_type] = new_status
 
                 # Alert on status change or critical
-                if (new_status != old_status or
-                    new_status in (MetricStatus.BELOW_MINIMUM, MetricStatus.CRITICAL)):
+                if new_status != old_status or new_status in (
+                    MetricStatus.BELOW_MINIMUM,
+                    MetricStatus.CRITICAL,
+                ):
                     self._trigger_alert(metric, value, new_status)
 
             return measurement
@@ -625,45 +633,45 @@ class AccuracyMonitor:
                 latest = self.get_latest_measurement(metric_type)
                 stats = self.compute_metric_statistics(metric_type)
 
-                lines.extend([
-                    f"Metric: {metric.name}",
-                    f"  Current Status: {status.value}",
-                ])
+                lines.extend(
+                    [
+                        f"Metric: {metric.name}",
+                        f"  Current Status: {status.value}",
+                    ]
+                )
 
                 if latest:
-                    lines.append(
-                        f"  Latest Value: {latest.value:.4f} {metric.unit}"
-                    )
-                    lines.append(
-                        f"  Measured At: {latest.timestamp.isoformat()}"
-                    )
+                    lines.append(f"  Latest Value: {latest.value:.4f} {metric.unit}")
+                    lines.append(f"  Measured At: {latest.timestamp.isoformat()}")
                     lines.append(metric.get_compliance_text(latest.value))
 
                 if stats["count"] > 0:
-                    lines.extend([
-                        f"  Mean: {stats['mean']:.4f}",
-                        f"  Std Dev: {stats['std']:.4f}",
-                        f"  Min: {stats['min']:.4f}",
-                        f"  Max: {stats['max']:.4f}",
-                        f"  Trend: {stats['trend']:+.6f}",
-                        f"  Sample Size: {stats['count']}",
-                    ])
+                    lines.extend(
+                        [
+                            f"  Mean: {stats['mean']:.4f}",
+                            f"  Std Dev: {stats['std']:.4f}",
+                            f"  Min: {stats['min']:.4f}",
+                            f"  Max: {stats['max']:.4f}",
+                            f"  Trend: {stats['trend']:+.6f}",
+                            f"  Sample Size: {stats['count']}",
+                        ]
+                    )
 
                 lines.append("")
 
             # Overall compliance assessment
             statuses = list(self._current_status.values())
             critical_count = sum(1 for s in statuses if s == MetricStatus.CRITICAL)
-            below_min_count = sum(
-                1 for s in statuses if s == MetricStatus.BELOW_MINIMUM
-            )
+            below_min_count = sum(1 for s in statuses if s == MetricStatus.BELOW_MINIMUM)
 
-            lines.extend([
-                "-" * 70,
-                "OVERALL COMPLIANCE ASSESSMENT",
-                "-" * 70,
-                "",
-            ])
+            lines.extend(
+                [
+                    "-" * 70,
+                    "OVERALL COMPLIANCE ASSESSMENT",
+                    "-" * 70,
+                    "",
+                ]
+            )
 
             if critical_count > 0:
                 lines.append(
@@ -681,10 +689,12 @@ class AccuracyMonitor:
                     "System compliant with Article 15 accuracy requirements."
                 )
 
-            lines.extend([
-                "",
-                "=" * 70,
-            ])
+            lines.extend(
+                [
+                    "",
+                    "=" * 70,
+                ]
+            )
 
             return "\n".join(lines)
 
@@ -722,8 +732,7 @@ class AccuracyMonitor:
                     for m in self._declared_metrics.metrics
                 ],
                 "current_status": {
-                    mt.name: status.value
-                    for mt, status in self._current_status.items()
+                    mt.name: status.value for mt, status in self._current_status.items()
                 },
                 "measurement_history": {
                     mt.name: [
@@ -858,8 +867,7 @@ def get_default_trading_metrics() -> List[AccuracyMetric]:
             metric_type=MetricType.CVAR_95,
             name="Conditional Value at Risk (95%)",
             description=(
-                "Expected loss in the worst 5% of scenarios. "
-                "Measures tail risk beyond VaR."
+                "Expected loss in the worst 5% of scenarios. " "Measures tail risk beyond VaR."
             ),
             expected_value=0.03,  # 3%
             minimum_value=0.05,  # 5%

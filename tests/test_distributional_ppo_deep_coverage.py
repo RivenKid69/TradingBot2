@@ -39,6 +39,7 @@ from distributional_ppo import (
 # Test _compute_empirical_cvar
 # =============================================================================
 
+
 class TestComputeEmpiricalCvar:
     """Test _compute_empirical_cvar method."""
 
@@ -49,7 +50,7 @@ class TestComputeEmpiricalCvar:
         model._cvar_winsor_fraction = 0.01
         model._cvar_tail_warning_logged = False
         # Use object.__setattr__ to bypass property
-        object.__setattr__(model, '_logger', MagicMock())
+        object.__setattr__(model, "_logger", MagicMock())
         return model
 
     def test_empty_rewards(self):
@@ -101,7 +102,7 @@ class TestComputeEmpiricalCvar:
     def test_nan_alpha(self):
         """Test with NaN alpha."""
         model = self._create_model_stub()
-        model.cvar_alpha = float('nan')
+        model.cvar_alpha = float("nan")
 
         raw_rewards = torch.tensor([1.0, 2.0, 3.0])
 
@@ -114,6 +115,7 @@ class TestComputeEmpiricalCvar:
 # Test _quantile_huber_loss
 # =============================================================================
 
+
 class TestQuantileHuberLoss:
     """Test _quantile_huber_loss method."""
 
@@ -122,7 +124,7 @@ class TestQuantileHuberLoss:
         model = DistributionalPPO.__new__(DistributionalPPO)
         model._quantile_huber_kappa = 1.0
         model._quantile_levels_cache = {
-            torch.device('cpu'): torch.linspace(0.025, 0.975, num_quantiles)
+            torch.device("cpu"): torch.linspace(0.025, 0.975, num_quantiles)
         }
         # Add mock policy with quantile_levels
         mock_policy = MagicMock()
@@ -189,6 +191,7 @@ class TestQuantileHuberLoss:
 # Test _project_categorical_distribution
 # =============================================================================
 
+
 class TestProjectCategoricalDistribution:
     """Test _project_categorical_distribution method."""
 
@@ -227,10 +230,12 @@ class TestProjectCategoricalDistribution:
         """Test batch projection."""
         model = self._create_model_stub()
 
-        probs = torch.tensor([
-            [0.25, 0.25, 0.25, 0.25],
-            [0.1, 0.2, 0.3, 0.4],
-        ])
+        probs = torch.tensor(
+            [
+                [0.25, 0.25, 0.25, 0.25],
+                [0.1, 0.2, 0.3, 0.4],
+            ]
+        )
         source_atoms = torch.tensor([0.0, 1.0, 2.0, 3.0])
         target_atoms = torch.tensor([0.0, 1.0, 2.0, 3.0])
 
@@ -268,6 +273,7 @@ class TestProjectCategoricalDistribution:
 # Test _cvar_from_quantiles
 # =============================================================================
 
+
 class TestCvarFromQuantiles:
     """Test _cvar_from_quantiles method."""
 
@@ -276,7 +282,7 @@ class TestCvarFromQuantiles:
         model = DistributionalPPO.__new__(DistributionalPPO)
         model.cvar_alpha = 0.1
         model._quantile_levels_cache = {
-            torch.device('cpu'): torch.linspace(0.025, 0.975, num_quantiles)
+            torch.device("cpu"): torch.linspace(0.025, 0.975, num_quantiles)
         }
         return model
 
@@ -305,6 +311,7 @@ class TestCvarFromQuantiles:
 # =============================================================================
 # Test PopArtController evaluate_shadow edge cases
 # =============================================================================
+
 
 class TestPopArtControllerEvaluateShadowEdgeCases:
     """Test PopArtController evaluate_shadow edge cases."""
@@ -344,7 +351,7 @@ class TestPopArtControllerEvaluateShadowEdgeCases:
 
         result = controller.evaluate_shadow(
             model=MagicMock(),
-            returns_raw=torch.tensor([float('nan'), float('nan')]),
+            returns_raw=torch.tensor([float("nan"), float("nan")]),
             ret_mean=0.0,
             ret_std=1.0,
         )
@@ -373,6 +380,7 @@ class TestPopArtControllerEvaluateShadowEdgeCases:
 # =============================================================================
 # Test PopArtController _weighted_mean_std edge cases
 # =============================================================================
+
 
 class TestPopArtControllerWeightedMeanStdEdgeCases:
     """Test PopArtController _weighted_mean_std edge cases."""
@@ -430,6 +438,7 @@ class TestPopArtControllerWeightedMeanStdEdgeCases:
 # Test PopArtController _clip_fraction
 # =============================================================================
 
+
 class TestPopArtControllerClipFraction:
     """Test PopArtController _clip_fraction static method."""
 
@@ -470,6 +479,7 @@ class TestPopArtControllerClipFraction:
 # Test _cfg_get with various object types
 # =============================================================================
 
+
 class TestCfgGetAdvanced:
     """Advanced tests for _cfg_get function."""
 
@@ -494,6 +504,7 @@ class TestCfgGetAdvanced:
 
     def test_class_with_slots(self):
         """Test with class using __slots__."""
+
         class SlottedConfig:
             __slots__ = ["key"]
 
@@ -506,6 +517,7 @@ class TestCfgGetAdvanced:
 
     def test_lambda_get(self):
         """Test object with callable that's not a proper get."""
+
         class WeirdConfig:
             get = lambda self, x: x  # noqa
 
@@ -519,6 +531,7 @@ class TestCfgGetAdvanced:
 # =============================================================================
 # Test compute_grouped_explained_variance with various weights
 # =============================================================================
+
 
 class TestComputeGroupedExplainedVarianceWeights:
     """Test compute_grouped_explained_variance with weights."""
@@ -556,6 +569,7 @@ class TestComputeGroupedExplainedVarianceWeights:
 # Test calculate_cvar with various distributions
 # =============================================================================
 
+
 class TestCalculateCvarDistributions:
     """Test calculate_cvar with various distribution shapes."""
 
@@ -592,6 +606,7 @@ class TestCalculateCvarDistributions:
 # =============================================================================
 # Test create_sequencers with various episode patterns
 # =============================================================================
+
 
 class TestCreateSequencersPatterns:
     """Test create_sequencers with various episode patterns."""
@@ -636,6 +651,7 @@ class TestCreateSequencersPatterns:
 # Test _bounded_dual_update
 # =============================================================================
 
+
 class TestBoundedDualUpdateAdvanced:
     """Advanced tests for _bounded_dual_update."""
 
@@ -662,7 +678,7 @@ class TestBoundedDualUpdateAdvanced:
 
     def test_inf_gap(self):
         """Test with inf gap."""
-        result = DistributionalPPO._bounded_dual_update(0.5, 0.1, float('inf'))
+        result = DistributionalPPO._bounded_dual_update(0.5, 0.1, float("inf"))
 
         assert isinstance(result, float)
 
@@ -680,6 +696,7 @@ class TestBoundedDualUpdateAdvanced:
 # =============================================================================
 # Test safe_explained_variance numerical edge cases
 # =============================================================================
+
 
 class TestSafeExplainedVarianceNumerical:
     """Test safe_explained_variance with numerical edge cases."""

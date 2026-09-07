@@ -15,7 +15,7 @@ def test_online_mode():
     spec = FeatureSpec(
         lookbacks_prices=[5, 15],
         rsi_period=14,
-        yang_zhang_windows=[24, 100]  # 24 минуты, 100 минут
+        yang_zhang_windows=[24, 100],  # 24 минуты, 100 минут
     )
 
     transformer = OnlineFeatureTransformer(spec)
@@ -85,15 +85,17 @@ def test_offline_mode():
         low = open_p * 0.995
         close = base_price * (1 + 0.01 * np.sin((i + 0.5) * 0.1))
 
-        data.append({
-            "ts_ms": 1000000000 + i * 60000,
-            "symbol": "BTCUSDT",
-            "price": close,
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        data.append(
+            {
+                "ts_ms": 1000000000 + i * 60000,
+                "symbol": "BTCUSDT",
+                "price": close,
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
         base_price *= 1.0001
 
     df = pd.DataFrame(data)
@@ -101,7 +103,7 @@ def test_offline_mode():
     spec = FeatureSpec(
         lookbacks_prices=[5, 15],
         rsi_period=14,
-        yang_zhang_windows=[24, 100]  # 24 минуты, 100 минут
+        yang_zhang_windows=[24, 100],  # 24 минуты, 100 минут
     )
 
     # Применяем трансформацию
@@ -155,17 +157,15 @@ def test_without_ohlc():
     print("\nТест 3: Без OHLC данных (должны быть NaN)")
 
     # Создаем датафрейм только с price (без OHLC)
-    df = pd.DataFrame({
-        "ts_ms": [1000000000 + i * 60000 for i in range(50)],
-        "symbol": ["BTCUSDT"] * 50,
-        "price": [100 + i * 0.1 for i in range(50)],
-    })
-
-    spec = FeatureSpec(
-        lookbacks_prices=[5],
-        rsi_period=14,
-        yang_zhang_windows=[24]
+    df = pd.DataFrame(
+        {
+            "ts_ms": [1000000000 + i * 60000 for i in range(50)],
+            "symbol": ["BTCUSDT"] * 50,
+            "price": [100 + i * 0.1 for i in range(50)],
+        }
     )
+
+    spec = FeatureSpec(lookbacks_prices=[5], rsi_period=14, yang_zhang_windows=[24])
 
     feats_df = apply_offline_features(
         df,
@@ -213,6 +213,7 @@ def main():
         except Exception as e:
             print(f"  ❌ ИСКЛЮЧЕНИЕ: {e}\n")
             import traceback
+
             traceback.print_exc()
             failed += 1
 
@@ -225,5 +226,6 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     success = main()
     sys.exit(0 if success else 1)

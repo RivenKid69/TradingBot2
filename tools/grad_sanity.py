@@ -69,7 +69,9 @@ def _torch_select_device(torch_mod, preferred: str | None = None):
         return torch_mod.device(preferred)
     if torch_mod.cuda.is_available():
         return torch_mod.device("cuda")
-    if getattr(torch_mod.backends, "mps", None) and torch_mod.backends.mps.is_available():  # pragma: no cover
+    if (
+        getattr(torch_mod.backends, "mps", None) and torch_mod.backends.mps.is_available()
+    ):  # pragma: no cover
         return torch_mod.device("mps")
     return torch_mod.device("cpu")
 
@@ -130,7 +132,9 @@ def run_check(*, device: str | None = None, dtype=None, batch_size: int = 32) ->
     model = _torch_build_probe(torch_mod, dtype=dtype, device=chosen_device)
     optimiser = torch_mod.optim.Adam(model.parameters(), lr=1e-3)
 
-    inputs, targets = _torch_probe_batch(torch_mod, batch_size=batch_size, dtype=dtype, device=chosen_device)
+    inputs, targets = _torch_probe_batch(
+        torch_mod, batch_size=batch_size, dtype=dtype, device=chosen_device
+    )
 
     optimiser.zero_grad(set_to_none=True)
     outputs = model(inputs)

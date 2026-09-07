@@ -19,53 +19,67 @@
 ## ⚠️ CRITICAL ISSUES ADDRESSED IN v5.0
 
 ### Memory Architecture (480+ LOBs)
+
 - **Problem**: SPY chain = 24 expiries × 20 strikes = 480 order books. At 500MB/LOB = **240GB RAM**
 - **Solution**: Phase 0.5 adds lazy LOB instantiation, LRU eviction, ring buffer depth limiting
 
 ### Jump λ Calibration
+
 - **Problem**: Merton jump-diffusion λ not calibrated from data
 - **Solution**: Phase 1 adds calibration from historical earnings moves + VIX term structure
 
 ### SSVI → Lee Wing Transition
+
 - **Problem**: Abrupt transition at wing boundaries causes kink in IV surface
 - **Solution**: Phase 3 adds smooth hyperbolic tangent blending over 5% strike range
 
 ### Heston COS Truncation
+
 - **Problem**: COS method truncation bounds L not specified → numerical instability
 - **Solution**: Phase 3 specifies L = c₁ + c₂√T with Fang-Oosterlee (2008) formulas
 
 ### Dupire Tikhonov λ Selection
+
 - **Problem**: Regularization λ arbitrary, no cross-validation
 - **Solution**: Phase 3 adds GCV (Generalized Cross-Validation) for automatic λ selection
 
 ### 480 LOBs Memory (240GB Issue)
+
 - **Solution**: Phase 5 uses lazy instantiation + LRU cache (max 50 active LOBs) + ring buffer depth (100 levels)
 
 ### Cross-Series LOB O(N²) Complexity
+
 - **Problem**: N series × N quote updates = O(N²) per tick
 - **Solution**: Phase 5 uses event-driven updates with strike bucketing, O(N log N)
 
 ### STANS 10K Scenario Runtime
+
 - **Problem**: 10K full repricing per position × 1000 positions = 10B operations
 - **Solution**: Phase 6 uses delta-gamma-vega approximation for 99% scenarios, full repricing for tail 1%
 
 ### Corporate Actions
+
 - **Solution**: Phase 6 adds OCC adjustment handling (splits, special dividends, mergers, spin-offs)
 
 ### IB Rate Limits (10 chains/min)
+
 - **Solution**: Phase 2 adds chain caching (5-min TTL), incremental delta updates, priority queue
 
 ### Assignment Risk Model
+
 - **Solution**: Phase 6 adds Broadie-Detemple early exercise boundary + dividend timing logic
 
 ### Delta Hedge Frequency
+
 - **Solution**: Phase 7 adds Whalley-Wilmott (1997) asymptotic expansion for optimal rehedge bands
 
 ### LOB Pro-Rata vs FIFO
+
 - **Problem**: Options markets (CBOE, PHLX) use pro-rata allocation, not FIFO
 - **Solution**: Phase 5 uses `ProRataMatchingEngine` from existing `lob/matching_engine.py`
 
 ### Rough Volatility Consideration
+
 - **Note**: Gatheral et al. (2018) rough volatility (H≈0.1) is research frontier, NOT included in v5.0
 - **Rationale**: Calibration complexity too high for L3 realism target; Heston + Bates sufficient
 
@@ -229,12 +243,14 @@ from core_errors import BotError  # Для наследования OptionsError
 ## Executive Summary
 
 Полная интеграция опционов всех типов на уровне L3 LOB simulation с поддержкой:
+
 - **US Listed Options** (CBOE, NYSE Arca, NASDAQ PHLX)
 - **Index Options** (SPX, VIX, NDX -- cash-settled, European)
 - **Futures Options** (ES, CL, GC options -- via CME/CBOT)
 - **Crypto Options** (Deribit BTC/ETH -- European, cash-settled)
 
 **Ключевые метрики качества:**
+
 | Metric | Target |
 |--------|--------|
 | Greeks Accuracy | < 0.1% vs analytical |
@@ -317,11 +333,13 @@ from core_errors import BotError  # Для наследования OptionsError
 ### 0.5.1 Problem Statement
 
 **Options LOB Memory Crisis**:
+
 - SPY chain: 24 expiries × 20 strikes × 2 (call/put) = **960 series**
 - Each LOB at full depth (1000 levels): ~500MB
 - Total naive memory: **480 GB** -- impossible!
 
 **Comparison with Futures**:
+
 - Futures: 1 LOB per symbol (ES, NQ, etc.)
 - Options: 100-1000 LOBs per underlying
 - Fundamentally different architecture required
@@ -451,6 +469,7 @@ class EventDrivenLOBCoordinator:
 | **Total** | **71** | **100%** | **✅ ALL PASS (internal CI)** |
 
 ### 0.5.5 Deliverables (✅ COMPLETED 2025-12-03)
+
 - [x] `lob/lazy_multi_series.py` -- Lazy LOB manager (~600 lines)
 - [x] `lob/ring_buffer_orderbook.py` -- Fixed-depth order book (~500 lines)
 - [x] `lob/event_coordinator.py` -- O(N log N) event propagation (~450 lines)
@@ -473,6 +492,7 @@ See: [docs/options/memory_architecture.md](options/memory_architecture.md) for d
 ## Phase 1: Core Models & Data Structures (6 weeks) -- ✅ COMPLETE (240/240 tests)
 
 ### 1.1 Objectives
+
 - Define options contract specifications
 - Implement analytical Greeks (all 12, not just 8)
 - Build Black-Scholes, Leisen-Reimer Binomial, Monte Carlo pricing
@@ -581,6 +601,7 @@ class GreeksResult:
 **Black-Scholes-Merton (European with dividends)**:
 
 Merton (1973) extension for continuous dividends:
+
 ```
 C = S·e^(-qT)·N(d₁) - K·e^(-rT)·N(d₂)
 P = K·e^(-rT)·N(-d₂) - S·e^(-qT)·N(-d₁)
@@ -1067,6 +1088,7 @@ bs_greeks_batch = vmap(bs_greeks_single, in_axes=(0, 0, 0, 0, 0, 0, 0))
 | **Total** | **200** | **100%** |
 
 ### 1.4 Deliverables
+
 - [ ] `core_options.py` -- Contract specs, enums (integrates with AssetClass.OPTIONS)
 - [ ] `impl_greeks.py` -- All 12 Greeks with numerical validation
 - [ ] `impl_greeks_vectorized.py` -- Batch Greeks with NumPy/CuPy/JAX support
@@ -1078,6 +1100,7 @@ bs_greeks_batch = vmap(bs_greeks_single, in_axes=(0, 0, 0, 0, 0, 0, 0))
 - [ ] Documentation: `docs/options/core_models.md`
 
 ### 1.5 Regression Check
+
 ```bash
 pytest tests/ -x --ignore=tests/test_options_*.py  # All existing tests pass
 pytest tests/test_options_core.py -v               # All new tests pass
@@ -1090,17 +1113,20 @@ pytest tests/test_options_core.py -v               # All new tests pass
 ### 2.0 CRITICAL: IB Options ≠ IB Futures
 
 **ВАЖНО**: Existing IB futures adapter (`adapters/ib/order_execution.py`) uses:
+
 ```python
 from ib_insync import Future, ContFuture  # FUTURES ONLY!
 ```
 
 **Options require DIFFERENT imports**:
+
 ```python
 from ib_insync import Option, FuturesOption, Index  # OPTIONS
 # Also need: OptionChain, OptionComputation for Greeks
 ```
 
 **This is NOT a simple extension** -- requires substantial new code:
+
 - Different contract creation (`Option()` vs `Future()`)
 - Different quote structure (Greeks included in quote)
 - Combo orders for spreads (IB ComboLeg)
@@ -1110,6 +1136,7 @@ from ib_insync import Option, FuturesOption, Index  # OPTIONS
 **Timeline impact**: +2 weeks compared to naive estimate
 
 ### 2.1 Objectives
+
 - Create NEW IB options adapter (NOT just extend futures adapter)
 - Add Theta Data as primary options data source (cost-effective)
 - Polygon.io for historical options data
@@ -1123,6 +1150,7 @@ Use IB or Theta Data instead.
 **CBOE Direct API**: No direct retail access. Use broker APIs (IB, Schwab).
 
 **Recommended Stack**:
+
 | Data Need | Primary Source | Backup |
 |-----------|---------------|--------|
 | Real-time US options | IB TWS API | Theta Data |
@@ -1203,6 +1231,7 @@ class OptionsQuote:
 ```
 
 **IB Rate Limits for Options** (from existing IBRateLimiter):
+
 | Limit Type | IB Limit | Safety Margin |
 |------------|----------|---------------|
 | Option chains | 10/min | 8/min |
@@ -1387,6 +1416,7 @@ class IBOptionsRateLimitManager:
 ```
 
 **Integration with existing IBRateLimiter**:
+
 ```python
 # In adapters/ib/options.py
 from adapters.ib.market_data import IBRateLimiter
@@ -1561,6 +1591,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
 ```
 
 **Действие для Phase 2**:
+
 - **НЕ создавать новый адаптер!**
 - Расширить существующий `AlpacaOptionsExecutionAdapter`:
   - Добавить streaming quotes (`stream_option_quotes_async()`)
@@ -1568,6 +1599,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
   - Интегрировать с `OptionsQuote` dataclass
 
 **Преимущество Alpaca**:
+
 - Commission-free options trading
 - Full US options universe
 - REST + WebSocket API
@@ -1591,6 +1623,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
 **Note**: Deribit moved to Phase 2B (separate complexity due to inverse margining)
 
 ### 2.6 Deliverables
+
 - [ ] `adapters/alpaca/options_execution.py` -- **РАСШИРИТЬ существующий** (streaming, historical)
 - [ ] `adapters/ib/options.py` -- NEW IB options adapter (not simple extension!)
 - [ ] `adapters/ib/options_combo.py` -- IB combo/spread order support
@@ -1619,6 +1652,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
 | **Quote Convention** | USD/contract | BTC/ETH per contract |
 
 **Inverse Margining** is the key complexity:
+
 - P&L is in crypto, not USD
 - Margin is in crypto collateral
 - As crypto price drops, margin requirement IN USD increases!
@@ -1808,6 +1842,7 @@ class DeribitMarginResult:
 | **Total** | **120** | **100%** |
 
 ### 2B.4 Deliverables
+
 - [ ] `adapters/deribit/options.py` -- Deribit options adapter
 - [ ] `adapters/deribit/margin.py` -- Inverse margining calculator
 - [ ] `adapters/deribit/websocket.py` -- WebSocket streaming
@@ -1819,6 +1854,7 @@ class DeribitMarginResult:
 ## Phase 3: IV Surface & Volatility Models (6 weeks)
 
 ### 3.1 Objectives
+
 - Construct arbitrage-free IV surface using SSVI
 - Implement Gatheral & Jacquier (2014) arbitrage conditions
 - Add Heston for equity (NOT SABR -- SABR is for rates/FX only)
@@ -2325,6 +2361,7 @@ class LeeWingExtrapolation:
 Reference: Bates (1996) "Jumps and Stochastic Volatility"
 
 Why Bates for equity options:
+
 - Heston explains skew but NOT smile curvature at wings
 - Jumps capture crash risk (fat left tail)
 - Essential for short-dated options where jump risk dominates
@@ -2470,6 +2507,7 @@ class IVCalibrationService:
 | **Total** | **205** | **100%** |
 
 ### 3.4 Deliverables
+
 - [ ] `impl_iv_surface.py` -- IV surface with SSVI
 - [ ] `impl_ssvi.py` -- SSVI model with Gatheral-Jacquier conditions
 - [ ] `impl_heston.py` -- Heston model (NOT SABR for equity!)
@@ -2485,6 +2523,7 @@ class IVCalibrationService:
 ## Phase 4: L2 Execution Provider (4 weeks)
 
 ### 4.1 Objectives
+
 - Options-specific slippage model with moneyness/DTE factors
 - Greeks-aware execution
 - Bid-ask spread modeling (including PFOF effects)
@@ -2497,6 +2536,7 @@ class IVCalibrationService:
 **CRITICAL**: Options slippage fundamentally differs from equity!
 
 Key differences:
+
 - Spread is NOT constant -- varies with moneyness, DTE, underlying vol
 - Gamma exposure creates asymmetric slippage
 - Retail flow (PFOF) gets better execution than displayed
@@ -2667,6 +2707,7 @@ def create_options_execution_provider(
 Reference: Almgren (2012) "Optimal Execution with Nonlinear Impact Functions and Trading-Enhanced Risk"
 
 **Why different from equity**:
+
 - Options have Greeks exposure that changes during execution
 - Delta-neutral execution requires simultaneous underlying hedge
 - Gamma risk is path-dependent
@@ -2842,6 +2883,7 @@ class IVImpactModel:
 | **Total** | **220** | **100%** |
 
 ### 4.4 Deliverables
+
 - [ ] `impl_options_slippage.py` -- Moneyness/DTE/Greeks-aware slippage
 - [ ] `impl_options_fees.py` -- Fee structures (all exchanges)
 - [ ] `execution_providers_options.py` -- L2 provider (integrates with AssetClass.OPTIONS)
@@ -2874,6 +2916,7 @@ Without Phase 0.5: SPY chain (480 LOBs × 500MB) = **240GB RAM → Fails**
 With Phase 0.5: max 50 active LOBs × 50MB = **2.5GB RAM → OK**
 
 ### 5.1 Objectives
+
 - Options-specific order book (fundamentally different from equity!)
 - Market maker behavior simulation (Cho & Engle 2022)
 - Quote dynamics with regime detection
@@ -3304,6 +3347,7 @@ class OptionsArbitrageDetector:
 | **Total** | **250** | **100%** |
 
 ### 5.5 Deliverables
+
 - [ ] `lob/multi_series_lob.py` -- Multi-series LOB manager (480+ books)
 - [ ] `lob/series_lob.py` -- Individual series order book
 - [ ] `lob/cross_expiry_coordinator.py` -- Cross-expiry consistency
@@ -3321,6 +3365,7 @@ class OptionsArbitrageDetector:
 **Duration increased**: OCC STANS Monte Carlo is complex, requires proper implementation
 
 ### 6.1 Objectives
+
 - Options-specific risk guards (following `services/futures_risk_guards.py` pattern)
 - **OCC STANS (System for Theoretical Analysis and Numerical Simulations)** -- Monte Carlo VaR
 - Reg T margin with correct formulas
@@ -3446,6 +3491,7 @@ Reference: OCC "Margin Methodology" (current as of 2024), "STANS Technical Speci
 **STANS = System for Theoretical Analysis and Numerical Simulations**
 
 Key points:
+
 - **Monte Carlo VaR**, NOT parametric VaR!
 - 10,000+ scenarios per risk class
 - 2-day 99% Expected Shortfall (ES), not VaR
@@ -3742,7 +3788,6 @@ class STANSMarginResult:
     es_99: float
 ```
 
-
 class RegTMarginCalculator:
     """
     Reg T margin for retail accounts.
@@ -3792,6 +3837,7 @@ class RegTMarginCalculator:
         - Covered: Only underlying margin
         - Spreads: Limited to max loss
         """
+
 ```
 
 #### 6.2.3 Exercise/Assignment Engine (`impl_exercise_assignment.py`)
@@ -3883,6 +3929,7 @@ class ExerciseAssignmentEngine:
 | **Total** | **240** | **100%** |
 
 ### 6.4 Deliverables
+
 - [ ] `services/options_risk_guards.py` -- All risk guards (following futures pattern)
 - [ ] `impl_occ_stans.py` -- Full STANS Monte Carlo (10K scenarios, full repricing)
 - [ ] `impl_occ_margin.py` -- OCC margin wrapper + Reg T fallback
@@ -4164,6 +4211,7 @@ class AdjustedContractSpec(OptionsContractSpec):
 ```
 
 **Test Requirements for Corporate Actions**:
+
 | Test Category | Tests | Coverage |
 |---------------|-------|----------|
 | Stock Split Adjustment | 10 | 2:1, 3:1, 3:2, 4:1, reverse splits |
@@ -4183,6 +4231,7 @@ class AdjustedContractSpec(OptionsContractSpec):
 **ПРОПУЩЕНО В ОРИГИНАЛЬНОМ ПЛАНЕ**: Как валидировать computed Greeks против рыночных цен?
 
 **Проблема**: Greeks вычисляются из модели (BS, Heston), но рынок может disagree из-за:
+
 - Stochastic volatility (market Greeks ≠ model Greeks)
 - Jumps/tail risk (model underestimates delta near jumps)
 - Interest rate uncertainty (rho calibration)
@@ -4257,6 +4306,7 @@ class DeltaValidationResult:
 ```
 
 **Threshold Guidelines**:
+
 | Greek | Threshold | Condition |
 |-------|-----------|-----------|
 | Delta | 0.02 | All conditions |
@@ -4333,6 +4383,7 @@ class PortfolioOffsetResult:
 ```
 
 **Offset Limits by Correlation**:
+
 | Correlation | Max Offset |
 |-------------|------------|
 | > 0.8 | 50% |
@@ -4431,6 +4482,7 @@ class ExerciseBoundary:
 ```
 
 **Key Implementation Notes**:
+
 - Use antithetic variates for variance reduction
 - Apply Longstaff-Schwartz regression for continuation value
 - Account for discrete dividends (not just yield)
@@ -4447,6 +4499,7 @@ class ExerciseBoundary:
 | **Total** | **100** | **100%** |
 
 ### C.5 Deliverables for Conceptual Additions
+
 - [ ] `impl_greeks_validation.py` -- Greeks validation models
 - [ ] `impl_portfolio_offset.py` -- Correlation offset calculator
 - [ ] `impl_exercise_probability.py` -- Monte Carlo exercise probability
@@ -4458,6 +4511,7 @@ class ExerciseBoundary:
 ## Phase 7: Complex Orders & Strategies (5 weeks)
 
 ### 7.1 Objectives
+
 - Multi-leg order execution with proper Greeks netting
 - Spread trading simulation with leg risk
 - Delta hedging automation
@@ -5110,6 +5164,7 @@ class VolatilityTrader:
 | **Total** | **220** | **100%** |
 
 ### 7.4 Deliverables
+
 - [ ] `impl_multi_leg.py` -- Multi-leg execution with Greeks netting
 - [ ] `impl_legging_risk.py` -- Legging risk manager (Sinclair 2008)
 - [ ] `impl_delta_hedge.py` -- Delta hedging strategies
@@ -5122,6 +5177,7 @@ class VolatilityTrader:
 ## Phase 8: Training Integration (5 weeks)
 
 ### 8.1 Objectives
+
 - Options trading environment wrapper (following `wrappers/futures_env.py` pattern)
 - Options-specific features
 - Reward shaping for options
@@ -5252,6 +5308,7 @@ class OptionsEnvConfig:
 **VRP Features -- Critical for Vol Trading (Goyal & Saretto 2009)**:
 
 The Volatility Risk Premium (VRP = IV - RV) is the most consistent alpha source in options:
+
 - **Positive VRP**: Short vol profitable (most of the time)
 - **VRP term structure**: Front VRP > Back VRP indicates near-term fear
 - **VRP momentum**: Rising VRP = increasing fear, falling VRP = complacency
@@ -5353,6 +5410,7 @@ class OptionsRewardConfig:
 | **Total** | **205** | **100%** |
 
 ### 8.4 Deliverables
+
 - [ ] `wrappers/options_env.py` -- Training environment (follows futures_env pattern)
 - [ ] `options_features.py` -- Feature extraction (14 features, including VRP)
 - [ ] `impl_options_reward.py` -- Greeks-aware reward shaping
@@ -5365,6 +5423,7 @@ class OptionsRewardConfig:
 ## Phase 9: Live Trading (5 weeks)
 
 ### 9.1 Objectives
+
 - Options position sync (with Greeks)
 - Real-time Greeks monitoring with alerts
 - Exercise/expiration management
@@ -5545,6 +5604,7 @@ class ExerciseManager:
 | **Total** | **165** | **100%** |
 
 ### 9.4 Deliverables
+
 - [ ] `services/options_live.py` -- Live runner
 - [ ] `services/greeks_monitor.py` -- Greeks monitoring
 - [ ] `services/exercise_mgr.py` -- Exercise/assignment management
@@ -5558,6 +5618,7 @@ class ExerciseManager:
 ## Phase 10: Validation & Documentation (4 weeks)
 
 ### 10.1 Objectives
+
 - Comprehensive validation testing
 - Backward compatibility verification
 - Performance benchmarks
@@ -5652,6 +5713,7 @@ pytest tests/test_options_*.py -v
 | **Total** | **280** | **100%** |
 
 ### 10.7 Deliverables
+
 - [ ] `tests/test_options_validation.py` -- 180 validation tests
 - [ ] `tests/test_options_backward_compat.py` -- 100 compat tests
 - [ ] `benchmarks/bench_options.py` -- Performance suite
@@ -5705,12 +5767,14 @@ pytest tests/test_options_*.py -v
 | 10 | 5 weeks | All | 12 Greeks validation, performance benchmarks | +1 week |
 
 **Component Reuse Summary**:
+
 - `adapters/alpaca/options_execution.py` (1065 lines): OptionType, OptionStrategy, OptionContract
 - `lob/` module (24 files, v8.0.0): MatchingEngine base, OrderBook patterns
 - `execution_providers.py` (Protocol classes): SlippageProvider, FeeProvider
 - `wrappers/futures_env.py` pattern: Env wrapper template
 
 **Critical Complexity Adjustments (v5.0)**:
+
 1. **Memory Architecture (NEW)**: Lazy LOB instantiation, LRU eviction for 480+ books
 2. **IB Options + Rate Limits (ENHANCED)**: 10 chains/min limit, priority queue, caching
 3. **Options LOB Multi-Series**: N strikes × M expiries with Pro-Rata matching (CBOE Rule 6.45)
@@ -5735,6 +5799,7 @@ pytest tests/test_options_*.py -v
 ### Key References
 
 **Academic -- Pricing & Volatility**:
+
 - Black & Scholes (1973): "The Pricing of Options and Corporate Liabilities"
 - Merton (1973): "Theory of Rational Option Pricing" (dividends)
 - Merton (1976): "Option pricing when underlying stock returns are discontinuous" (jumps)
@@ -5747,12 +5812,14 @@ pytest tests/test_options_*.py -v
 - **Craven & Wahba (1979)**: "Smoothing noisy data with spline functions" (GCV for regularization -- v5.0)
 
 **Academic -- Numerical Methods**:
+
 - Leisen & Reimer (1996): "Binomial models for option valuation - examining and improving convergence"
 - Brenner & Subrahmanyam (1994): "A simple approach to option valuation and hedging" (IV seed)
 - Jäckel (2015): "Let's Be Rational" (robust IV solver)
 - Broadie & Detemple (1996): "American Option Valuation" (gamma convexity)
 
 **Academic -- Execution & Market Microstructure**:
+
 - Cho & Engle (2022): "Market Maker Quotes in Options Markets" (regime-dependent MM)
 - Muravyev & Pearson (2020): "Options Trading Costs Are Lower Than You Think" (PFOF)
 - Avellaneda & Lipkin (2003): "A market-induced mechanism for stock pinning"
@@ -5761,6 +5828,7 @@ pytest tests/test_options_*.py -v
 - **Garleanu, Pedersen & Poteshman (2009)**: "Demand-Based Option Pricing" (IV impact)
 
 **Academic -- Volatility Trading & Hedging**:
+
 - Carr & Madan (1998): "Towards a theory of volatility trading" (variance swaps)
 - **Goyal & Saretto (2009)**: "Cross-section of option returns and volatility" (VRP alpha)
 - **Sinclair (2008)**: "Volatility Trading" (practical guide, legging risk)
@@ -5768,17 +5836,19 @@ pytest tests/test_options_*.py -v
 - **Leland (1985)**: "Option Pricing and Replication with Transaction Costs" (adjusted volatility)
 
 **Textbooks**:
+
 - Hull (2017): "Options, Futures, and Other Derivatives" (reference)
 - Taleb (1997): "Dynamic Hedging" (Greeks intuition)
 
 **Industry**:
+
 - OCC: Options Clearing Corporation -- STANS margin methodology
 - CBOE: Index options methodology, VIX calculation
 - CME: Futures options specifications
 - Deribit: Crypto options documentation, DVOL
 - Theta Data: API documentation
 
-### Quick Reference Table (for CLAUDE.md)
+### Quick Reference Table (for `PLATFORM_REFERENCE.md`)
 
 | Task | Location | Test Command |
 |------|----------|--------------|
@@ -5820,7 +5890,7 @@ pytest tests/test_options_*.py -v
 **Document Version**: 5.0
 **Created**: 2025-12-03
 **Last Updated**: 2025-12-03
-**Author**: Claude Code
+**Author**: Sultan Suyunbayev
 
 ---
 
@@ -5829,6 +5899,7 @@ pytest tests/test_options_*.py -v
 ### v5.0 (2025-12-03) -- Comprehensive Technical Enhancements
 
 **Phase 0.5: Memory Architecture Design (NEW)**
+
 - Added lazy LOB instantiation pattern
 - Added LRU eviction strategy (max 50 active LOBs)
 - Added garbage collection for inactive series
@@ -5836,24 +5907,28 @@ pytest tests/test_options_*.py -v
 - 45 new tests
 
 **Phase 2: IB Rate Limit Management (ENHANCED)**
+
 - Added `OptionsChainCache` with 5-min TTL
 - Added `IBOptionsRateLimitManager` with priority queue
 - Added 10 chains/min rate limiting
 - 15 new tests
 
 **Phase 3: Numerical Methods (ENHANCED)**
+
 - Added Dupire GCV λ selection (`DupireRegularizer`)
 - Added smooth SSVI→Lee wing transition with tanh blending
 - Added Heston COS truncation bounds (Fang-Oosterlee 2008)
 - 30 new tests
 
 **Phase 5: Pro-Rata Matching (ENHANCED)**
+
 - Added `OptionsProRataMatchingEngine` (CBOE Rule 6.45)
 - Added customer priority handling
 - Added configurable public customer, professional customer, market maker allocations
 - 30 new tests
 
 **Phase 6: OCC Enhancements (ENHANCED)**
+
 - Added `OCCAdjustmentHandler` for corporate actions
 - Added support for splits, special dividends, spin-offs, mergers
 - Added `STANSPortfolioPricer` with Taylor delta-gamma-vega approximation
@@ -5861,21 +5936,25 @@ pytest tests/test_options_*.py -v
 - 30 new tests
 
 **Phase 7: Optimal Hedging (ENHANCED)**
+
 - Added Whalley-Wilmott (1997) optimal hedge bandwidth
 - Added `OptimalHedgeBandwidthCalculator` with formula: H* = (3/2 × k × exp(-rT) × Γ × S² × σ²)^(1/3)
 - Updated `DeltaHedger` with `whalley_wilmott` as default strategy
 - 30 new tests
 
 **Timeline Update**
+
 - Original v2.0: 51 weeks
 - v4.0: 69 weeks
 - **v5.0: 77 weeks (~18 months)** with all enhancements
 
 **Test Count Update**
+
 - v4.0: ~2,700 tests
 - **v5.0: ~3,100 tests** (+400 tests for new components)
 
 **New References Added**
+
 - Craven & Wahba (1979): GCV for regularization
 - Whalley & Wilmott (1997): Optimal hedge bandwidth
 - Leland (1985): Transaction costs in hedging
@@ -5887,42 +5966,49 @@ pytest tests/test_options_*.py -v
 **v4.0 Additions -- Addressed ALL 13+ Critical Issues**:
 
 **Phase 3 (IV Surface)**:
+
 - Added **Lee (2004) Wing Extrapolation** -- SSVI diverges at extreme strikes, Lee formula fixes
 - Added **Bates (1996) SVJ Model** -- Heston misses jump risk, critical for options pricing
 - Added `impl_bates.py`, `impl_wing_extrapolation.py` to deliverables
 - Test count: 155 → 205 (+50 tests)
 
 **Phase 4 (Execution)**:
+
 - Added **Options Execution Algorithms** -- Delta-Neutral TWAP, Gamma-Aware POV, Spread Execution
 - Added **IV Impact Model** -- large options orders move IV (Garleanu et al. 2009)
 - Added `execution_algos_options.py`, `impl_iv_impact.py` to deliverables
 - Test count: 150 → 220 (+70 tests)
 
 **Phase 5 (L3 LOB)**:
+
 - Added **Multi-Series LOB Architecture** -- 480+ coordinated books for SPY chain
 - Added `MultiSeriesLOBManager`, `SeriesLOB`, `CrossExpiryCoordinator` classes
 - Added `lob/multi_series_lob.py`, `lob/series_lob.py`, `lob/cross_expiry_coordinator.py`
 - Test count: 180 → 250 (+70 tests)
 
 **Phase 6 (Risk Management)**:
+
 - Replaced simple `OCCMarginCalculator` with **full OCC STANS Monte Carlo**
 - Added 10,000+ scenario generation, full repricing, 2-day 99% Expected Shortfall
 - Added `impl_occ_stans.py` with `STANSScenarioGenerator`, `STANSPortfolioPricer`
 - Test count: 185 → 240 (+55 tests)
 
 **Phase 7 (Complex Orders)**:
+
 - Added **LeggingRiskManager** -- Sinclair (2008) approach to partial fill exposure
 - Added `LeggingState`, `LeggingRiskLimits`, `LeggingRiskAssessment` classes
 - Added emergency hedge creation, real-time monitoring
 - Test count: 180 → 220 (+40 tests)
 
 **Phase 8 (Training)**:
+
 - Added **VRP Features** (Goyal & Saretto 2009) -- 3 new features
 - Features: `vrp_zscore`, `vrp_term_structure`, `vrp_momentum`
 - Total features: 11 → 14
 - Test count: 180 → 205 (+25 tests)
 
 **References Added**:
+
 - Lee (2004), Bates (1996), Fang & Oosterlee (2008)
 - Almgren (2012), Cartea et al. (2015), Garleanu et al. (2009)
 - Goyal & Saretto (2009), Sinclair (2008), Taleb (1997)
@@ -5934,27 +6020,32 @@ pytest tests/test_options_*.py -v
 ### Changelog v3.0 (2025-12-03) -- Architectural Fixes & Conceptual Additions
 
 **Critical Finding**:
+
 - `lob/` module EXISTS (24 files, v8.0.0) -- not creating new!
 - `adapters/alpaca/options_execution.py` EXISTS (1065 lines) -- extending, not recreating!
 
 **Phase 1 Fixes**:
+
 - Fixed OptionType enum duplication: NOW IMPORTS from `adapters/alpaca/options_execution.py`
 - Added imports: `OptionType`, `OptionStrategy`, `OptionContract`, `OPTIONS_CONTRACT_MULTIPLIER`
 - `OptionsContractSpec` now explicitly extends `OptionContract` from Alpaca adapter
 
 **Phase 2 Fixes**:
+
 - Added section 2.4.5 documenting EXISTING Alpaca Options Adapter
 - Clear instruction: EXTEND existing adapter, DO NOT recreate
 - Updated deliverables to reference existing files
 - Test count: 140 → 165 (extended adapter tests)
 
 **Phase 4 Fixes**:
+
 - `OptionsSlippageProvider` now explicitly inherits from `SlippageProvider` Protocol
 - `OptionsFeeProvider` now explicitly inherits from `FeeProvider` Protocol
 - Added explicit imports from `execution_providers.py`
 - Added docstrings explaining Protocol pattern
 
 **Conceptual Additions (New Section)**:
+
 - C.1: Greeks Validation Models (`GreeksValidator` class)
   - Compares model Greeks vs market-implied Greeks
   - Alerts on divergence > threshold (default 10%)
@@ -5970,6 +6061,7 @@ pytest tests/test_options_*.py -v
 - C.5: New deliverables list
 
 **Timeline Revision**:
+
 - v2.0: 51 weeks (56 with buffer)
 - v3.0: **45 weeks (50 with buffer)** -- 6 weeks saved by component reuse
 - Reuse savings breakdown:
@@ -5979,10 +6071,12 @@ pytest tests/test_options_*.py -v
   - Env wrapper pattern: -0.5 week
 
 **Test Count Update**:
+
 - v2.0: ~2,000 tests
 - v3.0: ~2,100 tests (+100 for conceptual additions)
 
 **New References**:
+
 - Longstaff & Schwartz (2001): "Valuing American Options by Simulation"
 - Markowitz (1952): "Portfolio Selection" (correlation-based offsets)
 - CME SPAN: Portfolio margining methodology
@@ -5992,6 +6086,7 @@ pytest tests/test_options_*.py -v
 ### Changelog v2.0 (2025-12-03)
 
 **Phase 1 Fixes**:
+
 - Added American IV solver using binomial tree inversion
 - Increased binomial steps: 100 → 501 (Leisen-Reimer)
 - Replaced CRR with Leisen-Reimer (O(1/n²) convergence)
@@ -6002,6 +6097,7 @@ pytest tests/test_options_*.py -v
 - Added variance swap replication (Carr-Madan 1998)
 
 **Phase 2 Fixes**:
+
 - Removed OPRA direct feed ($2,500/month not practical)
 - Removed CBOE direct API (no retail access)
 - Extended existing IB adapter instead of creating new
@@ -6009,6 +6105,7 @@ pytest tests/test_options_*.py -v
 - Added Polygon for historical options data
 
 **Phase 3 Fixes**:
+
 - Replaced raw SVI with SSVI (Gatheral & Jacquier 2014)
 - Added full arbitrage-free conditions (butterfly, calendar, Lee)
 - Clarified SABR is for rates/FX only, use Heston for equity
@@ -6016,12 +6113,14 @@ pytest tests/test_options_*.py -v
 - Added complete calendar arbitrage check (∂w/∂T > 0)
 
 **Phase 4 Fixes**:
+
 - Added moneyness-dependent slippage (ATM vs OTM)
 - Added DTE-dependent slippage (near-expiry wider)
 - Added PFOF retail flow model (Muravyev & Pearson 2020)
 - Integrated with existing AssetClass.OPTIONS
 
 **Phase 5 Fixes**:
+
 - Redesigned options LOB (fundamentally different from equity)
 - Added Cho & Engle (2022) regime-dependent MM model
 - Added 5 MM quoting regimes (NORMAL, HIGH_VOL, EARNINGS, EXPIRATION, LOW_LIQ)
@@ -6029,18 +6128,21 @@ pytest tests/test_options_*.py -v
 - Added cross-strike arbitrage detection (butterfly, box)
 
 **Phase 6 Fixes**:
+
 - Fixed Reg T formulas (added correct naked put/call calculations)
 - Replaced TIMS with OCC STANS margin methodology
 - Added Broadie & Detemple (1996) gamma convexity value for exercise
 - Added pattern compliance with futures_risk_guards.py
 
 **Phase 7-10 Fixes**:
+
 - Added variance swap construction (Carr-Madan)
 - Added 11 options features (including GEX, vanna exposure)
 - Extended env wrapper pattern from futures_env.py
 - Extended all component durations by 1-2 weeks
 
 **Architectural Fixes**:
+
 - Integration with existing AssetClass.OPTIONS (execution_providers.py:54)
 - Extension of existing lob/ module (not new module)
 - Extension of existing IB adapter (adapters/ib/)
@@ -6049,16 +6151,19 @@ pytest tests/test_options_*.py -v
 - Env wrapper following futures_env.py pattern
 
 **Timeline Revision**:
+
 - Original: 38 weeks
 - Revised: 51 weeks (+13 weeks for added complexity)
 - With 10% buffer: 56 weeks (~13 months)
 
 **Test Count Revision**:
+
 - Original: 1,265 tests
 - Revised: 1,775 tests (+510 for added features)
 - With buffer: ~2,000 tests
 
 **Added References**:
+
 - Leisen & Reimer (1996)
 - Jäckel (2015)
 - Gatheral & Jacquier (2014)

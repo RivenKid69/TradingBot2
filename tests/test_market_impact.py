@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob.data_structures import (
@@ -74,19 +75,22 @@ from lob.impact_calibration import (
 # Fixtures
 # ==============================================================================
 
+
 @pytest.fixture
 def sample_order_book() -> OrderBook:
     """Create a sample order book with liquidity."""
     book = OrderBook(symbol="AAPL", tick_size=0.01, lot_size=1.0)
 
     # Add bids
-    for i, (price, qty) in enumerate([
-        (150.00, 500),
-        (149.99, 300),
-        (149.98, 200),
-        (149.97, 400),
-        (149.96, 600),
-    ]):
+    for i, (price, qty) in enumerate(
+        [
+            (150.00, 500),
+            (149.99, 300),
+            (149.98, 200),
+            (149.97, 400),
+            (149.96, 600),
+        ]
+    ):
         order = LimitOrder(
             order_id=f"bid_{i}",
             price=price,
@@ -98,13 +102,15 @@ def sample_order_book() -> OrderBook:
         book.add_limit_order(order)
 
     # Add asks
-    for i, (price, qty) in enumerate([
-        (150.02, 400),
-        (150.03, 250),
-        (150.04, 350),
-        (150.05, 500),
-        (150.06, 300),
-    ]):
+    for i, (price, qty) in enumerate(
+        [
+            (150.02, 400),
+            (150.03, 250),
+            (150.04, 350),
+            (150.05, 500),
+            (150.06, 300),
+        ]
+    ):
         order = LimitOrder(
             order_id=f"ask_{i}",
             price=price,
@@ -172,9 +178,9 @@ def calibration_dataset() -> CalibrationDataset:
         # Synthetic impact following square-root model
         # impact = 0.1 * 0.02 * sqrt(participation) + 0.05 * participation
         impact_bps = (
-            0.1 * 0.02 * np.sqrt(participation) * 10000 +
-            0.05 * participation * 10000 +
-            np.random.normal(0, 0.5)  # Noise
+            0.1 * 0.02 * np.sqrt(participation) * 10000
+            + 0.05 * participation * 10000
+            + np.random.normal(0, 0.5)  # Noise
         )
 
         pre_mid = base_price
@@ -198,6 +204,7 @@ def calibration_dataset() -> CalibrationDataset:
 # ==============================================================================
 # Test: Impact Parameters
 # ==============================================================================
+
 
 class TestImpactParameters:
     """Tests for ImpactParameters dataclass."""
@@ -229,6 +236,7 @@ class TestImpactParameters:
 # ==============================================================================
 # Test: Kyle Lambda Model
 # ==============================================================================
+
 
 class TestKyleLambdaModel:
     """Tests for Kyle Lambda model."""
@@ -311,6 +319,7 @@ class TestKyleLambdaModel:
 # Test: Almgren-Chriss Model
 # ==============================================================================
 
+
 class TestAlmgrenChrissModel:
     """Tests for Almgren-Chriss model."""
 
@@ -340,9 +349,7 @@ class TestAlmgrenChrissModel:
 
     def test_permanent_impact_linear(self):
         """Test permanent impact is linear in participation."""
-        model = AlmgrenChrissModel(
-            params=ImpactParameters(gamma=0.05)
-        )
+        model = AlmgrenChrissModel(params=ImpactParameters(gamma=0.05))
 
         adv = 10_000_000
 
@@ -374,9 +381,7 @@ class TestAlmgrenChrissModel:
 
     def test_optimal_execution_time(self):
         """Test optimal execution time calculation."""
-        model = AlmgrenChrissModel(
-            params=ImpactParameters(eta=0.1, gamma=0.05, volatility=0.02)
-        )
+        model = AlmgrenChrissModel(params=ImpactParameters(eta=0.1, gamma=0.05, volatility=0.02))
 
         t_star = model.compute_optimal_execution_time(
             order_qty=100000,
@@ -409,6 +414,7 @@ class TestAlmgrenChrissModel:
 # Test: Gatheral Model
 # ==============================================================================
 
+
 class TestGatheralModel:
     """Tests for Gatheral model."""
 
@@ -433,13 +439,11 @@ class TestGatheralModel:
         """Test market resilience rate computation."""
         model = GatheralModel(tau_ms=60000)
         rate = model.compute_resilience_rate()
-        assert abs(rate - 1/60000) < 1e-10
+        assert abs(rate - 1 / 60000) < 1e-10
 
     def test_impact_at_time(self):
         """Test impact at specific time."""
-        model = GatheralModel(
-            params=ImpactParameters(eta=0.1, gamma=0.05, tau_ms=60000, beta=1.5)
-        )
+        model = GatheralModel(params=ImpactParameters(eta=0.1, gamma=0.05, tau_ms=60000, beta=1.5))
 
         temp, perm = model.compute_impact_at_time(
             order_qty=10000,
@@ -459,6 +463,7 @@ class TestGatheralModel:
 # Test: Composite Model
 # ==============================================================================
 
+
 class TestCompositeImpactModel:
     """Tests for Composite impact model."""
 
@@ -472,17 +477,15 @@ class TestCompositeImpactModel:
 
     def test_weighted_average(self):
         """Test weighted average of impacts."""
-        ac_model = AlmgrenChrissModel(
-            params=ImpactParameters(eta=0.1, gamma=0.05)
-        )
-        gatheral_model = GatheralModel(
-            params=ImpactParameters(eta=0.2, gamma=0.1)
-        )
+        ac_model = AlmgrenChrissModel(params=ImpactParameters(eta=0.1, gamma=0.05))
+        gatheral_model = GatheralModel(params=ImpactParameters(eta=0.2, gamma=0.1))
 
-        composite = CompositeImpactModel([
-            (ac_model, 0.6),
-            (gatheral_model, 0.4),
-        ])
+        composite = CompositeImpactModel(
+            [
+                (ac_model, 0.6),
+                (gatheral_model, 0.4),
+            ]
+        )
 
         impact = composite.compute_temporary_impact(
             order_qty=10000,
@@ -501,6 +504,7 @@ class TestCompositeImpactModel:
 # ==============================================================================
 # Test: Impact Tracker
 # ==============================================================================
+
 
 class TestImpactTracker:
     """Tests for Impact Tracker."""
@@ -562,6 +566,7 @@ class TestImpactTracker:
 # Test: Factory Functions
 # ==============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory functions."""
 
@@ -590,6 +595,7 @@ class TestFactoryFunctions:
 # ==============================================================================
 # Test: Impact Effects
 # ==============================================================================
+
 
 class TestImpactEffects:
     """Tests for Impact Effects."""
@@ -623,9 +629,7 @@ class TestImpactEffects:
         assert result.new_bid < sample_order_book.best_bid
         assert result.bid_shift_bps < 0
 
-    def test_simulate_liquidity_reaction(
-        self, sample_order_book, sample_limit_order, sample_fill
-    ):
+    def test_simulate_liquidity_reaction(self, sample_order_book, sample_limit_order, sample_fill):
         """Test simulating liquidity reaction."""
         effects = ImpactEffects()
 
@@ -685,9 +689,7 @@ class TestImpactEffects:
         ]
         assert 0 <= result.continuation_probability <= 1
 
-    def test_estimate_adverse_selection(
-        self, sample_order_book, sample_limit_order
-    ):
+    def test_estimate_adverse_selection(self, sample_order_book, sample_limit_order):
         """Test adverse selection estimation."""
         effects = ImpactEffects()
 
@@ -705,12 +707,11 @@ class TestImpactEffects:
 # Test: LOB Impact Simulator
 # ==============================================================================
 
+
 class TestLOBImpactSimulator:
     """Tests for LOB Impact Simulator."""
 
-    def test_simulate_trade_impact(
-        self, sample_order_book, sample_limit_order, sample_fill
-    ):
+    def test_simulate_trade_impact(self, sample_order_book, sample_limit_order, sample_fill):
         """Test complete trade impact simulation."""
         simulator = LOBImpactSimulator()
 
@@ -728,37 +729,44 @@ class TestLOBImpactSimulator:
 
         assert impact.total_impact_bps > 0
 
-    def test_cumulative_impact_tracking(
-        self, sample_order_book, sample_limit_order, sample_fill
-    ):
+    def test_cumulative_impact_tracking(self, sample_order_book, sample_limit_order, sample_fill):
         """Test cumulative impact over multiple trades."""
         simulator = LOBImpactSimulator()
 
         # First trade
         simulator.simulate_trade_impact(
-            sample_order_book, sample_limit_order, sample_fill,
-            adv=10_000_000, volatility=0.02, timestamp_ms=1000,
+            sample_order_book,
+            sample_limit_order,
+            sample_fill,
+            adv=10_000_000,
+            volatility=0.02,
+            timestamp_ms=1000,
         )
         impact_1 = simulator.cumulative_impact_bps
 
         # Second trade
         simulator.simulate_trade_impact(
-            sample_order_book, sample_limit_order, sample_fill,
-            adv=10_000_000, volatility=0.02, timestamp_ms=2000,
+            sample_order_book,
+            sample_limit_order,
+            sample_fill,
+            adv=10_000_000,
+            volatility=0.02,
+            timestamp_ms=2000,
         )
         impact_2 = simulator.cumulative_impact_bps
 
         assert impact_2 > impact_1
 
-    def test_reset(
-        self, sample_order_book, sample_limit_order, sample_fill
-    ):
+    def test_reset(self, sample_order_book, sample_limit_order, sample_fill):
         """Test simulator reset."""
         simulator = LOBImpactSimulator()
 
         simulator.simulate_trade_impact(
-            sample_order_book, sample_limit_order, sample_fill,
-            adv=10_000_000, volatility=0.02,
+            sample_order_book,
+            sample_limit_order,
+            sample_fill,
+            adv=10_000_000,
+            volatility=0.02,
         )
         assert simulator.cumulative_impact_bps > 0
 
@@ -769,6 +777,7 @@ class TestLOBImpactSimulator:
 # ==============================================================================
 # Test: Impact Calibration
 # ==============================================================================
+
 
 class TestImpactCalibration:
     """Tests for Impact Calibration."""
@@ -916,6 +925,7 @@ class TestImpactCalibration:
 # Test: Integration
 # ==============================================================================
 
+
 class TestIntegration:
     """Integration tests for market impact with LOB."""
 
@@ -942,9 +952,7 @@ class TestIntegration:
         assert result.total_impact_bps > 0
         assert result.decay_profile
 
-    def test_complete_simulation_workflow(
-        self, sample_order_book, sample_limit_order, sample_fill
-    ):
+    def test_complete_simulation_workflow(self, sample_order_book, sample_limit_order, sample_fill):
         """Test complete simulation workflow."""
         # Create simulator
         simulator = create_lob_impact_simulator(
@@ -987,6 +995,7 @@ class TestIntegration:
 # Test: Edge Cases
 # ==============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases."""
 
@@ -1000,9 +1009,7 @@ class TestEdgeCases:
 
     def test_zero_volatility(self):
         """Test handling of zero volatility."""
-        model = AlmgrenChrissModel(
-            params=ImpactParameters(eta=0.1, gamma=0.05, volatility=0.02)
-        )
+        model = AlmgrenChrissModel(params=ImpactParameters(eta=0.1, gamma=0.05, volatility=0.02))
 
         # Should use default volatility
         impact = model.compute_temporary_impact(1000, 10_000_000, 0)

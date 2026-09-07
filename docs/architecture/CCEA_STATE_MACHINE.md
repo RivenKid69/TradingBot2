@@ -102,11 +102,13 @@ This document defines the state machines for Deployment and Run entities in the 
 ### 1.4 State Persistence
 
 **Cloud stores:**
+
 - `desired_state`: What Cloud wants
 - `current_state`: Last reported by Agent
 - `state_updated_at`: Timestamp of last update
 
 **Agent stores:**
+
 - `local_state`: Actual runtime state
 - `pending_commands`: Unacknowledged commands
 - `approval_queue`: Pending approvals
@@ -238,6 +240,7 @@ Changes that **can apply without approval**:
 Agent maintains local policy that:
 
 1. **Hard Caps** - Cannot be overridden by Cloud
+
    ```yaml
    hard_caps:
      max_position_pct: 10
@@ -248,6 +251,7 @@ Agent maintains local policy that:
    ```
 
 2. **Auto-Approve Rules** - Skip approval for specific patterns
+
    ```yaml
    auto_approve:
      enabled: true
@@ -456,6 +460,7 @@ Each halt records:
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](./CCEA_OVERVIEW.md)
 - [Data Model](./CCEA_DATA_MODEL.md)
 - [Agent Documentation](../agent/README.md)

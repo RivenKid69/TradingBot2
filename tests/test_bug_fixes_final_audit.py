@@ -8,15 +8,18 @@ Tests for 3 confirmed bugs fixed in distributional_ppo.py:
 
 Reference: DEEP_AUDIT_PHASE_FINAL_REPORT.md
 """
+
 import math
 import warnings
 from typing import Any, Optional, Tuple
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 gym = pytest.importorskip("gymnasium")
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -100,9 +103,7 @@ class TestBug8TimeLimitBootstrapFreshStates:
                 return None
 
             batch_shape = obs_tensor.shape[0]
-            episode_starts_tensor = torch.zeros(
-                (batch_shape,), dtype=torch.float32, device=device
-            )
+            episode_starts_tensor = torch.zeros((batch_shape,), dtype=torch.float32, device=device)
 
             # Get initial LSTM states for this specific environment
             value_states = mock_select_value_states(env_index)
@@ -136,7 +137,9 @@ class TestBug8TimeLimitBootstrapFreshStates:
 
         # CRITICAL ASSERTIONS
         # 1. forward() must be called on terminal_obs to get fresh LSTM states
-        assert mock_policy.forward.call_count == 1, "forward() should be called once to get fresh LSTM states"
+        assert (
+            mock_policy.forward.call_count == 1
+        ), "forward() should be called once to get fresh LSTM states"
 
         # Verify forward was called with correct arguments
         forward_call_args = mock_policy.forward.call_args
@@ -168,7 +171,6 @@ class TestBug8TimeLimitBootstrapFreshStates:
         assert math.isfinite(bootstrap_value)
         assert bootstrap_value == pytest.approx(0.1)
 
-
     def test_stale_states_would_give_wrong_value(self):
         """
         Demonstrate that using stale LSTM states gives incorrect bootstrap values.
@@ -176,6 +178,7 @@ class TestBug8TimeLimitBootstrapFreshStates:
         This test shows WHY the bug matters: LSTM states encode temporal context,
         and using states from observation A to evaluate observation B creates bias.
         """
+
         # Create a simple LSTM-based value predictor
         class SimpleLSTMValuePredictor(torch.nn.Module):
             def __init__(self, obs_dim: int, hidden_dim: int = 16):
@@ -318,7 +321,7 @@ class TestBug11CostOverflowValidation:
 
         # Should have extracted [0.1, 0.2, 0.3, 0.4]
         expected_median = 0.25  # median([0.1, 0.2, 0.3, 0.4])
-        expected_mean = 0.25    # mean([0.1, 0.2, 0.3, 0.4])
+        expected_mean = 0.25  # mean([0.1, 0.2, 0.3, 0.4])
 
         assert reward_costs_fraction_value is not None
         assert reward_costs_fraction_mean_value is not None
@@ -408,7 +411,7 @@ class TestBug10CVaRTailValidation:
         # True distribution: N(0, 1)
         num_trials = 100
         batch_size = 100
-        alpha_low = 0.01   # tail_count = 1 (unstable)
+        alpha_low = 0.01  # tail_count = 1 (unstable)
         alpha_high = 0.10  # tail_count = 10 (more stable)
 
         cvar_estimates_low = []
@@ -474,12 +477,12 @@ class TestAllFixesIntegration:
         import torch
 
         # Verify DistributionalPPO has CVaR-related fixes (BUG #10)
-        assert hasattr(DistributionalPPO, "cvar_winsor_pct"), (
-            "DistributionalPPO must have cvar_winsor_pct for CVaR alpha handling"
-        )
-        assert hasattr(DistributionalPPO, "train"), (
-            "DistributionalPPO must have train method for distributional RL"
-        )
+        assert hasattr(
+            DistributionalPPO, "cvar_winsor_pct"
+        ), "DistributionalPPO must have cvar_winsor_pct for CVaR alpha handling"
+        assert hasattr(
+            DistributionalPPO, "train"
+        ), "DistributionalPPO must have train method for distributional RL"
 
         # Verify torch operations work for infinite cost handling (BUG #11)
         test_tensor = torch.tensor([1.0, 2.0, float("inf")])

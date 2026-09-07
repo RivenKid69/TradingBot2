@@ -81,6 +81,7 @@ class AIActLogEventType(Enum):
     - Oversight events: Human interventions, overrides
     - Data events: Input data processing
     """
+
     # System events
     SYSTEM_START = "system_start"
     SYSTEM_STOP = "system_stop"
@@ -133,6 +134,7 @@ class AIActLogEventType(Enum):
 
 class AIActLogCategory(Enum):
     """Log event categories for classification."""
+
     SYSTEM = "system"
     DECISION = "decision"
     RISK = "risk"
@@ -176,6 +178,7 @@ class AIActLogEvent:
         metadata: Additional event-specific metadata
         integrity_hash: SHA-256 hash for tamper detection
     """
+
     event_id: str = ""
     timestamp_utc: str = ""
     event_type: str = ""
@@ -255,6 +258,7 @@ class LogSession:
 
     Tracks the period of use for the AI system.
     """
+
     session_id: str = ""
     start_time: str = ""
     end_time: Optional[str] = None
@@ -294,6 +298,7 @@ class AIActLoggingConfig:
         enable_encryption: Encrypt logs at rest
         encryption_key_id: Key identifier for encryption
     """
+
     log_path: str = "logs/ai_act"
     retention_days: int = 180  # Article 19: minimum 6 months
     enable_compression: bool = True
@@ -370,13 +375,18 @@ class LogRetentionManager:
         file_times.sort(key=lambda x: x[1])
 
         if file_times:
-            status["oldest_log"] = datetime.fromtimestamp(file_times[0][1], tz=timezone.utc).isoformat()
-            status["newest_log"] = datetime.fromtimestamp(file_times[-1][1], tz=timezone.utc).isoformat()
+            status["oldest_log"] = datetime.fromtimestamp(
+                file_times[0][1], tz=timezone.utc
+            ).isoformat()
+            status["newest_log"] = datetime.fromtimestamp(
+                file_times[-1][1], tz=timezone.utc
+            ).isoformat()
 
         # Check files due for deletion
         retention_cutoff = datetime.now(timezone.utc) - timedelta(days=self.config.retention_days)
         status["files_due_for_deletion"] = sum(
-            1 for f, t in file_times
+            1
+            for f, t in file_times
             if datetime.fromtimestamp(t, tz=timezone.utc) < retention_cutoff
         )
 
@@ -392,7 +402,9 @@ class LogRetentionManager:
         if not self.config.enable_compression:
             return 0
 
-        compression_cutoff = datetime.now(timezone.utc) - timedelta(days=self.config.compression_after_days)
+        compression_cutoff = datetime.now(timezone.utc) - timedelta(
+            days=self.config.compression_after_days
+        )
         compressed_count = 0
 
         with self._lock:
@@ -610,8 +622,12 @@ class AIActLogger:
         self._audit_path = self._log_path / "audit"
 
         for path in [
-            self._decision_path, self._risk_path, self._oversight_path,
-            self._system_path, self._data_path, self._audit_path
+            self._decision_path,
+            self._risk_path,
+            self._oversight_path,
+            self._system_path,
+            self._data_path,
+            self._audit_path,
         ]:
             path.mkdir(parents=True, exist_ok=True)
 
@@ -667,17 +683,19 @@ class AIActLogger:
             )
 
             # Log session start
-            self._log_event(AIActLogEvent(
-                event_type=AIActLogEventType.SYSTEM_START.value,
-                category=AIActLogCategory.SYSTEM.value,
-                system_state={
-                    "session_id": self._current_session.session_id,
-                    "system_version": system_version,
-                    "configuration_hash": configuration_hash,
-                },
-                session_id=self._current_session.session_id,
-                human_operator_id=operator_id,
-            ))
+            self._log_event(
+                AIActLogEvent(
+                    event_type=AIActLogEventType.SYSTEM_START.value,
+                    category=AIActLogCategory.SYSTEM.value,
+                    system_state={
+                        "session_id": self._current_session.session_id,
+                        "system_version": system_version,
+                        "configuration_hash": configuration_hash,
+                    },
+                    session_id=self._current_session.session_id,
+                    human_operator_id=operator_id,
+                )
+            )
 
             logger.info(f"Session started: {self._current_session.session_id}")
             return self._current_session
@@ -696,16 +714,18 @@ class AIActLogger:
             self._current_session.end_time = datetime.now(timezone.utc).isoformat()
 
             # Log session end
-            self._log_event(AIActLogEvent(
-                event_type=AIActLogEventType.SYSTEM_STOP.value,
-                category=AIActLogCategory.SYSTEM.value,
-                system_state={
-                    "session_id": self._current_session.session_id,
-                    "event_count": self._current_session.event_count,
-                    "duration_seconds": self._calculate_session_duration(),
-                },
-                session_id=self._current_session.session_id,
-            ))
+            self._log_event(
+                AIActLogEvent(
+                    event_type=AIActLogEventType.SYSTEM_STOP.value,
+                    category=AIActLogCategory.SYSTEM.value,
+                    system_state={
+                        "session_id": self._current_session.session_id,
+                        "event_count": self._current_session.event_count,
+                        "duration_seconds": self._calculate_session_duration(),
+                    },
+                    session_id=self._current_session.session_id,
+                )
+            )
 
             # Flush any remaining events
             self._flush_buffer()
@@ -1288,7 +1308,10 @@ class AIActLogger:
                                 continue
 
                             # Event type filter
-                            if event_type_values and data.get("event_type") not in event_type_values:
+                            if (
+                                event_type_values
+                                and data.get("event_type") not in event_type_values
+                            ):
                                 continue
 
                             yield data
@@ -1343,9 +1366,7 @@ class AIActLogger:
         event.integrity_hash = event._compute_hash()
 
         # Update chain hash
-        self._last_chain_hash = self._verifier.compute_chain_hash(
-            self._last_chain_hash, event
-        )
+        self._last_chain_hash = self._verifier.compute_chain_hash(self._last_chain_hash, event)
 
         # Increment session event count
         with self._session_lock:
@@ -1393,6 +1414,7 @@ class AIActLogger:
 
     def _start_flush_thread(self) -> None:
         """Start the async flush thread."""
+
         def flush_loop():
             while not self._stop_flush.is_set():
                 self._stop_flush.wait(self.config.flush_interval_seconds)

@@ -22,9 +22,10 @@ Issue #3: Reward=0 stuck with invalid price data [MEDIUM]
     Fix: Try multiple fallbacks: close → open → scan first 10 rows.
     Location: trading_patchnew.py:791-828
 
-Reference: CLAUDE.md sections "Troubleshooting" and "История критических исправлений"
+Reference: docs/PLATFORM_REFERENCE.md sections "Troubleshooting" and "История критических исправлений"
 Test count: 9 tests (2 for Issue #1, 1 for Issue #2, 3 for Issue #3, 3 regression)
 """
+
 from __future__ import annotations
 
 import math
@@ -38,8 +39,10 @@ from unittest.mock import patch, MagicMock
 # Minimal stub classes for testing without Cython dependencies
 # ============================================================================
 
+
 class _EnvState:
     """Minimal state stub for testing."""
+
     def __init__(self):
         self.cash = 1000.0
         self.units = 0.0
@@ -91,7 +94,7 @@ class _MediatorStub:
         obs = self._build_observation(
             row=self._env.df.iloc[state.step_idx] if len(self._env.df) > state.step_idx else None,
             state=state,
-            mark_price=100.0
+            mark_price=100.0,
         )
         state.step_idx += 1
         return obs, 0.0, False, False, {}
@@ -101,48 +104,56 @@ class _MediatorStub:
 # Test fixtures
 # ============================================================================
 
+
 def _create_test_df_valid() -> pd.DataFrame:
     """Create test dataframe with valid data."""
-    return pd.DataFrame({
-        "open": [100.0, 101.0, 102.0, 103.0],
-        "high": [101.0, 102.0, 103.0, 104.0],
-        "low": [99.0, 100.0, 101.0, 102.0],
-        "close": [100.5, 101.5, 102.5, 103.5],
-        "price": [100.5, 101.5, 102.5, 103.5],
-        "quote_asset_volume": [10.0, 10.0, 10.0, 10.0],
-        "ts_ms": [0, 60000, 120000, 180000],
-    })
+    return pd.DataFrame(
+        {
+            "open": [100.0, 101.0, 102.0, 103.0],
+            "high": [101.0, 102.0, 103.0, 104.0],
+            "low": [99.0, 100.0, 101.0, 102.0],
+            "close": [100.5, 101.5, 102.5, 103.5],
+            "price": [100.5, 101.5, 102.5, 103.5],
+            "quote_asset_volume": [10.0, 10.0, 10.0, 10.0],
+            "ts_ms": [0, 60000, 120000, 180000],
+        }
+    )
 
 
 def _create_test_df_nan_close_row0() -> pd.DataFrame:
     """Create test dataframe with NaN close at row 0."""
-    return pd.DataFrame({
-        "open": [100.0, 101.0, 102.0, 103.0],
-        "high": [101.0, 102.0, 103.0, 104.0],
-        "low": [99.0, 100.0, 101.0, 102.0],
-        "close": [float("nan"), 101.5, 102.5, 103.5],  # NaN at row 0
-        "price": [float("nan"), 101.5, 102.5, 103.5],
-        "quote_asset_volume": [10.0, 10.0, 10.0, 10.0],
-        "ts_ms": [0, 60000, 120000, 180000],
-    })
+    return pd.DataFrame(
+        {
+            "open": [100.0, 101.0, 102.0, 103.0],
+            "high": [101.0, 102.0, 103.0, 104.0],
+            "low": [99.0, 100.0, 101.0, 102.0],
+            "close": [float("nan"), 101.5, 102.5, 103.5],  # NaN at row 0
+            "price": [float("nan"), 101.5, 102.5, 103.5],
+            "quote_asset_volume": [10.0, 10.0, 10.0, 10.0],
+            "ts_ms": [0, 60000, 120000, 180000],
+        }
+    )
 
 
 def _create_test_df_nan_close_multiple() -> pd.DataFrame:
     """Create test dataframe with NaN close at first several rows."""
-    return pd.DataFrame({
-        "open": [100.0, 101.0, 102.0, 103.0, 104.0, 105.0],
-        "high": [101.0, 102.0, 103.0, 104.0, 105.0, 106.0],
-        "low": [99.0, 100.0, 101.0, 102.0, 103.0, 104.0],
-        "close": [float("nan"), float("nan"), float("nan"), 103.5, 104.5, 105.5],
-        "price": [float("nan"), float("nan"), float("nan"), 103.5, 104.5, 105.5],
-        "quote_asset_volume": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
-        "ts_ms": [0, 60000, 120000, 180000, 240000, 300000],
-    })
+    return pd.DataFrame(
+        {
+            "open": [100.0, 101.0, 102.0, 103.0, 104.0, 105.0],
+            "high": [101.0, 102.0, 103.0, 104.0, 105.0, 106.0],
+            "low": [99.0, 100.0, 101.0, 102.0, 103.0, 104.0],
+            "close": [float("nan"), float("nan"), float("nan"), 103.5, 104.5, 105.5],
+            "price": [float("nan"), float("nan"), float("nan"), 103.5, 104.5, 105.5],
+            "quote_asset_volume": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
+            "ts_ms": [0, 60000, 120000, 180000, 240000, 300000],
+        }
+    )
 
 
 # ============================================================================
 # Test Issue #1: reset() should return actual observation, not zeros
 # ============================================================================
+
 
 class TestResetObservationNotZeros:
     """Tests for Issue #1: reset() should return actual observation from row 0."""
@@ -158,7 +169,7 @@ class TestResetObservationNotZeros:
         # Mock TradingEnv to avoid Cython dependencies
         from trading_patchnew import TradingEnv
 
-        with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+        with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
             env = TradingEnv.__new__(TradingEnv)
             # Set up minimal required attributes
             env.df = df
@@ -188,8 +199,7 @@ class TestResetObservationNotZeros:
             assert obs.shape == (10,)
             # With valid data, obs should have non-zero elements
             assert np.count_nonzero(obs) > 0, (
-                f"Expected non-zero observation from row 0, got all zeros. "
-                f"obs={obs}"
+                f"Expected non-zero observation from row 0, got all zeros. " f"obs={obs}"
             )
 
     def test_reset_observation_reflects_row0_data(self):
@@ -198,7 +208,7 @@ class TestResetObservationNotZeros:
 
         from trading_patchnew import TradingEnv
 
-        with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+        with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
             env = TradingEnv.__new__(TradingEnv)
             env.df = df
             env.initial_cash = 1000.0
@@ -223,14 +233,15 @@ class TestResetObservationNotZeros:
             # The mediator stub puts mark_price in obs[0]
             # mark_price should be close from row 0 = 100.5
             expected_price = df.iloc[0]["close"]
-            assert obs[0] == pytest.approx(expected_price, rel=0.01), (
-                f"Expected obs[0] to be close to {expected_price}, got {obs[0]}"
-            )
+            assert obs[0] == pytest.approx(
+                expected_price, rel=0.01
+            ), f"Expected obs[0] to be close to {expected_price}, got {obs[0]}"
 
 
 # ============================================================================
 # Test Issue #2: Redundant _last_signal_position assignment removed
 # ============================================================================
+
 
 class TestRedundantSignalPositionRemoved:
     """Tests for Issue #2: Redundant _last_signal_position assignment."""
@@ -254,16 +265,16 @@ class TestRedundantSignalPositionRemoved:
 
         # Check that there's only ONE assignment of _last_signal_position in step()
         # that's not in a comment
-        lines = source.split('\n')
+        lines = source.split("\n")
         assignment_count = 0
         for line in lines:
             stripped = line.strip()
             # Skip comments and docstrings
-            if stripped.startswith('#') or stripped.startswith('"""') or stripped.startswith("'''"):
+            if stripped.startswith("#") or stripped.startswith('"""') or stripped.startswith("'''"):
                 continue
-            if 'self._last_signal_position = float(next_signal_pos)' in stripped:
+            if "self._last_signal_position = float(next_signal_pos)" in stripped:
                 assignment_count += 1
-            if 'self._last_signal_position = float(agent_signal_pos)' in stripped:
+            if "self._last_signal_position = float(agent_signal_pos)" in stripped:
                 assignment_count += 1
 
         # After the fix, there should be exactly 1 assignment (line 2000)
@@ -278,6 +289,7 @@ class TestRedundantSignalPositionRemoved:
 # Test Issue #3: Improved _last_reward_price initialization
 # ============================================================================
 
+
 class TestImprovedRewardPriceInitialization:
     """Tests for Issue #3: Better _last_reward_price initialization."""
 
@@ -287,7 +299,7 @@ class TestImprovedRewardPriceInitialization:
 
         from trading_patchnew import TradingEnv
 
-        with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+        with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
             env = TradingEnv.__new__(TradingEnv)
             env.df = df
             env.initial_cash = 1000.0
@@ -307,8 +319,8 @@ class TestImprovedRewardPriceInitialization:
             env.bar_interval_ms = 60000  # Public attribute used by get_bar_interval_seconds
             env._bar_interval_updated = False
             # No close_actual so it will use close column
-            if hasattr(env, '_close_actual'):
-                delattr(env, '_close_actual')
+            if hasattr(env, "_close_actual"):
+                delattr(env, "_close_actual")
 
             env._init_state()
 
@@ -325,7 +337,7 @@ class TestImprovedRewardPriceInitialization:
 
         from trading_patchnew import TradingEnv
 
-        with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+        with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
             env = TradingEnv.__new__(TradingEnv)
             env.df = df
             env.initial_cash = 1000.0
@@ -344,8 +356,8 @@ class TestImprovedRewardPriceInitialization:
             env._bar_interval_ms = 60000
             env.bar_interval_ms = 60000  # Public attribute used by get_bar_interval_seconds
             env._bar_interval_updated = False
-            if hasattr(env, '_close_actual'):
-                delattr(env, '_close_actual')
+            if hasattr(env, "_close_actual"):
+                delattr(env, "_close_actual")
 
             # Since open is valid (100.0), it should be used as fallback
             # even before scanning for other rows
@@ -353,9 +365,9 @@ class TestImprovedRewardPriceInitialization:
 
             # open[0] = 100.0 is valid, so that should be used
             expected_price = df.iloc[0]["open"]  # 100.0
-            assert env._last_reward_price > 0.0, (
-                f"Expected _last_reward_price > 0, got {env._last_reward_price}"
-            )
+            assert (
+                env._last_reward_price > 0.0
+            ), f"Expected _last_reward_price > 0, got {env._last_reward_price}"
             assert env._last_reward_price == pytest.approx(expected_price, rel=0.1), (
                 f"Expected _last_reward_price near {expected_price}, "
                 f"got {env._last_reward_price}"
@@ -367,7 +379,7 @@ class TestImprovedRewardPriceInitialization:
 
         from trading_patchnew import TradingEnv
 
-        with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+        with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
             env = TradingEnv.__new__(TradingEnv)
             env.df = df
             env.initial_cash = 1000.0
@@ -386,8 +398,8 @@ class TestImprovedRewardPriceInitialization:
             env._bar_interval_ms = 60000
             env.bar_interval_ms = 60000  # Public attribute used by get_bar_interval_seconds
             env._bar_interval_updated = False
-            if hasattr(env, '_close_actual'):
-                delattr(env, '_close_actual')
+            if hasattr(env, "_close_actual"):
+                delattr(env, "_close_actual")
 
             env._init_state()
 
@@ -403,6 +415,7 @@ class TestImprovedRewardPriceInitialization:
 # Integration test: Full flow verification
 # ============================================================================
 
+
 class TestResetObservationIntegration:
     """Integration tests for the reset observation flow."""
 
@@ -412,7 +425,7 @@ class TestResetObservationIntegration:
 
         from trading_patchnew import TradingEnv
 
-        with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+        with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
             env = TradingEnv.__new__(TradingEnv)
             env.df = df
             env.initial_cash = 1000.0
@@ -441,14 +454,15 @@ class TestResetObservationIntegration:
 
             # Both reset and first step use row 0 data
             # With the fix, reset observation should be meaningful
-            assert np.count_nonzero(obs_reset) > 0, (
-                "Reset observation should have non-zero elements"
-            )
+            assert (
+                np.count_nonzero(obs_reset) > 0
+            ), "Reset observation should have non-zero elements"
 
 
 # ============================================================================
 # Regression tests: Ensure existing behavior is preserved
 # ============================================================================
+
 
 class TestResetObservationRegression:
     """Regression tests to ensure fixes don't break existing functionality."""
@@ -459,7 +473,7 @@ class TestResetObservationRegression:
 
         from trading_patchnew import TradingEnv
 
-        with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+        with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
             env = TradingEnv.__new__(TradingEnv)
             env.df = df
             env.initial_cash = 1000.0
@@ -488,19 +502,21 @@ class TestResetObservationRegression:
 
     def test_last_reward_price_zero_with_all_nan_data(self):
         """With all NaN data, _last_reward_price should be 0 (safe fallback)."""
-        df = pd.DataFrame({
-            "open": [float("nan")] * 4,
-            "high": [float("nan")] * 4,
-            "low": [float("nan")] * 4,
-            "close": [float("nan")] * 4,
-            "price": [float("nan")] * 4,
-            "quote_asset_volume": [10.0] * 4,
-            "ts_ms": [0, 60000, 120000, 180000],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [float("nan")] * 4,
+                "high": [float("nan")] * 4,
+                "low": [float("nan")] * 4,
+                "close": [float("nan")] * 4,
+                "price": [float("nan")] * 4,
+                "quote_asset_volume": [10.0] * 4,
+                "ts_ms": [0, 60000, 120000, 180000],
+            }
+        )
 
         from trading_patchnew import TradingEnv
 
-        with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+        with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
             env = TradingEnv.__new__(TradingEnv)
             env.df = df
             env.initial_cash = 1000.0
@@ -519,8 +535,8 @@ class TestResetObservationRegression:
             env._bar_interval_ms = 60000
             env.bar_interval_ms = 60000  # Public attribute used by get_bar_interval_seconds
             env._bar_interval_updated = False
-            if hasattr(env, '_close_actual'):
-                delattr(env, '_close_actual')
+            if hasattr(env, "_close_actual"):
+                delattr(env, "_close_actual")
 
             env._init_state()
 

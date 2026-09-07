@@ -105,6 +105,7 @@ def sample_bar():
 @pytest.fixture
 def sample_fill():
     """Sample fill for fee calculation."""
+
     # Create a minimal Fill object - check actual Fill signature
     class SimpleFill:
         def __init__(self):
@@ -195,6 +196,7 @@ class TestFuturesSlippageProviderBasics:
     def test_compute_slippage_bps_signature(self, futures_slippage_provider):
         """compute_slippage_bps has correct signature."""
         import inspect
+
         sig = inspect.signature(futures_slippage_provider.compute_slippage_bps)
         params = list(sig.parameters.keys())
         assert "funding_rate" in params
@@ -205,7 +207,9 @@ class TestFuturesSlippageProviderBasics:
 class TestFuturesSlippageProviderFundingStress:
     """Tests for funding rate stress factor."""
 
-    def test_funding_stress_high_positive_buy(self, futures_slippage_provider, sample_order, sample_market):
+    def test_funding_stress_high_positive_buy(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """High positive funding + BUY increases slippage (crowded long)."""
         # Base slippage without funding
         base_bps = futures_slippage_provider.compute_slippage_bps(
@@ -248,7 +252,9 @@ class TestFuturesSlippageProviderFundingStress:
 
         assert with_funding > base_bps
 
-    def test_funding_stress_opposite_direction_no_penalty(self, futures_slippage_provider, sample_order, sample_market):
+    def test_funding_stress_opposite_direction_no_penalty(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """Opposite direction funding does not increase slippage."""
         # Positive funding + SELL (not crowded)
         order = Order("BTCUSDT", "SELL", 0.1, "MARKET")  # Use float
@@ -271,7 +277,9 @@ class TestFuturesSlippageProviderFundingStress:
         # so we check that the difference is not due to our additional funding_stress factor
         assert abs(with_funding - base_bps) < 5.0  # Relaxed threshold
 
-    def test_funding_stress_zero_funding(self, futures_slippage_provider, sample_order, sample_market):
+    def test_funding_stress_zero_funding(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """Zero funding rate has no impact."""
         base_bps = futures_slippage_provider.compute_slippage_bps(
             order=sample_order,
@@ -316,7 +324,9 @@ class TestFuturesSlippageProviderFundingStress:
 class TestFuturesSlippageProviderLiquidationCascade:
     """Tests for liquidation cascade factor."""
 
-    def test_liquidation_cascade_increases_slippage(self, futures_slippage_provider, sample_order, sample_market):
+    def test_liquidation_cascade_increases_slippage(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """Recent liquidations increase slippage."""
         base_bps = futures_slippage_provider.compute_slippage_bps(
             order=sample_order,
@@ -336,7 +346,9 @@ class TestFuturesSlippageProviderLiquidationCascade:
         # Liquidation cascade adds ~10% slippage (2% liquidations × sensitivity 5.0)
         assert (with_liquidations - base_bps) > 1.0  # Relaxed: at least 1bps impact
 
-    def test_liquidation_cascade_below_threshold_no_impact(self, futures_slippage_provider, sample_order, sample_market):
+    def test_liquidation_cascade_below_threshold_no_impact(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """Liquidations below threshold have minimal impact."""
         base_bps = futures_slippage_provider.compute_slippage_bps(
             order=sample_order,
@@ -383,7 +395,9 @@ class TestFuturesSlippageProviderLiquidationCascade:
 class TestFuturesSlippageProviderOpenInterest:
     """Tests for open interest liquidity penalty."""
 
-    def test_oi_liquidity_penalty_high_oi(self, futures_slippage_provider, sample_order, sample_market):
+    def test_oi_liquidity_penalty_high_oi(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """High OI relative to ADV increases slippage."""
         base_bps = futures_slippage_provider.compute_slippage_bps(
             order=sample_order,
@@ -401,7 +415,9 @@ class TestFuturesSlippageProviderOpenInterest:
 
         assert with_high_oi > base_bps
 
-    def test_oi_liquidity_penalty_normal_oi(self, futures_slippage_provider, sample_order, sample_market):
+    def test_oi_liquidity_penalty_normal_oi(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """Normal OI (< ADV) has minimal penalty."""
         base_bps = futures_slippage_provider.compute_slippage_bps(
             order=sample_order,
@@ -424,7 +440,9 @@ class TestFuturesSlippageProviderOpenInterest:
 class TestFuturesSlippageProviderCombinedFactors:
     """Tests for combined futures-specific factors."""
 
-    def test_all_factors_combined_worst_case(self, futures_slippage_provider, sample_order, sample_market):
+    def test_all_factors_combined_worst_case(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """All negative factors combined create maximum slippage."""
         # High funding (same direction) + liquidations + high OI
         max_slippage = futures_slippage_provider.compute_slippage_bps(
@@ -464,7 +482,9 @@ class TestFuturesSlippageProviderCombinedFactors:
 class TestFuturesSlippageProviderLiquidationRisk:
     """Tests for liquidation risk estimation."""
 
-    def test_estimate_liquidation_risk_long_position(self, futures_slippage_provider, sample_market):
+    def test_estimate_liquidation_risk_long_position(
+        self, futures_slippage_provider, sample_market
+    ):
         """Liquidation risk calculation for long position."""
         risk = futures_slippage_provider.estimate_liquidation_risk(
             order=None,  # Not used
@@ -482,7 +502,9 @@ class TestFuturesSlippageProviderLiquidationRisk:
         # Liquidation price should be below entry
         assert risk["liquidation_price"] < 50000.0
 
-    def test_estimate_liquidation_risk_short_position(self, futures_slippage_provider, sample_market):
+    def test_estimate_liquidation_risk_short_position(
+        self, futures_slippage_provider, sample_market
+    ):
         """Liquidation risk calculation for short position."""
         risk = futures_slippage_provider.estimate_liquidation_risk(
             order=None,
@@ -670,7 +692,9 @@ class TestFuturesL2ExecutionProviderBasics:
 class TestFuturesL2ExecutionProviderExecution:
     """Tests for order execution."""
 
-    def test_execute_market_order_basic(self, futures_execution_provider, sample_order, sample_market, sample_bar):
+    def test_execute_market_order_basic(
+        self, futures_execution_provider, sample_order, sample_market, sample_bar
+    ):
         """Execute basic market order."""
         fill = futures_execution_provider.execute(
             order=sample_order,
@@ -681,7 +705,9 @@ class TestFuturesL2ExecutionProviderExecution:
         assert fill is not None
         # Additional assertions depend on Fill implementation
 
-    def test_execute_with_mark_price_bar(self, futures_execution_provider, sample_order, sample_market, sample_bar):
+    def test_execute_with_mark_price_bar(
+        self, futures_execution_provider, sample_order, sample_market, sample_bar
+    ):
         """Execute uses mark price bar when provided."""
         mark_bar = BarData(
             open=49900.0,  # Use float instead of Decimal
@@ -701,7 +727,9 @@ class TestFuturesL2ExecutionProviderExecution:
         # If mark_bar is used, fill price should be influenced by it
         assert fill is not None
 
-    def test_execute_with_funding_rate(self, futures_execution_provider, sample_order, sample_market, sample_bar):
+    def test_execute_with_funding_rate(
+        self, futures_execution_provider, sample_order, sample_market, sample_bar
+    ):
         """Execute includes funding rate in slippage."""
         fill = futures_execution_provider.execute(
             order=sample_order,
@@ -713,7 +741,9 @@ class TestFuturesL2ExecutionProviderExecution:
         assert fill is not None
         # Slippage should be higher due to funding
 
-    def test_execute_with_all_factors(self, futures_execution_provider, sample_order, sample_market, sample_bar):
+    def test_execute_with_all_factors(
+        self, futures_execution_provider, sample_order, sample_market, sample_bar
+    ):
         """Execute with all futures-specific factors."""
         fill = futures_execution_provider.execute(
             order=sample_order,
@@ -798,15 +828,17 @@ class TestIntegration:
 
         # Fill should be returned (may be None if not filled)
         # Verify result is valid type (None or has expected attributes)
-        assert fill is None or hasattr(fill, 'price'), (
-            "Fill result should be None or have price attribute"
-        )
+        assert fill is None or hasattr(
+            fill, "price"
+        ), "Fill result should be None or have price attribute"
 
 
 class TestEdgeCases:
     """Edge case and error handling tests."""
 
-    def test_slippage_with_none_optional_params(self, futures_slippage_provider, sample_order, sample_market):
+    def test_slippage_with_none_optional_params(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """Slippage works with all optional params as None."""
         slippage = futures_slippage_provider.compute_slippage_bps(
             order=sample_order,
@@ -833,6 +865,7 @@ class TestEdgeCases:
 
     def test_fee_computation_zero_notional(self, futures_fee_provider):
         """Fee handles zero notional."""
+
         class ZeroFill:
             def __init__(self):
                 self.notional = Decimal("0")
@@ -863,7 +896,9 @@ class TestEdgeCases:
         # Should be capped at max_slippage_bps (default 500.0)
         assert slippage <= 500.0
 
-    def test_negative_liquidations_handled(self, futures_slippage_provider, sample_order, sample_market):
+    def test_negative_liquidations_handled(
+        self, futures_slippage_provider, sample_order, sample_market
+    ):
         """Negative liquidations (edge case) don't crash."""
         slippage = futures_slippage_provider.compute_slippage_bps(
             order=sample_order,

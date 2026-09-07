@@ -1,4 +1,5 @@
 """Comprehensive tests for services.shutdown module."""
+
 import asyncio
 import signal
 import sys
@@ -29,7 +30,7 @@ class TestShutdownManagerInit:
                 "stop": 10.0,
                 "flush": 15.0,
                 "finalize": 20.0,
-            }
+            },
         }
         manager = ShutdownManager(config)
 
@@ -175,9 +176,7 @@ class TestShutdownManagerCallbackExecution:
 
     async def test_timeout_applied_to_callback(self):
         """Test timeout is applied to slow callbacks."""
-        manager = ShutdownManager({
-            "timeouts": {"stop": 0.05}
-        })
+        manager = ShutdownManager({"timeouts": {"stop": 0.05}})
 
         async def slow_callback():
             await asyncio.sleep(1.0)  # Longer than timeout
@@ -327,6 +326,7 @@ class TestShutdownManagerEdgeCases:
         def callback_returning_awaitable():
             async def inner():
                 executed.append(True)
+
             return inner()
 
         manager.on_stop(callback_returning_awaitable)
@@ -339,9 +339,7 @@ class TestShutdownManagerEdgeCases:
     @pytest.mark.asyncio
     async def test_zero_timeout(self):
         """Test with zero timeout."""
-        manager = ShutdownManager({
-            "timeouts": {"stop": 0.0}
-        })
+        manager = ShutdownManager({"timeouts": {"stop": 0.0}})
 
         async def callback():
             await asyncio.sleep(0.1)

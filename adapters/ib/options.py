@@ -114,6 +114,7 @@ else:
 # Options Quote Data
 # =============================================================================
 
+
 @dataclass
 class OptionsQuote:
     """
@@ -132,6 +133,7 @@ class OptionsQuote:
         greeks: Option Greeks from IB
         timestamp_ns: Quote timestamp in nanoseconds
     """
+
     contract: OptionsContractSpec
     bid: Optional[Decimal] = None
     ask: Optional[Decimal] = None
@@ -195,6 +197,7 @@ class OptionsChainData:
         underlying_price: Current underlying price
         timestamp_ns: Chain retrieval timestamp
     """
+
     underlying: str
     expiration: date
     calls: List[OptionsContractSpec] = field(default_factory=list)
@@ -244,6 +247,7 @@ class OptionsChainData:
 # Options Order
 # =============================================================================
 
+
 @dataclass
 class OptionsOrder:
     """
@@ -258,6 +262,7 @@ class OptionsOrder:
         time_in_force: DAY, GTC, IOC, FOK
         client_order_id: Client-assigned order ID
     """
+
     contract: OptionsContractSpec
     side: str  # BUY or SELL
     qty: int
@@ -281,6 +286,7 @@ class OptionsOrderResult:
     """
     Result of options order submission.
     """
+
     success: bool
     order_id: Optional[str] = None
     client_order_id: Optional[str] = None
@@ -313,6 +319,7 @@ class MarginRequirement:
         commission: Estimated commission
         equity_impact: Impact on buying power
     """
+
     initial_margin: Decimal
     maintenance_margin: Decimal
     commission: Decimal = Decimal("0")
@@ -331,6 +338,7 @@ class MarginRequirement:
 # =============================================================================
 # IB Options Market Data Adapter
 # =============================================================================
+
 
 class IBOptionsMarketDataAdapter(IBMarketDataAdapter):
     """
@@ -517,27 +525,31 @@ class IBOptionsMarketDataAdapter(IBMarketDataAdapter):
                 for strike in chain_def.strikes:
                     # Create call spec
                     call_occ = self._make_occ_symbol(underlying, exp_date, strike, "C")
-                    calls.append(OptionsContractSpec(
-                        symbol=call_occ,
-                        underlying=underlying,
-                        option_type=OptionType.CALL,
-                        strike=Decimal(str(strike)),
-                        expiration=exp_date,
-                        exchange=chain_def.exchange,
-                        multiplier=chain_def.multiplier,
-                    ))
+                    calls.append(
+                        OptionsContractSpec(
+                            symbol=call_occ,
+                            underlying=underlying,
+                            option_type=OptionType.CALL,
+                            strike=Decimal(str(strike)),
+                            expiration=exp_date,
+                            exchange=chain_def.exchange,
+                            multiplier=chain_def.multiplier,
+                        )
+                    )
 
                     # Create put spec
                     put_occ = self._make_occ_symbol(underlying, exp_date, strike, "P")
-                    puts.append(OptionsContractSpec(
-                        symbol=put_occ,
-                        underlying=underlying,
-                        option_type=OptionType.PUT,
-                        strike=Decimal(str(strike)),
-                        expiration=exp_date,
-                        exchange=chain_def.exchange,
-                        multiplier=chain_def.multiplier,
-                    ))
+                    puts.append(
+                        OptionsContractSpec(
+                            symbol=put_occ,
+                            underlying=underlying,
+                            option_type=OptionType.PUT,
+                            strike=Decimal(str(strike)),
+                            expiration=exp_date,
+                            exchange=chain_def.exchange,
+                            multiplier=chain_def.multiplier,
+                        )
+                    )
 
                 chain_data = OptionsChainData(
                     underlying=underlying,
@@ -550,9 +562,7 @@ class IBOptionsMarketDataAdapter(IBMarketDataAdapter):
 
                 # Cache the chain
                 if use_cache:
-                    self._options_rate_limiter.cache_chain(
-                        underlying, exp_date, chain_data
-                    )
+                    self._options_rate_limiter.cache_chain(underlying, exp_date, chain_data)
 
                 result.append(chain_data)
 
@@ -701,7 +711,9 @@ class IBOptionsMarketDataAdapter(IBMarketDataAdapter):
             raise ConnectionError("Not connected to IB")
 
         # Subscribe to all contracts
-        contract_map: Dict[int, Tuple[OptionsContractSpec, Any, Any]] = {}  # conId -> (spec, ib_contract, ticker)
+        contract_map: Dict[int, Tuple[OptionsContractSpec, Any, Any]] = (
+            {}
+        )  # conId -> (spec, ib_contract, ticker)
 
         for contract in contracts:
             if not self._options_rate_limiter.add_subscription(contract.symbol):
@@ -909,7 +921,9 @@ class IBOptionsMarketDataAdapter(IBMarketDataAdapter):
             ask_size=int(ticker.askSize) if ticker.askSize else None,
             volume=int(ticker.volume) if ticker.volume else None,
             open_interest=None,  # Not in real-time data
-            underlying_price=Decimal(str(ticker.modelGreeks.undPrice)) if ticker.modelGreeks else None,
+            underlying_price=(
+                Decimal(str(ticker.modelGreeks.undPrice)) if ticker.modelGreeks else None
+            ),
             greeks=greeks,
             timestamp_ns=int(time.time() * 1e9),
         )
@@ -931,6 +945,7 @@ class IBOptionsMarketDataAdapter(IBMarketDataAdapter):
 # =============================================================================
 # IB Options Order Execution Adapter
 # =============================================================================
+
 
 class IBOptionsOrderExecutionAdapter(IBOrderExecutionAdapter):
     """
@@ -1063,7 +1078,11 @@ class IBOptionsOrderExecutionAdapter(IBOrderExecutionAdapter):
                 client_order_id=trade.order.orderRef or str(trade.order.orderId),
                 status=trade.orderStatus.status,
                 filled_qty=int(trade.orderStatus.filled),
-                avg_fill_price=Decimal(str(trade.orderStatus.avgFillPrice)) if trade.orderStatus.avgFillPrice else None,
+                avg_fill_price=(
+                    Decimal(str(trade.orderStatus.avgFillPrice))
+                    if trade.orderStatus.avgFillPrice
+                    else None
+                ),
             )
 
         except Exception as e:
@@ -1186,21 +1205,25 @@ class IBOptionsOrderExecutionAdapter(IBOrderExecutionAdapter):
 
         for pos in self._ib.positions():
             contract = pos.contract
-            if hasattr(contract, 'secType') and contract.secType == 'OPT':
+            if hasattr(contract, "secType") and contract.secType == "OPT":
                 qty = Decimal(str(pos.position))
                 if qty == 0:
                     continue
 
-                positions.append({
-                    "symbol": contract.symbol,
-                    "underlying": contract.symbol,
-                    "strike": Decimal(str(contract.strike)),
-                    "expiration": datetime.strptime(contract.lastTradeDateOrContractMonth, "%Y%m%d").date(),
-                    "option_type": OptionType.CALL if contract.right == "C" else OptionType.PUT,
-                    "qty": qty,
-                    "avg_cost": Decimal(str(pos.avgCost)),
-                    "exchange": contract.exchange,
-                })
+                positions.append(
+                    {
+                        "symbol": contract.symbol,
+                        "underlying": contract.symbol,
+                        "strike": Decimal(str(contract.strike)),
+                        "expiration": datetime.strptime(
+                            contract.lastTradeDateOrContractMonth, "%Y%m%d"
+                        ).date(),
+                        "option_type": OptionType.CALL if contract.right == "C" else OptionType.PUT,
+                        "qty": qty,
+                        "avg_cost": Decimal(str(pos.avgCost)),
+                        "exchange": contract.exchange,
+                    }
+                )
 
         return positions
 
@@ -1234,6 +1257,7 @@ class IBOptionsOrderExecutionAdapter(IBOrderExecutionAdapter):
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_ib_options_market_data_adapter(
     config: Optional[Dict[str, Any]] = None,
@@ -1278,6 +1302,7 @@ def create_ib_options_execution_adapter(
 # =============================================================================
 # OCC Symbology Utilities
 # =============================================================================
+
 
 def parse_occ_symbol(occ_symbol: str) -> Dict[str, Any]:
     """

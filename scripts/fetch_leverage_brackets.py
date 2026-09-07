@@ -57,10 +57,26 @@ BINANCE_FUTURES_TESTNET_URL = "https://testnet.binancefuture.com"
 
 # Popular symbols to fetch by default
 DEFAULT_SYMBOLS = [
-    "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
-    "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "LINKUSDT", "MATICUSDT",
-    "DOTUSDT", "LTCUSDT", "UNIUSDT", "ATOMUSDT", "NEARUSDT",
-    "APTUSDT", "ARBUSDT", "OPUSDT", "INJUSDT", "SUIUSDT",
+    "BTCUSDT",
+    "ETHUSDT",
+    "BNBUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "DOGEUSDT",
+    "ADAUSDT",
+    "AVAXUSDT",
+    "LINKUSDT",
+    "MATICUSDT",
+    "DOTUSDT",
+    "LTCUSDT",
+    "UNIUSDT",
+    "ATOMUSDT",
+    "NEARUSDT",
+    "APTUSDT",
+    "ARBUSDT",
+    "OPUSDT",
+    "INJUSDT",
+    "SUIUSDT",
 ]
 
 logger = logging.getLogger(__name__)
@@ -70,9 +86,11 @@ logger = logging.getLogger(__name__)
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class LeverageBracketData:
     """Single leverage bracket from Binance API."""
+
     bracket: int
     initial_leverage: int
     notional_cap: float
@@ -94,6 +112,7 @@ class LeverageBracketData:
 @dataclass
 class SymbolBrackets:
     """All brackets for a single symbol."""
+
     symbol: str
     brackets: List[LeverageBracketData] = field(default_factory=list)
 
@@ -104,6 +123,7 @@ class SymbolBrackets:
 @dataclass
 class FetchResult:
     """Result of fetching leverage brackets."""
+
     success: bool
     data: Dict[str, SymbolBrackets] = field(default_factory=dict)
     errors: List[str] = field(default_factory=list)
@@ -113,6 +133,7 @@ class FetchResult:
 # =============================================================================
 # Binance API Client
 # =============================================================================
+
 
 class BinanceFuturesClient:
     """Simple client for Binance Futures API."""
@@ -229,10 +250,12 @@ class BinanceFuturesClient:
 
             if sym_info.get("symbol", "").endswith("USDT"):
                 # Build bracket data from filters
-                brackets_data.append({
-                    "symbol": sym_info["symbol"],
-                    "brackets": self._extract_brackets_from_filters(sym_info),
-                })
+                brackets_data.append(
+                    {
+                        "symbol": sym_info["symbol"],
+                        "brackets": self._extract_brackets_from_filters(sym_info),
+                    }
+                )
 
         return brackets_data
 
@@ -271,35 +294,182 @@ class BinanceFuturesClient:
         if max_leverage >= 125:
             # BTC-like pattern
             return [
-                {"bracket": 1, "initialLeverage": 125, "notionalCap": 50000, "notionalFloor": 0, "maintMarginRatio": 0.004, "cum": 0},
-                {"bracket": 2, "initialLeverage": 100, "notionalCap": 250000, "notionalFloor": 50000, "maintMarginRatio": 0.005, "cum": 50},
-                {"bracket": 3, "initialLeverage": 50, "notionalCap": 1000000, "notionalFloor": 250000, "maintMarginRatio": 0.01, "cum": 1300},
-                {"bracket": 4, "initialLeverage": 20, "notionalCap": 5000000, "notionalFloor": 1000000, "maintMarginRatio": 0.025, "cum": 16300},
-                {"bracket": 5, "initialLeverage": 10, "notionalCap": 20000000, "notionalFloor": 5000000, "maintMarginRatio": 0.05, "cum": 141300},
-                {"bracket": 6, "initialLeverage": 5, "notionalCap": 50000000, "notionalFloor": 20000000, "maintMarginRatio": 0.1, "cum": 1141300},
-                {"bracket": 7, "initialLeverage": 2, "notionalCap": 100000000, "notionalFloor": 50000000, "maintMarginRatio": 0.25, "cum": 8641300},
-                {"bracket": 8, "initialLeverage": 1, "notionalCap": 200000000, "notionalFloor": 100000000, "maintMarginRatio": 0.5, "cum": 33641300},
+                {
+                    "bracket": 1,
+                    "initialLeverage": 125,
+                    "notionalCap": 50000,
+                    "notionalFloor": 0,
+                    "maintMarginRatio": 0.004,
+                    "cum": 0,
+                },
+                {
+                    "bracket": 2,
+                    "initialLeverage": 100,
+                    "notionalCap": 250000,
+                    "notionalFloor": 50000,
+                    "maintMarginRatio": 0.005,
+                    "cum": 50,
+                },
+                {
+                    "bracket": 3,
+                    "initialLeverage": 50,
+                    "notionalCap": 1000000,
+                    "notionalFloor": 250000,
+                    "maintMarginRatio": 0.01,
+                    "cum": 1300,
+                },
+                {
+                    "bracket": 4,
+                    "initialLeverage": 20,
+                    "notionalCap": 5000000,
+                    "notionalFloor": 1000000,
+                    "maintMarginRatio": 0.025,
+                    "cum": 16300,
+                },
+                {
+                    "bracket": 5,
+                    "initialLeverage": 10,
+                    "notionalCap": 20000000,
+                    "notionalFloor": 5000000,
+                    "maintMarginRatio": 0.05,
+                    "cum": 141300,
+                },
+                {
+                    "bracket": 6,
+                    "initialLeverage": 5,
+                    "notionalCap": 50000000,
+                    "notionalFloor": 20000000,
+                    "maintMarginRatio": 0.1,
+                    "cum": 1141300,
+                },
+                {
+                    "bracket": 7,
+                    "initialLeverage": 2,
+                    "notionalCap": 100000000,
+                    "notionalFloor": 50000000,
+                    "maintMarginRatio": 0.25,
+                    "cum": 8641300,
+                },
+                {
+                    "bracket": 8,
+                    "initialLeverage": 1,
+                    "notionalCap": 200000000,
+                    "notionalFloor": 100000000,
+                    "maintMarginRatio": 0.5,
+                    "cum": 33641300,
+                },
             ]
         elif max_leverage >= 75:
             # Altcoin pattern
             return [
-                {"bracket": 1, "initialLeverage": 75, "notionalCap": 10000, "notionalFloor": 0, "maintMarginRatio": 0.0065, "cum": 0},
-                {"bracket": 2, "initialLeverage": 50, "notionalCap": 50000, "notionalFloor": 10000, "maintMarginRatio": 0.01, "cum": 35},
-                {"bracket": 3, "initialLeverage": 25, "notionalCap": 250000, "notionalFloor": 50000, "maintMarginRatio": 0.02, "cum": 535},
-                {"bracket": 4, "initialLeverage": 10, "notionalCap": 1000000, "notionalFloor": 250000, "maintMarginRatio": 0.05, "cum": 8035},
-                {"bracket": 5, "initialLeverage": 5, "notionalCap": 2000000, "notionalFloor": 1000000, "maintMarginRatio": 0.1, "cum": 58035},
-                {"bracket": 6, "initialLeverage": 2, "notionalCap": 5000000, "notionalFloor": 2000000, "maintMarginRatio": 0.25, "cum": 358035},
-                {"bracket": 7, "initialLeverage": 1, "notionalCap": 10000000, "notionalFloor": 5000000, "maintMarginRatio": 0.5, "cum": 1608035},
+                {
+                    "bracket": 1,
+                    "initialLeverage": 75,
+                    "notionalCap": 10000,
+                    "notionalFloor": 0,
+                    "maintMarginRatio": 0.0065,
+                    "cum": 0,
+                },
+                {
+                    "bracket": 2,
+                    "initialLeverage": 50,
+                    "notionalCap": 50000,
+                    "notionalFloor": 10000,
+                    "maintMarginRatio": 0.01,
+                    "cum": 35,
+                },
+                {
+                    "bracket": 3,
+                    "initialLeverage": 25,
+                    "notionalCap": 250000,
+                    "notionalFloor": 50000,
+                    "maintMarginRatio": 0.02,
+                    "cum": 535,
+                },
+                {
+                    "bracket": 4,
+                    "initialLeverage": 10,
+                    "notionalCap": 1000000,
+                    "notionalFloor": 250000,
+                    "maintMarginRatio": 0.05,
+                    "cum": 8035,
+                },
+                {
+                    "bracket": 5,
+                    "initialLeverage": 5,
+                    "notionalCap": 2000000,
+                    "notionalFloor": 1000000,
+                    "maintMarginRatio": 0.1,
+                    "cum": 58035,
+                },
+                {
+                    "bracket": 6,
+                    "initialLeverage": 2,
+                    "notionalCap": 5000000,
+                    "notionalFloor": 2000000,
+                    "maintMarginRatio": 0.25,
+                    "cum": 358035,
+                },
+                {
+                    "bracket": 7,
+                    "initialLeverage": 1,
+                    "notionalCap": 10000000,
+                    "notionalFloor": 5000000,
+                    "maintMarginRatio": 0.5,
+                    "cum": 1608035,
+                },
             ]
         else:
             # Low leverage pattern
             return [
-                {"bracket": 1, "initialLeverage": 50, "notionalCap": 10000, "notionalFloor": 0, "maintMarginRatio": 0.01, "cum": 0},
-                {"bracket": 2, "initialLeverage": 25, "notionalCap": 50000, "notionalFloor": 10000, "maintMarginRatio": 0.02, "cum": 100},
-                {"bracket": 3, "initialLeverage": 10, "notionalCap": 250000, "notionalFloor": 50000, "maintMarginRatio": 0.05, "cum": 1600},
-                {"bracket": 4, "initialLeverage": 5, "notionalCap": 1000000, "notionalFloor": 250000, "maintMarginRatio": 0.1, "cum": 14100},
-                {"bracket": 5, "initialLeverage": 2, "notionalCap": 5000000, "notionalFloor": 1000000, "maintMarginRatio": 0.25, "cum": 164100},
-                {"bracket": 6, "initialLeverage": 1, "notionalCap": 10000000, "notionalFloor": 5000000, "maintMarginRatio": 0.5, "cum": 1414100},
+                {
+                    "bracket": 1,
+                    "initialLeverage": 50,
+                    "notionalCap": 10000,
+                    "notionalFloor": 0,
+                    "maintMarginRatio": 0.01,
+                    "cum": 0,
+                },
+                {
+                    "bracket": 2,
+                    "initialLeverage": 25,
+                    "notionalCap": 50000,
+                    "notionalFloor": 10000,
+                    "maintMarginRatio": 0.02,
+                    "cum": 100,
+                },
+                {
+                    "bracket": 3,
+                    "initialLeverage": 10,
+                    "notionalCap": 250000,
+                    "notionalFloor": 50000,
+                    "maintMarginRatio": 0.05,
+                    "cum": 1600,
+                },
+                {
+                    "bracket": 4,
+                    "initialLeverage": 5,
+                    "notionalCap": 1000000,
+                    "notionalFloor": 250000,
+                    "maintMarginRatio": 0.1,
+                    "cum": 14100,
+                },
+                {
+                    "bracket": 5,
+                    "initialLeverage": 2,
+                    "notionalCap": 5000000,
+                    "notionalFloor": 1000000,
+                    "maintMarginRatio": 0.25,
+                    "cum": 164100,
+                },
+                {
+                    "bracket": 6,
+                    "initialLeverage": 1,
+                    "notionalCap": 10000000,
+                    "notionalFloor": 5000000,
+                    "maintMarginRatio": 0.5,
+                    "cum": 1414100,
+                },
             ]
 
     def get_exchange_info(self) -> Dict[str, Any]:
@@ -310,6 +480,7 @@ class BinanceFuturesClient:
 # =============================================================================
 # Bracket Fetcher
 # =============================================================================
+
 
 def parse_bracket_data(raw_data: Dict[str, Any]) -> Optional[LeverageBracketData]:
     """Parse raw bracket data from Binance API into our format."""
@@ -427,8 +598,7 @@ def save_brackets_to_json(
             "symbols_count": len(result.data),
         },
         "brackets": {
-            symbol: sym_brackets.to_dict()
-            for symbol, sym_brackets in result.data.items()
+            symbol: sym_brackets.to_dict() for symbol, sym_brackets in result.data.items()
         },
     }
 
@@ -449,6 +619,7 @@ def save_brackets_to_json(
 # =============================================================================
 # CLI
 # =============================================================================
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
@@ -475,13 +646,15 @@ Examples:
     )
 
     parser.add_argument(
-        "-s", "--symbols",
+        "-s",
+        "--symbols",
         type=str,
         help="Comma-separated list of symbols to fetch",
     )
 
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         type=Path,
         default=DEFAULT_OUTPUT,
         help=f"Output JSON file path (default: {DEFAULT_OUTPUT})",
@@ -500,7 +673,8 @@ Examples:
     )
 
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose output",
     )
@@ -572,8 +746,10 @@ def main() -> int:
         for symbol, brackets in list(result.data.items())[:2]:
             print(f"\n{symbol}:")
             for b in brackets.brackets[:3]:
-                print(f"  Bracket {b.bracket}: leverage={b.initial_leverage}x, "
-                      f"cap={b.notional_cap:,.0f}, mmr={b.maint_margin_ratio:.4f}")
+                print(
+                    f"  Bracket {b.bracket}: leverage={b.initial_leverage}x, "
+                    f"cap={b.notional_cap:,.0f}, mmr={b.maint_margin_ratio:.4f}"
+                )
             if len(brackets.brackets) > 3:
                 print(f"  ... and {len(brackets.brackets) - 3} more brackets")
 

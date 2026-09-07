@@ -58,9 +58,7 @@ def test_market_open_next_h1_slippage():
         vol_factor=1.0,
         cfg=sim.slippage_cfg,
     )
-    expected_price = apply_slippage_price(
-        side="BUY", quote_price=100.0, slippage_bps=expected_bps
-    )
+    expected_price = apply_slippage_price(side="BUY", quote_price=100.0, slippage_bps=expected_bps)
     assert trade.price == pytest.approx(expected_price)
 
 

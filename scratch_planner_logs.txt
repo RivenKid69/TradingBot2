@@ -1,1 +1,0 @@
-I will edit `index.html` using the `multi_replace_file_content` tool to add the mode toggle at the top of the quick start panel, define the custom non-AI actions mapping, conditionally hide the model path in backtests when in custom mode, and add a template code popup modal.

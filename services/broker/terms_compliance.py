@@ -92,7 +92,6 @@ IB API Terms: Contact your IB representative
 By proceeding, you confirm that you have read IB's API Agreement
 and authorize this platform to execute orders on your behalf.
 """,
-
     SupportedBroker.ALPACA: """
 ALPACA API USAGE NOTICE
 
@@ -128,7 +127,6 @@ Alpaca API Docs: https://alpaca.markets/docs/api-references/
 By proceeding, you confirm acceptance of Alpaca's terms and
 authorize this platform to trade on your behalf.
 """,
-
     SupportedBroker.BINANCE: """
 BINANCE API USAGE NOTICE
 
@@ -162,7 +160,6 @@ Binance API Docs: https://binance-docs.github.io/apidocs/
 By proceeding, you confirm you are in a permitted jurisdiction
 and authorize this platform to trade on your behalf.
 """,
-
     SupportedBroker.COINBASE: """
 COINBASE API USAGE NOTICE
 
@@ -197,7 +194,6 @@ Coinbase API Docs: https://docs.cloud.coinbase.com/
 By proceeding, you accept Coinbase's terms and authorize
 this platform to execute trades on your behalf.
 """,
-
     SupportedBroker.KRAKEN: """
 KRAKEN API USAGE NOTICE
 
@@ -231,7 +227,6 @@ Kraken API Docs: https://docs.kraken.com/rest/
 By proceeding, you accept Kraken's terms and authorize
 this platform to trade on your behalf.
 """,
-
     SupportedBroker.OANDA: """
 OANDA API USAGE NOTICE
 
@@ -268,7 +263,6 @@ OANDA API Docs: https://developer.oanda.com/rest-live-v20/
 By proceeding, you accept OANDA's terms and authorize
 this platform to trade forex on your behalf.
 """,
-
     SupportedBroker.DERIBIT: """
 DERIBIT API USAGE NOTICE
 
@@ -313,6 +307,7 @@ the risks of derivative trading.
 # ============================================================================
 # BROKER RATE LIMITS
 # ============================================================================
+
 
 @dataclass(frozen=True)
 class BrokerRateLimitInfo:
@@ -374,6 +369,7 @@ BROKER_RATE_LIMITS: Dict[SupportedBroker, BrokerRateLimitInfo] = {
 # DATA CLASSES
 # ============================================================================
 
+
 @dataclass
 class BrokerTermsAcknowledgment:
     """
@@ -428,13 +424,17 @@ class BrokerTermsNotAcknowledgedError(Exception):
 
     def __init__(self, broker: SupportedBroker, message: Optional[str] = None):
         self.broker = broker
-        self.message = message or f"Please review and accept {broker.value} API terms before submitting credentials"
+        self.message = (
+            message
+            or f"Please review and accept {broker.value} API terms before submitting credentials"
+        )
         super().__init__(self.message)
 
 
 # ============================================================================
 # STORAGE PROTOCOL
 # ============================================================================
+
 
 class BrokerTermsStorageProtocol(Protocol):
     """Protocol for broker terms acknowledgment storage."""
@@ -444,9 +444,7 @@ class BrokerTermsStorageProtocol(Protocol):
         ...
 
     def get_latest(
-        self,
-        user_id: str,
-        broker: SupportedBroker
+        self, user_id: str, broker: SupportedBroker
     ) -> Optional[BrokerTermsAcknowledgment]:
         """Get the latest acknowledgment for a user and broker."""
         ...
@@ -471,15 +469,10 @@ class InMemoryBrokerTermsStorage:
         self._acknowledgments.append(acknowledgment)
 
     def get_latest(
-        self,
-        user_id: str,
-        broker: SupportedBroker
+        self, user_id: str, broker: SupportedBroker
     ) -> Optional[BrokerTermsAcknowledgment]:
         """Get the latest acknowledgment for a user and broker."""
-        matching = [
-            a for a in self._acknowledgments
-            if a.user_id == user_id and a.broker == broker
-        ]
+        matching = [a for a in self._acknowledgments if a.user_id == user_id and a.broker == broker]
         if not matching:
             return None
         return max(matching, key=lambda a: a.acknowledged_at)
@@ -498,6 +491,7 @@ class InMemoryBrokerTermsStorage:
 # ============================================================================
 # SERVICE CLASS
 # ============================================================================
+
 
 class BrokerTermsService:
     """
@@ -587,7 +581,7 @@ class BrokerTermsService:
         user_id: str,
         broker: SupportedBroker,
         ip_address: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> BrokerTermsAcknowledgment:
         """
         Record a user's acknowledgment of broker terms.
@@ -614,11 +608,7 @@ class BrokerTermsService:
         self._storage.save(ack)
         return ack
 
-    def has_valid_acknowledgment(
-        self,
-        user_id: str,
-        broker: SupportedBroker
-    ) -> bool:
+    def has_valid_acknowledgment(self, user_id: str, broker: SupportedBroker) -> bool:
         """
         Check if user has a valid (current version) acknowledgment.
 
@@ -638,9 +628,7 @@ class BrokerTermsService:
         return latest.terms_version == current_version
 
     def require_acknowledgment_before_key_submission(
-        self,
-        user_id: str,
-        broker: SupportedBroker
+        self, user_id: str, broker: SupportedBroker
     ) -> None:
         """
         Enforce acknowledgment before API key can be submitted.
@@ -656,13 +644,11 @@ class BrokerTermsService:
             raise BrokerTermsNotAcknowledgedError(
                 broker,
                 f"Please review and accept {broker.value} API terms before submitting credentials. "
-                f"Current terms version: {self._current_versions.get(broker, '2024.1')}"
+                f"Current terms version: {self._current_versions.get(broker, '2024.1')}",
             )
 
     def get_pending_acknowledgments(
-        self,
-        user_id: str,
-        brokers: Optional[List[SupportedBroker]] = None
+        self, user_id: str, brokers: Optional[List[SupportedBroker]] = None
     ) -> List[SupportedBroker]:
         """
         Get list of brokers requiring acknowledgment.
@@ -683,10 +669,7 @@ class BrokerTermsService:
 
         return pending
 
-    def get_user_acknowledgments(
-        self,
-        user_id: str
-    ) -> List[BrokerTermsAcknowledgment]:
+    def get_user_acknowledgments(self, user_id: str) -> List[BrokerTermsAcknowledgment]:
         """
         Get all acknowledgments for a user.
 
@@ -714,11 +697,7 @@ class BrokerTermsService:
         """
         return self._storage.delete_for_user(user_id)
 
-    def update_terms_version(
-        self,
-        broker: SupportedBroker,
-        new_version: str
-    ) -> None:
+    def update_terms_version(self, broker: SupportedBroker, new_version: str) -> None:
         """
         Update the terms version for a broker.
 
@@ -731,10 +710,7 @@ class BrokerTermsService:
         """
         self._current_versions[broker] = new_version
 
-    def get_acknowledgment_status(
-        self,
-        user_id: str
-    ) -> Dict[str, Any]:
+    def get_acknowledgment_status(self, user_id: str) -> Dict[str, Any]:
         """
         Get acknowledgment status for all brokers.
 

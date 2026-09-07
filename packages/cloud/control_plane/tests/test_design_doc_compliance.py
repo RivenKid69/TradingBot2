@@ -576,8 +576,7 @@ class TestCloudBoundaryValidator:
         result = validator.validate_outgoing_message(msg)
         assert not result.valid
         assert any(
-            v.violation_type == BoundaryViolationType.PROHIBITED_COMMAND
-            for v in result.violations
+            v.violation_type == BoundaryViolationType.PROHIBITED_COMMAND for v in result.violations
         )
 
     def test_intent_injection_blocked(self, validator: CloudBoundaryValidator):
@@ -592,8 +591,7 @@ class TestCloudBoundaryValidator:
         result = validator.validate_outgoing_message(msg)
         assert not result.valid
         assert any(
-            v.violation_type == BoundaryViolationType.PROHIBITED_FIELD
-            for v in result.violations
+            v.violation_type == BoundaryViolationType.PROHIBITED_FIELD for v in result.violations
         )
 
     def test_order_fields_blocked(self, validator: CloudBoundaryValidator):

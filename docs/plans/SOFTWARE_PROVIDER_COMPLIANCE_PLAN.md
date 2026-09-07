@@ -63,11 +63,13 @@
 ```
 
 **Sources:**
+
 - EU E-Commerce Directive 2000/31/EC Art. 5, 6
 - ESMA Q&A MiFID II (ESMA35-43-349) - software vendor exclusion
 - GDPR Art. 13-14 transparency requirements
 
 **Tests:**
+
 ```python
 # tests/test_legal_compliance.py
 class TestTermsOfService:
@@ -152,11 +154,13 @@ class TestTermsOfService:
 ```
 
 **Sources:**
+
 - GDPR Regulation (EU) 2016/679
 - EDPB Guidelines on Transparency (WP260)
 - ICO Guide to Privacy Notices
 
 **Tests:**
+
 ```python
 class TestPrivacyPolicy:
     def test_privacy_policy_exists(self):
@@ -337,11 +341,13 @@ class CredentialVault:
 ```
 
 **Sources:**
+
 - NIST SP 800-57 Part 1 Rev 5
 - OWASP Cryptographic Storage Cheat Sheet
 - RFC 5116 (AEAD)
 
 **Tests:**
+
 ```python
 # tests/test_credential_vault.py
 import pytest
@@ -519,6 +525,7 @@ class DisclaimerNotAcknowledgedError(Exception):
 ```
 
 **Integration point:**
+
 ```python
 # In order execution flow
 def execute_live_order(user_id: str, order: Order):
@@ -530,6 +537,7 @@ def execute_live_order(user_id: str, order: Order):
 ```
 
 **Tests:**
+
 ```python
 class TestDisclaimerService:
     def test_fresh_user_has_no_acknowledgment(self, service):
@@ -561,6 +569,7 @@ class TestDisclaimerService:
 **Location:** `services/backtest/result_formatter.py`
 
 **Implementation:**
+
 ```python
 # services/backtest/disclaimer_injection.py
 """
@@ -603,6 +612,7 @@ class BacktestService:
 ```
 
 **Tests:**
+
 ```python
 class TestBacktestDisclaimer:
     def test_disclaimer_always_present(self, backtest_service):
@@ -625,6 +635,7 @@ class TestBacktestDisclaimer:
 **Requirement:** Ensure platform usage complies with broker API terms of service.
 
 **Broker Terms Review Checklist:**
+
 ```
 - [ ] Interactive Brokers: API Agreement Section 5 (Third-Party Access)
 - [ ] Alpaca: Platform Agreement, API Terms
@@ -766,6 +777,7 @@ class BrokerTermsNotAcknowledgedError(Exception):
 ```
 
 **Integration point:**
+
 ```python
 # In API key submission flow
 def submit_broker_credentials(user_id: str, broker: str, api_key: str, api_secret: str):
@@ -782,6 +794,7 @@ def submit_broker_credentials(user_id: str, broker: str, api_key: str, api_secre
 ```
 
 **Tests:**
+
 ```python
 class TestBrokerTermsService:
     def test_warning_text_exists_for_supported_brokers(self, service):
@@ -950,6 +963,7 @@ class GDPRDeletionService:
 ```
 
 **Tests:**
+
 ```python
 class TestGDPRDeletion:
     def test_deletion_request_created(self, service):
@@ -1156,6 +1170,7 @@ For questions, contact: [DPO email]
 ```
 
 **Tests:**
+
 ```python
 class TestGDPRExport:
     def test_export_returns_zip(self, service):
@@ -1283,6 +1298,7 @@ class GeoBlockingService:
 ```
 
 **Tests:**
+
 ```python
 class TestGeoBlocking:
     def test_allowed_country(self, service):
@@ -1397,6 +1413,7 @@ class CredentialAuditLogger:
 ```
 
 **Tests:**
+
 ```python
 class TestCredentialAuditLogger:
     def test_access_logged(self, logger, mock_storage):
@@ -1717,6 +1734,7 @@ class BrokerRateLimiter:
 ```
 
 **Integration point:**
+
 ```python
 # In order execution flow
 async def execute_order(user_id: str, broker: str, order: Order):
@@ -1738,6 +1756,7 @@ async def execute_order(user_id: str, broker: str, order: Order):
 ```
 
 **Runaway Strategy Detection:**
+
 ```python
 # Detect and stop runaway strategies
 class RunawayDetector:
@@ -1761,6 +1780,7 @@ class RunawayDetector:
 ```
 
 **Tests:**
+
 ```python
 class TestBrokerRateLimiter:
     def test_allows_requests_under_limit(self, limiter):
@@ -1809,6 +1829,7 @@ class TestBrokerRateLimiter:
 **Purpose:** Protect the business from claims arising from software errors that may lead to trading losses.
 
 **Why It's Important:**
+
 - Even with comprehensive disclaimers, users may attempt legal action
 - Software bugs causing order errors are a real risk
 - Insurance provides defense costs coverage even for frivolous claims
@@ -1887,6 +1908,7 @@ class TestBrokerRateLimiter:
 **Integration with ToS:**
 
 Update Terms of Service section 6 (LIMITATION OF LIABILITY):
+
 ```
 6. LIMITATION OF LIABILITY
    ...
@@ -1934,6 +1956,7 @@ tests/
 ```
 
 **Coverage targets:**
+
 - Phase 1 (Critical): 100% coverage
 - Phase 2 (GDPR): 95% coverage
 - Phase 3 (Business): N/A (non-code)
@@ -1972,6 +1995,7 @@ Week 5+ (Phase 3 - Business Protection):
 ## References
 
 ### Regulatory
+
 1. **GDPR**: Regulation (EU) 2016/679
 2. **MiFID II**: Directive 2014/65/EU
 3. **E-Commerce Directive**: 2000/31/EC
@@ -1979,20 +2003,24 @@ Week 5+ (Phase 3 - Business Protection):
 5. **EDPB Guidelines**: WP260 (Transparency), WP242 (Portability)
 
 ### Security Standards
+
 6. **NIST**: SP 800-57 (Key Management)
 7. **OWASP**: Cryptographic Storage Cheat Sheet
 8. **RFC 6585**: Token Bucket Rate Limiting
 9. **ISO 27001**: A.12.4 (Logging and Monitoring)
 
 ### Sanctions
+
 10. **OFAC**: Sanctions Programs and Country Information
 11. **EU Sanctions**: Council Regulation (EU) 833/2014
 
 ### Broker API Documentation
+
 12. **Interactive Brokers API**: https://interactivebrokers.github.io/
 13. **Alpaca API**: https://alpaca.markets/docs/api-references/
 14. **Binance API**: https://binance-docs.github.io/apidocs/
 
 ### Insurance
+
 15. **Hiscox Technology Insurance**: hiscox.com/technology
 16. **AIG Cyber Insurance**: aig.com/business/insurance/cyber

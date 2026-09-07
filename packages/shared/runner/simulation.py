@@ -118,7 +118,11 @@ class SimulationRunner(BaseRunner):
         config.zone = RunnerZone.CLOUD
 
         super().__init__(config)
-        self._sim_config = config if isinstance(config, SimulationRunnerConfig) else SimulationRunnerConfig(**config.to_dict())
+        self._sim_config = (
+            config
+            if isinstance(config, SimulationRunnerConfig)
+            else SimulationRunnerConfig(**config.to_dict())
+        )
 
         # Initialize simulation engine
         self._engine = SimExecutionEngine(config=self._sim_config.to_sim_config())
@@ -148,11 +152,13 @@ class SimulationRunner(BaseRunner):
             self._strategy = strategy
 
             # Initialize strategy
-            strategy.initialize({
-                "symbols": self._config.symbols,
-                "mode": self._config.mode.value,
-                "run_id": self._config.run_id,
-            })
+            strategy.initialize(
+                {
+                    "symbols": self._config.symbols,
+                    "mode": self._config.mode.value,
+                    "run_id": self._config.run_id,
+                }
+            )
 
             # Reset engine
             self._engine.reset()
@@ -188,7 +194,9 @@ class SimulationRunner(BaseRunner):
         self._tick_count += 1
 
         # Update price in engine
-        symbol = market_data.get("symbol", self._config.symbols[0] if self._config.symbols else "UNKNOWN")
+        symbol = market_data.get(
+            "symbol", self._config.symbols[0] if self._config.symbols else "UNKNOWN"
+        )
         price = Decimal(str(market_data.get("close", market_data.get("last", 0))))
         self._engine.set_price(symbol, price)
 
@@ -218,12 +226,14 @@ class SimulationRunner(BaseRunner):
 
         # Track equity if enabled
         if self._sim_config.track_equity_curve:
-            self._equity_curve.append({
-                "timestamp": datetime.utcnow().isoformat(),
-                "tick": self._tick_count,
-                "equity": str(self._engine.get_equity()),
-                "total_pnl": str(self._engine.get_total_pnl()),
-            })
+            self._equity_curve.append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "tick": self._tick_count,
+                    "equity": str(self._engine.get_equity()),
+                    "total_pnl": str(self._engine.get_total_pnl()),
+                }
+            )
 
         # Update stats
         self._result.ticks_processed = self._tick_count
@@ -330,7 +340,8 @@ class SimulationRunner(BaseRunner):
         self._result.end_time = datetime.utcnow()
         self._result.duration_ms = int(
             (self._result.end_time - self._result.start_time).total_seconds() * 1000
-            if self._result.start_time else 0
+            if self._result.start_time
+            else 0
         )
         self._result.final_equity = self._engine.get_equity()
         self._result.total_pnl = self._engine.get_total_pnl()
@@ -384,7 +395,4 @@ class SimulationRunner(BaseRunner):
 
     def get_positions(self) -> Dict[str, Any]:
         """Get current positions."""
-        return {
-            symbol: pos.to_dict()
-            for symbol, pos in self._engine.get_positions().items()
-        }
+        return {symbol: pos.to_dict() for symbol, pos in self._engine.get_positions().items()}

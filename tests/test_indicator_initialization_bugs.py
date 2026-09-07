@@ -99,9 +99,9 @@ class TestRSIInitializationBug:
         )
 
         # Additional check: RSI should NOT be > 85 (no single-value bias)
-        assert rsi_14 < 85.0, (
-            f"FIX NOT WORKING: RSI={rsi_14:.1f} is still biased (> 85.0), single-value init bug may remain"
-        )
+        assert (
+            rsi_14 < 85.0
+        ), f"FIX NOT WORKING: RSI={rsi_14:.1f} is still biased (> 85.0), single-value init bug may remain"
 
     def test_rsi_correct_initialization_verified(self):
         """FIX VERIFIED: RSI initializes with SMA(14) of gains/losses.
@@ -118,8 +118,21 @@ class TestRSIInitializationBug:
 
         # Same price pattern as above
         prices = [
-            100.0, 110.0, 110.5, 110.0, 110.5, 110.0, 110.5, 110.0,
-            110.5, 110.0, 110.5, 110.0, 110.5, 110.0, 110.5,
+            100.0,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
+            110.0,
+            110.5,
         ]
 
         feats_list = []
@@ -138,9 +151,9 @@ class TestRSIInitializationBug:
 
         # AFTER FIX: RSI should be close to expected value (within tolerance)
         # Allow ±5 for floating point and timing differences
-        assert abs(rsi_14 - expected_rsi) < 5.0, (
-            f"RSI={rsi_14:.1f} differs from expected {expected_rsi:.1f}"
-        )
+        assert (
+            abs(rsi_14 - expected_rsi) < 5.0
+        ), f"RSI={rsi_14:.1f} differs from expected {expected_rsi:.1f}"
 
     def test_rsi_convergence_after_fix(self):
         """FIX VERIFIED: RSI converges properly with SMA initialization.
@@ -181,9 +194,9 @@ class TestRSIInitializationBug:
         # AFTER FIX: RSI should converge to neutral (~50) faster
         # With correct SMA initialization, no initial bias to decay
         # Allow range 45-55 for neutral RSI
-        assert 45.0 < rsi_150 < 55.0, (
-            f"FIX VERIFICATION: RSI at bar 150 = {rsi_150:.1f}, expected near 50 (45-55 range)"
-        )
+        assert (
+            45.0 < rsi_150 < 55.0
+        ), f"FIX VERIFICATION: RSI at bar 150 = {rsi_150:.1f}, expected near 50 (45-55 range)"
 
     def test_rsi_short_episodes_corruption(self):
         """Verify that short episodes (< 150 bars) are completely corrupted.
@@ -260,15 +273,15 @@ class TestATRInitializationNoBug:
 
         # Verify ATR at position 14 (full window)
         expected_atr_14 = sum(true_ranges) / 14
-        assert abs(atr_values[-1] - expected_atr_14) < 1e-10, (
-            f"ATR={atr_values[-1]:.6f} != expected SMA={expected_atr_14:.6f}"
-        )
+        assert (
+            abs(atr_values[-1] - expected_atr_14) < 1e-10
+        ), f"ATR={atr_values[-1]:.6f} != expected SMA={expected_atr_14:.6f}"
 
         # Verify ATR is NOT using single value
         # (single value would be just the last TR = 0.6)
-        assert abs(atr_values[-1] - 0.6) > 0.01, (
-            "ATR equals last TR value - suggests single-value bug"
-        )
+        assert (
+            abs(atr_values[-1] - 0.6) > 0.01
+        ), "ATR equals last TR value - suggests single-value bug"
 
         # PASS: ATR correctly computes SMA
         print(f"✅ ATR correctly uses SMA: {atr_values[-1]:.4f} (expected: {expected_atr_14:.4f})")
@@ -322,11 +335,13 @@ class TestCCIMeanDeviationBug:
         # Example: Wide bars (high-low spread) with close near low
         bars = []
         for i in range(20):
-            bars.append({
-                "high": 102.0,
-                "low": 98.0,
-                "close": 98.5,  # Close near low
-            })
+            bars.append(
+                {
+                    "high": 102.0,
+                    "low": 98.0,
+                    "close": 98.5,  # Close near low
+                }
+            )
 
         # Compute TP
         tp_values = [(b["high"] + b["low"] + b["close"]) / 3 for b in bars]
@@ -335,12 +350,16 @@ class TestCCIMeanDeviationBug:
         # BUGGY: Use SMA(close) as baseline
         sma_close = sum(close_values) / 20
         mean_dev_buggy = sum(abs(tp - sma_close) for tp in tp_values) / 20
-        cci_buggy = (tp_values[-1] - sma_close) / (0.015 * mean_dev_buggy) if mean_dev_buggy > 0 else 0
+        cci_buggy = (
+            (tp_values[-1] - sma_close) / (0.015 * mean_dev_buggy) if mean_dev_buggy > 0 else 0
+        )
 
         # CORRECT: Use SMA(TP) as baseline
         sma_tp = sum(tp_values) / 20
         mean_dev_correct = sum(abs(tp - sma_tp) for tp in tp_values) / 20
-        cci_correct = (tp_values[-1] - sma_tp) / (0.015 * mean_dev_correct) if mean_dev_correct > 0 else 0
+        cci_correct = (
+            (tp_values[-1] - sma_tp) / (0.015 * mean_dev_correct) if mean_dev_correct > 0 else 0
+        )
 
         # Expected TP
         expected_tp = (102.0 + 98.0 + 98.5) / 3  # 99.5
@@ -360,9 +379,9 @@ class TestCCIMeanDeviationBug:
         )
 
         # Bug verification: SMA(close) != SMA(TP)
-        assert abs(sma_close - sma_tp) > 0.5, (
-            f"Test design issue: SMA(close)={sma_close:.2f} too close to SMA(TP)={sma_tp:.2f}"
-        )
+        assert (
+            abs(sma_close - sma_tp) > 0.5
+        ), f"Test design issue: SMA(close)={sma_close:.2f} too close to SMA(TP)={sma_tp:.2f}"
 
     def test_cci_sign_inversion(self):
         """Verify that CCI bug can invert signal sign (critical error)."""

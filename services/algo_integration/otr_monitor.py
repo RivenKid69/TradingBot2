@@ -52,12 +52,12 @@ logger = logging.getLogger(__name__)
 class OrderEvent(str, Enum):
     """Types of order events tracked for OTR calculation."""
 
-    NEW_ORDER = "new_order"                 # New order submitted
-    MODIFY_ORDER = "modify_order"           # Order modification
-    CANCEL_ORDER = "cancel_order"           # Order cancellation
-    PARTIAL_FILL = "partial_fill"           # Partial execution
-    FULL_FILL = "full_fill"                 # Full execution
-    REJECT = "reject"                       # Order rejection
+    NEW_ORDER = "new_order"  # New order submitted
+    MODIFY_ORDER = "modify_order"  # Order modification
+    CANCEL_ORDER = "cancel_order"  # Order cancellation
+    PARTIAL_FILL = "partial_fill"  # Partial execution
+    FULL_FILL = "full_fill"  # Full execution
+    REJECT = "reject"  # Order rejection
 
 
 class OTRBucket(NamedTuple):
@@ -93,23 +93,23 @@ class OTRMetrics:
     timestamp_utc: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     # Core OTR metrics
-    otr_current: float = 0.0                # Current OTR
-    otr_rolling_1min: float = 0.0           # 1-minute rolling OTR
-    otr_rolling_5min: float = 0.0           # 5-minute rolling OTR
-    otr_rolling_1hour: float = 0.0          # 1-hour rolling OTR
-    otr_daily: float = 0.0                  # Daily OTR
+    otr_current: float = 0.0  # Current OTR
+    otr_rolling_1min: float = 0.0  # 1-minute rolling OTR
+    otr_rolling_5min: float = 0.0  # 5-minute rolling OTR
+    otr_rolling_1hour: float = 0.0  # 1-hour rolling OTR
+    otr_daily: float = 0.0  # Daily OTR
 
     # Raw counts
-    orders_total: int = 0                   # Total orders
-    trades_total: int = 0                   # Total trades (fills)
-    cancellations_total: int = 0            # Total cancellations
-    modifications_total: int = 0            # Total modifications
-    rejections_total: int = 0               # Total rejections
+    orders_total: int = 0  # Total orders
+    trades_total: int = 0  # Total trades (fills)
+    cancellations_total: int = 0  # Total cancellations
+    modifications_total: int = 0  # Total modifications
+    rejections_total: int = 0  # Total rejections
 
     # Rates
     orders_per_second: float = 0.0
     trades_per_second: float = 0.0
-    cancellation_rate_pct: float = 0.0      # Cancellations / Orders %
+    cancellation_rate_pct: float = 0.0  # Cancellations / Orders %
 
     # Level and status
     level: OTRLevel = OTRLevel.NORMAL
@@ -186,28 +186,28 @@ class OTRMonitorConfig:
     """Configuration for OTR monitoring."""
 
     # OTR thresholds (orders per trade)
-    otr_normal_max: float = 10.0            # Normal: up to 10:1
-    otr_elevated_threshold: float = 20.0    # Elevated: 20:1
-    otr_warning_threshold: float = 50.0     # Warning: 50:1
-    otr_critical_threshold: float = 100.0   # Critical: 100:1
-    otr_breach_threshold: float = 200.0     # Breach: 200:1 (may trigger kill switch)
+    otr_normal_max: float = 10.0  # Normal: up to 10:1
+    otr_elevated_threshold: float = 20.0  # Elevated: 20:1
+    otr_warning_threshold: float = 50.0  # Warning: 50:1
+    otr_critical_threshold: float = 100.0  # Critical: 100:1
+    otr_breach_threshold: float = 200.0  # Breach: 200:1 (may trigger kill switch)
 
     # Venue-specific thresholds
     venue_otr_limits: Dict[str, float] = field(default_factory=dict)
 
     # Monitoring windows
-    bucket_size_seconds: int = 1            # Granularity of tracking
-    window_1min: int = 60                   # 1-minute window
-    window_5min: int = 300                  # 5-minute window
-    window_1hour: int = 3600                # 1-hour window
+    bucket_size_seconds: int = 1  # Granularity of tracking
+    window_1min: int = 60  # 1-minute window
+    window_5min: int = 300  # 5-minute window
+    window_1hour: int = 3600  # 1-hour window
 
     # Cancellation rate thresholds
     cancellation_warning_pct: float = 50.0  # Warning if >50% cancelled
-    cancellation_critical_pct: float = 80.0 # Critical if >80% cancelled
+    cancellation_critical_pct: float = 80.0  # Critical if >80% cancelled
 
     # Response actions
     throttle_on_warning: bool = True
-    throttle_delay_ms: int = 100            # Delay per order when throttling
+    throttle_delay_ms: int = 100  # Delay per order when throttling
     block_on_critical: bool = True
     trigger_kill_switch_on_breach: bool = True
 
@@ -604,10 +604,16 @@ class OTRMonitor:
             metrics = self._calculate_metrics()
 
             if metrics.level == OTRLevel.BREACH:
-                return False, f"OTR breach: {metrics.otr_current:.1f} exceeds {self._config.otr_breach_threshold}"
+                return (
+                    False,
+                    f"OTR breach: {metrics.otr_current:.1f} exceeds {self._config.otr_breach_threshold}",
+                )
 
             if metrics.level == OTRLevel.CRITICAL and self._config.block_on_critical:
-                return False, f"OTR critical: {metrics.otr_current:.1f} exceeds {self._config.otr_critical_threshold}"
+                return (
+                    False,
+                    f"OTR critical: {metrics.otr_current:.1f} exceeds {self._config.otr_critical_threshold}",
+                )
 
             # Check venue-specific limits
             if venue and venue in self._config.venue_otr_limits:
@@ -698,9 +704,7 @@ class OTRMonitor:
         trades_per_second = trades_1min / self._config.window_1min if trades_1min > 0 else 0
 
         # Cancellation rate
-        cancellation_rate = (
-            self._daily_cancellations / max(self._daily_orders, 1) * 100
-        )
+        cancellation_rate = self._daily_cancellations / max(self._daily_orders, 1) * 100
 
         # Determine level
         level = self._determine_level(otr_current)
@@ -753,18 +757,12 @@ class OTRMonitor:
     def get_all_venue_otrs(self) -> Dict[str, float]:
         """Get OTR for all tracked venues."""
         with self._lock:
-            return {
-                venue: data.otr
-                for venue, data in self._venue_otr.items()
-            }
+            return {venue: data.otr for venue, data in self._venue_otr.items()}
 
     def get_all_algorithm_otrs(self) -> Dict[str, float]:
         """Get OTR for all tracked algorithms."""
         with self._lock:
-            return {
-                algo: data.otr
-                for algo, data in self._algo_otr.items()
-            }
+            return {algo: data.otr for algo, data in self._algo_otr.items()}
 
     # =========================================================================
     # Threshold Checking
@@ -789,13 +787,9 @@ class OTRMonitor:
 
             # Check cancellation rate
             if metrics.cancellation_rate_pct >= self._config.cancellation_critical_pct:
-                logger.warning(
-                    f"Cancellation rate critical: {metrics.cancellation_rate_pct:.1f}%"
-                )
+                logger.warning(f"Cancellation rate critical: {metrics.cancellation_rate_pct:.1f}%")
             elif metrics.cancellation_rate_pct >= self._config.cancellation_warning_pct:
-                logger.info(
-                    f"Cancellation rate elevated: {metrics.cancellation_rate_pct:.1f}%"
-                )
+                logger.info(f"Cancellation rate elevated: {metrics.cancellation_rate_pct:.1f}%")
 
     def _handle_breach(
         self,
@@ -934,7 +928,9 @@ class OTRMonitor:
 
     def _get_or_create_bucket(self, timestamp: float) -> OTRBucket:
         """Get or create bucket for timestamp."""
-        bucket_time = int(timestamp // self._config.bucket_size_seconds) * self._config.bucket_size_seconds
+        bucket_time = (
+            int(timestamp // self._config.bucket_size_seconds) * self._config.bucket_size_seconds
+        )
 
         # Find existing bucket
         for bucket in self._buckets:
@@ -1002,7 +998,8 @@ class OTRMonitor:
                 "venues_tracked": len(self._venue_otr),
                 "algorithms_tracked": len(self._algo_otr),
                 "breaches_today": sum(
-                    1 for b in self._breaches
+                    1
+                    for b in self._breaches
                     if datetime.now(timezone.utc).strftime("%Y-%m-%d") in b.timestamp_utc
                 ),
             }
@@ -1041,6 +1038,7 @@ class OTRMonitor:
 # =============================================================================
 # Factory Function
 # =============================================================================
+
 
 def create_otr_monitor(
     config: Optional[Dict[str, Any]] = None,

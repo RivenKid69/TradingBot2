@@ -654,8 +654,7 @@ class TestTCAComplianceWrapper:
 
         now = datetime.utcnow()
         analyses = wrapper.get_analyses(
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(hours=1)
+            start_time=now - timedelta(hours=1), end_time=now + timedelta(hours=1)
         )
 
         assert len(analyses) == 1
@@ -676,8 +675,7 @@ class TestTCAComplianceWrapper:
 
         now = datetime.utcnow()
         metrics = wrapper.get_aggregate_metrics(
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(hours=1)
+            start_time=now - timedelta(hours=1), end_time=now + timedelta(hours=1)
         )
 
         assert metrics.total_orders == 5
@@ -687,8 +685,7 @@ class TestTCAComplianceWrapper:
         """Test aggregate metrics with no data."""
         now = datetime.utcnow()
         metrics = wrapper.get_aggregate_metrics(
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(hours=1)
+            start_time=now - timedelta(hours=1), end_time=now + timedelta(hours=1)
         )
 
         assert metrics.total_orders == 0
@@ -866,8 +863,18 @@ class TestEdgeCases:
 
         order = {"order_id": "MULTI-VENUE", "side": "BUY", "quantity": Decimal("1000")}
         fills = [
-            {"price": Decimal("100"), "quantity": Decimal("500"), "timestamp_ms": 1000, "venue_mic": "XLON"},
-            {"price": Decimal("100.05"), "quantity": Decimal("500"), "timestamp_ms": 2000, "venue_mic": "XETR"},
+            {
+                "price": Decimal("100"),
+                "quantity": Decimal("500"),
+                "timestamp_ms": 1000,
+                "venue_mic": "XLON",
+            },
+            {
+                "price": Decimal("100.05"),
+                "quantity": Decimal("500"),
+                "timestamp_ms": 2000,
+                "venue_mic": "XETR",
+            },
         ]
 
         analysis = wrapper.analyze_post_trade(order, fills, {})

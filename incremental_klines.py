@@ -38,9 +38,19 @@ INTERVAL_MS = 14_400_000  # 4h bars
 MAX_BATCH = 1000
 
 HEADER = [
-    "open_time","open","high","low","close","volume",
-    "close_time","quote_asset_volume","number_of_trades",
-    "taker_buy_base_asset_volume","taker_buy_quote_asset_volume","ignore","symbol"
+    "open_time",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "close_time",
+    "quote_asset_volume",
+    "number_of_trades",
+    "taker_buy_base_asset_volume",
+    "taker_buy_quote_asset_volume",
+    "ignore",
+    "symbol",
 ]
 
 SYMBOL_MAX_ERRORS = 3
@@ -272,13 +282,9 @@ def run_many(symbols: List[str], close_lag_ms: int) -> int:
                 break
             except Exception as e:
                 errors += 1
-                print(
-                    f"[WARN] {sym}: {e} (attempt {errors}/{SYMBOL_MAX_ERRORS})"
-                )
+                print(f"[WARN] {sym}: {e} (attempt {errors}/{SYMBOL_MAX_ERRORS})")
                 if errors >= SYMBOL_MAX_ERRORS:
-                    print(
-                        f"[WARN] {sym}: skipping after {SYMBOL_MAX_ERRORS} errors"
-                    )
+                    print(f"[WARN] {sym}: skipping after {SYMBOL_MAX_ERRORS} errors")
                     skipped.append(sym)
                     break
                 time.sleep(SYMBOL_RETRY_BACKOFF * errors)

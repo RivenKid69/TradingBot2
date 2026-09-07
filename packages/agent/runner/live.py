@@ -117,16 +117,20 @@ class LiveRunnerConfig(RunnerConfig):
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         base = super().to_dict()
-        base.update({
-            "risk_config": self.risk_config.to_dict() if self.risk_config else None,
-            "local_policy": self.local_policy.to_dict() if self.local_policy else None,
-            "hard_caps": self.hard_caps.to_dict() if self.hard_caps else None,
-            "broker_name": self.broker_name,
-            "order_journal_path": str(self.order_journal_path) if self.order_journal_path else None,
-            "enable_kill_switch": self.enable_kill_switch,
-            "enable_reconciliation": self.enable_reconciliation,
-            "require_local_approval": self.require_local_approval,
-        })
+        base.update(
+            {
+                "risk_config": self.risk_config.to_dict() if self.risk_config else None,
+                "local_policy": self.local_policy.to_dict() if self.local_policy else None,
+                "hard_caps": self.hard_caps.to_dict() if self.hard_caps else None,
+                "broker_name": self.broker_name,
+                "order_journal_path": (
+                    str(self.order_journal_path) if self.order_journal_path else None
+                ),
+                "enable_kill_switch": self.enable_kill_switch,
+                "enable_reconciliation": self.enable_reconciliation,
+                "require_local_approval": self.require_local_approval,
+            }
+        )
         return base
 
 
@@ -175,7 +179,9 @@ class LiveRunner(BaseRunner):
         config.zone = RunnerZone.AGENT
 
         super().__init__(config)
-        self._live_config = config if isinstance(config, LiveRunnerConfig) else LiveRunnerConfig(**config.to_dict())
+        self._live_config = (
+            config if isinstance(config, LiveRunnerConfig) else LiveRunnerConfig(**config.to_dict())
+        )
 
         # Initialize risk components
         self._policy_firewall = PolicyFirewall(
@@ -246,14 +252,20 @@ class LiveRunner(BaseRunner):
         self._reconciler.update_local_positions(dict(self._portfolio.positions))
 
         # Position reconciliation is mandatory only for LIVE runs; for PAPER runs it is best-effort.
-        if self._config.mode == ExecutionMode.LIVE or self._live_config.fetch_broker_positions_fn is not None:
+        if (
+            self._config.mode == ExecutionMode.LIVE
+            or self._live_config.fetch_broker_positions_fn is not None
+        ):
             pos_result = self._reconciler.reconcile()
             if not pos_result.success or pos_result.halted:
                 self._trigger_kill_switch(f"Reconciliation failed: {pos_result.halt_reason}")
                 return
 
         # Order reconciliation is mandatory only for LIVE runs; for PAPER runs it is best-effort.
-        if self._config.mode == ExecutionMode.LIVE or self._live_config.fetch_broker_order_status_fn is not None:
+        if (
+            self._config.mode == ExecutionMode.LIVE
+            or self._live_config.fetch_broker_order_status_fn is not None
+        ):
             order_result = self._reconciler.reconcile_orders()
             if not order_result.success or order_result.halted:
                 self._trigger_kill_switch(f"Reconciliation failed: {order_result.halt_reason}")
@@ -278,12 +290,14 @@ class LiveRunner(BaseRunner):
             self._strategy = strategy
 
             # Initialize strategy
-            strategy.initialize({
-                "symbols": self._config.symbols,
-                "mode": self._config.mode.value,
-                "run_id": self._config.run_id,
-                "is_live": self._config.mode == ExecutionMode.LIVE,
-            })
+            strategy.initialize(
+                {
+                    "symbols": self._config.symbols,
+                    "mode": self._config.mode.value,
+                    "run_id": self._config.run_id,
+                    "is_live": self._config.mode == ExecutionMode.LIVE,
+                }
+            )
 
             # Update result
             self._result.start_time = datetime.utcnow()
@@ -309,9 +323,7 @@ class LiveRunner(BaseRunner):
         """
         # Check kill switch
         if self._kill_switch_triggered:
-            return StrategyResult(
-                warnings=[f"Kill switch triggered: {self._kill_switch_reason}"]
-            )
+            return StrategyResult(warnings=[f"Kill switch triggered: {self._kill_switch_reason}"])
 
         if self._state != RunnerState.RUNNING:
             return StrategyResult()
@@ -322,20 +334,27 @@ class LiveRunner(BaseRunner):
         # Periodic reconciliation before any strategy execution/trading decisions
         self._maybe_reconcile(time.time(), force=False)
         if self._kill_switch_triggered:
-            return StrategyResult(
-                warnings=[f"Kill switch triggered: {self._kill_switch_reason}"]
-            )
+            return StrategyResult(warnings=[f"Kill switch triggered: {self._kill_switch_reason}"])
 
         self._tick_count += 1
 
         # Update prices
-        symbol = market_data.get("symbol", self._config.symbols[0] if self._config.symbols else "UNKNOWN")
+        symbol = market_data.get(
+            "symbol", self._config.symbols[0] if self._config.symbols else "UNKNOWN"
+        )
         price = Decimal(str(market_data.get("close", market_data.get("last", 0))))
         self._prices[symbol] = price
 
         # Update portfolio state with position info
         market_data["position_qty"] = str(self._portfolio.get_position(symbol))
-        market_data["position_avg_price"] = str(self._portfolio.position_values.get(symbol, Decimal("0")) / self._portfolio.get_position(symbol)) if self._portfolio.get_position(symbol) else None
+        market_data["position_avg_price"] = (
+            str(
+                self._portfolio.position_values.get(symbol, Decimal("0"))
+                / self._portfolio.get_position(symbol)
+            )
+            if self._portfolio.get_position(symbol)
+            else None
+        )
 
         # Create context
         context = self._create_context(market_data)
@@ -396,19 +415,24 @@ class LiveRunner(BaseRunner):
 
                         # Notify strategy of order
                         if self._strategy:
-                            self._strategy.on_fill({
-                                "order_id": str(exec_result.order.order_id),
-                                "client_order_id": exec_result.order.client_order_id,
-                                "symbol": exec_result.order.symbol,
-                                "status": exec_result.order.status.value,
-                            })
+                            self._strategy.on_fill(
+                                {
+                                    "order_id": str(exec_result.order.order_id),
+                                    "client_order_id": exec_result.order.client_order_id,
+                                    "symbol": exec_result.order.symbol,
+                                    "status": exec_result.order.status.value,
+                                }
+                            )
 
                         # Callback if provided
                         if self._config.on_fill_callback:
                             self._config.on_fill_callback(exec_result.order.to_dict())
                     else:
                         result.processed = True
-                        result.fill_info = {"status": "no_order", "message": exec_result.error_message}
+                        result.fill_info = {
+                            "status": "no_order",
+                            "message": exec_result.error_message,
+                        }
                 else:
                     result.processed = False
                     result.error = exec_result.error_message
@@ -455,13 +479,17 @@ class LiveRunner(BaseRunner):
             return False
 
         if self._kill_switch_triggered:
-            self._result.errors.append(f"Cannot start: kill switch triggered ({self._kill_switch_reason})")
+            self._result.errors.append(
+                f"Cannot start: kill switch triggered ({self._kill_switch_reason})"
+            )
             return False
 
         # Reconcile on start (safe-halt on uncertainty)
         self._maybe_reconcile(time.time(), force=True)
         if self._kill_switch_triggered:
-            self._result.errors.append(f"Cannot start: kill switch triggered ({self._kill_switch_reason})")
+            self._result.errors.append(
+                f"Cannot start: kill switch triggered ({self._kill_switch_reason})"
+            )
             return False
 
         self._state = RunnerState.RUNNING
@@ -494,7 +522,8 @@ class LiveRunner(BaseRunner):
         self._result.end_time = datetime.utcnow()
         self._result.duration_ms = int(
             (self._result.end_time - self._result.start_time).total_seconds() * 1000
-            if self._result.start_time else 0
+            if self._result.start_time
+            else 0
         )
         self._result.final_equity = self._portfolio.equity
         self._result.total_pnl = self._portfolio.daily_pnl

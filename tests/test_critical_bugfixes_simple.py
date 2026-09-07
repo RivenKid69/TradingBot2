@@ -94,7 +94,9 @@ def test_roc_threshold():
         # Check if matches expected type
         status_type = "✅" if calc_type == expected_type else "❌"
 
-        print(f"  Result: {momentum:.3f} [{status_extreme}] [{status_type} expected {expected_type}]")
+        print(
+            f"  Result: {momentum:.3f} [{status_extreme}] [{status_type} expected {expected_type}]"
+        )
 
         if is_extreme or calc_type != expected_type:
             all_passed = False
@@ -197,4 +199,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

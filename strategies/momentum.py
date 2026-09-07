@@ -26,6 +26,7 @@ class MomentumStrategy(BaseSignalPolicy):
     По умолчанию ``enter_threshold`` и ``exit_threshold`` наследуют старый
     ``threshold`` для обратной совместимости.
     """
+
     required_features = ("ref_price",)
 
     def __init__(self) -> None:
@@ -45,9 +46,7 @@ class MomentumStrategy(BaseSignalPolicy):
         enter_threshold = float(config.get("enter_threshold", fallback_threshold))
         exit_threshold = float(config.get("exit_threshold", fallback_threshold))
         if enter_threshold < exit_threshold:
-            raise ValueError(
-                "enter_threshold must be greater than or equal to exit_threshold"
-            )
+            raise ValueError("enter_threshold must be greater than or equal to exit_threshold")
         self.enter_threshold = enter_threshold
         self.exit_threshold = exit_threshold
         # ``threshold`` сохраняем для обратной совместимости со старыми конфигами

@@ -106,8 +106,9 @@ def test_quantile_loss_asymmetry():
     expected_ratio = (1 - tau) / tau
     actual_ratio = loss_over / loss_under
 
-    assert np.isclose(actual_ratio, expected_ratio, rtol=1e-6), \
-        f"Asymmetry incorrect for τ={tau}: expected {expected_ratio}, got {actual_ratio}"
+    assert np.isclose(
+        actual_ratio, expected_ratio, rtol=1e-6
+    ), f"Asymmetry incorrect for τ={tau}: expected {expected_ratio}, got {actual_ratio}"
 
     # Test with τ = 0.75 (75th percentile)
     tau = 0.75
@@ -126,8 +127,9 @@ def test_quantile_loss_asymmetry():
     expected_ratio = (1 - tau) / tau
     actual_ratio = loss_over / loss_under
 
-    assert np.isclose(actual_ratio, expected_ratio, rtol=1e-6), \
-        f"Asymmetry incorrect for τ={tau}: expected {expected_ratio}, got {actual_ratio}"
+    assert np.isclose(
+        actual_ratio, expected_ratio, rtol=1e-6
+    ), f"Asymmetry incorrect for τ={tau}: expected {expected_ratio}, got {actual_ratio}"
 
     # Test with τ = 0.5 (median)
     tau = 0.5
@@ -141,8 +143,9 @@ def test_quantile_loss_asymmetry():
     print(f"  Ratio (over/under) = {loss_over/loss_under:.4f}")
 
     # For τ = 0.5, losses should be equal
-    assert np.isclose(loss_under, loss_over, rtol=1e-6), \
-        f"Losses should be equal for τ=0.5: {loss_under} vs {loss_over}"
+    assert np.isclose(
+        loss_under, loss_over, rtol=1e-6
+    ), f"Losses should be equal for τ=0.5: {loss_under} vs {loss_over}"
 
     print("\n✓ Asymmetry test passed!")
 
@@ -151,9 +154,9 @@ def test_current_implementation():
     """
     Test the CURRENT (potentially buggy) implementation.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Testing CURRENT implementation (delta = predicted - targets)")
-    print("="*80)
+    print("=" * 80)
 
     # Simulate current implementation
     def current_quantile_huber_loss(predicted, target, tau, kappa=1.0):
@@ -174,7 +177,7 @@ def test_current_implementation():
     tau = 0.25
     target = 0.0
     predicted_under = -1.0  # Underestimation
-    predicted_over = 1.0   # Overestimation
+    predicted_over = 1.0  # Overestimation
 
     loss_under_current = current_quantile_huber_loss(predicted_under, target, tau)
     loss_over_current = current_quantile_huber_loss(predicted_over, target, tau)
@@ -204,9 +207,9 @@ def test_fixed_implementation():
     """
     Test the FIXED implementation.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Testing FIXED implementation (delta = targets - predicted)")
-    print("="*80)
+    print("=" * 80)
 
     # Simulate fixed implementation
     def fixed_quantile_huber_loss(predicted, target, tau, kappa=1.0):
@@ -227,7 +230,7 @@ def test_fixed_implementation():
     tau = 0.25
     target = 0.0
     predicted_under = -1.0  # Underestimation
-    predicted_over = 1.0   # Overestimation
+    predicted_over = 1.0  # Overestimation
 
     loss_under_fixed = fixed_quantile_huber_loss(predicted_under, target, tau)
     loss_over_fixed = fixed_quantile_huber_loss(predicted_over, target, tau)
@@ -242,8 +245,9 @@ def test_fixed_implementation():
     expected_ratio = (1 - tau) / tau
     actual_ratio = loss_over_fixed / loss_under_fixed
 
-    assert np.isclose(actual_ratio, expected_ratio, rtol=1e-6), \
-        f"Fixed implementation still wrong: expected {expected_ratio}, got {actual_ratio}"
+    assert np.isclose(
+        actual_ratio, expected_ratio, rtol=1e-6
+    ), f"Fixed implementation still wrong: expected {expected_ratio}, got {actual_ratio}"
 
     print(f"\n✓ Fixed implementation is CORRECT!")
     return True
@@ -253,9 +257,9 @@ def test_coefficient_values():
     """
     Test that coefficients have correct values in different scenarios.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Testing coefficient values for different quantile levels")
-    print("="*80)
+    print("=" * 80)
 
     # Test various tau values
     tau_values = [0.1, 0.25, 0.5, 0.75, 0.9]
@@ -285,10 +289,12 @@ def test_coefficient_values():
         print(f"  Underestimation coefficient: {coef_under:.4f} (expected: {tau:.4f})")
         print(f"  Overestimation coefficient: {coef_over:.4f} (expected: {1-tau:.4f})")
 
-        assert np.isclose(coef_under, tau, rtol=1e-6), \
-            f"Underestimation coefficient wrong for τ={tau}"
-        assert np.isclose(coef_over, 1-tau, rtol=1e-6), \
-            f"Overestimation coefficient wrong for τ={tau}"
+        assert np.isclose(
+            coef_under, tau, rtol=1e-6
+        ), f"Underestimation coefficient wrong for τ={tau}"
+        assert np.isclose(
+            coef_over, 1 - tau, rtol=1e-6
+        ), f"Overestimation coefficient wrong for τ={tau}"
 
     print("\n✓ Coefficient values test passed!")
 
@@ -310,11 +316,11 @@ if __name__ == "__main__":
     test_fixed_implementation()
 
     if not current_is_correct:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("CONCLUSION: The current implementation HAS A BUG!")
         print("The delta sign is inverted, causing incorrect asymmetry.")
-        print("="*80)
+        print("=" * 80)
     else:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("CONCLUSION: The current implementation is correct!")
-        print("="*80)
+        print("=" * 80)

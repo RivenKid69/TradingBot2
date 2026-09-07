@@ -17,6 +17,7 @@ import logging
 import math
 
 from services.universe import get_symbols
+
 # Backward compatibility: FeatureSpec now lives in transformers, but some tests/imports expect core_config.FeatureSpec
 from transformers import FeatureSpec
 
@@ -27,9 +28,7 @@ class ComponentSpec(BaseModel):
     params — аргументы конструктора.
     """
 
-    target: str = Field(
-        ..., description='Например: "impl_offline_data:OfflineBarSource"'
-    )
+    target: str = Field(..., description='Например: "impl_offline_data:OfflineBarSource"')
     params: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -59,19 +58,17 @@ class ClockSyncConfig(BaseModel):
         default=2000.0, description="Enter safe mode if drift exceeds this many ms"
     )
     attempts: int = Field(default=5, description="Number of samples per sync attempt")
-    ema_alpha: float = Field(
-        default=0.1, description="EMA coefficient for skew updates"
-    )
-    max_step_ms: float = Field(
-        default=1000.0, description="Maximum skew adjustment per sync in ms"
-    )
+    ema_alpha: float = Field(default=0.1, description="EMA coefficient for skew updates")
+    max_step_ms: float = Field(default=1000.0, description="Maximum skew adjustment per sync in ms")
 
 
 class TimingConfig(BaseModel):
     """Настройки тайминга обработки баров и задержек закрытия."""
 
     enforce_closed_bars: bool = Field(default=True)
-    timeframe_ms: int = Field(default=14_400_000)  # Default 4h timeframe; override for other cadences
+    timeframe_ms: int = Field(
+        default=14_400_000
+    )  # Default 4h timeframe; override for other cadences
     close_lag_ms: int = Field(default=2000)
 
 
@@ -190,6 +187,7 @@ class CVaRRiskConfig(BaseModel):
 
 class RiskConfigSection(BaseModel):
     """Top-level risk configuration shared across run modes."""
+
     model_config = ConfigDict(extra="allow")
 
     max_total_notional: Optional[float] = Field(
@@ -255,9 +253,7 @@ class ThrottleConfig(BaseModel):
     """Global throttling configuration."""
 
     enabled: bool = False
-    global_: TokenBucketConfig = Field(
-        default_factory=TokenBucketConfig, alias="global"
-    )
+    global_: TokenBucketConfig = Field(default_factory=TokenBucketConfig, alias="global")
     symbol: TokenBucketConfig = Field(default_factory=TokenBucketConfig)
     mode: str = "drop"
     queue: ThrottleQueueConfig = Field(default_factory=ThrottleQueueConfig)
@@ -353,14 +349,13 @@ class MonitoringConfig:
     enabled: bool = False
     snapshot_metrics_sec: int = 60
     tick_sec: float = 1.0
-    thresholds: MonitoringThresholdsConfig = field(
-        default_factory=MonitoringThresholdsConfig
-    )
+    thresholds: MonitoringThresholdsConfig = field(default_factory=MonitoringThresholdsConfig)
     alerts: MonitoringAlertConfig = field(default_factory=MonitoringAlertConfig)
 
 
 class LatencyConfig(BaseModel):
     """Latency configuration preserved on ``CommonRunConfig``."""
+
     model_config = ConfigDict(extra="allow")
 
     use_seasonality: bool = Field(default=True)
@@ -376,6 +371,7 @@ class LatencyConfig(BaseModel):
 
 class ExecutionBridgeConfig(BaseModel):
     """Configuration payload for execution bridge adapters."""
+
     model_config = ConfigDict(extra="allow")
 
     intrabar_price_model: Optional[str] = Field(default=None)
@@ -410,6 +406,7 @@ class ClipToBarConfig(BaseModel):
 
 class SpotImpactConfig(BaseModel):
     """Coefficients for simple spot-market impact models."""
+
     model_config = ConfigDict(extra="allow")
 
     sqrt_coeff: float = Field(
@@ -484,6 +481,7 @@ class ResolvedTurnoverCaps:
 
 class SpotTurnoverLimit(BaseModel):
     """Per-entity turnover guard expressed in USD/bps terms."""
+
     model_config = ConfigDict(extra="allow")
 
     bps: Optional[float] = Field(
@@ -518,6 +516,7 @@ class SpotTurnoverLimit(BaseModel):
 
 class SpotTurnoverCaps(BaseModel):
     """Turnover guardrails applied to bar-execution decisions."""
+
     model_config = ConfigDict(extra="allow")
 
     per_symbol: Optional[SpotTurnoverLimit] = Field(
@@ -538,6 +537,7 @@ class SpotTurnoverCaps(BaseModel):
 
 class SpotCostConfig(BaseModel):
     """Container describing spot execution cost assumptions."""
+
     model_config = ConfigDict(extra="allow")
 
     taker_fee_bps: float = Field(
@@ -562,6 +562,7 @@ class SpotCostConfig(BaseModel):
 
 class PortfolioConfig(BaseModel):
     """High-level portfolio assumptions shared between runtime components."""
+
     model_config = ConfigDict(extra="allow")
 
     equity_usd: Optional[float] = Field(
@@ -582,6 +583,7 @@ class PortfolioConfig(BaseModel):
 
 class ExecutionRuntimeConfig(BaseModel):
     """Runtime execution configuration shared across run modes."""
+
     model_config = ConfigDict(extra="allow")
 
     intrabar_price_model: Optional[str] = Field(default=None)
@@ -659,6 +661,7 @@ class ExecutionRuntimeConfig(BaseModel):
 
 class AdvRuntimeConfig(BaseModel):
     """Runtime configuration for ADV/turnover data access."""
+
     model_config = ConfigDict(extra="allow")
 
     enabled: bool = Field(
@@ -730,7 +733,7 @@ class AdvRuntimeConfig(BaseModel):
         payload = super().dict(*args, **kwargs)
         return payload
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def _capture_unknown(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(values, dict):
@@ -980,7 +983,9 @@ def load_timing_profiles(
         profiles_payload = raw.get("profiles") or {}
     else:
         defaults_payload = dict(raw)
-        profiles_payload = defaults_payload.pop("profiles", {}) if isinstance(defaults_payload, dict) else {}
+        profiles_payload = (
+            defaults_payload.pop("profiles", {}) if isinstance(defaults_payload, dict) else {}
+        )
 
     defaults_cfg = TimingConfig.model_validate(defaults_payload)
     profile_map = _initial_timing_profile_map()
@@ -1077,7 +1082,7 @@ class SimulationConfig(CommonRunConfig):
     execution_params: ExecutionParams = Field(default_factory=ExecutionParams)
     execution: ExecutionRuntimeConfig = Field(default_factory=ExecutionRuntimeConfig)
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def _sync_symbols(cls, values):
         syms = values.get("symbols")
@@ -1139,7 +1144,7 @@ class TrainDataConfig(BaseModel):
     features_params: Dict[str, Any] = Field(default_factory=dict)
     target_params: Dict[str, Any] = Field(default_factory=dict)
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def _sync_train_window_aliases(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         start = values.get("start_ts")
@@ -1207,7 +1212,7 @@ class TrainConfig(CommonRunConfig):
     )
     execution_params: ExecutionParams = Field(default_factory=ExecutionParams)
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def _sync_symbols(cls, values):
         syms = values.get("symbols")
@@ -1226,9 +1231,7 @@ class EvalInputConfig(BaseModel):
 class EvalConfig(CommonRunConfig):
     mode: str = Field(default="eval")
     input: EvalInputConfig
-    metrics: List[str] = Field(
-        default_factory=lambda: ["sharpe", "sortino", "mdd", "pnl"]
-    )
+    metrics: List[str] = Field(default_factory=lambda: ["sharpe", "sortino", "mdd", "pnl"])
     execution_profile: ExecutionProfile = Field(
         default=ExecutionProfile.MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
     )

@@ -47,15 +47,15 @@ logger = logging.getLogger(__name__)
 # =========================
 
 MONTH_CODES = {
-    1: "F",   # January
-    2: "G",   # February
-    3: "H",   # March
-    4: "J",   # April
-    5: "K",   # May
-    6: "M",   # June
-    7: "N",   # July
-    8: "Q",   # August
-    9: "U",   # September
+    1: "F",  # January
+    2: "G",  # February
+    3: "H",  # March
+    4: "J",  # April
+    5: "K",  # May
+    6: "M",  # June
+    7: "N",  # July
+    8: "Q",  # August
+    9: "U",  # September
     10: "V",  # October
     11: "X",  # November
     12: "Z",  # December
@@ -68,8 +68,10 @@ MONTH_CODE_TO_NUM = {v: k for k, v in MONTH_CODES.items()}
 # Contract Cycles
 # =========================
 
+
 class ContractCycle(str, Enum):
     """Standard contract listing cycles."""
+
     # Quarterly (Mar, Jun, Sep, Dec)
     QUARTERLY = "quarterly"  # H, M, U, Z
     # Monthly
@@ -112,16 +114,32 @@ QUARTERLY_MONTHS = {3, 6, 9, 12}  # H, M, U, Z
 # Roll days before expiry by product type
 ROLL_DAYS_BEFORE: Dict[str, int] = {
     # Equity Index: 8 business days before expiry
-    "ES": 8, "NQ": 8, "YM": 8, "RTY": 8,
-    "MES": 8, "MNQ": 8, "MYM": 8, "M2K": 8,
+    "ES": 8,
+    "NQ": 8,
+    "YM": 8,
+    "RTY": 8,
+    "MES": 8,
+    "MNQ": 8,
+    "MYM": 8,
+    "M2K": 8,
     # Currencies: 2 business days before expiry
-    "6E": 2, "6J": 2, "6B": 2, "6A": 2, "6C": 2,
+    "6E": 2,
+    "6J": 2,
+    "6B": 2,
+    "6A": 2,
+    "6C": 2,
     # Metals: 3 business days before last trading day
-    "GC": 3, "SI": 3, "HG": 3,
+    "GC": 3,
+    "SI": 3,
+    "HG": 3,
     # Energy: 3 business days before expiry
-    "CL": 3, "NG": 3,
+    "CL": 3,
+    "NG": 3,
     # Bonds: 7 business days before first delivery day
-    "ZN": 7, "ZB": 7, "ZT": 7, "ZF": 7,
+    "ZN": 7,
+    "ZB": 7,
+    "ZT": 7,
+    "ZF": 7,
 }
 
 DEFAULT_ROLL_DAYS = 8
@@ -131,9 +149,11 @@ DEFAULT_ROLL_DAYS = 8
 # Rollover Models
 # =========================
 
+
 @dataclass
 class ContractInfo:
     """Information about a specific contract."""
+
     symbol: str
     base_symbol: str
     month_code: str
@@ -147,6 +167,7 @@ class ContractInfo:
 @dataclass
 class RolloverInfo:
     """Information about a rollover event."""
+
     from_contract: ContractInfo
     to_contract: ContractInfo
     roll_date: date
@@ -159,6 +180,7 @@ class RolloverInfo:
 @dataclass
 class ContinuousContractAdjustment:
     """Adjustment for continuous contract series."""
+
     symbol: str
     roll_date: date
     front_price: Decimal
@@ -170,6 +192,7 @@ class ContinuousContractAdjustment:
 # =========================
 # Contract Rollover Manager
 # =========================
+
 
 class ContractRolloverManager:
     """
@@ -445,14 +468,16 @@ class ContractRolloverManager:
             if self._adjustments[symbol]:
                 prev_cumulative = self._adjustments[symbol][-1].cumulative_adjustment
 
-            self._adjustments[symbol].append(ContinuousContractAdjustment(
-                symbol=symbol,
-                roll_date=roll_info.roll_date,
-                front_price=Decimal("0"),  # Would need actual prices
-                back_price=Decimal("0"),
-                adjustment=roll_info.roll_spread,
-                cumulative_adjustment=prev_cumulative + roll_info.roll_spread,
-            ))
+            self._adjustments[symbol].append(
+                ContinuousContractAdjustment(
+                    symbol=symbol,
+                    roll_date=roll_info.roll_date,
+                    front_price=Decimal("0"),  # Would need actual prices
+                    back_price=Decimal("0"),
+                    adjustment=roll_info.roll_spread,
+                    cumulative_adjustment=prev_cumulative + roll_info.roll_spread,
+                )
+            )
 
     def get_roll_history(
         self,
@@ -557,7 +582,7 @@ class ContractRolloverManager:
                 if symbol[i] in MONTH_CODE_TO_NUM:
                     base_symbol = symbol[:i]
                     month_code = symbol[i]
-                    year_str = symbol[i+1:]
+                    year_str = symbol[i + 1 :]
 
                     month = MONTH_CODE_TO_NUM[month_code]
                     year = 2000 + int(year_str) if len(year_str) == 2 else int(year_str)
@@ -680,6 +705,7 @@ class ContractRolloverManager:
 # =========================
 # Convenience Functions
 # =========================
+
 
 def create_rollover_manager(
     expiration_calendar: Optional[Dict[str, List[date]]] = None,

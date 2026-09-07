@@ -81,7 +81,7 @@ class TestProhibitedFields:
                 "nested": {
                     "price": 50000,  # PROHIBITED - nested
                 }
-            }
+            },
         }
 
         violations = check_dict_for_prohibited_fields(data)
@@ -176,7 +176,7 @@ class TestProtocolMessageCheck:
                     "deployment_id": "dep_001",
                     "artifact_digest": "sha256:abc",
                 }
-            ]
+            ],
         }
 
         result = check_protocol_message(message, "test_message")
@@ -263,7 +263,7 @@ class TestCloudBoundaryValidator:
             "commands": [
                 {"command_type": "REQUEST_START_RUN", "deployment_id": "d1"},
                 {"command_type": "REQUEST_STOP_RUN", "deployment_id": "d2"},
-            ]
+            ],
         }
 
         result = validator.validate_command_batch(batch)
@@ -279,7 +279,7 @@ class TestCloudBoundaryValidator:
             "commands": [
                 {"command_type": "REQUEST_START_RUN"},
                 {"command_type": "EXECUTE_ORDER", "side": "BUY"},  # Invalid
-            ]
+            ],
         }
 
         result = validator.validate_command_batch(batch)
@@ -330,7 +330,7 @@ class TestCloudCommandFilter:
                     "price": 50000,  # Should be removed
                 },
                 "good_field": "value",
-            }
+            },
         }
 
         clean = CloudCommandFilter.sanitize_command(dirty)
@@ -355,10 +355,12 @@ class TestRuntimeBoundaryEnforcer:
         def send_command(cmd: dict):
             return "sent"
 
-        result = send_command({
-            "command_type": "REQUEST_START_RUN",
-            "deployment_id": "d1",
-        })
+        result = send_command(
+            {
+                "command_type": "REQUEST_START_RUN",
+                "deployment_id": "d1",
+            }
+        )
 
         assert result == "sent"
         assert enforcer.stats["passed"] == 1
@@ -372,10 +374,12 @@ class TestRuntimeBoundaryEnforcer:
             return "sent"
 
         with pytest.raises(BoundaryViolationError):
-            send_command({
-                "command_type": "REQUEST_START_RUN",
-                "side": "BUY",  # Invalid
-            })
+            send_command(
+                {
+                    "command_type": "REQUEST_START_RUN",
+                    "side": "BUY",  # Invalid
+                }
+            )
 
         assert enforcer.stats["blocked"] == 1
 
@@ -418,37 +422,45 @@ class TestConvenienceFunctions:
 
     def test_validate_cloud_message_valid(self):
         """Test validate_cloud_message with valid data."""
-        result = validate_cloud_message({
-            "command_type": "REQUEST_START_RUN",
-            "deployment_id": "d1",
-        })
+        result = validate_cloud_message(
+            {
+                "command_type": "REQUEST_START_RUN",
+                "deployment_id": "d1",
+            }
+        )
 
         assert result is True
 
     def test_validate_cloud_message_invalid(self):
         """Test validate_cloud_message with invalid data."""
-        result = validate_cloud_message({
-            "command_type": "REQUEST_START_RUN",
-            "side": "BUY",
-        })
+        result = validate_cloud_message(
+            {
+                "command_type": "REQUEST_START_RUN",
+                "side": "BUY",
+            }
+        )
 
         assert result is False
 
     def test_assert_no_intent_fields_clean(self):
         """Test assert_no_intent_fields with clean data."""
         # Should not raise
-        assert_no_intent_fields({
-            "command_type": "REQUEST_START_RUN",
-            "deployment_id": "d1",
-        })
+        assert_no_intent_fields(
+            {
+                "command_type": "REQUEST_START_RUN",
+                "deployment_id": "d1",
+            }
+        )
 
     def test_assert_no_intent_fields_dirty(self):
         """Test assert_no_intent_fields with dirty data."""
         with pytest.raises(BoundaryViolationError):
-            assert_no_intent_fields({
-                "command_type": "REQUEST_START_RUN",
-                "intent": {"type": "market"},
-            })
+            assert_no_intent_fields(
+                {
+                    "command_type": "REQUEST_START_RUN",
+                    "intent": {"type": "market"},
+                }
+            )
 
 
 class TestSourceCodeCheck:
@@ -456,28 +468,28 @@ class TestSourceCodeCheck:
 
     def test_clean_source_passes(self):
         """Test clean source passes."""
-        source = '''
+        source = """
 def send_command(cmd):
     return {"command_type": "REQUEST_START_RUN"}
-'''
+"""
         result = check_python_source_for_intent_injection(source, "test.py")
         assert result.passed is True
 
     def test_dict_with_prohibited_key_detected(self):
         """Test dict literal with prohibited key is detected."""
-        source = '''
+        source = """
 def bad_function():
     return {"side": "BUY", "quantity": 100}
-'''
+"""
         result = check_python_source_for_intent_injection(source, "test.py")
         assert len(result.violations) > 0
 
     def test_subscript_access_detected(self):
         """Test subscript access to prohibited field detected."""
-        source = '''
+        source = """
 def access_side(data):
     return data["side"]
-'''
+"""
         result = check_python_source_for_intent_injection(source, "test.py")
         assert len(result.violations) > 0
 

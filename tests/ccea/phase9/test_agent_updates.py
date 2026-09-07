@@ -331,9 +331,7 @@ class TestAgentUpdateManager:
         await manager.check_for_updates(agent_id, "1.0.0")
         await manager.download_update(agent_id, update.id)
 
-        success, error = await manager.mark_downloaded(
-            agent_id, update.id, "sha256:test"
-        )
+        success, error = await manager.mark_downloaded(agent_id, update.id, "sha256:test")
 
         assert success is True
         status = manager.get_update_status(agent_id, update.id)
@@ -353,9 +351,7 @@ class TestAgentUpdateManager:
         await manager.check_for_updates(agent_id, "1.0.0")
         await manager.download_update(agent_id, update.id)
 
-        success, error = await manager.mark_downloaded(
-            agent_id, update.id, "sha256:different"
-        )
+        success, error = await manager.mark_downloaded(agent_id, update.id, "sha256:different")
 
         assert success is False
         assert "mismatch" in error.lower()
@@ -375,9 +371,7 @@ class TestAgentUpdateManager:
         await manager.download_update(agent_id, update.id)
         await manager.mark_downloaded(agent_id, update.id, "sha256:test")
 
-        success, error = await manager.approve_update(
-            agent_id, update.id, "test_user"
-        )
+        success, error = await manager.approve_update(agent_id, update.id, "test_user")
 
         assert success is True
         status = manager.get_update_status(agent_id, update.id)
@@ -423,9 +417,7 @@ class TestAgentUpdateManager:
         await manager.approve_update(agent_id, update.id, "test_user")
         await manager.install_update(agent_id, update.id)
 
-        success, error = await manager.complete_installation(
-            agent_id, update.id, "1.1.0", True
-        )
+        success, error = await manager.complete_installation(agent_id, update.id, "1.1.0", True)
 
         assert success is True
         status = manager.get_update_status(agent_id, update.id)
@@ -473,9 +465,7 @@ class TestAgentUpdateManager:
         status = manager.get_update_status(agent_id, update.id)
         status.rollback_version = "1.0.0"
 
-        success, error = await manager.initiate_rollback(
-            agent_id, update.id, "Test rollback"
-        )
+        success, error = await manager.initiate_rollback(agent_id, update.id, "Test rollback")
 
         assert success is True
         assert status.state == UpdateState.ROLLED_BACK

@@ -9,4 +9,3 @@ CustodiaCloud is positioned as a software/ICT provider; FE-specific materials ar
 ## Configs
 
 Archived FE configs live under `services/archive/dora_financial_entity/configs/`.
-

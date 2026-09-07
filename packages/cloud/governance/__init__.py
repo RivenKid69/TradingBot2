@@ -78,6 +78,7 @@ try:
         KeyInfo,
         EncryptionResult,
     )
+
     _HAS_CMK = True
 except ImportError:
     _HAS_CMK = False

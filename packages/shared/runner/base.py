@@ -310,7 +310,9 @@ class BaseRunner(ABC):
         elif timestamp is None:
             timestamp = datetime.utcnow()
 
-        symbol = market_data.get("symbol", self._config.symbols[0] if self._config.symbols else "UNKNOWN")
+        symbol = market_data.get(
+            "symbol", self._config.symbols[0] if self._config.symbols else "UNKNOWN"
+        )
 
         snapshot = MarketSnapshot(
             timestamp=timestamp,
@@ -318,9 +320,15 @@ class BaseRunner(ABC):
             bid=Decimal(str(market_data.get("bid", 0))) if market_data.get("bid") else None,
             ask=Decimal(str(market_data.get("ask", 0))) if market_data.get("ask") else None,
             last=Decimal(str(market_data.get("close", market_data.get("last", 0)))),
-            volume_24h=Decimal(str(market_data.get("volume", 0))) if market_data.get("volume") else None,
+            volume_24h=(
+                Decimal(str(market_data.get("volume", 0))) if market_data.get("volume") else None
+            ),
             position_qty=Decimal(str(market_data.get("position_qty", 0))),
-            position_avg_price=Decimal(str(market_data.get("position_avg_price", 0))) if market_data.get("position_avg_price") else None,
+            position_avg_price=(
+                Decimal(str(market_data.get("position_avg_price", 0)))
+                if market_data.get("position_avg_price")
+                else None
+            ),
             features=market_data.get("features", {}),
         )
 

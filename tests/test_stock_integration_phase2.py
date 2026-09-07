@@ -7,7 +7,7 @@ Tests for stock integration improvements (Phase 2 completion):
 2. Download stock data script (VIX pipeline, auto-detection)
 3. Alpaca streaming async wrappers
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 
@@ -39,12 +39,14 @@ from adapters.models import ExchangeVendor
 # SECTION 1: Yahoo Market Data Adapter Tests
 # =============================================================================
 
+
 class TestYahooMarketDataAdapter:
     """Tests for YahooMarketDataAdapter."""
 
     def test_import_adapter(self):
         """Test that adapter can be imported."""
         from adapters.yahoo.market_data import YahooMarketDataAdapter
+
         assert YahooMarketDataAdapter is not None
 
     def test_adapter_initialization(self):
@@ -131,13 +133,16 @@ class TestYahooMarketDataAdapter:
 
         # Create mock DataFrame
         dates = pd.date_range("2024-01-01", periods=5, freq="D", tz="UTC")
-        mock_df = pd.DataFrame({
-            "Open": [20.0, 21.0, 22.0, 23.0, 24.0],
-            "High": [21.0, 22.0, 23.0, 24.0, 25.0],
-            "Low": [19.0, 20.0, 21.0, 22.0, 23.0],
-            "Close": [20.5, 21.5, 22.5, 23.5, 24.5],
-            "Volume": [1000, 1100, 1200, 1300, 1400],
-        }, index=dates)
+        mock_df = pd.DataFrame(
+            {
+                "Open": [20.0, 21.0, 22.0, 23.0, 24.0],
+                "High": [21.0, 22.0, 23.0, 24.0, 25.0],
+                "Low": [19.0, 20.0, 21.0, 22.0, 23.0],
+                "Close": [20.5, 21.5, 22.5, 23.5, 24.5],
+                "Volume": [1000, 1100, 1200, 1300, 1400],
+            },
+            index=dates,
+        )
 
         mock_ticker.history.return_value = mock_df
         mock_yf.Ticker.return_value = mock_ticker
@@ -201,6 +206,7 @@ class TestYahooAdapterRegistration:
 # =============================================================================
 # SECTION 2: Download Stock Data Script Tests
 # =============================================================================
+
 
 class TestSanitizeFilename:
     """Tests for filename sanitization."""
@@ -330,6 +336,7 @@ class TestAutoProviderSelection:
 
     def test_yahoo_symbol_detection(self):
         """Test that Yahoo symbols are auto-detected."""
+
         # Simulate the logic from download_all_symbols
         def get_provider_for_symbol(symbol: str, default: str = "alpaca") -> str:
             if symbol.startswith("^") or "=" in symbol or "-Y." in symbol:
@@ -392,6 +399,7 @@ class TestNYSECalendar:
 # SECTION 3: Alpaca Streaming Tests
 # =============================================================================
 
+
 class TestAlpacaStreamingSync:
     """Tests for sync streaming methods."""
 
@@ -399,10 +407,12 @@ class TestAlpacaStreamingSync:
         """Test stream_bars method signature."""
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         # Check method exists and is callable
         assert hasattr(adapter, "stream_bars")
@@ -412,10 +422,12 @@ class TestAlpacaStreamingSync:
         """Test stream_ticks method signature."""
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         # Check method exists and is callable
         assert hasattr(adapter, "stream_ticks")
@@ -429,10 +441,12 @@ class TestAlpacaStreamingAsync:
         """Test stream_bars_async method exists."""
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         assert hasattr(adapter, "stream_bars_async")
         assert callable(adapter.stream_bars_async)
@@ -441,10 +455,12 @@ class TestAlpacaStreamingAsync:
         """Test stream_ticks_async method exists."""
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         assert hasattr(adapter, "stream_ticks_async")
         assert callable(adapter.stream_ticks_async)
@@ -454,10 +470,12 @@ class TestAlpacaStreamingAsync:
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
         import inspect
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         # Check it's an async generator function
         assert inspect.isasyncgenfunction(adapter.stream_bars_async)
@@ -467,10 +485,12 @@ class TestAlpacaStreamingAsync:
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
         import inspect
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         # Check it's an async generator function
         assert inspect.isasyncgenfunction(adapter.stream_ticks_async)
@@ -483,10 +503,12 @@ class TestAlpacaBarConversion:
         """Test successful bar conversion."""
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         # Create mock Alpaca bar
         mock_bar = MagicMock()
@@ -513,10 +535,12 @@ class TestAlpacaBarConversion:
         """Test bar conversion error handling."""
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         # Create mock bar that raises error
         mock_bar = MagicMock()
@@ -529,6 +553,7 @@ class TestAlpacaBarConversion:
 
 try:
     from alpaca.data.timeframe import TimeFrame
+
     HAS_ALPACA = True
 except ImportError:
     HAS_ALPACA = False
@@ -543,10 +568,12 @@ class TestAlpacaTimeframeParsing:
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
         from alpaca.data.timeframe import TimeFrame
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         tf = adapter._parse_timeframe("1m")
         assert tf == TimeFrame.Minute
@@ -559,10 +586,12 @@ class TestAlpacaTimeframeParsing:
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
         from alpaca.data.timeframe import TimeFrame
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         tf = adapter._parse_timeframe("1h")
         assert tf == TimeFrame.Hour
@@ -575,10 +604,12 @@ class TestAlpacaTimeframeParsing:
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
         from alpaca.data.timeframe import TimeFrame
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         tf = adapter._parse_timeframe("1d")
         assert tf == TimeFrame.Day
@@ -590,10 +621,12 @@ class TestAlpacaTimeframeParsing:
         """Test parsing invalid timeframe."""
         from adapters.alpaca.market_data import AlpacaMarketDataAdapter
 
-        adapter = AlpacaMarketDataAdapter(config={
-            "api_key": "test",
-            "api_secret": "test",
-        })
+        adapter = AlpacaMarketDataAdapter(
+            config={
+                "api_key": "test",
+                "api_secret": "test",
+            }
+        )
 
         with pytest.raises(ValueError, match="Unsupported timeframe"):
             adapter._parse_timeframe("invalid")
@@ -602,6 +635,7 @@ class TestAlpacaTimeframeParsing:
 # =============================================================================
 # SECTION 4: Docstring Tests
 # =============================================================================
+
 
 class TestDocstringUpdates:
     """Tests for docstring updates (STUB removed)."""
@@ -627,6 +661,7 @@ class TestDocstringUpdates:
 # SECTION 5: Integration Tests
 # =============================================================================
 
+
 class TestEndToEndIntegration:
     """End-to-end integration tests (with mocking)."""
 
@@ -638,15 +673,17 @@ class TestEndToEndIntegration:
         import os
 
         # Setup mock
-        mock_df = pd.DataFrame({
-            "timestamp": [1704067200],
-            "open": [20.0],
-            "high": [21.0],
-            "low": [19.0],
-            "close": [20.5],
-            "volume": [1000],
-            "symbol": ["^VIX"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "timestamp": [1704067200],
+                "open": [20.0],
+                "high": [21.0],
+                "low": [19.0],
+                "close": [20.5],
+                "volume": [1000],
+                "symbol": ["^VIX"],
+            }
+        )
         mock_download.return_value = ("^VIX", mock_df, None)
 
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -188,7 +188,7 @@ class TestBacktestDisclaimerService:
             strategy_version="2.0",
             start_date="2021-01-01",
             end_date="2023-12-31",
-            metadata={"notes": "test run"}
+            metadata={"notes": "test run"},
         )
 
         assert result.strategy_name == "momentum_v1"
@@ -300,7 +300,7 @@ class TestConvenienceFunctions:
             results=sample_results,
             strategy_name="momentum_v1",
             start_date="2020-01-01",
-            end_date="2023-12-31"
+            end_date="2023-12-31",
         )
 
         assert "disclaimer" in result

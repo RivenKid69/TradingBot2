@@ -83,6 +83,7 @@ def make_simple_env():
 # Test Definitions
 # ============================================================================
 
+
 def test_upgd_basic_instantiation():
     """Test basic UPGD optimizer instantiation."""
     model = nn.Linear(4, 2)
@@ -162,14 +163,12 @@ def test_vgs_basic_functionality():
 
 def test_upgd_vgs_integration():
     """Test UPGD with VGS integration over multiple steps."""
-    model = nn.Sequential(
-        nn.Linear(4, 32),
-        nn.ReLU(),
-        nn.Linear(32, 2)
-    )
+    model = nn.Sequential(nn.Linear(4, 32), nn.ReLU(), nn.Linear(32, 2))
 
     optimizer = AdaptiveUPGD(model.parameters(), lr=3e-4, sigma=0.01)
-    vgs = VarianceGradientScaler(model.parameters(), enabled=True, beta=0.99, alpha=0.1, warmup_steps=20)
+    vgs = VarianceGradientScaler(
+        model.parameters(), enabled=True, beta=0.99, alpha=0.1, warmup_steps=20
+    )
 
     for step in range(50):
         x = torch.randn(16, 4)
@@ -295,7 +294,7 @@ def test_twin_critics_with_upgd():
     )
 
     # Check Twin Critics is active
-    assert hasattr(model.policy, 'critics')
+    assert hasattr(model.policy, "critics")
     assert len(model.policy.critics) == 2
 
     # Train
@@ -370,7 +369,7 @@ def test_utility_computation():
     optimizer.step()
 
     state = optimizer.state[model.weight]
-    avg_utility = state['avg_utility']
+    avg_utility = state["avg_utility"]
 
     # First step: avg_utility = (1 - beta) * utility = 0.1 * expected_utility
     expected_avg_utility = 0.1 * expected_utility
@@ -433,11 +432,12 @@ def test_weight_decay():
 # Main Test Runner
 # ============================================================================
 
+
 def main():
     """Run all tests."""
-    print("="*60)
+    print("=" * 60)
     print("UPGD + PBT + Twin Critics + VGS - Simple Test Suite")
-    print("="*60)
+    print("=" * 60)
 
     runner = TestRunner()
 

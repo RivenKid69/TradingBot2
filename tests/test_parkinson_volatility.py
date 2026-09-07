@@ -20,15 +20,17 @@ def test_parkinson_basic():
         noise = 0.01 * math.sin(i * 0.5)
         open_p = base_price * (1 + noise)
         high = open_p * 1.005  # High на 0.5% выше open
-        low = open_p * 0.995   # Low на 0.5% ниже open
+        low = open_p * 0.995  # Low на 0.5% ниже open
         close = base_price * (1 + 0.01 * math.sin((i + 0.5) * 0.5))
 
-        ohlc_bars.append({
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        ohlc_bars.append(
+            {
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
         base_price *= 1.001  # медленный рост
 
     # Рассчитываем волатильность для окна 24 бара
@@ -81,7 +83,7 @@ def test_online_transformer():
         noise = 0.01 * math.sin(i * 0.3)
         open_p = base_price * (1 + noise)
         high = open_p * 1.008  # High на 0.8% выше
-        low = open_p * 0.992   # Low на 0.8% ниже
+        low = open_p * 0.992  # Low на 0.8% ниже
         close = base_price * (1 + 0.01 * math.sin((i + 0.5) * 0.3))
 
         feats = transformer.update(
@@ -139,10 +141,7 @@ def test_edge_cases():
         print("  ❌ ОШИБКА: должна вернуться None при недостатке данных")
 
     # Тест 2: Нулевая волатильность (high = low)
-    ohlc_bars = [
-        {"open": 100, "high": 100, "low": 100, "close": 100}
-        for _ in range(50)
-    ]
+    ohlc_bars = [{"open": 100, "high": 100, "low": 100, "close": 100} for _ in range(50)]
     vol = calculate_parkinson_volatility(ohlc_bars, 24)
     if vol is not None and vol >= 0 and vol < 0.0001:
         print("  ✓ Корректная обработка нулевой волатильности")
@@ -151,6 +150,7 @@ def test_edge_cases():
 
     # Тест 3: Высокая волатильность (большой диапазон high-low)
     import random
+
     random.seed(42)
     ohlc_bars = []
     for _ in range(50):
@@ -158,12 +158,14 @@ def test_edge_cases():
         # Создаем большой диапазон между high и low
         low_price = base * random.uniform(0.85, 0.95)
         high_price = base * random.uniform(1.05, 1.15)
-        ohlc_bars.append({
-            "open": base,
-            "high": high_price,
-            "low": low_price,
-            "close": base * random.uniform(0.95, 1.05),
-        })
+        ohlc_bars.append(
+            {
+                "open": base,
+                "high": high_price,
+                "low": low_price,
+                "close": base * random.uniform(0.95, 1.05),
+            }
+        )
 
     vol = calculate_parkinson_volatility(ohlc_bars, 24)
     if vol is not None and vol > 0:
@@ -188,12 +190,14 @@ def test_window_sizes():
         high = open_p * 1.01
         low = open_p * 0.99
         close = base_price * (1 + 0.02 * math.sin((i + 0.5) * 0.01))
-        ohlc_bars.append({
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        ohlc_bars.append(
+            {
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
         base_price *= 1.00001
 
     # Тестируем окна: 24ч (1440 мин), 7д (10080 мин)
@@ -229,12 +233,14 @@ def test_efficiency_comparison():
         low = open_p * (1 - intraday_range)
         close = base_price * (1 + volatility * math.sin((i + 0.5) * 0.1))
 
-        ohlc_bars.append({
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        ohlc_bars.append(
+            {
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
         base_price *= 1.0001
 
     # Рассчитываем Parkinson волатильность
@@ -242,7 +248,7 @@ def test_efficiency_comparison():
 
     # Простая close-to-close волатильность для сравнения
     closes = [bar["close"] for bar in ohlc_bars[-100:]]
-    returns = [math.log(closes[i] / closes[i-1]) for i in range(1, len(closes))]
+    returns = [math.log(closes[i] / closes[i - 1]) for i in range(1, len(closes))]
     close_vol = math.sqrt(sum(r**2 for r in returns) / len(returns))
 
     print(f"  Parkinson волатильность (High-Low): {parkinson_vol:.6f}")
@@ -282,6 +288,7 @@ def main():
         except Exception as e:
             print(f"❌ ИСКЛЮЧЕНИЕ в {test_func.__name__}: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 
@@ -294,5 +301,6 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     success = main()
     sys.exit(0 if success else 1)

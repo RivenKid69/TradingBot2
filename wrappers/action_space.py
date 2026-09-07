@@ -129,4 +129,3 @@ class LongOnlyActionWrapper(ActionWrapper):
         if not np.isfinite(value):
             raise ValueError(f"Non-finite long-only score: {value}")
         return self._map_to_long_only(value)
-

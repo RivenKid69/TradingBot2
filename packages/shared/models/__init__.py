@@ -17,6 +17,7 @@ from core_models import (
     Bar,
     OrderType,
 )
+
 # OrderSide / PositionSide are canonically defined in core_futures (a zone-safe
 # core_* module). They were never in core_models — importing them from there was
 # the P0-A ImportError. Re-export from their real home.

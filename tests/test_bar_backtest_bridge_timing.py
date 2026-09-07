@@ -94,7 +94,9 @@ def _bar_bridge_cls(monkeypatch: pytest.MonkeyPatch) -> type[Any]:
     def _load_specs(*_args: Any, **_kwargs: Any) -> tuple[dict, dict]:  # pragma: no cover - stub
         return {}, {}
 
-    def _round_price_to_tick(price: float, _tick: float, *_args: Any, **_kwargs: Any) -> float:  # pragma: no cover - stub
+    def _round_price_to_tick(
+        price: float, _tick: float, *_args: Any, **_kwargs: Any
+    ) -> float:  # pragma: no cover - stub
         return float(price)
 
     specs_mod.load_specs = _load_specs  # type: ignore[attr-defined]

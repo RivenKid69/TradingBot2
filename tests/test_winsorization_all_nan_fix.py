@@ -53,26 +53,30 @@ class TestWinsorization_AllNaNColumns:
     @pytest.fixture
     def df_with_all_nan(self):
         """DataFrame with an entirely NaN column."""
-        return pd.DataFrame({
-            'timestamp': range(10),
-            'symbol': ['BTC'] * 10,
-            'close': [100.0 + i for i in range(10)],
-            'volume': [1.0 + i for i in range(10)],
-            'all_nan_col': [np.nan] * 10,
-            'partial_nan_col': [1.0, np.nan, 3.0, np.nan, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
-            'valid_col': list(range(10)),
-        })
+        return pd.DataFrame(
+            {
+                "timestamp": range(10),
+                "symbol": ["BTC"] * 10,
+                "close": [100.0 + i for i in range(10)],
+                "volume": [1.0 + i for i in range(10)],
+                "all_nan_col": [np.nan] * 10,
+                "partial_nan_col": [1.0, np.nan, 3.0, np.nan, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+                "valid_col": list(range(10)),
+            }
+        )
 
     @pytest.fixture
     def df_multi_symbol_all_nan(self):
         """Multi-symbol DataFrame where one symbol has all-NaN column."""
-        return pd.DataFrame({
-            'timestamp': [0, 1, 2, 0, 1, 2],
-            'symbol': ['BTC', 'BTC', 'BTC', 'ETH', 'ETH', 'ETH'],
-            'close': [100.0, 101.0, 102.0, 200.0, 201.0, 202.0],
-            'volume': [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            'feature_a': [np.nan] * 6,  # All NaN across both symbols
-        })
+        return pd.DataFrame(
+            {
+                "timestamp": [0, 1, 2, 0, 1, 2],
+                "symbol": ["BTC", "BTC", "BTC", "ETH", "ETH", "ETH"],
+                "close": [100.0, 101.0, 102.0, 200.0, 201.0, 202.0],
+                "volume": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                "feature_a": [np.nan] * 6,  # All NaN across both symbols
+            }
+        )
 
     # ==========================================================================
     # Test 1: Current Behavior (Before Fix)
@@ -93,38 +97,38 @@ class TestWinsorization_AllNaNColumns:
 
         # Should log warning during fit
         import warnings
+
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            pipe.fit({'BTC': df_with_all_nan.copy()})
+            pipe.fit({"BTC": df_with_all_nan.copy()})
 
             # Note: warning is logged via logging module, not warnings module
             # So we check logs separately
 
         # Check stats for all-NaN column
-        stats = pipe.stats.get('all_nan_col', {})
+        stats = pipe.stats.get("all_nan_col", {})
 
         # FIXED BEHAVIOR:
         # - is_all_nan=True (new flag)
         # - NO winsorize_bounds (or None)
         # - is_constant=True (still true)
-        assert stats.get('is_all_nan', False) == True, \
-            "FIXED: Should mark as all-NaN"
+        assert stats.get("is_all_nan", False) == True, "FIXED: Should mark as all-NaN"
 
-        assert 'winsorize_bounds' not in stats, \
-            "FIXED: Should NOT have winsorize_bounds for all-NaN columns"
+        assert (
+            "winsorize_bounds" not in stats
+        ), "FIXED: Should NOT have winsorize_bounds for all-NaN columns"
 
-        assert stats['is_constant'] == True, "Should still be marked constant"
+        assert stats["is_constant"] == True, "Should still be marked constant"
 
         # Transform and check output
         result = pipe.transform_df(df_with_all_nan.copy())
-        z_col = 'all_nan_col_z'
+        z_col = "all_nan_col_z"
 
         assert z_col in result.columns, "Should create z-score column"
         z_values = result[z_col]
 
         # FIXED BEHAVIOR: Preserve NaN (do NOT convert to zeros)
-        assert z_values.isna().all(), \
-            "FIXED: All-NaN column should remain NaN (not zeros)"
+        assert z_values.isna().all(), "FIXED: All-NaN column should remain NaN (not zeros)"
 
     # ==========================================================================
     # Test 2: Expected Behavior (After Fix)
@@ -149,35 +153,39 @@ class TestWinsorization_AllNaNColumns:
         pipe = FeaturePipeline(enable_winsorization=True, strict_idempotency=True)
 
         # Capture logging output using pytest caplog fixture
-        with caplog.at_level(logging.WARNING, logger='features_pipeline'):
-            pipe.fit({'BTC': df_with_all_nan.copy()})
+        with caplog.at_level(logging.WARNING, logger="features_pipeline"):
+            pipe.fit({"BTC": df_with_all_nan.copy()})
 
         # Check that warning was logged (uses logging.warning, not warnings.warn)
         log_messages = [record.message for record in caplog.records]
-        assert any('all_nan_col' in msg or 'ALL NaN' in msg for msg in log_messages) or \
-               len(log_messages) > 0, \
-            "Should log warning mentioning all-NaN column (via logging module)"
+        assert (
+            any("all_nan_col" in msg or "ALL NaN" in msg for msg in log_messages)
+            or len(log_messages) > 0
+        ), "Should log warning mentioning all-NaN column (via logging module)"
 
         # Check stats
-        stats = pipe.stats.get('all_nan_col', {})
+        stats = pipe.stats.get("all_nan_col", {})
 
         # Fixed behavior: is_all_nan=True, no winsorize_bounds
-        assert stats.get('is_all_nan', False) == True, \
-            "Should mark column with is_all_nan=True flag"
+        assert (
+            stats.get("is_all_nan", False) == True
+        ), "Should mark column with is_all_nan=True flag"
 
-        assert 'winsorize_bounds' not in stats, \
-            "Should NOT have winsorize_bounds for all-NaN columns"
+        assert (
+            "winsorize_bounds" not in stats
+        ), "Should NOT have winsorize_bounds for all-NaN columns"
 
         # Transform and check output preserves NaN
         result = pipe.transform_df(df_with_all_nan.copy())
-        z_col = 'all_nan_col_z'
+        z_col = "all_nan_col_z"
 
         assert z_col in result.columns, "Should create z-score column"
         z_values = result[z_col]
 
         # Fixed behavior: preserve NaN (not convert to zeros)
-        assert z_values.isna().all(), \
-            "All-NaN column should remain NaN (not silently converted to zeros)"
+        assert (
+            z_values.isna().all()
+        ), "All-NaN column should remain NaN (not silently converted to zeros)"
 
     # ==========================================================================
     # Test 3: Partial NaN Handling (Should Work Correctly)
@@ -190,34 +198,35 @@ class TestWinsorization_AllNaNColumns:
         This should already work - winsorization uses np.nanpercentile.
         """
         pipe = FeaturePipeline(enable_winsorization=True, strict_idempotency=True)
-        pipe.fit({'BTC': df_with_all_nan.copy()})
+        pipe.fit({"BTC": df_with_all_nan.copy()})
 
-        stats = pipe.stats.get('partial_nan_col', {})
+        stats = pipe.stats.get("partial_nan_col", {})
 
         # Should have valid bounds (computed on non-NaN values)
-        assert 'winsorize_bounds' in stats
-        bounds = stats['winsorize_bounds']
-        assert np.isfinite(bounds[0]) and np.isfinite(bounds[1]), \
-            "Partial NaN column should have valid bounds"
+        assert "winsorize_bounds" in stats
+        bounds = stats["winsorize_bounds"]
+        assert np.isfinite(bounds[0]) and np.isfinite(
+            bounds[1]
+        ), "Partial NaN column should have valid bounds"
 
         # Should NOT be marked constant (has variation)
-        assert stats['is_constant'] == False, "Should not be constant"
+        assert stats["is_constant"] == False, "Should not be constant"
 
         # Transform should work
         result = pipe.transform_df(df_with_all_nan.copy())
-        z_col = 'partial_nan_col_z'
+        z_col = "partial_nan_col_z"
 
         assert z_col in result.columns
         z_values = result[z_col]
 
         # NaN positions should be preserved
-        original_nan_mask = df_with_all_nan['partial_nan_col'].isna()
+        original_nan_mask = df_with_all_nan["partial_nan_col"].isna()
         result_nan_mask = z_values.isna()
         pd.testing.assert_series_equal(
             original_nan_mask,
             result_nan_mask,
             check_names=False,
-            obj="NaN positions should be preserved"
+            obj="NaN positions should be preserved",
         )
 
         # Non-NaN values should be z-scored
@@ -236,16 +245,17 @@ class TestWinsorization_AllNaNColumns:
         Edge case: Column is all-NaN for ALL symbols.
         """
         pipe = FeaturePipeline(enable_winsorization=True, strict_idempotency=True)
-        pipe.fit({'ALL': df_multi_symbol_all_nan.copy()})
+        pipe.fit({"ALL": df_multi_symbol_all_nan.copy()})
 
-        stats = pipe.stats.get('feature_a', {})
+        stats = pipe.stats.get("feature_a", {})
 
         # Should detect all-NaN even across multiple symbols
-        if 'winsorize_bounds' in stats:
-            bounds = stats['winsorize_bounds']
+        if "winsorize_bounds" in stats:
+            bounds = stats["winsorize_bounds"]
             # Current behavior: (nan, nan)
-            assert np.isnan(bounds[0]) and np.isnan(bounds[1]), \
-                "Multi-symbol all-NaN column has NaN bounds (current bug)"
+            assert np.isnan(bounds[0]) and np.isnan(
+                bounds[1]
+            ), "Multi-symbol all-NaN column has NaN bounds (current bug)"
 
     # ==========================================================================
     # Test 5: Disable Winsorization
@@ -258,31 +268,30 @@ class TestWinsorization_AllNaNColumns:
         After fix (2025-11-21): Should still detect and preserve NaN.
         """
         pipe = FeaturePipeline(enable_winsorization=False, strict_idempotency=True)
-        pipe.fit({'BTC': df_with_all_nan.copy()})
+        pipe.fit({"BTC": df_with_all_nan.copy()})
 
-        stats = pipe.stats.get('all_nan_col', {})
+        stats = pipe.stats.get("all_nan_col", {})
 
         # No winsorize_bounds when disabled
-        assert 'winsorize_bounds' not in stats, \
-            "Should not have winsorize_bounds when disabled"
+        assert "winsorize_bounds" not in stats, "Should not have winsorize_bounds when disabled"
 
         # Should be marked as all-NaN even without winsorization
-        assert stats.get('is_all_nan', False) == True, \
-            "FIXED: Should detect all-NaN even without winsorization"
+        assert (
+            stats.get("is_all_nan", False) == True
+        ), "FIXED: Should detect all-NaN even without winsorization"
 
         # Should still be marked constant
-        assert stats['is_constant'] == True
+        assert stats["is_constant"] == True
 
         # Transform
         result = pipe.transform_df(df_with_all_nan.copy())
-        z_col = 'all_nan_col_z'
+        z_col = "all_nan_col_z"
 
         assert z_col in result.columns
         z_values = result[z_col]
 
         # FIXED: Should preserve NaN (not convert to zeros)
-        assert z_values.isna().all(), \
-            "FIXED: All-NaN preserved even without winsorization"
+        assert z_values.isna().all(), "FIXED: All-NaN preserved even without winsorization"
 
     # ==========================================================================
     # Test 6: Save/Load Preserves Invalid Markers
@@ -297,7 +306,7 @@ class TestWinsorization_AllNaNColumns:
         pytest.skip("FIX NOT YET IMPLEMENTED")
 
         pipe = FeaturePipeline(enable_winsorization=True, strict_idempotency=True)
-        pipe.fit({'BTC': df_with_all_nan.copy()})
+        pipe.fit({"BTC": df_with_all_nan.copy()})
 
         # Save
         save_path = tmp_path / "pipeline.json"
@@ -307,9 +316,10 @@ class TestWinsorization_AllNaNColumns:
         loaded_pipe = FeaturePipeline.load(str(save_path))
 
         # Check that invalid markers are preserved
-        stats = loaded_pipe.stats.get('all_nan_col', {})
-        assert stats.get('is_invalid', False) or stats.get('all_nan', False), \
-            "Invalid markers should be preserved in save/load"
+        stats = loaded_pipe.stats.get("all_nan_col", {})
+        assert stats.get("is_invalid", False) or stats.get(
+            "all_nan", False
+        ), "Invalid markers should be preserved in save/load"
 
     # ==========================================================================
     # Test 7: Zero-Variance vs All-NaN Distinction
@@ -322,27 +332,29 @@ class TestWinsorization_AllNaNColumns:
         Zero-variance: [5.0, 5.0, 5.0, ...] -> valid, should normalize to zeros
         All-NaN: [nan, nan, nan, ...] -> invalid, should warn/skip
         """
-        df = pd.DataFrame({
-            'timestamp': range(10),
-            'symbol': ['BTC'] * 10,
-            'close': [100.0] * 10,
-            'zero_var': [5.0] * 10,  # Constant, zero variance
-            'all_nan': [np.nan] * 10,  # All NaN
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": range(10),
+                "symbol": ["BTC"] * 10,
+                "close": [100.0] * 10,
+                "zero_var": [5.0] * 10,  # Constant, zero variance
+                "all_nan": [np.nan] * 10,  # All NaN
+            }
+        )
 
         pipe = FeaturePipeline(enable_winsorization=True, strict_idempotency=True)
-        pipe.fit({'BTC': df.copy()})
+        pipe.fit({"BTC": df.copy()})
 
         # Zero variance column: Should be marked constant, but VALID
-        zero_var_stats = pipe.stats.get('zero_var', {})
-        assert zero_var_stats['is_constant'] == True, "Zero variance -> constant"
+        zero_var_stats = pipe.stats.get("zero_var", {})
+        assert zero_var_stats["is_constant"] == True, "Zero variance -> constant"
         # Should NOT have invalid markers
-        assert not zero_var_stats.get('is_invalid', False)
-        assert not zero_var_stats.get('all_nan', False)
+        assert not zero_var_stats.get("is_invalid", False)
+        assert not zero_var_stats.get("all_nan", False)
 
         # All-NaN column: Should be marked constant AND invalid
-        all_nan_stats = pipe.stats.get('all_nan', {})
-        assert all_nan_stats['is_constant'] == True, "All-NaN -> constant (current)"
+        all_nan_stats = pipe.stats.get("all_nan", {})
+        assert all_nan_stats["is_constant"] == True, "All-NaN -> constant (current)"
 
         # After fix: Should ALSO have invalid marker
         # pytest.skip("Fix not implemented")
@@ -367,25 +379,23 @@ class TestWinsorization_AllNaNColumns:
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            pipe.fit({'BTC': df_with_all_nan.copy()})
+            pipe.fit({"BTC": df_with_all_nan.copy()})
 
             # Find warning for all_nan_col
-            all_nan_warnings = [
-                warning for warning in w
-                if 'all_nan_col' in str(warning.message)
-            ]
+            all_nan_warnings = [warning for warning in w if "all_nan_col" in str(warning.message)]
 
             assert len(all_nan_warnings) > 0, "Should warn about all-NaN column"
 
             warning_msg = str(all_nan_warnings[0].message)
 
             # Check message quality
-            assert 'all_nan_col' in warning_msg, "Should mention column name"
-            assert 'entirely NaN' in warning_msg or 'all-NaN' in warning_msg, \
-                "Should explain problem"
+            assert "all_nan_col" in warning_msg, "Should mention column name"
+            assert (
+                "entirely NaN" in warning_msg or "all-NaN" in warning_msg
+            ), "Should explain problem"
             # Optionally check for recommendations
             # assert 'impute' in warning_msg or 'skip' in warning_msg
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])

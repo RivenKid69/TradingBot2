@@ -49,14 +49,19 @@ def load_membership_changes(path: str) -> pd.DataFrame:
     tick_c = cols.get("ticker") or cols.get("symbol")
     act_c = cols.get("action") or cols.get("event")
     if not (date_c and tick_c and act_c):
-        raise ValueError(f"membership file must have columns date,ticker,action; got {list(df.columns)}")
-    out = pd.DataFrame({
-        "date": pd.to_datetime(df[date_c]).dt.strftime("%Y-%m-%d"),
-        "ticker": df[tick_c].astype(str).str.upper().str.strip(),
-        "action": df[act_c].astype(str).str.lower().str.strip(),
-    })
+        raise ValueError(
+            f"membership file must have columns date,ticker,action; got {list(df.columns)}"
+        )
+    out = pd.DataFrame(
+        {
+            "date": pd.to_datetime(df[date_c]).dt.strftime("%Y-%m-%d"),
+            "ticker": df[tick_c].astype(str).str.upper().str.strip(),
+            "action": df[act_c].astype(str).str.lower().str.strip(),
+        }
+    )
     out["action"] = out["action"].map(
-        lambda a: "add" if a in _ADD else ("remove" if a in _REMOVE else a))
+        lambda a: "add" if a in _ADD else ("remove" if a in _REMOVE else a)
+    )
     out = out[out["action"].isin(["add", "remove"])].reset_index(drop=True)
     return out.sort_values(["date", "ticker"]).reset_index(drop=True)
 
@@ -75,13 +80,17 @@ def changes_to_baseline_and_events(changes: pd.DataFrame):
         added = sorted(day[day["action"] == "add"]["ticker"].unique().tolist())
         removed = sorted(day[day["action"] == "remove"]["ticker"].unique().tolist())
         if added or removed:
-            events.append({"date": d, "added": added, "removed": removed,
-                           "reason": "membership change"})
+            events.append(
+                {"date": d, "added": added, "removed": removed, "reason": "membership change"}
+            )
     return baseline_date, baseline, events
 
 
 def build_index_membership_universe(
-    path: str, *, index: str = "CUSTOM", name: Optional[str] = None,
+    path: str,
+    *,
+    index: str = "CUSTOM",
+    name: Optional[str] = None,
     delistings: Optional[Sequence[Dict[str, Any]]] = None,
 ):
     """Построить survivorship-free ``IndexMembershipUniverse`` из changes-файла."""
@@ -92,16 +101,25 @@ def build_index_membership_universe(
     if baseline_date is None:
         raise ValueError(f"no membership events parsed from {path}")
     uni = IndexMembershipUniverse.from_baseline(
-        index, baseline, baseline_date,
-        changes=events, delistings=list(delistings or []),
+        index,
+        baseline,
+        baseline_date,
+        changes=events,
+        delistings=list(delistings or []),
         name=name or f"index:{index}",
     )
-    logger.info("IndexMembershipUniverse '%s': baseline=%d @ %s, %d change-events (PIT, survivorship-free)",
-                index, len(baseline), baseline_date, len(events))
+    logger.info(
+        "IndexMembershipUniverse '%s': baseline=%d @ %s, %d change-events (PIT, survivorship-free)",
+        index,
+        len(baseline),
+        baseline_date,
+        len(events),
+    )
     return uni
 
 
 __all__ = [
-    "load_membership_changes", "changes_to_baseline_and_events",
+    "load_membership_changes",
+    "changes_to_baseline_and_events",
     "build_index_membership_universe",
 ]

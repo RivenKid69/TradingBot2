@@ -25,6 +25,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 | Hello Strategy | Run "hello world" (no broker) | Complete |
 
 **Success Criteria:**
+
 - [ ] Agent can enroll with Cloud using token
 - [ ] Heartbeat visible in Cloud dashboard
 - [ ] Artifact builds and signs successfully
@@ -48,6 +49,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 | Command idempotency | Deduplication | Complete |
 
 **Success Criteria:**
+
 - [ ] Cloud can send REQUEST_START_RUN
 - [ ] Agent shows approval prompt locally
 - [ ] User can approve/reject in CLI/UI
@@ -56,6 +58,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 - [ ] Commands are idempotent (retry-safe)
 
 **Commands implemented:**
+
 - REQUEST_START_RUN
 - REQUEST_STOP_RUN
 - REQUEST_PAUSE_RUN
@@ -78,6 +81,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 | Idempotency | Client order IDs | Complete |
 
 **Success Criteria:**
+
 - [ ] Credentials stored in Local Vault
 - [ ] Strategy produces Intent locally
 - [ ] Risk Manager validates Intent
@@ -87,6 +91,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 - [ ] No duplicate orders after retry
 
 **Broker Connectors:**
+
 - Binance Spot/Futures
 - Alpaca Stocks
 - OANDA Forex
@@ -108,6 +113,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 | Retention policies | Configurable retention | Complete |
 
 **Success Criteria:**
+
 - [ ] Telemetry buffered locally
 - [ ] All telemetry passes through redaction
 - [ ] AGGREGATED is default (no raw orders)
@@ -116,6 +122,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 - [ ] Data deleted after retention period
 
 **Privacy Features:**
+
 - Mandatory redaction middleware
 - No RAW_ORDER_EVENTS level
 - Configurable telemetry level
@@ -137,6 +144,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 | Custom SLAs | Contract support | In Progress |
 
 **Success Criteria:**
+
 - [ ] Full stack deploys in customer VPC
 - [ ] Evidence pack exports to customer storage
 - [ ] Access audit log captures all reads
@@ -145,6 +153,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 - [ ] Custom SLA terms implemented
 
 **Enterprise Features:**
+
 - On-premises deployment
 - Air-gapped mode
 - Evidence pack export
@@ -173,12 +182,14 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 **Context:** Should we require Docker for all retail users, or allow process-only sandbox?
 
 **Decision:** Process-only is acceptable for retail
+
 - Docker optional but recommended
 - Process sandbox provides basic isolation
 - Resource limits via OS controls
 - Enterprise can mandate Docker
 
 **Rationale:**
+
 - Lower barrier to entry for retail
 - Docker not available on all systems
 - Process sandbox sufficient for trusted user code
@@ -188,12 +199,14 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 **Context:** Should we ever allow raw order events in telemetry?
 
 **Decision:** Disabled by default, enterprise-only with contract
+
 - `RAW_ORDER_EVENTS` level does not exist in protocol
 - Enterprise can request via custom contract
 - Requires explicit data processing agreement
 - Additional legal review required
 
 **Rationale:**
+
 - Privacy risk: order data is highly sensitive
 - IP risk: reveals strategy logic
 - Regulatory risk: could be construed as advisory data
@@ -203,12 +216,14 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 **Context:** Can Cloud request Agent to flatten all positions?
 
 **Decision:** Local-only by default
+
 - No `FLATTEN_POSITION` command in protocol
 - Kill switch can flatten (local decision)
 - Enterprise can enable via policy
 - Requires explicit local configuration
 
 **Rationale:**
+
 - Flatten is a trading action
 - Cloud should not control trading
 - Local kill switch provides this capability
@@ -224,12 +239,14 @@ Agent: Receives intent, creates order
 ```
 
 **Decision:** DEFERRED
+
 - Legally/reputation risky
 - Could be construed as Cloud sending orders
 - Requires thorough legal review
 - May pursue in future with proper structuring
 
 **Concerns:**
+
 - "Intent" vs "Order" distinction blurs
 - Cloud becomes de facto decision maker
 - Regulatory risk increases significantly
@@ -239,12 +256,14 @@ Agent: Receives intent, creates order
 **Context:** What data is GDPR "personal data" for our platform?
 
 **Decision:** Conservative interpretation
+
 - Email, name, IP address: Personal
 - Trading activity: Personal (reveals behavior)
 - Strategy performance: Pseudonymous (with user ID)
 - Aggregated metrics: Not personal (no identification)
 
 **Implementation:**
+
 - See [CCEA_PRIVACY.md](./CCEA_PRIVACY.md)
 - DPA template includes data categories
 - Retention policies per data type
@@ -254,12 +273,14 @@ Agent: Receives intent, creates order
 **Context:** How do we verify user actually controls their VPS?
 
 **Decision:** Attestation + ToS
+
 - User attests in ToS they control the host
 - Agent generates device key on first run
 - No verification of VPS ownership required
 - Enterprise: can require attestation documents
 
 **Rationale:**
+
 - We cannot technically verify VPS ownership
 - ToS places responsibility on user
 - Device key proves consistent agent identity
@@ -453,6 +474,7 @@ User (Cloud UI)         Cloud                      Agent              User (Loca
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](./CCEA_OVERVIEW.md)
 - [State Machine](./CCEA_STATE_MACHINE.md)
 - [Protocol](./CCEA_PROTOCOL.md)

@@ -102,19 +102,35 @@ class DynamicSpreadConfig:
             hash=str(d["hash"]) if d.get("hash") is not None else None,
             alpha_bps=float(alpha_bps_val) if alpha_bps_val is not None else None,
             beta_coef=float(beta_coef_val) if beta_coef_val is not None else None,
-            min_spread_bps=float(d["min_spread_bps"]) if d.get("min_spread_bps") is not None else None,
-            max_spread_bps=float(d["max_spread_bps"]) if d.get("max_spread_bps") is not None else None,
-            smoothing_alpha=float(d["smoothing_alpha"]) if d.get("smoothing_alpha") is not None else None,
+            min_spread_bps=(
+                float(d["min_spread_bps"]) if d.get("min_spread_bps") is not None else None
+            ),
+            max_spread_bps=(
+                float(d["max_spread_bps"]) if d.get("max_spread_bps") is not None else None
+            ),
+            smoothing_alpha=(
+                float(d["smoothing_alpha"]) if d.get("smoothing_alpha") is not None else None
+            ),
             vol_metric=str(vol_metric_val) if vol_metric_val is not None else None,
             vol_window=int(vol_window_val) if vol_window_val is not None else None,
             use_volatility=bool(d.get("use_volatility", False)),
             gamma=float(d["gamma"]) if d.get("gamma") is not None else None,
             zscore_clip=float(d["zscore_clip"]) if d.get("zscore_clip") is not None else None,
-            refresh_warn_days=int(d["refresh_warn_days"]) if d.get("refresh_warn_days") is not None else None,
-            refresh_fail_days=int(d["refresh_fail_days"]) if d.get("refresh_fail_days") is not None else None,
+            refresh_warn_days=(
+                int(d["refresh_warn_days"]) if d.get("refresh_warn_days") is not None else None
+            ),
+            refresh_fail_days=(
+                int(d["refresh_fail_days"]) if d.get("refresh_fail_days") is not None else None
+            ),
             refresh_on_start=bool(d.get("refresh_on_start", False)),
-            last_refresh_ts=int(d["last_refresh_ts"]) if d.get("last_refresh_ts") is not None else None,
-            fallback_spread_bps=float(d["fallback_spread_bps"]) if d.get("fallback_spread_bps") is not None else None,
+            last_refresh_ts=(
+                int(d["last_refresh_ts"]) if d.get("last_refresh_ts") is not None else None
+            ),
+            fallback_spread_bps=(
+                float(d["fallback_spread_bps"])
+                if d.get("fallback_spread_bps") is not None
+                else None
+            ),
             extra=extra,
         )
 
@@ -209,9 +225,19 @@ class DynamicImpactConfig:
             fallback_k=float(d["fallback_k"]) if d.get("fallback_k") is not None else None,
             vol_metric=str(d["vol_metric"]) if d.get("vol_metric") is not None else None,
             vol_window=int(d["vol_window"]) if d.get("vol_window") is not None else None,
-            participation_metric=str(d["participation_metric"]) if d.get("participation_metric") is not None else None,
-            participation_window=int(d["participation_window"]) if d.get("participation_window") is not None else None,
-            smoothing_alpha=float(d["smoothing_alpha"]) if d.get("smoothing_alpha") is not None else None,
+            participation_metric=(
+                str(d["participation_metric"])
+                if d.get("participation_metric") is not None
+                else None
+            ),
+            participation_window=(
+                int(d["participation_window"])
+                if d.get("participation_window") is not None
+                else None
+            ),
+            smoothing_alpha=(
+                float(d["smoothing_alpha"]) if d.get("smoothing_alpha") is not None else None
+            ),
             zscore_clip=float(d["zscore_clip"]) if d.get("zscore_clip") is not None else None,
             extra=extra,
         )
@@ -277,9 +303,15 @@ class TailShockConfig:
             probability=float(d.get("probability", 0.0)),
             shock_bps=float(d.get("shock_bps", 0.0)),
             shock_multiplier=float(d.get("shock_multiplier", 1.0)),
-            decay_halflife_bars=int(d["decay_halflife_bars"]) if d.get("decay_halflife_bars") is not None else None,
-            min_multiplier=float(d["min_multiplier"]) if d.get("min_multiplier") is not None else None,
-            max_multiplier=float(d["max_multiplier"]) if d.get("max_multiplier") is not None else None,
+            decay_halflife_bars=(
+                int(d["decay_halflife_bars"]) if d.get("decay_halflife_bars") is not None else None
+            ),
+            min_multiplier=(
+                float(d["min_multiplier"]) if d.get("min_multiplier") is not None else None
+            ),
+            max_multiplier=(
+                float(d["max_multiplier"]) if d.get("max_multiplier") is not None else None
+            ),
             seed=int(d["seed"]) if d.get("seed") is not None else None,
             extra=extra,
         )
@@ -357,11 +389,15 @@ class AdvConfig:
         return cls(
             enabled=bool(d.get("enabled", False)),
             window_days=int(d.get("window_days", 30)),
-            smoothing_alpha=float(d["smoothing_alpha"]) if d.get("smoothing_alpha") is not None else None,
+            smoothing_alpha=(
+                float(d["smoothing_alpha"]) if d.get("smoothing_alpha") is not None else None
+            ),
             fallback_adv=float(d["fallback_adv"]) if d.get("fallback_adv") is not None else None,
             min_adv=float(d["min_adv"]) if d.get("min_adv") is not None else None,
             max_adv=float(d["max_adv"]) if d.get("max_adv") is not None else None,
-            seasonality_path=str(d["seasonality_path"]) if d.get("seasonality_path") is not None else None,
+            seasonality_path=(
+                str(d["seasonality_path"]) if d.get("seasonality_path") is not None else None
+            ),
             override_path=str(d["override_path"]) if d.get("override_path") is not None else None,
             hash=str(d["hash"]) if d.get("hash") is not None else None,
             profile_kind=str(d["profile_kind"]) if d.get("profile_kind") is not None else None,
@@ -549,9 +585,7 @@ class CalibratedRegimeOverride:
             "count",
         }
         impact_mean = _safe_float(
-            data.get("impact_mean_bps")
-            or data.get("impact_bps")
-            or data.get("impact")
+            data.get("impact_mean_bps") or data.get("impact_bps") or data.get("impact")
         )
         count_val = data.get("count")
         count_int = None
@@ -619,9 +653,7 @@ class SymbolCalibratedProfile:
             impact_curve_raw, (str, bytes, bytearray)
         ):
             impact_curve = tuple(
-                dict(bucket)
-                for bucket in impact_curve_raw
-                if isinstance(bucket, Mapping)
+                dict(bucket) for bucket in impact_curve_raw if isinstance(bucket, Mapping)
             )
         hourly_block = data.get("hourly_multipliers") or data.get("hourly")
         hourly_profile: Optional[CalibratedHourlyProfile] = None
@@ -630,7 +662,11 @@ class SymbolCalibratedProfile:
         regime_block = data.get("regime_overrides") or data.get("regime_multipliers")
         regime_values: Dict[str, CalibratedRegimeOverride] = {}
         if isinstance(regime_block, Mapping):
-            values = regime_block.get("values") if isinstance(regime_block.get("values"), Mapping) else regime_block
+            values = (
+                regime_block.get("values")
+                if isinstance(regime_block.get("values"), Mapping)
+                else regime_block
+            )
             if isinstance(values, Mapping):
                 for key, value in values.items():
                     if not isinstance(value, Mapping):
@@ -663,8 +699,12 @@ class SymbolCalibratedProfile:
             symbol=_normalise_symbol_key(data.get("symbol")),
             path=str(data.get("path")) if data.get("path") is not None else None,
             curve_path=str(data.get("curve_path")) if data.get("curve_path") is not None else None,
-            hourly_path=str(data.get("hourly_path")) if data.get("hourly_path") is not None else None,
-            regime_path=str(data.get("regime_path")) if data.get("regime_path") is not None else None,
+            hourly_path=(
+                str(data.get("hourly_path")) if data.get("hourly_path") is not None else None
+            ),
+            regime_path=(
+                str(data.get("regime_path")) if data.get("regime_path") is not None else None
+            ),
             impact_curve=impact_curve,
             hourly_multipliers=hourly_profile,
             regime_overrides={k: v for k, v in regime_values.items() if k is not None},
@@ -821,7 +861,9 @@ class CalibratedProfilesConfig:
             return next(iter(self.symbols.values()))
         return None
 
-    def get_hourly_profile(self, symbol_profile: Optional[SymbolCalibratedProfile]) -> Optional[CalibratedHourlyProfile]:
+    def get_hourly_profile(
+        self, symbol_profile: Optional[SymbolCalibratedProfile]
+    ) -> Optional[CalibratedHourlyProfile]:
         if symbol_profile and symbol_profile.hourly_multipliers is not None:
             return symbol_profile.hourly_multipliers
         return self.hourly_multipliers
@@ -862,7 +904,9 @@ class CalibratedProfilesConfig:
         for mapping in search_maps:
             for candidate in regime_key_candidates:
                 for key, value in mapping.items():
-                    if key == candidate or (isinstance(key, str) and key.lower() == candidate.lower()):
+                    if key == candidate or (
+                        isinstance(key, str) and key.lower() == candidate.lower()
+                    ):
                         return value
         return None
 
@@ -879,6 +923,7 @@ class SlippageConfig:
       - size: абсолютное торгуемое количество (в базовой валюте, штуках)
       - liquidity: прокси ликвидности (например, rolling_volume_shares или ADV в штуках)
     """
+
     k: float = 0.8
     min_half_spread_bps: float = 0.0
     default_spread_bps: float = 2.0
@@ -945,11 +990,7 @@ class SlippageConfig:
             adv_cfg = AdvConfig()
 
         calibrated_cfg: Optional[CalibratedProfilesConfig] = None
-        calib_block = (
-            d.get("calibrated_profiles")
-            or d.get("calibrated")
-            or d.get("calibration")
-        )
+        calib_block = d.get("calibrated_profiles") or d.get("calibrated") or d.get("calibration")
         if isinstance(calib_block, CalibratedProfilesConfig):
             calibrated_cfg = calib_block
         elif isinstance(calib_block, Mapping):
@@ -1038,9 +1079,7 @@ def _curve_impact(
             or bucket.get("max_notional")
             or bucket.get("upper_size")
         )
-        mean_notional = _safe_float(
-            bucket.get("mean_notional") or bucket.get("median_notional")
-        )
+        mean_notional = _safe_float(bucket.get("mean_notional") or bucket.get("median_notional"))
         key = lower
         if key is None:
             key = mean_notional
@@ -1072,9 +1111,7 @@ def _curve_impact(
     )
     if impact is not None:
         return float(max(0.0, impact))
-    slip = _safe_float(
-        selected.get("mean_slippage_bps") or selected.get("slippage_bps")
-    )
+    slip = _safe_float(selected.get("mean_slippage_bps") or selected.get("slippage_bps"))
     if slip is None:
         return None
     value = float(slip) - float(half_spread_bps)
@@ -1128,7 +1165,9 @@ def _estimate_calibrated_slippage(
             override_k = float(regime_override.k)
         if regime_override.impact_mean_bps is not None:
             override_impact = float(regime_override.impact_mean_bps)
-    min_half_spread = max(float(candidate) for candidate in min_half_candidates if candidate is not None)
+    min_half_spread = max(
+        float(candidate) for candidate in min_half_candidates if candidate is not None
+    )
     base_spread = float(spread_default)
     half_spread = max(0.5 * base_spread, float(min_half_spread))
     notional_val = _safe_float(notional)
@@ -1165,8 +1204,12 @@ def _estimate_calibrated_slippage(
             k_base = float(k_base)
             if regime_multiplier != 1.0:
                 k_base *= float(regime_multiplier)
-            impact = k_base * float(vf) * math.sqrt(
-                max(abs(float(size_val)), cfg.eps) / max(abs(float(liquidity_val)), cfg.eps)
+            impact = (
+                k_base
+                * float(vf)
+                * math.sqrt(
+                    max(abs(float(size_val)), cfg.eps) / max(abs(float(liquidity_val)), cfg.eps)
+                )
             )
     else:
         impact = float(impact) * float(vf)
@@ -1307,7 +1350,11 @@ def estimate_slippage_bps(
     half_spread_bps = max(0.5 * sbps, float(cfg.min_half_spread_bps))
 
     vf = float(vol_factor) if (vol_factor is not None and math.isfinite(float(vol_factor))) else 1.0
-    liq = float(liquidity) if (liquidity is not None and float(liquidity) > 0.0 and math.isfinite(float(liquidity))) else 1.0
+    liq = (
+        float(liquidity)
+        if (liquidity is not None and float(liquidity) > 0.0 and math.isfinite(float(liquidity)))
+        else 1.0
+    )
     sz = abs(size_val)
 
     impact_term = float(cfg.k) * vf * math.sqrt(max(sz, cfg.eps) / max(liq, cfg.eps))
@@ -1328,7 +1375,9 @@ def apply_slippage_price(*, side: str, quote_price: float, slippage_bps: float) 
         return float(q * (1.0 - bps))
 
 
-def compute_spread_bps_from_quotes(*, bid: Optional[float], ask: Optional[float], cfg: SlippageConfig) -> float:
+def compute_spread_bps_from_quotes(
+    *, bid: Optional[float], ask: Optional[float], cfg: SlippageConfig
+) -> float:
     """
     Рассчитать spread_bps из котировок. Если данных нет — вернуть cfg.default_spread_bps.
     """

@@ -13,6 +13,7 @@ Where:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 
 
@@ -36,14 +37,13 @@ def test_vf_clipping_predictions_not_targets():
 
     # Expected clipped predictions
     expected_clipped_preds = torch.clamp(
-        predictions,
-        min=old_values - clip_delta,
-        max=old_values + clip_delta
+        predictions, min=old_values - clip_delta, max=old_values + clip_delta
     )
 
     # Verify predictions are clipped
-    assert not torch.allclose(predictions, expected_clipped_preds), \
-        "Some predictions should be clipped"
+    assert not torch.allclose(
+        predictions, expected_clipped_preds
+    ), "Some predictions should be clipped"
 
     # CRITICAL: Targets should NEVER be clipped
     # In the old (buggy) implementation, targets would be clipped here
@@ -63,14 +63,17 @@ def test_vf_clipping_predictions_not_targets():
         correct_loss_unclipped = (predictions[i] - targets[i]).pow(2)
         correct_loss_clipped = (expected_clipped_preds[i] - targets[i]).pow(2)
 
-        assert torch.isclose(loss_unclipped[i], correct_loss_unclipped), \
-            f"Unclipped loss at {i} should use unclipped target"
-        assert torch.isclose(loss_clipped[i], correct_loss_clipped), \
-            f"Clipped loss at {i} should use unclipped target"
+        assert torch.isclose(
+            loss_unclipped[i], correct_loss_unclipped
+        ), f"Unclipped loss at {i} should use unclipped target"
+        assert torch.isclose(
+            loss_clipped[i], correct_loss_clipped
+        ), f"Clipped loss at {i} should use unclipped target"
 
         # Verify max is taken correctly
-        assert torch.isclose(final_loss[i], torch.max(correct_loss_unclipped, correct_loss_clipped)), \
-            f"Final loss at {i} should be max of both terms"
+        assert torch.isclose(
+            final_loss[i], torch.max(correct_loss_unclipped, correct_loss_clipped)
+        ), f"Final loss at {i} should be max of both terms"
 
     print("✓ VF clipping correctly clips predictions, not targets")
 
@@ -96,9 +99,7 @@ def test_vf_clipping_quantile_loss():
     # Clip predictions (mean value)
     mean_pred = quantile_predictions.mean(dim=1, keepdim=True)
     mean_pred_clipped = torch.clamp(
-        mean_pred,
-        min=old_values - clip_delta,
-        max=old_values + clip_delta
+        mean_pred, min=old_values - clip_delta, max=old_values + clip_delta
     )
 
     # Apply delta to all quantiles
@@ -141,9 +142,7 @@ def test_vf_clipping_distributional_loss():
 
     # Clip predictions
     mean_pred_clipped = torch.clamp(
-        mean_predictions,
-        min=old_values - clip_delta,
-        max=old_values + clip_delta
+        mean_predictions, min=old_values - clip_delta, max=old_values + clip_delta
     )
 
     # Build distributions (simplified)
@@ -169,8 +168,9 @@ def test_vf_clipping_distributional_loss():
 
     # Verify we're using the same target distribution in both terms
     assert target_dist.shape == (batch_size, n_atoms), "Target distribution unchanged"
-    assert torch.allclose(target_dist.sum(dim=1), torch.ones(batch_size)), \
-        "Target distribution should sum to 1"
+    assert torch.allclose(
+        target_dist.sum(dim=1), torch.ones(batch_size)
+    ), "Target distribution should sum to 1"
 
     print("✓ Distributional VF clipping correctly uses unclipped target distribution")
 
@@ -186,7 +186,7 @@ def test_target_clipping_is_wrong():
     # Scenario: prediction far from old value, target even farther
     old_value = torch.tensor([2.0])
     prediction = torch.tensor([3.0])  # +1.0 from old
-    target = torch.tensor([5.0])      # +3.0 from old
+    target = torch.tensor([5.0])  # +3.0 from old
     clip_delta = 0.5
 
     # Correct implementation: clip prediction, not target
@@ -196,24 +196,25 @@ def test_target_clipping_is_wrong():
     loss_unclipped_correct = (prediction - target).pow(2)  # (3.0 - 5.0)^2 = 4.0
     loss_clipped_correct = (pred_clipped - target).pow(2)  # (2.5 - 5.0)^2 = 6.25
     final_loss_correct = torch.max(loss_unclipped_correct, loss_clipped_correct)
-    assert torch.isclose(final_loss_correct, torch.tensor([6.25])), \
-        "Correct loss should be 6.25"
+    assert torch.isclose(final_loss_correct, torch.tensor([6.25])), "Correct loss should be 6.25"
 
     # Wrong implementation: clip target too
     target_clipped_wrong = torch.clamp(target, old_value - clip_delta, old_value + clip_delta)
-    assert torch.isclose(target_clipped_wrong, torch.tensor([2.5])), \
-        "In wrong impl, target would be clipped to 2.5"
+    assert torch.isclose(
+        target_clipped_wrong, torch.tensor([2.5])
+    ), "In wrong impl, target would be clipped to 2.5"
 
     loss_unclipped_wrong = (prediction - target_clipped_wrong).pow(2)  # (3.0 - 2.5)^2 = 0.25
     loss_clipped_wrong = (pred_clipped - target_clipped_wrong).pow(2)  # (2.5 - 2.5)^2 = 0.0
     final_loss_wrong = torch.max(loss_unclipped_wrong, loss_clipped_wrong)
-    assert torch.isclose(final_loss_wrong, torch.tensor([0.25])), \
-        "Wrong loss would be 0.25"
+    assert torch.isclose(final_loss_wrong, torch.tensor([0.25])), "Wrong loss would be 0.25"
 
     # The losses are dramatically different!
     # Correct: 6.25 (large error signal)
     # Wrong: 0.25 (artificially reduced error signal)
-    print(f"✗ Clipping targets gives wrong loss: {final_loss_wrong.item():.2f} vs {final_loss_correct.item():.2f}")
+    print(
+        f"✗ Clipping targets gives wrong loss: {final_loss_wrong.item():.2f} vs {final_loss_correct.item():.2f}"
+    )
     print("  This demonstrates why the old implementation was critically broken!")
 
 
@@ -231,15 +232,17 @@ def test_edge_case_prediction_within_clip_range():
     pred_clipped = torch.clamp(prediction, old_value - clip_delta, old_value + clip_delta)
 
     # Prediction should be unchanged
-    assert torch.isclose(pred_clipped, prediction), \
-        "Prediction within clip range should be unchanged"
+    assert torch.isclose(
+        pred_clipped, prediction
+    ), "Prediction within clip range should be unchanged"
 
     # Losses should be identical
     loss_unclipped = (prediction - target).pow(2)
     loss_clipped = (pred_clipped - target).pow(2)
 
-    assert torch.isclose(loss_unclipped, loss_clipped), \
-        "When prediction is within clip range, both losses should be equal"
+    assert torch.isclose(
+        loss_unclipped, loss_clipped
+    ), "When prediction is within clip range, both losses should be equal"
 
     print("✓ Edge case handled: prediction within clip range")
 
@@ -256,8 +259,9 @@ def test_edge_case_zero_clip_delta():
     pred_clipped = torch.clamp(prediction, old_value - clip_delta, old_value + clip_delta)
 
     # With zero delta, prediction should be clamped exactly to old_value
-    assert torch.isclose(pred_clipped, old_value), \
-        "With zero clip delta, prediction should equal old_value"
+    assert torch.isclose(
+        pred_clipped, old_value
+    ), "With zero clip delta, prediction should equal old_value"
 
     print("✓ Edge case handled: zero clip delta")
 

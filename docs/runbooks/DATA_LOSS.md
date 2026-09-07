@@ -45,6 +45,7 @@ ccea-agent reconcile positions --dry-run
 ### 2.1 Credential Vault Corruption/Loss
 
 **Symptoms:**
+
 - Agent cannot authenticate to broker
 - Vault file missing or corrupted
 - "Vault integrity check failed" error
@@ -73,6 +74,7 @@ ccea-agent preflight
 ```
 
 **CRITICAL:**
+
 - Credentials designed not to be stored in Cloud (CCEA architecture enforces this via protocol schema and Agent implementation)
 - If vault is lost and no backup exists, you must obtain new API keys from broker
 - Consider rotating keys after any vault compromise
@@ -80,6 +82,7 @@ ccea-agent preflight
 ### 2.2 Position State Loss
 
 **Symptoms:**
+
 - Agent shows no positions
 - Position mismatch with broker
 - "State file corrupted" error
@@ -109,6 +112,7 @@ ccea-agent start
 ```
 
 **Broker is Source of Truth:**
+
 - Agent state can be rebuilt from broker
 - Prioritize broker state over agent state in case of mismatch
 - Reconcile after any state issue
@@ -116,6 +120,7 @@ ccea-agent start
 ### 2.3 Order History Loss
 
 **Symptoms:**
+
 - Recent orders missing from local history
 - "Order not found" for known order IDs
 - Incomplete audit trail
@@ -142,6 +147,7 @@ ccea-agent orders export --days 30 --output orders_backup.json
 ### 2.4 Local Configuration Loss
 
 **Symptoms:**
+
 - Agent using default configuration
 - Risk limits reset to defaults
 - Strategy parameters missing
@@ -176,6 +182,7 @@ ccea-agent config get risk.max_position_size
 ### 3.1 Strategy Source Lost
 
 **Symptoms:**
+
 - Strategy missing from Cloud dashboard
 - Build failures (source not found)
 - "Strategy not found" errors
@@ -202,6 +209,7 @@ ccea-cli support request --type data-recovery --resource strategy
 ### 3.2 Telemetry Data Loss
 
 **Symptoms:**
+
 - Gaps in monitoring dashboard
 - Missing historical metrics
 - Analytics reports incomplete
@@ -229,6 +237,7 @@ ccea-cli support request --type data-recovery --resource telemetry
 **Approval records are IMMUTABLE and should never be lost.**
 
 If missing:
+
 1. Check audit log (separate from approval records)
 2. Records are replicated across zones
 3. Enterprise has extended retention

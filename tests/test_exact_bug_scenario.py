@@ -104,15 +104,17 @@ for i, price in enumerate(prices):
         rsi_old = calculate_rsi_old_buggy(avg_gain, avg_loss)
         rsi_new = calculate_rsi_fixed(avg_gain, avg_loss)
 
-        results.append({
-            "bar": i,
-            "price": price,
-            "delta": delta,
-            "avg_gain": avg_gain,
-            "avg_loss": avg_loss,
-            "rsi_old": rsi_old,
-            "rsi_new": rsi_new,
-        })
+        results.append(
+            {
+                "bar": i,
+                "price": price,
+                "delta": delta,
+                "avg_gain": avg_gain,
+                "avg_loss": avg_loss,
+                "rsi_old": rsi_old,
+                "rsi_new": rsi_new,
+            }
+        )
 
     last_price = price
 
@@ -120,33 +122,37 @@ print("\n" + "=" * 80)
 print("Results comparison:")
 print("=" * 80)
 
-print(f"\n{'Bar':<5} {'Price':<7} {'Δ':<6} {'avg_gain':<10} {'avg_loss':<10} "
-      f"{'OLD RSI':<10} {'NEW RSI':<10} {'Status':<10}")
+print(
+    f"\n{'Bar':<5} {'Price':<7} {'Δ':<6} {'avg_gain':<10} {'avg_loss':<10} "
+    f"{'OLD RSI':<10} {'NEW RSI':<10} {'Status':<10}"
+)
 print("-" * 80)
 
 all_ok = True
 
 for r in results:
-    old_str = f"{r['rsi_old']:.1f}" if not math.isnan(r['rsi_old']) else "NaN"
+    old_str = f"{r['rsi_old']:.1f}" if not math.isnan(r["rsi_old"]) else "NaN"
     new_str = f"{r['rsi_new']:.1f}"
 
     # Check if fix is working
-    if r['avg_loss'] == 0.0 and r['avg_gain'] > 0.0:
+    if r["avg_loss"] == 0.0 and r["avg_gain"] > 0.0:
         # This is the bug scenario!
-        if math.isnan(r['rsi_old']) and r['rsi_new'] == 100.0:
+        if math.isnan(r["rsi_old"]) and r["rsi_new"] == 100.0:
             status = "🔧 FIXED"
         else:
             status = "❌ WRONG"
             all_ok = False
     else:
-        if abs(r['rsi_old'] - r['rsi_new']) < 0.01:
+        if abs(r["rsi_old"] - r["rsi_new"]) < 0.01:
             status = "✓ Same"
         else:
             status = "⚠️ Diff"
 
-    print(f"{r['bar']:<5} {r['price']:<7.0f} {r['delta']:>5.0f} "
-          f"{r['avg_gain']:<10.1f} {r['avg_loss']:<10.1f} "
-          f"{old_str:<10} {new_str:<10} {status:<10}")
+    print(
+        f"{r['bar']:<5} {r['price']:<7.0f} {r['delta']:>5.0f} "
+        f"{r['avg_gain']:<10.1f} {r['avg_loss']:<10.1f} "
+        f"{old_str:<10} {new_str:<10} {status:<10}"
+    )
 
 print("\n" + "=" * 80)
 print("VERIFICATION:")
@@ -156,19 +162,23 @@ print("=" * 80)
 print("\nBars 1-3 (pure uptrend, avg_loss = 0):")
 for i in [0, 1, 2]:
     r = results[i]
-    if r['avg_loss'] == 0.0:
-        old_ok = "NaN" if math.isnan(r['rsi_old']) else f"{r['rsi_old']:.1f}"
-        new_ok = r['rsi_new'] == 100.0
-        print(f"  Bar {r['bar']}: OLD = {old_ok} (WRONG), NEW = {r['rsi_new']:.1f} "
-              f"({'✓ FIXED' if new_ok else '❌ WRONG'})")
+    if r["avg_loss"] == 0.0:
+        old_ok = "NaN" if math.isnan(r["rsi_old"]) else f"{r['rsi_old']:.1f}"
+        new_ok = r["rsi_new"] == 100.0
+        print(
+            f"  Bar {r['bar']}: OLD = {old_ok} (WRONG), NEW = {r['rsi_new']:.1f} "
+            f"({'✓ FIXED' if new_ok else '❌ WRONG'})"
+        )
 
 # Bar 4: Mixed movement
 print("\nBar 4 (has both gains and losses):")
 r = results[3]
-if r['avg_loss'] > 0:
-    match = abs(r['rsi_old'] - r['rsi_new']) < 0.01
-    print(f"  Bar {r['bar']}: OLD = {r['rsi_old']:.1f}, NEW = {r['rsi_new']:.1f} "
-          f"({'✓ Same' if match else '⚠️ Different'})")
+if r["avg_loss"] > 0:
+    match = abs(r["rsi_old"] - r["rsi_new"]) < 0.01
+    print(
+        f"  Bar {r['bar']}: OLD = {r['rsi_old']:.1f}, NEW = {r['rsi_new']:.1f} "
+        f"({'✓ Same' if match else '⚠️ Different'})"
+    )
 
 print("\n" + "=" * 80)
 if all_ok:

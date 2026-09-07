@@ -40,7 +40,9 @@ def _nan_series(panel: Panel, name: str) -> pd.Series:
     return pd.Series(np.nan, index=panel.index, name=name)
 
 
-def _yield_or_ratio(panel: Panel, name: str, *, yield_col: str, num_col: str, price_col: str) -> pd.Series:
+def _yield_or_ratio(
+    panel: Panel, name: str, *, yield_col: str, num_col: str, price_col: str
+) -> pd.Series:
     """Готовая yield-колонка если есть; иначе ``num_col / price_col``; иначе NaN (BYO)."""
     if yield_col in panel.columns:
         return panel[yield_col].astype("float64").rename(name)
@@ -57,7 +59,9 @@ class EquityMomentum(BaseSignal):
     Классика: на дневных барах ``lookback=252, skip=21`` (год минус последний месяц).
     """
 
-    def __init__(self, name: str = "eq_mom", *, lookback: int = 252, skip: int = 21, price_col: str = "close") -> None:
+    def __init__(
+        self, name: str = "eq_mom", *, lookback: int = 252, skip: int = 21, price_col: str = "close"
+    ) -> None:
         self.name = name
         self.lookback = int(lookback)
         self.skip = int(skip)
@@ -73,46 +77,79 @@ class EquityMomentum(BaseSignal):
 class EarningsYield(BaseSignal):
     """E/P: earnings yield (готовая ``ep`` колонка или ``earnings``/``close``)."""
 
-    def __init__(self, name: str = "earnings_yield", *, yield_col: str = "ep",
-                 earnings_col: str = "earnings", price_col: str = "close") -> None:
+    def __init__(
+        self,
+        name: str = "earnings_yield",
+        *,
+        yield_col: str = "ep",
+        earnings_col: str = "earnings",
+        price_col: str = "close",
+    ) -> None:
         self.name = name
         self.yield_col = yield_col
         self.earnings_col = earnings_col
         self.price_col = price_col
 
     def compute_panel(self, panel: Panel) -> pd.Series:
-        return _yield_or_ratio(panel, self.name, yield_col=self.yield_col,
-                               num_col=self.earnings_col, price_col=self.price_col)
+        return _yield_or_ratio(
+            panel,
+            self.name,
+            yield_col=self.yield_col,
+            num_col=self.earnings_col,
+            price_col=self.price_col,
+        )
 
 
 class BookToPrice(BaseSignal):
     """B/P: book-to-price (готовая ``bp`` колонка или ``book_value``/``close``)."""
 
-    def __init__(self, name: str = "book_to_price", *, yield_col: str = "bp",
-                 book_col: str = "book_value", price_col: str = "close") -> None:
+    def __init__(
+        self,
+        name: str = "book_to_price",
+        *,
+        yield_col: str = "bp",
+        book_col: str = "book_value",
+        price_col: str = "close",
+    ) -> None:
         self.name = name
         self.yield_col = yield_col
         self.book_col = book_col
         self.price_col = price_col
 
     def compute_panel(self, panel: Panel) -> pd.Series:
-        return _yield_or_ratio(panel, self.name, yield_col=self.yield_col,
-                               num_col=self.book_col, price_col=self.price_col)
+        return _yield_or_ratio(
+            panel,
+            self.name,
+            yield_col=self.yield_col,
+            num_col=self.book_col,
+            price_col=self.price_col,
+        )
 
 
 class FCFYield(BaseSignal):
     """FCF yield: free-cash-flow / price (готовая ``fcf_yield`` или ``fcf``/``close``)."""
 
-    def __init__(self, name: str = "fcf_yield", *, yield_col: str = "fcf_yield",
-                 fcf_col: str = "fcf", price_col: str = "close") -> None:
+    def __init__(
+        self,
+        name: str = "fcf_yield",
+        *,
+        yield_col: str = "fcf_yield",
+        fcf_col: str = "fcf",
+        price_col: str = "close",
+    ) -> None:
         self.name = name
         self.yield_col = yield_col
         self.fcf_col = fcf_col
         self.price_col = price_col
 
     def compute_panel(self, panel: Panel) -> pd.Series:
-        return _yield_or_ratio(panel, self.name, yield_col=self.yield_col,
-                               num_col=self.fcf_col, price_col=self.price_col)
+        return _yield_or_ratio(
+            panel,
+            self.name,
+            yield_col=self.yield_col,
+            num_col=self.fcf_col,
+            price_col=self.price_col,
+        )
 
 
 class ReturnOnEquity(BaseSignal):
@@ -144,7 +181,9 @@ class Accruals(BaseSignal):
 class LowVolatility(BaseSignal):
     """Low-vol аномалия: −(rolling std дневных доходностей за ``window``)."""
 
-    def __init__(self, name: str = "low_vol", *, window: int = 60, price_col: str = "close") -> None:
+    def __init__(
+        self, name: str = "low_vol", *, window: int = 60, price_col: str = "close"
+    ) -> None:
         self.name = name
         self.window = int(window)
         self.price_col = price_col
@@ -156,7 +195,11 @@ class LowVolatility(BaseSignal):
         ret = g.pct_change()
         vol = ret.groupby(level=SYMBOL_LEVEL, group_keys=False).rolling(self.window).std()
         # rolling добавляет лишний уровень индекса — выровняем обратно к панели
-        vol = vol.reset_index(level=0, drop=True) if isinstance(vol.index, pd.MultiIndex) and vol.index.nlevels > 2 else vol
+        vol = (
+            vol.reset_index(level=0, drop=True)
+            if isinstance(vol.index, pd.MultiIndex) and vol.index.nlevels > 2
+            else vol
+        )
         return (-vol).reindex(panel.index).rename(self.name)
 
 
@@ -196,7 +239,14 @@ def build_equity_signal(kind: str, name: str, **kwargs: Any) -> BaseSignal:
 EQUITY_SIGNAL_KINDS = tuple(_KINDS.keys())
 
 __all__ = [
-    "EquityMomentum", "EarningsYield", "BookToPrice", "FCFYield",
-    "ReturnOnEquity", "Accruals", "LowVolatility", "EquitySize",
-    "build_equity_signal", "EQUITY_SIGNAL_KINDS",
+    "EquityMomentum",
+    "EarningsYield",
+    "BookToPrice",
+    "FCFYield",
+    "ReturnOnEquity",
+    "Accruals",
+    "LowVolatility",
+    "EquitySize",
+    "build_equity_signal",
+    "EQUITY_SIGNAL_KINDS",
 ]

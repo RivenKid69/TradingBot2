@@ -170,9 +170,11 @@ class BacktestRunner:
             self._engine = SimExecutionEngine(config=sim_config)
 
             # Initialize strategy
-            strategy.initialize({
-                "symbols": config.symbols,
-            })
+            strategy.initialize(
+                {
+                    "symbols": config.symbols,
+                }
+            )
 
             # Track equity
             equity_curve = []
@@ -226,10 +228,12 @@ class BacktestRunner:
 
                 # Track equity
                 equity = self._engine.get_equity()
-                equity_curve.append({
-                    "timestamp": timestamp.isoformat(),
-                    "equity": str(equity),
-                })
+                equity_curve.append(
+                    {
+                        "timestamp": timestamp.isoformat(),
+                        "equity": str(equity),
+                    }
+                )
 
                 # Track drawdown
                 if equity > peak_equity:
@@ -268,21 +272,18 @@ class BacktestRunner:
         """Calculate backtest metrics."""
         total_return = final_equity - initial_capital
         total_return_pct = (
-            total_return / initial_capital * 100
-            if initial_capital > 0
-            else Decimal("0")
+            total_return / initial_capital * 100 if initial_capital > 0 else Decimal("0")
         )
 
         max_drawdown_pct = (
-            max_drawdown / initial_capital * 100
-            if initial_capital > 0
-            else Decimal("0")
+            max_drawdown / initial_capital * 100 if initial_capital > 0 else Decimal("0")
         )
 
         # Trade statistics
         total_trades = len(trades)
         winning_trades = sum(
-            1 for t in trades
+            1
+            for t in trades
             if Decimal(t.get("commission", "0")) < Decimal(t.get("notional", "0")) * Decimal("0.01")
         )
         losing_trades = total_trades - winning_trades

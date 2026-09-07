@@ -65,31 +65,65 @@ logger = logging.getLogger(__name__)
 
 # Major pairs (G7 currencies, most liquid)
 MAJOR_PAIRS: Set[str] = {
-    "EUR_USD", "USD_JPY", "GBP_USD", "USD_CHF",
-    "AUD_USD", "USD_CAD", "NZD_USD",
+    "EUR_USD",
+    "USD_JPY",
+    "GBP_USD",
+    "USD_CHF",
+    "AUD_USD",
+    "USD_CAD",
+    "NZD_USD",
 }
 
 # Minor pairs (no USD, G10 currencies)
 MINOR_PAIRS: Set[str] = {
-    "EUR_GBP", "EUR_CHF", "GBP_CHF", "EUR_AUD",
-    "EUR_CAD", "EUR_NZD", "GBP_AUD", "GBP_CAD",
-    "GBP_NZD", "AUD_NZD", "AUD_CHF", "AUD_CAD",
-    "NZD_CHF", "NZD_CAD", "CHF_JPY",
+    "EUR_GBP",
+    "EUR_CHF",
+    "GBP_CHF",
+    "EUR_AUD",
+    "EUR_CAD",
+    "EUR_NZD",
+    "GBP_AUD",
+    "GBP_CAD",
+    "GBP_NZD",
+    "AUD_NZD",
+    "AUD_CHF",
+    "AUD_CAD",
+    "NZD_CHF",
+    "NZD_CAD",
+    "CHF_JPY",
 }
 
 # JPY crosses
 CROSS_PAIRS: Set[str] = {
-    "EUR_JPY", "GBP_JPY", "AUD_JPY", "NZD_JPY",
+    "EUR_JPY",
+    "GBP_JPY",
+    "AUD_JPY",
+    "NZD_JPY",
     "CAD_JPY",
 }
 
 # Exotic pairs (EM currencies)
 EXOTIC_PAIRS: Set[str] = {
-    "USD_TRY", "USD_ZAR", "USD_MXN", "USD_PLN",
-    "USD_HUF", "USD_CZK", "USD_SGD", "USD_HKD",
-    "USD_NOK", "USD_SEK", "USD_DKK", "EUR_TRY",
-    "EUR_PLN", "EUR_HUF", "EUR_CZK", "EUR_NOK",
-    "EUR_SEK", "EUR_DKK", "GBP_NOK", "GBP_SEK",
+    "USD_TRY",
+    "USD_ZAR",
+    "USD_MXN",
+    "USD_PLN",
+    "USD_HUF",
+    "USD_CZK",
+    "USD_SGD",
+    "USD_HKD",
+    "USD_NOK",
+    "USD_SEK",
+    "USD_DKK",
+    "EUR_TRY",
+    "EUR_PLN",
+    "EUR_HUF",
+    "EUR_CZK",
+    "EUR_NOK",
+    "EUR_SEK",
+    "EUR_DKK",
+    "GBP_NOK",
+    "GBP_SEK",
 }
 
 # All known forex pairs
@@ -100,14 +134,16 @@ ALL_FOREX_PAIRS: Set[str] = MAJOR_PAIRS | MINOR_PAIRS | CROSS_PAIRS | EXOTIC_PAI
 # Default Instrument Settings
 # =========================
 
+
 @dataclass
 class ForexInstrumentDefaults:
     """Default settings for forex instruments."""
+
     pip_size: Decimal
     display_precision: int
     min_trade_size: Decimal  # Minimum units
     max_trade_size: Decimal  # Maximum units
-    margin_rate: float       # Initial margin rate (e.g., 0.02 = 50:1 leverage)
+    margin_rate: float  # Initial margin rate (e.g., 0.02 = 50:1 leverage)
 
 
 # JPY pairs have different pip size
@@ -608,15 +644,11 @@ class OandaExchangeInfoAdapter(ExchangeInfoAdapter):
 
         if qty_dec < rule.min_qty:
             result["valid"] = False
-            result["errors"].append(
-                f"Quantity {qty} below minimum {rule.min_qty}"
-            )
+            result["errors"].append(f"Quantity {qty} below minimum {rule.min_qty}")
 
         if rule.max_qty and qty_dec > rule.max_qty:
             result["valid"] = False
-            result["errors"].append(
-                f"Quantity {qty} exceeds maximum {rule.max_qty}"
-            )
+            result["errors"].append(f"Quantity {qty} exceeds maximum {rule.max_qty}")
 
         # Check price precision if provided
         if price is not None:
@@ -626,8 +658,6 @@ class OandaExchangeInfoAdapter(ExchangeInfoAdapter):
             # Check if price is on tick
             remainder = price_dec % tick
             if remainder != 0:
-                result["warnings"].append(
-                    f"Price {price} not on tick size {tick}"
-                )
+                result["warnings"].append(f"Price {price} not on tick size {tick}")
 
         return result

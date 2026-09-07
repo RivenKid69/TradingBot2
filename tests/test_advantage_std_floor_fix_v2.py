@@ -11,6 +11,7 @@ This maintains PPO's contract while preventing gradient explosion.
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
@@ -18,6 +19,7 @@ import numpy as np
 
 class TestResults:
     """Track test results."""
+
     def __init__(self):
         self.passed = 0
         self.failed = 0
@@ -78,12 +80,12 @@ def test_always_normalize():
 
             # Check that normalization happened
             norm_mean = np.mean(normalized)
-            assert approx_equal(norm_mean, 0.0, abs_tol=1e-6), \
-                f"{name}: mean should be ~0, got {norm_mean}"
+            assert approx_equal(
+                norm_mean, 0.0, abs_tol=1e-6
+            ), f"{name}: mean should be ~0, got {norm_mean}"
 
             # Check all finite
-            assert np.all(np.isfinite(normalized)), \
-                f"{name}: all values should be finite"
+            assert np.all(np.isfinite(normalized)), f"{name}: all values should be finite"
 
         results.record_pass("test_always_normalize")
     except Exception as e:
@@ -111,8 +113,9 @@ def test_ppo_expectation_satisfied():
         print(f"    After normalization: mean={norm_mean:.2e}, std={norm_std:.2e}")
 
         # CRITICAL: mean should be ~0 (PPO expectation)
-        assert approx_equal(norm_mean, 0.0, abs_tol=1e-6), \
-            f"Normalized mean should be ~0, got {norm_mean}"
+        assert approx_equal(
+            norm_mean, 0.0, abs_tol=1e-6
+        ), f"Normalized mean should be ~0, got {norm_mean}"
 
         results.record_pass("test_ppo_expectation_satisfied")
     except Exception as e:
@@ -182,7 +185,7 @@ def test_gradient_safety_comprehensive():
             norm_new = (advantages - mean) / std_new
             max_new = np.max(np.abs(norm_new))
 
-            reduction = max_old / max_new if max_new > 0 else float('inf')
+            reduction = max_old / max_new if max_new > 0 else float("inf")
 
             print(f"    {std:.1e}  {max_old:<12.2e} {max_new:<12.2e} {reduction:<12.0f}x")
 
@@ -222,8 +225,7 @@ def test_uniform_advantages_behavior():
         assert max_norm < 1.0, "Uniform advantages should compress to small values"
 
         # Mean should still be ~0
-        assert approx_equal(np.mean(normalized), 0.0, abs_tol=1e-6), \
-            "Mean should be ~0"
+        assert approx_equal(np.mean(normalized), 0.0, abs_tol=1e-6), "Mean should be ~0"
 
         results.record_pass("test_uniform_advantages_behavior")
     except Exception as e:

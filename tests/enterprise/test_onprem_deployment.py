@@ -450,9 +450,7 @@ class TestOnPremDeploymentService:
         )
         assert deployment.deployment_type == DeploymentType.AIR_GAPPED
 
-    def test_create_deployment_unsupported_version(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_create_deployment_unsupported_version(self, service: OnPremDeploymentService) -> None:
         """Test deployment creation with unsupported version."""
         with pytest.raises(ValueError, match="Version not supported"):
             service.create_deployment(
@@ -543,9 +541,7 @@ class TestOnPremDeploymentService:
             version="1.0.0",
             created_by="admin",
         )
-        updated = service.update_status(
-            deployment.deployment_id, DeploymentStatus.IN_PROGRESS
-        )
+        updated = service.update_status(deployment.deployment_id, DeploymentStatus.IN_PROGRESS)
         assert updated is not None
         assert updated.status == DeploymentStatus.IN_PROGRESS
         assert updated.started_at is not None
@@ -558,9 +554,7 @@ class TestOnPremDeploymentService:
             version="1.0.0",
             created_by="admin",
         )
-        updated = service.update_status(
-            deployment.deployment_id, DeploymentStatus.COMPLETED
-        )
+        updated = service.update_status(deployment.deployment_id, DeploymentStatus.COMPLETED)
         assert updated is not None
         assert updated.status == DeploymentStatus.COMPLETED
         assert updated.completed_at is not None
@@ -704,9 +698,7 @@ class TestComponentManagement:
         assert result is not None
         assert result.status == "deploying"
 
-    def test_deploy_component_deployment_not_found(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_deploy_component_deployment_not_found(self, service: OnPremDeploymentService) -> None:
         """Test deploying component for non-existent deployment."""
         result = service.deploy_component(
             deployment_id="non-existent",
@@ -714,9 +706,7 @@ class TestComponentManagement:
         )
         assert result is None
 
-    def test_complete_component_deployment(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_complete_component_deployment(self, service: OnPremDeploymentService) -> None:
         """Test completing component deployment."""
         deployment = service.create_deployment(
             client_id="client-001",
@@ -775,9 +765,7 @@ class TestComponentManagement:
         assert status["deployed"] >= 1
         assert status["healthy"] >= 1
 
-    def test_get_component_status_not_found(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_get_component_status_not_found(self, service: OnPremDeploymentService) -> None:
         """Test getting component status for non-existent deployment."""
         status = service.get_component_status("non-existent")
         assert status == {}
@@ -822,9 +810,7 @@ class TestChecklistManagement:
         )
         assert result is False
 
-    def test_complete_checklist_item_not_found(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_complete_checklist_item_not_found(self, service: OnPremDeploymentService) -> None:
         """Test completing non-existent checklist item."""
         deployment = service.create_deployment(
             client_id="client-001",
@@ -850,9 +836,7 @@ class TestChecklistManagement:
         # Complete first pre item
         pre_items = [c for c in deployment.checklist if c.phase == "pre"]
         if pre_items:
-            service.complete_checklist_item(
-                deployment.deployment_id, pre_items[0].item_id, "admin"
-            )
+            service.complete_checklist_item(deployment.deployment_id, pre_items[0].item_id, "admin")
 
         status = service.get_checklist_status(deployment.deployment_id)
         assert "total_items" in status
@@ -863,9 +847,7 @@ class TestChecklistManagement:
         assert "during" in status["by_phase"]
         assert "post" in status["by_phase"]
 
-    def test_get_checklist_status_not_found(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_get_checklist_status_not_found(self, service: OnPremDeploymentService) -> None:
         """Test getting checklist status for non-existent deployment."""
         status = service.get_checklist_status("non-existent")
         assert status == {}
@@ -899,9 +881,7 @@ class TestDeploymentReporting:
         assert "checklist" in summary
         assert "created_at" in summary
 
-    def test_get_deployment_summary_not_found(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_get_deployment_summary_not_found(self, service: OnPremDeploymentService) -> None:
         """Test getting summary for non-existent deployment."""
         summary = service.get_deployment_summary("non-existent")
         assert summary == {}
@@ -915,9 +895,7 @@ class TestDefaultComponents:
         """Create service instance for testing."""
         return OnPremDeploymentService()
 
-    def test_default_components_created(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_default_components_created(self, service: OnPremDeploymentService) -> None:
         """Test that default components are created."""
         deployment = service.create_deployment(
             client_id="client-001",
@@ -932,9 +910,7 @@ class TestDefaultComponents:
         assert ComponentType.MESSAGE_QUEUE in component_types
         assert ComponentType.API_SERVER in component_types
 
-    def test_default_checklist_created(
-        self, service: OnPremDeploymentService
-    ) -> None:
+    def test_default_checklist_created(self, service: OnPremDeploymentService) -> None:
         """Test that default checklist is created."""
         deployment = service.create_deployment(
             client_id="client-001",
@@ -1021,12 +997,8 @@ class TestDeploymentWorkflow:
         )
 
         # 3. Verify requirements
-        service.update_requirement_status(
-            deployment.deployment_id, cpu_req.requirement_id, "met"
-        )
-        service.update_requirement_status(
-            deployment.deployment_id, ram_req.requirement_id, "met"
-        )
+        service.update_requirement_status(deployment.deployment_id, cpu_req.requirement_id, "met")
+        service.update_requirement_status(deployment.deployment_id, ram_req.requirement_id, "met")
         assert deployment.requirements_met is True
 
         # 4. Complete pre-deployment checklist

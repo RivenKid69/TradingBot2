@@ -97,11 +97,13 @@ The Design Doc allows `RAW_ORDER_EVENTS` as an opt-in sensitivity level and flag
 Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1739`.
 
 **Decision for this EU-only product posture**:
+
 - `RAW_ORDER_EVENTS` is supported as a telemetry sensitivity level **only for enterprise** and only with **explicit per-workspace opt-in**, with strict validation (allowlist fields), minimal retention, and access controls.
 - Default remains `AGGREGATED`; `DETAILED_NON_SENSITIVE` is opt-in for ops/debugging; enterprise may choose “telemetry stays local” instead of Cloud ingestion.
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`.
 
 **Required alignment work**:
+
 - Ensure protocol/schema, documentation, and runtime enforcement are consistent:
   - Cloud telemetry schema contains `AGGREGATED`, `DETAILED_NON_SENSITIVE`, `RAW_ORDER_EVENTS` per Design Doc.
   - Non-RAW levels must reject order/fill-like fields; RAW must be blocked unless enterprise + explicit opt-in is proven and audited.
@@ -117,16 +119,19 @@ Each phase includes deliverables and “Definition of Done” (DoD). Phases are 
 **Goal**: create a defensible processing map aligned with CCEA boundaries.
 
 Key work:
+
 - Build a **system data inventory**: where personal data can exist (accounts, billing, access logs, audit trails, telemetry identifiers).
 - Produce a **data flow diagram**: Cloud ↔ Agent, including telemetry levels.
 - Decide **Controller vs Processor** per data category (document assumptions; validate with counsel).
 - Create a **RoPA-lite** record (Art. 30) sufficient for audits and due diligence.
 
 Deliverables:
+
 - `docs/compliance/GDPR_RISK_SCOPE_MEMO.md` (roles, boundaries, data categories)
 - RoPA-lite table (system → data → purpose → lawful basis → retention → access)
 
 DoD:
+
 - A RoPA-lite table exists with columns: system, data category, purpose, lawful basis, retention, residency, access roles, subprocessors.
 - A Cloud↔Agent data flow diagram exists and labels Cloud telemetry levels (`AGGREGATED`/`DETAILED_NON_SENSITIVE`/`RAW_ORDER_EVENTS`), and documents RAW gating (enterprise-only, explicit opt-in) and “telemetry stays local” option.
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`.
@@ -139,15 +144,18 @@ DoD:
 **Goal**: external commitments match the actual CCEA design (no overpromising, no mismatches).
 
 Key work:
+
 - Update Privacy Policy / ToS language to reflect: CCEA zones, what Cloud receives/never receives, telemetry redaction, EU-only, retention and DSAR.
 - Finalize DPA templates and “support-with-consent” rules (how consent is captured, logged, and revoked; what data may be shared).
 - Establish DSAR intake and identity verification approach proportional to risk.
 
 Deliverables:
+
 - Updated: `docs/legal/PRIVACY_POLICY.md`, `docs/legal/TERMS_OF_SERVICE.md`, `docs/legal/DPA_TEMPLATE.md`
 - DSAR SOP (intake, verify, process, respond) + templates
 
 DoD:
+
 - Public/legal docs and engineering reality are consistent (no contradictions about credentials, order data, telemetry levels, EU-only residency, DSAR boundaries).
 - "CCEA privacy design commitments" checklist is explicitly stated:
   - Cloud is designed not to receive secrets/credentials/env vars (verify via protocol schema, CI guardrails, and security review)
@@ -177,6 +185,7 @@ DoD:
 | Tests | ✅ Done | `packages/cloud/governance/tests/test_consent.py`, `test_dsar_phase1.py` |
 
 **Key Additions:**
+
 - Privacy Policy Section 7A: CCEA Privacy Design Commitments Checklist
 - Privacy Policy Section 7B: Support-with-Consent Policy
 - Privacy Policy Section 5.4.3: Telemetry Sensitivity Levels (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS)
@@ -188,6 +197,7 @@ DoD:
 - SupportConsentService with auditable consent workflow
 
 **Test Results:**
+
 - 96 tests passing for governance module
 - 84 tests passing for Phase 2 governance (existing tests - no regression)
 - DSAR exports now include CCEA boundary notice
@@ -199,6 +209,7 @@ DoD:
 **Goal**: make violations mechanically hard (or impossible).
 
 Key work:
+
 - Enforce “no order-like payloads” at protocol schema level and CI (explicit prohibited fields like side/qty/price).  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1039`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1697`.
 - Telemetry contract (Cloud ingestion): `AGGREGATED` default; `DETAILED_NON_SENSITIVE` is opt-in; `RAW_ORDER_EVENTS` is enterprise-only + explicit opt-in; any increase in sensitivity requires explicit config + audit event.
@@ -223,6 +234,7 @@ Key work:
 - Add regression tests for redaction + schema guardrails.
 
 Deliverables:
+
 - “Telemetry data dictionary (Cloud ingestion)” (allowed/forbidden fields per Cloud telemetry level, using the canonical IDs: `AGGREGATED`/`DETAILED_NON_SENSITIVE`/`RAW_ORDER_EVENTS`)
 - “RAW_ORDER_EVENTS handling spec (enterprise-only)”:
   - Cloud ingestion gates (enterprise + explicit opt-in + audit events)
@@ -235,6 +247,7 @@ Deliverables:
 - A protocol change review checklist and journal format for new command types (recorded in the evidence pack change journal).
 
 DoD:
+
 - A PR that attempts to introduce order-like payloads in Cloud→Agent protocol commands, or in non-`RAW_ORDER_EVENTS` telemetry, or introduces secrets/env vars in any telemetry, fails CI.
 - A PR that attempts to disable redaction (even via feature flag/config) fails CI and/or tests.
 - `RAW_ORDER_EVENTS` exists as a telemetry level, but:
@@ -261,6 +274,7 @@ DoD:
 | Phase 2 Guardrails Tests | ✅ Done | `ccea/guardrails/tests/test_phase2_guardrails.py` |
 
 **Key Additions:**
+
 - Telemetry Level Contracts with field validation per level (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS)
 - RAW_ORDER_EVENTS enterprise gating with opt-in workflow
 - Protocol command security review enforcement with journal format
@@ -269,6 +283,7 @@ DoD:
 - Comprehensive field sets: AGGREGATED_ALLOWED_FIELDS, DETAILED_ALLOWED_FIELDS, RAW_ORDER_ALLOWED_FIELDS, ALWAYS_FORBIDDEN_FIELDS, ORDER_LIKE_FIELDS, PII_FIELDS
 
 **Test Results (internal; verify via CI):**
+
 - 48 tests passing for telemetry contract module (at time of implementation)
 - 47 tests passing for Phase 2 guardrails (at time of implementation)
 - 144 tests passing for governance module (no regression)
@@ -281,6 +296,7 @@ DoD:
 **Goal**: residency is a runtime enforcement, not just a claim.
 
 Key work:
+
 - Enforce EU region selection and prevent cross-region storage/processing.
 - Validate all dependencies are EU-resident, including:
   - primary DBs and replicas
@@ -291,12 +307,14 @@ Key work:
 - Implement residency policy checks and evidence exports.
 
 Deliverables:
+
 - Residency policy enforcement code + config defaults (EU-only)
 - Automated "EU-only drift check" (CI or deployment validation) that fails if any endpoint/bucket/region is not in EU.
 - Drift check produces a machine-readable report (e.g., JSON) listing every configured endpoint/bucket/region/subprocessor used at runtime (for evidence pack storage).
 - Evidence pack: list of EU services/subprocessors and regions
 
 DoD (internal criteria; not independently audited):
+
 - Automated drift check is designed to fail closed if any configured endpoint/storage/support tool is outside EU, and to produce a stored report artifact (see test coverage for current validation status).
 
 **Implementation Summary (2025-12-16):**
@@ -337,12 +355,14 @@ DoD (internal criteria; not independently audited):
    - Blocks deployment on non-EU endpoint detection
 
 **Supported Validations:**
+
 - AWS Regions: RDS, S3, ElastiCache, SES, CloudWatch, KMS, Secrets Manager, SNS, SQS, ECR
 - GCP Regions: europe-west*, europe-north*, europe-central*
 - Azure Regions: westeurope, northeurope, germanywest*, france*, sweden*, switzerland*, uk*
 - Known Services: Stripe (EU), Sentry (EU), SES (EU), SendGrid (EU)
 
 **Report Format:**
+
 ```json
 {
   "check_id": "drift-check-YYYY-MM-DD-XXXXXXXX",
@@ -355,6 +375,7 @@ DoD (internal criteria; not independently audited):
 ```
 
 **Test Results (internal CI; verify via test run logs):**
+
 - 76 tests passing for residency drift module (at time of documentation)
 - 52 tests passing for CI residency guardrail (at time of documentation)
 - 220 tests passing for governance module (no regression)
@@ -367,16 +388,19 @@ DoD (internal criteria; not independently audited):
 **Goal**: storage limitation and lifecycle control (Art. 5(1)(e)).
 
 Key work:
+
 - Define retention schedule per data type (telemetry, audit, access logs, backtest artifacts, support records).
 - Implement scheduled purge jobs with auditing (who/what/when; counts deleted).
 - Implement legal hold (if needed) with strict access control and audit.
 
 Deliverables:
+
 - Retention policy registry + API/admin flows
 - Auto-purge scheduler + audit events for purge runs
 - Tests: purge correctness; legal hold prevents deletion for scoped datasets
 
 DoD:
+
 - A scheduled purge run produces an auditable purge event including counts (deleted/archived/aggregated/anonymized) and timestamps per workspace.
 - Integration tests seed data older than cutoff and prove it is deleted/changed according to policy; legal hold (if enabled) prevents deletion for the scoped dataset.
 
@@ -419,6 +443,7 @@ DoD:
    - Updates policy last_purge_at after execution
 
 4. **PurgeEvent** (Audit Schema)
+
    ```json
    {
      "event_id": "uuid",
@@ -454,6 +479,7 @@ DoD:
    - Sessions: session_data (24h)
 
 **Test Results:**
+
 - 60 tests passing for retention service module
 - 280 tests passing for governance module (no regression)
 - Integration tests verify:
@@ -470,6 +496,7 @@ DoD:
 **Goal**: fulfill rights requests for data you actually control in Cloud (Art. 12–23).
 
 Key work:
+
 - Implement DSAR workflows for:
   - Access (Art. 15)
   - Portability/export (Art. 20)
@@ -478,11 +505,13 @@ Key work:
 - Add DSAR tracking (status, deadlines, extensions) and audit log.
 
 Deliverables:
+
 - DSAR endpoints + service
 - Export package format + checksum
 - DSAR audit records and metrics
 
 DoD:
+
 - End-to-end tests: create DSAR → (identity verify where required) → export/delete → immutable audit record exists for each step.
 - DSAR deadline rules are explicit: standard 30 days, one extension to 60 days when justified; tests prove deadline computation and state transitions.
 
@@ -521,6 +550,7 @@ DoD:
    - Automatic overdue detection and expiration
 
 4. **Export Package Format**
+
    ```json
    {
      "metadata": {
@@ -539,6 +569,7 @@ DoD:
      "data": [...]
    }
    ```
+
    - SHA-256 checksum: `sha256:<hex_digest>`
    - Secure download links with token and expiry (7 days)
 
@@ -572,6 +603,7 @@ DoD:
    - Period filtering (workspace, days)
 
 **Test Results:**
+
 - 73 tests passing for DSAR Phase 5 module
 - 353 tests passing for governance module (no regression)
 - 2692 tests passing for CCEA module (no regression)
@@ -589,6 +621,7 @@ DoD:
 **Goal**: least privilege with provable accountability for access to sensitive data.
 
 Key work:
+
 - RBAC inside workspace (read vs admin vs support scopes).
 - Access audit log: who accessed what/when, especially for sensitive datasets and DSAR exports.
 - Break-glass: **incident-only**, reason required, scope limited, time bounded, fully audited (and included in the evidence pack).
@@ -599,6 +632,7 @@ Key work:
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
 
 Deliverables:
+
 - RBAC policy definitions + enforcement points
 - Access-audit event schema + storage + export
 - Break-glass workflow and logs
@@ -606,6 +640,7 @@ Deliverables:
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L966`.
 
 DoD:
+
 - Every sensitive access is attributable to a principal and request_id; break-glass additionally has a reason, scope, and expiry time; all are exportable.
 
 **Implementation Summary (2025-12-17):**
@@ -677,12 +712,14 @@ DoD:
    - ChangeManagementService ↔ AccessAuditService: Full audit trail for change lifecycle
 
 **Evidence Pack Exports:**
+
 - RBAC snapshot (roles, assignments, permissions)
 - Access audit logs with integrity hash
 - Break-glass requests with evidence hash
 - Change journal with integrity hash
 
 **Test Results:**
+
 - 74 tests passing for Phase 6 access control module
 - 427 tests passing for governance module (no regression)
 - Tests verify:
@@ -706,6 +743,7 @@ DoD:
 **Goal**: "appropriate measures" + repeatable incident handling for personal data breaches.
 
 Key work:
+
 - Security baseline: encryption at rest/in transit, key management, MFA for privileged roles, secrets management, logging/monitoring.
 - Supply chain (Design Doc 15.1): signed artifacts, pinned digests, allowlist registries, SBOM stored and retrievable by digest.
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L909`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L911`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L913`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L915`.
@@ -734,6 +772,7 @@ Key work:
 #### Implementation Details
 
 **1. SecurityBaselineService** (`packages/cloud/governance/security_baseline.py`):
+
 - Encryption configuration (AES-256-GCM at rest, TLS 1.3 in transit)
 - Key management with automatic rotation (90 days default, configurable 30-365)
 - MFA enforcement policies (TOTP, WebAuthn supported; SMS deprecated)
@@ -741,6 +780,7 @@ Key work:
 - Security event logging and compliance checking
 
 **2. SupplyChainService** (`packages/cloud/governance/supply_chain.py`):
+
 - Signed artifact registration with signature verification
 - Digest pinning (sha256/sha512) with expiration tracking
 - Registry allowlist enforcement
@@ -749,6 +789,7 @@ Key work:
 - Trusted signer management
 
 **3. AgentUpdateService** (`packages/cloud/governance/agent_updates.py`):
+
 - Signed update publication and verification
 - Staged rollout (canary → early adopters → general availability)
 - Rollback with dual-approval requirement
@@ -757,6 +798,7 @@ Key work:
 - Rollout metrics and success criteria
 
 **4. ResearchSandboxService** (`packages/cloud/governance/research_sandbox.py`):
+
 - Isolation levels (container, VM, Firecracker, Kata)
 - Resource quotas (CPU, memory, storage, network)
 - Egress allowlist with default-deny policy
@@ -764,6 +806,7 @@ Key work:
 - Job lifecycle management with full audit trail
 
 **5. BreachWorkflowService** (`packages/cloud/governance/breach_workflow.py`):
+
 - Breach reporting and confirmation workflow
 - Risk assessment with scoring (0.0-10.0 scale)
 - Notification decision tree (authority: 72h, subjects: high risk)
@@ -772,12 +815,14 @@ Key work:
 - Timeline tracking and deadline alerts
 
 **6. EvidencePackService** (`packages/cloud/governance/evidence_pack.py`):
+
 - 23 evidence categories covering all governance aspects
 - Quick export methods for security, breach, supply chain, compliance
 - ZIP and JSON export formats with integrity hashes
 - Audit-ready artifact aggregation
 
 DoD (internal tooling validation; not a compliance claim):
+
 - ✅ Simulated breach workflow produces notification decision package and evidence trail (target: 72h external deadline; internal tabletop target: draft package + timeline within 24h).
 - ✅ Evidence pack exports: signed artifact inventory + SBOM + change journal + staged rollout/rollback records + research sandbox policy/violations.
 - ✅ 146 tests passing at time of Phase 7 completion (verify current status via CI; commit hash to be recorded in release notes).
@@ -790,11 +835,13 @@ DoD (internal tooling validation; not a compliance claim):
 **Status**: COMPLETED (2025-12-17)
 
 Key work:
+
 - ✅ Add CI/PR gates for new telemetry fields, new logs, new data stores: classification + retention + redaction.
 - ✅ Compliance dashboards: DSAR SLA tracking, purge success monitoring, break-glass usage audit, residency drift monitoring (design target: drift = 0; verify via dashboard exports).
 - ✅ Quarterly review cadence: retention schedule, subprocessors list, DSAR metrics, incident learnings.
 
 Deliverables:
+
 - ✅ CI "privacy-by-design" checks (`ccea/guardrails/privacy_by_design_check.py`)
 - ✅ Metrics dashboards and periodic reports (`packages/cloud/governance/compliance_dashboard.py`)
 - ✅ Data Inventory Registry (`packages/cloud/governance/data_inventory.py`)
@@ -802,6 +849,7 @@ Deliverables:
 - ✅ Phase 8 Specification (`docs/compliance/CONTINUOUS_COMPLIANCE_PHASE8_SPEC.md`)
 
 DoD:
+
 - ✅ CI fails closed if a new data store/log stream/telemetry field ships without recorded: classification, retention, residency, and redaction requirements (in a registered data inventory entry).
 - ✅ 88 Phase 8 tests passing (`tests/cloud/governance/test_phase8_continuous_compliance.py`).
 - ✅ All 273 governance tests passing (no regressions).
@@ -813,6 +861,7 @@ DoD:
 **Goal**: support enterprise on-prem/VPC deployments in a way that preserves the "software/platform provider" posture and is auditable.
 
 Key work:
+
 - Support enterprise deployment options (on-prem/VPC, or Cloud used only for updates/monitoring by contract).
 - Enforce policy options required by the Design Doc:
   - "telemetry stays local" (enterprise)
@@ -821,6 +870,7 @@ Key work:
 - Ensure evidence pack exports remain available in on-prem/air-gapped contexts and are exportable without external connectivity if needed.
 
 Deliverables:
+
 - Enterprise posture note (supported modes, contractual boundaries, and marketing claim guardrails).
 - On-prem/VPC deployment checklist including: EU-only data systems, registry mirror, offline verification/signing, evidence export paths, "telemetry stays local" defaults.
 - Deployment references to keep in sync with the posture:
@@ -828,6 +878,7 @@ Deliverables:
   - `deploy/helm/ccea-cloud/values-enterprise.yaml`
 
 DoD:
+
 - An on-prem/VPC deployment (EU-only posture) can produce an evidence pack and prove residency/telemetry boundaries in that mode:
   - telemetry stays local by default
   - if Cloud RAW telemetry is enabled (enterprise-only), it is explicitly opted-in, audited, and access-restricted
@@ -886,10 +937,12 @@ DoD:
    - `docker-compose.yml`: Phase 9 environment variables (CCEA_DEPLOYMENT_MODE, CCEA_TELEMETRY_LOCAL_ONLY, CCEA_EVIDENCE_EXPORT_LOCAL_ONLY, CCEA_POSTURE_VALIDATION_ENABLED), evidence_exports volume
 
 **Marketing Claim Guardrails** (from ENTERPRISE_POSTURE_NOTE.md):
+
 - Permitted claims: "EU-only data residency", "Telemetry stays local option", "GDPR-aligned architecture"
 - Prohibited claims: "No data leaves your network" (unless air-gapped), "Complete data sovereignty" (Cloud still receives some metadata), Compliance guarantees without contract
 
 **Test Results:**
+
 - 51 tests passing for enterprise posture service
 - 38 tests passing for enterprise posture CI guardrail
 - 624 tests passing for governance module (no regressions)
@@ -944,10 +997,13 @@ To support customer due diligence and audits, be able to export:
 ## 7) References (official and widely-used guidance)
 
 Primary legal text:
+
 - GDPR Regulation (EU) 2016/679 (Articles listed in Section 2).
 
 EU guidance (EDPB):
+
 - EDPB Guidelines on transparency, data subject rights, breach notification, and security measures (use as interpretation guidance when finalizing SOPs/policies).
 
 Operational best practice (for engineering controls):
+
 - ISO/IEC 27001/27002 and NIST CSF as control catalog references for Art. 32 mapping (select only what matches CCEA risk profile).

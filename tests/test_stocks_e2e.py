@@ -33,9 +33,18 @@ import pytest
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# The bundled equity data was removed from the repository: it came from Yahoo
+# Finance, whose terms do not allow redistribution. Recreate it locally with
+#     python scripts/download_stock_data.py
+pytestmark = pytest.mark.skipif(
+    not Path("data/raw_stocks").exists(),
+    reason="requires data/raw_stocks — run scripts/download_stock_data.py first",
+)
+
 # ============================================================================
 # Test Results Tracking
 # ============================================================================
+
 
 class TestResults:
     """Track test results."""
@@ -80,6 +89,7 @@ results = TestResults()
 
 def run_test(name: str):
     """Decorator to run a test with error handling."""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
@@ -90,13 +100,16 @@ def run_test(name: str):
                 results.add_fail(name, str(e))
                 traceback.print_exc()
                 return False
+
         return wrapper
+
     return decorator
 
 
 # ============================================================================
 # SECTION 1: Data Adapters Tests
 # ============================================================================
+
 
 def test_data_adapters():
     """Test all data adapters."""
@@ -194,6 +207,7 @@ def test_adapter_registry():
 # SECTION 2: Multi-Asset Data Loader Tests
 # ============================================================================
 
+
 def test_multi_asset_loader():
     """Test multi-asset data loader."""
     print("\n" + "=" * 60)
@@ -248,6 +262,7 @@ def test_timeframe_conversion():
 # ============================================================================
 # SECTION 3: L2 Execution Provider Tests
 # ============================================================================
+
 
 def test_l2_execution():
     """Test L2 execution provider for equities."""
@@ -423,6 +438,7 @@ def test_l2_execution_provider_integration():
 # SECTION 4: L3 LOB Simulation Components
 # ============================================================================
 
+
 def test_l3_components():
     """Test L3 LOB simulation components."""
     print("\n" + "=" * 60)
@@ -527,9 +543,7 @@ def test_queue_tracker():
     )
     from lob.data_structures import LimitOrder, Side
 
-    tracker = QueuePositionTracker(
-        default_method=PositionEstimationMethod.MBP_PESSIMISTIC
-    )
+    tracker = QueuePositionTracker(default_method=PositionEstimationMethod.MBP_PESSIMISTIC)
 
     order = LimitOrder(
         order_id="our_order",
@@ -727,6 +741,7 @@ def test_dark_pool():
 # SECTION 5: L3 Execution Provider
 # ============================================================================
 
+
 def test_l3_execution():
     """Test L3 execution provider."""
     print("\n" + "=" * 60)
@@ -795,7 +810,9 @@ def test_l3_fill_provider():
     """Test L3 fill provider with queue position."""
     from execution_providers_l3 import L3FillProvider, L3SlippageProvider
     from execution_providers import (
-        Order, MarketState, BarData,
+        Order,
+        MarketState,
+        BarData,
         EquityFeeProvider,
     )
     from lob.config import L3ExecutionConfig
@@ -843,7 +860,9 @@ def test_l3_execution_provider_integration():
     """Test complete L3 execution provider."""
     from execution_providers_l3 import create_l3_execution_provider
     from execution_providers import (
-        Order, MarketState, BarData,
+        Order,
+        MarketState,
+        BarData,
     )
 
     provider = create_l3_execution_provider()
@@ -880,6 +899,7 @@ def test_l3_execution_provider_integration():
 # ============================================================================
 # SECTION 6: Trading Environment Integration
 # ============================================================================
+
 
 def test_trading_env():
     """Test trading environment with stock data."""
@@ -1006,6 +1026,7 @@ def test_position_sync():
 # SECTION 7: Training Pipeline
 # ============================================================================
 
+
 def test_training_pipeline():
     """Test training pipeline on stocks."""
     print("\n" + "=" * 60)
@@ -1078,6 +1099,7 @@ def test_backtest_stocks():
     # Just check imports work
     try:
         from service_backtest import BacktestService
+
         assert BacktestService is not None
     except ImportError as e:
         # May have missing deps
@@ -1090,6 +1112,7 @@ def test_backtest_stocks():
 # ============================================================================
 # SECTION 8: Live Trading Components
 # ============================================================================
+
 
 def test_live_trading_components():
     """Test live trading specific components."""
@@ -1116,7 +1139,7 @@ def test_bracket_order_config():
         qty=100,
         limit_price=150.0,  # Entry price is limit_price
         take_profit_price=165.0,  # +10%
-        stop_loss_price=142.50,   # -5%
+        stop_loss_price=142.50,  # -5%
         time_in_force="DAY",
     )
 
@@ -1232,6 +1255,7 @@ def test_order_type_enum():
 # SECTION 9: Extended Hours & Session Management
 # ============================================================================
 
+
 def test_session_management():
     """Test session management for US equities."""
     print("\n" + "=" * 60)
@@ -1342,6 +1366,7 @@ def test_weekend_detection():
 # SECTION 10: Complete Backtest Flow
 # ============================================================================
 
+
 def test_backtest_flow():
     """Test complete backtest workflow."""
     print("\n" + "=" * 60)
@@ -1390,18 +1415,23 @@ def test_backtest_data_preparation():
     from data_loader_multi_asset import load_multi_asset_data, AssetClass
 
     # Try loading any available stock data
-    stock_paths = list(Path("data/raw_stocks").glob("*.parquet")) if Path("data/raw_stocks").exists() else []
+    stock_paths = (
+        list(Path("data/raw_stocks").glob("*.parquet")) if Path("data/raw_stocks").exists() else []
+    )
 
     if not stock_paths:
         # Create minimal test data
-        df = pd.DataFrame({
-            "timestamp": pd.date_range("2024-01-01", periods=100, freq="1h").astype(int) // 10**9,
-            "open": np.random.uniform(100, 110, 100),
-            "high": np.random.uniform(110, 120, 100),
-            "low": np.random.uniform(90, 100, 100),
-            "close": np.random.uniform(100, 110, 100),
-            "volume": np.random.uniform(1000000, 2000000, 100),
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=100, freq="1h").astype(int)
+                // 10**9,
+                "open": np.random.uniform(100, 110, 100),
+                "high": np.random.uniform(110, 120, 100),
+                "low": np.random.uniform(90, 100, 100),
+                "close": np.random.uniform(100, 110, 100),
+                "volume": np.random.uniform(1000000, 2000000, 100),
+            }
+        )
         assert len(df) == 100
         return
 
@@ -1418,7 +1448,13 @@ def test_backtest_data_preparation():
 @run_test("Backtest Execution Simulation")
 def test_backtest_execution_simulation():
     """Test execution simulation in backtest."""
-    from execution_providers import create_execution_provider, AssetClass, Order, MarketState, BarData
+    from execution_providers import (
+        create_execution_provider,
+        AssetClass,
+        Order,
+        MarketState,
+        BarData,
+    )
 
     provider = create_execution_provider(AssetClass.EQUITY)
 
@@ -1485,6 +1521,7 @@ def test_backtest_metrics_calculation():
 # SECTION 11: Full Training Pipeline
 # ============================================================================
 
+
 def test_full_training():
     """Test complete training pipeline."""
     print("\n" + "=" * 60)
@@ -1503,14 +1540,16 @@ def test_env_creation_for_training():
     from trading_patchnew import TradingEnv
 
     # Create minimal DataFrame
-    df = pd.DataFrame({
-        "timestamp": list(range(1000)),
-        "open": np.random.uniform(100, 110, 1000),
-        "high": np.random.uniform(110, 120, 1000),
-        "low": np.random.uniform(90, 100, 1000),
-        "close": np.random.uniform(100, 110, 1000),
-        "volume": np.random.uniform(1e6, 2e6, 1000),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": list(range(1000)),
+            "open": np.random.uniform(100, 110, 1000),
+            "high": np.random.uniform(110, 120, 1000),
+            "low": np.random.uniform(90, 100, 1000),
+            "close": np.random.uniform(100, 110, 1000),
+            "volume": np.random.uniform(1e6, 2e6, 1000),
+        }
+    )
 
     env = TradingEnv(
         df=df,
@@ -1576,14 +1615,16 @@ def test_mini_training_loop():
     from trading_patchnew import TradingEnv
 
     # Create environment
-    df = pd.DataFrame({
-        "timestamp": list(range(500)),
-        "open": 100 + np.cumsum(np.random.normal(0, 0.5, 500)),
-        "high": 100 + np.cumsum(np.random.normal(0, 0.5, 500)) + 1,
-        "low": 100 + np.cumsum(np.random.normal(0, 0.5, 500)) - 1,
-        "close": 100 + np.cumsum(np.random.normal(0, 0.5, 500)),
-        "volume": np.random.uniform(1e6, 2e6, 500),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": list(range(500)),
+            "open": 100 + np.cumsum(np.random.normal(0, 0.5, 500)),
+            "high": 100 + np.cumsum(np.random.normal(0, 0.5, 500)) + 1,
+            "low": 100 + np.cumsum(np.random.normal(0, 0.5, 500)) - 1,
+            "close": 100 + np.cumsum(np.random.normal(0, 0.5, 500)),
+            "volume": np.random.uniform(1e6, 2e6, 500),
+        }
+    )
 
     env = TradingEnv(
         df=df,
@@ -1615,6 +1656,7 @@ def test_mini_training_loop():
 # SECTION 12: L2/L3 Edge Cases
 # ============================================================================
 
+
 def test_edge_cases():
     """Test edge cases for execution providers."""
     print("\n" + "=" * 60)
@@ -1631,7 +1673,13 @@ def test_edge_cases():
 @run_test("Zero Volume Handling")
 def test_zero_volume_handling():
     """Test handling of zero volume scenarios."""
-    from execution_providers import create_execution_provider, AssetClass, Order, MarketState, BarData
+    from execution_providers import (
+        create_execution_provider,
+        AssetClass,
+        Order,
+        MarketState,
+        BarData,
+    )
 
     provider = create_execution_provider(AssetClass.EQUITY)
 
@@ -1658,7 +1706,13 @@ def test_zero_volume_handling():
 @run_test("Extreme Prices Handling")
 def test_extreme_prices():
     """Test handling of extreme price values."""
-    from execution_providers import create_execution_provider, AssetClass, Order, MarketState, BarData
+    from execution_providers import (
+        create_execution_provider,
+        AssetClass,
+        Order,
+        MarketState,
+        BarData,
+    )
 
     provider = create_execution_provider(AssetClass.EQUITY)
 
@@ -1687,7 +1741,13 @@ def test_extreme_prices():
 @run_test("Limit Order Edge Cases")
 def test_limit_order_edge_cases():
     """Test limit order edge cases."""
-    from execution_providers import create_execution_provider, AssetClass, Order, MarketState, BarData
+    from execution_providers import (
+        create_execution_provider,
+        AssetClass,
+        Order,
+        MarketState,
+        BarData,
+    )
 
     provider = create_execution_provider(AssetClass.EQUITY)
 
@@ -1791,6 +1851,7 @@ def test_spread_edge_cases():
 # ============================================================================
 # SECTION 13: Streaming & Real-time Simulation
 # ============================================================================
+
 
 def test_streaming_simulation():
     """Test streaming and real-time data simulation."""
@@ -1916,6 +1977,7 @@ def test_latency_profile_simulation():
 # SECTION 14: Macro Data & Features
 # ============================================================================
 
+
 def test_macro_features():
     """Test macro data and feature integration."""
     print("\n" + "=" * 60)
@@ -2010,6 +2072,7 @@ def test_macro_feature_calculation():
 # SECTION 15: Integration Tests
 # ============================================================================
 
+
 def test_integration():
     """Integration tests combining multiple components."""
     print("\n" + "=" * 60)
@@ -2025,7 +2088,13 @@ def test_integration():
 @run_test("Full Trade Lifecycle")
 def test_full_trade_lifecycle():
     """Test complete trade lifecycle from signal to execution."""
-    from execution_providers import create_execution_provider, AssetClass, Order, MarketState, BarData
+    from execution_providers import (
+        create_execution_provider,
+        AssetClass,
+        Order,
+        MarketState,
+        BarData,
+    )
     from services.position_sync import SyncResult
 
     # 1. Generate signal
@@ -2071,14 +2140,16 @@ def test_full_trade_lifecycle():
 def test_data_to_feature_to_signal():
     """Test pipeline from raw data to features to trading signal."""
     # 1. Create raw data
-    df = pd.DataFrame({
-        "timestamp": list(range(200)),
-        "open": 100 + np.cumsum(np.random.normal(0, 0.3, 200)),
-        "high": 100 + np.cumsum(np.random.normal(0, 0.3, 200)) + 0.5,
-        "low": 100 + np.cumsum(np.random.normal(0, 0.3, 200)) - 0.5,
-        "close": 100 + np.cumsum(np.random.normal(0, 0.3, 200)),
-        "volume": np.random.uniform(1e6, 2e6, 200),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": list(range(200)),
+            "open": 100 + np.cumsum(np.random.normal(0, 0.3, 200)),
+            "high": 100 + np.cumsum(np.random.normal(0, 0.3, 200)) + 0.5,
+            "low": 100 + np.cumsum(np.random.normal(0, 0.3, 200)) - 0.5,
+            "close": 100 + np.cumsum(np.random.normal(0, 0.3, 200)),
+            "volume": np.random.uniform(1e6, 2e6, 200),
+        }
+    )
 
     # 2. Calculate simple features
     df["returns"] = df["close"].pct_change()
@@ -2096,7 +2167,13 @@ def test_data_to_feature_to_signal():
 @run_test("Multi-Symbol Trading")
 def test_multi_symbol_trading():
     """Test trading multiple symbols simultaneously."""
-    from execution_providers import create_execution_provider, AssetClass, Order, MarketState, BarData
+    from execution_providers import (
+        create_execution_provider,
+        AssetClass,
+        Order,
+        MarketState,
+        BarData,
+    )
 
     provider = create_execution_provider(AssetClass.EQUITY)
 
@@ -2143,8 +2220,8 @@ def test_risk_management_integration():
 
     config = RiskConfig(
         max_abs_position=100.0,  # 100 units max
-        max_notional=15000.0,    # $15k max notional
-        max_drawdown_pct=0.2,    # 20% max drawdown
+        max_notional=15000.0,  # $15k max notional
+        max_drawdown_pct=0.2,  # 20% max drawdown
     )
 
     guard = RiskGuard(cfg=config)
@@ -2166,6 +2243,7 @@ def test_risk_management_integration():
 # ============================================================================
 # Main Entry Point
 # ============================================================================
+
 
 def main():
     """Run all tests."""

@@ -41,8 +41,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ICTEventType(Enum):
     """Types of ICT events per DORA Article 17."""
+
     SYSTEM_FAILURE = "system_failure"
     SECURITY_BREACH = "security_breach"
     DATA_BREACH = "data_breach"
@@ -62,26 +64,29 @@ class ICTEventType(Enum):
 
 class IncidentPhase(Enum):
     """Incident management phases per Article 17."""
-    DETECTION = "detection"              # Early warning, automated detection
-    RECORDING = "recording"              # Record and log incident
-    CLASSIFICATION = "classification"    # Classify per Article 18 criteria
-    ESCALATION = "escalation"            # Internal escalation
-    NOTIFICATION = "notification"        # Regulatory notification if major
-    INVESTIGATION = "investigation"      # Root cause analysis
-    RESOLUTION = "resolution"            # Corrective actions
-    CLOSURE = "closure"                  # Post-incident review
+
+    DETECTION = "detection"  # Early warning, automated detection
+    RECORDING = "recording"  # Record and log incident
+    CLASSIFICATION = "classification"  # Classify per Article 18 criteria
+    ESCALATION = "escalation"  # Internal escalation
+    NOTIFICATION = "notification"  # Regulatory notification if major
+    INVESTIGATION = "investigation"  # Root cause analysis
+    RESOLUTION = "resolution"  # Corrective actions
+    CLOSURE = "closure"  # Post-incident review
 
 
 class IncidentPriority(Enum):
     """Incident priority levels."""
-    P1_CRITICAL = "P1"      # Immediate action required
-    P2_HIGH = "P2"          # Action within 4 hours
-    P3_MEDIUM = "P3"        # Action within 24 hours
-    P4_LOW = "P4"           # Action within 72 hours
+
+    P1_CRITICAL = "P1"  # Immediate action required
+    P2_HIGH = "P2"  # Action within 4 hours
+    P3_MEDIUM = "P3"  # Action within 24 hours
+    P4_LOW = "P4"  # Action within 72 hours
 
 
 class IncidentStatus(Enum):
     """Incident status tracking."""
+
     NEW = "new"
     DETECTED = "detected"
     RECORDED = "recorded"
@@ -97,15 +102,17 @@ class IncidentStatus(Enum):
 
 class EscalationLevel(Enum):
     """Escalation levels per Article 17(3)(d)."""
-    L1_OPERATIONAL = "L1"   # Operational team
-    L2_TECHNICAL = "L2"     # Technical management
-    L3_MANAGEMENT = "L3"    # Senior management
-    L4_EXECUTIVE = "L4"     # Executive/Board level
-    L5_REGULATORY = "L5"    # Regulatory authorities
+
+    L1_OPERATIONAL = "L1"  # Operational team
+    L2_TECHNICAL = "L2"  # Technical management
+    L3_MANAGEMENT = "L3"  # Senior management
+    L4_EXECUTIVE = "L4"  # Executive/Board level
+    L5_REGULATORY = "L5"  # Regulatory authorities
 
 
 class EarlyWarningType(Enum):
     """Early warning indicator types per Article 17(3)(a)."""
+
     PERFORMANCE_DEGRADATION = "performance_degradation"
     ANOMALOUS_BEHAVIOR = "anomalous_behavior"
     SECURITY_ALERT = "security_alert"
@@ -121,6 +128,7 @@ class EarlyWarningType(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ICTEvent:
     """
@@ -128,6 +136,7 @@ class ICTEvent:
 
     Represents a detected event that may indicate an incident.
     """
+
     event_id: str = ""
     event_type: ICTEventType = ICTEventType.OTHER
     source_system: str = ""
@@ -162,7 +171,9 @@ class ICTEvent:
 
     def __post_init__(self):
         if not self.event_id:
-            self.event_id = f"EVT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.event_id = (
+                f"EVT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.detected_at:
             self.detected_at = datetime.now(timezone.utc).isoformat()
 
@@ -174,6 +185,7 @@ class EarlyWarningIndicator:
 
     Monitors system health and raises alerts before incidents occur.
     """
+
     indicator_id: str = ""
     indicator_type: EarlyWarningType = EarlyWarningType.ANOMALOUS_BEHAVIOR
     name: str = ""
@@ -218,6 +230,7 @@ class DORAIncident:
 
     Comprehensive incident tracking with all DORA-required fields.
     """
+
     incident_id: str = ""
 
     # Source event
@@ -314,7 +327,9 @@ class DORAIncident:
 
     def __post_init__(self):
         if not self.incident_id:
-            self.incident_id = f"INC-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.incident_id = (
+                f"INC-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
         if not self.detected_at:
@@ -349,6 +364,7 @@ class IncidentAction:
     """
     Incident action tracking.
     """
+
     action_id: str = ""
     incident_id: str = ""
     action_type: str = ""  # immediate, containment, corrective, preventive
@@ -377,6 +393,7 @@ class EscalationRule:
     """
     Escalation rule per Article 17(3)(d).
     """
+
     rule_id: str = ""
     name: str = ""
     description: str = ""
@@ -408,9 +425,11 @@ class EscalationRule:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class IncidentManagementConfig:
     """Configuration for ICT Incident Management."""
+
     # Workflow settings
     auto_classify: bool = True
     auto_escalate: bool = True
@@ -448,6 +467,7 @@ class IncidentManagementConfig:
 # =============================================================================
 # Main Class Implementation
 # =============================================================================
+
 
 class DORAIncidentManagement:
     """
@@ -563,12 +583,15 @@ class DORAIncidentManagement:
         with self._lock:
             self._events[event.event_id] = event
 
-        self._log_event("event_detected", {
-            "event_id": event.event_id,
-            "event_type": event_type.value,
-            "source_system": source_system,
-            "title": title,
-        })
+        self._log_event(
+            "event_detected",
+            {
+                "event_id": event.event_id,
+                "event_type": event_type.value,
+                "source_system": source_system,
+                "title": title,
+            },
+        )
 
         logger.info(f"ICT Event detected: {event.event_id} - {title}")
         return event
@@ -601,11 +624,14 @@ class DORAIncidentManagement:
             event.processed_at = datetime.now(timezone.utc).isoformat()
             event.processed_by = processed_by
 
-        self._log_event("event_processed", {
-            "event_id": event_id,
-            "is_incident": is_incident,
-            "processed_by": processed_by,
-        })
+        self._log_event(
+            "event_processed",
+            {
+                "event_id": event_id,
+                "is_incident": is_incident,
+                "processed_by": processed_by,
+            },
+        )
 
         return event
 
@@ -666,11 +692,14 @@ class DORAIncidentManagement:
             event.is_incident = True
             event.incident_id = incident.incident_id
 
-        self._log_event("incident_created", {
-            "incident_id": incident.incident_id,
-            "source_event_id": event.event_id,
-            "incident_type": incident.incident_type.value,
-        })
+        self._log_event(
+            "incident_created",
+            {
+                "incident_id": incident.incident_id,
+                "source_event_id": event.event_id,
+                "incident_type": incident.incident_type.value,
+            },
+        )
 
         logger.info(f"Incident created: {incident.incident_id}")
         return incident
@@ -721,11 +750,14 @@ class DORAIncidentManagement:
         with self._lock:
             self._incidents[incident.incident_id] = incident
 
-        self._log_event("incident_created_direct", {
-            "incident_id": incident.incident_id,
-            "incident_type": incident_type.value,
-            "priority": priority.value,
-        })
+        self._log_event(
+            "incident_created_direct",
+            {
+                "incident_id": incident.incident_id,
+                "incident_type": incident_type.value,
+                "priority": priority.value,
+            },
+        )
 
         logger.info(f"Incident created: {incident.incident_id}")
         return incident
@@ -786,12 +818,8 @@ class DORAIncidentManagement:
                 incident.requires_notification = True
 
                 # Calculate notification deadline per CDR 2025/301
-                detected = datetime.fromisoformat(
-                    incident.detected_at.replace("Z", "+00:00")
-                )
-                classified = datetime.fromisoformat(
-                    incident.classified_at.replace("Z", "+00:00")
-                )
+                detected = datetime.fromisoformat(incident.detected_at.replace("Z", "+00:00"))
+                classified = datetime.fromisoformat(incident.classified_at.replace("Z", "+00:00"))
 
                 deadline_from_classification = classified + timedelta(
                     hours=self.config.initial_notification_hours_from_classification
@@ -809,12 +837,15 @@ class DORAIncidentManagement:
                     f"Notification deadline: {incident.notification_deadline}"
                 )
 
-        self._log_event("incident_classified", {
-            "incident_id": incident_id,
-            "priority": priority.value,
-            "is_major": is_major,
-            "notification_deadline": incident.notification_deadline if is_major else None,
-        })
+        self._log_event(
+            "incident_classified",
+            {
+                "incident_id": incident_id,
+                "priority": priority.value,
+                "is_major": is_major,
+                "notification_deadline": incident.notification_deadline if is_major else None,
+            },
+        )
 
         return incident
 
@@ -869,16 +900,19 @@ class DORAIncidentManagement:
                     {
                         "incident_id": incident_id,
                         **escalation_record,
-                    }
+                    },
                 )
             except Exception as e:
                 logger.error(f"Escalation callback failed: {e}")
 
-        self._log_event("incident_escalated", {
-            "incident_id": incident_id,
-            "to_level": to_level.value,
-            "reason": reason,
-        })
+        self._log_event(
+            "incident_escalated",
+            {
+                "incident_id": incident_id,
+                "to_level": to_level.value,
+                "reason": reason,
+            },
+        )
 
         logger.info(f"Incident {incident_id} escalated to {to_level.value}")
         return incident
@@ -916,10 +950,13 @@ class DORAIncidentManagement:
             if assigned_to:
                 incident.assigned_to = assigned_to
 
-        self._log_event("investigation_started", {
-            "incident_id": incident_id,
-            "assigned_to": assigned_to,
-        })
+        self._log_event(
+            "investigation_started",
+            {
+                "incident_id": incident_id,
+                "assigned_to": assigned_to,
+            },
+        )
 
         return incident
 
@@ -952,10 +989,13 @@ class DORAIncidentManagement:
             incident.contributing_factors = contributing_factors or []
             incident.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("root_cause_identified", {
-            "incident_id": incident_id,
-            "root_cause_category": root_cause_category,
-        })
+        self._log_event(
+            "root_cause_identified",
+            {
+                "incident_id": incident_id,
+                "root_cause_category": root_cause_category,
+            },
+        )
 
         return incident
 
@@ -1014,11 +1054,14 @@ class DORAIncidentManagement:
 
             incident.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("action_added", {
-            "incident_id": incident_id,
-            "action_id": action.action_id,
-            "action_type": action_type,
-        })
+        self._log_event(
+            "action_added",
+            {
+                "incident_id": incident_id,
+                "action_id": action.action_id,
+                "action_type": action_type,
+            },
+        )
 
         return action
 
@@ -1115,23 +1158,28 @@ class DORAIncidentManagement:
             incident.updated_at = now
 
             # Calculate duration
-            detected = datetime.fromisoformat(
-                incident.detected_at.replace("Z", "+00:00")
-            )
+            detected = datetime.fromisoformat(incident.detected_at.replace("Z", "+00:00"))
             resolved = datetime.fromisoformat(now.replace("Z", "+00:00"))
             incident.duration_hours = (resolved - detected).total_seconds() / 3600
 
             # Update impact if provided
             if final_impact_assessment:
                 if "economic_impact_eur" in final_impact_assessment:
-                    incident.estimated_economic_impact_eur = final_impact_assessment["economic_impact_eur"]
+                    incident.estimated_economic_impact_eur = final_impact_assessment[
+                        "economic_impact_eur"
+                    ]
                 if "affected_clients_count" in final_impact_assessment:
-                    incident.affected_clients_count = final_impact_assessment["affected_clients_count"]
+                    incident.affected_clients_count = final_impact_assessment[
+                        "affected_clients_count"
+                    ]
 
-        self._log_event("incident_resolved", {
-            "incident_id": incident_id,
-            "duration_hours": incident.duration_hours,
-        })
+        self._log_event(
+            "incident_resolved",
+            {
+                "incident_id": incident_id,
+                "duration_hours": incident.duration_hours,
+            },
+        )
 
         logger.info(f"Incident resolved: {incident_id}")
         return incident
@@ -1170,10 +1218,13 @@ class DORAIncidentManagement:
             incident.post_incident_review_id = post_incident_review_id
             incident.updated_at = now
 
-        self._log_event("incident_closed", {
-            "incident_id": incident_id,
-            "lessons_learned": lessons_learned,
-        })
+        self._log_event(
+            "incident_closed",
+            {
+                "incident_id": incident_id,
+                "lessons_learned": lessons_learned,
+            },
+        )
 
         logger.info(f"Incident closed: {incident_id}")
         return incident
@@ -1212,10 +1263,13 @@ class DORAIncidentManagement:
 
             incident.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("notification_submitted", {
-            "incident_id": incident_id,
-            "report_id": report_id,
-        })
+        self._log_event(
+            "notification_submitted",
+            {
+                "incident_id": incident_id,
+                "report_id": report_id,
+            },
+        )
 
         return incident
 
@@ -1223,17 +1277,15 @@ class DORAIncidentManagement:
         """Get incidents that require notification but haven't been notified."""
         with self._lock:
             return [
-                i for i in self._incidents.values()
+                i
+                for i in self._incidents.values()
                 if i.requires_notification and not i.notification_submitted
             ]
 
     def get_overdue_notifications(self) -> List[DORAIncident]:
         """Get incidents with overdue notifications."""
         with self._lock:
-            return [
-                i for i in self._incidents.values()
-                if i.notification_overdue
-            ]
+            return [i for i in self._incidents.values() if i.notification_overdue]
 
     # =========================================================================
     # Early Warning System (Article 17(3)(a))
@@ -1293,11 +1345,14 @@ class DORAIncidentManagement:
         with self._lock:
             self._early_warnings[indicator.indicator_id] = indicator
 
-        self._log_event("early_warning_registered", {
-            "indicator_id": indicator.indicator_id,
-            "name": name,
-            "monitored_system": monitored_system,
-        })
+        self._log_event(
+            "early_warning_registered",
+            {
+                "indicator_id": indicator.indicator_id,
+                "name": name,
+                "monitored_system": monitored_system,
+            },
+        )
 
         return indicator
 
@@ -1386,10 +1441,7 @@ class DORAIncidentManagement:
     def get_triggered_early_warnings(self) -> List[EarlyWarningIndicator]:
         """Get all currently triggered early warning indicators."""
         with self._lock:
-            return [
-                i for i in self._early_warnings.values()
-                if i.is_triggered and i.is_active
-            ]
+            return [i for i in self._early_warnings.values() if i.is_triggered and i.is_active]
 
     def get_early_warning_indicator(
         self,
@@ -1476,7 +1528,10 @@ class DORAIncidentManagement:
                     if rule.trigger_priority and incident.priority not in rule.trigger_priority:
                         continue
 
-                    if rule.trigger_incident_types and incident.incident_type not in rule.trigger_incident_types:
+                    if (
+                        rule.trigger_incident_types
+                        and incident.incident_type not in rule.trigger_incident_types
+                    ):
                         continue
 
                     if incident.escalation_level != rule.from_level:
@@ -1489,9 +1544,7 @@ class DORAIncidentManagement:
 
                     # Check time threshold
                     if rule.trigger_time_minutes > 0:
-                        created = datetime.fromisoformat(
-                            incident.created_at.replace("Z", "+00:00")
-                        )
+                        created = datetime.fromisoformat(incident.created_at.replace("Z", "+00:00"))
                         elapsed_minutes = (now - created).total_seconds() / 60
 
                         if elapsed_minutes >= rule.trigger_time_minutes:
@@ -1551,10 +1604,9 @@ class DORAIncidentManagement:
 
         with self._lock:
             return [
-                i for i in self._incidents.values()
-                if datetime.fromisoformat(
-                    i.created_at.replace("Z", "+00:00")
-                ) >= cutoff
+                i
+                for i in self._incidents.values()
+                if datetime.fromisoformat(i.created_at.replace("Z", "+00:00")) >= cutoff
             ]
 
     def get_action(self, action_id: str) -> Optional[IncidentAction]:
@@ -1568,18 +1620,12 @@ class DORAIncidentManagement:
     ) -> List[IncidentAction]:
         """Get all actions for an incident."""
         with self._lock:
-            return [
-                a for a in self._actions.values()
-                if a.incident_id == incident_id
-            ]
+            return [a for a in self._actions.values() if a.incident_id == incident_id]
 
     def get_pending_actions(self) -> List[IncidentAction]:
         """Get all pending actions."""
         with self._lock:
-            return [
-                a for a in self._actions.values()
-                if a.status == "pending"
-            ]
+            return [a for a in self._actions.values() if a.status == "pending"]
 
     # =========================================================================
     # Reporting and Statistics
@@ -1610,10 +1656,9 @@ class DORAIncidentManagement:
 
         with self._lock:
             period_incidents = [
-                i for i in self._incidents.values()
-                if start_dt <= datetime.fromisoformat(
-                    i.created_at.replace("Z", "+00:00")
-                ) <= end_dt
+                i
+                for i in self._incidents.values()
+                if start_dt <= datetime.fromisoformat(i.created_at.replace("Z", "+00:00")) <= end_dt
             ]
 
         # Calculate statistics
@@ -1624,9 +1669,7 @@ class DORAIncidentManagement:
 
         by_priority = {}
         for priority in IncidentPriority:
-            by_priority[priority.value] = sum(
-                1 for i in period_incidents if i.priority == priority
-            )
+            by_priority[priority.value] = sum(1 for i in period_incidents if i.priority == priority)
 
         by_type = {}
         for inc_type in ICTEventType:
@@ -1635,10 +1678,7 @@ class DORAIncidentManagement:
                 by_type[inc_type.value] = count
 
         # Calculate average resolution time
-        resolved_incidents = [
-            i for i in period_incidents
-            if i.resolved_at
-        ]
+        resolved_incidents = [i for i in period_incidents if i.resolved_at]
 
         avg_resolution_hours = 0.0
         if resolved_incidents:
@@ -1656,11 +1696,10 @@ class DORAIncidentManagement:
             "by_priority": by_priority,
             "by_type": by_type,
             "average_resolution_hours": round(avg_resolution_hours, 2),
-            "notification_submitted": sum(
-                1 for i in period_incidents if i.notification_submitted
-            ),
+            "notification_submitted": sum(1 for i in period_incidents if i.notification_submitted),
             "notification_pending": sum(
-                1 for i in period_incidents
+                1
+                for i in period_incidents
                 if i.requires_notification and not i.notification_submitted
             ),
         }
@@ -1684,8 +1723,7 @@ class DORAIncidentManagement:
                     raise ValueError(f"Incident {incident_id} not found")
                 incidents = [asdict(self._incidents[incident_id])]
                 actions = [
-                    asdict(a) for a in self._actions.values()
-                    if a.incident_id == incident_id
+                    asdict(a) for a in self._actions.values() if a.incident_id == incident_id
                 ]
             else:
                 incidents = [asdict(i) for i in self._incidents.values()]
@@ -1725,6 +1763,7 @@ class DORAIncidentManagement:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_incident_management(
     config: Optional[IncidentManagementConfig] = None,

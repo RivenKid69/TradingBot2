@@ -4,19 +4,23 @@ import json
 
 
 def make_trades() -> pd.DataFrame:
-    return pd.DataFrame({
-        "ts_ms": [1, 2],
-        "pnl": [1.0, -0.5],
-        "side": ["BUY", "SELL"],
-        "qty": [1, 1],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1, 2],
+            "pnl": [1.0, -0.5],
+            "side": ["BUY", "SELL"],
+            "qty": [1, 1],
+        }
+    )
 
 
 def make_equity() -> pd.DataFrame:
-    return pd.DataFrame({
-        "ts_ms": [1, 2],
-        "equity": [1.0, 0.5],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1, 2],
+            "equity": [1.0, 0.5],
+        }
+    )
 
 
 def test_calculate_metrics_multiple_profiles():

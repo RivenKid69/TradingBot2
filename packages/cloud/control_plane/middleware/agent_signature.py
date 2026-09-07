@@ -48,18 +48,21 @@ HEADER_KEY_ID = "X-CCEA-Key-ID"
 MAX_TIMESTAMP_AGE_SECONDS = 300  # 5 minutes
 
 # Paths that require agent signature verification (when strict mode is enabled)
-AGENT_SIGNED_PATHS: Set[str] = frozenset({
-    "/api/v1/agent/heartbeat",
-    "/api/v1/agent/commands/poll",
-    "/api/v1/agent/commands/",  # Prefix for command operations
-    "/api/v1/agent/telemetry",
-    "/api/v1/agent/approval",
-})
+AGENT_SIGNED_PATHS: Set[str] = frozenset(
+    {
+        "/api/v1/agent/heartbeat",
+        "/api/v1/agent/commands/poll",
+        "/api/v1/agent/commands/",  # Prefix for command operations
+        "/api/v1/agent/telemetry",
+        "/api/v1/agent/approval",
+    }
+)
 
 
 @dataclass
 class SignatureVerificationResult:
     """Result of signature verification."""
+
     verified: bool
     agent_id: Optional[str] = None
     key_fingerprint: Optional[str] = None
@@ -70,6 +73,7 @@ class SignatureVerificationResult:
 @dataclass
 class SignatureConfig:
     """Configuration for signature verification."""
+
     strict_mode: bool = False  # If True, reject unsigned requests
     verify_timestamp: bool = True  # If True, check timestamp freshness
     max_timestamp_age: int = MAX_TIMESTAMP_AGE_SECONDS
@@ -118,10 +122,7 @@ class AgentSignatureVerifier:
         if not signature_b64:
             if self.config.log_unverified:
                 logger.debug(f"No {HEADER_SIGNATURE} header on request {request.url.path}")
-            return SignatureVerificationResult(
-                verified=False,
-                error="Missing signature header"
-            )
+            return SignatureVerificationResult(verified=False, error="Missing signature header")
 
         # Get timestamp (for replay protection)
         timestamp_str = request.headers.get(HEADER_TIMESTAMP)
@@ -137,7 +138,7 @@ class AgentSignatureVerifier:
                     return SignatureVerificationResult(
                         verified=False,
                         timestamp=request_timestamp,
-                        error=f"Request timestamp too old ({age:.0f}s > {self.config.max_timestamp_age}s)"
+                        error=f"Request timestamp too old ({age:.0f}s > {self.config.max_timestamp_age}s)",
                     )
             except (ValueError, TypeError) as e:
                 logger.warning(f"Invalid timestamp format: {timestamp_str}")
@@ -156,8 +157,7 @@ class AgentSignatureVerifier:
             if self.config.log_unverified:
                 logger.debug("No agent ID in request context for signature verification")
             return SignatureVerificationResult(
-                verified=False,
-                error="No agent ID in request context"
+                verified=False, error="No agent ID in request context"
             )
 
         # Get agent's public key
@@ -166,9 +166,7 @@ class AgentSignatureVerifier:
             if public_key is None:
                 self._failed_count += 1
                 return SignatureVerificationResult(
-                    verified=False,
-                    agent_id=agent_id,
-                    error="Agent public key not found"
+                    verified=False, agent_id=agent_id, error="Agent public key not found"
                 )
 
             # Load public key if it's a PEM string
@@ -179,9 +177,7 @@ class AgentSignatureVerifier:
             logger.error(f"Error loading agent public key: {e}")
             self._failed_count += 1
             return SignatureVerificationResult(
-                verified=False,
-                agent_id=agent_id,
-                error=f"Error loading public key: {e}"
+                verified=False, agent_id=agent_id, error=f"Error loading public key: {e}"
             )
 
         # Get request body for verification
@@ -190,9 +186,7 @@ class AgentSignatureVerifier:
         except Exception as e:
             logger.error(f"Error reading request body: {e}")
             return SignatureVerificationResult(
-                verified=False,
-                agent_id=agent_id,
-                error=f"Error reading request body: {e}"
+                verified=False, agent_id=agent_id, error=f"Error reading request body: {e}"
             )
 
         # Build message to verify (body + timestamp if present)
@@ -211,9 +205,7 @@ class AgentSignatureVerifier:
             logger.error(f"Signature verification error: {e}")
             self._failed_count += 1
             return SignatureVerificationResult(
-                verified=False,
-                agent_id=agent_id,
-                error=f"Signature verification error: {e}"
+                verified=False, agent_id=agent_id, error=f"Signature verification error: {e}"
             )
 
         if is_valid:
@@ -229,9 +221,7 @@ class AgentSignatureVerifier:
         else:
             self._failed_count += 1
             return SignatureVerificationResult(
-                verified=False,
-                agent_id=agent_id,
-                error="Invalid signature"
+                verified=False, agent_id=agent_id, error="Invalid signature"
             )
 
     def should_verify(self, path: str) -> bool:
@@ -312,7 +302,7 @@ class AgentSignatureMiddleware(BaseHTTPMiddleware):
                 content={
                     "detail": f"Agent signature verification failed: {result.error}",
                     "signature_required": True,
-                }
+                },
             )
 
         # Log unverified requests in non-strict mode

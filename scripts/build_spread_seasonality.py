@@ -109,9 +109,7 @@ def _infer_timestamp_column(df: pd.DataFrame, explicit: Optional[str]) -> str:
     for col in candidates:
         if col in df.columns:
             return col
-    raise ValueError(
-        "Could not locate timestamp column. Provide it explicitly via --ts-col."
-    )
+    raise ValueError("Could not locate timestamp column. Provide it explicitly via --ts-col.")
 
 
 def _infer_spread_series(df: pd.DataFrame, explicit: Optional[str]) -> np.ndarray:
@@ -157,7 +155,9 @@ def _infer_spread_series(df: pd.DataFrame, explicit: Optional[str]) -> np.ndarra
     return metric
 
 
-def _filter_window(ts_ms: np.ndarray, values: np.ndarray, window_days: int) -> tuple[np.ndarray, np.ndarray]:
+def _filter_window(
+    ts_ms: np.ndarray, values: np.ndarray, window_days: int
+) -> tuple[np.ndarray, np.ndarray]:
     if window_days <= 0 or ts_ms.size == 0:
         return ts_ms, values
     cutoff = ts_ms.max() - int(window_days * DAY_MS)
@@ -209,12 +209,16 @@ def compute_spread_multipliers(
     if spread_values.size == 0:
         raise ValueError("Spread values must be positive")
 
-    df = pd.DataFrame({
-        "hour": hour_of_week(ts_ms),
-        "spread": spread_values,
-    })
+    df = pd.DataFrame(
+        {
+            "hour": hour_of_week(ts_ms),
+            "spread": spread_values,
+        }
+    )
     grouped = df.groupby("hour")["spread"].agg(["mean", "count"])
-    hourly_mean = grouped["mean"].reindex(range(HOURS_IN_WEEK), fill_value=np.nan).to_numpy(dtype=float)
+    hourly_mean = (
+        grouped["mean"].reindex(range(HOURS_IN_WEEK), fill_value=np.nan).to_numpy(dtype=float)
+    )
     counts = grouped["count"].reindex(range(HOURS_IN_WEEK), fill_value=0).to_numpy(dtype=int)
     overall_mean = float(np.nanmean(spread_values))
 
@@ -375,9 +379,7 @@ def main() -> None:
     elif config_window_days:
         window_days_meta = int(config_window_days)
     else:
-        computed_window = compute_window_days(
-            result.actual_start_ms, result.actual_end_ms
-        )
+        computed_window = compute_window_days(result.actual_start_ms, result.actual_end_ms)
         window_days_meta = int(computed_window) if computed_window else 0
 
     data_window_meta = {

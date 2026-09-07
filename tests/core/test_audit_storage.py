@@ -48,6 +48,7 @@ from services.core.risk_controls.audit_storage import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_record():
     """Create a sample audit record for testing."""
@@ -125,6 +126,7 @@ def file_storage(tmp_path):
 # Config Tests
 # =============================================================================
 
+
 class TestAuditStorageConfig:
     """Tests for AuditStorageConfig."""
 
@@ -170,6 +172,7 @@ class TestStorageMetrics:
 # MemoryAuditStorage Tests
 # =============================================================================
 
+
 class TestMemoryAuditStorage:
     """Tests for MemoryAuditStorage."""
 
@@ -195,8 +198,14 @@ class TestMemoryAuditStorage:
 
         # Verify chain
         assert memory_storage._records[0].previous_record_hash is None
-        assert memory_storage._records[1].previous_record_hash == memory_storage._records[0].record_hash
-        assert memory_storage._records[2].previous_record_hash == memory_storage._records[1].record_hash
+        assert (
+            memory_storage._records[1].previous_record_hash
+            == memory_storage._records[0].record_hash
+        )
+        assert (
+            memory_storage._records[2].previous_record_hash
+            == memory_storage._records[1].record_hash
+        )
 
     def test_append_batch(self, memory_storage, sample_records):
         """Test batch append."""
@@ -257,7 +266,8 @@ class TestMemoryAuditStorage:
 
         # Filter by event type
         results = memory_storage.read_range(
-            start, end,
+            start,
+            end,
             event_types=[AuditEventType.ORDER_SUBMITTED],
         )
 
@@ -442,6 +452,7 @@ class TestMemoryAuditStorage:
 # SQLiteAuditStorage Tests
 # =============================================================================
 
+
 class TestSQLiteAuditStorage:
     """Tests for SQLiteAuditStorage."""
 
@@ -560,6 +571,7 @@ class TestSQLiteAuditStorage:
 # FileAuditStorage Tests
 # =============================================================================
 
+
 class TestFileAuditStorage:
     """Tests for FileAuditStorage."""
 
@@ -655,6 +667,7 @@ class TestFileAuditStorage:
 # Factory Function Tests
 # =============================================================================
 
+
 class TestCreateAuditStorage:
     """Tests for create_audit_storage factory function."""
 
@@ -706,10 +719,13 @@ class TestCreateAuditStorage:
 # Chain Integrity Tests
 # =============================================================================
 
+
 class TestChainIntegrity:
     """Tests for chain integrity across storage backends."""
 
-    @pytest.mark.parametrize("storage_fixture", ["memory_storage", "sqlite_storage", "file_storage"])
+    @pytest.mark.parametrize(
+        "storage_fixture", ["memory_storage", "sqlite_storage", "file_storage"]
+    )
     def test_chain_integrity_maintained(self, storage_fixture, sample_records, request):
         """Test that chain integrity is maintained."""
         storage = request.getfixturevalue(storage_fixture)
@@ -728,7 +744,9 @@ class TestChainIntegrity:
             assert record.previous_record_hash == prev_hash
             prev_hash = record.record_hash
 
-    @pytest.mark.parametrize("storage_fixture", ["memory_storage", "sqlite_storage", "file_storage"])
+    @pytest.mark.parametrize(
+        "storage_fixture", ["memory_storage", "sqlite_storage", "file_storage"]
+    )
     def test_verify_chain_detects_tampering(self, storage_fixture, sample_records, request):
         """Test that chain verification detects tampering."""
         storage = request.getfixturevalue(storage_fixture)
@@ -744,6 +762,7 @@ class TestChainIntegrity:
 # =============================================================================
 # Metrics Tests
 # =============================================================================
+
 
 class TestStorageMetricsTracking:
     """Tests for metrics tracking across storage backends."""

@@ -23,6 +23,7 @@ from uuid import UUID
 
 class ChangeClass(str, Enum):
     """Change classification per Design Doc."""
+
     TRADING_IMPACTING = "trading_impacting"
     NON_TRADING_IMPACTING = "non_trading_impacting"
     OPERATIONAL = "operational"
@@ -31,6 +32,7 @@ class ChangeClass(str, Enum):
 
 class CommandType(str, Enum):
     """Command types with their default change classes."""
+
     REQUEST_START_RUN = "REQUEST_START_RUN"
     REQUEST_STOP_RUN = "REQUEST_STOP_RUN"
     REQUEST_PAUSE_RUN = "REQUEST_PAUSE_RUN"
@@ -41,33 +43,42 @@ class CommandType(str, Enum):
 
 
 # Commands that are ALWAYS trading-impacting
-ALWAYS_TRADING_IMPACTING: Final[FrozenSet[str]] = frozenset([
-    "REQUEST_START_RUN",
-    "REQUEST_UPGRADE_ARTIFACT",
-])
+ALWAYS_TRADING_IMPACTING: Final[FrozenSet[str]] = frozenset(
+    [
+        "REQUEST_START_RUN",
+        "REQUEST_UPGRADE_ARTIFACT",
+    ]
+)
 
 # Commands that MAY be trading-impacting (depends on payload)
-POTENTIALLY_TRADING_IMPACTING: Final[FrozenSet[str]] = frozenset([
-    "REQUEST_UPDATE_CONFIG",
-])
+POTENTIALLY_TRADING_IMPACTING: Final[FrozenSet[str]] = frozenset(
+    [
+        "REQUEST_UPDATE_CONFIG",
+    ]
+)
 
 # Commands that are safety/operational (can apply without approval)
 # NOTE: These still CANNOT send orders/signals - they only stop/pause
-SAFETY_OPERATIONAL: Final[FrozenSet[str]] = frozenset([
-    "REQUEST_STOP_RUN",
-    "REQUEST_PAUSE_RUN",
-])
+SAFETY_OPERATIONAL: Final[FrozenSet[str]] = frozenset(
+    [
+        "REQUEST_STOP_RUN",
+        "REQUEST_PAUSE_RUN",
+    ]
+)
 
 # Commands that are purely administrative
-ADMINISTRATIVE: Final[FrozenSet[str]] = frozenset([
-    "REQUEST_ROTATE_AGENT_SESSION",
-    "REQUEST_EXPORT_LOGS",
-])
+ADMINISTRATIVE: Final[FrozenSet[str]] = frozenset(
+    [
+        "REQUEST_ROTATE_AGENT_SESSION",
+        "REQUEST_EXPORT_LOGS",
+    ]
+)
 
 
 @dataclass
 class ChangeClassDetermination:
     """Result of change class determination."""
+
     change_class: ChangeClass
     requires_approval: bool
     reason: str
@@ -90,6 +101,7 @@ class ChangeClassDetermination:
 @dataclass
 class ApprovalRequirement:
     """Approval requirement for a command."""
+
     required: bool
     reason: str
     change_class: ChangeClass
@@ -346,7 +358,10 @@ class AgentChangeClassEnforcer:
             cc = ChangeClass(change_class.lower())
         except ValueError:
             if self._fail_closed:
-                return False, f"Unknown change_class '{change_class}' - treating as TRADING_IMPACTING requires approval"
+                return (
+                    False,
+                    f"Unknown change_class '{change_class}' - treating as TRADING_IMPACTING requires approval",
+                )
             cc = ChangeClass.TRADING_IMPACTING
 
         # Rule 1: TRADING_IMPACTING ALWAYS requires approval
@@ -406,9 +421,13 @@ def enforce_trading_impacting_approval(
 
     if determination.change_class == ChangeClass.TRADING_IMPACTING:
         if not requires_approval:
-            return True, True, (
-                f"Corrected: {command_type} is TRADING_IMPACTING, "
-                "requires_approval set to True (Phase 3, 3.5)"
+            return (
+                True,
+                True,
+                (
+                    f"Corrected: {command_type} is TRADING_IMPACTING, "
+                    "requires_approval set to True (Phase 3, 3.5)"
+                ),
             )
         return True, False, ""
 

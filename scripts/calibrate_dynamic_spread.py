@@ -82,9 +82,7 @@ def _compute_mid(df: pd.DataFrame) -> pd.Series:
     if mid_col:
         return df[mid_col].copy().rename(None)
 
-    raise KeyError(
-        "Unable to infer mid price column. Provide bid/ask or a mid/close column."
-    )
+    raise KeyError("Unable to infer mid price column. Provide bid/ask or a mid/close column.")
 
 
 def _compute_spread_bps(df: pd.DataFrame, mid: pd.Series) -> Optional[pd.Series]:
@@ -263,7 +261,9 @@ def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
         description="Calibrate coefficients for the dynamic spread configuration",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("data_path", type=Path, help="Path to the bar data file (CSV/Parquet/Feather)")
+    parser.add_argument(
+        "data_path", type=Path, help="Path to the bar data file (CSV/Parquet/Feather)"
+    )
     parser.add_argument("--symbol", help="Optional symbol to filter by")
     parser.add_argument("--timeframe", help="Optional timeframe/interval to filter by")
     parser.add_argument(
@@ -407,22 +407,10 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     if fallback_reason is not None:
         print(f"(values derived from fallback heuristics: {fallback_reason})")
 
-    bounds_input = (
-        regression_df["spread"] if not regression_df.empty else spread_series.dropna()
-    )
-    derived_min, derived_max = _derive_spread_bounds(
-        bounds_input, args.clip_lower, args.clip_upper
-    )
-    min_spread = (
-        float(args.min_spread_bps)
-        if args.min_spread_bps is not None
-        else derived_min
-    )
-    max_spread = (
-        float(args.max_spread_bps)
-        if args.max_spread_bps is not None
-        else derived_max
-    )
+    bounds_input = regression_df["spread"] if not regression_df.empty else spread_series.dropna()
+    derived_min, derived_max = _derive_spread_bounds(bounds_input, args.clip_lower, args.clip_upper)
+    min_spread = float(args.min_spread_bps) if args.min_spread_bps is not None else derived_min
+    max_spread = float(args.max_spread_bps) if args.max_spread_bps is not None else derived_max
     if min_spread is not None and max_spread is not None and max_spread < min_spread:
         max_spread = min_spread
 
@@ -447,12 +435,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
                 "dynamic_spread": {
                     "alpha_bps": float(alpha),
                     "beta_coef": float(beta),
-                    "min_spread_bps": float(min_spread)
-                    if min_spread is not None
-                    else None,
-                    "max_spread_bps": float(max_spread)
-                    if max_spread is not None
-                    else None,
+                    "min_spread_bps": float(min_spread) if min_spread is not None else None,
+                    "max_spread_bps": float(max_spread) if max_spread is not None else None,
                     "smoothing_alpha": smoothing_alpha,
                     "fallback_spread_bps": float(fallback_spread),
                     "vol_metric": args.volatility_metric,
@@ -464,12 +448,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             }
         }
         if yaml is None:
-            raise RuntimeError(
-                "PyYAML is required for --output. Install it or omit the argument."
-            )
-        args.output.write_text(
-            yaml.safe_dump(fragment, sort_keys=False, default_flow_style=False)
-        )
+            raise RuntimeError("PyYAML is required for --output. Install it or omit the argument.")
+        args.output.write_text(yaml.safe_dump(fragment, sort_keys=False, default_flow_style=False))
         print(f"Wrote YAML fragment to {args.output}")
 
     return 0

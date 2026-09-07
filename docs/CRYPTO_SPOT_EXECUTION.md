@@ -1,7 +1,7 @@
 # Binance Spot order execution (P0-C)
 
 > **Статус:** ✅ ЗАКРЫТО 2026-07-16 · закрывает P0-C / §3.4 из
-> [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](../PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md).
+> [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](history/PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md).
 > Тесты: `tests/test_binance_spot_execution.py` (17) + live smoke.
 
 ## Проблема (что было)

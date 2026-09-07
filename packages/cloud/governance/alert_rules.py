@@ -35,9 +35,11 @@ from uuid import uuid4
 # Default throttle window
 DEFAULT_THROTTLE_SECONDS: Final[int] = 300
 
+
 # Alert severities
 class AlertSeverity(Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -46,24 +48,26 @@ class AlertSeverity(Enum):
 
 class AlertAction(Enum):
     """Actions to take when alert triggers."""
-    NOTIFY = auto()        # Send notification
-    LOG = auto()           # Log only
-    ESCALATE = auto()      # Escalate to on-call
-    WEBHOOK = auto()       # Call webhook
-    SLACK = auto()         # Send to Slack
-    EMAIL = auto()         # Send email
-    PAGERDUTY = auto()     # Page on-call
+
+    NOTIFY = auto()  # Send notification
+    LOG = auto()  # Log only
+    ESCALATE = auto()  # Escalate to on-call
+    WEBHOOK = auto()  # Call webhook
+    SLACK = auto()  # Send to Slack
+    EMAIL = auto()  # Send email
+    PAGERDUTY = auto()  # Page on-call
 
 
 class AlertConditionType(Enum):
     """Types of alert conditions."""
-    THRESHOLD = auto()     # Value exceeds threshold
-    EQUALS = auto()        # Value equals target
-    CONTAINS = auto()      # Value contains string
-    REGEX = auto()         # Value matches regex
-    RATE = auto()          # Rate of events exceeds threshold
-    COUNT = auto()         # Count of events exceeds threshold
-    ABSENT = auto()        # Event absent for duration
+
+    THRESHOLD = auto()  # Value exceeds threshold
+    EQUALS = auto()  # Value equals target
+    CONTAINS = auto()  # Value contains string
+    REGEX = auto()  # Value matches regex
+    RATE = auto()  # Rate of events exceeds threshold
+    COUNT = auto()  # Count of events exceeds threshold
+    ABSENT = auto()  # Event absent for duration
 
 
 @dataclass
@@ -78,6 +82,7 @@ class AlertCondition:
         threshold: Threshold value
         window_seconds: Time window for rate/count conditions
     """
+
     type: AlertConditionType = AlertConditionType.THRESHOLD
     field: str = ""
     operator: str = ">"
@@ -136,6 +141,7 @@ class AlertTrigger:
         context: Additional context
         timestamp: When triggered
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     rule_id: str = ""
     rule_name: str = ""
@@ -188,6 +194,7 @@ class AlertRule:
         enabled: Whether rule is active
         throttle_seconds: Minimum time between triggers
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
     description: str = ""
@@ -317,121 +324,133 @@ class AlertRulesEngine:
     def _init_builtin_rules(self) -> None:
         """Initialize built-in alert rules."""
         # Kill switch triggered
-        self.add_rule(AlertRule(
-            name="kill_switch_triggered",
-            description="Alert when kill switch is triggered",
-            alert_type="kill_switch",
-            conditions=[
-                AlertCondition(
-                    type=AlertConditionType.EQUALS,
-                    field="event_type",
-                    threshold="kill_switch",
-                ),
-            ],
-            severity=AlertSeverity.CRITICAL,
-            actions={AlertAction.NOTIFY, AlertAction.ESCALATE},
-            throttle_seconds=60,  # Alert once per minute
-        ))
+        self.add_rule(
+            AlertRule(
+                name="kill_switch_triggered",
+                description="Alert when kill switch is triggered",
+                alert_type="kill_switch",
+                conditions=[
+                    AlertCondition(
+                        type=AlertConditionType.EQUALS,
+                        field="event_type",
+                        threshold="kill_switch",
+                    ),
+                ],
+                severity=AlertSeverity.CRITICAL,
+                actions={AlertAction.NOTIFY, AlertAction.ESCALATE},
+                throttle_seconds=60,  # Alert once per minute
+            )
+        )
 
         # Broker errors burst
-        self.add_rule(AlertRule(
-            name="broker_errors_burst",
-            description="Alert on burst of broker errors",
-            alert_type="broker_errors",
-            conditions=[
-                AlertCondition(
-                    type=AlertConditionType.EQUALS,
-                    field="event_type",
-                    threshold="broker_error",
-                ),
-                AlertCondition(
-                    type=AlertConditionType.RATE,
-                    field="error_rate",
-                    operator=">",
-                    threshold=5,  # More than 5 errors
-                    window_seconds=60,  # Per minute
-                ),
-            ],
-            severity=AlertSeverity.ERROR,
-            actions={AlertAction.NOTIFY},
-            throttle_seconds=300,
-        ))
+        self.add_rule(
+            AlertRule(
+                name="broker_errors_burst",
+                description="Alert on burst of broker errors",
+                alert_type="broker_errors",
+                conditions=[
+                    AlertCondition(
+                        type=AlertConditionType.EQUALS,
+                        field="event_type",
+                        threshold="broker_error",
+                    ),
+                    AlertCondition(
+                        type=AlertConditionType.RATE,
+                        field="error_rate",
+                        operator=">",
+                        threshold=5,  # More than 5 errors
+                        window_seconds=60,  # Per minute
+                    ),
+                ],
+                severity=AlertSeverity.ERROR,
+                actions={AlertAction.NOTIFY},
+                throttle_seconds=300,
+            )
+        )
 
         # Data feed invalid
-        self.add_rule(AlertRule(
-            name="data_feed_invalid",
-            description="Alert when data feed is invalid",
-            alert_type="data_feed",
-            conditions=[
-                AlertCondition(
-                    type=AlertConditionType.EQUALS,
-                    field="event_type",
-                    threshold="data_feed_invalid",
-                ),
-            ],
-            severity=AlertSeverity.ERROR,
-            actions={AlertAction.NOTIFY},
-            throttle_seconds=120,
-        ))
+        self.add_rule(
+            AlertRule(
+                name="data_feed_invalid",
+                description="Alert when data feed is invalid",
+                alert_type="data_feed",
+                conditions=[
+                    AlertCondition(
+                        type=AlertConditionType.EQUALS,
+                        field="event_type",
+                        threshold="data_feed_invalid",
+                    ),
+                ],
+                severity=AlertSeverity.ERROR,
+                actions={AlertAction.NOTIFY},
+                throttle_seconds=120,
+            )
+        )
 
         # Order spam detection
-        self.add_rule(AlertRule(
-            name="order_spam_detected",
-            description="Alert on excessive order rate",
-            alert_type="order_spam",
-            conditions=[
-                AlertCondition(
-                    type=AlertConditionType.EQUALS,
-                    field="event_type",
-                    threshold="order_submitted",
-                ),
-                AlertCondition(
-                    type=AlertConditionType.RATE,
-                    field="order_rate",
-                    operator=">",
-                    threshold=100,  # More than 100 orders
-                    window_seconds=60,  # Per minute
-                ),
-            ],
-            severity=AlertSeverity.WARNING,
-            actions={AlertAction.NOTIFY},
-            throttle_seconds=300,
-        ))
+        self.add_rule(
+            AlertRule(
+                name="order_spam_detected",
+                description="Alert on excessive order rate",
+                alert_type="order_spam",
+                conditions=[
+                    AlertCondition(
+                        type=AlertConditionType.EQUALS,
+                        field="event_type",
+                        threshold="order_submitted",
+                    ),
+                    AlertCondition(
+                        type=AlertConditionType.RATE,
+                        field="order_rate",
+                        operator=">",
+                        threshold=100,  # More than 100 orders
+                        window_seconds=60,  # Per minute
+                    ),
+                ],
+                severity=AlertSeverity.WARNING,
+                actions={AlertAction.NOTIFY},
+                throttle_seconds=300,
+            )
+        )
 
         # Agent offline
-        self.add_rule(AlertRule(
-            name="agent_offline",
-            description="Alert when agent goes offline",
-            alert_type="agent_status",
-            conditions=[
-                AlertCondition(
-                    type=AlertConditionType.EQUALS,
-                    field="event_type",
-                    threshold="agent_offline",
-                ),
-            ],
-            severity=AlertSeverity.CRITICAL,
-            actions={AlertAction.NOTIFY},
-            throttle_seconds=60,
-        ))
+        self.add_rule(
+            AlertRule(
+                name="agent_offline",
+                description="Alert when agent goes offline",
+                alert_type="agent_status",
+                conditions=[
+                    AlertCondition(
+                        type=AlertConditionType.EQUALS,
+                        field="event_type",
+                        threshold="agent_offline",
+                    ),
+                ],
+                severity=AlertSeverity.CRITICAL,
+                actions={AlertAction.NOTIFY},
+                throttle_seconds=60,
+            )
+        )
 
         # High error rate
-        self.add_rule(AlertRule(
-            name="high_error_rate",
-            description="Alert on high error rate",
-            alert_type="error_rate",
-            conditions=[
-                AlertCondition(
-                    type=AlertConditionType.THRESHOLD,
-                    field="error_count",
-                    operator=">",
-                    threshold=10,
-                ),
-            ],
-            severity=AlertSeverity.WARNING,
-            actions={AlertAction.NOTIFY},
-            throttle_seconds=300,
-        ))
+        self.add_rule(
+            AlertRule(
+                name="high_error_rate",
+                description="Alert on high error rate",
+                alert_type="error_rate",
+                conditions=[
+                    AlertCondition(
+                        type=AlertConditionType.THRESHOLD,
+                        field="error_count",
+                        operator=">",
+                        threshold=10,
+                    ),
+                ],
+                severity=AlertSeverity.WARNING,
+                actions={AlertAction.NOTIFY},
+                throttle_seconds=300,
+            )
+        )
 
     def add_rule(self, rule: AlertRule) -> None:
         """Add alert rule."""

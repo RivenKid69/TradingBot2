@@ -46,8 +46,10 @@ logger = logging.getLogger(__name__)
 # Enums and Constants
 # =============================================================================
 
+
 class AssetClass(enum.Enum):
     """Asset class enumeration for execution providers."""
+
     CRYPTO = "crypto"
     EQUITY = "equity"
     FUTURES = "futures"
@@ -57,12 +59,14 @@ class AssetClass(enum.Enum):
 
 class OrderSide(enum.Enum):
     """Order side enumeration."""
+
     BUY = "BUY"
     SELL = "SELL"
 
 
 class OrderType(enum.Enum):
     """Order type enumeration."""
+
     MARKET = "MARKET"
     LIMIT = "LIMIT"
     STOP = "STOP"
@@ -71,6 +75,7 @@ class OrderType(enum.Enum):
 
 class LiquidityRole(enum.Enum):
     """Liquidity role (maker/taker) for fee calculation."""
+
     MAKER = "maker"
     TAKER = "taker"
     UNKNOWN = "unknown"
@@ -87,6 +92,7 @@ _MAX_SLIPPAGE_BPS = 500.0  # Safety cap
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass(frozen=True)
 class MarketState:
@@ -110,6 +116,7 @@ class MarketState:
         bid_depth: L3 bid depth [(price, size), ...]
         ask_depth: L3 ask depth [(price, size), ...]
     """
+
     timestamp: int
     bid: Optional[float] = None
     ask: Optional[float] = None
@@ -178,6 +185,7 @@ class Order:
         client_order_id: Optional client-provided order ID
         time_in_force: Time in force (GTC, IOC, FOK)
     """
+
     symbol: str
     side: str  # "BUY" | "SELL"
     qty: float
@@ -225,6 +233,7 @@ class Fill:
         fee_breakdown: Detailed fee breakdown (optional)
         metadata: Additional execution metadata
     """
+
     price: float
     qty: float
     fee: float
@@ -271,6 +280,7 @@ class BarData:
         timestamp: Bar start timestamp
         timeframe_ms: Bar timeframe in milliseconds
     """
+
     open: float
     high: float
     low: float
@@ -297,6 +307,7 @@ class BarData:
 # =============================================================================
 # Protocol Definitions (Interfaces)
 # =============================================================================
+
 
 @runtime_checkable
 class SlippageProvider(Protocol):
@@ -434,6 +445,7 @@ class ExecutionProvider(Protocol):
 # =============================================================================
 # L2 Implementations (Statistical Models)
 # =============================================================================
+
 
 class StatisticalSlippageProvider:
     """
@@ -625,7 +637,9 @@ class StatisticalSlippageProvider:
             _extract_value(config, "impact_coef", "k", "impact_coefficient", default=0.1)
         )
         params["spread_bps"] = float(
-            _extract_value(config, "spread_bps", "default_spread_bps", "half_spread_bps", default=5.0)
+            _extract_value(
+                config, "spread_bps", "default_spread_bps", "half_spread_bps", default=5.0
+            )
         )
         params["volatility_scale"] = float(
             _extract_value(config, "volatility_scale", "vol_scale", default=1.0)
@@ -714,8 +728,10 @@ class StatisticalSlippageProvider:
 # Crypto Parametric TCA Model
 # =============================================================================
 
+
 class VolatilityRegime(enum.Enum):
     """Volatility regime classification."""
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
@@ -724,6 +740,7 @@ class VolatilityRegime(enum.Enum):
 # =============================================================================
 # Forex Parametric TCA Model Enums
 # =============================================================================
+
 
 class ForexSession(enum.Enum):
     """
@@ -741,6 +758,7 @@ class ForexSession(enum.Enum):
         - BIS Triennial Central Bank Survey (2022)
         - King, Osler, Rime (2012): "Foreign Exchange Market Structure"
     """
+
     SYDNEY = "sydney"
     TOKYO = "tokyo"
     LONDON = "london"
@@ -765,6 +783,7 @@ class PairType(enum.Enum):
         - BIS Triennial Survey (2022): Currency pair turnover data
         - Berger et al. (2008): "The Development of the Global FX Market"
     """
+
     MAJOR = "major"
     MINOR = "minor"
     CROSS = "cross"
@@ -802,17 +821,20 @@ class CryptoParametricConfig:
         min_slippage_bps: Minimum slippage floor
         max_slippage_bps: Maximum slippage cap
     """
+
     # Base impact parameters (Almgren-Chriss)
     impact_coef_base: float = 0.10
     impact_coef_range: Tuple[float, float] = (0.05, 0.15)
     spread_bps: float = 5.0
 
     # Volatility regime (Cont 2001)
-    vol_regime_multipliers: Dict[str, float] = field(default_factory=lambda: {
-        "low": 0.8,
-        "normal": 1.0,
-        "high": 1.5,
-    })
+    vol_regime_multipliers: Dict[str, float] = field(
+        default_factory=lambda: {
+            "low": 0.8,
+            "normal": 1.0,
+            "high": 1.5,
+        }
+    )
     vol_lookback_periods: int = 20
     vol_regime_thresholds: Tuple[float, float] = (25.0, 75.0)  # Percentiles
 
@@ -824,14 +846,37 @@ class CryptoParametricConfig:
 
     # Time-of-day curve (Binance research: Asia/EU/US sessions)
     # Values represent liquidity multipliers (lower = less liquidity = more slippage)
-    tod_curve: Dict[int, float] = field(default_factory=lambda: {
-        # Asia session (00:00-08:00 UTC)
-        0: 0.85, 1: 0.80, 2: 0.75, 3: 0.70, 4: 0.75, 5: 0.80, 6: 0.85, 7: 0.90,
-        # EU session (08:00-16:00 UTC)
-        8: 0.95, 9: 1.00, 10: 1.05, 11: 1.05, 12: 1.00, 13: 1.05, 14: 1.10, 15: 1.10,
-        # US session (16:00-24:00 UTC) - overlap with EU is peak
-        16: 1.15, 17: 1.15, 18: 1.10, 19: 1.05, 20: 1.00, 21: 0.95, 22: 0.90, 23: 0.85,
-    })
+    tod_curve: Dict[int, float] = field(
+        default_factory=lambda: {
+            # Asia session (00:00-08:00 UTC)
+            0: 0.85,
+            1: 0.80,
+            2: 0.75,
+            3: 0.70,
+            4: 0.75,
+            5: 0.80,
+            6: 0.85,
+            7: 0.90,
+            # EU session (08:00-16:00 UTC)
+            8: 0.95,
+            9: 1.00,
+            10: 1.05,
+            11: 1.05,
+            12: 1.00,
+            13: 1.05,
+            14: 1.10,
+            15: 1.10,
+            # US session (16:00-24:00 UTC) - overlap with EU is peak
+            16: 1.15,
+            17: 1.15,
+            18: 1.10,
+            19: 1.05,
+            20: 1.00,
+            21: 0.95,
+            22: 0.90,
+            23: 0.85,
+        }
+    )
 
     # BTC correlation decay (altcoin liquidity fragmentation)
     btc_correlation_decay_factor: float = 0.5
@@ -1043,9 +1088,7 @@ class CryptoParametricSlippageProvider:
         # 4. Order book imbalance penalty (Cont et al. 2014)
         # =====================================================================
         imbalance_factor = 1.0
-        imbalance = self._compute_order_book_imbalance(
-            market, bid_depth_total, ask_depth_total
-        )
+        imbalance = self._compute_order_book_imbalance(market, bid_depth_total, ask_depth_total)
 
         if imbalance is not None:
             # Imbalance is in [-1, 1]: positive = more bids, negative = more asks
@@ -1087,7 +1130,9 @@ class CryptoParametricSlippageProvider:
             # Lower correlation with BTC = less liquidity spillover = more slippage
             # Reference: Empirical observation of altcoin order book depth
             corr_clamped = max(0.0, min(1.0, btc_correlation))
-            correlation_decay = 1.0 + (1.0 - corr_clamped) * self.config.btc_correlation_decay_factor
+            correlation_decay = (
+                1.0 + (1.0 - corr_clamped) * self.config.btc_correlation_decay_factor
+            )
 
         # =====================================================================
         # 8. Asymmetric slippage for panic sells
@@ -1097,7 +1142,7 @@ class CryptoParametricSlippageProvider:
 
         if is_sell and recent_returns is not None and len(recent_returns) > 0:
             # Check if we're in a downtrend
-            returns_array = list(recent_returns)[-self.config.vol_lookback_periods:]
+            returns_array = list(recent_returns)[-self.config.vol_lookback_periods :]
             if len(returns_array) > 0:
                 cumulative_return = sum(returns_array)
                 if cumulative_return < self.config.downtrend_threshold:
@@ -1153,7 +1198,7 @@ class CryptoParametricSlippageProvider:
             return VolatilityRegime.NORMAL
 
         # Compute realized volatility (standard deviation of returns)
-        returns_list = list(returns)[-self.config.vol_lookback_periods:]
+        returns_list = list(returns)[-self.config.vol_lookback_periods :]
         if len(returns_list) < 2:
             return VolatilityRegime.NORMAL
 
@@ -1295,7 +1340,7 @@ class CryptoParametricSlippageProvider:
 
         # Trim history
         if len(self._fill_quality_history) > self._max_history_size:
-            self._fill_quality_history = self._fill_quality_history[-self._max_history_size:]
+            self._fill_quality_history = self._fill_quality_history[-self._max_history_size :]
 
         # Compute adjustment based on recent prediction errors
         if len(self._fill_quality_history) >= 10:
@@ -1407,13 +1452,10 @@ class CryptoParametricSlippageProvider:
 
         if is_whale:
             recommendations.append(
-                f"Large order ({participation*100:.2f}% ADV). "
-                "Consider TWAP/VWAP over 2-4 hours."
+                f"Large order ({participation*100:.2f}% ADV). " "Consider TWAP/VWAP over 2-4 hours."
             )
         elif participation > 0.005:
-            recommendations.append(
-                "Moderate size order. Consider splitting into 2-3 tranches."
-            )
+            recommendations.append("Moderate size order. Consider splitting into 2-3 tranches.")
 
         if hour_utc is not None:
             tod_factor = self.get_time_of_day_factor(hour_utc)
@@ -1536,6 +1578,7 @@ class CryptoParametricSlippageProvider:
 # Forex Parametric TCA Model
 # =============================================================================
 
+
 @dataclass
 class ForexParametricConfig:
     """
@@ -1576,38 +1619,45 @@ class ForexParametricConfig:
         min_slippage_pips: Minimum slippage floor in pips
         max_slippage_pips: Maximum slippage cap in pips
     """
+
     # Base impact parameters (Almgren-Chriss)
     # Lower than crypto (0.10) and equity (0.05) due to higher FX liquidity
     impact_coef_base: float = 0.03
     impact_coef_range: Tuple[float, float] = (0.02, 0.05)
 
     # Default spreads by pair type (pips) - RETAIL profile
-    default_spreads_pips: Dict[str, float] = field(default_factory=lambda: {
-        "major": 1.2,    # EUR/USD, GBP/USD, USD/JPY, etc.
-        "minor": 2.0,    # EUR/GBP, EUR/CHF, etc.
-        "cross": 3.0,    # EUR/JPY, GBP/JPY, etc.
-        "exotic": 25.0,  # USD/TRY, USD/ZAR, etc.
-    })
+    default_spreads_pips: Dict[str, float] = field(
+        default_factory=lambda: {
+            "major": 1.2,  # EUR/USD, GBP/USD, USD/JPY, etc.
+            "minor": 2.0,  # EUR/GBP, EUR/CHF, etc.
+            "cross": 3.0,  # EUR/JPY, GBP/JPY, etc.
+            "exotic": 25.0,  # USD/TRY, USD/ZAR, etc.
+        }
+    )
 
     # Spread profiles for different client types
-    spread_profiles: Dict[str, Dict[str, float]] = field(default_factory=lambda: {
-        "institutional": {"major": 0.3, "minor": 0.8, "cross": 1.5, "exotic": 8.0},
-        "retail": {"major": 1.2, "minor": 2.0, "cross": 3.0, "exotic": 25.0},
-        "conservative": {"major": 1.8, "minor": 3.0, "cross": 4.5, "exotic": 40.0},
-    })
+    spread_profiles: Dict[str, Dict[str, float]] = field(
+        default_factory=lambda: {
+            "institutional": {"major": 0.3, "minor": 0.8, "cross": 1.5, "exotic": 8.0},
+            "retail": {"major": 1.2, "minor": 2.0, "cross": 3.0, "exotic": 25.0},
+            "conservative": {"major": 1.8, "minor": 3.0, "cross": 4.5, "exotic": 40.0},
+        }
+    )
 
     # Session liquidity factors (1.0 = normal liquidity)
     # Higher value = more liquidity = lower slippage
-    session_liquidity: Dict[str, float] = field(default_factory=lambda: {
-        "sydney": 0.65,           # Lowest for majors
-        "tokyo": 0.75,            # JPY pairs more active
-        "london": 1.10,           # Highest single-session liquidity
-        "new_york": 1.05,         # Second highest
-        "london_ny_overlap": 1.35,  # Peak liquidity (12:00-16:00 UTC)
-        "tokyo_london_overlap": 0.90,  # Moderate
-        "off_hours": 0.50,        # Very low
-        "weekend": 0.0,           # Market closed
-    })
+    session_liquidity: Dict[str, float] = field(
+        default_factory=lambda: {
+            "sydney": 0.65,  # Lowest for majors
+            "tokyo": 0.75,  # JPY pairs more active
+            "london": 1.10,  # Highest single-session liquidity
+            "new_york": 1.05,  # Second highest
+            "london_ny_overlap": 1.35,  # Peak liquidity (12:00-16:00 UTC)
+            "tokyo_london_overlap": 0.90,  # Moderate
+            "off_hours": 0.50,  # Very low
+            "weekend": 0.0,  # Market closed
+        }
+    )
 
     # Interest rate differential sensitivity
     # Positive carry = more market makers = tighter spreads
@@ -1620,44 +1670,50 @@ class ForexParametricConfig:
 
     # News event impact multipliers
     # Reference: ForexFactory impact ratings, OANDA volatility studies
-    news_event_multipliers: Dict[str, float] = field(default_factory=lambda: {
-        "nfp": 3.0,           # Non-Farm Payrolls (highest impact)
-        "fomc": 2.5,          # Fed decisions
-        "ecb": 2.0,           # ECB decisions
-        "boe": 1.8,           # Bank of England
-        "boj": 1.8,           # Bank of Japan
-        "rba": 1.5,           # Reserve Bank of Australia
-        "cpi": 1.8,           # Inflation data
-        "gdp": 1.5,           # GDP releases
-        "pmi": 1.3,           # PMI data
-        "retail_sales": 1.2,  # Retail sales
-        "employment": 1.5,    # Employment data (non-NFP)
-        "trade_balance": 1.2, # Trade data
-        "other": 1.1,         # Minor events
-    })
+    news_event_multipliers: Dict[str, float] = field(
+        default_factory=lambda: {
+            "nfp": 3.0,  # Non-Farm Payrolls (highest impact)
+            "fomc": 2.5,  # Fed decisions
+            "ecb": 2.0,  # ECB decisions
+            "boe": 1.8,  # Bank of England
+            "boj": 1.8,  # Bank of Japan
+            "rba": 1.5,  # Reserve Bank of Australia
+            "cpi": 1.8,  # Inflation data
+            "gdp": 1.5,  # GDP releases
+            "pmi": 1.3,  # PMI data
+            "retail_sales": 1.2,  # Retail sales
+            "employment": 1.5,  # Employment data (non-NFP)
+            "trade_balance": 1.2,  # Trade data
+            "other": 1.1,  # Minor events
+        }
+    )
 
     # Pair type slippage multipliers
-    pair_type_multipliers: Dict[str, float] = field(default_factory=lambda: {
-        "major": 1.0,   # Baseline
-        "minor": 1.4,   # 40% more slippage
-        "cross": 1.8,   # 80% more slippage
-        "exotic": 3.5,  # 250% more slippage
-    })
+    pair_type_multipliers: Dict[str, float] = field(
+        default_factory=lambda: {
+            "major": 1.0,  # Baseline
+            "minor": 1.4,  # 40% more slippage
+            "cross": 1.8,  # 80% more slippage
+            "exotic": 3.5,  # 250% more slippage
+        }
+    )
 
     # Volatility regime multipliers
-    vol_regime_multipliers: Dict[str, float] = field(default_factory=lambda: {
-        "low": 0.80,      # Calm markets (VIX < 12 equivalent)
-        "normal": 1.00,   # Normal conditions (VIX 12-20)
-        "high": 1.50,     # Elevated volatility (VIX 20-30)
-        "extreme": 2.50,  # Crisis/flash crash (VIX > 30)
-    })
+    vol_regime_multipliers: Dict[str, float] = field(
+        default_factory=lambda: {
+            "low": 0.80,  # Calm markets (VIX < 12 equivalent)
+            "normal": 1.00,  # Normal conditions (VIX 12-20)
+            "high": 1.50,  # Elevated volatility (VIX 20-30)
+            "extreme": 2.50,  # Crisis/flash crash (VIX > 30)
+        }
+    )
 
     # Volatility regime detection parameters
     vol_lookback_periods: int = 20
     vol_regime_thresholds: Tuple[float, float] = (25.0, 75.0)  # Percentiles
 
     # Bounds (in pips)
-    min_slippage_pips: float = 0.05   # Minimum realistic slippage
+    min_slippage_pips: float = 0.05  # Minimum realistic slippage
     max_slippage_pips: float = 150.0  # For exotic pairs during extreme events
 
     # Adaptive coefficient learning rate
@@ -1734,29 +1790,66 @@ class ForexParametricSlippageProvider:
 
     # Currency pair classifications (standard forex notation)
     # Using underscore format for consistency (EUR_USD, not EURUSD)
-    MAJORS: frozenset = frozenset({
-        "EUR_USD", "USD_JPY", "GBP_USD", "USD_CHF",
-        "AUD_USD", "USD_CAD", "NZD_USD",
-    })
+    MAJORS: frozenset = frozenset(
+        {
+            "EUR_USD",
+            "USD_JPY",
+            "GBP_USD",
+            "USD_CHF",
+            "AUD_USD",
+            "USD_CAD",
+            "NZD_USD",
+        }
+    )
 
-    MINORS: frozenset = frozenset({
-        "EUR_GBP", "EUR_CHF", "GBP_CHF", "EUR_AUD",
-        "EUR_CAD", "EUR_NZD", "GBP_AUD", "GBP_CAD",
-        "AUD_NZD", "CHF_JPY",
-    })
+    MINORS: frozenset = frozenset(
+        {
+            "EUR_GBP",
+            "EUR_CHF",
+            "GBP_CHF",
+            "EUR_AUD",
+            "EUR_CAD",
+            "EUR_NZD",
+            "GBP_AUD",
+            "GBP_CAD",
+            "AUD_NZD",
+            "CHF_JPY",
+        }
+    )
 
-    EXOTICS: frozenset = frozenset({
-        "USD_TRY", "USD_ZAR", "USD_MXN", "USD_PLN",
-        "USD_HUF", "USD_CZK", "USD_SGD", "USD_HKD",
-        "USD_NOK", "USD_SEK", "USD_DKK", "EUR_TRY",
-        "EUR_ZAR", "EUR_NOK", "EUR_SEK", "EUR_PLN",
-    })
+    EXOTICS: frozenset = frozenset(
+        {
+            "USD_TRY",
+            "USD_ZAR",
+            "USD_MXN",
+            "USD_PLN",
+            "USD_HUF",
+            "USD_CZK",
+            "USD_SGD",
+            "USD_HKD",
+            "USD_NOK",
+            "USD_SEK",
+            "USD_DKK",
+            "EUR_TRY",
+            "EUR_ZAR",
+            "EUR_NOK",
+            "EUR_SEK",
+            "EUR_PLN",
+        }
+    )
 
     # JPY pairs (different pip size: 0.01 instead of 0.0001)
-    JPY_PAIRS: frozenset = frozenset({
-        "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
-        "NZD_JPY", "CAD_JPY", "CHF_JPY",
-    })
+    JPY_PAIRS: frozenset = frozenset(
+        {
+            "USD_JPY",
+            "EUR_JPY",
+            "GBP_JPY",
+            "AUD_JPY",
+            "NZD_JPY",
+            "CAD_JPY",
+            "CHF_JPY",
+        }
+    )
 
     def __init__(
         self,
@@ -1792,10 +1885,7 @@ class ForexParametricSlippageProvider:
 
         if overrides:
             # Create new config with overrides
-            config_dict = {
-                k: v for k, v in self.config.__dict__.items()
-                if not k.startswith("_")
-            }
+            config_dict = {k: v for k, v in self.config.__dict__.items() if not k.startswith("_")}
             config_dict.update(overrides)
             self.config = ForexParametricConfig(**config_dict)
 
@@ -1865,8 +1955,7 @@ class ForexParametricSlippageProvider:
         # =====================================================================
         pair_type = pair_type or self._classify_pair(order.symbol)
         spreads = self.config.spread_profiles.get(
-            self.spread_profile,
-            self.config.default_spreads_pips
+            self.spread_profile, self.config.default_spreads_pips
         )
         base_spread_pips = spreads.get(pair_type.value, 1.5)
         half_spread = base_spread_pips / 2.0
@@ -1927,9 +2016,7 @@ class ForexParametricSlippageProvider:
         # =====================================================================
         news_factor = 1.0
         if upcoming_news is not None:
-            news_factor = self.config.news_event_multipliers.get(
-                upcoming_news.lower(), 1.0
-            )
+            news_factor = self.config.news_event_multipliers.get(upcoming_news.lower(), 1.0)
 
         # =====================================================================
         # 8. Pair type multiplier
@@ -1981,9 +2068,7 @@ class ForexParametricSlippageProvider:
         Returns:
             Expected slippage in basis points
         """
-        slippage_pips = self.compute_slippage_pips(
-            order, market, participation_ratio, **kwargs
-        )
+        slippage_pips = self.compute_slippage_pips(order, market, participation_ratio, **kwargs)
 
         # Convert pips to bps (rough approximation)
         # For most pairs: 1 pip ≈ 10 bps at mid-price around 1.0
@@ -2111,7 +2196,7 @@ class ForexParametricSlippageProvider:
         if returns is None or len(returns) < 2:
             return "normal"
 
-        returns_list = list(returns)[-self.config.vol_lookback_periods:]
+        returns_list = list(returns)[-self.config.vol_lookback_periods :]
         if len(returns_list) < 2:
             return "normal"
 
@@ -2172,7 +2257,7 @@ class ForexParametricSlippageProvider:
 
         # Trim history
         if len(self._fill_quality_history) > self._max_history_size:
-            self._fill_quality_history = self._fill_quality_history[-self._max_history_size:]
+            self._fill_quality_history = self._fill_quality_history[-self._max_history_size :]
 
         # Compute adjustment based on recent prediction errors
         if len(self._fill_quality_history) >= 10:
@@ -2254,6 +2339,7 @@ class ForexParametricSlippageProvider:
         if session is None and hour_utc is not None:
             # Create fake timestamp for session detection
             import time
+
             fake_ts = int(time.time() * 1000)
             # Adjust to the specified hour (rough approximation)
             session = self._detect_session(fake_ts)
@@ -2334,9 +2420,7 @@ class ForexParametricSlippageProvider:
 
         # Pair type recommendations
         if pair_type == PairType.EXOTIC:
-            recommendations.append(
-                "Exotic pair - expect wider spreads. Consider limit orders."
-            )
+            recommendations.append("Exotic pair - expect wider spreads. Consider limit orders.")
 
         # News recommendations
         if upcoming_news:
@@ -2756,9 +2840,7 @@ class CryptoFeeProvider:
         taker_bps = _extract_value(
             config, "taker_bps", "taker_rate_bps", "taker_fee_bps", default=4.0
         )
-        discount_rate = _extract_value(
-            config, "discount_rate", "bnb_discount", default=0.75
-        )
+        discount_rate = _extract_value(config, "discount_rate", "bnb_discount", default=0.75)
         use_discount = _extract_value(
             config, "use_discount", "use_bnb_discount", "bnb_settlement", default=False
         )
@@ -2912,9 +2994,7 @@ class EquityFeeProvider:
         taf_fee_rate = _extract_value(
             config, "taf_fee_rate", "taf_fee_per_share", "taf_fee", default=None
         )
-        taf_max_fee = _extract_value(
-            config, "taf_max_fee", "taf_max", "max_taf", default=None
-        )
+        taf_max_fee = _extract_value(config, "taf_max_fee", "taf_max", "max_taf", default=None)
         include_regulatory = _extract_value(
             config, "include_regulatory", "regulatory_fees", "include_fees", default=True
         )
@@ -3072,6 +3152,7 @@ class ForexFeeProvider:
 # L2 Combined Execution Provider
 # =============================================================================
 
+
 class L2ExecutionProvider:
     """
     L2: Combined execution provider using statistical models.
@@ -3122,11 +3203,10 @@ class L2ExecutionProvider:
                 # Futures: use FuturesSlippageProvider
                 try:
                     from execution_providers_futures import FuturesSlippageProvider
+
                     self.slippage = FuturesSlippageProvider()
                 except ImportError:
-                    logger.warning(
-                        "FuturesSlippageProvider not available, using crypto defaults"
-                    )
+                    logger.warning("FuturesSlippageProvider not available, using crypto defaults")
                     self.slippage = StatisticalSlippageProvider(
                         impact_coef=0.1,
                         spread_bps=5.0,
@@ -3148,11 +3228,10 @@ class L2ExecutionProvider:
                 # Futures: use FuturesFeeProvider
                 try:
                     from execution_providers_futures import FuturesFeeProvider
+
                     self.fees = FuturesFeeProvider()
                 except ImportError:
-                    logger.warning(
-                        "FuturesFeeProvider not available, using crypto defaults"
-                    )
+                    logger.warning("FuturesFeeProvider not available, using crypto defaults")
                     self.fees = CryptoFeeProvider()
             else:
                 self.fees = CryptoFeeProvider()
@@ -3216,9 +3295,7 @@ class L2ExecutionProvider:
         # Slippage estimate
         dummy_order = Order("", side, 1.0, "MARKET")
         dummy_market = MarketState(0, volatility=volatility, adv=adv)
-        slippage_bps = self.slippage.compute_slippage_bps(
-            dummy_order, dummy_market, participation
-        )
+        slippage_bps = self.slippage.compute_slippage_bps(dummy_order, dummy_market, participation)
         slippage_cost = notional * slippage_bps / 10000.0
 
         # Fee estimate (taker worst case)
@@ -3243,6 +3320,7 @@ class L2ExecutionProvider:
 # L3 Stubs (Future LOB-based implementations)
 # =============================================================================
 
+
 class LOBSlippageProvider:
     """
     L3: Order book based slippage provider (FUTURE).
@@ -3262,9 +3340,7 @@ class LOBSlippageProvider:
     def __init__(self, **kwargs: Any) -> None:
         """Initialize LOB slippage provider (stub)."""
         self._config = kwargs
-        logger.warning(
-            "LOBSlippageProvider is a stub. Use StatisticalSlippageProvider for now."
-        )
+        logger.warning("LOBSlippageProvider is a stub. Use StatisticalSlippageProvider for now.")
 
     def compute_slippage_bps(
         self,
@@ -3336,9 +3412,7 @@ class LOBFillProvider:
         self.slippage = slippage_provider or StatisticalSlippageProvider()
         self.fees = fee_provider or ZeroFeeProvider()
         self._config = kwargs
-        logger.warning(
-            "LOBFillProvider is a stub. Use OHLCVFillProvider for now."
-        )
+        logger.warning("LOBFillProvider is a stub. Use OHLCVFillProvider for now.")
 
     def try_fill(
         self,
@@ -3379,6 +3453,7 @@ class LOBFillProvider:
 # Factory Functions
 # =============================================================================
 
+
 def create_slippage_provider(
     level: str = "L2",
     asset_class: AssetClass = AssetClass.CRYPTO,
@@ -3401,6 +3476,7 @@ def create_slippage_provider(
         # Import L3 provider (avoid circular import)
         try:
             from execution_providers_l3 import L3SlippageProvider
+
             return L3SlippageProvider(asset_class=asset_class, **kwargs)
         except ImportError:
             logger.warning(
@@ -3488,6 +3564,7 @@ def create_fill_provider(
         # Import L3 provider (avoid circular import)
         try:
             from execution_providers_l3 import L3FillProvider
+
             return L3FillProvider(
                 slippage_provider=slippage_provider,
                 fee_provider=fee_provider,
@@ -3555,6 +3632,7 @@ def create_execution_provider(
         # Import L3 provider (avoid circular import)
         try:
             from execution_providers_l3 import L3ExecutionProvider
+
             return L3ExecutionProvider(
                 asset_class=asset_class,
                 config=kwargs.pop("config", None),
@@ -3565,7 +3643,8 @@ def create_execution_provider(
         except ImportError as e:
             logger.warning(
                 "L3 providers not available, falling back to L2. "
-                "Ensure execution_providers_l3.py is present. Error: %s", e
+                "Ensure execution_providers_l3.py is present. Error: %s",
+                e,
             )
             # Fall through to L2
 
@@ -3671,16 +3750,10 @@ def create_providers_from_asset_class(
     # Fee provider
     if asset_class == AssetClass.EQUITY:
         fees: FeeProvider = (
-            EquityFeeProvider.from_config(fee_config)
-            if fee_config
-            else EquityFeeProvider()
+            EquityFeeProvider.from_config(fee_config) if fee_config else EquityFeeProvider()
         )
     else:
-        fees = (
-            CryptoFeeProvider.from_config(fee_config)
-            if fee_config
-            else CryptoFeeProvider()
-        )
+        fees = CryptoFeeProvider.from_config(fee_config) if fee_config else CryptoFeeProvider()
 
     return slippage, fees
 
@@ -3688,6 +3761,7 @@ def create_providers_from_asset_class(
 # =============================================================================
 # Backward Compatibility: Integration with existing execution_sim.py
 # =============================================================================
+
 
 def wrap_legacy_slippage_config(config: Any) -> StatisticalSlippageProvider:
     """

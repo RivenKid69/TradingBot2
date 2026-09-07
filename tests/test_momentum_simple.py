@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Простой тест для проверки логики tbr_momentum без зависимостей."""
 
+
 def test_momentum_logic():
     """Проверка логики вычисления momentum."""
     print("Тест логики momentum вычисления:\n")
@@ -31,9 +32,9 @@ def test_momentum_logic():
             print(f"  ✗ Not enough data (need {window+1}, have {len(ratio_list)})\n")
 
     # Проверим граничный случай с малым количеством данных
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Граничный случай: только 2 значения")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     small_list = [0.5, 0.52]
     print(f"ratio_list = {small_list}")
@@ -51,9 +52,9 @@ def test_momentum_logic():
             print(f"  ✗ NaN (need {window+1} values, have {len(small_list)})")
 
     # Проверим потенциальную проблему
-    print("\n\n" + "="*60)
+    print("\n\n" + "=" * 60)
     print("ПОТЕНЦИАЛЬНАЯ ПРОБЛЕМА:")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     print("Если tbr_momentum признаки заполняются NaN, это может быть из-за:")
     print("1. Недостаточно данных в начале (нужно window+1 значений)")
@@ -74,14 +75,19 @@ def test_momentum_logic():
     window = 2
     print(f"\nДля window={window}:")
     print(f"  ratio_list_from_deque[-1] = {ratio_list_from_deque[-1]}")
-    print(f"  ratio_list_from_deque[-(window+1)] = ratio_list_from_deque[-{window+1}] = {ratio_list_from_deque[-(window+1)]}")
+    print(
+        f"  ratio_list_from_deque[-(window+1)] = ratio_list_from_deque[-{window+1}] = {ratio_list_from_deque[-(window+1)]}"
+    )
 
-    momentum = ratio_list_from_deque[-1] - ratio_list_from_deque[-(window+1)]
-    print(f"  momentum = {ratio_list_from_deque[-1]} - {ratio_list_from_deque[-(window+1)]} = {momentum}")
+    momentum = ratio_list_from_deque[-1] - ratio_list_from_deque[-(window + 1)]
+    print(
+        f"  momentum = {ratio_list_from_deque[-1]} - {ratio_list_from_deque[-(window+1)]} = {momentum}"
+    )
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("✅ ВСЕ ПРОВЕРКИ ЗАВЕРШЕНЫ")
-    print("="*60)
+    print("=" * 60)
+
 
 if __name__ == "__main__":
     test_momentum_logic()

@@ -1,1 +1,0 @@
-﻿I will now update the `renderPipelineStatusDetails` function in `index.html` to dynamically render a step as `ВЫПОЛНЯЕТСЯ` (with a pulsing yellow dot and animated status checkers like `Сканирование... ⏳`) whenever a background task is running. This fixes the issue of displaying "Ожидание запуска" during active operations.

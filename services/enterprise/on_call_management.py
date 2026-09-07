@@ -258,7 +258,11 @@ class OnCallManagementService:
             description="Standard escalation for all incidents",
             levels=[
                 {"level": "l1", "timeout_minutes": 15, "notify": ["primary_on_call"]},
-                {"level": "l2", "timeout_minutes": 30, "notify": ["secondary_on_call", "team_lead"]},
+                {
+                    "level": "l2",
+                    "timeout_minutes": 30,
+                    "notify": ["secondary_on_call", "team_lead"],
+                },
                 {"level": "l3", "timeout_minutes": 60, "notify": ["engineering_manager"]},
                 {"level": "l4", "timeout_minutes": 120, "notify": ["vp_engineering", "cto"]},
             ],
@@ -326,7 +330,11 @@ class OnCallManagementService:
             "available_engineers": available,
             "minimum_required": self.config.minimum_engineers,
             "is_adequate": available >= self.config.minimum_engineers,
-            "capacity_percent": (available / self.config.minimum_engineers * 100) if self.config.minimum_engineers > 0 else 0,
+            "capacity_percent": (
+                (available / self.config.minimum_engineers * 100)
+                if self.config.minimum_engineers > 0
+                else 0
+            ),
         }
 
     # =========================================================================
@@ -542,7 +550,12 @@ class OnCallManagementService:
         assignment.escalate(to_engineer_id)
 
         # Update escalation level
-        level_order = [EscalationLevel.L1, EscalationLevel.L2, EscalationLevel.L3, EscalationLevel.L4]
+        level_order = [
+            EscalationLevel.L1,
+            EscalationLevel.L2,
+            EscalationLevel.L3,
+            EscalationLevel.L4,
+        ]
         current_idx = level_order.index(assignment.escalation_level)
         if current_idx < len(level_order) - 1:
             assignment.escalation_level = level_order[current_idx + 1]
@@ -570,8 +583,7 @@ class OnCallManagementService:
     ) -> OnCallMetrics:
         """Calculate on-call metrics for a period."""
         assignments = [
-            a for a in self._assignments.values()
-            if period_start <= a.assigned_at <= period_end
+            a for a in self._assignments.values() if period_start <= a.assigned_at <= period_end
         ]
 
         if not assignments:
@@ -589,24 +601,20 @@ class OnCallManagementService:
             )
 
         response_times = [
-            a.response_time_seconds for a in assignments
-            if a.response_time_seconds is not None
+            a.response_time_seconds for a in assignments if a.response_time_seconds is not None
         ]
         resolution_times = [
-            a.resolution_time_seconds for a in assignments
-            if a.resolution_time_seconds is not None
+            a.resolution_time_seconds for a in assignments if a.resolution_time_seconds is not None
         ]
 
         acknowledged_within_sla = sum(
-            1 for a in assignments
+            1
+            for a in assignments
             if a.response_time_seconds is not None
             and a.response_time_seconds <= self.get_sla_target(a.priority)
         )
 
-        resolved_within_sla = sum(
-            1 for a in assignments
-            if a.resolution_time_seconds is not None
-        )
+        resolved_within_sla = sum(1 for a in assignments if a.resolution_time_seconds is not None)
 
         escalations = sum(1 for a in assignments if a.escalated_at is not None)
 
@@ -620,10 +628,16 @@ class OnCallManagementService:
             acknowledged_within_sla=acknowledged_within_sla,
             resolved_within_sla=resolved_within_sla,
             escalations=escalations,
-            avg_response_time_seconds=sum(response_times) / len(response_times) if response_times else 0,
-            avg_resolution_time_seconds=sum(resolution_times) / len(resolution_times) if resolution_times else 0,
+            avg_response_time_seconds=(
+                sum(response_times) / len(response_times) if response_times else 0
+            ),
+            avg_resolution_time_seconds=(
+                sum(resolution_times) / len(resolution_times) if resolution_times else 0
+            ),
             p95_response_time_seconds=sorted_response[p95_idx] if sorted_response else 0,
-            sla_compliance_percent=(acknowledged_within_sla / len(assignments) * 100) if assignments else 100,
+            sla_compliance_percent=(
+                (acknowledged_within_sla / len(assignments) * 100) if assignments else 100
+            ),
         )
 
 

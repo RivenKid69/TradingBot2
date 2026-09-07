@@ -22,39 +22,33 @@ def verify_fix():
     checks = []
 
     # Check 1: Training quantile uses unclipped target
-    check1 = bool(re.search(
-        r'targets_norm_for_loss\s*=\s*target_returns_norm_raw_selected\.reshape',
-        code
-    ))
+    check1 = bool(
+        re.search(r"targets_norm_for_loss\s*=\s*target_returns_norm_raw_selected\.reshape", code)
+    )
     checks.append(("Training quantile uses unclipped target", check1))
 
     # Check 2: No usage of clipped target in loss
-    check2 = not bool(re.search(
-        r'targets_norm_for_loss\s*=\s*target_returns_norm_selected\.reshape',
-        code
-    ))
+    check2 = not bool(
+        re.search(r"targets_norm_for_loss\s*=\s*target_returns_norm_selected\.reshape", code)
+    )
     checks.append(("No clipped target in loss", check2))
 
     # Check 3: Distributional uses unclipped target
-    check3 = bool(re.search(
-        r'clamped_targets\s*=\s*target_returns_norm_raw\.clamp',
-        code
-    ))
+    check3 = bool(re.search(r"clamped_targets\s*=\s*target_returns_norm_raw\.clamp", code))
     checks.append(("Distributional uses unclipped target", check3))
 
     # Check 4: Eval uses unclipped target
-    check4 = bool(re.search(
-        r'target_norm_col\s*=\s*target_returns_norm_unclipped\.reshape',
-        code
-    ))
+    check4 = bool(re.search(r"target_norm_col\s*=\s*target_returns_norm_unclipped\.reshape", code))
     checks.append(("Eval uses unclipped target", check4))
 
     # Check 5: EV batches use unclipped target
-    check5 = bool(re.search(
-        r'value_target_batches_norm\.append\s*\(\s*target_returns_norm_raw_selected',
-        code,
-        re.DOTALL
-    ))
+    check5 = bool(
+        re.search(
+            r"value_target_batches_norm\.append\s*\(\s*target_returns_norm_raw_selected",
+            code,
+            re.DOTALL,
+        )
+    )
     checks.append(("EV batches use unclipped target", check5))
 
     # Check 6: Critical fix comments present
@@ -66,7 +60,7 @@ def verify_fix():
     checks.append(("PPO formula documented", check7))
 
     # Check 8: Predictions still clipped
-    check8 = bool(re.search(r'value_pred_raw_clipped\s*=\s*torch\.clamp', code))
+    check8 = bool(re.search(r"value_pred_raw_clipped\s*=\s*torch\.clamp", code))
     checks.append(("Predictions still clipped (no regression)", check8))
 
     # Print results
@@ -102,5 +96,6 @@ def verify_fix():
 
 if __name__ == "__main__":
     import sys
+
     success = verify_fix()
     sys.exit(0 if success else 1)

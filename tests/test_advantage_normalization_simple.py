@@ -4,6 +4,7 @@ Simple standalone test for advantage normalization (no pytest dependency).
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
@@ -46,8 +47,8 @@ def test_global_normalization_preserves_relative_ordering():
 
     # Create three groups with different advantage levels
     group_a = np.array([100.0, 110.0, 120.0], dtype=np.float32)  # High
-    group_b = np.array([10.0, 12.0, 14.0], dtype=np.float32)      # Medium
-    group_c = np.array([-5.0, -6.0, -4.0], dtype=np.float32)      # Low
+    group_b = np.array([10.0, 12.0, 14.0], dtype=np.float32)  # Medium
+    group_c = np.array([-5.0, -6.0, -4.0], dtype=np.float32)  # Low
 
     advantages = np.concatenate([group_a, group_b, group_c])
 
@@ -82,16 +83,17 @@ def test_implementation_uses_global_normalization():
     source = inspect.getsource(DistributionalPPO.collect_rollouts)
 
     # Should have global normalization code
-    assert "self.normalize_advantage" in source, \
-        "Should check normalize_advantage flag"
-    assert "advantages_flat = rollout_buffer.advantages.reshape(-1)" in source, \
-        "Should flatten entire buffer for global statistics"
-    assert "np.mean(advantages_flat)" in source, \
-        "Should compute mean over entire buffer"
-    assert "np.std(advantages_flat, ddof=1)" in source, \
-        "Should compute std over entire buffer with ddof=1 for unbiased estimate"
-    assert "rollout_buffer.advantages = " in source, \
-        "Should update buffer with normalized advantages"
+    assert "self.normalize_advantage" in source, "Should check normalize_advantage flag"
+    assert (
+        "advantages_flat = rollout_buffer.advantages.reshape(-1)" in source
+    ), "Should flatten entire buffer for global statistics"
+    assert "np.mean(advantages_flat)" in source, "Should compute mean over entire buffer"
+    assert (
+        "np.std(advantages_flat, ddof=1)" in source
+    ), "Should compute std over entire buffer with ddof=1 for unbiased estimate"
+    assert (
+        "rollout_buffer.advantages = " in source
+    ), "Should update buffer with normalized advantages"
 
     print("  ✓ collect_rollouts() has global normalization")
 
@@ -99,17 +101,17 @@ def test_implementation_uses_global_normalization():
     train_source = inspect.getsource(DistributionalPPO.train)
 
     # Should NOT compute per-group statistics
-    assert "group_advantages_for_stats" not in train_source, \
-        "Should NOT collect advantages for per-group statistics"
-    assert "group_adv_mean = " not in train_source, \
-        "Should NOT compute per-group mean"
-    assert "group_adv_std = " not in train_source, \
-        "Should NOT compute per-group std"
+    assert (
+        "group_advantages_for_stats" not in train_source
+    ), "Should NOT collect advantages for per-group statistics"
+    assert "group_adv_mean = " not in train_source, "Should NOT compute per-group mean"
+    assert "group_adv_std = " not in train_source, "Should NOT compute per-group std"
 
     # Should have comment about global normalization
-    assert "already normalized globally" in train_source.lower() or \
-           "already globally normalized" in train_source.lower(), \
-        "Should document that advantages are already normalized"
+    assert (
+        "already normalized globally" in train_source.lower()
+        or "already globally normalized" in train_source.lower()
+    ), "Should document that advantages are already normalized"
 
     print("  ✓ train() does NOT use per-group normalization")
     print("  ✓ Implementation uses global normalization correctly")
@@ -136,15 +138,18 @@ def test_no_per_group_statistics_in_train():
     relevant_section = source[loop_start:grad_step_idx]
 
     # Should NOT see advantage normalization in this section
-    assert "advantages_selected_raw - " not in relevant_section or \
-           "group_adv_mean" not in relevant_section, \
-        "Should NOT normalize advantages during training loop"
+    assert (
+        "advantages_selected_raw - " not in relevant_section
+        or "group_adv_mean" not in relevant_section
+    ), "Should NOT normalize advantages during training loop"
 
-    assert "advantages.mean()" not in relevant_section, \
-        "Should NOT compute advantage mean in training loop"
+    assert (
+        "advantages.mean()" not in relevant_section
+    ), "Should NOT compute advantage mean in training loop"
 
-    assert "advantages.std(" not in relevant_section, \
-        "Should NOT compute advantage std in training loop"
+    assert (
+        "advantages.std(" not in relevant_section
+    ), "Should NOT compute advantage std in training loop"
 
     print("  ✓ No per-group statistics computation in train()")
 
@@ -171,6 +176,7 @@ def main():
         except Exception as e:
             print(f"\n  ✗ FAILED: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 

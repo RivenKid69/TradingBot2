@@ -51,12 +51,16 @@ class SubAccountTarget:
 class AccountAllocation:
     account: str
     qty: Decimal
-    price: Decimal             # average (blended) price — same for all accounts
+    price: Decimal  # average (blended) price — same for all accounts
     notional: Decimal
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"account": self.account, "qty": str(self.qty),
-                "price": str(self.price), "notional": str(self.notional)}
+        return {
+            "account": self.account,
+            "qty": str(self.qty),
+            "price": str(self.price),
+            "notional": str(self.notional),
+        }
 
 
 @dataclass
@@ -70,10 +74,15 @@ class AllocationResult:
     give_up: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"symbol": self.symbol, "side": self.side, "avg_price": str(self.avg_price),
-                "total_filled": str(self.total_filled), "residual": str(self.residual),
-                "allocations": [a.to_dict() for a in self.allocations],
-                "give_up": self.give_up}
+        return {
+            "symbol": self.symbol,
+            "side": self.side,
+            "avg_price": str(self.avg_price),
+            "total_filled": str(self.total_filled),
+            "residual": str(self.residual),
+            "allocations": [a.to_dict() for a in self.allocations],
+            "give_up": self.give_up,
+        }
 
 
 def average_fill_price(fills: List[Fill]) -> Decimal:
@@ -82,12 +91,16 @@ def average_fill_price(fills: List[Fill]) -> Decimal:
     if tot_qty == 0:
         return Decimal("0")
     notional = sum((f.qty * f.price for f in fills), Decimal("0"))
-    return (notional / tot_qty)
+    return notional / tot_qty
 
 
 def average_price_allocation(
-    symbol: str, side: str, fills: List[Fill], targets: List[SubAccountTarget],
-    *, give_up: Optional["GiveUp"] = None,
+    symbol: str,
+    side: str,
+    fills: List[Fill],
+    targets: List[SubAccountTarget],
+    *,
+    give_up: Optional["GiveUp"] = None,
 ) -> AllocationResult:
     """Allocate a block to sub-accounts at the blended VWAP.
 
@@ -126,24 +139,36 @@ def average_price_allocation(
 @dataclass
 class GiveUp:
     """Give-up / CMTA: executing broker hands the trade to a clearing broker."""
+
     executing_broker: str
     clearing_broker: str
     account: str = ""
-    cmta_code: str = ""        # Clearing Member Trade Assignment code
+    cmta_code: str = ""  # Clearing Member Trade Assignment code
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"executing_broker": self.executing_broker, "clearing_broker": self.clearing_broker,
-                "account": self.account, "cmta_code": self.cmta_code, "type": "give_up_cmta"}
+        return {
+            "executing_broker": self.executing_broker,
+            "clearing_broker": self.clearing_broker,
+            "account": self.account,
+            "cmta_code": self.cmta_code,
+            "type": "give_up_cmta",
+        }
 
 
 # Settlement cycles by asset class (US equities moved to T+1 on 2024-05-28).
-_SETTLE_DAYS = {"equity": 1, "etf": 1, "bond": 1, "crypto": 0,
-                "fx": 2, "futures": 1, "options": 1}
+_SETTLE_DAYS = {"equity": 1, "etf": 1, "bond": 1, "crypto": 0, "fx": 2, "futures": 1, "options": 1}
 
 _US_HOLIDAYS_2026 = {
-    date(2026, 1, 1), date(2026, 1, 19), date(2026, 2, 16), date(2026, 4, 3),
-    date(2026, 5, 25), date(2026, 6, 19), date(2026, 7, 3), date(2026, 9, 7),
-    date(2026, 11, 26), date(2026, 12, 25),
+    date(2026, 1, 1),
+    date(2026, 1, 19),
+    date(2026, 2, 16),
+    date(2026, 4, 3),
+    date(2026, 5, 25),
+    date(2026, 6, 19),
+    date(2026, 7, 3),
+    date(2026, 9, 7),
+    date(2026, 11, 26),
+    date(2026, 12, 25),
 }
 
 
@@ -171,10 +196,12 @@ def net_settlement(allocations: List[AccountAllocation], side: str) -> Dict[str,
     sign = Decimal("1") if side.upper() == "BUY" else Decimal("-1")
     out: Dict[str, Dict[str, str]] = {}
     for a in allocations:
-        cash = -sign * a.notional        # buy pays cash out
+        cash = -sign * a.notional  # buy pays cash out
         shares = sign * a.qty
-        out[a.account] = {"cash_delta": str(cash.quantize(Decimal("0.01"))),
-                          "position_delta": str(shares)}
+        out[a.account] = {
+            "cash_delta": str(cash.quantize(Decimal("0.01"))),
+            "position_delta": str(shares),
+        }
     return out
 
 
@@ -182,8 +209,15 @@ class ClearingEngine:
     """Orchestrates allocation → give-up → settlement for a block trade."""
 
     def process_block(
-        self, *, symbol: str, side: str, fills: List[Fill], targets: List[SubAccountTarget],
-        trade_date: date, asset_class: str = "equity", give_up: Optional[GiveUp] = None,
+        self,
+        *,
+        symbol: str,
+        side: str,
+        fills: List[Fill],
+        targets: List[SubAccountTarget],
+        trade_date: date,
+        asset_class: str = "equity",
+        give_up: Optional[GiveUp] = None,
     ) -> Dict[str, Any]:
         result = average_price_allocation(symbol, side, fills, targets, give_up=give_up)
         settle = settlement_date(trade_date, asset_class)
@@ -198,7 +232,14 @@ class ClearingEngine:
 
 
 __all__ = [
-    "Fill", "SubAccountTarget", "AccountAllocation", "AllocationResult", "GiveUp",
-    "average_fill_price", "average_price_allocation", "settlement_date",
-    "net_settlement", "ClearingEngine",
+    "Fill",
+    "SubAccountTarget",
+    "AccountAllocation",
+    "AllocationResult",
+    "GiveUp",
+    "average_fill_price",
+    "average_price_allocation",
+    "settlement_date",
+    "net_settlement",
+    "ClearingEngine",
 ]

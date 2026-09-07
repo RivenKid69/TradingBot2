@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import sys
 import tempfile
@@ -74,15 +75,10 @@ STATS_PATH = Path("logs/offline/fetch_binance_filters_stats.json")
 
 def _deep_merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
     merged: dict[str, Any] = {
-        key: (dict(value) if isinstance(value, Mapping) else value)
-        for key, value in base.items()
+        key: (dict(value) if isinstance(value, Mapping) else value) for key, value in base.items()
     }
     for key, value in override.items():
-        if (
-            key in merged
-            and isinstance(merged[key], Mapping)
-            and isinstance(value, Mapping)
-        ):
+        if key in merged and isinstance(merged[key], Mapping) and isinstance(value, Mapping):
             merged[key] = _deep_merge(merged[key], value)  # type: ignore[arg-type]
         else:
             merged[key] = dict(value) if isinstance(value, Mapping) else value
@@ -101,9 +97,7 @@ def _normalize_endpoint_map(raw: Mapping[str, Any] | None) -> dict[str, Any]:
     return normalized
 
 
-def _normalize_rest_budget_sections(
-    rest_cfg: Mapping[str, Any]
-) -> tuple[dict[str, Any], Any]:
+def _normalize_rest_budget_sections(rest_cfg: Mapping[str, Any]) -> tuple[dict[str, Any], Any]:
     sources: list[Mapping[str, Any]] = []
     if isinstance(rest_cfg, Mapping):
         sources.append(rest_cfg)
@@ -312,9 +306,7 @@ def _load_universe_symbols(path: Path) -> List[str]:
     if isinstance(payload, Mapping):
         symbols = payload.get("symbols")
         if not isinstance(symbols, Sequence) or isinstance(symbols, (str, bytes)):
-            raise ValueError(
-                f"Universe file {path} must contain a sequence under 'symbols'"
-            )
+            raise ValueError(f"Universe file {path} must contain a sequence under 'symbols'")
         candidates = symbols
     elif isinstance(payload, Sequence) and not isinstance(payload, (str, bytes)):
         candidates = payload
@@ -465,9 +457,7 @@ def main(argv: List[str] | None = None) -> int:
         with closing(BinancePublicClient(session=session)) as client:
             symbol_count = len(symbols)
             chunk_count = 1 if symbol_count == 0 else (symbol_count + chunk_size - 1) // chunk_size
-            session.plan_request(
-                EXCHANGE_INFO_ENDPOINT, count=chunk_count, tokens=10.0
-            )
+            session.plan_request(EXCHANGE_INFO_ENDPOINT, count=chunk_count, tokens=10.0)
 
             if args.dry_run:
                 target = "all available" if symbol_count == 0 else f"{symbol_count}"
@@ -476,11 +466,7 @@ def main(argv: List[str] | None = None) -> int:
                     f"{chunk_count} request(s) to {EXCHANGE_INFO_ENDPOINT} "
                     f"for {target} symbol(s) with chunk_size={chunk_size}",
                 )
-                print(
-                    json.dumps(
-                        session.stats(), ensure_ascii=False, indent=2, sort_keys=True
-                    )
-                )
+                print(json.dumps(session.stats(), ensure_ascii=False, indent=2, sort_keys=True))
                 try:
                     session.write_stats(stats_path)
                 except Exception:
@@ -488,9 +474,7 @@ def main(argv: List[str] | None = None) -> int:
                 return 0
 
             should_checkpoint = (
-                symbol_count > 0
-                and chunk_count > 1
-                and symbol_count >= checkpoint_threshold
+                symbol_count > 0 and chunk_count > 1 and symbol_count >= checkpoint_threshold
             )
 
             filters: dict[str, dict[str, Any]] = {}
@@ -530,14 +514,10 @@ def main(argv: List[str] | None = None) -> int:
                 for chunk in _iter_symbol_chunks(symbols[index:], chunk_size):
                     if not chunk:
                         continue
-                    chunk_filters = client.get_exchange_filters(
-                        market="spot", symbols=chunk
-                    )
+                    chunk_filters = client.get_exchange_filters(market="spot", symbols=chunk)
                     missing = [sym for sym in chunk if sym not in chunk_filters]
                     if missing:
-                        raise RuntimeError(
-                            "Missing filters for symbol(s): " + ", ".join(missing)
-                        )
+                        raise RuntimeError("Missing filters for symbol(s): " + ", ".join(missing))
                     filters.update(chunk_filters)
                     index += len(chunk)
                     if should_checkpoint:
@@ -551,9 +531,7 @@ def main(argv: List[str] | None = None) -> int:
                         try:
                             session.write_stats(stats_path)
                         except Exception:
-                            logging.debug(
-                                "Failed to persist stats snapshot", exc_info=True
-                            )
+                            logging.debug("Failed to persist stats snapshot", exc_info=True)
                 if len(filters) < symbol_count:
                     missing_total = [sym for sym in symbols if sym not in filters]
                     if missing_total:
@@ -582,11 +560,7 @@ def main(argv: List[str] | None = None) -> int:
                 f"Fetched {metadata['symbols_count']} symbol filters "
                 f"from {metadata['source']} into {args.out}"
             )
-            print(
-                json.dumps(
-                    session.stats(), ensure_ascii=False, indent=2, sort_keys=True
-                )
-            )
+            print(json.dumps(session.stats(), ensure_ascii=False, indent=2, sort_keys=True))
             try:
                 session.write_stats(stats_path)
             except Exception:

@@ -28,7 +28,8 @@ def test_stale_bar_uses_current_timestamp():
     # Write to temporary CSV
     import tempfile
     import os
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
         f.write(csv_data)
         temp_path = f.name
 
@@ -60,18 +61,22 @@ def test_stale_bar_uses_current_timestamp():
 
         # Second bar should be STALE (copies data from first bar)
         # but uses CURRENT timestamp (60000), not previous timestamp (0)
-        assert bars[1].ts == 60000, \
-            f"Stale bar should use current timestamp 60000, got {bars[1].ts}"
-        assert float(bars[1].close) == 100.5, \
-            f"Stale bar should copy previous close price 100.5, got {bars[1].close}"
+        assert (
+            bars[1].ts == 60000
+        ), f"Stale bar should use current timestamp 60000, got {bars[1].ts}"
+        assert (
+            float(bars[1].close) == 100.5
+        ), f"Stale bar should copy previous close price 100.5, got {bars[1].close}"
 
         # Third bar should be STALE (copies data from second bar which was stale itself)
         # and uses CURRENT timestamp (120000)
-        assert bars[2].ts == 120000, \
-            f"Stale bar should use current timestamp 120000, got {bars[2].ts}"
+        assert (
+            bars[2].ts == 120000
+        ), f"Stale bar should use current timestamp 120000, got {bars[2].ts}"
         # Since bar[1] was stale and copied bar[0]'s data, bar[2] also gets bar[0]'s data
-        assert float(bars[2].close) == 100.5, \
-            f"Stale bar should copy previous close price 100.5, got {bars[2].close}"
+        assert (
+            float(bars[2].close) == 100.5
+        ), f"Stale bar should copy previous close price 100.5, got {bars[2].close}"
 
     finally:
         # Cleanup
@@ -87,7 +92,8 @@ def test_stale_bar_preserves_symbol():
 
     import tempfile
     import os
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
         f.write(csv_data)
         temp_path = f.name
 
@@ -111,8 +117,7 @@ def test_stale_bar_preserves_symbol():
 
         # All bars should have correct symbol
         for bar in bars:
-            assert bar.symbol == "BTCUSDT", \
-                f"Bar at {bar.ts} has wrong symbol: {bar.symbol}"
+            assert bar.symbol == "BTCUSDT", f"Bar at {bar.ts} has wrong symbol: {bar.symbol}"
 
     finally:
         os.unlink(temp_path)
@@ -128,7 +133,8 @@ def test_no_stale_bar_normal_operation():
 
     import tempfile
     import os
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
         f.write(csv_data)
         temp_path = f.name
 

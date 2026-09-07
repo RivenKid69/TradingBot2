@@ -51,6 +51,7 @@ from ccea.crypto.keys import (
 
 class KeyStatus(str, Enum):
     """Key lifecycle status."""
+
     ACTIVE = "active"
     PENDING = "pending"  # Generated but not yet activated
     ROTATING = "rotating"  # Being rotated (grace period)
@@ -60,6 +61,7 @@ class KeyStatus(str, Enum):
 
 class KeyPurpose(str, Enum):
     """Key purpose."""
+
     ARTIFACT_SIGNING = "artifact_signing"
     MANIFEST_SIGNING = "manifest_signing"
     AGENT_DEVICE = "agent_device"
@@ -68,6 +70,7 @@ class KeyPurpose(str, Enum):
 
 class TrustLevel(str, Enum):
     """Trust level for keys."""
+
     ROOT = "root"  # Trust anchor
     INTERMEDIATE = "intermediate"
     LEAF = "leaf"
@@ -76,6 +79,7 @@ class TrustLevel(str, Enum):
 @dataclass
 class KeyMetadata:
     """Metadata for a managed key."""
+
     key_id: str
     algorithm: KeyAlgorithm
     purpose: KeyPurpose
@@ -122,8 +126,12 @@ class KeyMetadata:
             status=KeyStatus(data["status"]),
             trust_level=TrustLevel(data["trust_level"]),
             created_at=datetime.fromisoformat(data["created_at"]),
-            expires_at=datetime.fromisoformat(data["expires_at"]) if data.get("expires_at") else None,
-            revoked_at=datetime.fromisoformat(data["revoked_at"]) if data.get("revoked_at") else None,
+            expires_at=(
+                datetime.fromisoformat(data["expires_at"]) if data.get("expires_at") else None
+            ),
+            revoked_at=(
+                datetime.fromisoformat(data["revoked_at"]) if data.get("revoked_at") else None
+            ),
             revocation_reason=data.get("revocation_reason"),
             parent_key_id=data.get("parent_key_id"),
             labels=data.get("labels", {}),
@@ -133,6 +141,7 @@ class KeyMetadata:
 @dataclass
 class TrustRoot:
     """Trust root configuration."""
+
     root_key_ids: Set[str]
     allowed_purposes: Set[KeyPurpose]
     min_algorithm: KeyAlgorithm = KeyAlgorithm.ED25519
@@ -500,6 +509,7 @@ class KeyManager:
 
         # Detect algorithm
         from ccea.crypto.keys import get_key_algorithm
+
         algorithm = get_key_algorithm(public_key)
 
         metadata = KeyMetadata(
@@ -579,10 +589,7 @@ class KeyManager:
 
     def _save_metadata(self) -> None:
         """Save key metadata to disk."""
-        data = {
-            key_id: meta.to_dict()
-            for key_id, meta in self._metadata.items()
-        }
+        data = {key_id: meta.to_dict() for key_id, meta in self._metadata.items()}
 
         with open(self.metadata_path, "w") as f:
             json.dump(data, f, indent=2)

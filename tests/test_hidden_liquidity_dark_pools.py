@@ -18,6 +18,7 @@ Total: 30+ tests
 """
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 import time
 from typing import List, Tuple, Optional
@@ -266,12 +267,14 @@ class TestIcebergDetector:
         level_qty_history = []
 
         for i in range(5):
-            executions.append(Trade(
-                price=price,
-                qty=100.0,
-                maker_order_id="maker_1",
-                timestamp_ns=ts + i * 10000,
-            ))
+            executions.append(
+                Trade(
+                    price=price,
+                    qty=100.0,
+                    maker_order_id="maker_1",
+                    timestamp_ns=ts + i * 10000,
+                )
+            )
             # Qty refills after each execution
             level_qty_history.append(500.0)  # Always back to 500
 
@@ -293,15 +296,27 @@ class TestIcebergDetector:
 
         # Create iceberg with multiple refills
         for i in range(4):
-            pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000)
-            trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + i * 10000 + 1000, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000)
+            pre_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000
+            )
+            trade = Trade(
+                price=price,
+                qty=100.0,
+                maker_order_id="maker_1",
+                timestamp_ns=ts + i * 10000 + 1000,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000
+            )
             iceberg = iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
         assert iceberg is not None
 
         # Estimate hidden reserve
-        hidden_estimate = iceberg_detector.estimate_hidden_reserve(iceberg, current_visible_qty=500.0)
+        hidden_estimate = iceberg_detector.estimate_hidden_reserve(
+            iceberg, current_visible_qty=500.0
+        )
 
         assert hidden_estimate > 0
         # Should be reasonable estimate based on refill pattern
@@ -313,9 +328,19 @@ class TestIcebergDetector:
 
         # Create iceberg at price 100
         for i in range(2):
-            pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000)
-            trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + i * 10000 + 1000, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000)
+            pre_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000
+            )
+            trade = Trade(
+                price=price,
+                qty=100.0,
+                maker_order_id="maker_1",
+                timestamp_ns=ts + i * 10000 + 1000,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000
+            )
             iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
         active = list(iceberg_detector.get_active_icebergs())
@@ -328,8 +353,16 @@ class TestIcebergDetector:
         ts = time.time_ns()
 
         pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts)
-        trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + 1000, aggressor_side=Side.SELL)
-        post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000)
+        trade = Trade(
+            price=price,
+            qty=100.0,
+            maker_order_id="maker_1",
+            timestamp_ns=ts + 1000,
+            aggressor_side=Side.SELL,
+        )
+        post_level = LevelSnapshot(
+            price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000
+        )
 
         iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
@@ -349,15 +382,25 @@ class TestIcebergDetector:
 
         # Create iceberg
         pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts)
-        trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + 1000, aggressor_side=Side.SELL)
-        post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000)
+        trade = Trade(
+            price=price,
+            qty=100.0,
+            maker_order_id="maker_1",
+            timestamp_ns=ts + 1000,
+            aggressor_side=Side.SELL,
+        )
+        post_level = LevelSnapshot(
+            price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000
+        )
 
         iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
         assert len(list(iceberg_detector.get_active_icebergs())) == 1
 
         # Remove stale (with future timestamp)
-        removed_count = iceberg_detector.remove_stale_icebergs(ts + 100_000_000_000)  # 100 seconds later
+        removed_count = iceberg_detector.remove_stale_icebergs(
+            ts + 100_000_000_000
+        )  # 100 seconds later
 
         assert removed_count == 1
         assert len(list(iceberg_detector.get_active_icebergs())) == 0
@@ -369,9 +412,19 @@ class TestIcebergDetector:
 
         # Create and confirm iceberg
         for i in range(3):
-            pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000)
-            trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + i * 10000 + 1000, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000)
+            pre_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000
+            )
+            trade = Trade(
+                price=price,
+                qty=100.0,
+                maker_order_id="maker_1",
+                timestamp_ns=ts + i * 10000 + 1000,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000
+            )
             iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
         stats = iceberg_detector.stats()
@@ -421,9 +474,19 @@ class TestHiddenLiquidityEstimator:
 
         # Create iceberg
         for i in range(2):
-            pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000)
-            trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + i * 10000 + 1000, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000)
+            pre_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000
+            )
+            trade = Trade(
+                price=price,
+                qty=100.0,
+                maker_order_id="maker_1",
+                timestamp_ns=ts + i * 10000 + 1000,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000
+            )
             iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
         estimator = HiddenLiquidityEstimator(
@@ -468,9 +531,19 @@ class TestHiddenLiquidityEstimator:
 
         # Create iceberg
         for i in range(2):
-            pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000)
-            trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + i * 10000 + 1000, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000)
+            pre_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000
+            )
+            trade = Trade(
+                price=price,
+                qty=100.0,
+                maker_order_id="maker_1",
+                timestamp_ns=ts + i * 10000 + 1000,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000
+            )
             iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
         estimator = HiddenLiquidityEstimator(iceberg_detector=iceberg_detector)
@@ -514,6 +587,7 @@ class TestDarkPoolVenue:
         )
 
         import random
+
         venue = DarkPoolVenue(config, rng=random.Random(42))
 
         fill = venue.attempt_fill(
@@ -556,6 +630,7 @@ class TestDarkPoolVenue:
         )
 
         import random
+
         venue = DarkPoolVenue(config, rng=random.Random(42))
 
         fill = venue.attempt_fill(
@@ -575,6 +650,7 @@ class TestDarkPoolVenue:
         )
 
         import random
+
         venue = DarkPoolVenue(config, rng=random.Random(42))
 
         for _ in range(10):
@@ -609,7 +685,9 @@ class TestDarkPoolSimulator:
         venues = list(simulator.get_all_venues())
         assert len(venues) == 2
 
-    def test_attempt_dark_fill(self, dark_pool_simulator: DarkPoolSimulator, sample_order: LimitOrder):
+    def test_attempt_dark_fill(
+        self, dark_pool_simulator: DarkPoolSimulator, sample_order: LimitOrder
+    ):
         """Test attempting dark pool fill."""
         fill = dark_pool_simulator.attempt_dark_fill(
             order=sample_order,
@@ -666,6 +744,7 @@ class TestDarkPoolSimulator:
         )
 
         import random
+
         venue = DarkPoolVenue(config, rng=random.Random(42))
 
         order = LimitOrder(
@@ -756,7 +835,9 @@ class TestDarkPoolSimulator:
 
         # Should have received leakages via callback
 
-    def test_preferred_venue(self, dark_pool_simulator: DarkPoolSimulator, sample_order: LimitOrder):
+    def test_preferred_venue(
+        self, dark_pool_simulator: DarkPoolSimulator, sample_order: LimitOrder
+    ):
         """Test preferred venue routing."""
         # Should try preferred venue first
         fill = dark_pool_simulator.attempt_dark_fill(
@@ -873,6 +954,7 @@ class TestIntegration:
             )
 
             import random
+
             venue = DarkPoolVenue(config, rng=random.Random(42))
 
             fill = venue.attempt_fill(order=sample_order, lit_mid_price=100.0)
@@ -887,26 +969,54 @@ class TestIntegration:
 
         # Phase 1: Detection
         pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts)
-        trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + 1000, aggressor_side=Side.SELL)
-        post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000)
+        trade = Trade(
+            price=price,
+            qty=100.0,
+            maker_order_id="maker_1",
+            timestamp_ns=ts + 1000,
+            aggressor_side=Side.SELL,
+        )
+        post_level = LevelSnapshot(
+            price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000
+        )
 
         iceberg = iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
         assert iceberg.state == IcebergState.SUSPECTED
 
         # Phase 2: Confirmation
         for i in range(2, 5):
-            pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000)
-            trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + i * 10000 + 1000, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000)
+            pre_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000
+            )
+            trade = Trade(
+                price=price,
+                qty=100.0,
+                maker_order_id="maker_1",
+                timestamp_ns=ts + i * 10000 + 1000,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000
+            )
             iceberg = iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
         assert iceberg.state == IcebergState.CONFIRMED
         assert iceberg.confidence >= DetectionConfidence.MEDIUM
 
         # Phase 3: Exhaustion (no refill)
-        pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 100000)
-        trade = Trade(price=price, qty=100.0, maker_order_id="maker_1", timestamp_ns=ts + 100001, aggressor_side=Side.SELL)
-        post_level = LevelSnapshot(price=price, visible_qty=0.0, order_count=0, timestamp_ns=ts + 100001)  # No refill
+        pre_level = LevelSnapshot(
+            price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 100000
+        )
+        trade = Trade(
+            price=price,
+            qty=100.0,
+            maker_order_id="maker_1",
+            timestamp_ns=ts + 100001,
+            aggressor_side=Side.SELL,
+        )
+        post_level = LevelSnapshot(
+            price=price, visible_qty=0.0, order_count=0, timestamp_ns=ts + 100001
+        )  # No refill
 
         iceberg = iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
@@ -1008,9 +1118,19 @@ class TestPerformance:
         start = time_module.perf_counter()
 
         for i in range(1000):
-            pre_level = LevelSnapshot(price=100.0, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 1000)
-            trade = Trade(price=100.0, qty=10.0, maker_order_id="maker_1", timestamp_ns=ts + i * 1000 + 100, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=100.0, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 1000 + 100)
+            pre_level = LevelSnapshot(
+                price=100.0, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 1000
+            )
+            trade = Trade(
+                price=100.0,
+                qty=10.0,
+                maker_order_id="maker_1",
+                timestamp_ns=ts + i * 1000 + 100,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=100.0, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 1000 + 100
+            )
 
             iceberg_detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
@@ -1019,7 +1139,9 @@ class TestPerformance:
         # Should process 1000 executions in < 1 second
         assert elapsed < 1.0, f"Processing took {elapsed:.2f}s, expected < 1.0s"
 
-    def test_dark_pool_performance(self, dark_pool_simulator: DarkPoolSimulator, sample_order: LimitOrder):
+    def test_dark_pool_performance(
+        self, dark_pool_simulator: DarkPoolSimulator, sample_order: LimitOrder
+    ):
         """Test dark pool simulation performance."""
         import time as time_module
 
@@ -1057,6 +1179,7 @@ class TestBugFixes:
         )
 
         import random
+
         venue = DarkPoolVenue(config, rng=random.Random(42))
 
         order = LimitOrder(
@@ -1089,12 +1212,14 @@ class TestBugFixes:
         level_qty_history = []
 
         for i in range(3):  # 3 refills -> confirmed
-            executions.append(Trade(
-                price=price,
-                qty=100.0,
-                maker_order_id="maker_1",
-                timestamp_ns=ts + i * 10000,
-            ))
+            executions.append(
+                Trade(
+                    price=price,
+                    qty=100.0,
+                    maker_order_id="maker_1",
+                    timestamp_ns=ts + i * 10000,
+                )
+            )
             level_qty_history.append(500.0)  # Always back to 500 (refill)
 
         iceberg = detector.detect_iceberg(
@@ -1116,9 +1241,7 @@ class TestBugFixes:
 
         price = 100.0
         ts = time.time_ns()
-        executions = [
-            Trade(price=price, qty=100.0, maker_order_id="m1", timestamp_ns=ts)
-        ]
+        executions = [Trade(price=price, qty=100.0, maker_order_id="m1", timestamp_ns=ts)]
         level_qty_history = [500.0]  # Only 1 refill -> suspected
 
         iceberg = detector.detect_iceberg(
@@ -1145,9 +1268,19 @@ class TestBugFixes:
 
         # Create iceberg with display size = 100 (from refill)
         def create_iceberg(det: IcebergDetector) -> IcebergOrder:
-            pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts)
-            trade = Trade(price=price, qty=100.0, maker_order_id="m1", timestamp_ns=ts + 1000, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000)
+            pre_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts
+            )
+            trade = Trade(
+                price=price,
+                qty=100.0,
+                maker_order_id="m1",
+                timestamp_ns=ts + 1000,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000
+            )
             return det.process_execution(trade, pre_level, post_level, Side.BUY)
 
         iceberg_default = create_iceberg(detector_default)
@@ -1169,7 +1302,9 @@ class TestBugFixes:
 
         ts = time.time_ns()
         pre_level = LevelSnapshot(price=100.0, visible_qty=500.0, order_count=5, timestamp_ns=ts)
-        post_level = LevelSnapshot(price=100.0, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000)
+        post_level = LevelSnapshot(
+            price=100.0, visible_qty=500.0, order_count=5, timestamp_ns=ts + 1000
+        )
 
         # Trade without aggressor_side and without explicit side
         trade = Trade(
@@ -1198,6 +1333,7 @@ class TestBugFixes:
         )
 
         import random
+
         venue = DarkPoolVenue(config, rng=random.Random(42))
 
         # Verify config is used
@@ -1217,9 +1353,19 @@ class TestBugFixes:
         # Create iceberg with multiple refills
         iceberg = None
         for i in range(4):
-            pre_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000)
-            trade = Trade(price=price, qty=100.0, maker_order_id="m1", timestamp_ns=ts + i * 10000 + 1000, aggressor_side=Side.SELL)
-            post_level = LevelSnapshot(price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000)
+            pre_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000
+            )
+            trade = Trade(
+                price=price,
+                qty=100.0,
+                maker_order_id="m1",
+                timestamp_ns=ts + i * 10000 + 1000,
+                aggressor_side=Side.SELL,
+            )
+            post_level = LevelSnapshot(
+                price=price, visible_qty=500.0, order_count=5, timestamp_ns=ts + i * 10000 + 1000
+            )
             iceberg = detector.process_execution(trade, pre_level, post_level, Side.BUY)
 
         assert iceberg is not None

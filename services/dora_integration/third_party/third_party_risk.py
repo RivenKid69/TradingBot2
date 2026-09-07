@@ -43,8 +43,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ProviderType(Enum):
     """Type of ICT third-party service provider."""
+
     CLOUD_SERVICE = "cloud_service"
     INFRASTRUCTURE = "infrastructure"
     SOFTWARE_VENDOR = "software_vendor"
@@ -61,6 +63,7 @@ class ProviderType(Enum):
 
 class ProviderCriticality(Enum):
     """Provider criticality classification per Article 28."""
+
     CRITICAL = "critical"  # Supports critical/important function
     HIGH = "high"  # Significant operational impact
     MEDIUM = "medium"  # Moderate operational impact
@@ -69,6 +72,7 @@ class ProviderCriticality(Enum):
 
 class ServiceCriticality(Enum):
     """Service criticality classification."""
+
     CRITICAL_OR_IMPORTANT = "critical_or_important"  # Article 3(22)
     IMPORTANT = "important"
     STANDARD = "standard"
@@ -77,6 +81,7 @@ class ServiceCriticality(Enum):
 
 class ProviderStatus(Enum):
     """Provider relationship status."""
+
     ACTIVE = "active"
     UNDER_REVIEW = "under_review"
     ONBOARDING = "onboarding"
@@ -87,6 +92,7 @@ class ProviderStatus(Enum):
 
 class RiskCategory(Enum):
     """Third-party risk categories."""
+
     OPERATIONAL = "operational"
     SECURITY = "security"
     COMPLIANCE = "compliance"
@@ -101,6 +107,7 @@ class RiskCategory(Enum):
 
 class RiskLevel(Enum):
     """Risk level classification."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -109,6 +116,7 @@ class RiskLevel(Enum):
 
 class DueDiligenceStatus(Enum):
     """Due diligence assessment status."""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -119,6 +127,7 @@ class DueDiligenceStatus(Enum):
 
 class AssessmentType(Enum):
     """Type of assessment."""
+
     INITIAL = "initial"
     PERIODIC = "periodic"
     INCIDENT_TRIGGERED = "incident_triggered"
@@ -128,6 +137,7 @@ class AssessmentType(Enum):
 
 class SubstitutabilityLevel(Enum):
     """Provider substitutability level."""
+
     EASILY_SUBSTITUTABLE = "easily_substitutable"
     SUBSTITUTABLE_WITH_EFFORT = "substitutable_with_effort"
     DIFFICULT_TO_SUBSTITUTE = "difficult_to_substitute"
@@ -138,6 +148,7 @@ class SubstitutabilityLevel(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ICTService:
     """
@@ -145,6 +156,7 @@ class ICTService:
 
     Represents a specific service within a provider relationship.
     """
+
     service_id: str = ""
     name: str = ""
     description: str = ""
@@ -181,6 +193,7 @@ class ICTProvider:
     Represents a third-party provider with all required information
     for DORA compliance tracking.
     """
+
     provider_id: str = ""
     name: str = ""
     legal_name: str = ""
@@ -254,9 +267,33 @@ class ICTProvider:
         # Check EU status
         if self.country:
             EU_COUNTRIES = {
-                "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-                "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
-                "PL", "PT", "RO", "SK", "SI", "ES", "SE"
+                "AT",
+                "BE",
+                "BG",
+                "HR",
+                "CY",
+                "CZ",
+                "DK",
+                "EE",
+                "FI",
+                "FR",
+                "DE",
+                "GR",
+                "HU",
+                "IE",
+                "IT",
+                "LV",
+                "LT",
+                "LU",
+                "MT",
+                "NL",
+                "PL",
+                "PT",
+                "RO",
+                "SK",
+                "SI",
+                "ES",
+                "SE",
             }
             self.is_eu_provider = self.country.upper() in EU_COUNTRIES
 
@@ -266,6 +303,7 @@ class ThirdPartyRisk:
     """
     Identified risk related to a third-party provider.
     """
+
     risk_id: str = ""
     provider_id: str = ""
     category: RiskCategory = RiskCategory.OPERATIONAL
@@ -325,6 +363,7 @@ class ThirdPartyRiskAssessment:
     """
     Complete third-party risk assessment per Article 28.
     """
+
     assessment_id: str = ""
     provider_id: str = ""
     assessment_type: AssessmentType = AssessmentType.PERIODIC
@@ -382,6 +421,7 @@ class DueDiligenceCheck:
     """
     Due diligence check for a provider.
     """
+
     check_id: str = ""
     provider_id: str = ""
     check_type: str = ""  # financial, legal, security, operational, compliance
@@ -417,6 +457,7 @@ class ProviderRelationshipEvent:
     """
     Event in the lifecycle of a provider relationship.
     """
+
     event_id: str = ""
     provider_id: str = ""
     event_type: str = ""  # onboarding, review, incident, contract_change, termination
@@ -446,6 +487,7 @@ class ProviderRelationshipEvent:
 # =============================================================================
 # Configuration
 # =============================================================================
+
 
 @dataclass
 class ThirdPartyRiskConfig:
@@ -491,6 +533,7 @@ class ThirdPartyRiskConfig:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class DORAThirdPartyRiskManagement:
     """
@@ -545,9 +588,7 @@ class DORAThirdPartyRiskManagement:
         self._providers_by_criticality: Dict[ProviderCriticality, Set[str]] = {
             c: set() for c in ProviderCriticality
         }
-        self._providers_by_type: Dict[ProviderType, Set[str]] = {
-            t: set() for t in ProviderType
-        }
+        self._providers_by_type: Dict[ProviderType, Set[str]] = {t: set() for t in ProviderType}
         self._risks_by_provider: Dict[str, Set[str]] = {}
 
         # Thread safety
@@ -633,13 +674,16 @@ class DORAThirdPartyRiskManagement:
             f"Provider {name} registered",
         )
 
-        self._log_event("provider_registered", {
-            "provider_id": provider.provider_id,
-            "name": name,
-            "type": provider_type.value,
-            "country": country,
-            "criticality": provider.criticality.value,
-        })
+        self._log_event(
+            "provider_registered",
+            {
+                "provider_id": provider.provider_id,
+                "name": name,
+                "type": provider_type.value,
+                "country": country,
+                "criticality": provider.criticality.value,
+            },
+        )
 
         logger.info(f"Provider registered: {name} ({provider.provider_id})")
         return provider
@@ -673,10 +717,13 @@ class DORAThirdPartyRiskManagement:
                 self._providers_by_type[old_type].discard(provider_id)
                 self._providers_by_type[provider.provider_type].add(provider_id)
 
-        self._log_event("provider_updated", {
-            "provider_id": provider_id,
-            "updates": {k: str(v) for k, v in updates.items()},
-        })
+        self._log_event(
+            "provider_updated",
+            {
+                "provider_id": provider_id,
+                "updates": {k: str(v) for k, v in updates.items()},
+            },
+        )
 
         return provider
 
@@ -711,15 +758,15 @@ class DORAThirdPartyRiskManagement:
         """Get all providers of specific type."""
         with self._lock:
             return [
-                self._providers[pid]
-                for pid in self._providers_by_type.get(provider_type, set())
+                self._providers[pid] for pid in self._providers_by_type.get(provider_type, set())
             ]
 
     def get_critical_providers(self) -> List[ICTProvider]:
         """Get all critical providers."""
         with self._lock:
             return [
-                p for p in self._providers.values()
+                p
+                for p in self._providers.values()
                 if p.criticality == ProviderCriticality.CRITICAL
                 and p.status == ProviderStatus.ACTIVE
             ]
@@ -750,8 +797,7 @@ class DORAThirdPartyRiskManagement:
             if self.config.require_due_diligence_before_onboarding:
                 if provider.due_diligence_status != DueDiligenceStatus.COMPLETED:
                     logger.warning(
-                        f"Cannot activate provider {provider_id}: "
-                        "Due diligence not completed"
+                        f"Cannot activate provider {provider_id}: " "Due diligence not completed"
                     )
                     return None
 
@@ -788,11 +834,14 @@ class DORAThirdPartyRiskManagement:
 
         # Notify if configured
         if self.config.notification_callback:
-            self.config.notification_callback("provider_suspended", {
-                "provider_id": provider_id,
-                "provider_name": provider.name,
-                "reason": reason,
-            })
+            self.config.notification_callback(
+                "provider_suspended",
+                {
+                    "provider_id": provider_id,
+                    "provider_name": provider.name,
+                    "reason": reason,
+                },
+            )
 
         return provider
 
@@ -902,19 +951,25 @@ class DORAThirdPartyRiskManagement:
         # Check if escalation needed
         if risk.risk_level.value in [RiskLevel.HIGH.value, RiskLevel.CRITICAL.value]:
             if self.config.escalation_callback:
-                self.config.escalation_callback("high_risk_identified", {
-                    "risk_id": risk.risk_id,
-                    "provider_id": provider_id,
-                    "risk_name": name,
-                    "risk_level": risk.risk_level.value,
-                })
+                self.config.escalation_callback(
+                    "high_risk_identified",
+                    {
+                        "risk_id": risk.risk_id,
+                        "provider_id": provider_id,
+                        "risk_name": name,
+                        "risk_level": risk.risk_level.value,
+                    },
+                )
 
-        self._log_event("risk_identified", {
-            "risk_id": risk.risk_id,
-            "provider_id": provider_id,
-            "category": category.value,
-            "risk_level": risk.risk_level.value,
-        })
+        self._log_event(
+            "risk_identified",
+            {
+                "risk_id": risk.risk_id,
+                "provider_id": provider_id,
+                "category": category.value,
+                "risk_level": risk.risk_level.value,
+            },
+        )
 
         return risk
 
@@ -944,11 +999,14 @@ class DORAThirdPartyRiskManagement:
             if self.config.notify_on_risk_increase:
                 if self._risk_level_increased(old_level, new_level):
                     if self.config.notification_callback:
-                        self.config.notification_callback("risk_increased", {
-                            "risk_id": risk_id,
-                            "old_level": old_level.value,
-                            "new_level": new_level.value,
-                        })
+                        self.config.notification_callback(
+                            "risk_increased",
+                            {
+                                "risk_id": risk_id,
+                                "old_level": old_level.value,
+                                "new_level": new_level.value,
+                            },
+                        )
 
         return risk
 
@@ -999,11 +1057,14 @@ class DORAThirdPartyRiskManagement:
             risk.acceptance_date = datetime.now(timezone.utc).isoformat()
             risk.last_reviewed = risk.acceptance_date
 
-        self._log_event("risk_accepted", {
-            "risk_id": risk_id,
-            "accepted_by": accepted_by,
-            "justification": justification,
-        })
+        self._log_event(
+            "risk_accepted",
+            {
+                "risk_id": risk_id,
+                "accepted_by": accepted_by,
+                "justification": justification,
+            },
+        )
 
         return risk
 
@@ -1041,10 +1102,7 @@ class DORAThirdPartyRiskManagement:
 
             # Determine services to assess
             if services_to_assess:
-                services = [
-                    s for s in provider.services
-                    if s.service_id in services_to_assess
-                ]
+                services = [s for s in provider.services if s.service_id in services_to_assess]
             else:
                 services = provider.services
 
@@ -1129,12 +1187,15 @@ class DORAThirdPartyRiskManagement:
             f"Risk assessment completed: {assessment.overall_rating}",
         )
 
-        self._log_event("assessment_completed", {
-            "assessment_id": assessment.assessment_id,
-            "provider_id": provider_id,
-            "overall_risk_level": assessment.overall_risk_level.value,
-            "overall_rating": assessment.overall_rating,
-        })
+        self._log_event(
+            "assessment_completed",
+            {
+                "assessment_id": assessment.assessment_id,
+                "provider_id": provider_id,
+                "overall_risk_level": assessment.overall_risk_level.value,
+                "overall_rating": assessment.overall_rating,
+            },
+        )
 
         return assessment
 
@@ -1170,10 +1231,7 @@ class DORAThirdPartyRiskManagement:
     ) -> List[ThirdPartyRiskAssessment]:
         """Get all assessments for a provider."""
         with self._lock:
-            return [
-                a for a in self._assessments.values()
-                if a.provider_id == provider_id
-            ]
+            return [a for a in self._assessments.values() if a.provider_id == provider_id]
 
     def get_latest_assessment(
         self,
@@ -1318,8 +1376,8 @@ class DORAThirdPartyRiskManagement:
 
             # Set expiry
             check.expires_date = (
-                datetime.now(timezone.utc) +
-                timedelta(days=self.config.due_diligence_validity_months * 30)
+                datetime.now(timezone.utc)
+                + timedelta(days=self.config.due_diligence_validity_months * 30)
             ).isoformat()
 
             # Update provider overall status
@@ -1348,8 +1406,7 @@ class DORAThirdPartyRiskManagement:
                 "failed": sum(1 for c in checks if c.status == DueDiligenceStatus.FAILED),
                 "in_progress": sum(1 for c in checks if c.status == DueDiligenceStatus.IN_PROGRESS),
                 "requires_remediation": sum(
-                    1 for c in checks
-                    if c.status == DueDiligenceStatus.REQUIRES_REMEDIATION
+                    1 for c in checks if c.status == DueDiligenceStatus.REQUIRES_REMEDIATION
                 ),
                 "checks": [
                     {
@@ -1403,9 +1460,7 @@ class DORAThirdPartyRiskManagement:
             assessment["control_areas"]["audit_rights"] = audit_control
             if not provider.audit_rights_granted:
                 assessment["issues"].append("No audit rights granted")
-                assessment["recommendations"].append(
-                    "Negotiate audit rights in contract"
-                )
+                assessment["recommendations"].append("Negotiate audit rights in contract")
 
             # Subcontracting visibility
             subcontracting_control = {
@@ -1418,9 +1473,7 @@ class DORAThirdPartyRiskManagement:
             assessment["control_areas"]["subcontracting"] = subcontracting_control
             if provider.permits_subcontracting and not provider.subcontracting_chain_known:
                 assessment["issues"].append("Subcontracting chain not fully known")
-                assessment["recommendations"].append(
-                    "Request full disclosure of subcontractors"
-                )
+                assessment["recommendations"].append("Request full disclosure of subcontractors")
 
             # Data location control
             data_control = {
@@ -1446,9 +1499,7 @@ class DORAThirdPartyRiskManagement:
             }
             assessment["control_areas"]["incident_notification"] = incident_control
             if not provider.incident_contact_email:
-                assessment["recommendations"].append(
-                    "Establish incident notification contact"
-                )
+                assessment["recommendations"].append("Establish incident notification contact")
 
             # Determine overall control level
             issues_count = len(assessment["issues"])
@@ -1492,9 +1543,7 @@ class DORAThirdPartyRiskManagement:
                 "notes": "Audit rights include competent authority access" if nca_access else "",
             }
             if not nca_access:
-                verification["issues"].append(
-                    "NCA access not contractually ensured"
-                )
+                verification["issues"].append("NCA access not contractually ensured")
 
             # Check data availability
             data_available = bool(provider.data_processing_countries)
@@ -1530,12 +1579,10 @@ class DORAThirdPartyRiskManagement:
                 "providers": {
                     "total": len(self._providers),
                     "active": sum(
-                        1 for p in self._providers.values()
-                        if p.status == ProviderStatus.ACTIVE
+                        1 for p in self._providers.values() if p.status == ProviderStatus.ACTIVE
                     ),
                     "by_criticality": {
-                        c.value: len(self._providers_by_criticality[c])
-                        for c in ProviderCriticality
+                        c.value: len(self._providers_by_criticality[c]) for c in ProviderCriticality
                     },
                     "by_type": {
                         t.value: len(self._providers_by_type[t])
@@ -1543,18 +1590,18 @@ class DORAThirdPartyRiskManagement:
                         if len(self._providers_by_type[t]) > 0
                     },
                     "supporting_critical_functions": sum(
-                        1 for p in self._providers.values()
-                        if p.supports_critical_function
+                        1 for p in self._providers.values() if p.supports_critical_function
                     ),
                     "designated_ctpps": sum(
-                        1 for p in self._providers.values()
-                        if p.is_designated_ctpp
+                        1 for p in self._providers.values() if p.is_designated_ctpp
                     ),
                 },
                 "risks": {
                     "total": len(active_risks),
                     "by_level": {
-                        "critical": sum(1 for r in active_risks if r.risk_level == RiskLevel.CRITICAL),
+                        "critical": sum(
+                            1 for r in active_risks if r.risk_level == RiskLevel.CRITICAL
+                        ),
                         "high": sum(1 for r in active_risks if r.risk_level == RiskLevel.HIGH),
                         "medium": sum(1 for r in active_risks if r.risk_level == RiskLevel.MEDIUM),
                         "low": sum(1 for r in active_risks if r.risk_level == RiskLevel.LOW),
@@ -1571,15 +1618,18 @@ class DORAThirdPartyRiskManagement:
                 },
                 "due_diligence": {
                     "completed": sum(
-                        1 for p in self._providers.values()
+                        1
+                        for p in self._providers.values()
                         if p.due_diligence_status == DueDiligenceStatus.COMPLETED
                     ),
                     "in_progress": sum(
-                        1 for p in self._providers.values()
+                        1
+                        for p in self._providers.values()
                         if p.due_diligence_status == DueDiligenceStatus.IN_PROGRESS
                     ),
                     "not_started": sum(
-                        1 for p in self._providers.values()
+                        1
+                        for p in self._providers.values()
                         if p.due_diligence_status == DueDiligenceStatus.NOT_STARTED
                     ),
                 },
@@ -1596,7 +1646,8 @@ class DORAThirdPartyRiskManagement:
                     ),
                     "no_critical_risks": sum(
                         1 for r in active_risks if r.risk_level == RiskLevel.CRITICAL
-                    ) == 0,
+                    )
+                    == 0,
                 },
             }
 
@@ -1689,16 +1740,15 @@ class DORAThirdPartyRiskManagement:
         return {
             "services_count": len(services),
             "critical_services": sum(
-                1 for s in services
-                if s.criticality == ServiceCriticality.CRITICAL_OR_IMPORTANT
+                1 for s in services if s.criticality == ServiceCriticality.CRITICAL_OR_IMPORTANT
             ),
             "availability_concerns": [
-                s.service_id for s in services
-                if s.availability_target_pct < 99.0
+                s.service_id for s in services if s.availability_target_pct < 99.0
             ],
             "substitutability": provider.substitutability.value,
             "alternatives_available": len(provider.alternative_providers),
-            "subcontracting_risk": provider.permits_subcontracting and not provider.subcontracting_chain_known,
+            "subcontracting_risk": provider.permits_subcontracting
+            and not provider.subcontracting_chain_known,
             "assessment_score": "low" if len(services) < 3 else "medium",
         }
 
@@ -1712,8 +1762,7 @@ class DORAThirdPartyRiskManagement:
             "audit_rights": provider.audit_rights_granted,
             "last_audit": provider.last_audit_date,
             "data_sensitivity": any(
-                s.data_classification in ["confidential", "restricted"]
-                for s in services
+                s.data_classification in ["confidential", "restricted"] for s in services
             ),
             "security_certifications_requested": True,
             "assessment_score": "low" if provider.audit_rights_granted else "medium",
@@ -1726,12 +1775,17 @@ class DORAThirdPartyRiskManagement:
         """Assess compliance risk for a provider."""
         return {
             "is_eu_provider": provider.is_eu_provider,
-            "data_locations_eu_compliant": all(
-                c in self._get_eu_countries() or c in ["US", "UK", "CH"]  # Adequacy
-                for c in provider.data_processing_countries
-            ) if provider.data_processing_countries else None,
+            "data_locations_eu_compliant": (
+                all(
+                    c in self._get_eu_countries() or c in ["US", "UK", "CH"]  # Adequacy
+                    for c in provider.data_processing_countries
+                )
+                if provider.data_processing_countries
+                else None
+            ),
             "is_designated_ctpp": provider.is_designated_ctpp,
-            "regulatory_requirements_met": provider.due_diligence_status == DueDiligenceStatus.COMPLETED,
+            "regulatory_requirements_met": provider.due_diligence_status
+            == DueDiligenceStatus.COMPLETED,
             "assessment_score": "low" if provider.is_eu_provider else "medium",
         }
 
@@ -1741,7 +1795,8 @@ class DORAThirdPartyRiskManagement:
     ) -> Dict[str, Any]:
         """Assess financial risk for a provider."""
         return {
-            "financial_stability_verified": provider.due_diligence_status == DueDiligenceStatus.COMPLETED,
+            "financial_stability_verified": provider.due_diligence_status
+            == DueDiligenceStatus.COMPLETED,
             "assessment_score": "low",
         }
 
@@ -1763,10 +1818,11 @@ class DORAThirdPartyRiskManagement:
                 "substitutability": provider.substitutability.value,
                 "alternatives_count": len(provider.alternative_providers),
                 "concentration_concern": (
-                    len(critical_functions) > 1 and
-                    provider.substitutability in [
+                    len(critical_functions) > 1
+                    and provider.substitutability
+                    in [
                         SubstitutabilityLevel.DIFFICULT_TO_SUBSTITUTE,
-                        SubstitutabilityLevel.NOT_SUBSTITUTABLE
+                        SubstitutabilityLevel.NOT_SUBSTITUTABLE,
                     ]
                 ),
                 "assessment_score": "high" if len(critical_functions) > 2 else "medium",
@@ -1842,9 +1898,33 @@ class DORAThirdPartyRiskManagement:
     def _get_eu_countries(self) -> Set[str]:
         """Get set of EU country codes."""
         return {
-            "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-            "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
-            "PL", "PT", "RO", "SK", "SI", "ES", "SE"
+            "AT",
+            "BE",
+            "BG",
+            "HR",
+            "CY",
+            "CZ",
+            "DK",
+            "EE",
+            "FI",
+            "FR",
+            "DE",
+            "GR",
+            "HU",
+            "IE",
+            "IT",
+            "LV",
+            "LT",
+            "LU",
+            "MT",
+            "NL",
+            "PL",
+            "PT",
+            "RO",
+            "SK",
+            "SI",
+            "ES",
+            "SE",
         }
 
     def _risk_level_increased(
@@ -1904,6 +1984,7 @@ class DORAThirdPartyRiskManagement:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_third_party_risk_management(
     config: Optional[ThirdPartyRiskConfig] = None,

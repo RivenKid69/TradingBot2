@@ -64,11 +64,21 @@ class TestRedactionMiddlewareBasic:
 class TestSecretRedaction:
     """Secret field redaction tests."""
 
-    @pytest.mark.parametrize("field_name", [
-        "api_key", "api_secret", "password", "token",
-        "access_token", "refresh_token", "secret_key",
-        "private_key", "credentials", "broker_key",
-    ])
+    @pytest.mark.parametrize(
+        "field_name",
+        [
+            "api_key",
+            "api_secret",
+            "password",
+            "token",
+            "access_token",
+            "refresh_token",
+            "secret_key",
+            "private_key",
+            "credentials",
+            "broker_key",
+        ],
+    )
     def test_secret_fields_redacted(self, field_name):
         """Test that secret fields are fully redacted."""
         middleware = TelemetryRedactionMiddleware()
@@ -112,10 +122,17 @@ class TestSecretRedaction:
 class TestAccountRedaction:
     """Account identifier redaction tests."""
 
-    @pytest.mark.parametrize("field_name", [
-        "account_number", "account_id", "ssn",
-        "tax_id", "routing_number", "card_number",
-    ])
+    @pytest.mark.parametrize(
+        "field_name",
+        [
+            "account_number",
+            "account_id",
+            "ssn",
+            "tax_id",
+            "routing_number",
+            "card_number",
+        ],
+    )
     def test_account_fields_masked(self, field_name):
         """Test that account fields are partially masked."""
         middleware = TelemetryRedactionMiddleware()
@@ -123,7 +140,10 @@ class TestAccountRedaction:
         result = middleware.redact(data)
 
         # Should be partially masked (starts with first chars, ends with last chars)
-        assert MASKED_PLACEHOLDER in result.data[field_name] or result.data[field_name] == REDACTED_PLACEHOLDER
+        assert (
+            MASKED_PLACEHOLDER in result.data[field_name]
+            or result.data[field_name] == REDACTED_PLACEHOLDER
+        )
 
     def test_short_account_fully_redacted(self):
         """Test short account values are fully redacted."""
@@ -137,10 +157,18 @@ class TestAccountRedaction:
 class TestPIIRedaction:
     """PII field redaction tests."""
 
-    @pytest.mark.parametrize("field_name", [
-        "email", "phone", "phone_number", "address",
-        "first_name", "last_name", "ip_address",
-    ])
+    @pytest.mark.parametrize(
+        "field_name",
+        [
+            "email",
+            "phone",
+            "phone_number",
+            "address",
+            "first_name",
+            "last_name",
+            "ip_address",
+        ],
+    )
     def test_pii_fields_masked(self, field_name):
         """Test that PII fields are masked."""
         middleware = TelemetryRedactionMiddleware()
@@ -148,7 +176,10 @@ class TestPIIRedaction:
         result = middleware.redact(data)
 
         # Should be masked or redacted
-        assert MASKED_PLACEHOLDER in result.data[field_name] or result.data[field_name] == REDACTED_PLACEHOLDER
+        assert (
+            MASKED_PLACEHOLDER in result.data[field_name]
+            or result.data[field_name] == REDACTED_PLACEHOLDER
+        )
 
 
 class TestValuePatternRedaction:
@@ -319,7 +350,9 @@ class TestMaxDepth:
         middleware = TelemetryRedactionMiddleware(config)
 
         # Create deeply nested structure
-        data = {"level0": {"level1": {"level2": {"level3": {"level4": {"level5": {"level6": "deep"}}}}}}}
+        data = {
+            "level0": {"level1": {"level2": {"level3": {"level4": {"level5": {"level6": "deep"}}}}}}
+        }
         result = middleware.redact(data)
 
         # Should not crash, deep values get redacted

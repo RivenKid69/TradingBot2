@@ -13,6 +13,7 @@ Tests focus on:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import math
@@ -43,9 +44,9 @@ class TestMathematicalCorrectness:
         Issue: The code computes mean from abs(gradients) but variance from
         raw gradients, which is mathematically inconsistent.
         """
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Variance-Mean Consistency")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
         model = SimpleModel()
@@ -72,13 +73,13 @@ class TestMathematicalCorrectness:
         manual_mean_abs = all_grads_tensor.abs().mean().item()
         print(f"Computed mean (from abs): {stats['grad_mean']:.8f}")
         print(f"Manual mean (from abs):   {manual_mean_abs:.8f}")
-        assert abs(stats['grad_mean'] - manual_mean_abs) < 1e-6
+        assert abs(stats["grad_mean"] - manual_mean_abs) < 1e-6
 
         # Check: variance is ALSO computed from abs values for consistency (FIXED)
         manual_var_abs = all_grads_tensor.abs().var().item()
         print(f"Computed variance (abs):  {stats['grad_var']:.8f}")
         print(f"Manual variance (abs):    {manual_var_abs:.8f}")
-        assert abs(stats['grad_var'] - manual_var_abs) < 1e-6
+        assert abs(stats["grad_var"] - manual_var_abs) < 1e-6
 
         # FIXED: Now mathematically consistent!
         # normalized_var = Var[|g|] / (E[|g|]^2 + eps)
@@ -89,9 +90,9 @@ class TestMathematicalCorrectness:
 
     def test_bias_correction_formula(self):
         """Test that bias correction is applied correctly."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Bias Correction Formula")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
         model = SimpleModel()
@@ -131,9 +132,9 @@ class TestMathematicalCorrectness:
 
     def test_normalized_variance_bounds(self):
         """Test that normalized variance stays within reasonable bounds."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Normalized Variance Bounds")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
         model = SimpleModel()
@@ -171,9 +172,9 @@ class TestMathematicalCorrectness:
 
     def test_scaling_factor_bounds(self):
         """Test that scaling factor is always in (0, 1]."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Scaling Factor Bounds")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
         model = SimpleModel()
@@ -196,8 +197,9 @@ class TestMathematicalCorrectness:
             print(f"Step {step}: scaling_factor = {scaling_factor:.6f}")
 
             # Verify bounds
-            assert 0.0 < scaling_factor <= 1.0, \
-                f"Scaling factor must be in (0, 1], got {scaling_factor}"
+            assert (
+                0.0 < scaling_factor <= 1.0
+            ), f"Scaling factor must be in (0, 1], got {scaling_factor}"
             assert math.isfinite(scaling_factor), "Scaling factor must be finite"
 
             scaler.update_statistics()
@@ -211,9 +213,9 @@ class TestNumericalStability:
 
     def test_zero_gradients(self):
         """Test behavior with zero gradients."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Zero Gradients")
-        print("="*70)
+        print("=" * 70)
 
         model = SimpleModel()
         scaler = VarianceGradientScaler(model.parameters())
@@ -239,9 +241,9 @@ class TestNumericalStability:
 
     def test_nan_gradients(self):
         """Test behavior with NaN gradients."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: NaN Gradients")
-        print("="*70)
+        print("=" * 70)
 
         model = SimpleModel()
         scaler = VarianceGradientScaler(model.parameters())
@@ -249,7 +251,7 @@ class TestNumericalStability:
         # Set some gradients to NaN
         for i, param in enumerate(model.parameters()):
             if i == 0:
-                param.grad = torch.full_like(param, float('nan'))
+                param.grad = torch.full_like(param, float("nan"))
             else:
                 param.grad = torch.randn_like(param)
 
@@ -264,9 +266,9 @@ class TestNumericalStability:
 
     def test_inf_gradients(self):
         """Test behavior with infinite gradients."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Infinite Gradients")
-        print("="*70)
+        print("=" * 70)
 
         model = SimpleModel()
         scaler = VarianceGradientScaler(model.parameters())
@@ -274,7 +276,7 @@ class TestNumericalStability:
         # Set some gradients to inf
         for i, param in enumerate(model.parameters()):
             if i == 0:
-                param.grad = torch.full_like(param, float('inf'))
+                param.grad = torch.full_like(param, float("inf"))
             else:
                 param.grad = torch.randn_like(param) * 0.01
 
@@ -289,9 +291,9 @@ class TestNumericalStability:
 
     def test_very_small_eps(self):
         """Test with very small epsilon for numerical stability."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Very Small Epsilon")
-        print("="*70)
+        print("=" * 70)
 
         torch.manual_seed(42)
         model = SimpleModel()
@@ -317,8 +319,7 @@ class TestNumericalStability:
                 normalized_var = scaler.get_normalized_variance()
                 scaling_factor = scaler.get_scaling_factor()
 
-                print(f"eps={eps:e}: norm_var={normalized_var:.6e}, "
-                      f"scale={scaling_factor:.6f}")
+                print(f"eps={eps:e}: norm_var={normalized_var:.6e}, " f"scale={scaling_factor:.6f}")
 
                 if eps == 0.0:
                     print("  ⚠ WARNING: eps=0 may cause division by zero")
@@ -330,9 +331,9 @@ class TestNumericalStability:
 
     def test_extreme_variance(self):
         """Test with artificially extreme variance."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Extreme Variance")
-        print("="*70)
+        print("=" * 70)
 
         model = SimpleModel()
         scaler = VarianceGradientScaler(model.parameters(), alpha=0.1)
@@ -368,9 +369,9 @@ class TestEdgeCases:
 
     def test_single_parameter(self):
         """Test with model having only one parameter."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Single Parameter")
-        print("="*70)
+        print("=" * 70)
 
         # Create simple model with one parameter
         model = nn.Linear(5, 1, bias=False)
@@ -391,9 +392,9 @@ class TestEdgeCases:
 
     def test_no_parameters(self):
         """Test with no parameters."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: No Parameters")
-        print("="*70)
+        print("=" * 70)
 
         scaler = VarianceGradientScaler(None)
 
@@ -410,9 +411,9 @@ class TestEdgeCases:
 
     def test_some_parameters_without_gradients(self):
         """Test when some parameters don't have gradients."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Mixed Gradient Availability")
-        print("="*70)
+        print("=" * 70)
 
         model = SimpleModel()
         scaler = VarianceGradientScaler(model.parameters())
@@ -437,9 +438,9 @@ class TestEdgeCases:
 
     def test_update_parameters_mid_training(self):
         """Test updating parameter list during training."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Update Parameters Mid-Training")
-        print("="*70)
+        print("=" * 70)
 
         model1 = SimpleModel()
         model2 = SimpleModel()
@@ -488,9 +489,9 @@ class TestPerformance:
 
     def test_memory_efficiency(self):
         """Test that scaler doesn't accumulate unbounded memory."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Memory Efficiency")
-        print("="*70)
+        print("=" * 70)
 
         model = SimpleModel()
         scaler = VarianceGradientScaler(model.parameters())
@@ -524,9 +525,9 @@ class TestPerformance:
 
     def test_computational_overhead(self):
         """Test computational overhead of VGS."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("TEST: Computational Overhead")
-        print("="*70)
+        print("=" * 70)
 
         import time
 
@@ -580,9 +581,9 @@ class TestPerformance:
 
 def run_all_tests():
     """Run all deep validation tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("DEEP VALIDATION TESTS FOR VARIANCE GRADIENT SCALER")
-    print("="*70)
+    print("=" * 70)
 
     test_classes = [
         TestMathematicalCorrectness,
@@ -601,7 +602,7 @@ def run_all_tests():
         print(f"{'='*70}")
 
         instance = test_class()
-        test_methods = [m for m in dir(instance) if m.startswith('test_')]
+        test_methods = [m for m in dir(instance) if m.startswith("test_")]
 
         for method_name in test_methods:
             total_tests += 1
@@ -614,12 +615,13 @@ def run_all_tests():
                 print(f"\n✗ FAILED: {method_name}")
                 print(f"  Error: {e}")
                 import traceback
+
                 traceback.print_exc()
 
     # Summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST SUMMARY")
-    print("="*70)
+    print("=" * 70)
     print(f"Total tests: {total_tests}")
     print(f"Passed: {passed_tests}")
     print(f"Failed: {len(failed_tests)}")
@@ -630,13 +632,14 @@ def run_all_tests():
             print(f"  - {class_name}.{method_name}: {error}")
         return False
     else:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("ALL DEEP VALIDATION TESTS PASSED! ✓")
-        print("="*70)
+        print("=" * 70)
         return True
 
 
 if __name__ == "__main__":
     import sys
+
     success = run_all_tests()
     sys.exit(0 if success else 1)

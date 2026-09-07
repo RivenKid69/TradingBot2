@@ -28,8 +28,10 @@ from uuid import uuid4
 # Enums and Constants
 # =============================================================================
 
+
 class EncryptionAlgorithm(str, Enum):
     """Supported encryption algorithms."""
+
     AES_256_GCM = "aes_256_gcm"
     AES_256_CBC = "aes_256_cbc"
     CHACHA20_POLY1305 = "chacha20_poly1305"
@@ -37,6 +39,7 @@ class EncryptionAlgorithm(str, Enum):
 
 class KeyDerivation(str, Enum):
     """Key derivation functions."""
+
     PBKDF2 = "pbkdf2"
     ARGON2ID = "argon2id"
     SCRYPT = "scrypt"
@@ -44,6 +47,7 @@ class KeyDerivation(str, Enum):
 
 class KeyType(str, Enum):
     """Types of cryptographic keys."""
+
     MASTER_KEY = "master_key"
     DATA_ENCRYPTION_KEY = "data_encryption_key"
     SIGNING_KEY = "signing_key"
@@ -53,6 +57,7 @@ class KeyType(str, Enum):
 
 class KeyStatus(str, Enum):
     """Key lifecycle status."""
+
     ACTIVE = "active"
     ROTATION_PENDING = "rotation_pending"
     DEPRECATED = "deprecated"
@@ -62,6 +67,7 @@ class KeyStatus(str, Enum):
 
 class KeyManagementPolicy(str, Enum):
     """Key management policies."""
+
     PLATFORM_MANAGED = "platform_managed"
     CUSTOMER_MANAGED = "customer_managed"
     HSM_BACKED = "hsm_backed"
@@ -69,6 +75,7 @@ class KeyManagementPolicy(str, Enum):
 
 class MFAMethod(str, Enum):
     """Multi-factor authentication methods."""
+
     TOTP = "totp"
     WEBAUTHN = "webauthn"
     SMS = "sms"  # Deprecated but supported for legacy
@@ -78,6 +85,7 @@ class MFAMethod(str, Enum):
 
 class MFARequirement(str, Enum):
     """MFA enforcement levels."""
+
     DISABLED = "disabled"
     OPTIONAL = "optional"
     REQUIRED_SENSITIVE = "required_sensitive"
@@ -86,6 +94,7 @@ class MFARequirement(str, Enum):
 
 class SecretType(str, Enum):
     """Types of secrets."""
+
     API_KEY = "api_key"
     DATABASE_CREDENTIAL = "database_credential"
     SERVICE_ACCOUNT = "service_account"
@@ -97,6 +106,7 @@ class SecretType(str, Enum):
 
 class SecretStatus(str, Enum):
     """Secret lifecycle status."""
+
     ACTIVE = "active"
     EXPIRING_SOON = "expiring_soon"
     EXPIRED = "expired"
@@ -106,6 +116,7 @@ class SecretStatus(str, Enum):
 
 class StorageBackend(str, Enum):
     """Secret storage backends."""
+
     VAULT = "vault"
     AWS_SECRETS_MANAGER = "aws_secrets_manager"
     GCP_SECRET_MANAGER = "gcp_secret_manager"
@@ -115,6 +126,7 @@ class StorageBackend(str, Enum):
 
 class SecurityEventType(str, Enum):
     """Types of security events."""
+
     KEY_CREATED = "key_created"
     KEY_ROTATED = "key_rotated"
     KEY_REVOKED = "key_revoked"
@@ -136,6 +148,7 @@ class SecurityEventType(str, Enum):
 
 class ComplianceStatus(str, Enum):
     """Compliance check status."""
+
     COMPLIANT = "compliant"
     NON_COMPLIANT = "non_compliant"
     REQUIRES_ATTENTION = "requires_attention"
@@ -162,9 +175,11 @@ MFA_LOCKOUT_MINUTES = 15
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class EncryptionConfig:
     """Encryption configuration."""
+
     algorithm: EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM
     key_derivation: KeyDerivation = KeyDerivation.ARGON2ID
     key_rotation_days: int = DEFAULT_KEY_ROTATION_DAYS
@@ -194,6 +209,7 @@ class EncryptionConfig:
 @dataclass
 class KeyMetadata:
     """Cryptographic key metadata (never stores actual key material)."""
+
     key_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     key_type: KeyType = KeyType.DATA_ENCRYPTION_KEY
@@ -243,6 +259,7 @@ class KeyMetadata:
 @dataclass
 class KeyRotationEvent:
     """Key rotation event record."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     key_id: str = ""
     old_version: int = 0
@@ -260,14 +277,17 @@ class KeyRotationEvent:
             self.evidence_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "key_id": self.key_id,
-            "old_version": self.old_version,
-            "new_version": self.new_version,
-            "rotated_at": self.rotated_at.isoformat(),
-            "rotated_by": self.rotated_by,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "key_id": self.key_id,
+                "old_version": self.old_version,
+                "new_version": self.new_version,
+                "rotated_at": self.rotated_at.isoformat(),
+                "rotated_by": self.rotated_by,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -289,6 +309,7 @@ class KeyRotationEvent:
 @dataclass
 class MFAConfig:
     """MFA configuration for a user/workspace."""
+
     config_id: str = field(default_factory=lambda: str(uuid4()))
     user_id: str = ""
     workspace_id: str = ""
@@ -338,7 +359,9 @@ class MFAConfig:
             "elevated_timeout_hours": self.elevated_timeout_hours,
             "max_attempts": self.max_attempts,
             "lockout_minutes": self.lockout_minutes,
-            "last_verified_at": self.last_verified_at.isoformat() if self.last_verified_at else None,
+            "last_verified_at": (
+                self.last_verified_at.isoformat() if self.last_verified_at else None
+            ),
             "failed_attempts": self.failed_attempts,
             "locked_until": self.locked_until.isoformat() if self.locked_until else None,
             "recovery_codes_generated": self.recovery_codes_generated,
@@ -348,6 +371,7 @@ class MFAConfig:
 @dataclass
 class MFAChallengeResult:
     """Result of an MFA challenge."""
+
     success: bool = False
     user_id: str = ""
     method: MFAMethod = MFAMethod.TOTP
@@ -360,6 +384,7 @@ class MFAChallengeResult:
 @dataclass
 class SecretPolicy:
     """Secret management policy."""
+
     policy_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     min_length: int = MIN_SECRET_LENGTH
@@ -418,6 +443,7 @@ class SecretPolicy:
 @dataclass
 class SecretMetadata:
     """Secret metadata (never stores actual secret value)."""
+
     secret_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     name: str = ""
@@ -465,7 +491,9 @@ class SecretMetadata:
             "last_rotated_at": self.last_rotated_at.isoformat() if self.last_rotated_at else None,
             "rotation_due_at": self.rotation_due_at.isoformat() if self.rotation_due_at else None,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
-            "last_accessed_at": self.last_accessed_at.isoformat() if self.last_accessed_at else None,
+            "last_accessed_at": (
+                self.last_accessed_at.isoformat() if self.last_accessed_at else None
+            ),
             "access_count": self.access_count,
             "version": self.version,
             "description": self.description,
@@ -476,6 +504,7 @@ class SecretMetadata:
 @dataclass
 class SecurityEvent:
     """Security event for audit trail."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     event_type: SecurityEventType = SecurityEventType.KEY_ACCESSED
@@ -496,16 +525,19 @@ class SecurityEvent:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "workspace_id": self.workspace_id,
-            "event_type": self.event_type.value,
-            "timestamp": self.timestamp.isoformat(),
-            "actor_id": self.actor_id,
-            "resource_id": self.resource_id,
-            "action": self.action,
-            "result": self.result,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "workspace_id": self.workspace_id,
+                "event_type": self.event_type.value,
+                "timestamp": self.timestamp.isoformat(),
+                "actor_id": self.actor_id,
+                "resource_id": self.resource_id,
+                "action": self.action,
+                "result": self.result,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -530,6 +562,7 @@ class SecurityEvent:
 @dataclass
 class ComplianceCheckResult:
     """Result of a security compliance check."""
+
     check_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     check_name: str = ""
@@ -557,6 +590,7 @@ class ComplianceCheckResult:
 @dataclass
 class SecurityBaselineStatus:
     """Overall security baseline status."""
+
     workspace_id: str = ""
     evaluated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     overall_status: ComplianceStatus = ComplianceStatus.NOT_EVALUATED
@@ -590,6 +624,7 @@ class SecurityBaselineStatus:
 # =============================================================================
 # Security Baseline Service
 # =============================================================================
+
 
 class SecurityBaselineService:
     """
@@ -705,11 +740,19 @@ class SecurityBaselineService:
 
         # Check key rotation
         if config.key_rotation_days > 90:
-            findings.append(f"Key rotation interval ({config.key_rotation_days} days) exceeds 90 days")
+            findings.append(
+                f"Key rotation interval ({config.key_rotation_days} days) exceeds 90 days"
+            )
             recommendations.append("Reduce key rotation interval to 90 days or less")
 
-        status = ComplianceStatus.COMPLIANT if not findings else (
-            ComplianceStatus.REQUIRES_ATTENTION if len(findings) <= 2 else ComplianceStatus.NON_COMPLIANT
+        status = (
+            ComplianceStatus.COMPLIANT
+            if not findings
+            else (
+                ComplianceStatus.REQUIRES_ATTENTION
+                if len(findings) <= 2
+                else ComplianceStatus.NON_COMPLIANT
+            )
         )
 
         result = ComplianceCheckResult(
@@ -840,7 +883,9 @@ class SecurityBaselineService:
 
             # Update key
             key.last_rotated_at = datetime.now(timezone.utc)
-            key.rotation_due_at = datetime.now(timezone.utc) + timedelta(days=config.key_rotation_days)
+            key.rotation_due_at = datetime.now(timezone.utc) + timedelta(
+                days=config.key_rotation_days
+            )
             key.key_fingerprint = new_fingerprint
             key.version += 1
 
@@ -922,7 +967,9 @@ class SecurityBaselineService:
             recommendations.append("Rotate overdue keys immediately")
 
         # Check for HSM backing
-        platform_managed = [k for k in keys if k.management_policy == KeyManagementPolicy.PLATFORM_MANAGED]
+        platform_managed = [
+            k for k in keys if k.management_policy == KeyManagementPolicy.PLATFORM_MANAGED
+        ]
         master_keys = [k for k in platform_managed if k.key_type == KeyType.MASTER_KEY]
         if master_keys:
             findings.append(f"{len(master_keys)} master key(s) not HSM-backed")
@@ -934,8 +981,14 @@ class SecurityBaselineService:
             findings.append(f"{len(deprecated)} deprecated key(s) still exist")
             recommendations.append("Remove or archive deprecated keys")
 
-        status = ComplianceStatus.COMPLIANT if not findings else (
-            ComplianceStatus.REQUIRES_ATTENTION if len(rotation_due) == 0 else ComplianceStatus.NON_COMPLIANT
+        status = (
+            ComplianceStatus.COMPLIANT
+            if not findings
+            else (
+                ComplianceStatus.REQUIRES_ATTENTION
+                if len(rotation_due) == 0
+                else ComplianceStatus.NON_COMPLIANT
+            )
         )
 
         result = ComplianceCheckResult(
@@ -949,7 +1002,9 @@ class SecurityBaselineService:
                 "total_keys": len(keys),
                 "rotation_due": len(rotation_due),
                 "deprecated": len(deprecated),
-                "hsm_backed": len([k for k in keys if k.management_policy == KeyManagementPolicy.HSM_BACKED]),
+                "hsm_backed": len(
+                    [k for k in keys if k.management_policy == KeyManagementPolicy.HSM_BACKED]
+                ),
             },
         )
 
@@ -989,7 +1044,11 @@ class SecurityBaselineService:
             self._mfa_configs[user_id] = config
 
         # Log event
-        event_type = SecurityEventType.MFA_ENABLED if config.requirement != MFARequirement.DISABLED else SecurityEventType.MFA_DISABLED
+        event_type = (
+            SecurityEventType.MFA_ENABLED
+            if config.requirement != MFARequirement.DISABLED
+            else SecurityEventType.MFA_DISABLED
+        )
         event = SecurityEvent(
             workspace_id=workspace_id,
             event_type=event_type,
@@ -1092,7 +1151,9 @@ class SecurityBaselineService:
             else:
                 config.failed_attempts += 1
                 if config.failed_attempts >= config.max_attempts:
-                    config.locked_until = datetime.now(timezone.utc) + timedelta(minutes=config.lockout_minutes)
+                    config.locked_until = datetime.now(timezone.utc) + timedelta(
+                        minutes=config.lockout_minutes
+                    )
 
                 result = MFAChallengeResult(
                     success=False,
@@ -1142,7 +1203,9 @@ class SecurityBaselineService:
 
         return config.needs_verification(for_sensitive)
 
-    def validate_mfa_compliance(self, workspace_id: str, user_ids: List[str]) -> ComplianceCheckResult:
+    def validate_mfa_compliance(
+        self, workspace_id: str, user_ids: List[str]
+    ) -> ComplianceCheckResult:
         """Validate MFA compliance for users in a workspace."""
         findings = []
         recommendations = []
@@ -1155,7 +1218,10 @@ class SecurityBaselineService:
             config = self.get_mfa_config(user_id)
             if config and config.requirement != MFARequirement.DISABLED:
                 users_with_mfa += 1
-                if MFAMethod.WEBAUTHN in config.enabled_methods or MFAMethod.HARDWARE_TOKEN in config.enabled_methods:
+                if (
+                    MFAMethod.WEBAUTHN in config.enabled_methods
+                    or MFAMethod.HARDWARE_TOKEN in config.enabled_methods
+                ):
                     users_with_strong_mfa += 1
                 if config.enabled_methods == {MFAMethod.SMS}:
                     users_with_sms_only += 1
@@ -1164,7 +1230,9 @@ class SecurityBaselineService:
         coverage = (users_with_mfa / total_users * 100) if total_users > 0 else 0
 
         if coverage < 100:
-            findings.append(f"MFA coverage is {coverage:.1f}% ({users_with_mfa}/{total_users} users)")
+            findings.append(
+                f"MFA coverage is {coverage:.1f}% ({users_with_mfa}/{total_users} users)"
+            )
             recommendations.append("Enable MFA for all users")
 
         if users_with_sms_only > 0:
@@ -1175,8 +1243,14 @@ class SecurityBaselineService:
             findings.append("Less than 50% of users have phishing-resistant MFA")
             recommendations.append("Encourage adoption of WebAuthn or hardware tokens")
 
-        status = ComplianceStatus.COMPLIANT if coverage == 100 and users_with_sms_only == 0 else (
-            ComplianceStatus.REQUIRES_ATTENTION if coverage >= 80 else ComplianceStatus.NON_COMPLIANT
+        status = (
+            ComplianceStatus.COMPLIANT
+            if coverage == 100 and users_with_sms_only == 0
+            else (
+                ComplianceStatus.REQUIRES_ATTENTION
+                if coverage >= 80
+                else ComplianceStatus.NON_COMPLIANT
+            )
         )
 
         result = ComplianceCheckResult(
@@ -1356,7 +1430,9 @@ class SecurityBaselineService:
             policy = self.get_secret_policy(secret.workspace_id)
 
             secret.last_rotated_at = datetime.now(timezone.utc)
-            secret.rotation_due_at = datetime.now(timezone.utc) + timedelta(days=policy.rotation_days)
+            secret.rotation_due_at = datetime.now(timezone.utc) + timedelta(
+                days=policy.rotation_days
+            )
             secret.status = SecretStatus.ACTIVE
             secret.version += 1
 
@@ -1405,7 +1481,9 @@ class SecurityBaselineService:
 
         return secret
 
-    def get_secrets_needing_rotation(self, workspace_id: Optional[str] = None) -> List[SecretMetadata]:
+    def get_secrets_needing_rotation(
+        self, workspace_id: Optional[str] = None
+    ) -> List[SecretMetadata]:
         """Get secrets that are due for rotation."""
         secrets = self.list_secrets(workspace_id=workspace_id, status=SecretStatus.ACTIVE)
         return [s for s in secrets if s.is_rotation_due()]
@@ -1427,15 +1505,23 @@ class SecurityBaselineService:
         recommendations = []
 
         # Check for secrets needing rotation
-        rotation_due = [s for s in secrets if s.is_rotation_due() and s.status == SecretStatus.ACTIVE]
+        rotation_due = [
+            s for s in secrets if s.is_rotation_due() and s.status == SecretStatus.ACTIVE
+        ]
         if rotation_due:
             findings.append(f"{len(rotation_due)} secret(s) are overdue for rotation")
             recommendations.append("Rotate overdue secrets immediately")
 
         # Check for expiring secrets
-        expiring = [s for s in secrets if s.is_expiring_soon(policy.expiry_warning_days) and s.status == SecretStatus.ACTIVE]
+        expiring = [
+            s
+            for s in secrets
+            if s.is_expiring_soon(policy.expiry_warning_days) and s.status == SecretStatus.ACTIVE
+        ]
         if expiring:
-            findings.append(f"{len(expiring)} secret(s) expiring within {policy.expiry_warning_days} days")
+            findings.append(
+                f"{len(expiring)} secret(s) expiring within {policy.expiry_warning_days} days"
+            )
             recommendations.append("Renew or rotate expiring secrets")
 
         # Check for revoked secrets
@@ -1444,8 +1530,14 @@ class SecurityBaselineService:
             findings.append(f"{len(revoked)} revoked secret(s) still in inventory")
             recommendations.append("Remove revoked secrets from inventory")
 
-        status = ComplianceStatus.COMPLIANT if not findings else (
-            ComplianceStatus.REQUIRES_ATTENTION if len(rotation_due) == 0 else ComplianceStatus.NON_COMPLIANT
+        status = (
+            ComplianceStatus.COMPLIANT
+            if not findings
+            else (
+                ComplianceStatus.REQUIRES_ATTENTION
+                if len(rotation_due) == 0
+                else ComplianceStatus.NON_COMPLIANT
+            )
         )
 
         result = ComplianceCheckResult(
@@ -1645,10 +1737,14 @@ class SecurityBaselineService:
 
         if include_keys:
             export_data["keys"] = [k.to_dict() for k in self.list_keys(workspace_id=workspace_id)]
-            export_data["key_rotations"] = [r.to_dict() for r in self.get_key_rotations(workspace_id=workspace_id)]
+            export_data["key_rotations"] = [
+                r.to_dict() for r in self.get_key_rotations(workspace_id=workspace_id)
+            ]
 
         if include_secrets:
-            export_data["secrets"] = [s.to_dict() for s in self.list_secrets(workspace_id=workspace_id)]
+            export_data["secrets"] = [
+                s.to_dict() for s in self.list_secrets(workspace_id=workspace_id)
+            ]
 
         if include_events:
             events = self.get_security_events(workspace_id=workspace_id, limit=10000)
@@ -1661,6 +1757,8 @@ class SecurityBaselineService:
 
         # Compute export hash
         export_content = json.dumps(export_data, sort_keys=True, default=str)
-        export_data["integrity_hash"] = f"sha256:{hashlib.sha256(export_content.encode()).hexdigest()}"
+        export_data["integrity_hash"] = (
+            f"sha256:{hashlib.sha256(export_content.encode()).hexdigest()}"
+        )
 
         return export_data

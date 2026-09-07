@@ -64,6 +64,7 @@ def _now_ms() -> int:
 # Conformal Prediction Service
 # =============================================================================
 
+
 class ConformalPredictionService:
     """
     Main service for conformal prediction integration.
@@ -113,8 +114,7 @@ class ConformalPredictionService:
         # Initialize components
         self._calibrator = create_calibrator(config)
         self._cvar_estimator = create_cvar_estimator(
-            config,
-            self._calibrator if isinstance(self._calibrator, CQRCalibrator) else None
+            config, self._calibrator if isinstance(self._calibrator, CQRCalibrator) else None
         )
         self._uncertainty_tracker = create_uncertainty_tracker(config)
 
@@ -128,7 +128,9 @@ class ConformalPredictionService:
         self._lock = threading.RLock()  # Reentrant lock for nested calibrate() calls
 
         # Callbacks for escalation
-        self._escalation_callbacks: Dict[EscalationLevel, List[Callable[[UncertaintyState], None]]] = {
+        self._escalation_callbacks: Dict[
+            EscalationLevel, List[Callable[[UncertaintyState], None]]
+        ] = {
             EscalationLevel.NORMAL: [],
             EscalationLevel.WARNING: [],
             EscalationLevel.CRITICAL: [],
@@ -217,27 +219,41 @@ class ConformalPredictionService:
             num_q = len(quantiles)
             if num_q == 0:
                 return CVaRBounds(
-                    cvar_point=0.0, cvar_lower=0.0, cvar_upper=0.0,
-                    var_point=0.0, var_lower=0.0, var_upper=0.0,
+                    cvar_point=0.0,
+                    cvar_lower=0.0,
+                    cvar_upper=0.0,
+                    var_point=0.0,
+                    var_lower=0.0,
+                    var_upper=0.0,
                     alpha=alpha,
                     interval=PredictionInterval(
-                        point_estimate=0.0, lower_bound=0.0, upper_bound=0.0,
-                        coverage_target=0.0, method=ConformalMethod.NAIVE
+                        point_estimate=0.0,
+                        lower_bound=0.0,
+                        upper_bound=0.0,
+                        coverage_target=0.0,
+                        method=ConformalMethod.NAIVE,
                     ),
                 )
 
             var_idx = int(alpha * num_q)
             var_idx = min(var_idx, num_q - 1)
-            cvar = float(np.mean(quantiles[:max(1, var_idx)]))
+            cvar = float(np.mean(quantiles[: max(1, var_idx)]))
             var = float(quantiles[var_idx])
 
             return CVaRBounds(
-                cvar_point=cvar, cvar_lower=cvar, cvar_upper=cvar,
-                var_point=var, var_lower=var, var_upper=var,
+                cvar_point=cvar,
+                cvar_lower=cvar,
+                cvar_upper=cvar,
+                var_point=var,
+                var_lower=var,
+                var_upper=var,
                 alpha=alpha,
                 interval=PredictionInterval(
-                    point_estimate=cvar, lower_bound=cvar, upper_bound=cvar,
-                    coverage_target=0.0, method=ConformalMethod.NAIVE
+                    point_estimate=cvar,
+                    lower_bound=cvar,
+                    upper_bound=cvar,
+                    coverage_target=0.0,
+                    method=ConformalMethod.NAIVE,
                 ),
             )
 
@@ -329,8 +345,10 @@ class ConformalPredictionService:
                     self._calibrator.partial_fit(prediction, true_value, ts)
 
             # Check if recalibration needed (for CQR)
-            if (self.config.recalibrate_interval > 0 and
-                self._steps_since_calibration >= self.config.recalibrate_interval):
+            if (
+                self.config.recalibrate_interval > 0
+                and self._steps_since_calibration >= self.config.recalibrate_interval
+            ):
                 self._maybe_recalibrate()
 
     def calibrate(
@@ -523,6 +541,7 @@ class ConformalPredictionService:
 # Integration Helpers
 # =============================================================================
 
+
 def create_conformal_service(config_dict: Dict[str, Any]) -> ConformalPredictionService:
     """
     Create conformal service from config dictionary.
@@ -607,6 +626,7 @@ def create_risk_guard_integration(
     Returns:
         Function returning uncertainty-adjusted position scale
     """
+
     def get_scaled_position() -> float:
         base = base_position_scale()
 
@@ -647,6 +667,7 @@ def create_escalation_handler(
     Returns:
         Dict mapping escalation levels to callbacks
     """
+
     def default_warning_handler(state: UncertaintyState) -> None:
         logger.warning(
             f"Uncertainty WARNING: width={state.current_interval_width:.4f}, "
@@ -679,6 +700,7 @@ def create_escalation_handler(
 # =============================================================================
 # Training Integration
 # =============================================================================
+
 
 class TrainingConformalIntegration:
     """
@@ -727,8 +749,7 @@ class TrainingConformalIntegration:
         self._epoch_count += 1
         result = None
 
-        if (self.calibration_frequency > 0 and
-            self._epoch_count % self.calibration_frequency == 0):
+        if self.calibration_frequency > 0 and self._epoch_count % self.calibration_frequency == 0:
 
             if len(self._epoch_predictions) > 0:
                 predictions = np.array(self._epoch_predictions)
@@ -756,6 +777,7 @@ class TrainingConformalIntegration:
 # =============================================================================
 # Live Trading Integration
 # =============================================================================
+
 
 class LiveTradingConformalIntegration:
     """

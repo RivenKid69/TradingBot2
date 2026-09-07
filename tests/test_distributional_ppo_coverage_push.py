@@ -23,6 +23,7 @@ torch.manual_seed(42)
 
 def _make_env(max_steps: int = 8, n_envs: int = 1) -> DummyVecEnv:
     """Create minimal test environment."""
+
     def _env_fn():
         import gymnasium
 
@@ -91,6 +92,7 @@ def _setup_and_collect(model, env, n_steps=8):
 # __init__ Validation Branch Tests
 # =============================================================================
 
+
 class TestInitValidationBranches:
     """Test validation branches in __init__."""
 
@@ -98,7 +100,7 @@ class TestInitValidationBranches:
         """Test vf_clip_threshold_ev with non-finite value raises."""
         env = _make_env()
         with pytest.raises(ValueError, match="vf_clip_threshold_ev"):
-            _make_model(env, vf_clip_threshold_ev=float('inf'))
+            _make_model(env, vf_clip_threshold_ev=float("inf"))
         env.close()
 
     def test_vf_clip_threshold_ev_out_of_range_raises(self):
@@ -155,13 +157,14 @@ class TestInitValidationBranches:
         """Test clip_range_vf with inf raises."""
         env = _make_env()
         with pytest.raises(ValueError, match="clip_range_vf"):
-            _make_model(env, clip_range_vf=float('inf'))
+            _make_model(env, clip_range_vf=float("inf"))
         env.close()
 
 
 # =============================================================================
 # Train Loop Branch Tests
 # =============================================================================
+
 
 class TestTrainLoopBranches:
     """Test specific branches in train() loop."""
@@ -215,6 +218,7 @@ class TestTrainLoopBranches:
 # PopArt Controller Tests
 # =============================================================================
 
+
 class TestPopArtControllerBranches:
     """Test PopArtController branches."""
 
@@ -237,6 +241,7 @@ class TestPopArtControllerBranches:
 # =============================================================================
 # CVaR Edge Cases
 # =============================================================================
+
 
 class TestCvarEdgeCases:
     """Test CVaR computation edge cases."""
@@ -282,6 +287,7 @@ class TestCvarEdgeCases:
 # Value Scale Edge Cases
 # =============================================================================
 
+
 class TestValueScaleEdgeCases:
     """Test value scale edge cases."""
 
@@ -303,6 +309,7 @@ class TestValueScaleEdgeCases:
 # =============================================================================
 # Optimizer Edge Cases
 # =============================================================================
+
 
 class TestOptimizerEdgeCases:
     """Test optimizer edge cases."""
@@ -343,6 +350,7 @@ class TestOptimizerEdgeCases:
 # =============================================================================
 # VF Clipping Mode Tests
 # =============================================================================
+
 
 class TestVfClippingModes:
     """Test VF clipping modes."""
@@ -386,6 +394,7 @@ class TestVfClippingModes:
 # Entropy Coefficient Decay Tests
 # =============================================================================
 
+
 class TestEntCoefDecay:
     """Test entropy coefficient decay schedules."""
 
@@ -413,6 +422,7 @@ class TestEntCoefDecay:
 # GAE Lambda Tests
 # =============================================================================
 
+
 class TestGaeLambda:
     """Test GAE lambda variations."""
 
@@ -437,6 +447,7 @@ class TestGaeLambda:
 # Multi-Environment Tests
 # =============================================================================
 
+
 class TestMultiEnv:
     """Test multi-environment configurations."""
 
@@ -459,6 +470,7 @@ class TestMultiEnv:
 # =============================================================================
 # Gradient Norm Tests
 # =============================================================================
+
 
 class TestGradientNorm:
     """Test gradient norm clipping."""
@@ -484,6 +496,7 @@ class TestGradientNorm:
 # Clip Range Tests
 # =============================================================================
 
+
 class TestClipRange:
     """Test clip range variations."""
 
@@ -507,6 +520,7 @@ class TestClipRange:
 # =============================================================================
 # VF Coefficient Tests
 # =============================================================================
+
 
 class TestVfCoef:
     """Test VF coefficient variations."""
@@ -532,6 +546,7 @@ class TestVfCoef:
 # Quantile Configuration Tests
 # =============================================================================
 
+
 class TestQuantileConfig:
     """Test quantile configuration."""
 
@@ -555,6 +570,7 @@ class TestQuantileConfig:
 # =============================================================================
 # Save/Load Edge Cases
 # =============================================================================
+
 
 class TestSaveLoadEdgeCases:
     """Test save/load edge cases."""
@@ -595,6 +611,7 @@ class TestSaveLoadEdgeCases:
 # Predict Edge Cases
 # =============================================================================
 
+
 class TestPredictEdgeCases:
     """Test prediction edge cases."""
 
@@ -624,6 +641,7 @@ class TestPredictEdgeCases:
 # =============================================================================
 # Additional Train Configurations
 # =============================================================================
+
 
 class TestAdditionalTrainConfigs:
     """Test additional training configurations."""

@@ -32,6 +32,7 @@ This report analyzes existing codebase components that can be reused or extended
 **Status**: ✅ Partially Ready
 
 **Existing Support**:
+
 ```python
 class MarketType(str, Enum):
     SPOT = "spot"
@@ -44,12 +45,14 @@ class MarketType(str, Enum):
 ```
 
 **Missing for Futures**:
+
 - `EQUITY_FUTURES` - For ES, NQ, YM
 - `COMMODITY_FUTURES` - For GC, CL, SI
 - `CURRENCY_FUTURES` - For 6E, 6J, 6B
 - `BOND_FUTURES` - For ZB, ZN, ZF
 
 **Required Changes**:
+
 ```python
 # Proposed additions to MarketType enum
 EQUITY_FUTURES = "equity_futures"
@@ -59,6 +62,7 @@ BOND_FUTURES = "bond_futures"
 ```
 
 **Exchange Vendor Status**:
+
 ```python
 class ExchangeVendor(str, Enum):
     BINANCE = "binance"           # ✅ Ready for futures
@@ -75,6 +79,7 @@ class ExchangeVendor(str, Enum):
 **Status**: ✅ Ready with Minor Extensions
 
 **Existing Futures Support**:
+
 ```python
 class BinanceMarketDataAdapter(MarketDataAdapter):
     def __init__(self, vendor, config):
@@ -83,11 +88,13 @@ class BinanceMarketDataAdapter(MarketDataAdapter):
 ```
 
 **API Endpoints Already Configured**:
+
 - Klines: `/fapi/v1/klines` (when use_futures=True)
 - Ticker: `/fapi/v1/ticker/24hr`
 - Depth: `/fapi/v1/depth`
 
 **Missing Endpoints**:
+
 | Endpoint | Purpose | Priority |
 |----------|---------|----------|
 | `/fapi/v1/fundingRate` | Historical funding | P0 (exists in ingest) |
@@ -101,10 +108,12 @@ class BinanceMarketDataAdapter(MarketDataAdapter):
 **Status**: ⚠️ Needs Extension
 
 **Current Implementation**:
+
 - Fetches spot exchange info
 - Parses LOT_SIZE, PRICE_FILTER, MIN_NOTIONAL
 
 **Missing for Futures**:
+
 - Futures-specific filters (MAX_NUM_ORDERS, PERCENT_PRICE)
 - Leverage bracket parsing
 - Margin rate extraction
@@ -117,6 +126,7 @@ class BinanceMarketDataAdapter(MarketDataAdapter):
 **Current**: Spot fee tiers (maker/taker based on VIP level)
 
 **Missing for Futures**:
+
 - Futures-specific fee tiers (lower than spot)
 - Fee discount for BNB payment
 - Fee rebates for high volume
@@ -130,6 +140,7 @@ class BinanceMarketDataAdapter(MarketDataAdapter):
 **Status**: ✅ Complete Implementation
 
 **Capabilities**:
+
 ```python
 def _fetch_all_funding(symbol, start_ms, end_ms):
     """Fetch historical funding rates with pagination"""
@@ -141,6 +152,7 @@ def _fetch_all_mark(symbol, start_ms, end_ms, tf_str):
 ```
 
 **Data Produced**:
+
 - `funding_rate` - Hourly funding rate values
 - `mark_price` - Mark price OHLCV data
 - `index_price` - From mark price endpoint
@@ -152,11 +164,13 @@ def _fetch_all_mark(symbol, start_ms, end_ms, tf_str):
 **Status**: ⚠️ Needs Extension
 
 **Current Support**:
+
 - `AssetClass.CRYPTO`
 - `AssetClass.EQUITY`
 - `AssetClass.FOREX`
 
 **Missing**:
+
 - `AssetClass.FUTURES` with sub-types
 - Rollover handling for expiring contracts
 - Continuous contract construction
@@ -193,6 +207,7 @@ class ForexLeverageGuard:
 ```
 
 **Adaptation for Futures**:
+
 - Replace currency pairs with futures symbols
 - Add SPAN margin calculation
 - Add maintenance margin check
@@ -203,11 +218,13 @@ class ForexLeverageGuard:
 **Status**: ✅ Core Infrastructure Ready
 
 **Existing Guards**:
+
 - Position size limits
 - Drawdown limits
 - PnL thresholds
 
 **Extension Needed**:
+
 - Futures-specific margin checks
 - Funding rate cost tracking
 - ADL risk monitoring
@@ -221,14 +238,17 @@ class ForexLeverageGuard:
 **Status**: ⚠️ Needs Futures-Specific Provider
 
 **Current Providers**:
+
 - `CryptoParametricSlippageProvider` - L2+ for crypto spot
 - `EquityParametricSlippageProvider` - L2+ for equities
 - `ForexParametricSlippageProvider` - L2+ for forex
 
 **Missing**:
+
 - `FuturesParametricSlippageProvider` - For all futures types
 
 **Key Differences for Futures**:
+
 | Aspect | Crypto Spot | Crypto Futures | CME Futures |
 |--------|-------------|----------------|-------------|
 | Spread | ~5 bps | ~3 bps | ~1-2 ticks |
@@ -241,11 +261,13 @@ class ForexLeverageGuard:
 **Status**: ⚠️ Needs Extension
 
 **Current Features**:
+
 - OHLCV-based fill simulation
 - Intrabar execution timing
 - Slippage modeling
 
 **Missing for Futures**:
+
 - Mark price vs last price logic
 - Funding rate deduction
 - Contract rollover simulation
@@ -260,12 +282,14 @@ class ForexLeverageGuard:
 **Status**: ⚠️ Needs Futures Features
 
 **Current Features** (63 total):
+
 - Price features
 - Volume features
 - Volatility features
 - Momentum features
 
 **Missing Futures Features**:
+
 | Feature | Description | Priority |
 |---------|-------------|----------|
 | `funding_rate` | Current 8h funding | P0 |
@@ -281,6 +305,7 @@ class ForexLeverageGuard:
 **Status**: ✅ Pattern for Futures Features
 
 **Reusable Pattern**:
+
 ```python
 class ForexFeatures:
     def compute_session_features(self, data):
@@ -297,6 +322,7 @@ class ForexFeatures:
 **Status**: ⚠️ Needs Futures Defaults
 
 **Current Entries**:
+
 ```yaml
 crypto:
   slippage_bps: 5.0
@@ -311,6 +337,7 @@ forex:
 ```
 
 **Missing**:
+
 ```yaml
 # Proposed additions
 crypto_futures:
@@ -336,6 +363,7 @@ commodity_futures:
 ### 8.1 Existing Test Coverage
 
 **Relevant Test Files**:
+
 | File | Coverage | Futures Relevance |
 |------|----------|-------------------|
 | `test_binance_adapters.py` | Spot only | Extend for futures |
@@ -346,10 +374,12 @@ commodity_futures:
 ### 8.2 Test Data Requirements
 
 **Existing Data**:
+
 - `data/raw/*.parquet` - Crypto spot
 - `data/raw_stocks/*.parquet` - Equity
 
 **Missing Data**:
+
 - `data/raw_futures/crypto/*.parquet` - Crypto perpetuals
 - `data/raw_futures/cme/*.parquet` - CME futures
 

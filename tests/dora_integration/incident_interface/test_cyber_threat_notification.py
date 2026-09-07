@@ -347,6 +347,7 @@ class TestCyberThreatNotificationService:
         from services.dora_integration.incident_interface.cyber_threat_notification import (
             NotificationStatus,
         )
+
         assert approved.status == NotificationStatus.APPROVED_FOR_NOTIFICATION
 
     def test_decline_notification(self, service):
@@ -369,6 +370,7 @@ class TestCyberThreatNotificationService:
         from services.dora_integration.incident_interface.cyber_threat_notification import (
             NotificationStatus,
         )
+
         assert declined.status == NotificationStatus.NOTIFICATION_DECLINED
 
     def test_submit_notification(self, service):
@@ -392,6 +394,7 @@ class TestCyberThreatNotificationService:
         from services.dora_integration.incident_interface.cyber_threat_notification import (
             NotificationStatus,
         )
+
         assert submitted.status == NotificationStatus.NOTIFIED
         assert submitted.submitted_at is not None
 

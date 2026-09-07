@@ -50,6 +50,7 @@ from packages.cloud.governance.residency_drift import (
 # Test Constants
 # ============================================================================
 
+
 class TestEURegionConstants:
     """Tests for EU region constants."""
 
@@ -93,36 +94,43 @@ class TestEURegionConstants:
 # Test is_eu_region Function
 # ============================================================================
 
+
 class TestIsEURegion:
     """Tests for is_eu_region function."""
 
-    @pytest.mark.parametrize("region", [
-        "eu-west-1",
-        "eu-west-2",
-        "eu-central-1",
-        "eu-north-1",
-        "EU-WEST-1",  # Case insensitive
-        "EU",
-        "Europe",
-        "europe-west1",
-        "westeurope",
-        "EU (Germany)",
-        "EU (Ireland)",
-    ])
+    @pytest.mark.parametrize(
+        "region",
+        [
+            "eu-west-1",
+            "eu-west-2",
+            "eu-central-1",
+            "eu-north-1",
+            "EU-WEST-1",  # Case insensitive
+            "EU",
+            "Europe",
+            "europe-west1",
+            "westeurope",
+            "EU (Germany)",
+            "EU (Ireland)",
+        ],
+    )
     def test_eu_regions_detected(self, region: str):
         """Test EU regions are correctly identified."""
         assert is_eu_region(region) is True
 
-    @pytest.mark.parametrize("region", [
-        "us-east-1",
-        "us-west-2",
-        "ap-northeast-1",
-        "ap-southeast-1",
-        "sa-east-1",
-        "af-south-1",
-        "me-south-1",
-        "ca-central-1",
-    ])
+    @pytest.mark.parametrize(
+        "region",
+        [
+            "us-east-1",
+            "us-west-2",
+            "ap-northeast-1",
+            "ap-southeast-1",
+            "sa-east-1",
+            "af-south-1",
+            "me-south-1",
+            "ca-central-1",
+        ],
+    )
     def test_non_eu_regions_rejected(self, region: str):
         """Test non-EU regions are correctly rejected."""
         assert is_eu_region(region) is False
@@ -139,6 +147,7 @@ class TestIsEURegion:
 # ============================================================================
 # Test EUOnlyDriftChecker
 # ============================================================================
+
 
 class TestEUOnlyDriftChecker:
     """Tests for EUOnlyDriftChecker class."""
@@ -164,14 +173,17 @@ class TestEndpointChecks:
         return EUOnlyDriftChecker()
 
     # AWS RDS Endpoints
-    @pytest.mark.parametrize("endpoint,expected_region,expected_compliant", [
-        ("mydb.eu-central-1.rds.amazonaws.com", "eu-central-1", True),
-        ("mydb.eu-west-1.rds.amazonaws.com", "eu-west-1", True),
-        ("mydb.eu-west-2.rds.amazonaws.com", "eu-west-2", True),
-        ("mydb.us-east-1.rds.amazonaws.com", "us-east-1", False),
-        ("mydb.us-west-2.rds.amazonaws.com", "us-west-2", False),
-        ("mydb.ap-northeast-1.rds.amazonaws.com", "ap-northeast-1", False),
-    ])
+    @pytest.mark.parametrize(
+        "endpoint,expected_region,expected_compliant",
+        [
+            ("mydb.eu-central-1.rds.amazonaws.com", "eu-central-1", True),
+            ("mydb.eu-west-1.rds.amazonaws.com", "eu-west-1", True),
+            ("mydb.eu-west-2.rds.amazonaws.com", "eu-west-2", True),
+            ("mydb.us-east-1.rds.amazonaws.com", "us-east-1", False),
+            ("mydb.us-west-2.rds.amazonaws.com", "us-west-2", False),
+            ("mydb.ap-northeast-1.rds.amazonaws.com", "ap-northeast-1", False),
+        ],
+    )
     def test_rds_endpoint_extraction(
         self,
         checker: EUOnlyDriftChecker,
@@ -189,14 +201,17 @@ class TestEndpointChecks:
         assert result.eu_compliant == expected_compliant
 
     # AWS S3 Endpoints
-    @pytest.mark.parametrize("endpoint,expected_region,expected_compliant", [
-        ("mybucket.s3.eu-central-1.amazonaws.com", "eu-central-1", True),
-        ("mybucket.s3.eu-west-1.amazonaws.com", "eu-west-1", True),
-        ("s3.eu-central-1.amazonaws.com", "eu-central-1", True),
-        ("s3-eu-west-1.amazonaws.com", "eu-west-1", True),
-        ("mybucket.s3.us-east-1.amazonaws.com", "us-east-1", False),
-        ("s3.us-west-2.amazonaws.com", "us-west-2", False),
-    ])
+    @pytest.mark.parametrize(
+        "endpoint,expected_region,expected_compliant",
+        [
+            ("mybucket.s3.eu-central-1.amazonaws.com", "eu-central-1", True),
+            ("mybucket.s3.eu-west-1.amazonaws.com", "eu-west-1", True),
+            ("s3.eu-central-1.amazonaws.com", "eu-central-1", True),
+            ("s3-eu-west-1.amazonaws.com", "eu-west-1", True),
+            ("mybucket.s3.us-east-1.amazonaws.com", "us-east-1", False),
+            ("s3.us-west-2.amazonaws.com", "us-west-2", False),
+        ],
+    )
     def test_s3_endpoint_extraction(
         self,
         checker: EUOnlyDriftChecker,
@@ -214,11 +229,14 @@ class TestEndpointChecks:
         assert result.eu_compliant == expected_compliant
 
     # AWS ElastiCache Endpoints
-    @pytest.mark.parametrize("endpoint,expected_region,expected_compliant", [
-        ("myredis.eu-central-1.cache.amazonaws.com", "eu-central-1", True),
-        ("myredis.eu-west-1.cache.amazonaws.com", "eu-west-1", True),
-        ("myredis.us-east-1.cache.amazonaws.com", "us-east-1", False),
-    ])
+    @pytest.mark.parametrize(
+        "endpoint,expected_region,expected_compliant",
+        [
+            ("myredis.eu-central-1.cache.amazonaws.com", "eu-central-1", True),
+            ("myredis.eu-west-1.cache.amazonaws.com", "eu-west-1", True),
+            ("myredis.us-east-1.cache.amazonaws.com", "us-east-1", False),
+        ],
+    )
     def test_elasticache_endpoint_extraction(
         self,
         checker: EUOnlyDriftChecker,
@@ -305,7 +323,9 @@ class TestServiceChecks:
 
     def test_sentry_eu_detected(self, checker: EUOnlyDriftChecker):
         """Test Sentry is detected as EU-compliant."""
-        result = checker._check_service("sentry", "", "error_tracking", ComponentType.ERROR_TRACKING)
+        result = checker._check_service(
+            "sentry", "", "error_tracking", ComponentType.ERROR_TRACKING
+        )
         assert result.eu_compliant is True
         assert result.region == "EU"
 
@@ -319,6 +339,7 @@ class TestServiceChecks:
 # ============================================================================
 # Test Full Drift Check
 # ============================================================================
+
 
 class TestFullDriftCheck:
     """Tests for full drift check functionality."""
@@ -471,6 +492,7 @@ class TestDriftReportSerialization:
 # Test Evidence Pack Export
 # ============================================================================
 
+
 class TestEvidencePackExport:
     """Tests for evidence pack export."""
 
@@ -546,6 +568,7 @@ class TestEvidencePackExport:
 # Test Deployment Config Validator
 # ============================================================================
 
+
 class TestDeploymentConfigValidator:
     """Tests for deployment configuration validation."""
 
@@ -600,6 +623,7 @@ class TestDeploymentConfigValidator:
 # Test Configuration Loading
 # ============================================================================
 
+
 class TestResidencyConfiguration:
     """Tests for ResidencyConfiguration."""
 
@@ -633,6 +657,7 @@ class TestResidencyConfiguration:
 # Test Convenience Functions
 # ============================================================================
 
+
 class TestConvenienceFunctions:
     """Tests for convenience functions."""
 
@@ -662,6 +687,7 @@ class TestConvenienceFunctions:
 # ============================================================================
 # Test Audit Logging
 # ============================================================================
+
 
 class TestAuditLogging:
     """Tests for audit logging functionality."""
@@ -695,6 +721,7 @@ class TestAuditLogging:
 # ============================================================================
 # Test Subprocessor Checks
 # ============================================================================
+
 
 class TestSubprocessorCheck:
     """Tests for SubprocessorCheck data class."""
@@ -736,6 +763,7 @@ class TestSubprocessorCheck:
 # Test Violation Handling
 # ============================================================================
 
+
 class TestDriftCheckViolation:
     """Tests for DriftCheckViolation data class."""
 
@@ -773,6 +801,7 @@ class TestDriftCheckViolation:
 # ============================================================================
 # Test Fail-Closed Behavior
 # ============================================================================
+
 
 class TestFailClosedBehavior:
     """Tests for fail-closed enforcement."""

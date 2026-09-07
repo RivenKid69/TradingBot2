@@ -106,30 +106,50 @@ def make_xs_router() -> APIRouter:
         if c.get("exposures"):
             exposures_df = pd.DataFrame(c["exposures"]).T.astype("float64")
         cons = OptimizerConstraints(
-            gross_max=c.get("gross_max"), net_target=c.get("net_target"),
-            long_only=bool(c.get("long_only", False)), max_position=c.get("max_position"),
+            gross_max=c.get("gross_max"),
+            net_target=c.get("net_target"),
+            long_only=bool(c.get("long_only", False)),
+            max_position=c.get("max_position"),
             max_turnover=c.get("max_turnover"),
-            sector_map=c.get("sector_map"), sector_caps=c.get("sector_caps"),
-            exposures=exposures_df, factor_caps=c.get("factor_caps"),
+            sector_map=c.get("sector_map"),
+            sector_caps=c.get("sector_caps"),
+            exposures=exposures_df,
+            factor_caps=c.get("factor_caps"),
         )
         from service_optimizer import RobustConfig as _RC, MultiPeriodOptimizer as _MPO
+
         robust = None
         _r = payload.get("robust")
         if _r and _r.get("enabled"):
             mu_unc = _r.get("mu_uncertainty")
-            robust = _RC(enabled=True, kind=str(_r.get("kind", "box")),
-                         kappa=float(_r.get("kappa", 1.0)),
-                         mu_uncertainty=(np.asarray(mu_unc, dtype="float64") if mu_unc is not None else None))
+            robust = _RC(
+                enabled=True,
+                kind=str(_r.get("kind", "box")),
+                kappa=float(_r.get("kappa", 1.0)),
+                mu_uncertainty=(
+                    np.asarray(mu_unc, dtype="float64") if mu_unc is not None else None
+                ),
+            )
         bl_views = None
         _bl = payload.get("bl_views")
         if _bl and _bl.get("P") is not None and _bl.get("Q") is not None:
-            bl_views = {"P": np.asarray(_bl["P"], dtype="float64"), "Q": np.asarray(_bl["Q"], dtype="float64"),
-                        "omega": (np.asarray(_bl["omega"], dtype="float64") if _bl.get("omega") is not None else None),
-                        "tau": float(_bl.get("tau", 0.05))}
+            bl_views = {
+                "P": np.asarray(_bl["P"], dtype="float64"),
+                "Q": np.asarray(_bl["Q"], dtype="float64"),
+                "omega": (
+                    np.asarray(_bl["omega"], dtype="float64")
+                    if _bl.get("omega") is not None
+                    else None
+                ),
+                "tau": float(_bl.get("tau", 0.05)),
+            }
         opt = PortfolioOptimizer(
             objective=payload.get("objective", "mean_variance"),
             risk_aversion=float(payload.get("risk_aversion", 5.0)),
-            use_cvxpy="never", constraints=cons, robust=robust, bl_views=bl_views,
+            use_cvxpy="never",
+            constraints=cons,
+            robust=robust,
+            bl_views=bl_views,
         )
         _mp = payload.get("multi_period")
         cur_w = None
@@ -137,11 +157,17 @@ def make_xs_router() -> APIRouter:
             cur_w = pd.Series({s: float(v) for s, v in payload["current_w"].items()})
         if _mp and _mp.get("enabled"):
             tr = _mp.get("trade_rate")
-            opt = _MPO(opt, trade_rate=(float(tr) if tr is not None else None),
-                       trade_cost=float(_mp.get("trade_cost", 0.001)))
+            opt = _MPO(
+                opt,
+                trade_rate=(float(tr) if tr is not None else None),
+                trade_cost=float(_mp.get("trade_cost", 0.001)),
+            )
         w = opt.solve(mu, cov, current_w=cur_w)
-        return {"weights": {s: float(v) for s, v in w.items()},
-                "gross": float(w.abs().sum()), "net": float(w.sum())}
+        return {
+            "weights": {s: float(v) for s, v in w.items()},
+            "gross": float(w.abs().sum()),
+            "net": float(w.sum()),
+        }
 
     @router.post("/risk_model")
     def risk_model(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
@@ -156,7 +182,8 @@ def make_xs_router() -> APIRouter:
     def trust(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
         returns = [float(x) for x in payload.get("returns", [])]
         return trust_report(
-            returns, n_trials=int(payload.get("n_trials", 1)),
+            returns,
+            n_trials=int(payload.get("n_trials", 1)),
             periods_per_year=float(payload.get("periods_per_year", 252.0)),
         )
 
@@ -177,9 +204,11 @@ def make_xs_router() -> APIRouter:
             raise HTTPException(status_code=422, detail=f"invalid config: {exc}")
         out = run_backtest(cfg)
         res = out["result"]
+
         # Аддитивно: серии для tear-sheet (эквити/доходности/экспозиция/оборот).
         def _floats(s: Any) -> list:
             return [float(x) for x in np.asarray(s, dtype="float64")]
+
         series = {
             "ts": [int(t) for t in res.returns.index],
             "returns": _floats(res.returns.to_numpy()),
@@ -196,7 +225,7 @@ def make_xs_router() -> APIRouter:
             "attribution": out.get("attribution"),
             "attribution_ts": out.get("attribution_ts"),
             "factor_attribution": out.get("factor_attribution"),  # P1 #11 (tied to risk model)
-            "capacity": out.get("capacity"),                      # P1 #12 (AUM→Sharpe)
+            "capacity": out.get("capacity"),  # P1 #12 (AUM→Sharpe)
             # Honesty flags (P0 #2): mark synthetic results so the UI never shows a
             # fabricated edge as real.
             "data_source": out.get("data_source"),
@@ -210,6 +239,7 @@ def make_xs_router() -> APIRouter:
         """Rendered LP-grade HTML tear-sheet (P1 #10) — printable to PDF."""
         from starlette.responses import HTMLResponse
         from service_tearsheet import render_html_tearsheet
+
         try:
             cfg = XSConfig.model_validate(payload)
         except Exception as exc:
@@ -238,13 +268,15 @@ def make_xs_router() -> APIRouter:
             try:
                 out = run_backtest(cfg, panel=panel)
                 s = out["summary"]
-                pts.append({
-                    "gross": float(g),
-                    "ann_vol": float(s.get("ann_vol", float("nan"))),
-                    "ann_return": float(s.get("ann_return", float("nan"))),
-                    "sharpe": float(s.get("sharpe", float("nan"))),
-                    "max_drawdown": float(s.get("max_drawdown", float("nan"))),
-                })
+                pts.append(
+                    {
+                        "gross": float(g),
+                        "ann_vol": float(s.get("ann_vol", float("nan"))),
+                        "ann_return": float(s.get("ann_return", float("nan"))),
+                        "sharpe": float(s.get("sharpe", float("nan"))),
+                        "max_drawdown": float(s.get("max_drawdown", float("nan"))),
+                    }
+                )
             except Exception:  # pragma: no cover
                 continue
         return {"points": pts}
@@ -270,6 +302,7 @@ def make_xs_router() -> APIRouter:
         from service_pretrade_risk import PreTradeRiskAnalyzer, RiskLimits
         from service_risk_model import StatRiskModel as _SRM
         from core_portfolio import SYMBOL_LEVEL
+
         try:
             cfg = XSConfig.model_validate(payload)
         except Exception as exc:
@@ -284,8 +317,10 @@ def make_xs_router() -> APIRouter:
         cov = cov.reindex(index=list(w.index), columns=list(w.index)).fillna(0.0)
         lim = payload.get("risk_limits", {}) or {}
         limits = RiskLimits(
-            var_max=lim.get("var_max"), cvar_max=lim.get("cvar_max"),
-            vol_max=lim.get("vol_max"), scenario_loss_max=lim.get("scenario_loss_max"),
+            var_max=lim.get("var_max"),
+            cvar_max=lim.get("cvar_max"),
+            vol_max=lim.get("vol_max"),
+            scenario_loss_max=lim.get("scenario_loss_max"),
         )
         an = PreTradeRiskAnalyzer(cov)
         rep = an.pretrade_check(w, limits=limits, returns=rets, strict=bool(lim))
@@ -299,6 +334,7 @@ def make_xs_router() -> APIRouter:
         """Impact-aware execution-plan (TWAP/VWAP/POV slices) для целевых весов (P1)."""
         from service_xs_execution import RebalanceScheduler
         from core_portfolio import SYMBOL_LEVEL
+
         try:
             cfg = XSConfig.model_validate(payload)
         except Exception as exc:
@@ -315,11 +351,12 @@ def make_xs_router() -> APIRouter:
             adv = (vol * close).tail(20).mean()
         eopt = payload.get("execution", {}) or {}
         sched = RebalanceScheduler(
-            algo=str(eopt.get("algo", "TWAP")), n_slices=int(eopt.get("n_slices", 6)),
+            algo=str(eopt.get("algo", "TWAP")),
+            n_slices=int(eopt.get("n_slices", 6)),
             participation=float(eopt.get("participation", 0.10)),
             spread_bps=float(eopt.get("spread_bps", 2.0)),
             impact_coef=float(eopt.get("impact_coef", 0.1)),
-            urgency=float(eopt.get("urgency", 2.0)),   # P1 #10: IS (Almgren-Chriss) front-loading
+            urgency=float(eopt.get("urgency", 2.0)),  # P1 #10: IS (Almgren-Chriss) front-loading
         )
         equity = float(payload.get("equity", 1_000_000))
         plan = sched.build_plan(w, None, prices, equity, adv=adv)
@@ -330,11 +367,14 @@ def make_xs_router() -> APIRouter:
         from impl_signal_diagnostics import signal_report
         from impl_panel import PanelBuilder
         from service_xs_pipeline import build_signal_library
+
         cfg = XSConfig.model_validate(payload)
         panel = load_panel(cfg)
         lib = build_signal_library(cfg)
         sig_panel = lib.compute(panel)
-        fwd = PanelBuilder.add_forward_returns(panel, price_col=cfg.backtest.price_col)["fwd_return"]
+        fwd = PanelBuilder.add_forward_returns(panel, price_col=cfg.backtest.price_col)[
+            "fwd_return"
+        ]
         return {
             "signals": list(sig_panel.columns),
             "ic": {c: signal_report(sig_panel[c], fwd) for c in sig_panel.columns},
@@ -348,26 +388,38 @@ def make_xs_router() -> APIRouter:
         alpha,multiplier}...] | demo:true, neutralize:[..], gross_max, max_position}.
         """
         from service_options_portfolio import (
-            OptionLeg, GreeksNeutralConstraints, OptionsPortfolioConstructor, synthetic_option_book,
+            OptionLeg,
+            GreeksNeutralConstraints,
+            OptionsPortfolioConstructor,
+            synthetic_option_book,
         )
+
         legs_in = payload.get("legs")
         chain_in = payload.get("chain")
         if chain_in:
             # Stage D5: реальный бук из option chain (free Deribit/EOD)
             from loaders.options_enrich import OptionsBookLoader
+
             legs = OptionsBookLoader.chain_to_legs(chain_in, spot=float(payload.get("spot", 100.0)))
         elif not legs_in and payload.get("demo", True):
             legs = synthetic_option_book(spot=float(payload.get("spot", 100.0)))
         else:
             legs = []
-            for d in (legs_in or []):
-                legs.append(OptionLeg(
-                    symbol=str(d["symbol"]), spot=float(d["spot"]), strike=float(d["strike"]),
-                    time_to_expiry=float(d["time_to_expiry"]), iv=float(d["iv"]),
-                    is_call=bool(d.get("is_call", True)), rate=float(d.get("rate", 0.0)),
-                    dividend_yield=float(d.get("dividend_yield", 0.0)),
-                    alpha=float(d.get("alpha", 0.0)), multiplier=float(d.get("multiplier", 100.0)),
-                ))
+            for d in legs_in or []:
+                legs.append(
+                    OptionLeg(
+                        symbol=str(d["symbol"]),
+                        spot=float(d["spot"]),
+                        strike=float(d["strike"]),
+                        time_to_expiry=float(d["time_to_expiry"]),
+                        iv=float(d["iv"]),
+                        is_call=bool(d.get("is_call", True)),
+                        rate=float(d.get("rate", 0.0)),
+                        dividend_yield=float(d.get("dividend_yield", 0.0)),
+                        alpha=float(d.get("alpha", 0.0)),
+                        multiplier=float(d.get("multiplier", 100.0)),
+                    )
+                )
         if not legs:
             raise HTTPException(status_code=422, detail="legs or demo required")
         cons = GreeksNeutralConstraints(
@@ -384,6 +436,7 @@ def make_xs_router() -> APIRouter:
     def data_quality(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
         """Honest Data-Quality отчёт собранной панели (Stage D0): провенанс/pit_quality/coverage."""
         from service_xs_pipeline import data_quality_for_config
+
         try:
             cfg = XSConfig.model_validate(payload)
         except Exception as exc:
@@ -394,6 +447,7 @@ def make_xs_router() -> APIRouter:
     def data_trust(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
         """Data-Trust gate (Stage D7): PIT-lineage сигналов + trust_verdict + violations."""
         from service_xs_pipeline import data_trust_for_config
+
         try:
             cfg = XSConfig.model_validate(payload)
         except Exception as exc:
@@ -413,19 +467,43 @@ def make_xs_router() -> APIRouter:
         weighting = str(payload.get("class_weighting", "risk_parity"))
         cfgs_in = payload.get("configs")
         if not cfgs_in and payload.get("demo", True):
+
             def _demo(ac, syms, kind):
-                return XSConfig.model_validate({
-                    "asset_class": ac,
-                    "data": {"source": "synthetic", "symbols": syms, "synthetic_bars": 200, "synthetic_seed": 7},
-                    "universe": {"type": "static", "symbols": syms},
-                    "signals": [{"name": "m", "kind": kind, "lookback": 40, "transforms": ["zscore"]}],
-                    "alpha": {"method": "ic_weighted"}, "risk": {"type": "stat", "method": "ledoit_wolf"},
-                    "optimizer": {"objective": "mean_variance", "risk_aversion": 5.0, "gross_max": 1.0,
-                                  "net_target": 0.0, "long_only": False, "max_position": 0.4},
-                    "backtest": {"rebalance_every": 5, "cov_lookback": 40, "min_cov_obs": 20,
-                                 "alpha_refit_every": 5, "cost_bps": 3.0, "price_col": "close",
-                                 "periods_per_year": 252},
-                })
+                return XSConfig.model_validate(
+                    {
+                        "asset_class": ac,
+                        "data": {
+                            "source": "synthetic",
+                            "symbols": syms,
+                            "synthetic_bars": 200,
+                            "synthetic_seed": 7,
+                        },
+                        "universe": {"type": "static", "symbols": syms},
+                        "signals": [
+                            {"name": "m", "kind": kind, "lookback": 40, "transforms": ["zscore"]}
+                        ],
+                        "alpha": {"method": "ic_weighted"},
+                        "risk": {"type": "stat", "method": "ledoit_wolf"},
+                        "optimizer": {
+                            "objective": "mean_variance",
+                            "risk_aversion": 5.0,
+                            "gross_max": 1.0,
+                            "net_target": 0.0,
+                            "long_only": False,
+                            "max_position": 0.4,
+                        },
+                        "backtest": {
+                            "rebalance_every": 5,
+                            "cov_lookback": 40,
+                            "min_cov_obs": 20,
+                            "alpha_refit_every": 5,
+                            "cost_bps": 3.0,
+                            "price_col": "close",
+                            "periods_per_year": 252,
+                        },
+                    }
+                )
+
             configs = {
                 "crypto": _demo("crypto", ["BTC", "ETH", "SOL", "BNB"], "crypto_momentum"),
                 "equity": _demo("equity", ["AAPL", "MSFT", "NVDA", "XOM"], "equity_momentum"),
@@ -444,10 +522,14 @@ def make_xs_router() -> APIRouter:
         tw = pd.Series({s: float(v) for s, v in payload.get("target_weights", {}).items()})
         equity = float(payload.get("equity", 1.0))
         lim = payload.get("limits", {})
-        guard = PortfolioRiskGuard(PortfolioRiskLimits(
-            gross_max=lim.get("gross_max"), net_max=lim.get("net_max"),
-            max_position=lim.get("max_position"), max_turnover=lim.get("max_turnover"),
-        ))
+        guard = PortfolioRiskGuard(
+            PortfolioRiskLimits(
+                gross_max=lim.get("gross_max"),
+                net_max=lim.get("net_max"),
+                max_position=lim.get("max_position"),
+                max_turnover=lim.get("max_turnover"),
+            )
+        )
 
         # Default: dry-run — Cloud forms Intents (target exposures) only (CCEA).
         # Opt-in execute=true runs a PAPER sim broker end-to-end here purely to
@@ -475,15 +557,18 @@ def make_xs_router() -> APIRouter:
         positions = {str(s): float(n) for s, n in (payload.get("positions") or {}).items()}
         n_slices = int(payload.get("n_slices", 1))
 
-        broker = SimBrokerConnector(prices, equity=equity,
-                                    fill_ratio=float(payload.get("fill_ratio", 1.0)))
+        broker = SimBrokerConnector(
+            prices, equity=equity, fill_ratio=float(payload.get("fill_ratio", 1.0))
+        )
         for sym, qty in positions.items():
             px = prices.get(sym)
             if px:
                 broker._positions[sym] = __import__("decimal").Decimal(str(qty / px))
         _clk = [float(payload.get("ts_ms", 0)) / 1000.0 or 0.0]
         stack = build_live_stack(
-            broker, n_slices=n_slices, symbols=list(prices),
+            broker,
+            n_slices=n_slices,
+            symbols=list(prices),
             min_trade_notional=float(payload.get("min_trade_notional", 1.0)),
             slice_interval_s=float(payload.get("slice_interval_s", 1.0)),
             clock=lambda: _clk[0],

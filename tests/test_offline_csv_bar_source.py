@@ -49,7 +49,15 @@ def test_missing_bar_raises(tmp_path):
         tmp_path,
         [
             {"ts": 0, "symbol": "BTC", "open": 1, "high": 1, "low": 1, "close": 1, "volume": 1},
-            {"ts": 120_000, "symbol": "BTC", "open": 1, "high": 1, "low": 1, "close": 1, "volume": 1},
+            {
+                "ts": 120_000,
+                "symbol": "BTC",
+                "open": 1,
+                "high": 1,
+                "low": 1,
+                "close": 1,
+                "volume": 1,
+            },
         ],
     )
     cfg = OfflineCSVConfig(paths=[path], timeframe="1m")
@@ -66,7 +74,15 @@ def test_missing_hour_bar_raises(tmp_path):
         tmp_path,
         [
             {"ts": 0, "symbol": "BTC", "open": 1, "high": 1, "low": 1, "close": 1, "volume": 1},
-            {"ts": 7_200_000, "symbol": "BTC", "open": 1, "high": 1, "low": 1, "close": 1, "volume": 1},
+            {
+                "ts": 7_200_000,
+                "symbol": "BTC",
+                "open": 1,
+                "high": 1,
+                "low": 1,
+                "close": 1,
+                "volume": 1,
+            },
         ],
     )
     cfg = OfflineCSVConfig(paths=[path], timeframe="1h")

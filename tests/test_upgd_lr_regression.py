@@ -15,6 +15,7 @@ This regression test verifies:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from optimizers import UPGD, AdaptiveUPGD, UPGDW
@@ -35,16 +36,14 @@ class TestUPGDLearningRateRegression:
         adaptive_source = inspect.getsource(AdaptiveUPGD.step)
 
         # Should NOT contain alpha=-2.0
-        assert 'alpha=-2.0' not in upgd_source, \
-            "UPGD still contains alpha=-2.0 multiplier bug!"
-        assert 'alpha=-2.0' not in adaptive_source, \
-            "AdaptiveUPGD still contains alpha=-2.0 multiplier bug!"
+        assert "alpha=-2.0" not in upgd_source, "UPGD still contains alpha=-2.0 multiplier bug!"
+        assert (
+            "alpha=-2.0" not in adaptive_source
+        ), "AdaptiveUPGD still contains alpha=-2.0 multiplier bug!"
 
         # SHOULD contain alpha=-1.0
-        assert 'alpha=-1.0' in upgd_source, \
-            "UPGD should use alpha=-1.0*lr"
-        assert 'alpha=-1.0' in adaptive_source, \
-            "AdaptiveUPGD should use alpha=-1.0*lr"
+        assert "alpha=-1.0" in upgd_source, "UPGD should use alpha=-1.0*lr"
+        assert "alpha=-1.0" in adaptive_source, "AdaptiveUPGD should use alpha=-1.0*lr"
 
     def test_adaptive_upgd_matches_upgdw_step_size(self):
         """
@@ -62,22 +61,10 @@ class TestUPGDLearningRateRegression:
 
         # Same optimizer settings
         opt1 = AdaptiveUPGD(
-            [param1],
-            lr=lr,
-            beta1=0.9,
-            beta2=0.999,
-            beta_utility=0.999,
-            sigma=0.0,
-            weight_decay=0.0
+            [param1], lr=lr, beta1=0.9, beta2=0.999, beta_utility=0.999, sigma=0.0, weight_decay=0.0
         )
 
-        opt2 = UPGDW(
-            [param2],
-            lr=lr,
-            betas=(0.9, 0.999),
-            weight_decay=0.0,
-            sigma=0.0
-        )
+        opt2 = UPGDW([param2], lr=lr, betas=(0.9, 0.999), weight_decay=0.0, sigma=0.0)
 
         # Run multiple steps with same gradients
         for _ in range(5):
@@ -101,7 +88,7 @@ class TestUPGDLearningRateRegression:
                 change2,
                 rtol=1e-4,
                 atol=1e-6,
-                msg="AdaptiveUPGD and UPGDW should produce the same steps"
+                msg="AdaptiveUPGD and UPGDW should produce the same steps",
             )
 
             opt1.zero_grad()
@@ -122,11 +109,7 @@ class TestUPGDLearningRateRegression:
         param = nn.Parameter(torch.ones(3))
 
         opt = UPGD(
-            [param],
-            lr=lr,
-            sigma=0.0,
-            weight_decay=0.0,
-            beta_utility=0.0  # No EMA for clean test
+            [param], lr=lr, sigma=0.0, weight_decay=0.0, beta_utility=0.0  # No EMA for clean test
         )
 
         # Set gradient
@@ -153,8 +136,9 @@ class TestUPGDLearningRateRegression:
         max_expected = 2.0 * lr * grad_mag  # This would be the buggy version
 
         # With fix, magnitude should be < max_expected/2 (approximately)
-        assert magnitude < max_expected, \
-            f"Step size too large: {magnitude} >= {max_expected}. Bug may be present!"
+        assert (
+            magnitude < max_expected
+        ), f"Step size too large: {magnitude} >= {max_expected}. Bug may be present!"
 
         # More precise check: magnitude should be closer to lr*grad_mag, not 2*lr*grad_mag
         expected_1x = lr * grad_mag
@@ -163,8 +147,9 @@ class TestUPGDLearningRateRegression:
         error_from_1x = abs(magnitude - expected_1x)
         error_from_2x = abs(magnitude - expected_2x)
 
-        assert error_from_1x < error_from_2x, \
-            f"Step size closer to 2x ({expected_2x}) than 1x ({expected_1x}). Bug may be present!"
+        assert (
+            error_from_1x < error_from_2x
+        ), f"Step size closer to 2x ({expected_2x}) than 1x ({expected_1x}). Bug may be present!"
 
     def test_upgd_upgdw_similar_magnitudes(self):
         """
@@ -199,12 +184,12 @@ class TestUPGDLearningRateRegression:
         ratio = change1 / change2 if change2 > 0 else 0
 
         # Ratio should be close to 1.0, definitely NOT 2.0
-        assert 0.1 < ratio < 10.0, \
-            f"Unexpected ratio {ratio} between UPGD and UPGDW step sizes"
+        assert 0.1 < ratio < 10.0, f"Unexpected ratio {ratio} between UPGD and UPGDW step sizes"
 
         # More importantly, ratio should NOT be close to 2.0 (bug signature)
-        assert not (1.8 < ratio < 2.2), \
-            f"Ratio {ratio} is close to 2.0 - this suggests the bug is still present!"
+        assert not (
+            1.8 < ratio < 2.2
+        ), f"Ratio {ratio} is close to 2.0 - this suggests the bug is still present!"
 
     def test_learning_rate_scaling(self):
         """
@@ -220,10 +205,24 @@ class TestUPGDLearningRateRegression:
         param1 = nn.Parameter(torch.ones(5))
         param2 = nn.Parameter(torch.ones(5))
 
-        opt1 = AdaptiveUPGD([param1], lr=lr_small, sigma=0.0, weight_decay=0.0,
-                             beta1=0.0, beta2=0.0, beta_utility=0.0)
-        opt2 = AdaptiveUPGD([param2], lr=lr_large, sigma=0.0, weight_decay=0.0,
-                             beta1=0.0, beta2=0.0, beta_utility=0.0)
+        opt1 = AdaptiveUPGD(
+            [param1],
+            lr=lr_small,
+            sigma=0.0,
+            weight_decay=0.0,
+            beta1=0.0,
+            beta2=0.0,
+            beta_utility=0.0,
+        )
+        opt2 = AdaptiveUPGD(
+            [param2],
+            lr=lr_large,
+            sigma=0.0,
+            weight_decay=0.0,
+            beta1=0.0,
+            beta2=0.0,
+            beta_utility=0.0,
+        )
 
         grad = torch.ones(5) * 0.5
 
@@ -243,8 +242,9 @@ class TestUPGDLearningRateRegression:
 
         # With correct implementation, doubling lr should double the step
         # Ratio should be close to 2.0
-        assert 1.8 < ratio < 2.2, \
-            f"Learning rate scaling incorrect: 2x lr gave {ratio}x step (expected ~2.0)"
+        assert (
+            1.8 < ratio < 2.2
+        ), f"Learning rate scaling incorrect: 2x lr gave {ratio}x step (expected ~2.0)"
 
 
 if __name__ == "__main__":

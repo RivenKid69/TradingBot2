@@ -186,7 +186,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 _DEFAULT_ADV = 1_000_000_000.0  # $1B typical for ES
-_DEFAULT_VOLATILITY = 0.015    # 1.5% daily for equity index
+_DEFAULT_VOLATILITY = 0.015  # 1.5% daily for equity index
 
 # RTH hours in Eastern Time
 RTH_START_HOUR = 9
@@ -235,14 +235,16 @@ SETTLEMENT_TIMES: Dict[str, Tuple[int, int]] = {
 # Session Detection
 # =============================================================================
 
+
 class CMESession(str, Enum):
     """CME trading session."""
-    RTH = "RTH"                # Regular Trading Hours (9:30-16:00 ET)
-    ETH = "ETH"                # Electronic Trading Hours (overnight)
-    PRE_OPEN = "PRE_OPEN"      # Pre-open auction (before RTH)
-    CLOSE = "CLOSE"            # Closing period
+
+    RTH = "RTH"  # Regular Trading Hours (9:30-16:00 ET)
+    ETH = "ETH"  # Electronic Trading Hours (overnight)
+    PRE_OPEN = "PRE_OPEN"  # Pre-open auction (before RTH)
+    CLOSE = "CLOSE"  # Closing period
     MAINTENANCE = "MAINTENANCE"  # Daily maintenance window
-    CLOSED = "CLOSED"          # Weekend/holiday
+    CLOSED = "CLOSED"  # Weekend/holiday
 
 
 def get_cme_session(
@@ -347,9 +349,11 @@ def get_minutes_to_settlement(
 # Daily Settlement Simulator
 # =============================================================================
 
+
 @dataclass
 class SettlementEvent:
     """Record of a settlement event."""
+
     timestamp_ms: int
     symbol: str
     settlement_price: Decimal
@@ -360,6 +364,7 @@ class SettlementEvent:
 @dataclass
 class DailySettlementState:
     """Daily settlement tracking state."""
+
     last_settlement_date: Optional[str] = None
     last_settlement_price: Optional[Decimal] = None
     settlement_events: List[SettlementEvent] = field(default_factory=list)
@@ -408,23 +413,21 @@ class DailySettlementSimulator:
 
         # Contract multipliers
         multipliers = {
-            "ES": Decimal("50"),      # $50 per point
-            "NQ": Decimal("20"),      # $20 per point
-            "YM": Decimal("5"),       # $5 per point
-            "RTY": Decimal("50"),     # $50 per point
-            "MES": Decimal("5"),      # $5 per point (micro)
-            "MNQ": Decimal("2"),      # $2 per point (micro)
-            "GC": Decimal("100"),     # $100 per oz
-            "SI": Decimal("5000"),    # $5000 per oz
-            "CL": Decimal("1000"),    # $1000 per barrel
-            "NG": Decimal("10000"),   # $10000 per MMBtu
+            "ES": Decimal("50"),  # $50 per point
+            "NQ": Decimal("20"),  # $20 per point
+            "YM": Decimal("5"),  # $5 per point
+            "RTY": Decimal("50"),  # $50 per point
+            "MES": Decimal("5"),  # $5 per point (micro)
+            "MNQ": Decimal("2"),  # $2 per point (micro)
+            "GC": Decimal("100"),  # $100 per oz
+            "SI": Decimal("5000"),  # $5000 per oz
+            "CL": Decimal("1000"),  # $1000 per barrel
+            "NG": Decimal("10000"),  # $10000 per MMBtu
             "6E": Decimal("125000"),  # €125,000
-            "ZN": Decimal("1000"),    # $1000 per point
-            "ZB": Decimal("1000"),    # $1000 per point
+            "ZN": Decimal("1000"),  # $1000 per point
+            "ZB": Decimal("1000"),  # $1000 per point
         }
-        self._multiplier = contract_multiplier or multipliers.get(
-            self._symbol, Decimal("1000")
-        )
+        self._multiplier = contract_multiplier or multipliers.get(self._symbol, Decimal("1000"))
 
     def process_settlement(
         self,
@@ -505,6 +508,7 @@ class DailySettlementSimulator:
 # L3 CME Slippage Provider
 # =============================================================================
 
+
 class CMEL3SlippageProvider:
     """
     L3 CME slippage provider with LOB walk-through.
@@ -551,9 +555,9 @@ class CMEL3SlippageProvider:
             # eta = temporary impact, gamma = permanent impact
             impact_coef = self._config.get_impact_coef(self._symbol)
             params = ImpactParameters(
-                eta=impact_coef,           # Temporary impact coefficient
-                gamma=impact_coef * 0.3,   # Permanent impact (lower)
-                volatility=0.02,           # Default volatility (updated per-trade)
+                eta=impact_coef,  # Temporary impact coefficient
+                gamma=impact_coef * 0.3,  # Permanent impact (lower)
+                volatility=0.02,  # Default volatility (updated per-trade)
             )
             self._impact_model = AlmgrenChrissModel(params=params)
 
@@ -603,9 +607,7 @@ class CMEL3SlippageProvider:
 
         if has_lob:
             # L3: Walk through the book
-            slippage_bps = self._compute_lob_walkthrough(
-                order, market, mid_price
-            )
+            slippage_bps = self._compute_lob_walkthrough(order, market, mid_price)
         else:
             # L2: Use statistical model
             slippage_bps = self._fallback.compute_slippage_bps(
@@ -657,10 +659,7 @@ class CMEL3SlippageProvider:
             slippage_bps = self._config.max_slippage_bps
 
         # Apply bounds
-        return max(
-            self._config.min_slippage_bps,
-            min(self._config.max_slippage_bps, slippage_bps)
-        )
+        return max(self._config.min_slippage_bps, min(self._config.max_slippage_bps, slippage_bps))
 
     def _compute_lob_walkthrough(
         self,
@@ -713,6 +712,7 @@ class CMEL3SlippageProvider:
 # L3 CME Fill Provider
 # =============================================================================
 
+
 class CMEL3FillProvider:
     """
     L3 CME fill provider with Globex matching.
@@ -750,8 +750,7 @@ class CMEL3FillProvider:
         self._symbol = symbol.upper()
         self._tick_size = TICK_SIZES.get(self._symbol, DEFAULT_TICK_SIZE)
         self._protection_points = DEFAULT_PROTECTION_POINTS.get(
-            self._symbol,
-            DEFAULT_PROTECTION_POINTS.get("ES", 6)
+            self._symbol, DEFAULT_PROTECTION_POINTS.get("ES", 6)
         )
 
         # Initialize Globex matching engine
@@ -787,6 +786,7 @@ class CMEL3FillProvider:
 
         # Random seed for stochastic fills
         import random
+
         self._rng = random.Random(seed) if seed is not None else random.Random()
 
     def try_fill(
@@ -1124,6 +1124,7 @@ class CMEL3FillProvider:
 # L3 CME Execution Provider
 # =============================================================================
 
+
 class CMEL3ExecutionProvider:
     """
     Full L3 execution provider for CME futures.
@@ -1460,6 +1461,7 @@ class CMEL3ExecutionProvider:
 # Factory Functions
 # =============================================================================
 
+
 def create_cme_l3_execution_provider(
     symbol: str,
     profile: str = "default",
@@ -1476,10 +1478,7 @@ def create_cme_l3_execution_provider(
     Returns:
         Configured CMEL3ExecutionProvider
     """
-    slippage_config = CME_SLIPPAGE_PROFILES.get(
-        profile,
-        CME_SLIPPAGE_PROFILES["default"]
-    )
+    slippage_config = CME_SLIPPAGE_PROFILES.get(profile, CME_SLIPPAGE_PROFILES["default"])
     return CMEL3ExecutionProvider(
         symbol=symbol,
         slippage_config=slippage_config,

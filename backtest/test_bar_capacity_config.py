@@ -69,7 +69,9 @@ def test_finalise_bar_capacity_payload_records_missing_fields() -> None:
     assert missing == ["adv_base_path", "timeframe_ms"]
 
 
-def test_apply_bar_capacity_base_config_calls_setter_and_logs(caplog: pytest.LogCaptureFixture) -> None:
+def test_apply_bar_capacity_base_config_calls_setter_and_logs(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     sim = _RecordingSim()
     adv_store = _StubAdvStore(path="/tmp/adv.csv")
     caplog.set_level("WARNING")
@@ -94,7 +96,9 @@ def test_apply_bar_capacity_base_config_calls_setter_and_logs(caplog: pytest.Log
     assert any("falling back to timeframe" in msg for msg in warning_messages)
 
 
-def test_apply_bar_capacity_base_config_logs_missing_fields(caplog: pytest.LogCaptureFixture) -> None:
+def test_apply_bar_capacity_base_config_logs_missing_fields(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     sim = _RecordingSim()
     caplog.set_level("WARNING")
 
@@ -109,18 +113,18 @@ def test_apply_bar_capacity_base_config_logs_missing_fields(caplog: pytest.LogCa
     assert sim.calls == [{"enabled": True}]
     warning_messages = [rec.getMessage() for rec in caplog.records]
     assert any(
-        "ctx: bar_capacity_base.adv_base_path not configured and no fallback available"
-        in msg
+        "ctx: bar_capacity_base.adv_base_path not configured and no fallback available" in msg
         for msg in warning_messages
     )
     assert any(
-        "ctx: bar_capacity_base.timeframe_ms not configured and no fallback available"
-        in msg
+        "ctx: bar_capacity_base.timeframe_ms not configured and no fallback available" in msg
         for msg in warning_messages
     )
 
 
-def test_apply_bar_capacity_base_config_bypasses_when_unavailable(caplog: pytest.LogCaptureFixture) -> None:
+def test_apply_bar_capacity_base_config_bypasses_when_unavailable(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     class NoConfigSim:
         pass
 

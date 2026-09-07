@@ -141,9 +141,7 @@ class TestDORAIncidentReporter:
         detection = "2025-01-15T10:00:00+00:00"
         classification = "2025-01-15T11:00:00+00:00"
 
-        deadline = reporter.calculate_initial_notification_deadline(
-            detection, classification
-        )
+        deadline = reporter.calculate_initial_notification_deadline(detection, classification)
 
         # 4h from classification (11:00) = 15:00
         # 24h from detection (10:00) = next day 10:00
@@ -178,9 +176,7 @@ class TestDORAIncidentReporter:
         detection = "2025-01-11T10:00:00+00:00"  # Saturday
         classification = "2025-01-11T11:00:00+00:00"
 
-        deadline = reporter.calculate_initial_notification_deadline(
-            detection, classification
-        )
+        deadline = reporter.calculate_initial_notification_deadline(detection, classification)
 
         # Should extend to Monday noon
         deadline_dt = datetime.fromisoformat(deadline.replace("Z", "+00:00"))

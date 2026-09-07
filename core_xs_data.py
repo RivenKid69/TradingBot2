@@ -20,9 +20,9 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 # pit_quality значения (согласованы с impl_data_sources.VALID_PIT_QUALITY)
-PIT_TRUE = "true"      # настоящий point-in-time (backtest честный)
+PIT_TRUE = "true"  # настоящий point-in-time (backtest честный)
 PIT_APPROX = "approx"  # приблизительный (лаг/прокси/допущения)
-PIT_NONE = "none"      # снимок/синтетика (НЕ backtest-safe)
+PIT_NONE = "none"  # снимок/синтетика (НЕ backtest-safe)
 VALID_PIT = (PIT_TRUE, PIT_APPROX, PIT_NONE)
 
 _PIT_RANK = {PIT_TRUE: 2, PIT_APPROX: 1, PIT_NONE: 0}
@@ -33,9 +33,9 @@ class ColumnProvenance:
     """Происхождение одной колонки панели."""
 
     column: str
-    source: str                      # имя источника/обогатителя
-    vendor: str                      # вендор ('binance'/'yahoo'/'byo'/'synthetic'/…)
-    pit_quality: str = PIT_TRUE      # true | approx | none
+    source: str  # имя источника/обогатителя
+    vendor: str  # вендор ('binance'/'yahoo'/'byo'/'synthetic'/…)
+    pit_quality: str = PIT_TRUE  # true | approx | none
     free: bool = True
     notes: str = ""
 
@@ -45,8 +45,12 @@ class ColumnProvenance:
 
     def to_dict(self) -> Dict[str, object]:
         return {
-            "column": self.column, "source": self.source, "vendor": self.vendor,
-            "pit_quality": self.pit_quality, "free": self.free, "notes": self.notes,
+            "column": self.column,
+            "source": self.source,
+            "vendor": self.vendor,
+            "pit_quality": self.pit_quality,
+            "free": self.free,
+            "notes": self.notes,
         }
 
 
@@ -59,9 +63,9 @@ class DataQualityReport:
     first_ts_ms: Optional[int]
     last_ts_ms: Optional[int]
     columns: List[ColumnProvenance] = field(default_factory=list)
-    coverage: Dict[str, float] = field(default_factory=dict)          # column → доля non-NaN
+    coverage: Dict[str, float] = field(default_factory=dict)  # column → доля non-NaN
     per_symbol_coverage: Dict[str, float] = field(default_factory=dict)
-    staleness_ms: Optional[int] = None                                # now − last_ts
+    staleness_ms: Optional[int] = None  # now − last_ts
     survivorship_biased: Optional[bool] = None
     warnings: List[str] = field(default_factory=list)
 
@@ -102,6 +106,10 @@ class DataQualityReport:
 
 
 __all__ = [
-    "PIT_TRUE", "PIT_APPROX", "PIT_NONE", "VALID_PIT",
-    "ColumnProvenance", "DataQualityReport",
+    "PIT_TRUE",
+    "PIT_APPROX",
+    "PIT_NONE",
+    "VALID_PIT",
+    "ColumnProvenance",
+    "DataQualityReport",
 ]

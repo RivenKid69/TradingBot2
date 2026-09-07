@@ -47,6 +47,7 @@ if config.config_file_name is not None:
 # Target metadata for autogenerate support
 target_metadata = Base.metadata
 
+
 # Get database URL from environment or config
 def get_database_url() -> str:
     """Get database URL from environment or config."""
@@ -114,10 +115,12 @@ async def run_async_migrations() -> None:
     url = configuration["sqlalchemy.url"]
     if url.startswith("sqlite"):
         from sqlalchemy.pool import StaticPool
+
         poolclass = StaticPool
         connect_args = {"check_same_thread": False}
     else:
         from sqlalchemy.pool import NullPool
+
         poolclass = NullPool
         connect_args = {}
 

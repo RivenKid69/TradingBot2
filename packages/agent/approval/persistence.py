@@ -296,10 +296,7 @@ class ApprovalPersistence:
         """Get persistence statistics."""
         with self._lock:
             pending_count = len(list((self._config.storage_dir / "pending").glob("*.json")))
-            history_count = sum(
-                1
-                for _ in (self._config.storage_dir / "history").rglob("*.json")
-            )
+            history_count = sum(1 for _ in (self._config.storage_dir / "history").rglob("*.json"))
 
             return {
                 "pending_count": pending_count,
@@ -326,9 +323,7 @@ class ApprovalPersistence:
             Number of records deleted
         """
         with self._lock:
-            cutoff = datetime.utcnow().replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
+            cutoff = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
             cutoff = cutoff.replace(
                 year=cutoff.year if cutoff.month > 1 else cutoff.year - 1,
                 month=(cutoff.month - 1) if cutoff.month > 1 else 12,
@@ -352,6 +347,7 @@ class ApprovalPersistence:
 
                     # Delete if older than cutoff
                     from datetime import timedelta
+
                     if dir_date < cutoff - timedelta(days=days):
                         for path in month_dir.glob("*.json"):
                             path.unlink()

@@ -141,16 +141,12 @@ class TestBuildEarningsBlackoutWindows:
         """Test that window duration is correct."""
         from no_trade import _build_earnings_blackout_windows
 
-        events = {
-            "AAPL": [{"symbol": "AAPL", "report_date": "2025-01-15"}]
-        }
+        events = {"AAPL": [{"symbol": "AAPL", "report_date": "2025-01-15"}]}
 
         bar_duration_ms = 4 * 60 * 60 * 1000  # 4 hours
         pre_bars = 3
         post_bars = 2
-        windows = _build_earnings_blackout_windows(
-            events, pre_bars, post_bars, bar_duration_ms
-        )
+        windows = _build_earnings_blackout_windows(events, pre_bars, post_bars, bar_duration_ms)
 
         window = windows[0]
         expected_duration = (pre_bars + post_bars) * bar_duration_ms
@@ -161,9 +157,7 @@ class TestBuildEarningsBlackoutWindows:
         """Test handling of invalid date format."""
         from no_trade import _build_earnings_blackout_windows
 
-        events = {
-            "AAPL": [{"symbol": "AAPL", "report_date": "invalid-date"}]
-        }
+        events = {"AAPL": [{"symbol": "AAPL", "report_date": "invalid-date"}]}
 
         # Should not raise, just skip invalid entries
         windows = _build_earnings_blackout_windows(events, 2, 1)
@@ -173,9 +167,7 @@ class TestBuildEarningsBlackoutWindows:
         """Test handling of missing report_date."""
         from no_trade import _build_earnings_blackout_windows
 
-        events = {
-            "AAPL": [{"symbol": "AAPL", "report_date": None}]
-        }
+        events = {"AAPL": [{"symbol": "AAPL", "report_date": None}]}
 
         windows = _build_earnings_blackout_windows(events, 2, 1)
         assert len(windows) == 0
@@ -301,10 +293,12 @@ class TestEarningsIntegration:
         if NO_TRADE_FEATURES_DISABLED:
             pytest.skip("NO_TRADE_FEATURES_DISABLED is True")
 
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000],
-            "symbol": ["AAPL", "AAPL", "AAPL"],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000],
+                "symbol": ["AAPL", "AAPL", "AAPL"],
+            }
+        )
 
         cfg = NoTradeConfig()
         assert cfg.earnings.enabled is False
@@ -325,10 +319,12 @@ class TestEarningsIntegration:
         if NO_TRADE_FEATURES_DISABLED:
             pytest.skip("NO_TRADE_FEATURES_DISABLED is True")
 
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000],
-            "symbol": ["BTCUSDT", "ETHUSDT", "BTCUSD"],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000],
+                "symbol": ["BTCUSDT", "ETHUSDT", "BTCUSD"],
+            }
+        )
 
         cfg = NoTradeConfig(earnings={"enabled": True})
 
@@ -346,10 +342,12 @@ class TestEarningsIntegration:
         if NO_TRADE_FEATURES_DISABLED:
             pytest.skip("NO_TRADE_FEATURES_DISABLED is True")
 
-        df = pd.DataFrame({
-            "ts_ms": [1000],
-            "symbol": ["AAPL"],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000],
+                "symbol": ["AAPL"],
+            }
+        )
 
         cfg = NoTradeConfig()
         _, _, _, _, labels = _compute_no_trade_components(df, cfg)
@@ -428,14 +426,10 @@ class TestEarningsAdapterIntegration:
             mock_instance.get_earnings_history.return_value = [mock_event]
 
             # First call
-            result1 = _get_earnings_events(
-                ["AAPL"], "2025-01-01", "2025-03-01", cache_ttl_sec=3600
-            )
+            result1 = _get_earnings_events(["AAPL"], "2025-01-01", "2025-03-01", cache_ttl_sec=3600)
 
             # Second call (should use cache)
-            result2 = _get_earnings_events(
-                ["AAPL"], "2025-01-01", "2025-03-01", cache_ttl_sec=3600
-            )
+            result2 = _get_earnings_events(["AAPL"], "2025-01-01", "2025-03-01", cache_ttl_sec=3600)
 
             # Adapter should only be called once (due to caching)
             assert mock_instance.get_earnings_history.call_count == 1
@@ -453,9 +447,7 @@ class TestEarningsAdapterIntegration:
         # by trying to fetch and catching errors
         with patch.dict("sys.modules", {"adapters.yahoo.earnings": None}):
             # When module is None, import will fail
-            result = _get_earnings_events(
-                ["AAPL"], "2025-01-01", "2025-03-01", cache_ttl_sec=3600
-            )
+            result = _get_earnings_events(["AAPL"], "2025-01-01", "2025-03-01", cache_ttl_sec=3600)
             # Should either return empty or have cached result
             assert isinstance(result, dict)
 
@@ -476,10 +468,12 @@ class TestBackwardCompatibility:
             pytest.skip("NO_TRADE_FEATURES_DISABLED is True")
 
         # Simulate crypto trading data
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000],
-            "symbol": ["BTCUSDT", "ETHUSDT", "BTCUSDT"],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000],
+                "symbol": ["BTCUSDT", "ETHUSDT", "BTCUSDT"],
+            }
+        )
 
         cfg = NoTradeConfig(earnings={"enabled": True})
 
@@ -513,9 +507,7 @@ no_trade:
     daily_utc:
       - "00:00-00:05"
 """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(config_content)
             temp_path = f.name
 

@@ -44,6 +44,7 @@ RETRY_BACKOFF: Final[int] = 60  # seconds
 
 class TaskState(str, Enum):
     """Task execution state."""
+
     PENDING = "pending"
     STARTED = "started"
     RUNNING = "running"
@@ -55,6 +56,7 @@ class TaskState(str, Enum):
 
 class TaskType(str, Enum):
     """Task type."""
+
     TRAINING = "training"
     BACKTEST = "backtest"
     RESEARCH = "research"
@@ -69,6 +71,7 @@ class TaskType(str, Enum):
 @dataclass
 class TaskResult:
     """Result of task execution."""
+
     task_id: str
     task_type: TaskType
     state: TaskState
@@ -98,6 +101,7 @@ class TaskResult:
 @dataclass
 class TaskConfig:
     """Base task configuration."""
+
     workspace_id: UUID
     user_id: UUID
     priority: int = 5  # 1-10, higher = more urgent
@@ -163,7 +167,11 @@ class BaseTask(ABC):
                 workspace_id=self.config.workspace_id,
                 started_at=self.started_at,
                 completed_at=self.completed_at,
-                duration_seconds=(self.completed_at - self.started_at).total_seconds() if self.started_at else None,
+                duration_seconds=(
+                    (self.completed_at - self.started_at).total_seconds()
+                    if self.started_at
+                    else None
+                ),
                 error=str(e),
                 retry_count=self.retry_count,
             )
@@ -177,6 +185,7 @@ class BaseTask(ABC):
 @dataclass
 class TrainingConfig(TaskConfig):
     """Training task configuration."""
+
     strategy_id: UUID = field(default_factory=uuid.uuid4)
     strategy_version: str = "1.0.0"
     model_type: str = "ppo"
@@ -225,7 +234,9 @@ class TrainingTask(BaseTask):
             if self.started_at:
                 elapsed = (datetime.now(timezone.utc) - self.started_at).total_seconds()
                 if elapsed > self.config.timeout_seconds:
-                    raise TimeoutError(f"Training exceeded timeout of {self.config.timeout_seconds}s")
+                    raise TimeoutError(
+                        f"Training exceeded timeout of {self.config.timeout_seconds}s"
+                    )
 
         # Generate artifact reference
         artifact_digest = f"sha256:{uuid.uuid4().hex}"
@@ -253,6 +264,7 @@ class TrainingTask(BaseTask):
 @dataclass
 class BacktestConfig(TaskConfig):
     """Backtest task configuration."""
+
     strategy_id: UUID = field(default_factory=uuid.uuid4)
     strategy_version: str = "1.0.0"
     artifact_digest: str = ""
@@ -322,11 +334,11 @@ class BacktestTask(BaseTask):
             "symbols": self.backtest_config.symbols,
             "metrics": {
                 "total_return": 0.25,  # 25% - MOCK VALUE
-                "sharpe_ratio": 1.5,   # MOCK VALUE
-                "max_drawdown": -0.15, # MOCK VALUE
-                "win_rate": 0.55,      # MOCK VALUE
+                "sharpe_ratio": 1.5,  # MOCK VALUE
+                "max_drawdown": -0.15,  # MOCK VALUE
+                "win_rate": 0.55,  # MOCK VALUE
                 "profit_factor": 1.8,  # MOCK VALUE
-                "total_trades": 500,   # MOCK VALUE
+                "total_trades": 500,  # MOCK VALUE
             },
             "equity_curve_digest": f"sha256:{uuid.uuid4().hex}",
             "trade_log_digest": f"sha256:{uuid.uuid4().hex}",
@@ -346,6 +358,7 @@ class BacktestTask(BaseTask):
 @dataclass
 class ResearchConfig(TaskConfig):
     """Research task configuration."""
+
     notebook_id: str = ""
     cells_to_run: Optional[List[str]] = None  # None = run all
     parameters: Dict[str, Any] = field(default_factory=dict)
@@ -375,11 +388,13 @@ class ResearchTask(BaseTask):
         cells_to_run = self.research_config.cells_to_run or ["cell_1", "cell_2", "cell_3"]
 
         for cell_id in cells_to_run:
-            cell_results.append({
-                "cell_id": cell_id,
-                "status": "success",
-                "execution_time_ms": 100,
-            })
+            cell_results.append(
+                {
+                    "cell_id": cell_id,
+                    "status": "success",
+                    "execution_time_ms": 100,
+                }
+            )
 
         return {
             "notebook_id": self.research_config.notebook_id,
@@ -397,6 +412,7 @@ class ResearchTask(BaseTask):
 @dataclass
 class ArtifactBuildConfig(TaskConfig):
     """Artifact build task configuration."""
+
     strategy_id: UUID = field(default_factory=uuid.uuid4)
     strategy_version: str = "1.0.0"
     git_sha: str = ""

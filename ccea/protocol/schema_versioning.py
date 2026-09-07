@@ -50,8 +50,10 @@ SEMVER_PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 # Enums
 # ============================================================================
 
+
 class NegotiationStatus(str, Enum):
     """Status of version negotiation."""
+
     PENDING = "PENDING"
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
@@ -60,6 +62,7 @@ class NegotiationStatus(str, Enum):
 
 class VersionCompatibility(str, Enum):
     """Result of version compatibility check."""
+
     COMPATIBLE = "COMPATIBLE"
     INCOMPATIBLE_MAJOR = "INCOMPATIBLE_MAJOR"
     INCOMPATIBLE_TOO_OLD = "INCOMPATIBLE_TOO_OLD"
@@ -71,6 +74,7 @@ class VersionCompatibility(str, Enum):
 # Schema Version Model
 # ============================================================================
 
+
 class SchemaVersion(BaseModel):
     """
     Semantic version representation for schema versioning.
@@ -80,6 +84,7 @@ class SchemaVersion(BaseModel):
     - MINOR version for backward-compatible new functionality
     - PATCH version for backward-compatible bug fixes
     """
+
     major: int = Field(..., ge=0, description="Major version (breaking changes)")
     minor: int = Field(..., ge=0, description="Minor version (new features)")
     patch: int = Field(..., ge=0, description="Patch version (bug fixes)")
@@ -126,11 +131,7 @@ class SchemaVersion(BaseModel):
                 return False
         if not isinstance(other, SchemaVersion):
             return NotImplemented
-        return (
-            self.major == other.major
-            and self.minor == other.minor
-            and self.patch == other.patch
-        )
+        return self.major == other.major and self.minor == other.minor and self.patch == other.patch
 
     def __lt__(self, other: "SchemaVersion") -> bool:
         if not isinstance(other, SchemaVersion):
@@ -180,12 +181,14 @@ class SchemaVersion(BaseModel):
 # Negotiation Request/Result Models
 # ============================================================================
 
+
 class VersionNegotiationRequest(BaseModel):
     """
     Version negotiation request from Agent to Cloud.
 
     Sent in POLL_COMMANDS message to indicate supported versions.
     """
+
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     min_supported: str = Field(..., pattern=r"^\d+\.\d+\.\d+$")
     max_supported: str = Field(..., pattern=r"^\d+\.\d+\.\d+$")
@@ -203,9 +206,7 @@ class VersionNegotiationRequest(BaseModel):
             min_ver = SchemaVersion.parse(min_ver_str)
             max_ver = SchemaVersion.parse(v)
             if max_ver < min_ver:
-                raise ValueError(
-                    f"max_supported ({v}) must be >= min_supported ({min_ver_str})"
-                )
+                raise ValueError(f"max_supported ({v}) must be >= min_supported ({min_ver_str})")
         return v
 
     def get_min_version(self) -> SchemaVersion:
@@ -230,6 +231,7 @@ class VersionNegotiationResult:
 
     Contains selected version or error information if negotiation failed.
     """
+
     status: NegotiationStatus
     selected_version: Optional[SchemaVersion] = None
     compatibility: VersionCompatibility = VersionCompatibility.COMPATIBLE
@@ -266,6 +268,7 @@ class VersionNegotiationResult:
 # ============================================================================
 # Version Negotiator
 # ============================================================================
+
 
 class SchemaVersionNegotiator:
     """
@@ -305,8 +308,7 @@ class SchemaVersionNegotiator:
 
         if self.max_supported < self.min_supported:
             raise ValueError(
-                f"max_supported ({max_supported}) must be >= "
-                f"min_supported ({min_supported})"
+                f"max_supported ({max_supported}) must be >= " f"min_supported ({min_supported})"
             )
 
         self._negotiation_cache: Dict[str, VersionNegotiationResult] = {}
@@ -391,7 +393,7 @@ class SchemaVersionNegotiator:
                 "selected_version": str(selected),
                 "agent_range": f"[{agent_min}-{agent_max}]",
                 "cloud_range": f"[{self.min_supported}-{self.max_supported}]",
-            }
+            },
         )
 
         result = VersionNegotiationResult(
@@ -444,6 +446,7 @@ class SchemaVersionNegotiator:
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def check_version_compatibility(
     version: str,

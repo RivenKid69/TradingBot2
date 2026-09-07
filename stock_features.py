@@ -22,7 +22,7 @@ Research references:
 - Moskowitz, T.J. et al. (2012): "Time series momentum" (relative strength)
 - Levy, R. (1967): "Relative Strength as a Criterion for Investment Selection"
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-27
 Version: 1.0.0
 """
@@ -45,30 +45,30 @@ import pandas as pd
 # VIX regime thresholds (based on historical analysis)
 # References: CBOE VIX historical percentiles
 VIX_REGIME_THRESHOLDS = {
-    "low": 12.0,      # Below 12: Very calm market (complacency)
-    "normal": 20.0,   # 12-20: Normal market conditions
-    "elevated": 30.0, # 20-30: Elevated fear
+    "low": 12.0,  # Below 12: Very calm market (complacency)
+    "normal": 20.0,  # 12-20: Normal market conditions
+    "elevated": 30.0,  # 20-30: Elevated fear
     "extreme": 40.0,  # Above 40: Extreme fear (crisis)
 }
 
 # Market regime thresholds
 # Based on SMA crossover strategies and VIX interpretation
 MARKET_REGIME_THRESHOLDS = {
-    "bull_vix_max": 20.0,       # VIX must be below 20 for bull
-    "bear_vix_min": 25.0,       # VIX must be above 25 for bear
-    "trend_sma_fast": 20,       # 20-day SMA for fast trend
-    "trend_sma_slow": 50,       # 50-day SMA for slow trend
+    "bull_vix_max": 20.0,  # VIX must be below 20 for bull
+    "bear_vix_min": 25.0,  # VIX must be above 25 for bear
+    "trend_sma_fast": 20,  # 20-day SMA for fast trend
+    "trend_sma_slow": 50,  # 50-day SMA for slow trend
 }
 
 # Relative strength lookback windows
 RS_WINDOWS = {
-    "short": 20,   # 20-day RS (approximately 1 month)
+    "short": 20,  # 20-day RS (approximately 1 month)
     "medium": 50,  # 50-day RS (approximately 2 months)
 }
 
 # Default values for missing data
-DEFAULT_VIX = 20.0            # Historical VIX mean approximately 20
-DEFAULT_MARKET_REGIME = 0.0   # Neutral/sideways
+DEFAULT_VIX = 20.0  # Historical VIX mean approximately 20
+DEFAULT_MARKET_REGIME = 0.0  # Neutral/sideways
 DEFAULT_RELATIVE_STRENGTH = 0.0  # Neutral
 
 
@@ -76,8 +76,10 @@ DEFAULT_RELATIVE_STRENGTH = 0.0  # Neutral
 # ENUMS
 # =============================================================================
 
+
 class MarketRegime(Enum):
     """Market regime classification."""
+
     BEAR = -1
     SIDEWAYS = 0
     BULL = 1
@@ -85,15 +87,17 @@ class MarketRegime(Enum):
 
 class VIXRegime(Enum):
     """VIX-based volatility regime."""
-    LOW = 0       # < 12: Complacency
-    NORMAL = 1    # 12-20: Normal
+
+    LOW = 0  # < 12: Complacency
+    NORMAL = 1  # 12-20: Normal
     ELEVATED = 2  # 20-30: Elevated fear
-    EXTREME = 3   # > 30: Extreme fear/crisis
+    EXTREME = 3  # > 30: Extreme fear/crisis
 
 
 # =============================================================================
 # DATA CLASSES
 # =============================================================================
+
 
 @dataclass
 class StockFeatures:
@@ -103,6 +107,7 @@ class StockFeatures:
     All features include validity flags to distinguish missing data from zero values,
     following the pattern established by Fear & Greed in crypto.
     """
+
     # VIX features
     vix_value: float = DEFAULT_VIX
     vix_valid: bool = False
@@ -133,6 +138,7 @@ class BenchmarkData:
 
     This is used to pass benchmark data to feature calculators.
     """
+
     spy_prices: List[float] = field(default_factory=list)
     qqq_prices: List[float] = field(default_factory=list)
     vix_values: List[float] = field(default_factory=list)
@@ -142,6 +148,7 @@ class BenchmarkData:
 # =============================================================================
 # VIX FEATURES
 # =============================================================================
+
 
 def calculate_vix_regime(vix_value: float) -> Tuple[float, VIXRegime]:
     """
@@ -228,6 +235,7 @@ def normalize_vix_value(vix_value: float) -> float:
 # =============================================================================
 # MARKET REGIME FEATURES
 # =============================================================================
+
 
 def calculate_market_regime(
     spy_prices: List[float],
@@ -329,6 +337,7 @@ def calculate_market_regime(
 # RELATIVE STRENGTH FEATURES
 # =============================================================================
 
+
 def calculate_relative_strength(
     stock_prices: List[float],
     benchmark_prices: List[float],
@@ -365,8 +374,12 @@ def calculate_relative_strength(
     - Jegadeesh & Titman (1993): "Returns to Buying Winners and Selling Losers"
     - Moskowitz et al. (2012): "Time series momentum"
     """
-    if (not stock_prices or not benchmark_prices or
-        len(stock_prices) < window + 1 or len(benchmark_prices) < window + 1):
+    if (
+        not stock_prices
+        or not benchmark_prices
+        or len(stock_prices) < window + 1
+        or len(benchmark_prices) < window + 1
+    ):
         return DEFAULT_RELATIVE_STRENGTH, False
 
     try:
@@ -377,8 +390,10 @@ def calculate_relative_strength(
         benchmark_past = float(benchmark_prices[-(window + 1)])
 
         # Validate prices
-        if not all(math.isfinite(p) and p > 0 for p in
-                  [stock_now, stock_past, benchmark_now, benchmark_past]):
+        if not all(
+            math.isfinite(p) and p > 0
+            for p in [stock_now, stock_past, benchmark_now, benchmark_past]
+        ):
             return DEFAULT_RELATIVE_STRENGTH, False
 
         # Calculate returns
@@ -430,37 +445,58 @@ SECTOR_ETFS = {
 # This would typically come from exchange_info adapter
 SYMBOL_TO_SECTOR = {
     # Technology
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "GOOG": "technology", "META": "technology", "NVDA": "technology",
-    "AMD": "technology", "INTC": "technology", "CRM": "technology",
-    "ADBE": "technology", "ORCL": "technology", "CSCO": "technology",
-
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "GOOG": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
+    "INTC": "technology",
+    "CRM": "technology",
+    "ADBE": "technology",
+    "ORCL": "technology",
+    "CSCO": "technology",
     # Healthcare
-    "JNJ": "healthcare", "UNH": "healthcare", "PFE": "healthcare",
-    "MRK": "healthcare", "ABBV": "healthcare", "LLY": "healthcare",
-
+    "JNJ": "healthcare",
+    "UNH": "healthcare",
+    "PFE": "healthcare",
+    "MRK": "healthcare",
+    "ABBV": "healthcare",
+    "LLY": "healthcare",
     # Financials
-    "JPM": "financials", "BAC": "financials", "WFC": "financials",
-    "GS": "financials", "MS": "financials", "C": "financials",
-
+    "JPM": "financials",
+    "BAC": "financials",
+    "WFC": "financials",
+    "GS": "financials",
+    "MS": "financials",
+    "C": "financials",
     # Consumer Discretionary
-    "AMZN": "consumer_discretionary", "TSLA": "consumer_discretionary",
-    "HD": "consumer_discretionary", "NKE": "consumer_discretionary",
-
+    "AMZN": "consumer_discretionary",
+    "TSLA": "consumer_discretionary",
+    "HD": "consumer_discretionary",
+    "NKE": "consumer_discretionary",
     # Consumer Staples
-    "PG": "consumer_staples", "KO": "consumer_staples", "PEP": "consumer_staples",
-    "WMT": "consumer_staples", "COST": "consumer_staples",
-
+    "PG": "consumer_staples",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "WMT": "consumer_staples",
+    "COST": "consumer_staples",
     # Industrials
-    "BA": "industrials", "CAT": "industrials", "HON": "industrials",
-    "UPS": "industrials", "GE": "industrials",
-
+    "BA": "industrials",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "UPS": "industrials",
+    "GE": "industrials",
     # Energy
-    "XOM": "energy", "CVX": "energy", "COP": "energy",
-
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
     # Communication Services
-    "DIS": "communication_services", "NFLX": "communication_services",
-    "T": "communication_services", "VZ": "communication_services",
+    "DIS": "communication_services",
+    "NFLX": "communication_services",
+    "T": "communication_services",
+    "VZ": "communication_services",
 }
 
 
@@ -533,6 +569,7 @@ def get_symbol_sector(symbol: str) -> Optional[str]:
 # =============================================================================
 # FEATURE EXTRACTION
 # =============================================================================
+
 
 def extract_stock_features(
     row: Any,
@@ -619,9 +656,7 @@ def extract_stock_features(
         # Get market return (SPY return approximation)
         market_return = 0.0
         if benchmark_data.spy_prices and len(benchmark_data.spy_prices) >= 2:
-            market_return = (
-                benchmark_data.spy_prices[-1] / benchmark_data.spy_prices[-2] - 1
-            )
+            market_return = benchmark_data.spy_prices[-1] / benchmark_data.spy_prices[-2] - 1
 
         sector_mom, sector_valid = calculate_sector_momentum(
             symbol, benchmark_data.sector_returns, market_return
@@ -714,6 +749,7 @@ def _align_benchmark_by_timestamp(
         else:
             # No timestamp column - fall back to positional (with warning)
             import warnings
+
             warnings.warn(
                 "No timestamp column found in DataFrame. "
                 "Falling back to positional indexing which may cause temporal misalignment. "
@@ -853,7 +889,7 @@ def add_stock_features_to_dataframe(
     # Calculate rolling features
     for i in range(n_rows):
         # Build historical data up to current point using ALIGNED values
-        current_stock_prices = stock_prices[:i+1]
+        current_stock_prices = stock_prices[: i + 1]
 
         # FIX: Build cumulative benchmark prices from aligned values
         if spy_aligned[i] is not None:
@@ -883,13 +919,27 @@ def add_stock_features_to_dataframe(
         )
 
         # Update DataFrame
-        df.iloc[i, df.columns.get_loc("vix_normalized")] = features.vix_value if features.vix_valid else 0.0
-        df.iloc[i, df.columns.get_loc("vix_regime")] = features.vix_regime if features.vix_regime_valid else 0.5
-        df.iloc[i, df.columns.get_loc("market_regime")] = features.market_regime if features.market_regime_valid else 0.0
-        df.iloc[i, df.columns.get_loc("rs_spy_20d")] = features.rs_spy_20d if features.rs_spy_20d_valid else 0.0
-        df.iloc[i, df.columns.get_loc("rs_spy_50d")] = features.rs_spy_50d if features.rs_spy_50d_valid else 0.0
-        df.iloc[i, df.columns.get_loc("rs_qqq_20d")] = features.rs_qqq_20d if features.rs_qqq_20d_valid else 0.0
-        df.iloc[i, df.columns.get_loc("sector_momentum")] = features.sector_momentum if features.sector_momentum_valid else 0.0
+        df.iloc[i, df.columns.get_loc("vix_normalized")] = (
+            features.vix_value if features.vix_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("vix_regime")] = (
+            features.vix_regime if features.vix_regime_valid else 0.5
+        )
+        df.iloc[i, df.columns.get_loc("market_regime")] = (
+            features.market_regime if features.market_regime_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("rs_spy_20d")] = (
+            features.rs_spy_20d if features.rs_spy_20d_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("rs_spy_50d")] = (
+            features.rs_spy_50d if features.rs_spy_50d_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("rs_qqq_20d")] = (
+            features.rs_qqq_20d if features.rs_qqq_20d_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("sector_momentum")] = (
+            features.sector_momentum if features.sector_momentum_valid else 0.0
+        )
 
     return df
 

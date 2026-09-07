@@ -35,6 +35,7 @@ from sb3_contrib.common.recurrent.type_aliases import RNNStates
 # Exhaustive _cfg_get tests
 # =============================================================================
 
+
 class TestCfgGetComprehensive:
     """Comprehensive tests for every branch in _cfg_get."""
 
@@ -70,6 +71,7 @@ class TestCfgGetComprehensive:
 
     def test_callable_get_type_error_then_exception(self):
         """Test TypeError fallback when single-arg get also fails."""
+
         class GetTypeErrorThenFail:
             def get(self, key, default=None):
                 raise TypeError("too many args")
@@ -121,6 +123,7 @@ class TestCfgGetComprehensive:
 # =============================================================================
 # Exhaustive _popart_value_to_serializable tests
 # =============================================================================
+
 
 class TestPopartValueComprehensive:
     """Comprehensive tests for _popart_value_to_serializable."""
@@ -192,6 +195,7 @@ class TestPopartValueComprehensive:
 # =============================================================================
 # Exhaustive safe_explained_variance tests
 # =============================================================================
+
 
 class TestSafeExplainedVarianceComprehensive:
     """Comprehensive tests for safe_explained_variance."""
@@ -274,6 +278,7 @@ class TestSafeExplainedVarianceComprehensive:
 # Exhaustive _weighted_variance_np tests
 # =============================================================================
 
+
 class TestWeightedVarianceNpComprehensive:
     """Comprehensive tests for _weighted_variance_np."""
 
@@ -320,6 +325,7 @@ class TestWeightedVarianceNpComprehensive:
 # Exhaustive calculate_cvar tests
 # =============================================================================
 
+
 class TestCalculateCvarComprehensive:
     """Comprehensive tests for calculate_cvar function."""
 
@@ -346,11 +352,13 @@ class TestCalculateCvarComprehensive:
         assert result.item() < 0  # Left tail average
 
     def test_batch_size_greater_than_one(self):
-        probs = torch.tensor([
-            [0.25, 0.25, 0.25, 0.25],
-            [0.1, 0.2, 0.3, 0.4],
-            [0.4, 0.3, 0.2, 0.1],
-        ])
+        probs = torch.tensor(
+            [
+                [0.25, 0.25, 0.25, 0.25],
+                [0.1, 0.2, 0.3, 0.4],
+                [0.4, 0.3, 0.2, 0.1],
+            ]
+        )
         atoms = torch.tensor([-2.0, -1.0, 1.0, 2.0])
         result = calculate_cvar(probs, atoms, 0.5)
         assert result.shape == (3,)
@@ -368,6 +376,7 @@ class TestCalculateCvarComprehensive:
 # =============================================================================
 # Exhaustive compute_grouped_explained_variance tests
 # =============================================================================
+
 
 class TestComputeGroupedExplainedVarianceComprehensive:
     """Comprehensive tests for compute_grouped_explained_variance."""
@@ -407,6 +416,7 @@ class TestComputeGroupedExplainedVarianceComprehensive:
 # =============================================================================
 # Exhaustive create_sequencers tests
 # =============================================================================
+
 
 class TestCreateSequencersComprehensive:
     """Comprehensive tests for create_sequencers function."""
@@ -448,6 +458,7 @@ class TestCreateSequencersComprehensive:
 # PopArtController comprehensive tests
 # =============================================================================
 
+
 class TestPopArtControllerComprehensive:
     """Additional comprehensive tests for PopArtController."""
 
@@ -483,6 +494,7 @@ class TestPopArtControllerComprehensive:
 # =============================================================================
 # DistributionalPPO static methods comprehensive tests
 # =============================================================================
+
 
 class TestDistributionalPPOStaticComprehensive:
     """Comprehensive tests for DistributionalPPO static methods."""
@@ -535,6 +547,7 @@ class TestDistributionalPPOStaticComprehensive:
 # RawRecurrentRolloutBuffer tests
 # =============================================================================
 
+
 class TestRawRecurrentRolloutBufferComprehensive:
     """Comprehensive tests for RawRecurrentRolloutBuffer."""
 
@@ -558,6 +571,7 @@ class TestRawRecurrentRolloutBufferComprehensive:
 # =============================================================================
 # RNNStates handling tests
 # =============================================================================
+
 
 class TestRNNStatesHandling:
     """Tests for RNNStates handling in various methods."""

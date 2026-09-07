@@ -20,7 +20,10 @@ import pytest
 
 from impl_panel import PanelBuilder
 from impl_continuous_futures import (
-    back_adjust, stitch_contracts, build_continuous_panel, synthetic_continuous_frames,
+    back_adjust,
+    stitch_contracts,
+    build_continuous_panel,
+    synthetic_continuous_frames,
 )
 from signals.futures_signals import Trend, Carry, FuturesValue, RealizedVolInv
 from xs_risk.futures_factors import market_beta, build_futures_exposures
@@ -71,8 +74,8 @@ def test_stitch_contracts_builds_continuous():
     n = 30
     ts = np.array([(T0 + i * STEP) * 1000 for i in range(n)])
     P = 100.0 * np.cumprod(1.0 + 0.001 * np.ones(n))
-    a = pd.Series(P[:22], index=ts[:22])             # контракт A (с перекрытием)
-    b = pd.Series(P[18:] * 1.05, index=ts[18:])       # контракт B, +5% уровень
+    a = pd.Series(P[:22], index=ts[:22])  # контракт A (с перекрытием)
+    b = pd.Series(P[18:] * 1.05, index=ts[18:])  # контракт B, +5% уровень
     # A активен до ts[20], затем B
     cont, rolls = stitch_contracts([(ts[0], a), (ts[20], b)], method="ratio")
     assert len(rolls) == 1
@@ -111,21 +114,28 @@ def test_trend_and_value_signs():
     bar = (T0 + 12 * STEP) * 1000
     exp = close[12] / close[2] - 1.0
     assert tr.loc[(bar, "ES")] == pytest.approx(exp)
-    assert val.loc[(bar, "ES")] == pytest.approx(-exp)   # value = −trend
+    assert val.loc[(bar, "ES")] == pytest.approx(-exp)  # value = −trend
 
 
 def test_carry_from_front_back_and_ready_column():
     n = 4
     ts = [T0 + i * STEP for i in range(n)]
-    frame = pd.DataFrame({
-        "timestamp": ts, "symbol": "CL", "close": [70.0] * n,
-        "front": [70.0] * n, "back": [68.0] * n,  # backwardation: (70-68)/68 > 0
-    })
+    frame = pd.DataFrame(
+        {
+            "timestamp": ts,
+            "symbol": "CL",
+            "close": [70.0] * n,
+            "front": [70.0] * n,
+            "back": [68.0] * n,  # backwardation: (70-68)/68 > 0
+        }
+    )
     panel = PanelBuilder.from_frames({"CL": frame})
     c = Carry("c").compute_panel(panel)
     assert c.iloc[0] == pytest.approx((70.0 - 68.0) / 68.0)
     # готовая carry-колонка имеет приоритет
-    frame2 = pd.DataFrame({"timestamp": ts, "symbol": "CL", "close": [70.0] * n, "carry": [0.05] * n})
+    frame2 = pd.DataFrame(
+        {"timestamp": ts, "symbol": "CL", "close": [70.0] * n, "carry": [0.05] * n}
+    )
     panel2 = PanelBuilder.from_frames({"CL": frame2})
     assert Carry("c").compute_panel(panel2).iloc[0] == pytest.approx(0.05)
 
@@ -159,7 +169,8 @@ def test_build_futures_exposures_asset_class():
     rng = np.random.default_rng(1)
     rw = pd.DataFrame({s: rng.normal(0, 0.01, 100) for s in ["ES", "CL", "GC", "ZN"]})
     B = build_futures_exposures(
-        rw, asset_classes={"ES": "equity_index", "CL": "energy", "GC": "metals", "ZN": "rates"},
+        rw,
+        asset_classes={"ES": "equity_index", "CL": "energy", "GC": "metals", "ZN": "rates"},
     )
     assert "market_beta" in B.columns and "vol" in B.columns
     assert any(c.startswith("ac_") for c in B.columns)
@@ -170,24 +181,28 @@ def test_build_futures_exposures_asset_class():
 # pipeline integration
 # ---------------------------------------------------------------------------
 def test_pipeline_builds_futures_signals():
-    cfg = XSConfig.model_validate({
-        "asset_class": "futures",
-        "data": {"source": "synthetic", "symbols": ["ES", "CL"]},
-        "signals": [
-            {"name": "t50", "kind": "trend", "lookback": 50, "vol_normalize": True},
-            {"name": "val", "kind": "futures_value", "lookback": 250},
-            {"name": "c", "kind": "carry"},
-        ],
-    })
+    cfg = XSConfig.model_validate(
+        {
+            "asset_class": "futures",
+            "data": {"source": "synthetic", "symbols": ["ES", "CL"]},
+            "signals": [
+                {"name": "t50", "kind": "trend", "lookback": 50, "vol_normalize": True},
+                {"name": "val", "kind": "futures_value", "lookback": 250},
+                {"name": "c", "kind": "carry"},
+            ],
+        }
+    )
     lib = build_signal_library(cfg)
     assert lib.names == ["t50", "val", "c"]
 
 
 def test_futures_synthetic_panel_is_continuous():
-    cfg = XSConfig.model_validate({
-        "asset_class": "futures",
-        "data": {"source": "synthetic", "symbols": ["ES", "CL", "GC"], "synthetic_bars": 60},
-    })
+    cfg = XSConfig.model_validate(
+        {
+            "asset_class": "futures",
+            "data": {"source": "synthetic", "symbols": ["ES", "CL", "GC"], "synthetic_bars": 60},
+        }
+    )
     panel = load_panel(cfg)
     assert "close" in panel.columns
     assert panel.index.get_level_values("symbol").nunique() == 3
@@ -198,6 +213,7 @@ def test_futures_synthetic_panel_is_continuous():
 # ---------------------------------------------------------------------------
 def test_futures_preset_end_to_end():
     import yaml
+
     with open(FUTURES_CFG, "r", encoding="utf-8") as fh:
         cfg = XSConfig.model_validate(yaml.safe_load(fh))
     assert cfg.risk.type == "futures_factor"

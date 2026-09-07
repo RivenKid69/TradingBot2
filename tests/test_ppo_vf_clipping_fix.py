@@ -16,6 +16,7 @@ Tests cover:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -42,30 +43,35 @@ class TestPPOVFClippingMathematicalCorrectness:
         batch_size = 3
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
 
-        with patch.object(ppo, '_quantile_levels_tensor', return_value=quantile_levels):
+        with patch.object(ppo, "_quantile_levels_tensor", return_value=quantile_levels):
             predicted = torch.randn(batch_size, num_quantiles, requires_grad=True)
             targets = torch.randn(batch_size, 1)
 
             # Test reduction='none' returns per-sample losses
-            loss_none = ppo._quantile_huber_loss(predicted, targets, reduction='none')
-            assert loss_none.shape == (batch_size,), \
-                f"reduction='none' should return shape [batch], got {loss_none.shape}"
+            loss_none = ppo._quantile_huber_loss(predicted, targets, reduction="none")
+            assert loss_none.shape == (
+                batch_size,
+            ), f"reduction='none' should return shape [batch], got {loss_none.shape}"
 
             # Test reduction='mean' returns scalar
-            loss_mean = ppo._quantile_huber_loss(predicted, targets, reduction='mean')
-            assert loss_mean.shape == (), \
-                f"reduction='mean' should return scalar, got {loss_mean.shape}"
+            loss_mean = ppo._quantile_huber_loss(predicted, targets, reduction="mean")
+            assert (
+                loss_mean.shape == ()
+            ), f"reduction='mean' should return scalar, got {loss_mean.shape}"
 
             # Test reduction='sum' returns scalar
-            loss_sum = ppo._quantile_huber_loss(predicted, targets, reduction='sum')
-            assert loss_sum.shape == (), \
-                f"reduction='sum' should return scalar, got {loss_sum.shape}"
+            loss_sum = ppo._quantile_huber_loss(predicted, targets, reduction="sum")
+            assert (
+                loss_sum.shape == ()
+            ), f"reduction='sum' should return scalar, got {loss_sum.shape}"
 
             # Verify mathematical relationship
-            assert torch.allclose(loss_mean, loss_none.mean(), atol=1e-6), \
-                "reduction='mean' should equal mean of reduction='none'"
-            assert torch.allclose(loss_sum, loss_none.sum(), atol=1e-6), \
-                "reduction='sum' should equal sum of reduction='none'"
+            assert torch.allclose(
+                loss_mean, loss_none.mean(), atol=1e-6
+            ), "reduction='mean' should equal mean of reduction='none'"
+            assert torch.allclose(
+                loss_sum, loss_none.sum(), atol=1e-6
+            ), "reduction='sum' should equal sum of reduction='none'"
 
     def test_vf_clipping_uses_mean_of_max_not_max_of_mean(self):
         """
@@ -87,46 +93,50 @@ class TestPPOVFClippingMathematicalCorrectness:
         num_quantiles = 5
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
 
-        with patch.object(ppo, '_quantile_levels_tensor', return_value=quantile_levels):
+        with patch.object(ppo, "_quantile_levels_tensor", return_value=quantile_levels):
             # Create scenario where bug would produce different result
-            predicted_unclipped = torch.tensor([
-                [1.0, 1.2, 1.4, 1.6, 1.8],
-                [2.0, 2.2, 2.4, 2.6, 2.8],
-                [0.5, 0.6, 0.7, 0.8, 0.9],
-                [1.5, 1.6, 1.7, 1.8, 1.9],
-            ], requires_grad=True)
+            predicted_unclipped = torch.tensor(
+                [
+                    [1.0, 1.2, 1.4, 1.6, 1.8],
+                    [2.0, 2.2, 2.4, 2.6, 2.8],
+                    [0.5, 0.6, 0.7, 0.8, 0.9],
+                    [1.5, 1.6, 1.7, 1.8, 1.9],
+                ],
+                requires_grad=True,
+            )
 
-            predicted_clipped = torch.tensor([
-                [0.9, 1.1, 1.3, 1.5, 1.7],  # Clipped down
-                [2.1, 2.3, 2.5, 2.7, 2.9],  # Clipped up
-                [0.5, 0.6, 0.7, 0.8, 0.9],  # No change
-                [1.4, 1.5, 1.6, 1.7, 1.8],  # Clipped down
-            ], requires_grad=True)
+            predicted_clipped = torch.tensor(
+                [
+                    [0.9, 1.1, 1.3, 1.5, 1.7],  # Clipped down
+                    [2.1, 2.3, 2.5, 2.7, 2.9],  # Clipped up
+                    [0.5, 0.6, 0.7, 0.8, 0.9],  # No change
+                    [1.4, 1.5, 1.6, 1.7, 1.8],  # Clipped down
+                ],
+                requires_grad=True,
+            )
 
             targets = torch.tensor([[1.5], [2.5], [0.7], [1.7]])
 
             # Compute per-sample losses
             loss_unclipped_per_sample = ppo._quantile_huber_loss(
-                predicted_unclipped, targets, reduction='none'
+                predicted_unclipped, targets, reduction="none"
             )
             loss_clipped_per_sample = ppo._quantile_huber_loss(
-                predicted_clipped, targets, reduction='none'
+                predicted_clipped, targets, reduction="none"
             )
 
             # CORRECT implementation: mean(max(...))
-            correct_loss = torch.mean(
-                torch.max(loss_unclipped_per_sample, loss_clipped_per_sample)
-            )
+            correct_loss = torch.mean(torch.max(loss_unclipped_per_sample, loss_clipped_per_sample))
 
             # INCORRECT implementation (old bug): max(mean(...))
             incorrect_loss = torch.max(
-                loss_unclipped_per_sample.mean(),
-                loss_clipped_per_sample.mean()
+                loss_unclipped_per_sample.mean(), loss_clipped_per_sample.mean()
             )
 
             # These should be DIFFERENT (proving the bug matters)
-            assert not torch.allclose(correct_loss, incorrect_loss, atol=1e-4), \
-                "Correct and incorrect implementations should produce different results"
+            assert not torch.allclose(
+                correct_loss, incorrect_loss, atol=1e-4
+            ), "Correct and incorrect implementations should produce different results"
 
             print(f"Correct (mean of max): {correct_loss.item():.6f}")
             print(f"Incorrect (max of means): {incorrect_loss.item():.6f}")
@@ -147,7 +157,7 @@ class TestPPOVFClippingMathematicalCorrectness:
         num_quantiles = 5
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
 
-        with patch.object(ppo, '_quantile_levels_tensor', return_value=quantile_levels):
+        with patch.object(ppo, "_quantile_levels_tensor", return_value=quantile_levels):
             predicted_unclipped = torch.randn(batch_size, num_quantiles, requires_grad=True)
             predicted_clipped = predicted_unclipped.clone().detach() + 0.1
             predicted_clipped.requires_grad = True
@@ -155,16 +165,14 @@ class TestPPOVFClippingMathematicalCorrectness:
 
             # Compute with mean(max(...))
             loss_unclipped_per_sample = ppo._quantile_huber_loss(
-                predicted_unclipped, targets, reduction='none'
+                predicted_unclipped, targets, reduction="none"
             )
             loss_clipped_per_sample = ppo._quantile_huber_loss(
-                predicted_clipped, targets, reduction='none'
+                predicted_clipped, targets, reduction="none"
             )
 
             # Element-wise max, then mean
-            loss = torch.mean(
-                torch.max(loss_unclipped_per_sample, loss_clipped_per_sample)
-            )
+            loss = torch.mean(torch.max(loss_unclipped_per_sample, loss_clipped_per_sample))
 
             # Backprop
             loss.backward()
@@ -185,12 +193,14 @@ class TestPPOVFClippingMathematicalCorrectness:
                     if loss_unclipped_np[i] > loss_clipped_np[i]:
                         # Unclipped loss is larger for this sample
                         # So unclipped should have gradient, clipped might be zero
-                        assert torch.any(predicted_unclipped.grad[i] != 0), \
-                            f"Sample {i}: unclipped has larger loss but zero gradient"
+                        assert torch.any(
+                            predicted_unclipped.grad[i] != 0
+                        ), f"Sample {i}: unclipped has larger loss but zero gradient"
                     elif loss_clipped_np[i] > loss_unclipped_np[i]:
                         # Clipped loss is larger for this sample
-                        assert torch.any(predicted_clipped.grad[i] != 0), \
-                            f"Sample {i}: clipped has larger loss but zero gradient"
+                        assert torch.any(
+                            predicted_clipped.grad[i] != 0
+                        ), f"Sample {i}: clipped has larger loss but zero gradient"
 
     def test_categorical_vf_clipping_per_sample(self):
         """Test categorical distribution VF clipping uses per-sample max."""
@@ -212,15 +222,10 @@ class TestPPOVFClippingMathematicalCorrectness:
         loss_clipped_per_sample = -(target_dist * log_pred_clipped).sum(dim=1)
 
         # CORRECT: mean(max(...))
-        correct_loss = torch.mean(
-            torch.max(loss_unclipped_per_sample, loss_clipped_per_sample)
-        )
+        correct_loss = torch.mean(torch.max(loss_unclipped_per_sample, loss_clipped_per_sample))
 
         # INCORRECT: max(mean(...))
-        incorrect_loss = torch.max(
-            loss_unclipped_per_sample.mean(),
-            loss_clipped_per_sample.mean()
-        )
+        incorrect_loss = torch.max(loss_unclipped_per_sample.mean(), loss_clipped_per_sample.mean())
 
         # Verify gradients with correct implementation
         correct_loss.backward()
@@ -249,15 +254,15 @@ class TestPPOVFClippingEdgeCases:
         num_quantiles = 5
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
 
-        with patch.object(ppo, '_quantile_levels_tensor', return_value=quantile_levels):
+        with patch.object(ppo, "_quantile_levels_tensor", return_value=quantile_levels):
             predicted = torch.empty(0, num_quantiles)
             targets = torch.empty(0, 1)
 
             # Should handle gracefully
-            loss = ppo._quantile_huber_loss(predicted, targets, reduction='none')
+            loss = ppo._quantile_huber_loss(predicted, targets, reduction="none")
             assert loss.shape == (0,)
 
-            loss_mean = ppo._quantile_huber_loss(predicted, targets, reduction='mean')
+            loss_mean = ppo._quantile_huber_loss(predicted, targets, reduction="mean")
             assert torch.isfinite(loss_mean) or loss_mean.numel() == 0
 
     def test_identical_predictions(self):
@@ -273,12 +278,12 @@ class TestPPOVFClippingEdgeCases:
         num_quantiles = 5
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
 
-        with patch.object(ppo, '_quantile_levels_tensor', return_value=quantile_levels):
+        with patch.object(ppo, "_quantile_levels_tensor", return_value=quantile_levels):
             predicted = torch.randn(batch_size, num_quantiles)
             targets = torch.randn(batch_size, 1)
 
-            loss_unclipped = ppo._quantile_huber_loss(predicted, targets, reduction='none')
-            loss_clipped = ppo._quantile_huber_loss(predicted, targets, reduction='none')
+            loss_unclipped = ppo._quantile_huber_loss(predicted, targets, reduction="none")
+            loss_clipped = ppo._quantile_huber_loss(predicted, targets, reduction="none")
 
             # When predictions are identical, max should equal either one
             loss_vf = torch.mean(torch.max(loss_unclipped, loss_clipped))
@@ -299,17 +304,15 @@ class TestPPOVFClippingEdgeCases:
         num_quantiles = 5
         quantile_levels = torch.linspace(0.1, 0.9, num_quantiles)
 
-        with patch.object(ppo, '_quantile_levels_tensor', return_value=quantile_levels):
+        with patch.object(ppo, "_quantile_levels_tensor", return_value=quantile_levels):
             predicted_unclipped = torch.randn(batch_size, num_quantiles) * 100
             predicted_clipped = torch.clamp(predicted_unclipped, -10, 10)
             targets = torch.randn(batch_size, 1)
 
             loss_unclipped = ppo._quantile_huber_loss(
-                predicted_unclipped, targets, reduction='none'
+                predicted_unclipped, targets, reduction="none"
             )
-            loss_clipped = ppo._quantile_huber_loss(
-                predicted_clipped, targets, reduction='none'
-            )
+            loss_clipped = ppo._quantile_huber_loss(predicted_clipped, targets, reduction="none")
 
             loss = torch.mean(torch.max(loss_unclipped, loss_clipped))
 
@@ -328,12 +331,12 @@ def test_invalid_reduction_mode():
 
     quantile_levels = torch.linspace(0.1, 0.9, 5)
 
-    with patch.object(ppo, '_quantile_levels_tensor', return_value=quantile_levels):
+    with patch.object(ppo, "_quantile_levels_tensor", return_value=quantile_levels):
         predicted = torch.randn(3, 5)
         targets = torch.randn(3, 1)
 
         with pytest.raises(ValueError, match="Invalid reduction mode"):
-            ppo._quantile_huber_loss(predicted, targets, reduction='invalid')
+            ppo._quantile_huber_loss(predicted, targets, reduction="invalid")
 
 
 if __name__ == "__main__":

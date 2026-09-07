@@ -319,6 +319,7 @@ adapters/
 ```
 
 Usage:
+
 ```python
 from adapters.registry import create_market_data_adapter
 

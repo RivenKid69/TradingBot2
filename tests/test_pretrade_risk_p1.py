@@ -11,7 +11,9 @@ import pandas as pd
 import pytest
 
 from service_pretrade_risk import (
-    PreTradeRiskAnalyzer, RiskLimits, NAMED_STRESS_SCENARIOS,
+    PreTradeRiskAnalyzer,
+    RiskLimits,
+    NAMED_STRESS_SCENARIOS,
 )
 
 
@@ -24,7 +26,7 @@ def _cov(symbols, vols, corr):
 def _setup():
     syms = ["A", "B", "C"]
     vols = [0.02, 0.03, 0.015]
-    corr = [[1, .3, .2], [.3, 1, .1], [.2, .1, 1]]
+    corr = [[1, 0.3, 0.2], [0.3, 1, 0.1], [0.2, 0.1, 1]]
     cov = _cov(syms, vols, corr)
     w = pd.Series([0.5, -0.3, 0.4], index=syms)
     return PreTradeRiskAnalyzer(cov), w

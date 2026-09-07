@@ -34,6 +34,7 @@ class RiskConfig:
       - exposure_buffer_frac: дополнительный буфер к приросту экспозиции (0 = выключено).
       - enabled: общий флаг.
     """
+
     enabled: bool = True
     max_abs_position_qty: float = 0.0
     max_abs_position_notional: float = 0.0
@@ -58,7 +59,10 @@ class RiskConfig:
             entries_per_day = int(raw_entries)
             if entries_per_day < 0:
                 entries_per_day = None
-        def _coerce_float(value: Any, default: float = 0.0, *, minimum: float | None = None) -> float:
+
+        def _coerce_float(
+            value: Any, default: float = 0.0, *, minimum: float | None = None
+        ) -> float:
             if value is None:
                 return float(default)
             try:
@@ -75,13 +79,13 @@ class RiskConfig:
         max_total_exposure_pct = _coerce_float(
             d.get("max_total_exposure_pct", 0.0), 0.0, minimum=0.0
         )
-        exposure_buffer = _coerce_float(
-            d.get("exposure_buffer_frac", 0.0), 0.0, minimum=0.0
-        )
+        exposure_buffer = _coerce_float(d.get("exposure_buffer_frac", 0.0), 0.0, minimum=0.0)
 
         return cls(
             enabled=bool(d.get("enabled", True)),
-            max_abs_position_qty=_coerce_float(d.get("max_abs_position_qty", 0.0), 0.0, minimum=0.0),
+            max_abs_position_qty=_coerce_float(
+                d.get("max_abs_position_qty", 0.0), 0.0, minimum=0.0
+            ),
             max_abs_position_notional=_coerce_float(
                 d.get("max_abs_position_notional", 0.0), 0.0, minimum=0.0
             ),
@@ -112,6 +116,7 @@ class RiskManager:
       - Методы принимают сезонные коэффициенты ликвидности/латентности для
         масштабирования лимитов при необходимости.
     """
+
     def __init__(self, cfg: Optional[RiskConfig] = None):
         self.cfg = cfg or RiskConfig()
         self._max_entries_per_day: Optional[int] = self._normalize_entries_limit(
@@ -142,7 +147,9 @@ class RiskManager:
         return ev
 
     def _emit(self, ts_ms: int, code: str, message: str, **data: Any) -> None:
-        self._events.append(RiskEvent(ts_ms=int(ts_ms), code=str(code), message=str(message), data=dict(data)))
+        self._events.append(
+            RiskEvent(ts_ms=int(ts_ms), code=str(code), message=str(message), data=dict(data))
+        )
 
     @staticmethod
     def _normalize_entries_limit(value: Optional[Any]) -> Optional[int]:
@@ -211,11 +218,19 @@ class RiskManager:
             return
         daily_pnl = float(equity) - float(self._equity_day_start)
         self._last_equity = float(equity)
-        if float(self.cfg.daily_loss_limit) > 0.0 and daily_pnl <= -float(self.cfg.daily_loss_limit):
+        if float(self.cfg.daily_loss_limit) > 0.0 and daily_pnl <= -float(
+            self.cfg.daily_loss_limit
+        ):
             pause_s = max(0, int(self.cfg.pause_seconds_on_violation))
             self._paused_until_ms = max(self._paused_until_ms, int(ts_ms + pause_s * 1000))
-            self._emit(ts_ms, "DAILY_LOSS_PAUSE", f"Daily loss limit breached: PnL={daily_pnl:.2f} <= -{self.cfg.daily_loss_limit:.2f}",
-                       equity=float(equity), equity_day_start=float(self._equity_day_start), paused_until_ms=int(self._paused_until_ms))
+            self._emit(
+                ts_ms,
+                "DAILY_LOSS_PAUSE",
+                f"Daily loss limit breached: PnL={daily_pnl:.2f} <= -{self.cfg.daily_loss_limit:.2f}",
+                equity=float(equity),
+                equity_day_start=float(self._equity_day_start),
+                paused_until_ms=int(self._paused_until_ms),
+            )
 
     def can_send_order(self, ts_ms: int, *, latency_mult: float = 1.0) -> bool:
         """Check whether a new order can be sent respecting rate limits.
@@ -270,7 +285,12 @@ class RiskManager:
         if not self.cfg.enabled:
             return float(intended_qty)
         if self.is_paused(ts_ms):
-            self._emit(ts_ms, "PAUSED", "Trading paused by risk manager", paused_until_ms=int(self._paused_until_ms))
+            self._emit(
+                ts_ms,
+                "PAUSED",
+                "Trading paused by risk manager",
+                paused_until_ms=int(self._paused_until_ms),
+            )
             return 0.0
 
         if self._max_entries_per_day is not None:
@@ -293,10 +313,21 @@ class RiskManager:
         if max_order_notional > 0.0 and price is not None and price > 0.0:
             max_q_by_order = max_order_notional / float(price)
             if max_q_by_order <= 0.0:
-                self._emit(ts_ms, "ORDER_NOTIONAL_BLOCK", "max_order_notional too small", max_order_notional=max_order_notional)
+                self._emit(
+                    ts_ms,
+                    "ORDER_NOTIONAL_BLOCK",
+                    "max_order_notional too small",
+                    max_order_notional=max_order_notional,
+                )
                 return 0.0
             if q > max_q_by_order:
-                self._emit(ts_ms, "ORDER_NOTIONAL_CLAMP", "clamped by max_order_notional", requested_qty=float(q), allowed_qty=float(max_q_by_order))
+                self._emit(
+                    ts_ms,
+                    "ORDER_NOTIONAL_CLAMP",
+                    "clamped by max_order_notional",
+                    requested_qty=float(q),
+                    allowed_qty=float(max_q_by_order),
+                )
                 q = max_q_by_order
 
         # Лимит на абсолютную позицию (по qty)
@@ -309,12 +340,25 @@ class RiskManager:
                 room = max_pos_qty - max(0.0, -float(position_qty))
             allowed = max(0.0, float(room))
             if allowed <= 0.0:
-                self._emit(ts_ms, "POS_QTY_BLOCK", "position qty limit blocks increase",
-                           limit=max_pos_qty, position=float(position_qty), side=str(side))
+                self._emit(
+                    ts_ms,
+                    "POS_QTY_BLOCK",
+                    "position qty limit blocks increase",
+                    limit=max_pos_qty,
+                    position=float(position_qty),
+                    side=str(side),
+                )
                 return 0.0
             if q > allowed:
-                self._emit(ts_ms, "POS_QTY_CLAMP", "clamped by position qty limit",
-                           requested_qty=float(q), allowed_qty=float(allowed), limit=max_pos_qty, position=float(position_qty))
+                self._emit(
+                    ts_ms,
+                    "POS_QTY_CLAMP",
+                    "clamped by position qty limit",
+                    requested_qty=float(q),
+                    allowed_qty=float(allowed),
+                    limit=max_pos_qty,
+                    position=float(position_qty),
+                )
                 q = float(allowed)
 
         # Лимит на абсолютную позицию (по нотионалу)
@@ -326,12 +370,26 @@ class RiskManager:
                 room_notional = max(0.0, max_pos_notional - current_notional)
                 allowed = room_notional / float(price)
                 if allowed <= 0.0:
-                    self._emit(ts_ms, "POS_NOTIONAL_BLOCK", "position notional limit blocks increase",
-                               limit=max_pos_notional, position=float(position_qty), price=float(price))
+                    self._emit(
+                        ts_ms,
+                        "POS_NOTIONAL_BLOCK",
+                        "position notional limit blocks increase",
+                        limit=max_pos_notional,
+                        position=float(position_qty),
+                        price=float(price),
+                    )
                     return 0.0
                 if q > allowed:
-                    self._emit(ts_ms, "POS_NOTIONAL_CLAMP", "clamped by position notional limit",
-                               requested_qty=float(q), allowed_qty=float(allowed), limit=max_pos_notional, position=float(position_qty), price=float(price))
+                    self._emit(
+                        ts_ms,
+                        "POS_NOTIONAL_CLAMP",
+                        "clamped by position notional limit",
+                        requested_qty=float(q),
+                        allowed_qty=float(allowed),
+                        limit=max_pos_notional,
+                        position=float(position_qty),
+                        price=float(price),
+                    )
                     q = float(allowed)
                     pos_after = float(position_qty) + (q if side_up == "BUY" else -q)
 

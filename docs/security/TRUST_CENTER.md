@@ -1,4 +1,5 @@
 # Security Trust Center
+
 ## Pre-Contractual Security Overview
 
 **Version**: 1.7
@@ -196,12 +197,14 @@ This document provides pre-contractual security information designed to support 
 > **CRITICAL DISCLAIMER**: CustodiaCloud is a pre-revenue startup with no operational track record and no current customers. DR testing has not yet been conducted. RTO/RPO values cannot be provided without validated DR test results. Actual recovery objectives are contract-specific and require infrastructure deployment, testing validation, and operational capacity assessment.
 
 **Current State:**
+
 - DR testing: Not yet conducted
 - Multi-AZ deployment: Not yet deployed
 - DR automation: Design phase
 - Recovery runbooks: Documented (not validated)
 
 **Roadmap (budget-dependent):**
+
 - DR testing framework implementation
 - Infrastructure deployment and hardening
 - Quarterly DR test execution (when operational)
@@ -239,12 +242,14 @@ This document provides pre-contractual security information designed to support 
 > **CRITICAL DISCLAIMER**: CustodiaCloud is a pre-revenue startup with no operational on-call team, no current customers, and no incident response track record. Response time commitments cannot be provided without validated operational capacity. Actual response times will be defined in executed service agreements after team hiring, monitoring deployment, and operational validation. For capacity assessment framework, see `docs/operations/ON_CALL_CAPACITY_VALIDATION.md`.
 
 **Current Capacity:**
+
 - Coverage: Business hours only (EU timezone)
 - Team size: 1 FTE
 - On-call rotation: Not established
 - 24/7 monitoring: Not deployed
 
 **Roadmap (budget and hiring dependent):**
+
 - Hire 4+ FTE for sustainable on-call rotation
 - Deploy 24/7 monitoring and alerting infrastructure
 - Establish incident response procedures and runbooks
@@ -269,6 +274,7 @@ This document provides pre-contractual security information designed to support 
 > **Note**: The response times below describe **contractual terms** that will be offered in service agreements once operational capacity is validated. As stated in Section 7.1, current operational capacity is business hours only with 1 FTE. Actual response time commitments require 4+ FTE hiring, 24/7 monitoring deployment, and operational validation.
 
 For DORA-regulated clients (contractual terms, capacity-dependent):
+
 - Initial notification: Within 30 minutes (critical) — requires 24/7 on-call capability
 - Detailed report: Within 24 hours — requires incident response team
 - Root cause analysis: Within 5 business days
@@ -292,6 +298,7 @@ For DORA-regulated clients (contractual terms, capacity-dependent):
 ### 8.2 Due Diligence
 
 All critical subcontractors undergo:
+
 - Security assessment before engagement
 - Annual review of certifications
 - Incident reporting requirements
@@ -329,6 +336,7 @@ All critical subcontractors undergo:
 | Art. 33-34 | Breach notification (72h) | Workflow documented |
 
 **GDPR Key Features (Design Goals):**
+
 - **EU-priority data residency**: Core platform data in EU (Frankfurt, Ireland); sub-processors with non-EU processing operate under SCCs/DPF
 - **Telemetry redaction** (mandatory by design)
 - **DSAR response** within 30 days (workflow documented)
@@ -356,6 +364,7 @@ All critical subcontractors undergo:
 ### 10.1 Audit Rights
 
 For contracted clients:
+
 - Right to audit: Per contract terms
 - Notice period: 5 business days (standard), 24h (incident-related)
 - Scope: All relevant systems, processes, documentation
@@ -377,18 +386,22 @@ For contracted clients:
 ## 11. Contact Information
 
 ### Security Inquiries
+
 - Email: security@[platform-domain]
 - Response: 5 business days
 
 ### Incident Reporting
+
 - Email: incidents@[platform-domain]
 - Response: Business hours (24/7 coverage pending operational team hiring)
 
 ### Audit Requests
+
 - Email: compliance@[platform-domain]
 - Response: 5 business days
 
 ### Due Diligence Requests
+
 - Email: sales@[platform-domain]
 - Response: 3 business days
 

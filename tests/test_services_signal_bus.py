@@ -1,4 +1,5 @@
 """Comprehensive tests for services.signal_bus module."""
+
 import json
 import tempfile
 import threading
@@ -25,7 +26,7 @@ def _make_valid_payload() -> dict:
             "act_now": True,
             "impact": 0.0,
             "impact_mode": "none",
-        }
+        },
     }
 
 
@@ -243,7 +244,7 @@ class TestLogDrop:
             symbol="BTCUSDT",
             bar_close_ms=1234567890000,
             expires_at_ms=1234567950000,
-            payload=_make_valid_payload()
+            payload=_make_valid_payload(),
         )
 
         signal_bus.log_drop(envelope, "duplicate")
@@ -258,7 +259,7 @@ class TestLogDrop:
             symbol="BTCUSDT",
             bar_close_ms=1234567890000,
             expires_at_ms=1234567950000,
-            payload=_make_valid_payload()
+            payload=_make_valid_payload(),
         )
 
         signal_bus.log_drop(envelope, "expired")
@@ -267,14 +268,14 @@ class TestLogDrop:
         assert "BTCUSDT" in content
         assert "expired" in content
 
-    @patch('services.ops_kill_switch.record_duplicate')
+    @patch("services.ops_kill_switch.record_duplicate")
     def test_log_drop_duplicate_records_to_kill_switch(self, mock_record):
         """Test log_drop with duplicate reason records to kill switch."""
         envelope = SpotSignalEnvelope(
             symbol="BTCUSDT",
             bar_close_ms=1234567890000,
             expires_at_ms=1234567950000,
-            payload=_make_valid_payload()
+            payload=_make_valid_payload(),
         )
 
         signal_bus.log_drop(envelope, "duplicate")
@@ -590,9 +591,9 @@ class TestTimestampCoercion:
 
     def test_coerce_inf(self):
         """Test coercing infinity returns None."""
-        assert signal_bus._coerce_timestamp_ms(float('inf')) is None
-        assert signal_bus._coerce_timestamp_ms(float('-inf')) is None
+        assert signal_bus._coerce_timestamp_ms(float("inf")) is None
+        assert signal_bus._coerce_timestamp_ms(float("-inf")) is None
 
     def test_coerce_nan(self):
         """Test coercing NaN returns None."""
-        assert signal_bus._coerce_timestamp_ms(float('nan')) is None
+        assert signal_bus._coerce_timestamp_ms(float("nan")) is None

@@ -59,7 +59,7 @@ class TestS3Upload:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch('packages.cloud.enterprise.evidence_pack.BOTO3_AVAILABLE', False):
+        with patch("packages.cloud.enterprise.evidence_pack.BOTO3_AVAILABLE", False):
             with pytest.raises(RuntimeError, match="boto3"):
                 await exporter._upload_to_s3(sample_pack)
 
@@ -73,7 +73,7 @@ class TestS3Upload:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch('packages.cloud.enterprise.evidence_pack.BOTO3_AVAILABLE', True):
+        with patch("packages.cloud.enterprise.evidence_pack.BOTO3_AVAILABLE", True):
             with pytest.raises(ValueError, match="bucket"):
                 await exporter._upload_to_s3(sample_pack)
 
@@ -82,6 +82,7 @@ class TestS3Upload:
     async def test_upload_to_s3_success(self, temp_dir, sample_pack):
         """Test successful S3 upload with mocked boto3."""
         import boto3
+
         config = EvidencePackConfig(
             output_path=temp_dir,
             destination=ExportDestination.S3,
@@ -95,7 +96,7 @@ class TestS3Upload:
 
         mock_s3_client = MagicMock()
 
-        with patch.object(boto3, 'client', return_value=mock_s3_client):
+        with patch.object(boto3, "client", return_value=mock_s3_client):
             await exporter._upload_to_s3(sample_pack)
 
             # Verify upload was called
@@ -106,6 +107,7 @@ class TestS3Upload:
     async def test_upload_to_s3_with_encryption(self, temp_dir, sample_pack):
         """Test S3 upload includes server-side encryption."""
         import boto3
+
         config = EvidencePackConfig(
             output_path=temp_dir,
             destination=ExportDestination.S3,
@@ -115,7 +117,7 @@ class TestS3Upload:
 
         mock_s3_client = MagicMock()
 
-        with patch.object(boto3, 'client', return_value=mock_s3_client):
+        with patch.object(boto3, "client", return_value=mock_s3_client):
             await exporter._upload_to_s3(sample_pack)
 
             call_args = mock_s3_client.upload_file.call_args
@@ -128,6 +130,7 @@ class TestS3Upload:
     async def test_upload_to_s3_with_metadata(self, temp_dir, sample_pack):
         """Test S3 upload includes metadata."""
         import boto3
+
         config = EvidencePackConfig(
             output_path=temp_dir,
             destination=ExportDestination.S3,
@@ -137,7 +140,7 @@ class TestS3Upload:
 
         mock_s3_client = MagicMock()
 
-        with patch.object(boto3, 'client', return_value=mock_s3_client):
+        with patch.object(boto3, "client", return_value=mock_s3_client):
             await exporter._upload_to_s3(sample_pack)
 
             call_args = mock_s3_client.upload_file.call_args
@@ -165,7 +168,7 @@ class TestS3Upload:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch('packages.cloud.enterprise.evidence_pack.BOTO3_AVAILABLE', True):
+        with patch("packages.cloud.enterprise.evidence_pack.BOTO3_AVAILABLE", True):
             with pytest.raises(ValueError, match="archive"):
                 await exporter._upload_to_s3(pack_without_archive)
 
@@ -183,7 +186,7 @@ class TestGCSUpload:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch('packages.cloud.enterprise.evidence_pack.GCS_AVAILABLE', False):
+        with patch("packages.cloud.enterprise.evidence_pack.GCS_AVAILABLE", False):
             with pytest.raises(RuntimeError, match="google-cloud-storage"):
                 await exporter._upload_to_gcs(sample_pack)
 
@@ -197,7 +200,7 @@ class TestGCSUpload:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch('packages.cloud.enterprise.evidence_pack.GCS_AVAILABLE', True):
+        with patch("packages.cloud.enterprise.evidence_pack.GCS_AVAILABLE", True):
             with pytest.raises(ValueError, match="bucket"):
                 await exporter._upload_to_gcs(sample_pack)
 
@@ -206,6 +209,7 @@ class TestGCSUpload:
     async def test_upload_to_gcs_success(self, temp_dir, sample_pack):
         """Test successful GCS upload."""
         from google.cloud import storage as gcs_storage
+
         config = EvidencePackConfig(
             output_path=temp_dir,
             destination=ExportDestination.GCS,
@@ -223,7 +227,7 @@ class TestGCSUpload:
         mock_client.bucket.return_value = mock_bucket
         mock_bucket.blob.return_value = mock_blob
 
-        with patch.object(gcs_storage, 'Client', return_value=mock_client):
+        with patch.object(gcs_storage, "Client", return_value=mock_client):
             await exporter._upload_to_gcs(sample_pack)
 
             mock_client.bucket.assert_called_once_with("gcs-bucket")
@@ -234,6 +238,7 @@ class TestGCSUpload:
     async def test_upload_to_gcs_with_metadata(self, temp_dir, sample_pack):
         """Test GCS upload includes metadata."""
         from google.cloud import storage as gcs_storage
+
         config = EvidencePackConfig(
             output_path=temp_dir,
             destination=ExportDestination.GCS,
@@ -248,7 +253,7 @@ class TestGCSUpload:
         mock_client.bucket.return_value = mock_bucket
         mock_bucket.blob.return_value = mock_blob
 
-        with patch.object(gcs_storage, 'Client', return_value=mock_client):
+        with patch.object(gcs_storage, "Client", return_value=mock_client):
             await exporter._upload_to_gcs(sample_pack)
 
             # Check metadata was set on blob
@@ -269,7 +274,7 @@ class TestAzureUpload:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch('packages.cloud.enterprise.evidence_pack.AZURE_AVAILABLE', False):
+        with patch("packages.cloud.enterprise.evidence_pack.AZURE_AVAILABLE", False):
             with pytest.raises(RuntimeError, match="azure-storage-blob"):
                 await exporter._upload_to_azure(sample_pack)
 
@@ -283,7 +288,7 @@ class TestAzureUpload:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch('packages.cloud.enterprise.evidence_pack.AZURE_AVAILABLE', True):
+        with patch("packages.cloud.enterprise.evidence_pack.AZURE_AVAILABLE", True):
             with pytest.raises(ValueError, match="container"):
                 await exporter._upload_to_azure(sample_pack)
 
@@ -300,15 +305,15 @@ class TestAzureUpload:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch.object(BlobServiceClient, 'from_connection_string', side_effect=ValueError("connection_string")):
+        with patch.object(
+            BlobServiceClient, "from_connection_string", side_effect=ValueError("connection_string")
+        ):
             with pytest.raises(ValueError, match="connection_string"):
                 await exporter._upload_to_azure(sample_pack)
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(not AZURE_AVAILABLE, reason="azure-storage-blob not available")
-    async def test_upload_to_azure_with_connection_string(
-        self, temp_dir, sample_pack
-    ):
+    async def test_upload_to_azure_with_connection_string(self, temp_dir, sample_pack):
         """Test Azure upload with connection string."""
         from azure.storage.blob import BlobServiceClient
 
@@ -330,7 +335,9 @@ class TestAzureUpload:
         mock_blob_service.get_container_client.return_value = mock_container_client
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
-        with patch.object(BlobServiceClient, 'from_connection_string', return_value=mock_blob_service):
+        with patch.object(
+            BlobServiceClient, "from_connection_string", return_value=mock_blob_service
+        ):
             await exporter._upload_to_azure(sample_pack)
 
             BlobServiceClient.from_connection_string.assert_called_once()
@@ -359,8 +366,10 @@ class TestAzureUpload:
         mock_blob_service.get_container_client.return_value = mock_container_client
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
-        with patch.object(BlobServiceClient, '__init__', return_value=None):
-            with patch.object(BlobServiceClient, 'get_container_client', return_value=mock_container_client):
+        with patch.object(BlobServiceClient, "__init__", return_value=None):
+            with patch.object(
+                BlobServiceClient, "get_container_client", return_value=mock_container_client
+            ):
                 mock_container_client.get_blob_client.return_value = mock_blob_client
 
                 await exporter._upload_to_azure(sample_pack)
@@ -390,7 +399,9 @@ class TestAzureUpload:
         mock_blob_service.get_container_client.return_value = mock_container_client
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
-        with patch.object(BlobServiceClient, 'from_connection_string', return_value=mock_blob_service):
+        with patch.object(
+            BlobServiceClient, "from_connection_string", return_value=mock_blob_service
+        ):
             await exporter._upload_to_azure(sample_pack)
 
             call_args = mock_blob_client.upload_blob.call_args
@@ -414,7 +425,7 @@ class TestDestinationRouting:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch.object(exporter, '_upload_to_s3', new_callable=AsyncMock) as mock_s3:
+        with patch.object(exporter, "_upload_to_s3", new_callable=AsyncMock) as mock_s3:
             await exporter._upload_to_destination(sample_pack)
             mock_s3.assert_called_once_with(sample_pack)
 
@@ -428,7 +439,7 @@ class TestDestinationRouting:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch.object(exporter, '_upload_to_gcs', new_callable=AsyncMock) as mock_gcs:
+        with patch.object(exporter, "_upload_to_gcs", new_callable=AsyncMock) as mock_gcs:
             await exporter._upload_to_destination(sample_pack)
             mock_gcs.assert_called_once_with(sample_pack)
 
@@ -442,7 +453,7 @@ class TestDestinationRouting:
         )
         exporter = EvidencePackExporter(config)
 
-        with patch.object(exporter, '_upload_to_azure', new_callable=AsyncMock) as mock_azure:
+        with patch.object(exporter, "_upload_to_azure", new_callable=AsyncMock) as mock_azure:
             await exporter._upload_to_destination(sample_pack)
             mock_azure.assert_called_once_with(sample_pack)
 
@@ -465,14 +476,17 @@ class TestCloudLibraryAvailability:
     def test_boto3_availability_flag(self):
         """Test BOTO3_AVAILABLE flag exists."""
         from packages.cloud.enterprise.evidence_pack import BOTO3_AVAILABLE
+
         assert isinstance(BOTO3_AVAILABLE, bool)
 
     def test_gcs_availability_flag(self):
         """Test GCS_AVAILABLE flag exists."""
         from packages.cloud.enterprise.evidence_pack import GCS_AVAILABLE
+
         assert isinstance(GCS_AVAILABLE, bool)
 
     def test_azure_availability_flag(self):
         """Test AZURE_AVAILABLE flag exists."""
         from packages.cloud.enterprise.evidence_pack import AZURE_AVAILABLE
+
         assert isinstance(AZURE_AVAILABLE, bool)

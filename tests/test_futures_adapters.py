@@ -133,7 +133,12 @@ def mock_exchange_info_response() -> Dict[str, Any]:
                 "quantityPrecision": 3,
                 "filters": [
                     {"filterType": "PRICE_FILTER", "tickSize": "0.01"},
-                    {"filterType": "LOT_SIZE", "stepSize": "0.001", "minQty": "0.001", "maxQty": "1000"},
+                    {
+                        "filterType": "LOT_SIZE",
+                        "stepSize": "0.001",
+                        "minQty": "0.001",
+                        "maxQty": "1000",
+                    },
                     {"filterType": "MIN_NOTIONAL", "notional": "10"},
                 ],
             },
@@ -148,7 +153,12 @@ def mock_exchange_info_response() -> Dict[str, Any]:
                 "quantityPrecision": 3,
                 "filters": [
                     {"filterType": "PRICE_FILTER", "tickSize": "0.01"},
-                    {"filterType": "LOT_SIZE", "stepSize": "0.01", "minQty": "0.01", "maxQty": "10000"},
+                    {
+                        "filterType": "LOT_SIZE",
+                        "stepSize": "0.01",
+                        "minQty": "0.01",
+                        "maxQty": "10000",
+                    },
                     {"filterType": "MIN_NOTIONAL", "notional": "10"},
                 ],
             },
@@ -163,9 +173,27 @@ def mock_leverage_brackets_response() -> List[Dict[str, Any]]:
         {
             "symbol": "BTCUSDT",
             "brackets": [
-                {"bracket": 1, "initialLeverage": 125, "notionalCap": 50000, "maintMarginRatio": 0.004, "cum": 0},
-                {"bracket": 2, "initialLeverage": 100, "notionalCap": 250000, "maintMarginRatio": 0.005, "cum": 50},
-                {"bracket": 3, "initialLeverage": 50, "notionalCap": 1000000, "maintMarginRatio": 0.01, "cum": 1300},
+                {
+                    "bracket": 1,
+                    "initialLeverage": 125,
+                    "notionalCap": 50000,
+                    "maintMarginRatio": 0.004,
+                    "cum": 0,
+                },
+                {
+                    "bracket": 2,
+                    "initialLeverage": 100,
+                    "notionalCap": 250000,
+                    "maintMarginRatio": 0.005,
+                    "cum": 50,
+                },
+                {
+                    "bracket": 3,
+                    "initialLeverage": 50,
+                    "notionalCap": 1000000,
+                    "maintMarginRatio": 0.01,
+                    "cum": 1300,
+                },
             ],
         },
     ]
@@ -554,7 +582,9 @@ class TestBinanceFuturesOrderExecutionAdapter:
     def test_convert_order_type_take_profit_market(self):
         """Test _convert_order_type for TAKE_PROFIT_MARKET."""
         adapter = BinanceFuturesOrderExecutionAdapter()
-        assert adapter._convert_order_type(FuturesOrderType.TAKE_PROFIT_MARKET) == "TAKE_PROFIT_MARKET"
+        assert (
+            adapter._convert_order_type(FuturesOrderType.TAKE_PROFIT_MARKET) == "TAKE_PROFIT_MARKET"
+        )
 
     def test_parse_order_response_success(self, mock_order_response):
         """Test _parse_order_response for successful order."""
@@ -767,30 +797,36 @@ class TestEdgeCases:
         adapter = BinanceFuturesOrderExecutionAdapter()
 
         # Test FILLED
-        filled = adapter._parse_exec_report({
-            "status": "FILLED",
-            "side": "BUY",
-            "symbol": "BTCUSDT",
-            "orderId": "123",
-        })
+        filled = adapter._parse_exec_report(
+            {
+                "status": "FILLED",
+                "side": "BUY",
+                "symbol": "BTCUSDT",
+                "orderId": "123",
+            }
+        )
         assert filled.exec_status.value == "FILLED"
 
         # Test CANCELED
-        canceled = adapter._parse_exec_report({
-            "status": "CANCELED",
-            "side": "SELL",
-            "symbol": "BTCUSDT",
-            "orderId": "456",
-        })
+        canceled = adapter._parse_exec_report(
+            {
+                "status": "CANCELED",
+                "side": "SELL",
+                "symbol": "BTCUSDT",
+                "orderId": "456",
+            }
+        )
         assert canceled.exec_status.value == "CANCELED"
 
         # Test REJECTED
-        rejected = adapter._parse_exec_report({
-            "status": "REJECTED",
-            "side": "BUY",
-            "symbol": "BTCUSDT",
-            "orderId": "789",
-        })
+        rejected = adapter._parse_exec_report(
+            {
+                "status": "REJECTED",
+                "side": "BUY",
+                "symbol": "BTCUSDT",
+                "orderId": "789",
+            }
+        )
         assert rejected.exec_status.value == "REJECTED"
 
 
@@ -813,7 +849,12 @@ class TestContractSpecParsing:
             "contractType": "PERPETUAL",
             "filters": [
                 {"filterType": "PRICE_FILTER", "tickSize": "0.01"},
-                {"filterType": "LOT_SIZE", "stepSize": "0.001", "minQty": "0.001", "maxQty": "1000"},
+                {
+                    "filterType": "LOT_SIZE",
+                    "stepSize": "0.001",
+                    "minQty": "0.001",
+                    "maxQty": "1000",
+                },
             ],
         }
 

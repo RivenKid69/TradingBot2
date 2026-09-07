@@ -4,7 +4,7 @@ tests/test_us_market_structure.py
 Tests for US market structure rules (L3 LOB).
 
 FIX (2025-11-28): Tests for Issue #7 "L3 LOB: US Market Structure"
-Reference: CLAUDE.md → Issue #7
+Reference: docs/PLATFORM_REFERENCE.md → Issue #7
 
 These tests verify:
 1. Tick size enforcement (Rule 612)
@@ -16,6 +16,7 @@ These tests verify:
 import math
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob.us_market_structure import (
@@ -382,9 +383,7 @@ class TestUSMarketStructureValidator:
         validator = USMarketStructureValidator()
         nbbo = NBBO(bid=100.00, bid_size=100, ask=100.05, ask_size=100)
 
-        price, qty, warnings = validator.create_compliant_order(
-            "BUY", 100.003, 100, nbbo
-        )
+        price, qty, warnings = validator.create_compliant_order("BUY", 100.003, 100, nbbo)
 
         assert price == 100.00  # Adjusted to tick
         assert qty == 100

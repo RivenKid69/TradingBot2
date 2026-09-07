@@ -664,7 +664,7 @@ class TestFillRateValidation:
         bar = BarData(
             open=50000.0,
             high=52000.0,  # +4%
-            low=48000.0,   # -4%
+            low=48000.0,  # -4%
             close=50500.0,
             volume=10000.0,
         )
@@ -1732,9 +1732,7 @@ class TestFundingRateMechanics:
 
         total_funding = sum(position_notional * rate for rate in funding_rates)
 
-        expected = Decimal("100000") * (
-            Decimal("0.0001") - Decimal("0.00005") + Decimal("0.0002")
-        )
+        expected = Decimal("100000") * (Decimal("0.0001") - Decimal("0.00005") + Decimal("0.0002"))
 
         assert total_funding == expected
 
@@ -1893,7 +1891,11 @@ class TestLiquidationEngineValidation:
             wallet_balance=Decimal("5000"),  # Initial margin only
         )
 
-        assert result.status in [MarginStatus.DANGER, MarginStatus.CRITICAL, MarginStatus.LIQUIDATION]
+        assert result.status in [
+            MarginStatus.DANGER,
+            MarginStatus.CRITICAL,
+            MarginStatus.LIQUIDATION,
+        ]
 
     def test_margin_guard_detects_liquidation(self, margin_guard):
         """Margin guard detects liquidation condition."""
@@ -2333,7 +2335,7 @@ class TestMarginCalculationAccuracy:
         )
         # Result status depends on computed margin ratio
         assert result is not None
-        assert hasattr(result, 'status')
+        assert hasattr(result, "status")
 
     def test_tiered_mmr_accumulation(self, tiered_margin_calc):
         """Tiered MMR correctly accumulates across brackets."""
@@ -2644,9 +2646,7 @@ class TestCrossComponentIntegration:
         close_fill = futures_execution_provider.execute(close_order, market, bar)
         assert close_fill is not None
 
-    def test_risk_guard_chain_integration(
-        self, margin_guard, funding_guard
-    ):
+    def test_risk_guard_chain_integration(self, margin_guard, funding_guard):
         """Risk guard chain validates all conditions."""
         # Simulate a risky position
 
@@ -2796,7 +2796,11 @@ class TestCrossComponentIntegration:
         )
 
         # At price below liquidation, margin should be critical or liquidation
-        assert result.status in [MarginStatus.CRITICAL, MarginStatus.LIQUIDATION, MarginStatus.DANGER]
+        assert result.status in [
+            MarginStatus.CRITICAL,
+            MarginStatus.LIQUIDATION,
+            MarginStatus.DANGER,
+        ]
 
     def test_fee_calculation_integration(self, futures_execution_provider):
         """Fees correctly calculated and included in fill."""
@@ -2823,7 +2827,7 @@ class TestCrossComponentIntegration:
         fill = futures_execution_provider.execute(order, market, bar)
 
         assert fill is not None
-        assert hasattr(fill, 'fee') or True  # Check fee exists
+        assert hasattr(fill, "fee") or True  # Check fee exists
 
     def test_position_sizing_with_margin(self, tiered_margin_calc):
         """Position size limited by available margin."""
@@ -3026,23 +3030,23 @@ class TestValidationMetricsSummary:
 
         # ExecutionSimulator must be a class that can be instantiated
         # Liquidation logic is handled within the execution loop (same-bar by design)
-        assert isinstance(ExecutionSimulator, type), (
-            "ExecutionSimulator must be a class"
-        )
+        assert isinstance(ExecutionSimulator, type), "ExecutionSimulator must be a class"
         # Design spec: liquidation occurs in same simulation step as detection
         # This is architectural - the execution loop processes all events per bar
         # Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#sim-liquidation-design
 
     def test_margin_calculation_01_percent_accuracy(self):
         """Margin calculation error < 0.1%."""
-        calc = TieredMarginCalculator(brackets=[
-            LeverageBracket(
-                bracket=1,
-                notional_cap=Decimal("999999999999"),
-                maint_margin_rate=Decimal("0.004"),
-                max_leverage=125,
-            ),
-        ])
+        calc = TieredMarginCalculator(
+            brackets=[
+                LeverageBracket(
+                    bracket=1,
+                    notional_cap=Decimal("999999999999"),
+                    maint_margin_rate=Decimal("0.004"),
+                    max_leverage=125,
+                ),
+            ]
+        )
 
         test_cases = [
             (Decimal("10000"), 10, Decimal("1000")),

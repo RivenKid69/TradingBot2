@@ -721,7 +721,8 @@ class TestForexPositionSynchronizer:
         result = sync.sync_once()
         # Should find EUR_USD and GBP_USD missing locally
         missing_local = [
-            d for d in result.discrepancies
+            d
+            for d in result.discrepancies
             if d.discrepancy_type == PositionDiscrepancyType.MISSING_LOCAL
         ]
         assert len(missing_local) >= 2
@@ -739,7 +740,8 @@ class TestForexPositionSynchronizer:
 
         result = sync.sync_once()
         missing_remote = [
-            d for d in result.discrepancies
+            d
+            for d in result.discrepancies
             if d.discrepancy_type == PositionDiscrepancyType.MISSING_REMOTE
         ]
         assert len(missing_remote) == 1
@@ -759,7 +761,8 @@ class TestForexPositionSynchronizer:
 
         result = sync.sync_once()
         units_mismatch = [
-            d for d in result.discrepancies
+            d
+            for d in result.discrepancies
             if d.discrepancy_type == PositionDiscrepancyType.UNITS_MISMATCH
         ]
         assert len(units_mismatch) >= 1
@@ -783,7 +786,8 @@ class TestForexPositionSynchronizer:
 
         result = sync.sync_once()
         side_mismatch = [
-            d for d in result.discrepancies
+            d
+            for d in result.discrepancies
             if d.discrepancy_type == PositionDiscrepancyType.SIDE_MISMATCH
         ]
         assert len(side_mismatch) == 1
@@ -970,7 +974,9 @@ class TestForexSessionDetection:
 
     def test_detect_weekend_friday_after_close(self):
         """Test weekend detection Friday after 5pm ET."""
-        friday_late = datetime(2024, 1, 12, 18, 0, tzinfo=ZoneInfo("America/New_York"))  # Friday 6pm ET
+        friday_late = datetime(
+            2024, 1, 12, 18, 0, tzinfo=ZoneInfo("America/New_York")
+        )  # Friday 6pm ET
         ts_ms = int(friday_late.timestamp() * 1000)
 
         session_info = get_current_forex_session(ts_ms)
@@ -978,7 +984,9 @@ class TestForexSessionDetection:
 
     def test_detect_weekend_sunday_before_open(self):
         """Test weekend detection Sunday before 5pm ET."""
-        sunday_early = datetime(2024, 1, 14, 14, 0, tzinfo=ZoneInfo("America/New_York"))  # Sunday 2pm ET
+        sunday_early = datetime(
+            2024, 1, 14, 14, 0, tzinfo=ZoneInfo("America/New_York")
+        )  # Sunday 2pm ET
         ts_ms = int(sunday_early.timestamp() * 1000)
 
         session_info = get_current_forex_session(ts_ms)
@@ -987,7 +995,9 @@ class TestForexSessionDetection:
     def test_rollover_window_detection(self):
         """Test rollover window detection."""
         # Near 5pm ET (rollover time)
-        near_rollover = datetime(2024, 1, 15, 16, 50, tzinfo=ZoneInfo("America/New_York"))  # 4:50pm ET
+        near_rollover = datetime(
+            2024, 1, 15, 16, 50, tzinfo=ZoneInfo("America/New_York")
+        )  # 4:50pm ET
         ts_ms = int(near_rollover.timestamp() * 1000)
 
         session_info = get_current_forex_session(ts_ms)
@@ -1015,7 +1025,7 @@ class TestForexSessionDetection:
         # Weekend should have infinite spread
         weekend = datetime(2024, 1, 13, 12, 0, tzinfo=ZoneInfo("America/New_York"))
         weekend_session = get_current_forex_session(int(weekend.timestamp() * 1000))
-        assert weekend_session.spread_multiplier == float('inf')
+        assert weekend_session.spread_multiplier == float("inf")
 
     def test_utility_functions(self):
         """Test session utility functions."""
@@ -1402,7 +1412,7 @@ class TestPhase6Integration:
                 liq = SESSION_LIQUIDITY[session]
                 spread = SESSION_SPREAD_MULT[session]
                 # Higher liquidity should mean lower spread (generally)
-                if liq > 0 and spread < float('inf'):
+                if liq > 0 and spread < float("inf"):
                     # This is a soft check - relationship should be inverse
                     pass
 
@@ -1709,7 +1719,7 @@ class TestSessionRouterAdvanced:
         # Test various times to cover all sessions
         test_times = [
             datetime(2024, 1, 15, 23, 0, tzinfo=ZoneInfo("UTC")),  # Sydney
-            datetime(2024, 1, 15, 3, 0, tzinfo=ZoneInfo("UTC")),   # Tokyo
+            datetime(2024, 1, 15, 3, 0, tzinfo=ZoneInfo("UTC")),  # Tokyo
             datetime(2024, 1, 15, 10, 0, tzinfo=ZoneInfo("UTC")),  # London
             datetime(2024, 1, 15, 15, 0, tzinfo=ZoneInfo("UTC")),  # NY
             datetime(2024, 1, 15, 14, 0, tzinfo=ZoneInfo("UTC")),  # Overlap

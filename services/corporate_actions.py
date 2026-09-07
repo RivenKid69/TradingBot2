@@ -63,6 +63,7 @@ DEFAULT_CACHE_DIR = Path("data/cache/corporate_actions")
 @dataclass
 class CorporateActionsConfig:
     """Configuration for CorporateActionsService."""
+
     cache_dir: Path = DEFAULT_CACHE_DIR
     cache_ttl_hours: int = 24  # Cache validity in hours
     vendor: str = "yahoo"  # Default data vendor
@@ -115,6 +116,7 @@ class CorporateActionsService:
         """Get or create the corporate actions adapter."""
         if self._adapter is None:
             from adapters.registry import create_corporate_actions_adapter
+
             self._adapter = create_corporate_actions_adapter(
                 self.config.vendor,
                 self._adapter_config,
@@ -124,8 +126,9 @@ class CorporateActionsService:
     @property
     def earnings_adapter(self):
         """Get or create the earnings adapter."""
-        if not hasattr(self, '_earnings_adapter') or self._earnings_adapter is None:
+        if not hasattr(self, "_earnings_adapter") or self._earnings_adapter is None:
             from adapters.registry import create_earnings_adapter
+
             self._earnings_adapter = create_earnings_adapter(
                 self.config.vendor,
                 self._adapter_config,
@@ -293,6 +296,7 @@ class CorporateActionsService:
         # Fetch from adapter
         try:
             from adapters.models import Dividend
+
             dividends = self.adapter.get_dividends(
                 symbol,
                 start_date=start_date,
@@ -586,7 +590,11 @@ class CorporateActionsService:
                         logger.warning(
                             "compute_dividend_factors(%s): implausible adjustment %.4f "
                             "(price=%.4f, div=%.4f) at %s — clamping to (0,1].",
-                            symbol, adjustment, price_at_ex, div_amount, ex_date,
+                            symbol,
+                            adjustment,
+                            price_at_ex,
+                            div_amount,
+                            ex_date,
                         )
                         adjustment = min(1.0, max(adjustment, 1e-6))
                     cumulative *= adjustment
@@ -694,7 +702,8 @@ class CorporateActionsService:
 
                 # Sum dividends in trailing 12 months
                 trailing_divs = sum(
-                    amount for date_str, amount in div_by_date.items()
+                    amount
+                    for date_str, amount in div_by_date.items()
                     if start_dt.strftime("%Y-%m-%d") <= date_str <= as_of_date
                 )
 
@@ -775,7 +784,8 @@ class CorporateActionsService:
             # Bulk price adjustment: skip (with warning) any dividend whose ex-date
             # close isn't in this frame rather than fabricate a price or crash.
             dividend_factors = self.compute_dividend_factors(
-                symbol, dates, prices_by_date, strict=False)
+                symbol, dates, prices_by_date, strict=False
+            )
             for d in dates:
                 combined_factor[d] *= dividend_factors.get(d, 1.0)
 
@@ -818,10 +828,7 @@ class CorporateActionsService:
         """
         dividends = self.get_dividends(symbol, start_date=start_date, end_date=end_date)
 
-        total_dividend = sum(
-            float(d.get("amount", 0))
-            for d in dividends
-        )
+        total_dividend = sum(float(d.get("amount", 0)) for d in dividends)
 
         # This is a simplified calculation - proper total return
         # needs price data to compute daily reinvestment
@@ -893,12 +900,8 @@ class CorporateActionsService:
 
         try:
             # Get recent dividends
-            start = (
-                datetime.fromisoformat(as_of_date) - timedelta(days=400)
-            ).strftime("%Y-%m-%d")
-            end = (
-                datetime.fromisoformat(as_of_date) + timedelta(days=60)
-            ).strftime("%Y-%m-%d")
+            start = (datetime.fromisoformat(as_of_date) - timedelta(days=400)).strftime("%Y-%m-%d")
+            end = (datetime.fromisoformat(as_of_date) + timedelta(days=60)).strftime("%Y-%m-%d")
 
             dividends = self.get_dividends(symbol, start_date=start, end_date=end)
 
@@ -908,20 +911,12 @@ class CorporateActionsService:
             as_of_dt = datetime.fromisoformat(as_of_date)
 
             # Split into past and future
-            past_divs = [
-                d for d in dividends
-                if datetime.fromisoformat(d["ex_date"]) <= as_of_dt
-            ]
-            future_divs = [
-                d for d in dividends
-                if datetime.fromisoformat(d["ex_date"]) > as_of_dt
-            ]
+            past_divs = [d for d in dividends if datetime.fromisoformat(d["ex_date"]) <= as_of_dt]
+            future_divs = [d for d in dividends if datetime.fromisoformat(d["ex_date"]) > as_of_dt]
 
             # Days to next ex-dividend
             if future_divs:
-                next_ex = min(
-                    d["ex_date"] for d in future_divs
-                )
+                next_ex = min(d["ex_date"] for d in future_divs)
                 next_dt = datetime.fromisoformat(next_ex)
                 features["days_to_ex_div"] = (next_dt - as_of_dt).days
 
@@ -1198,10 +1193,7 @@ class CorporateActionsService:
             "dividend_count": len(dividends),
             "total_dividends": round(total_dividends, 4),
             "split_count": len(splits),
-            "splits": [
-                f"{s.get('ratio', [1,1])[0]}:{s.get('ratio', [1,1])[1]}"
-                for s in splits
-            ],
+            "splits": [f"{s.get('ratio', [1,1])[0]}:{s.get('ratio', [1,1])[1]}" for s in splits],
             "earnings_count": len(earnings),
             "last_dividend_date": dividends[-1]["ex_date"] if dividends else None,
             "last_split_date": splits[-1]["ex_date"] if splits else None,
@@ -1296,8 +1288,20 @@ def add_earnings_features(df: pd.DataFrame, symbol: str) -> pd.DataFrame:
 
 # Default universe used when none is supplied (liquid US large caps).
 _DEFAULT_CA_UNIVERSE = [
-    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
-    "JPM", "JNJ", "KO", "XOM", "PFE", "WMT", "HD",
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "TSLA",
+    "JPM",
+    "JNJ",
+    "KO",
+    "XOM",
+    "PFE",
+    "WMT",
+    "HD",
 ]
 
 
@@ -1318,24 +1322,28 @@ def _build_corporate_actions_report(symbols: List[str]) -> Dict[str, Any]:
         try:
             for s in service.get_splits(sym) or []:
                 ratio = s.get("ratio") or [None, None]
-                splits_out.append({
-                    "symbol": s.get("symbol", sym),
-                    "ex_date": s.get("ex_date"),
-                    "ratio_new": ratio[0] if len(ratio) > 0 else None,
-                    "ratio_old": ratio[1] if len(ratio) > 1 else None,
-                    "is_reverse": bool(s.get("is_reverse", False)),
-                })
+                splits_out.append(
+                    {
+                        "symbol": s.get("symbol", sym),
+                        "ex_date": s.get("ex_date"),
+                        "ratio_new": ratio[0] if len(ratio) > 0 else None,
+                        "ratio_old": ratio[1] if len(ratio) > 1 else None,
+                        "is_reverse": bool(s.get("is_reverse", False)),
+                    }
+                )
         except Exception as exc:  # pragma: no cover - network dependent
             errors.append(f"splits {sym}: {exc}")
         try:
             for d in service.get_dividends(sym) or []:
-                dividends_out.append({
-                    "symbol": d.get("symbol", sym),
-                    "ex_date": d.get("ex_date"),
-                    "pay_date": d.get("pay_date"),
-                    "amount": d.get("amount"),
-                    "yield_pct": d.get("yield_pct"),
-                })
+                dividends_out.append(
+                    {
+                        "symbol": d.get("symbol", sym),
+                        "ex_date": d.get("ex_date"),
+                        "pay_date": d.get("pay_date"),
+                        "amount": d.get("amount"),
+                        "yield_pct": d.get("yield_pct"),
+                    }
+                )
         except Exception as exc:  # pragma: no cover - network dependent
             errors.append(f"dividends {sym}: {exc}")
 
@@ -1347,12 +1355,14 @@ def _build_corporate_actions_report(symbols: List[str]) -> Dict[str, Any]:
         tracker = get_delisting_tracker()
         for ev in tracker.get_delistings():
             d = ev.to_dict()
-            survivorship_out.append({
-                "symbol": d.get("symbol"),
-                "delist_date": d.get("delist_date"),
-                "reason": d.get("reason"),
-                "successor_symbol": d.get("successor_symbol"),
-            })
+            survivorship_out.append(
+                {
+                    "symbol": d.get("symbol"),
+                    "delist_date": d.get("delist_date"),
+                    "reason": d.get("reason"),
+                    "successor_symbol": d.get("successor_symbol"),
+                }
+            )
     except Exception as exc:  # pragma: no cover
         errors.append(f"survivorship: {exc}")
 
@@ -1391,8 +1401,12 @@ if __name__ == "__main__":
     from datetime import datetime as _dt
 
     ap = argparse.ArgumentParser(description="Fetch corporate actions and write a JSON report.")
-    ap.add_argument("--symbols", default="", help="Comma-separated symbols (defaults to a liquid US universe).")
-    ap.add_argument("--out", default="models/corporate_actions.json", help="Path to write the report JSON.")
+    ap.add_argument(
+        "--symbols", default="", help="Comma-separated symbols (defaults to a liquid US universe)."
+    )
+    ap.add_argument(
+        "--out", default="models/corporate_actions.json", help="Path to write the report JSON."
+    )
     args = ap.parse_args()
 
     if args.symbols.strip():

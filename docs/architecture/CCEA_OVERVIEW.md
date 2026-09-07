@@ -355,6 +355,7 @@ All TRADING_IMPACTING commands require local approval:
 | EU data residency | By design for EU customers; drift checks designed to fail closed (verify via residency dashboard and CI tests) |
 
 **CCEA Privacy Design Commitments** *(verify via architecture review and CI tests)*:
+
 - Cloud is **designed not to** store or receive broker credentials or API keys (secrets designed to stay in customer-controlled Agent)
 - Cloud is **designed not to** receive order-like payloads in commands (protocol-level design prohibition)
 - Telemetry redaction is **on by default** (designed as mandatory; verify via CI guardrails); raw order events require explicit opt-in
@@ -577,12 +578,12 @@ All marketing materials must include:
 
 | Document | Purpose |
 |----------|---------|
-| [CCEA_MARKETING_GUIDELINES.md](../business/CCEA_MARKETING_GUIDELINES.md) | Approved marketing language |
-| [CCEA_TERMS_OF_SERVICE_GUIDELINES.md](../business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md) | ToS requirements |
-| [OPEN_CORE_BUSINESS_MODEL.md](../business/OPEN_CORE_BUSINESS_MODEL.md) | Business model details |
-| [IP_PROTECTION_STRATEGY.md](../business/IP_PROTECTION_STRATEGY.md) | IP and trade secret protection |
-| [PRICING_DIFFERENTIATION_STRATEGY.md](../business/PRICING_DIFFERENTIATION_STRATEGY.md) | Pricing by product mode |
-| [COMPETITIVE_MOAT.md](../business/COMPETITIVE_MOAT.md) | Competitive advantage analysis |
+| [CCEA_MARKETING_GUIDELINES.md](../history/business/CCEA_MARKETING_GUIDELINES.md) | Approved marketing language |
+| [CCEA_TERMS_OF_SERVICE_GUIDELINES.md](../history/business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md) | ToS requirements |
+| [OPEN_CORE_BUSINESS_MODEL.md](../history/business/OPEN_CORE_BUSINESS_MODEL.md) | Business model details |
+| [IP_PROTECTION_STRATEGY.md](../history/business/IP_PROTECTION_STRATEGY.md) | IP and trade secret protection |
+| [PRICING_DIFFERENTIATION_STRATEGY.md](../history/business/PRICING_DIFFERENTIATION_STRATEGY.md) | Pricing by product mode |
+| [COMPETITIVE_MOAT.md](../history/business/COMPETITIVE_MOAT.md) | Competitive advantage analysis |
 
 ### Operational Documentation
 

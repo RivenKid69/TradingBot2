@@ -108,9 +108,7 @@ class Signature:
             algorithm=algorithm,
             signature_value=data.get("signature_value", ""),
             certificate=data.get("certificate"),
-            timestamp=datetime.fromisoformat(data["timestamp"])
-            if data.get("timestamp")
-            else None,
+            timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else None,
             key_id=data.get("key_id"),
         )
 
@@ -171,9 +169,11 @@ class Provenance:
             git_branch=data.get("git_branch", ""),
             git_tag=data.get("git_tag"),
             builder_id=data.get("builder_id", ""),
-            build_timestamp=datetime.fromisoformat(data["build_timestamp"])
-            if "build_timestamp" in data
-            else datetime.utcnow(),
+            build_timestamp=(
+                datetime.fromisoformat(data["build_timestamp"])
+                if "build_timestamp" in data
+                else datetime.utcnow()
+            ),
             build_host=data.get("build_host", ""),
             ci_job_id=data.get("ci_job_id"),
             ci_pipeline_url=data.get("ci_pipeline_url"),
@@ -456,9 +456,7 @@ class ArtifactManifest:
     permissions: Permissions = field(default_factory=Permissions)
 
     # Risk (suggested, not enforced)
-    risk_profile_suggested: RiskProfileSuggested = field(
-        default_factory=RiskProfileSuggested
-    )
+    risk_profile_suggested: RiskProfileSuggested = field(default_factory=RiskProfileSuggested)
 
     # Data contracts
     data_contract: Dict[str, Any] = field(default_factory=dict)
@@ -540,20 +538,18 @@ class ArtifactManifest:
             provenance=Provenance.from_dict(data.get("provenance", {})),
             runtime=RuntimeRequirements.from_dict(data.get("runtime", {})),
             permissions=Permissions.from_dict(data.get("permissions", {})),
-            risk_profile_suggested=RiskProfileSuggested(
-                **data.get("risk_profile_suggested", {})
-            ),
+            risk_profile_suggested=RiskProfileSuggested(**data.get("risk_profile_suggested", {})),
             data_contract=data.get("data_contract", {}),
             telemetry_schema_version=data.get("telemetry_schema_version", "1.0.0"),
             change_class=data.get("change_class", "trading_impacting"),
             sandbox_type=sandbox_type,
             timeframe=timeframe,
-            created_at=datetime.fromisoformat(data["created_at"])
-            if "created_at" in data
-            else datetime.utcnow(),
-            built_at=datetime.fromisoformat(data["built_at"])
-            if data.get("built_at")
-            else None,
+            created_at=(
+                datetime.fromisoformat(data["created_at"])
+                if "created_at" in data
+                else datetime.utcnow()
+            ),
+            built_at=datetime.fromisoformat(data["built_at"]) if data.get("built_at") else None,
         )
 
     def is_schema_compatible(
@@ -569,9 +565,8 @@ class ArtifactManifest:
 
     def has_valid_signature(self) -> bool:
         """Check if manifest has a non-empty signature."""
-        return (
-            self.signature.algorithm != SignatureAlgorithm.NONE
-            and bool(self.signature.signature_value)
+        return self.signature.algorithm != SignatureAlgorithm.NONE and bool(
+            self.signature.signature_value
         )
 
 

@@ -152,15 +152,13 @@ class UPGDW(torch.optim.Optimizer):
 
                 # Update utility EMA using beta2 (same as second moment decay)
                 avg_utility = state["avg_utility"]
-                avg_utility.mul_(beta2).add_(
-                    -p.grad.data * p.data, alpha=1 - beta2
-                )
+                avg_utility.mul_(beta2).add_(-p.grad.data * p.data, alpha=1 - beta2)
 
                 # Update Adam moments
                 exp_avg = state["exp_avg"]
                 exp_avg_sq = state["exp_avg_sq"]
                 exp_avg.mul_(beta1).add_(p.grad.data, alpha=1 - beta1)
-                exp_avg_sq.mul_(beta2).add_(p.grad.data ** 2, alpha=1 - beta2)
+                exp_avg_sq.mul_(beta2).add_(p.grad.data**2, alpha=1 - beta2)
 
                 # Track global min/max utility for proper normalization
                 # FIX (2026-05-27): Track min/max on BIAS-CORRECTED utility

@@ -41,14 +41,13 @@ from ..models import AccessAudit, AuditAction
 # ============================================================================
 
 # Current request context for audit
-_audit_context: ContextVar[Optional["AuditContext"]] = ContextVar(
-    "_audit_context", default=None
-)
+_audit_context: ContextVar[Optional["AuditContext"]] = ContextVar("_audit_context", default=None)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
+
 
 @dataclass
 class AuditConfig:
@@ -57,6 +56,7 @@ class AuditConfig:
 
     Design Doc compliance: Controls what gets logged and when.
     """
+
     enabled: bool = True
     log_request_body: bool = False  # Only enable in development
     log_response_body: bool = False  # Never enable in production
@@ -67,6 +67,7 @@ class AuditConfig:
 @dataclass
 class AuditEntry:
     """Audit entry data."""
+
     action: AuditAction
     resource_type: str
     resource_id: Optional[str] = None
@@ -92,6 +93,7 @@ class AuditContext:
 
     Collects audit entries and commits them at the end of the scope.
     """
+
     request_id: str
     user_id: Optional[UUID] = None
     agent_id: Optional[UUID] = None
@@ -191,6 +193,7 @@ SENSITIVE_ENDPOINTS: Set[str] = {
 # ============================================================================
 # Audit Logger
 # ============================================================================
+
 
 class AuditLogger:
     """
@@ -361,6 +364,7 @@ class AuditLogger:
 # Context Manager
 # ============================================================================
 
+
 @asynccontextmanager
 async def audit_scope(
     session: AsyncSession,
@@ -442,6 +446,7 @@ def audit_sensitive_access(
         resource_id_param: Name of the parameter containing resource ID
         include_result: Whether to include result summary in audit context
     """
+
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -489,12 +494,14 @@ def audit_sensitive_access(
                 raise
 
         return wrapper  # type: ignore
+
     return decorator
 
 
 # ============================================================================
 # FastAPI Middleware
 # ============================================================================
+
 
 class AuditMiddleware(BaseHTTPMiddleware):
     """

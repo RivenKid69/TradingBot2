@@ -11,6 +11,7 @@ This follows Gymnasium semantics: step() returns the NEXT state observation.
 Reference: https://gymnasium.farama.org/api/env/#gymnasium.Env.step
 Test count: 6 tests
 """
+
 from __future__ import annotations
 
 import math
@@ -24,8 +25,10 @@ from unittest.mock import patch, MagicMock
 # Minimal stub classes for testing without Cython dependencies
 # ============================================================================
 
+
 class _EnvState:
     """Minimal state stub for testing."""
+
     def __init__(self):
         self.cash = 1000.0
         self.units = 0.0
@@ -86,7 +89,7 @@ class _MediatorStub:
         obs = self._build_observation(
             row=self._env.df.iloc[state.step_idx] if len(self._env.df) > state.step_idx else None,
             state=state,
-            mark_price=100.0
+            mark_price=100.0,
         )
         state.step_idx += 1
         return obs, 0.0, False, False, {}
@@ -96,25 +99,28 @@ class _MediatorStub:
 # Test fixtures
 # ============================================================================
 
+
 def _create_test_df_distinguishable() -> pd.DataFrame:
     """Create test dataframe with clearly distinguishable rows."""
     # Each row has unique values to verify which row observation comes from
-    return pd.DataFrame({
-        "ts_ms": [0, 60000, 120000, 180000, 240000],
-        "open": [100.0, 200.0, 300.0, 400.0, 500.0],
-        "high": [110.0, 210.0, 310.0, 410.0, 510.0],
-        "low": [90.0, 190.0, 290.0, 390.0, 490.0],
-        "close": [105.0, 205.0, 305.0, 405.0, 505.0],
-        "price": [105.0, 205.0, 305.0, 405.0, 505.0],
-        "quote_asset_volume": [1000.0, 2000.0, 3000.0, 4000.0, 5000.0],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [0, 60000, 120000, 180000, 240000],
+            "open": [100.0, 200.0, 300.0, 400.0, 500.0],
+            "high": [110.0, 210.0, 310.0, 410.0, 510.0],
+            "low": [90.0, 190.0, 290.0, 390.0, 490.0],
+            "close": [105.0, 205.0, 305.0, 405.0, 505.0],
+            "price": [105.0, 205.0, 305.0, 405.0, 505.0],
+            "quote_asset_volume": [1000.0, 2000.0, 3000.0, 4000.0, 5000.0],
+        }
+    )
 
 
 def _setup_mock_env(df):
     """Set up a mock TradingEnv for testing."""
     from trading_patchnew import TradingEnv
 
-    with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+    with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
         env = TradingEnv.__new__(TradingEnv)
         env.df = df.copy()
         env.initial_cash = 1000.0
@@ -142,6 +148,7 @@ def _setup_mock_env(df):
 # Tests for step() returning NEXT row observation
 # ============================================================================
 
+
 class TestStepReturnsNextRowObservation:
     """Tests verifying step() returns observation from NEXT row."""
 
@@ -162,6 +169,7 @@ class TestStepReturnsNextRowObservation:
 
         # Simulate first step
         from action_proto import ActionProto, ActionType
+
         proto = ActionProto(ActionType.HOLD, 0.0)
 
         # Call _signal_only_step
@@ -186,6 +194,7 @@ class TestStepReturnsNextRowObservation:
         env = _setup_mock_env(df)
 
         from action_proto import ActionProto, ActionType
+
         proto = ActionProto(ActionType.HOLD, 0.0)
 
         # Initialize
@@ -207,9 +216,9 @@ class TestStepReturnsNextRowObservation:
             expected_rows.append(expected_next)
             actual_rows.append(env._mediator.observation_row_indices[-1])
 
-        assert actual_rows == expected_rows, (
-            f"Expected observation row sequence {expected_rows}, got {actual_rows}"
-        )
+        assert (
+            actual_rows == expected_rows
+        ), f"Expected observation row sequence {expected_rows}, got {actual_rows}"
 
     def test_reset_and_first_step_observations_differ(self):
         """Reset observation and first step observation should be different."""
@@ -217,6 +226,7 @@ class TestStepReturnsNextRowObservation:
         env = _setup_mock_env(df)
 
         from action_proto import ActionProto, ActionType
+
         proto = ActionProto(ActionType.HOLD, 0.0)
 
         # Get reset observation
@@ -241,6 +251,7 @@ class TestStepReturnsNextRowObservation:
         env = _setup_mock_env(df)
 
         from action_proto import ActionProto, ActionType
+
         proto = ActionProto(ActionType.HOLD, 0.0)
 
         env._init_state()
@@ -258,9 +269,9 @@ class TestStepReturnsNextRowObservation:
         # Should use last row (index len(df)-1 = 4)
         obs_row = env._mediator.observation_row_indices[-1]
         expected = len(df) - 1
-        assert obs_row == expected, (
-            f"Expected terminal observation from row {expected}, got {obs_row}"
-        )
+        assert (
+            obs_row == expected
+        ), f"Expected terminal observation from row {expected}, got {obs_row}"
 
     def test_observation_mark_price_from_next_row(self):
         """Observation mark price should be from next row."""
@@ -268,6 +279,7 @@ class TestStepReturnsNextRowObservation:
         env = _setup_mock_env(df)
 
         from action_proto import ActionProto, ActionType
+
         proto = ActionProto(ActionType.HOLD, 0.0)
 
         env._init_state()
@@ -275,15 +287,13 @@ class TestStepReturnsNextRowObservation:
         # First step: should use row[1] price (205.0) for observation
         row_idx = env.state.step_idx  # 0
         row = env.df.iloc[row_idx]
-        obs, _, _, _, _ = env._signal_only_step(
-            proto, row_idx, row, 100.0, next_signal_pos=0.0
-        )
+        obs, _, _, _, _ = env._signal_only_step(proto, row_idx, row, 100.0, next_signal_pos=0.0)
 
         # obs[0] should be mark_price from row[1]
         expected_price = df.iloc[1]["close"]  # 205.0
-        assert obs[0] == pytest.approx(expected_price, rel=0.1), (
-            f"Expected obs mark_price ~{expected_price}, got {obs[0]}"
-        )
+        assert obs[0] == pytest.approx(
+            expected_price, rel=0.1
+        ), f"Expected obs mark_price ~{expected_price}, got {obs[0]}"
 
 
 class TestStepObservationEdgeCases:
@@ -291,18 +301,21 @@ class TestStepObservationEdgeCases:
 
     def test_single_row_dataframe(self):
         """With single row dataframe, all observations should use row[0]."""
-        df = pd.DataFrame({
-            "ts_ms": [0],
-            "open": [100.0],
-            "high": [110.0],
-            "low": [90.0],
-            "close": [105.0],
-            "price": [105.0],
-            "quote_asset_volume": [1000.0],
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [0],
+                "open": [100.0],
+                "high": [110.0],
+                "low": [90.0],
+                "close": [105.0],
+                "price": [105.0],
+                "quote_asset_volume": [1000.0],
+            }
+        )
         env = _setup_mock_env(df)
 
         from action_proto import ActionProto, ActionType
+
         proto = ActionProto(ActionType.HOLD, 0.0)
 
         env._init_state()

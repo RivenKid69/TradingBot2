@@ -57,6 +57,7 @@ from impl_circuit_breaker import (
 # Test Constants and Configuration
 # =============================================================================
 
+
 class TestCircuitBreakerConstants:
     """Test circuit breaker constants and thresholds."""
 
@@ -109,6 +110,7 @@ class TestCircuitBreakerConstants:
 # Test Circuit Breaker Level Detection
 # =============================================================================
 
+
 class TestCircuitBreakerLevelDetection:
     """Test circuit breaker level detection functions."""
 
@@ -157,6 +159,7 @@ class TestCircuitBreakerLevelDetection:
 # Test CMECircuitBreaker Basic Operations
 # =============================================================================
 
+
 class TestCMECircuitBreakerBasic:
     """Test basic CMECircuitBreaker operations."""
 
@@ -203,6 +206,7 @@ class TestCMECircuitBreakerBasic:
 # =============================================================================
 # Test Equity Circuit Breakers
 # =============================================================================
+
 
 class TestEquityCircuitBreakers:
     """Test equity index circuit breaker triggers."""
@@ -335,6 +339,7 @@ class TestEquityCircuitBreakers:
 # Test Overnight Limits
 # =============================================================================
 
+
 class TestOvernightLimits:
     """Test overnight (ETH) price limits."""
 
@@ -422,6 +427,7 @@ class TestOvernightLimits:
 # =============================================================================
 # Test Commodity Price Limits
 # =============================================================================
+
 
 class TestCommodityPriceLimits:
     """Test commodity daily price limits."""
@@ -514,6 +520,7 @@ class TestCommodityPriceLimits:
 # Test Velocity Logic
 # =============================================================================
 
+
 class TestVelocityLogic:
     """Test velocity logic (fat-finger protection)."""
 
@@ -598,6 +605,7 @@ class TestVelocityLogic:
 # Test can_trade Method
 # =============================================================================
 
+
 class TestCanTrade:
     """Test can_trade comprehensive check."""
 
@@ -663,6 +671,7 @@ class TestCanTrade:
 # Test Daily Reset
 # =============================================================================
 
+
 class TestDailyReset:
     """Test daily state reset."""
 
@@ -717,6 +726,7 @@ class TestDailyReset:
 # Test get_current_limits
 # =============================================================================
 
+
 class TestGetCurrentLimits:
     """Test get_current_limits method."""
 
@@ -760,6 +770,7 @@ class TestGetCurrentLimits:
 # =============================================================================
 # Test Factory Functions
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Test factory functions."""
@@ -809,6 +820,7 @@ class TestFactoryFunctions:
 # Test CircuitBreakerManager
 # =============================================================================
 
+
 class TestCircuitBreakerManager:
     """Test multi-product circuit breaker manager."""
 
@@ -840,10 +852,12 @@ class TestCircuitBreakerManager:
         manager.add_product("ES")
         manager.add_product("NQ")
 
-        manager.set_reference_prices({
-            "ES": Decimal("4500"),
-            "NQ": Decimal("15000"),
-        })
+        manager.set_reference_prices(
+            {
+                "ES": Decimal("4500"),
+                "NQ": Decimal("15000"),
+            }
+        )
 
         assert manager.get_breaker("ES").state.reference_price == Decimal("4500")
         assert manager.get_breaker("NQ").state.reference_price == Decimal("15000")
@@ -912,6 +926,7 @@ class TestCircuitBreakerManager:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -972,6 +987,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Integration Scenarios
 # =============================================================================
+
 
 class TestIntegrationScenarios:
     """Test realistic integration scenarios."""
@@ -1076,6 +1092,7 @@ class TestIntegrationScenarios:
 # =============================================================================
 # Additional Coverage Tests
 # =============================================================================
+
 
 class TestCoverageEdgeCases:
     """Tests for edge cases to achieve 100% coverage."""

@@ -119,7 +119,7 @@ class TestStrategyContract:
         from typing import Protocol
 
         # StrategyContract is a Protocol, not instantiable directly
-        assert hasattr(StrategyContract, '__protocol_attrs__') or True
+        assert hasattr(StrategyContract, "__protocol_attrs__") or True
 
     def test_strategy_result(self):
         """Test strategy result."""
@@ -298,8 +298,18 @@ class TestHashingUtilities:
         """Test digest verification."""
         from packages.shared.utils.hashing import verify_digest
 
-        assert verify_digest(b"hello", "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824") is True
-        assert verify_digest(b"hello", "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824") is True
+        assert (
+            verify_digest(
+                b"hello", "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+            )
+            is True
+        )
+        assert (
+            verify_digest(
+                b"hello", "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+            )
+            is True
+        )
         assert verify_digest(b"hello", "wrong_digest") is False
 
     def test_compute_content_hash(self):
@@ -318,7 +328,9 @@ class TestHashingUtilities:
 
         content = {"a": 1, "b": 2, "timestamp": "2025-01-01"}
         hash1 = compute_content_hash(content, exclude_keys={"timestamp"})
-        hash2 = compute_content_hash({"a": 1, "b": 2, "timestamp": "2025-12-31"}, exclude_keys={"timestamp"})
+        hash2 = compute_content_hash(
+            {"a": 1, "b": 2, "timestamp": "2025-12-31"}, exclude_keys={"timestamp"}
+        )
 
         assert hash1 == hash2
 

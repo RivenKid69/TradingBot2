@@ -74,8 +74,10 @@ COMMAND_TYPE_METADATA: Final[Dict[str, Dict[str, Any]]] = {
 # Validation Results
 # ============================================================================
 
+
 class ValidationSeverity(str, Enum):
     """Severity of validation error."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -85,6 +87,7 @@ class ValidationSeverity(str, Enum):
 @dataclass
 class CommandValidationError:
     """Error from command type validation."""
+
     message: str
     severity: ValidationSeverity
     command_type: str
@@ -103,6 +106,7 @@ class CommandValidationError:
 @dataclass
 class CommandValidationResult:
     """Result of command type validation."""
+
     valid: bool
     command_type: str
     errors: List[CommandValidationError]
@@ -121,6 +125,7 @@ class CommandValidationResult:
 # ============================================================================
 # Validator
 # ============================================================================
+
 
 class CommandTypeValidator:
     """
@@ -162,11 +167,13 @@ class CommandTypeValidator:
 
         # Check if empty
         if not normalized:
-            errors.append(CommandValidationError(
-                message="Command type cannot be empty",
-                severity=ValidationSeverity.CRITICAL,
-                command_type=command_type,
-            ))
+            errors.append(
+                CommandValidationError(
+                    message="Command type cannot be empty",
+                    severity=ValidationSeverity.CRITICAL,
+                    command_type=command_type,
+                )
+            )
             return CommandValidationResult(
                 valid=False,
                 command_type=command_type,
@@ -175,12 +182,14 @@ class CommandTypeValidator:
 
         # Check against allowlist (FAIL-CLOSED)
         if normalized not in self._allowed_types:
-            errors.append(CommandValidationError(
-                message=f"Unknown command type '{command_type}'. "
-                        f"Allowed types: {sorted(self._allowed_types)}",
-                severity=ValidationSeverity.CRITICAL,
-                command_type=command_type,
-            ))
+            errors.append(
+                CommandValidationError(
+                    message=f"Unknown command type '{command_type}'. "
+                    f"Allowed types: {sorted(self._allowed_types)}",
+                    severity=ValidationSeverity.CRITICAL,
+                    command_type=command_type,
+                )
+            )
             return CommandValidationResult(
                 valid=False,
                 command_type=command_type,

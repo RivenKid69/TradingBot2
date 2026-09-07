@@ -141,13 +141,13 @@ class OptionsQuote:
         if self.timestamp is not None and self.timestamp_ns == 0:
             self.timestamp_ns = int(self.timestamp.timestamp() * 1e9)
         elif self.timestamp_ns > 0 and self.timestamp is None:
-            object.__setattr__(self, 'timestamp', datetime.fromtimestamp(self.timestamp_ns / 1e9))
+            object.__setattr__(self, "timestamp", datetime.fromtimestamp(self.timestamp_ns / 1e9))
 
         # Sync bid/ask back to None-checked values for property access
         if self.bid is None:
-            object.__setattr__(self, 'bid', self.bid_price)
+            object.__setattr__(self, "bid", self.bid_price)
         if self.ask is None:
-            object.__setattr__(self, 'ask', self.ask_price)
+            object.__setattr__(self, "ask", self.ask_price)
 
     @property
     def mid_price(self) -> float:
@@ -244,9 +244,9 @@ class OptionsEvent:
             self.timestamp_ns = int(self.timestamp.timestamp() * 1e9)
         elif self.timestamp_ns == 0:
             self.timestamp_ns = time.time_ns()
-            object.__setattr__(self, 'timestamp', datetime.fromtimestamp(self.timestamp_ns / 1e9))
+            object.__setattr__(self, "timestamp", datetime.fromtimestamp(self.timestamp_ns / 1e9))
         elif self.timestamp is None and self.timestamp_ns > 0:
-            object.__setattr__(self, 'timestamp', datetime.fromtimestamp(self.timestamp_ns / 1e9))
+            object.__setattr__(self, "timestamp", datetime.fromtimestamp(self.timestamp_ns / 1e9))
 
 
 @dataclass
@@ -448,7 +448,9 @@ class EventDrivenLOBCoordinator:
         self._expiry_index: Dict[str, Set[str]] = defaultdict(set)
 
         # Per-series callbacks
-        self._per_series_callbacks: Dict[str, List[Callable[[str, OptionsEvent], None]]] = defaultdict(list)
+        self._per_series_callbacks: Dict[str, List[Callable[[str, OptionsEvent], None]]] = (
+            defaultdict(list)
+        )
 
         # Current ATM strike (for ATM_ONLY scope)
         self._atm_strike: Optional[float] = None
@@ -901,10 +903,7 @@ class EventDrivenLOBCoordinator:
 
         elif event.scope == PropagationScope.CUSTOM:
             if event.custom_filter:
-                return {
-                    s for s in self._series_to_bucket
-                    if event.custom_filter(s)
-                }
+                return {s for s in self._series_to_bucket if event.custom_filter(s)}
             return set()
 
         return set()
@@ -972,10 +971,7 @@ class EventDrivenLOBCoordinator:
         parts = source_series.split("_")
         underlying = parts[0] if parts else ""
 
-        return {
-            s for s in self._series_to_bucket
-            if s.startswith(underlying + "_")
-        }
+        return {s for s in self._series_to_bucket if s.startswith(underlying + "_")}
 
     def _count_buckets_checked(self, event: OptionsEvent) -> int:
         """Count number of buckets that would be checked."""
@@ -1003,15 +999,11 @@ class EventDrivenLOBCoordinator:
         # Update average affected series
         n = self._stats.total_events
         old_avg = self._stats.avg_affected_series
-        self._stats.avg_affected_series = (
-            (old_avg * (n - 1) + affected_count) / n
-        )
+        self._stats.avg_affected_series = (old_avg * (n - 1) + affected_count) / n
 
         # Update average propagation time
         old_time = self._stats.avg_propagation_time_ns
-        self._stats.avg_propagation_time_ns = (
-            (old_time * (n - 1) + propagation_time_ns) / n
-        )
+        self._stats.avg_propagation_time_ns = (old_time * (n - 1) + propagation_time_ns) / n
 
         # Update peak
         if affected_count > self._stats.peak_affected_series:

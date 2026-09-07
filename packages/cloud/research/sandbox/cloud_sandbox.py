@@ -88,6 +88,7 @@ class IsolationLevel(Enum):
 
     Higher levels provide stronger isolation but more overhead.
     """
+
     NONE = auto()  # No isolation (development only, NEVER in production)
     PROCESS = auto()  # Separate process with resource limits
     CONTAINER = auto()  # Docker container with cgroups
@@ -97,6 +98,7 @@ class IsolationLevel(Enum):
 
 class CloudSandboxState(Enum):
     """Sandbox lifecycle state."""
+
     CREATED = auto()
     INITIALIZING = auto()
     READY = auto()
@@ -115,6 +117,7 @@ class CloudSandboxConfig:
 
     Security-critical settings with safe defaults.
     """
+
     # Identification
     sandbox_id: str = field(default_factory=lambda: str(uuid4()))
     tenant_id: str = ""
@@ -221,6 +224,7 @@ class CloudSandboxConfig:
 @dataclass
 class CloudSandboxMetrics:
     """Runtime metrics from sandbox execution."""
+
     sandbox_id: str = ""
     tenant_id: str = ""
 
@@ -270,6 +274,7 @@ class CloudSandboxMetrics:
 @dataclass
 class CloudSandboxResult:
     """Result of sandbox execution."""
+
     sandbox_id: str = ""
     job_id: str = ""
     tenant_id: str = ""
@@ -456,9 +461,9 @@ class CloudResearchSandbox:
                 if self.config.scratch_dir:
                     self._scratch_dir = self.config.scratch_dir
                 else:
-                    self._scratch_dir = Path(tempfile.mkdtemp(
-                        prefix=f"ccea-sandbox-{self.config.sandbox_id[:8]}-"
-                    ))
+                    self._scratch_dir = Path(
+                        tempfile.mkdtemp(prefix=f"ccea-sandbox-{self.config.sandbox_id[:8]}-")
+                    )
 
                 # Validate isolation backend
                 if self.config.isolation_level == IsolationLevel.CONTAINER:
@@ -632,7 +637,7 @@ class CloudResearchSandbox:
         func_name = func.__name__
 
         # Create wrapper code
-        code = f'''
+        code = f"""
 {source}
 
 import json
@@ -651,7 +656,7 @@ def _run():
 
 if __name__ == "__main__":
     _run()
-'''
+"""
 
         return self.execute(code, entrypoint="main.py")
 
@@ -751,9 +756,7 @@ if __name__ == "__main__":
 
             # Wait with timeout
             try:
-                stdout, stderr = self._process.communicate(
-                    timeout=self.config.timeout_seconds
-                )
+                stdout, stderr = self._process.communicate(timeout=self.config.timeout_seconds)
 
                 result.stdout = self._truncate_output(stdout.decode("utf-8", errors="replace"))
                 result.stderr = self._truncate_output(stderr.decode("utf-8", errors="replace"))
@@ -831,7 +834,9 @@ if __name__ == "__main__":
                 self._stop_container(container_name)
 
                 result.killed_by_timeout = True
-                result.termination_reason = f"Container timeout after {self.config.timeout_seconds}s"
+                result.termination_reason = (
+                    f"Container timeout after {self.config.timeout_seconds}s"
+                )
                 result.exit_code = -9
                 result.state = CloudSandboxState.TERMINATED
 
@@ -856,21 +861,22 @@ if __name__ == "__main__":
         workspace = self._scratch_dir / "workspace"
 
         cmd = [
-            "docker", "run",
-            "--name", container_name,
+            "docker",
+            "run",
+            "--name",
+            container_name,
             "--rm",  # Auto-remove on exit
-
             # Resource limits
             f"--memory={self.config.memory_limit_mb}m",
             f"--memory-swap={self.config.memory_limit_mb}m",  # No swap
             f"--cpus={self.config.cpu_limit}",
             f"--pids-limit={self.config.max_pids}",
-
             # Network
-            "--network", self.config.docker_network,
-
+            "--network",
+            self.config.docker_network,
             # Security
-            "--security-opt", "no-new-privileges",
+            "--security-opt",
+            "no-new-privileges",
         ]
 
         # Read-only filesystem
@@ -899,10 +905,14 @@ if __name__ == "__main__":
             cmd.extend(["--runtime", self.config.docker_runtime])
 
         # Mount workspace
-        cmd.extend([
-            "-v", f"{workspace}:/workspace:ro",
-            "-w", "/workspace",
-        ])
+        cmd.extend(
+            [
+                "-v",
+                f"{workspace}:/workspace:ro",
+                "-w",
+                "/workspace",
+            ]
+        )
 
         # Environment variables (filtered)
         for key, value in self.config.env_vars.items():
@@ -910,10 +920,13 @@ if __name__ == "__main__":
                 cmd.extend(["-e", f"{key}={value}"])
 
         # Image and command
-        cmd.extend([
-            self.config.docker_image,
-            "python", entrypoint,
-        ])
+        cmd.extend(
+            [
+                self.config.docker_image,
+                "python",
+                entrypoint,
+            ]
+        )
 
         return cmd
 
@@ -961,8 +974,7 @@ if __name__ == "__main__":
 
         if not kernel_path.exists():
             result.errors.append(
-                f"Kernel image not found at {kernel_path}. "
-                "Download from Firecracker releases."
+                f"Kernel image not found at {kernel_path}. " "Download from Firecracker releases."
             )
             result.state = CloudSandboxState.FAILED
             self._set_state(CloudSandboxState.FAILED)
@@ -999,8 +1011,10 @@ if __name__ == "__main__":
             # Start Firecracker process
             cmd = [
                 firecracker_bin,
-                "--api-sock", str(api_socket),
-                "--config-file", str(config_path),
+                "--api-sock",
+                str(api_socket),
+                "--config-file",
+                str(config_path),
             ]
 
             # Add seccomp filter if available
@@ -1024,12 +1038,8 @@ if __name__ == "__main__":
 
                 stdout, stderr = self._process.communicate(timeout=vm_timeout)
 
-                result.stdout = self._truncate_output(
-                    stdout.decode("utf-8", errors="replace")
-                )
-                result.stderr = self._truncate_output(
-                    stderr.decode("utf-8", errors="replace")
-                )
+                result.stdout = self._truncate_output(stdout.decode("utf-8", errors="replace"))
+                result.stderr = self._truncate_output(stderr.decode("utf-8", errors="replace"))
                 result.exit_code = self._process.returncode
                 result.success = result.exit_code == 0
                 result.state = CloudSandboxState.STOPPED
@@ -1245,17 +1255,17 @@ if __name__ == "__main__":
 
                         # Extract relevant metrics
                         if "vcpu" in metrics:
-                            self._metrics.cpu_time_seconds = float(
-                                metrics.get("vcpu", {}).get("exit_io_out", 0)
-                            ) / 1e9  # Convert to seconds
+                            self._metrics.cpu_time_seconds = (
+                                float(metrics.get("vcpu", {}).get("exit_io_out", 0)) / 1e9
+                            )  # Convert to seconds
 
                         if "block" in metrics:
-                            self._metrics.disk_read_bytes = metrics.get(
-                                "block", {}
-                            ).get("read_bytes", 0)
-                            self._metrics.disk_write_bytes = metrics.get(
-                                "block", {}
-                            ).get("write_bytes", 0)
+                            self._metrics.disk_read_bytes = metrics.get("block", {}).get(
+                                "read_bytes", 0
+                            )
+                            self._metrics.disk_write_bytes = metrics.get("block", {}).get(
+                                "write_bytes", 0
+                            )
 
         except Exception as e:
             logger.debug(f"Could not parse VM metrics: {e}")
@@ -1296,21 +1306,17 @@ if __name__ == "__main__":
 
             # CPU time limit
             resource.setrlimit(
-                resource.RLIMIT_CPU,
-                (self.config.timeout_seconds, self.config.timeout_seconds)
+                resource.RLIMIT_CPU, (self.config.timeout_seconds, self.config.timeout_seconds)
             )
 
             # File descriptor limit
             resource.setrlimit(
                 resource.RLIMIT_NOFILE,
-                (self.config.max_file_descriptors, self.config.max_file_descriptors)
+                (self.config.max_file_descriptors, self.config.max_file_descriptors),
             )
 
             # Process limit
-            resource.setrlimit(
-                resource.RLIMIT_NPROC,
-                (self.config.max_pids, self.config.max_pids)
-            )
+            resource.setrlimit(resource.RLIMIT_NPROC, (self.config.max_pids, self.config.max_pids))
 
             # No core dumps
             resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
@@ -1339,9 +1345,15 @@ if __name__ == "__main__":
         """Check if environment variable is safe to pass."""
         # Block dangerous env vars
         blocked = {
-            "LD_PRELOAD", "LD_LIBRARY_PATH", "PYTHONPATH",
-            "HOME", "USER", "SHELL", "TERM",
-            "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",
+            "LD_PRELOAD",
+            "LD_LIBRARY_PATH",
+            "PYTHONPATH",
+            "HOME",
+            "USER",
+            "SHELL",
+            "TERM",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
             "GOOGLE_APPLICATION_CREDENTIALS",
             "AZURE_CLIENT_SECRET",
         }

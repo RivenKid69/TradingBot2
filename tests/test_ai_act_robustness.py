@@ -44,9 +44,11 @@ from services.ai_act.robustness_testing import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def simple_model():
     """Simple model function for testing."""
+
     def model(x):
         if x is None:
             raise ValueError("Input cannot be None")
@@ -57,14 +59,19 @@ def simple_model():
         if isinstance(x, (list, tuple)):
             return [v * 2 if isinstance(v, (int, float)) and math.isfinite(v) else v for v in x]
         if isinstance(x, dict):
-            return {k: v * 2 if isinstance(v, (int, float)) and math.isfinite(v) else v for k, v in x.items()}
+            return {
+                k: v * 2 if isinstance(v, (int, float)) and math.isfinite(v) else v
+                for k, v in x.items()
+            }
         return x
+
     return model
 
 
 @pytest.fixture
 def robust_model():
     """Model with built-in robustness."""
+
     def model(x):
         try:
             if x is None:
@@ -84,6 +91,7 @@ def robust_model():
             return {"failsafe": False, "value": x}
         except Exception:
             return {"failsafe": True, "value": 0}
+
     return model
 
 
@@ -96,6 +104,7 @@ def test_inputs():
 # =============================================================================
 # Test Enums
 # =============================================================================
+
 
 class TestRobustnessTestType:
     """Tests for RobustnessTestType enum."""
@@ -159,6 +168,7 @@ class TestTestStatus:
 # =============================================================================
 # Test RobustnessTestResult
 # =============================================================================
+
 
 class TestRobustnessTestResult:
     """Tests for RobustnessTestResult dataclass."""
@@ -246,6 +256,7 @@ class TestRobustnessTestResult:
 # Test AdversarialTester
 # =============================================================================
 
+
 class TestAdversarialTester:
     """Tests for AdversarialTester class."""
 
@@ -265,6 +276,7 @@ class TestAdversarialTester:
 
     def test_run_test_with_robust_model(self, tester, test_inputs):
         """Test with a model that handles perturbations well."""
+
         def robust_model(x):
             if isinstance(x, (int, float)) and math.isfinite(x):
                 return x * 2  # Deterministic, proportional output
@@ -293,6 +305,7 @@ class TestAdversarialTester:
 
     def test_run_test_empty_inputs(self, tester):
         """Test with empty inputs."""
+
         def model(x):
             return x * 2
 
@@ -340,6 +353,7 @@ class TestAdversarialTester:
 
     def test_recommendations_on_low_score(self, tester):
         """Test that recommendations are given for low scores."""
+
         def failing_model(x):
             raise ValueError("Always fails")
 
@@ -351,6 +365,7 @@ class TestAdversarialTester:
 # =============================================================================
 # Test DistributionShiftTester
 # =============================================================================
+
 
 class TestDistributionShiftTester:
     """Tests for DistributionShiftTester class."""
@@ -371,6 +386,7 @@ class TestDistributionShiftTester:
 
     def test_run_test_with_robust_model(self, tester, test_inputs):
         """Test with robust model."""
+
         def robust_model(x):
             if isinstance(x, (int, float)) and math.isfinite(x):
                 return x * 2
@@ -385,6 +401,7 @@ class TestDistributionShiftTester:
 
     def test_run_test_with_fragile_model(self, tester, test_inputs):
         """Test with model that fails on shifted data."""
+
         def fragile_model(x):
             if isinstance(x, (int, float)):
                 if x > 10:  # Fails on large values
@@ -432,6 +449,7 @@ class TestDistributionShiftTester:
 
     def test_scenario_results_in_metadata(self, tester, test_inputs):
         """Test that scenario results are in metadata."""
+
         def model(x):
             return x * 2 if isinstance(x, (int, float)) else x
 
@@ -444,6 +462,7 @@ class TestDistributionShiftTester:
 # =============================================================================
 # Test FailsafeTester
 # =============================================================================
+
 
 class TestFailsafeTester:
     """Tests for FailsafeTester class."""
@@ -539,6 +558,7 @@ class TestFailsafeTester:
 # Test RobustnessTestSuite
 # =============================================================================
 
+
 class TestRobustnessTestSuite:
     """Tests for RobustnessTestSuite class."""
 
@@ -618,6 +638,7 @@ class TestRobustnessTestSuite:
 # Test Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory functions."""
 
@@ -651,6 +672,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Test Thread Safety
 # =============================================================================
+
 
 class TestThreadSafety:
     """Tests for thread safety."""
@@ -690,11 +712,13 @@ class TestThreadSafety:
 # Test Integration Scenarios
 # =============================================================================
 
+
 class TestIntegrationScenarios:
     """Integration tests for realistic scenarios."""
 
     def test_trading_model_robustness(self):
         """Test robustness of a trading model."""
+
         def trading_model(market_data):
             """Simulated trading model."""
             if market_data is None:
@@ -742,6 +766,7 @@ class TestIntegrationScenarios:
 
     def test_full_compliance_workflow(self):
         """Test full Article 15 compliance workflow."""
+
         # Create a model with known behavior
         def ml_model(features):
             if features is None:
@@ -804,6 +829,7 @@ class TestIntegrationScenarios:
 
     def test_stress_testing_large_input_set(self):
         """Test with larger input set for stress testing."""
+
         def simple_model(x):
             return x * 2 if isinstance(x, (int, float)) else x
 
@@ -829,11 +855,13 @@ class TestIntegrationScenarios:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
     def test_empty_model_output(self):
         """Test handling of empty model output."""
+
         def empty_model(x):
             return None
 
@@ -845,6 +873,7 @@ class TestEdgeCases:
 
     def test_model_always_fails(self):
         """Test with model that always throws."""
+
         def failing_model(x):
             raise Exception("Always fails")
 
@@ -882,6 +911,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Score Thresholds
 # =============================================================================
+
 
 class TestScoreThresholds:
     """Test score threshold behavior."""

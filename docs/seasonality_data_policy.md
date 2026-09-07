@@ -4,12 +4,14 @@ This repository uses aggregated exchange data to compute seasonality multipliers
 The following rules apply to any data stored under `data/seasonality_source`:
 
 ## Data Handling
+
 - Only market data derived from public sources may be stored.
 - Files must never contain personal identifying information (PII).
 - Retain at least 12 months of history for auditability.
 - Each file requires a matching `.sha256` checksum.
 
 ## Usage Limitations
+
 - Seasonality data is for internal analytics and model training only.
 - Redistribution outside the organization is prohibited.
 - When sharing derived metrics, ensure that no raw snapshots are exposed.
@@ -17,6 +19,7 @@ The following rules apply to any data stored under `data/seasonality_source`:
   PII patterns exist.
 
 ## Licensing and Attribution
+
 - Historical snapshots are typically sourced from public exchange APIs (for
   example, Binance) and remain subject to their respective terms of use. See the
   [Binance API Terms of Use](https://www.binance.com/en/legal/api-terms-of-use)

@@ -4,7 +4,7 @@
 проводка и действия — `app.py` (`_build_scheduler_actions`, `/api/scheduler/*`) ·
 тесты — `tests/test_scheduler_service.py` (24) · UI — карточка «Планировщик задач» в Lite Data Manager.
 
-Закрывает P0-F из [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](../PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md):
+Закрывает P0-F из [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](history/PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md):
 до него обновление данных, drift-retrain и EOD-переоценка запускались только руками.
 
 ---

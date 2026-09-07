@@ -17,7 +17,7 @@ Test Categories:
 Test Count Target: 45 tests
 
 References:
-    - CLAUDE.md: Regression Prevention Protocol
+    - docs/PLATFORM_REFERENCE.md: Regression Prevention Protocol
     - docs/FOREX_INTEGRATION_PLAN.md: Phase 10 requirements
 """
 
@@ -67,12 +67,14 @@ FEATURE_PIPELINE_BASELINE = {
 # Crypto Regression Suite
 # =============================================================================
 
+
 class TestCryptoRegressionSuite:
     """Ensure crypto functionality unchanged after Forex integration."""
 
     def test_crypto_parametric_provider_exists(self):
         """CryptoParametricSlippageProvider must still exist."""
         from execution_providers import CryptoParametricSlippageProvider
+
         provider = CryptoParametricSlippageProvider()
         assert provider is not None
         assert hasattr(provider, "compute_slippage_bps")
@@ -80,6 +82,7 @@ class TestCryptoRegressionSuite:
     def test_crypto_parametric_config_exists(self):
         """CryptoParametricConfig must still exist with original defaults."""
         from execution_providers import CryptoParametricConfig
+
         config = CryptoParametricConfig()
 
         # Verify defaults unchanged
@@ -214,6 +217,7 @@ class TestCryptoRegressionSuite:
 # Equity Regression Suite
 # =============================================================================
 
+
 class TestEquityRegressionSuite:
     """Ensure equity functionality unchanged after Forex integration."""
 
@@ -272,6 +276,7 @@ class TestEquityRegressionSuite:
 # Adapter Registry Regression Suite
 # =============================================================================
 
+
 class TestAdapterRegistryRegression:
     """Ensure adapter registry backward compatible."""
 
@@ -280,8 +285,11 @@ class TestAdapterRegistryRegression:
         from adapters.models import MarketType
 
         existing_types = [
-            "CRYPTO_SPOT", "CRYPTO_FUTURES", "CRYPTO_PERP",
-            "EQUITY", "EQUITY_OPTIONS",
+            "CRYPTO_SPOT",
+            "CRYPTO_FUTURES",
+            "CRYPTO_PERP",
+            "EQUITY",
+            "EQUITY_OPTIONS",
         ]
 
         for mt in existing_types:
@@ -348,21 +356,23 @@ class TestAdapterRegistryRegression:
 # Feature Pipeline Regression Suite
 # =============================================================================
 
+
 class TestFeaturePipelineRegression:
     """Ensure feature pipeline produces identical outputs."""
 
     def test_features_pipeline_module_exists(self):
         """features_pipeline module must exist."""
         import features_pipeline
+
         # Module should exist and have some feature-related attributes
         assert features_pipeline is not None
         # Check for any of the common attributes
         has_attrs = (
-            hasattr(features_pipeline, "compute_features") or
-            hasattr(features_pipeline, "FeaturesConfig") or
-            hasattr(features_pipeline, "build_features") or
-            hasattr(features_pipeline, "FeatureBuilder") or
-            hasattr(features_pipeline, "FeaturePipeline")
+            hasattr(features_pipeline, "compute_features")
+            or hasattr(features_pipeline, "FeaturesConfig")
+            or hasattr(features_pipeline, "build_features")
+            or hasattr(features_pipeline, "FeatureBuilder")
+            or hasattr(features_pipeline, "FeaturePipeline")
         )
         assert has_attrs or True  # Module existence is sufficient
 
@@ -380,20 +390,21 @@ class TestFeaturePipelineRegression:
         # This test validates the feature registry design principle
         try:
             import features_pipeline
+
             # If feature registry exists, check registered features
             if hasattr(features_pipeline, "CRYPTO_FEATURES"):
                 crypto_features = features_pipeline.CRYPTO_FEATURES
                 for forex_feat in forex_only_features:
-                    assert forex_feat not in crypto_features, (
-                        f"Forex feature '{forex_feat}' should not appear in crypto features"
-                    )
+                    assert (
+                        forex_feat not in crypto_features
+                    ), f"Forex feature '{forex_feat}' should not appear in crypto features"
             elif hasattr(features_pipeline, "get_feature_names"):
                 # Alternative: get features by asset type
                 crypto_features = features_pipeline.get_feature_names("crypto")
                 for forex_feat in forex_only_features:
-                    assert forex_feat not in crypto_features, (
-                        f"Forex feature '{forex_feat}' should not appear in crypto features"
-                    )
+                    assert (
+                        forex_feat not in crypto_features
+                    ), f"Forex feature '{forex_feat}' should not appear in crypto features"
             else:
                 # Feature registry not fully implemented yet
                 # Test passes as no features are exposed
@@ -408,6 +419,7 @@ class TestFeaturePipelineRegression:
         # Verify by checking observation space shape is consistent
         try:
             from mediator import Mediator
+
             # Create mediator instances for different asset types
             # and verify observation space dimensions are appropriate
             #
@@ -426,12 +438,14 @@ class TestFeaturePipelineRegression:
 # Risk Guards Regression Suite
 # =============================================================================
 
+
 class TestRiskGuardsRegression:
     """Ensure risk guards behavior unchanged."""
 
     def test_risk_guard_module_exists(self):
         """risk_guard module must exist."""
         import risk_guard
+
         assert hasattr(risk_guard, "RiskGuard")
 
     def test_stock_risk_guards_exist(self):
@@ -448,6 +462,7 @@ class TestRiskGuardsRegression:
 # =============================================================================
 # Core Classes Regression Suite
 # =============================================================================
+
 
 class TestCoreClassesRegression:
     """Ensure core classes unchanged."""
@@ -517,6 +532,7 @@ class TestCoreClassesRegression:
 # Phase-Specific Regression Gates
 # =============================================================================
 
+
 class TestPhaseRegressionGates:
     """
     Regression gates to run after each phase.
@@ -576,12 +592,16 @@ class TestPhaseRegressionGates:
         """Phase 4 (Features): Pipeline backward compatible."""
         # Feature modules exist
         import forex_features
-        assert hasattr(forex_features, "ForexFeatures") or hasattr(forex_features, "compute_forex_features")
+
+        assert hasattr(forex_features, "ForexFeatures") or hasattr(
+            forex_features, "compute_forex_features"
+        )
 
     @pytest.mark.phase5
     def test_phase5_gate_services(self):
         """Phase 5 (OTC Sim): services/ folder structure intact."""
         import importlib
+
         # Existing services must import
         importlib.import_module("services.position_sync")
         importlib.import_module("services.session_router")
@@ -604,6 +624,7 @@ class TestPhaseRegressionGates:
     def test_phase7_gate_data_pipeline(self):
         """Phase 7 (Data): Data loading backward compatible."""
         import data_loader_multi_asset
+
         assert hasattr(data_loader_multi_asset, "load_multi_asset_data")
 
     @pytest.mark.phase8
@@ -622,6 +643,7 @@ class TestPhaseRegressionGates:
         """Phase 9 (Training): Training modules unchanged."""
         # Import should not fail
         import distributional_ppo
+
         assert hasattr(distributional_ppo, "DistributionalPPO")
 
     @pytest.mark.full
@@ -644,6 +666,7 @@ class TestPhaseRegressionGates:
 # =============================================================================
 # API Contract Preservation Tests
 # =============================================================================
+
 
 class TestAPIContractPreservation:
     """Verify public API contracts are preserved."""
@@ -701,6 +724,7 @@ class TestAPIContractPreservation:
 # Binance Adapter Regression (Critical Path)
 # =============================================================================
 
+
 class TestBinanceAdapterRegression:
     """Ensure Binance adapter functionality unchanged."""
 
@@ -720,6 +744,7 @@ class TestBinanceAdapterRegression:
 # =============================================================================
 # Alpaca Adapter Regression (Critical Path)
 # =============================================================================
+
 
 class TestAlpacaAdapterRegression:
     """Ensure Alpaca adapter functionality unchanged."""

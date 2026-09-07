@@ -23,12 +23,14 @@ def test_yang_zhang_basic():
         low = open_p * 0.995
         close = base_price * (1 + 0.01 * math.sin((i + 0.5) * 0.5))
 
-        ohlc_bars.append({
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        ohlc_bars.append(
+            {
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
         base_price *= 1.001  # медленный рост
 
     # Рассчитываем волатильность для окна 24 бара
@@ -139,10 +141,7 @@ def test_edge_cases():
         print("  ❌ ОШИБКА: должна вернуться None при недостатке данных")
 
     # Тест 2: Нулевая волатильность
-    ohlc_bars = [
-        {"open": 100, "high": 100, "low": 100, "close": 100}
-        for _ in range(50)
-    ]
+    ohlc_bars = [{"open": 100, "high": 100, "low": 100, "close": 100} for _ in range(50)]
     vol = calculate_yang_zhang_volatility(ohlc_bars, 24)
     if vol is not None and vol >= 0 and vol < 0.0001:
         print("  ✓ Корректная обработка нулевой волатильности")
@@ -151,16 +150,19 @@ def test_edge_cases():
 
     # Тест 3: Высокая волатильность
     import random
+
     random.seed(42)
     ohlc_bars = []
     for _ in range(50):
         base = 100 * (1 + random.gauss(0, 0.1))
-        ohlc_bars.append({
-            "open": base * random.uniform(0.95, 1.05),
-            "high": base * random.uniform(1.05, 1.15),
-            "low": base * random.uniform(0.85, 0.95),
-            "close": base * random.uniform(0.95, 1.05),
-        })
+        ohlc_bars.append(
+            {
+                "open": base * random.uniform(0.95, 1.05),
+                "high": base * random.uniform(1.05, 1.15),
+                "low": base * random.uniform(0.85, 0.95),
+                "close": base * random.uniform(0.95, 1.05),
+            }
+        )
 
     vol = calculate_yang_zhang_volatility(ohlc_bars, 24)
     if vol is not None and vol > 0:
@@ -185,12 +187,14 @@ def test_window_sizes():
         high = open_p * 1.01
         low = open_p * 0.99
         close = base_price * (1 + 0.02 * math.sin((i + 0.5) * 0.01))
-        ohlc_bars.append({
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        ohlc_bars.append(
+            {
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
         base_price *= 1.00001
 
     # Тестируем окна: 24ч (1440 мин), 7д (10080 мин), 30д (43200 мин)
@@ -233,6 +237,7 @@ def main():
         except Exception as e:
             print(f"❌ ИСКЛЮЧЕНИЕ в {test_func.__name__}: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 
@@ -245,5 +250,6 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     success = main()
     sys.exit(0 if success else 1)

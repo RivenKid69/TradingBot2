@@ -38,28 +38,32 @@ from service_calibrate_slippage import (
 @pytest.fixture
 def sample_trades():
     """Sample trades data for slippage calibration."""
-    return pd.DataFrame({
-        "symbol": ["BTCUSDT"] * 5,
-        "size": [1.0, 2.0, 1.5, 3.0, 0.5],
-        "liquidity": [1000.0, 1500.0, 1200.0, 2000.0, 800.0],
-        "vol_factor": [1.0, 1.2, 0.9, 1.5, 0.8],
-        "observed_slip_bps": [10.0, 15.0, 12.0, 20.0, 8.0],
-        "spread_bps": [5.0, 6.0, 5.5, 7.0, 4.5],
-        "half_spread_bps": [2.5, 3.0, 2.75, 3.5, 2.25],
-    })
+    return pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT"] * 5,
+            "size": [1.0, 2.0, 1.5, 3.0, 0.5],
+            "liquidity": [1000.0, 1500.0, 1200.0, 2000.0, 800.0],
+            "vol_factor": [1.0, 1.2, 0.9, 1.5, 0.8],
+            "observed_slip_bps": [10.0, 15.0, 12.0, 20.0, 8.0],
+            "spread_bps": [5.0, 6.0, 5.5, 7.0, 4.5],
+            "half_spread_bps": [2.5, 3.0, 2.75, 3.5, 2.25],
+        }
+    )
 
 
 @pytest.fixture
 def sample_trades_no_half_spread():
     """Sample trades without half_spread_bps column."""
-    return pd.DataFrame({
-        "symbol": ["BTCUSDT"] * 5,
-        "size": [1.0, 2.0, 1.5, 3.0, 0.5],
-        "liquidity": [1000.0, 1500.0, 1200.0, 2000.0, 800.0],
-        "vol_factor": [1.0, 1.2, 0.9, 1.5, 0.8],
-        "observed_slip_bps": [10.0, 15.0, 12.0, 20.0, 8.0],
-        "spread_bps": [5.0, 6.0, 5.5, 7.0, 4.5],
-    })
+    return pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT"] * 5,
+            "size": [1.0, 2.0, 1.5, 3.0, 0.5],
+            "liquidity": [1000.0, 1500.0, 1200.0, 2000.0, 800.0],
+            "vol_factor": [1.0, 1.2, 0.9, 1.5, 0.8],
+            "observed_slip_bps": [10.0, 15.0, 12.0, 20.0, 8.0],
+            "spread_bps": [5.0, 6.0, 5.5, 7.0, 4.5],
+        }
+    )
 
 
 # ============================================================================
@@ -119,13 +123,15 @@ def test_fit_k_closed_form_basic(sample_trades):
 def test_fit_k_closed_form_perfect_correlation():
     """Test fit_k_closed_form with perfect linear relationship."""
     # Create data where observed_slip - half_spread = 0.8 * vol_factor * sqrt(size/liquidity)
-    df = pd.DataFrame({
-        "size": [1.0, 2.0, 4.0, 1.0, 2.0],
-        "liquidity": [100.0, 100.0, 100.0, 400.0, 400.0],
-        "vol_factor": [1.0, 1.0, 1.0, 1.0, 1.0],
-        "half_spread_bps": [0.0, 0.0, 0.0, 0.0, 0.0],
-        "observed_slip_bps": [0.0, 0.0, 0.0, 0.0, 0.0],  # Will be overwritten
-    })
+    df = pd.DataFrame(
+        {
+            "size": [1.0, 2.0, 4.0, 1.0, 2.0],
+            "liquidity": [100.0, 100.0, 100.0, 400.0, 400.0],
+            "vol_factor": [1.0, 1.0, 1.0, 1.0, 1.0],
+            "half_spread_bps": [0.0, 0.0, 0.0, 0.0, 0.0],
+            "observed_slip_bps": [0.0, 0.0, 0.0, 0.0, 0.0],  # Will be overwritten
+        }
+    )
 
     # Calculate perfect observed_slip: k * vol_factor * sqrt(size/liquidity)
     k_true = 0.8
@@ -139,13 +145,15 @@ def test_fit_k_closed_form_perfect_correlation():
 
 def test_fit_k_closed_form_empty_data():
     """Test fit_k_closed_form with empty data."""
-    df = pd.DataFrame({
-        "size": [],
-        "liquidity": [],
-        "vol_factor": [],
-        "observed_slip_bps": [],
-        "half_spread_bps": [],
-    })
+    df = pd.DataFrame(
+        {
+            "size": [],
+            "liquidity": [],
+            "vol_factor": [],
+            "observed_slip_bps": [],
+            "half_spread_bps": [],
+        }
+    )
 
     k = fit_k_closed_form(df)
 
@@ -155,13 +163,15 @@ def test_fit_k_closed_form_empty_data():
 
 def test_fit_k_closed_form_zero_size():
     """Test fit_k_closed_form with zero size (filtered out)."""
-    df = pd.DataFrame({
-        "size": [0.0, 0.0, 0.0],
-        "liquidity": [1000.0, 1000.0, 1000.0],
-        "vol_factor": [1.0, 1.0, 1.0],
-        "observed_slip_bps": [10.0, 10.0, 10.0],
-        "half_spread_bps": [5.0, 5.0, 5.0],
-    })
+    df = pd.DataFrame(
+        {
+            "size": [0.0, 0.0, 0.0],
+            "liquidity": [1000.0, 1000.0, 1000.0],
+            "vol_factor": [1.0, 1.0, 1.0],
+            "observed_slip_bps": [10.0, 10.0, 10.0],
+            "half_spread_bps": [5.0, 5.0, 5.0],
+        }
+    )
 
     k = fit_k_closed_form(df)
 
@@ -171,13 +181,15 @@ def test_fit_k_closed_form_zero_size():
 
 def test_fit_k_closed_form_zero_liquidity():
     """Test fit_k_closed_form with zero liquidity (filtered out)."""
-    df = pd.DataFrame({
-        "size": [1.0, 1.0, 1.0],
-        "liquidity": [0.0, 0.0, 0.0],
-        "vol_factor": [1.0, 1.0, 1.0],
-        "observed_slip_bps": [10.0, 10.0, 10.0],
-        "half_spread_bps": [5.0, 5.0, 5.0],
-    })
+    df = pd.DataFrame(
+        {
+            "size": [1.0, 1.0, 1.0],
+            "liquidity": [0.0, 0.0, 0.0],
+            "vol_factor": [1.0, 1.0, 1.0],
+            "observed_slip_bps": [10.0, 10.0, 10.0],
+            "half_spread_bps": [5.0, 5.0, 5.0],
+        }
+    )
 
     k = fit_k_closed_form(df)
 
@@ -188,13 +200,15 @@ def test_fit_k_closed_form_zero_liquidity():
 def test_fit_k_closed_form_negative_k():
     """Test fit_k_closed_form clips negative k to zero."""
     # Create data that would produce negative k
-    df = pd.DataFrame({
-        "size": [1.0, 2.0, 4.0],
-        "liquidity": [100.0, 100.0, 100.0],
-        "vol_factor": [1.0, 1.0, 1.0],
-        "half_spread_bps": [10.0, 15.0, 20.0],
-        "observed_slip_bps": [5.0, 5.0, 5.0],  # Less than half_spread → negative impact
-    })
+    df = pd.DataFrame(
+        {
+            "size": [1.0, 2.0, 4.0],
+            "liquidity": [100.0, 100.0, 100.0],
+            "vol_factor": [1.0, 1.0, 1.0],
+            "half_spread_bps": [10.0, 15.0, 20.0],
+            "observed_slip_bps": [5.0, 5.0, 5.0],  # Less than half_spread → negative impact
+        }
+    )
 
     k = fit_k_closed_form(df)
 
@@ -204,13 +218,15 @@ def test_fit_k_closed_form_negative_k():
 
 def test_fit_k_closed_form_nan_handling():
     """Test fit_k_closed_form handles NaN values."""
-    df = pd.DataFrame({
-        "size": [1.0, 2.0, float("nan"), 4.0],
-        "liquidity": [100.0, 100.0, 100.0, 100.0],
-        "vol_factor": [1.0, 1.0, 1.0, 1.0],
-        "half_spread_bps": [2.0, 2.0, 2.0, 2.0],
-        "observed_slip_bps": [10.0, 15.0, 12.0, 20.0],
-    })
+    df = pd.DataFrame(
+        {
+            "size": [1.0, 2.0, float("nan"), 4.0],
+            "liquidity": [100.0, 100.0, 100.0, 100.0],
+            "vol_factor": [1.0, 1.0, 1.0, 1.0],
+            "half_spread_bps": [2.0, 2.0, 2.0, 2.0],
+            "observed_slip_bps": [10.0, 15.0, 12.0, 20.0],
+        }
+    )
 
     k = fit_k_closed_form(df)
 
@@ -408,13 +424,15 @@ def test_run_output_directory_creation():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create trades file
         trades_path = os.path.join(tmpdir, "trades.csv")
-        sample_df = pd.DataFrame({
-            "size": [1.0],
-            "liquidity": [100.0],
-            "vol_factor": [1.0],
-            "observed_slip_bps": [10.0],
-            "half_spread_bps": [2.0],
-        })
+        sample_df = pd.DataFrame(
+            {
+                "size": [1.0],
+                "liquidity": [100.0],
+                "vol_factor": [1.0],
+                "observed_slip_bps": [10.0],
+                "half_spread_bps": [2.0],
+            }
+        )
         sample_df.to_csv(trades_path, index=False)
 
         # Output in nested directory
@@ -470,13 +488,15 @@ def test_from_config_minimal():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create trades file
         trades_path = os.path.join(tmpdir, "trades.csv")
-        sample_df = pd.DataFrame({
-            "size": [1.0, 2.0],
-            "liquidity": [100.0, 200.0],
-            "vol_factor": [1.0, 1.0],
-            "observed_slip_bps": [10.0, 15.0],
-            "half_spread_bps": [2.0, 3.0],
-        })
+        sample_df = pd.DataFrame(
+            {
+                "size": [1.0, 2.0],
+                "liquidity": [100.0, 200.0],
+                "vol_factor": [1.0, 1.0],
+                "observed_slip_bps": [10.0, 15.0],
+                "half_spread_bps": [2.0, 3.0],
+            }
+        )
         sample_df.to_csv(trades_path, index=False)
 
         # Minimal config
@@ -518,13 +538,15 @@ def test_run_empty_trades():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Empty trades file
         trades_path = os.path.join(tmpdir, "trades.csv")
-        pd.DataFrame({
-            "size": [],
-            "liquidity": [],
-            "vol_factor": [],
-            "observed_slip_bps": [],
-            "half_spread_bps": [],
-        }).to_csv(trades_path, index=False)
+        pd.DataFrame(
+            {
+                "size": [],
+                "liquidity": [],
+                "vol_factor": [],
+                "observed_slip_bps": [],
+                "half_spread_bps": [],
+            }
+        ).to_csv(trades_path, index=False)
 
         out_path = os.path.join(tmpdir, "output.json")
 
@@ -543,14 +565,16 @@ def test_run_all_nan_spread():
     """Test run with all NaN spread values."""
     with tempfile.TemporaryDirectory() as tmpdir:
         trades_path = os.path.join(tmpdir, "trades.csv")
-        df = pd.DataFrame({
-            "size": [1.0, 2.0],
-            "liquidity": [100.0, 200.0],
-            "vol_factor": [1.0, 1.0],
-            "observed_slip_bps": [10.0, 15.0],
-            "spread_bps": [float("nan"), float("nan")],
-            "half_spread_bps": [2.0, 3.0],
-        })
+        df = pd.DataFrame(
+            {
+                "size": [1.0, 2.0],
+                "liquidity": [100.0, 200.0],
+                "vol_factor": [1.0, 1.0],
+                "observed_slip_bps": [10.0, 15.0],
+                "spread_bps": [float("nan"), float("nan")],
+                "half_spread_bps": [2.0, 3.0],
+            }
+        )
         df.to_csv(trades_path, index=False)
 
         out_path = os.path.join(tmpdir, "output.json")
@@ -570,13 +594,15 @@ def test_run_zero_quantile():
     """Test run with min_half_spread_quantile=0.0."""
     with tempfile.TemporaryDirectory() as tmpdir:
         trades_path = os.path.join(tmpdir, "trades.csv")
-        sample_df = pd.DataFrame({
-            "size": [1.0, 2.0],
-            "liquidity": [100.0, 200.0],
-            "vol_factor": [1.0, 1.0],
-            "observed_slip_bps": [10.0, 15.0],
-            "half_spread_bps": [2.0, 3.0],
-        })
+        sample_df = pd.DataFrame(
+            {
+                "size": [1.0, 2.0],
+                "liquidity": [100.0, 200.0],
+                "vol_factor": [1.0, 1.0],
+                "observed_slip_bps": [10.0, 15.0],
+                "half_spread_bps": [2.0, 3.0],
+            }
+        )
         sample_df.to_csv(trades_path, index=False)
 
         out_path = os.path.join(tmpdir, "output.json")
@@ -597,13 +623,15 @@ def test_run_one_quantile():
     """Test run with min_half_spread_quantile=1.0."""
     with tempfile.TemporaryDirectory() as tmpdir:
         trades_path = os.path.join(tmpdir, "trades.csv")
-        sample_df = pd.DataFrame({
-            "size": [1.0, 2.0],
-            "liquidity": [100.0, 200.0],
-            "vol_factor": [1.0, 1.0],
-            "observed_slip_bps": [10.0, 15.0],
-            "half_spread_bps": [2.0, 3.0],
-        })
+        sample_df = pd.DataFrame(
+            {
+                "size": [1.0, 2.0],
+                "liquidity": [100.0, 200.0],
+                "vol_factor": [1.0, 1.0],
+                "observed_slip_bps": [10.0, 15.0],
+                "half_spread_bps": [2.0, 3.0],
+            }
+        )
         sample_df.to_csv(trades_path, index=False)
 
         out_path = os.path.join(tmpdir, "output.json")

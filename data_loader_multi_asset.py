@@ -55,8 +55,10 @@ logger = logging.getLogger(__name__)
 # ENUMS
 # =============================================================================
 
+
 class AssetClass(str, Enum):
     """Asset class for data loading."""
+
     CRYPTO = "crypto"
     EQUITY = "equity"
     FOREX = "forex"
@@ -64,6 +66,7 @@ class AssetClass(str, Enum):
 
 class DataVendor(str, Enum):
     """Data source vendor."""
+
     BINANCE = "binance"
     ALPACA = "alpaca"
     POLYGON = "polygon"
@@ -79,6 +82,7 @@ class DataVendor(str, Enum):
 # =============================================================================
 # TIMEFRAME UTILITIES
 # =============================================================================
+
 
 def timeframe_to_seconds(tf: str) -> int:
     """Convert timeframe string to seconds."""
@@ -100,15 +104,20 @@ def timeframe_to_seconds(tf: str) -> int:
 
     # Parse numeric format (e.g., "15min", "4hour")
     import re
+
     match = re.match(r"(\d+)(m|min|h|hour|d|day|w|week)", tf_lower)
     if match:
         value = int(match.group(1))
         unit = match.group(2)
         unit_map = {
-            "m": 60, "min": 60,
-            "h": 3600, "hour": 3600,
-            "d": 86400, "day": 86400,
-            "w": 604800, "week": 604800,
+            "m": 60,
+            "min": 60,
+            "h": 3600,
+            "hour": 3600,
+            "d": 86400,
+            "day": 86400,
+            "w": 604800,
+            "week": 604800,
         }
         return value * unit_map.get(unit, 60)
 
@@ -152,11 +161,15 @@ def load_fear_greed(
 
     # Find timestamp and value columns
     cols = {c.lower(): c for c in fng.columns}
-    ts_col = "timestamp" if "timestamp" in cols else next(
-        (c for c in fng.columns if "time" in c.lower()), "timestamp"
+    ts_col = (
+        "timestamp"
+        if "timestamp" in cols
+        else next((c for c in fng.columns if "time" in c.lower()), "timestamp")
     )
-    val_col = "fear_greed_value" if "fear_greed_value" in fng.columns else (
-        "value" if "value" in fng.columns else None
+    val_col = (
+        "fear_greed_value"
+        if "fear_greed_value" in fng.columns
+        else ("value" if "value" in fng.columns else None)
     )
 
     fng = fng.rename(columns={ts_col: "timestamp"})
@@ -173,9 +186,7 @@ def load_fear_greed(
     fng["fear_greed_value_norm"] = fng["fear_greed_value"].astype(float) / 100.0
 
     # Align to timeframe
-    fng["timestamp"] = fng["timestamp"].apply(
-        lambda x: align_timestamp(x, timeframe_seconds)
-    )
+    fng["timestamp"] = fng["timestamp"].apply(lambda x: align_timestamp(x, timeframe_seconds))
     fng = fng.drop_duplicates(subset=["timestamp"]).sort_values("timestamp")
 
     return fng
@@ -184,6 +195,7 @@ def load_fear_greed(
 # =============================================================================
 # DATA LOADING FUNCTIONS
 # =============================================================================
+
 
 def load_from_file(
     path: Union[str, Path],
@@ -279,9 +291,7 @@ def _standardize_columns(
         df["timestamp"] = ts.astype("int64")
 
     # Align timestamp to timeframe
-    df["timestamp"] = df["timestamp"].apply(
-        lambda x: align_timestamp(int(x), timeframe_seconds)
-    )
+    df["timestamp"] = df["timestamp"].apply(lambda x: align_timestamp(int(x), timeframe_seconds))
 
     # Ensure OHLCV columns exist
     required_float = ["open", "high", "low", "close", "volume"]
@@ -318,9 +328,17 @@ def _standardize_columns(
 
     # Standardize column order
     base_cols = [
-        "timestamp", "symbol", "open", "high", "low", "close", "volume",
-        "quote_asset_volume", "number_of_trades",
-        "taker_buy_base_asset_volume", "taker_buy_quote_asset_volume"
+        "timestamp",
+        "symbol",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_asset_volume",
+        "number_of_trades",
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume",
     ]
     base_cols = [c for c in base_cols if c in df.columns]
     other_cols = [c for c in df.columns if c not in base_cols]
@@ -416,20 +434,22 @@ def load_from_adapter(
             # Convert bars to DataFrame
             rows = []
             for bar in bars:
-                rows.append({
-                    "timestamp": bar.ts // 1000 if bar.ts > 10_000_000_000 else bar.ts,
-                    "symbol": symbol.upper(),
-                    "open": float(bar.open),
-                    "high": float(bar.high),
-                    "low": float(bar.low),
-                    "close": float(bar.close),
-                    "volume": float(bar.volume_base),
-                    "quote_asset_volume": float(bar.volume_quote or 0),
-                    "number_of_trades": bar.trades or 0,
-                    "taker_buy_base_asset_volume": 0.0,
-                    "taker_buy_quote_asset_volume": 0.0,
-                    "vwap": float(bar.vwap) if bar.vwap else None,
-                })
+                rows.append(
+                    {
+                        "timestamp": bar.ts // 1000 if bar.ts > 10_000_000_000 else bar.ts,
+                        "symbol": symbol.upper(),
+                        "open": float(bar.open),
+                        "high": float(bar.high),
+                        "low": float(bar.low),
+                        "close": float(bar.close),
+                        "volume": float(bar.volume_base),
+                        "quote_asset_volume": float(bar.volume_quote or 0),
+                        "number_of_trades": bar.trades or 0,
+                        "taker_buy_base_asset_volume": 0.0,
+                        "taker_buy_quote_asset_volume": 0.0,
+                        "vwap": float(bar.vwap) if bar.vwap else None,
+                    }
+                )
 
             df = pd.DataFrame(rows)
             df = _standardize_columns(df, asset_class, timeframe)
@@ -537,15 +557,17 @@ def _load_benchmark_data(
         if bars:
             rows = []
             for bar in bars:
-                rows.append({
-                    "timestamp": bar.ts // 1000 if bar.ts > 10_000_000_000 else bar.ts,
-                    "symbol": symbol.upper(),
-                    "open": float(bar.open),
-                    "high": float(bar.high),
-                    "low": float(bar.low),
-                    "close": float(bar.close),
-                    "volume": float(bar.volume_base),
-                })
+                rows.append(
+                    {
+                        "timestamp": bar.ts // 1000 if bar.ts > 10_000_000_000 else bar.ts,
+                        "symbol": symbol.upper(),
+                        "open": float(bar.open),
+                        "high": float(bar.high),
+                        "low": float(bar.low),
+                        "close": float(bar.close),
+                        "volume": float(bar.volume_base),
+                    }
+                )
             df = pd.DataFrame(rows)
             if not df.empty:
                 logger.debug(f"Loaded benchmark {symbol} via Yahoo adapter: {len(df)} rows")
@@ -673,15 +695,21 @@ def _add_forex_features(
 
             df = df.copy()
             df["session"] = df["timestamp"].apply(get_session)
-            df["session_liquidity"] = df["session"].map({
-                "london_ny_overlap": 1.5,
-                "tokyo_london_overlap": 1.0,
-                "london": 1.3,
-                "new_york": 1.2,
-                "tokyo": 0.8,
-                "sydney": 0.6,
-                "low_liquidity": 0.4,
-            }).fillna(0.5)
+            df["session_liquidity"] = (
+                df["session"]
+                .map(
+                    {
+                        "london_ny_overlap": 1.5,
+                        "tokyo_london_overlap": 1.0,
+                        "london": 1.3,
+                        "new_york": 1.2,
+                        "tokyo": 0.8,
+                        "sydney": 0.6,
+                        "low_liquidity": 0.4,
+                    }
+                )
+                .fillna(0.5)
+            )
             df["is_session_overlap"] = df["session"].str.contains("overlap", na=False)
 
     except Exception as e:
@@ -847,10 +875,7 @@ def _merge_fear_greed(df: pd.DataFrame, fng: pd.DataFrame) -> pd.DataFrame:
     # Merge with backward fill
     fng_sorted = fng.sort_values("timestamp")[["timestamp", "fear_greed_value"]].copy()
     df = pd.merge_asof(
-        df.sort_values("timestamp"),
-        fng_sorted,
-        on="timestamp",
-        direction="backward"
+        df.sort_values("timestamp"), fng_sorted, on="timestamp", direction="backward"
     )
 
     if "fear_greed_value" in df.columns:
@@ -872,6 +897,7 @@ def _merge_fear_greed(df: pd.DataFrame, fng: pd.DataFrame) -> pd.DataFrame:
 # TRADING HOURS FILTERING (EQUITY)
 # =============================================================================
 
+
 def filter_trading_hours(
     df: pd.DataFrame,
     include_extended: bool = False,
@@ -890,6 +916,7 @@ def filter_trading_hours(
     """
     try:
         import pytz
+
         tz = pytz.timezone(timezone_str)
     except ImportError:
         logger.warning("pytz not installed - cannot filter trading hours")
@@ -929,6 +956,7 @@ def filter_trading_hours(
 # DATA VALIDATION
 # =============================================================================
 
+
 def validate_data(
     df: pd.DataFrame,
     asset_class: AssetClass = AssetClass.CRYPTO,
@@ -967,11 +995,11 @@ def validate_data(
     # Check OHLC validity
     if all(c in df.columns for c in ["open", "high", "low", "close"]):
         invalid_ohlc = (
-            (df["high"] < df["low"]) |
-            (df["high"] < df["open"]) |
-            (df["high"] < df["close"]) |
-            (df["low"] > df["open"]) |
-            (df["low"] > df["close"])
+            (df["high"] < df["low"])
+            | (df["high"] < df["open"])
+            | (df["high"] < df["close"])
+            | (df["low"] > df["open"])
+            | (df["low"] > df["close"])
         )
         invalid_count = invalid_ohlc.sum()
         if invalid_count > 0:
@@ -998,6 +1026,7 @@ def validate_data(
 # =============================================================================
 # CORPORATE ACTIONS INTEGRATION (Phase 7)
 # =============================================================================
+
 
 def apply_split_adjustment(
     df: pd.DataFrame,
@@ -1200,6 +1229,7 @@ def load_equity_data_adjusted(
 # =============================================================================
 # CONVENIENCE FUNCTIONS
 # =============================================================================
+
 
 def load_crypto_data(
     paths: Sequence[Union[str, Path]],

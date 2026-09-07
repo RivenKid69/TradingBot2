@@ -7,8 +7,8 @@ This document explains the available fields, dataset masking options, and runtim
 
 The `no_trade` section is split into two structured blocks:
 
-* `maintenance` - static windows around funding, maintenance, or custom events.
-* `dynamic` - runtime guard that can pause trading based on market anomalies.
+- `maintenance` - static windows around funding, maintenance, or custom events.
+- `dynamic` - runtime guard that can pause trading based on market anomalies.
 
 `NoTradeConfig` keeps backwards-compatible accessors (`funding_buffer_min`,
 `daily_utc`, `custom_ms`, `dynamic_guard`), but new configuration files should
@@ -172,9 +172,9 @@ Every block generates structured `DROP` log entries with
 audit why orders were skipped.  The monitoring layer increments the usual
 pipeline counters:
 
-* `monitoring.inc_stage(Stage.WINDOWS)` and
+- `monitoring.inc_stage(Stage.WINDOWS)` and
   `monitoring.inc_reason("DYNAMIC_GUARD")` contribute to aggregated alerts.
-* `pipeline_stage_drop_count{stage="WINDOWS", reason="DYNAMIC_GUARD"}` tracks
+- `pipeline_stage_drop_count{stage="WINDOWS", reason="DYNAMIC_GUARD"}` tracks
   per-symbol drop counts for dashboards.
 
 Offline tooling (`apply_no_trade_mask.py`) also propagates dynamic guard reasons
@@ -204,4 +204,3 @@ no_trade:
     custom_ms:
       - {start_ts_ms: 1700000000000, end_ts_ms: 1700001800000}  # 2023-11-14 00:00-00:30 UTC
 ```
-

@@ -44,16 +44,16 @@ VENDOR_CAPS: Dict[str, Dict[str, Any]] = {
         "title": "Binance (crypto)",
         "asset_classes": ["crypto"],
         "bars": ["1m", "5m", "15m", "1h"],
-        "ticks": "history",          # aggTrades — публичный исторический endpoint
+        "ticks": "history",  # aggTrades — публичный исторический endpoint
         "paid": False,
-        "key_envs": [],              # публичные klines/aggTrades без ключа
+        "key_envs": [],  # публичные klines/aggTrades без ключа
         "notes": "Минутки и тиковый бэкфилл (aggTrades) бесплатны.",
     },
     "polygon": {
         "title": "Polygon.io (US equities/options)",
         "asset_classes": ["equity", "options"],
         "bars": ["1m", "5m", "15m", "1h"],
-        "ticks": "unavailable",      # исторических trades нет в адаптере этой сборки
+        "ticks": "unavailable",  # исторических trades нет в адаптере этой сборки
         "paid": True,
         "key_envs": ["POLYGON_API_KEY"],
         "notes": "Минутки требуют платного плана (free: 5 req/min, EOD).",
@@ -80,9 +80,9 @@ VENDOR_CAPS: Dict[str, Dict[str, Any]] = {
         "title": "Dukascopy (forex/metals)",
         "asset_classes": ["forex"],
         "bars": ["1m", "5m", "15m", "1h"],
-        "ticks": "history",          # публичный bi5 tick-feed (агрегируется в бары)
+        "ticks": "history",  # публичный bi5 tick-feed (агрегируется в бары)
         "paid": False,
-        "key_envs": [],              # публичный фид без авторизации
+        "key_envs": [],  # публичный фид без авторизации
         "notes": "Бесплатный публичный tick-feed (bi5), история с 2003, без ключей.",
     },
 }
@@ -103,27 +103,33 @@ def vendor_status() -> List[Dict[str, Any]]:
         try:
             from adapters.registry import get_registry, AdapterType
             from adapters.models import ExchangeVendor
+
             reg = get_registry().get_registration(ExchangeVendor(vendor), AdapterType.MARKET_DATA)
             adapter_ok = reg is not None
             if not adapter_ok:
                 adapter_err = "MARKET_DATA адаптер не зарегистрирован"
         except Exception as exc:
             adapter_ok, adapter_err = False, str(exc)
-        out.append({
-            "vendor": vendor,
-            **{k: caps[k] for k in ("title", "asset_classes", "bars", "ticks", "paid", "notes")},
-            "key_envs": caps["key_envs"],
-            "keys_present": keys_present,
-            "adapter_available": adapter_ok,
-            "adapter_error": adapter_err,
-            "ready": adapter_ok and keys_present,
-        })
+        out.append(
+            {
+                "vendor": vendor,
+                **{
+                    k: caps[k] for k in ("title", "asset_classes", "bars", "ticks", "paid", "notes")
+                },
+                "key_envs": caps["key_envs"],
+                "keys_present": keys_present,
+                "adapter_available": adapter_ok,
+                "adapter_error": adapter_err,
+                "ready": adapter_ok and keys_present,
+            }
+        )
     return out
 
 
 # ---------------------------------------------------------------------------
 # Минутные бары → parquet (единый layout)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class DownloadResult:
@@ -193,14 +199,25 @@ def download_minute_bars(
 
     caps = VENDOR_CAPS.get(vendor)
     if caps is None:
-        return [DownloadResult(vendor, s, timeframe, ok=False,
-                               error=f"неизвестный вендор {vendor!r}") for s in symbols]
+        return [
+            DownloadResult(vendor, s, timeframe, ok=False, error=f"неизвестный вендор {vendor!r}")
+            for s in symbols
+        ]
     if timeframe not in caps["bars"]:
-        return [DownloadResult(vendor, s, timeframe, ok=False,
-                               error=f"{vendor} не поддерживает таймфрейм {timeframe}") for s in symbols]
+        return [
+            DownloadResult(
+                vendor,
+                s,
+                timeframe,
+                ok=False,
+                error=f"{vendor} не поддерживает таймфрейм {timeframe}",
+            )
+            for s in symbols
+        ]
 
     if adapter is None:
         from adapters.registry import create_market_data_adapter
+
         adapter = create_market_data_adapter(vendor, _vendor_config(vendor))
         adapter.connect()
 
@@ -215,8 +232,11 @@ def download_minute_bars(
             while cursor < end_ts_ms:
                 window_end = min(cursor + chunk_ms, end_ts_ms)
                 bars = adapter.get_bars(
-                    symbol, timeframe,
-                    limit=limit_per_call, start_ts=cursor, end_ts=window_end,
+                    symbol,
+                    timeframe,
+                    limit=limit_per_call,
+                    start_ts=cursor,
+                    end_ts=window_end,
                 )
                 for b in bars or []:
                     # core_models.Bar несёт объём как volume_base/volume_quote;
@@ -227,14 +247,18 @@ def download_minute_bars(
                         vol = getattr(b, "volume", None)
                     if vol is None:
                         vol = getattr(b, "volume_quote", None)
-                    rows.append({
-                        # схема scripts/download_stock_data.py: секунды, OHLCV
-                        "timestamp": int(b.ts) // 1000,
-                        "open": float(b.open), "high": float(b.high),
-                        "low": float(b.low), "close": float(b.close),
-                        "volume": float(vol) if vol is not None else 0.0,
-                        "symbol": symbol,
-                    })
+                    rows.append(
+                        {
+                            # схема scripts/download_stock_data.py: секунды, OHLCV
+                            "timestamp": int(b.ts) // 1000,
+                            "open": float(b.open),
+                            "high": float(b.high),
+                            "low": float(b.low),
+                            "close": float(b.close),
+                            "volume": float(vol) if vol is not None else 0.0,
+                            "symbol": symbol,
+                        }
+                    )
                 cursor = window_end
             if not rows:
                 res.error = "вендор не вернул данных за диапазон"
@@ -246,11 +270,18 @@ def download_minute_bars(
             df.to_parquet(path, index=False)
             res.path = path
             res.rows = int(len(df))
-            res.manifest_path = _write_manifest(path, {
-                "vendor": vendor, "symbol": symbol, "timeframe": timeframe,
-                "start_ts_ms": int(start_ts_ms), "end_ts_ms": int(end_ts_ms),
-                "rows": res.rows, "kind": "bars",
-            })
+            res.manifest_path = _write_manifest(
+                path,
+                {
+                    "vendor": vendor,
+                    "symbol": symbol,
+                    "timeframe": timeframe,
+                    "start_ts_ms": int(start_ts_ms),
+                    "end_ts_ms": int(end_ts_ms),
+                    "rows": res.rows,
+                    "kind": "bars",
+                },
+            )
             res.ok = True
         except Exception as exc:
             res.error = str(exc)
@@ -262,6 +293,7 @@ def download_minute_bars(
 # ---------------------------------------------------------------------------
 # Тиковый бэкфилл — Binance aggTrades (настоящие исторические сделки)
 # ---------------------------------------------------------------------------
+
 
 def download_binance_agg_trades(
     symbols: List[str],
@@ -296,8 +328,12 @@ def download_binance_agg_trades(
         res = DownloadResult("binance", symbol, "tick")
         try:
             rows: List[Dict[str, Any]] = []
-            params: Dict[str, Any] = {"symbol": symbol, "limit": 1000,
-                                      "startTime": int(start_ts_ms), "endTime": min(int(start_ts_ms) + 3600_000, int(end_ts_ms))}
+            params: Dict[str, Any] = {
+                "symbol": symbol,
+                "limit": 1000,
+                "startTime": int(start_ts_ms),
+                "endTime": min(int(start_ts_ms) + 3600_000, int(end_ts_ms)),
+            }
             from_id: Optional[int] = None
             for _ in range(max_requests_per_symbol):
                 if from_id is not None:
@@ -311,14 +347,16 @@ def download_binance_agg_trades(
                     if ts > end_ts_ms:
                         reached_end = True
                         break
-                    rows.append({
-                        "ts_ms": ts,
-                        "price": float(t["p"]),
-                        "qty": float(t["q"]),
-                        "agg_id": int(t["a"]),
-                        "is_buyer_maker": bool(t["m"]),
-                        "symbol": symbol,
-                    })
+                    rows.append(
+                        {
+                            "ts_ms": ts,
+                            "price": float(t["p"]),
+                            "qty": float(t["q"]),
+                            "agg_id": int(t["a"]),
+                            "is_buyer_maker": bool(t["m"]),
+                            "symbol": symbol,
+                        }
+                    )
                 if reached_end or int(batch[-1]["T"]) >= end_ts_ms:
                     break
                 # canonical Binance pagination: continue strictly by fromId
@@ -333,11 +371,18 @@ def download_binance_agg_trades(
             path = os.path.join(out_dir, "binance", f"{symbol}_ticks.parquet")
             df.to_parquet(path, index=False)
             res.path, res.rows = path, int(len(df))
-            res.manifest_path = _write_manifest(path, {
-                "vendor": "binance", "symbol": symbol, "timeframe": "tick",
-                "start_ts_ms": int(start_ts_ms), "end_ts_ms": int(end_ts_ms),
-                "rows": res.rows, "kind": "agg_trades",
-            })
+            res.manifest_path = _write_manifest(
+                path,
+                {
+                    "vendor": "binance",
+                    "symbol": symbol,
+                    "timeframe": "tick",
+                    "start_ts_ms": int(start_ts_ms),
+                    "end_ts_ms": int(end_ts_ms),
+                    "rows": res.rows,
+                    "kind": "agg_trades",
+                },
+            )
             res.ok = True
         except Exception as exc:
             res.error = str(exc)
@@ -347,6 +392,11 @@ def download_binance_agg_trades(
 
 
 __all__ = [
-    "DEFAULT_OUT_DIR", "DEFAULT_TICKS_DIR", "VENDOR_CAPS", "DownloadResult",
-    "download_binance_agg_trades", "download_minute_bars", "vendor_status",
+    "DEFAULT_OUT_DIR",
+    "DEFAULT_TICKS_DIR",
+    "VENDOR_CAPS",
+    "DownloadResult",
+    "download_binance_agg_trades",
+    "download_minute_bars",
+    "vendor_status",
 ]

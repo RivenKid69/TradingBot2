@@ -30,16 +30,14 @@ class TestForwardLookingBiasFix(unittest.TestCase):
         self.assertGreaterEqual(
             cfg.decision_delay_ms,
             8000,
-            "Default LeakConfig должен использовать decision_delay_ms >= 8000"
+            "Default LeakConfig должен использовать decision_delay_ms >= 8000",
         )
 
     def test_default_leakconfig_exact_value(self):
         """Проверка: дефолтное значение равно рекомендуемому минимуму 8000ms."""
         cfg = LeakConfig()
         self.assertEqual(
-            cfg.decision_delay_ms,
-            8000,
-            "Default decision_delay_ms должен быть 8000ms"
+            cfg.decision_delay_ms, 8000, "Default decision_delay_ms должен быть 8000ms"
         )
 
     def test_zero_delay_triggers_warning(self):
@@ -59,7 +57,7 @@ class TestForwardLookingBiasFix(unittest.TestCase):
             )
             self.assertTrue(
                 has_forward_bias_warning,
-                f"Предупреждение должно содержать информацию о forward-looking bias. Got: {warning_messages}"
+                f"Предупреждение должно содержать информацию о forward-looking bias. Got: {warning_messages}",
             )
 
     def test_low_delay_triggers_warning(self):
@@ -72,8 +70,7 @@ class TestForwardLookingBiasFix(unittest.TestCase):
 
                     # Должно быть предупреждение о низком delay
                     self.assertGreater(
-                        len(w), 0,
-                        f"decision_delay_ms={low_delay} должен вызывать UserWarning"
+                        len(w), 0, f"decision_delay_ms={low_delay} должен вызывать UserWarning"
                     )
 
     def test_safe_delay_no_warning(self):
@@ -92,7 +89,7 @@ class TestForwardLookingBiasFix(unittest.TestCase):
                     )
                     self.assertFalse(
                         has_bias_warning,
-                        f"decision_delay_ms={safe_delay} не должен вызывать предупреждение о bias. Got: {warning_messages}"
+                        f"decision_delay_ms={safe_delay} не должен вызывать предупреждение о bias. Got: {warning_messages}",
                     )
 
     def test_strict_mode_blocks_zero_delay(self):
@@ -107,12 +104,10 @@ class TestForwardLookingBiasFix(unittest.TestCase):
             self.assertIn(
                 "decision_delay_ms=0",
                 str(cm.exception),
-                "ValueError должен упоминать decision_delay_ms=0"
+                "ValueError должен упоминать decision_delay_ms=0",
             )
             self.assertIn(
-                "STRICT mode",
-                str(cm.exception),
-                "ValueError должен упоминать STRICT mode"
+                "STRICT mode", str(cm.exception), "ValueError должен упоминать STRICT mode"
             )
         finally:
             if old_env is None:
@@ -134,7 +129,7 @@ class TestForwardLookingBiasFix(unittest.TestCase):
                     self.assertIn(
                         f"decision_delay_ms={low_delay}",
                         str(cm.exception),
-                        f"ValueError должен упоминать decision_delay_ms={low_delay}"
+                        f"ValueError должен упоминать decision_delay_ms={low_delay}",
                     )
         finally:
             if old_env is None:
@@ -167,7 +162,7 @@ class TestForwardLookingBiasFix(unittest.TestCase):
         self.assertIn(
             "must be >= 0",
             str(cm.exception),
-            "Должна быть ошибка о том, что delay должен быть >= 0"
+            "Должна быть ошибка о том, что delay должен быть >= 0",
         )
 
     def test_attach_decision_time_with_default_config(self):
@@ -221,7 +216,7 @@ class TestTimingProfilesUseSafeDelays(unittest.TestCase):
                 self.assertGreaterEqual(
                     delay,
                     8000,
-                    f"Profile '{profile_name}' должен использовать decision_delay_ms >= 8000, got {delay}"
+                    f"Profile '{profile_name}' должен использовать decision_delay_ms >= 8000, got {delay}",
                 )
 
     def test_legacy_sim_yaml_uses_safe_delay(self):
@@ -241,7 +236,7 @@ class TestTimingProfilesUseSafeDelays(unittest.TestCase):
         self.assertGreaterEqual(
             delay,
             8000,
-            f"legacy_sim.yaml должен использовать decision_delay_ms >= 8000, got {delay}"
+            f"legacy_sim.yaml должен использовать decision_delay_ms >= 8000, got {delay}",
         )
 
 

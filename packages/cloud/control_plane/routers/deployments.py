@@ -272,7 +272,11 @@ DEPLOYMENT_STATE_TRANSITIONS = {
     DeploymentState.PENDING_APPROVAL: [DeploymentState.APPROVED, DeploymentState.FAILED],
     DeploymentState.APPROVED: [DeploymentState.DEPLOYING, DeploymentState.FAILED],
     DeploymentState.DEPLOYING: [DeploymentState.DEPLOYED, DeploymentState.FAILED],
-    DeploymentState.DEPLOYED: [DeploymentState.SUSPENDED, DeploymentState.RETIRED, DeploymentState.FAILED],
+    DeploymentState.DEPLOYED: [
+        DeploymentState.SUSPENDED,
+        DeploymentState.RETIRED,
+        DeploymentState.FAILED,
+    ],
     DeploymentState.SUSPENDED: [DeploymentState.DEPLOYED, DeploymentState.RETIRED],
     DeploymentState.FAILED: [DeploymentState.PENDING_APPROVAL, DeploymentState.RETIRED],
     DeploymentState.RETIRED: [],  # Terminal state
@@ -348,9 +352,7 @@ async def list_deployments(
             count_query = count_query.where(Deployment.workspace_id == workspace_id)
         elif not current_user.is_superuser:
             # Get all workspaces in user's org
-            ws_ids_q = select(Workspace.id).where(
-                Workspace.organization_id == current_user.org_id
-            )
+            ws_ids_q = select(Workspace.id).where(Workspace.organization_id == current_user.org_id)
             query = query.where(Deployment.workspace_id.in_(ws_ids_q))
             count_query = count_query.where(Deployment.workspace_id.in_(ws_ids_q))
 
@@ -661,6 +663,7 @@ async def transition_deployment_state(
 @router.delete(
     "/{deployment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Delete deployment",
     description="Soft delete deployment.",
 )
@@ -760,9 +763,7 @@ async def list_runs(
 
         # Get runs
         query = (
-            query.offset(pagination.offset)
-            .limit(pagination.limit)
-            .order_by(Run.created_at.desc())
+            query.offset(pagination.offset).limit(pagination.limit).order_by(Run.created_at.desc())
         )
         result = await session.execute(query)
         runs = result.scalars().all()
@@ -812,9 +813,7 @@ async def create_run(
             )
 
         # Verify workspace access
-        await _verify_workspace_access(
-            session, deployment.workspace_id, current_user, "run:create"
-        )
+        await _verify_workspace_access(session, deployment.workspace_id, current_user, "run:create")
 
         # Verify deployment is in correct state
         current_state = (
@@ -916,9 +915,7 @@ async def update_run(
             )
 
         # Verify workspace access
-        await _verify_workspace_access(
-            session, run.workspace_id, current_user, "run:write"
-        )
+        await _verify_workspace_access(session, run.workspace_id, current_user, "run:write")
 
         # Update fields
         if request.error_message is not None:
@@ -969,9 +966,7 @@ async def transition_run_state(
             )
 
         # Verify workspace access
-        await _verify_workspace_access(
-            session, run.workspace_id, current_user, "run:write"
-        )
+        await _verify_workspace_access(session, run.workspace_id, current_user, "run:write")
 
         # Get current and target states
         current_state = RunState(run.state) if isinstance(run.state, str) else run.state

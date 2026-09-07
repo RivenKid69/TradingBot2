@@ -33,6 +33,7 @@ from ccea.protocol.schema_versioning import (
 # SchemaVersion Tests
 # ============================================================================
 
+
 class TestSchemaVersion:
     """Tests for SchemaVersion class."""
 
@@ -221,6 +222,7 @@ class TestSchemaVersion:
 # VersionNegotiationRequest Tests
 # ============================================================================
 
+
 class TestVersionNegotiationRequest:
     """Tests for VersionNegotiationRequest class."""
 
@@ -336,6 +338,7 @@ class TestVersionNegotiationRequest:
 # VersionNegotiationResult Tests
 # ============================================================================
 
+
 class TestVersionNegotiationResult:
     """Tests for VersionNegotiationResult class."""
 
@@ -392,6 +395,7 @@ class TestVersionNegotiationResult:
 # ============================================================================
 # SchemaVersionNegotiator Tests
 # ============================================================================
+
 
 class TestSchemaVersionNegotiator:
     """Tests for SchemaVersionNegotiator class."""
@@ -629,6 +633,7 @@ class TestSchemaVersionNegotiator:
 # Utility Function Tests
 # ============================================================================
 
+
 class TestUtilityFunctions:
     """Tests for utility functions."""
 
@@ -747,6 +752,7 @@ class TestUtilityFunctions:
 # Constants Tests
 # ============================================================================
 
+
 class TestConstants:
     """Tests for module constants."""
 
@@ -782,6 +788,7 @@ class TestConstants:
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestIntegration:
     """Integration tests for schema versioning."""

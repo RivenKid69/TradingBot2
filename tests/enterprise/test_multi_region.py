@@ -410,9 +410,7 @@ class TestMultiRegionService:
         )
         service = MultiRegionService(config)
 
-        service.update_health(
-            Region.EU_CENTRAL_1, 50.0, 99.9, 0.1, 5000, 45.0, 60.0, 30.0
-        )
+        service.update_health(Region.EU_CENTRAL_1, 50.0, 99.9, 0.1, 5000, 45.0, 60.0, 30.0)
 
         all_health = service.get_all_health()
         assert Region.EU_CENTRAL_1 in all_health
@@ -512,9 +510,7 @@ class TestMultiRegionService:
         )
         service = MultiRegionService(config)
 
-        plan = service.create_failover_plan(
-            "Test Plan", Region.EU_CENTRAL_1, Region.EU_WEST_1
-        )
+        plan = service.create_failover_plan("Test Plan", Region.EU_CENTRAL_1, Region.EU_WEST_1)
 
         retrieved = service.get_failover_plan(plan.plan_id)
         assert retrieved is not None
@@ -544,9 +540,7 @@ class TestMultiRegionService:
         )
         service = MultiRegionService(config)
 
-        plan = service.create_failover_plan(
-            "EU Failover", Region.EU_CENTRAL_1, Region.EU_WEST_1
-        )
+        plan = service.create_failover_plan("EU Failover", Region.EU_CENTRAL_1, Region.EU_WEST_1)
 
         event = service.initiate_failover(
             plan_id=plan.plan_id,
@@ -584,9 +578,7 @@ class TestMultiRegionService:
         )
         service = MultiRegionService(config)
 
-        plan = service.create_failover_plan(
-            "EU Failover", Region.EU_CENTRAL_1, Region.EU_WEST_1
-        )
+        plan = service.create_failover_plan("EU Failover", Region.EU_CENTRAL_1, Region.EU_WEST_1)
         service.initiate_failover(plan.plan_id, "test")
 
         events = service.get_failover_events()
@@ -631,9 +623,7 @@ class TestMultiRegionService:
         )
         service = MultiRegionService(config)
 
-        deployment = service.deploy_to_region(
-            Region.EU_CENTRAL_1, "1.0.0", "admin"
-        )
+        deployment = service.deploy_to_region(Region.EU_CENTRAL_1, "1.0.0", "admin")
 
         retrieved = service.get_deployment(deployment.deployment_id)
         assert retrieved is not None

@@ -23,6 +23,7 @@ class TestPhase3ModuleImports:
             RiskLevel,
             SubstitutabilityLevel,
         )
+
         assert DORAConcentrationRisk is not None
         assert ConcentrationRiskConfig is not None
 
@@ -34,6 +35,7 @@ class TestPhase3ModuleImports:
             LeadOverseer,
             CTPPStatus,
         )
+
         assert DORACtppOversight is not None
         assert CTPPOversightConfig is not None
 
@@ -45,6 +47,7 @@ class TestPhase3ModuleImports:
             ProviderType,
             ProviderCriticality,
         )
+
         assert DORAThirdPartyRiskManagement is not None
         assert ThirdPartyRiskConfig is not None
 
@@ -55,6 +58,7 @@ class TestPhase3ModuleImports:
             ThirdPartyProviderType,
             ThirdPartyCriticality,
         )
+
         assert DORAThirdPartyIncidents is not None
 
     def test_subcontractor_management_imports(self):
@@ -64,6 +68,7 @@ class TestPhase3ModuleImports:
             SubcontractorConfig,
             SubcontractorType,
         )
+
         assert DORASubcontractorManagement is not None
         assert SubcontractorConfig is not None
 
@@ -78,6 +83,7 @@ class TestPhase3ModuleInstantiation:
                 DORAConcentrationRisk,
                 ConcentrationRiskConfig,
             )
+
             config = ConcentrationRiskConfig(log_path=tmpdir)
             manager = DORAConcentrationRisk(config)
             assert manager is not None
@@ -89,6 +95,7 @@ class TestPhase3ModuleInstantiation:
                 DORACtppOversight,
                 CTPPOversightConfig,
             )
+
             config = CTPPOversightConfig(log_path=tmpdir)
             manager = DORACtppOversight(config)
             assert manager is not None
@@ -100,6 +107,7 @@ class TestPhase3ModuleInstantiation:
                 DORAThirdPartyRiskManagement,
                 ThirdPartyRiskConfig,
             )
+
             config = ThirdPartyRiskConfig(log_path=tmpdir)
             manager = DORAThirdPartyRiskManagement(config)
             assert manager is not None
@@ -109,6 +117,7 @@ class TestPhase3ModuleInstantiation:
         from services.dora_integration.third_party.third_party_incidents import (
             DORAThirdPartyIncidents,
         )
+
         manager = DORAThirdPartyIncidents(
             entity_id="TEST-001",
             entity_name="Test Entity",
@@ -122,6 +131,7 @@ class TestPhase3ModuleInstantiation:
                 DORASubcontractorManagement,
                 SubcontractorConfig,
             )
+
             config = SubcontractorConfig(log_path=tmpdir)
             manager = DORASubcontractorManagement(config)
             assert manager is not None
@@ -138,6 +148,7 @@ class TestConcentrationRiskBasicOperations:
                 DORAConcentrationRisk,
                 ConcentrationRiskConfig,
             )
+
             config = ConcentrationRiskConfig(log_path=tmpdir)
             yield DORAConcentrationRisk(config)
 
@@ -146,6 +157,7 @@ class TestConcentrationRiskBasicOperations:
         from services.dora_integration.third_party.concentration_risk import (
             SubstitutabilityLevel,
         )
+
         dep = manager.add_provider_dependency(
             provider_id="PRV-001",
             provider_name="Test Provider",
@@ -198,6 +210,7 @@ class TestSubcontractorManagementBasicOperations:
                 DORASubcontractorManagement,
                 SubcontractorConfig,
             )
+
             config = SubcontractorConfig(log_path=tmpdir)
             yield DORASubcontractorManagement(config)
 
@@ -213,6 +226,7 @@ class TestSubcontractorManagementBasicOperations:
         from services.dora_integration.third_party.subcontractor_management import (
             SubcontractorType,
         )
+
         sub = manager.register_subcontractor(
             name="New Provider",
             subcontractor_type=SubcontractorType.DATA_PROVIDER,
@@ -226,6 +240,7 @@ class TestSubcontractorManagementBasicOperations:
         from services.dora_integration.third_party.subcontractor_management import (
             ChangeType,
         )
+
         subs = manager.get_all_subcontractors()
         if subs:
             change = manager.record_change(
@@ -253,14 +268,15 @@ class TestCTPPOversightBasicOperations:
                 DORACtppOversight,
                 CTPPOversightConfig,
             )
+
             config = CTPPOversightConfig(log_path=tmpdir)
             yield DORACtppOversight(config)
 
     def test_manager_has_methods(self, manager):
         """Test manager has expected methods."""
         # Check manager has key methods
-        assert hasattr(manager, 'get_ctpp_designation')
-        assert hasattr(manager, 'get_all_designated_ctpps')
+        assert hasattr(manager, "get_ctpp_designation")
+        assert hasattr(manager, "get_all_designated_ctpps")
 
     def test_get_all_designations(self, manager):
         """Test getting all designations."""
@@ -279,14 +295,15 @@ class TestThirdPartyRiskBasicOperations:
                 DORAThirdPartyRiskManagement,
                 ThirdPartyRiskConfig,
             )
+
             config = ThirdPartyRiskConfig(log_path=tmpdir)
             yield DORAThirdPartyRiskManagement(config)
 
     def test_manager_has_methods(self, manager):
         """Test manager has expected methods."""
-        assert hasattr(manager, 'get_provider')
-        assert hasattr(manager, 'get_critical_providers')
-        assert hasattr(manager, 'get_providers_by_type')
+        assert hasattr(manager, "get_provider")
+        assert hasattr(manager, "get_critical_providers")
+        assert hasattr(manager, "get_providers_by_type")
 
 
 class TestThirdPartyIncidentsBasicOperations:
@@ -298,6 +315,7 @@ class TestThirdPartyIncidentsBasicOperations:
         from services.dora_integration.third_party.third_party_incidents import (
             DORAThirdPartyIncidents,
         )
+
         yield DORAThirdPartyIncidents(
             entity_id="TEST-001",
             entity_name="Test Entity",
@@ -305,9 +323,9 @@ class TestThirdPartyIncidentsBasicOperations:
 
     def test_manager_has_methods(self, manager):
         """Test manager has expected methods."""
-        assert hasattr(manager, 'get_incident')
-        assert hasattr(manager, 'get_active_incidents')
-        assert hasattr(manager, 'escalate_incident')
+        assert hasattr(manager, "get_incident")
+        assert hasattr(manager, "get_active_incidents")
+        assert hasattr(manager, "escalate_incident")
 
 
 class TestMainPackageExports:
@@ -322,6 +340,7 @@ class TestMainPackageExports:
             DORAThirdPartyIncidents,
             DORASubcontractorManagement,
         )
+
         assert DORAConcentrationRisk is not None
         assert DORACtppOversight is not None
         assert DORAThirdPartyRiskManagement is not None
@@ -336,6 +355,7 @@ class TestMainPackageExports:
             ThirdPartyRiskConfig,
             SubcontractorConfig,
         )
+
         assert ConcentrationRiskConfig is not None
         assert CTPPOversightConfig is not None
         assert ThirdPartyRiskConfig is not None
@@ -350,6 +370,7 @@ class TestMainPackageExports:
             create_third_party_incidents,
             create_subcontractor_management,
         )
+
         assert create_concentration_risk is not None
         assert create_ctpp_oversight is not None
         assert create_third_party_risk_management is not None
@@ -367,6 +388,7 @@ class TestBackwardCompatibility:
             DORAProviderInfoPackage,
             PooledAuditSupport,
         )
+
         assert DORAuditReadiness is not None
         assert DORAProviderInfoPackage is not None
         assert PooledAuditSupport is not None
@@ -379,6 +401,7 @@ class TestBackwardCompatibility:
             DORAIncidentReporter,
             DORACommunication,
         )
+
         assert ClientNotificationService is not None
         assert DORAIncidentClassification is not None
         assert DORAIncidentReporter is not None

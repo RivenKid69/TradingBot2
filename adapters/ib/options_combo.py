@@ -82,38 +82,41 @@ else:
 # Combo Strategy Types
 # =============================================================================
 
+
 class ComboStrategy(str, Enum):
     """
     Pre-defined options combo strategies.
 
     Based on standard CBOE multi-leg order types.
     """
+
     # Two-leg strategies
-    VERTICAL_SPREAD = "vertical_spread"        # Same expiry, different strikes
-    CALENDAR_SPREAD = "calendar_spread"        # Same strike, different expiries (horizontal)
-    DIAGONAL_SPREAD = "diagonal_spread"        # Different strike and expiry
-    STRADDLE = "straddle"                      # Same strike call + put
-    STRANGLE = "strangle"                      # Different strike call + put
-    COVERED_CALL = "covered_call"              # Long stock + short call
-    PROTECTIVE_PUT = "protective_put"          # Long stock + long put
-    COLLAR = "collar"                          # Long stock + put + short call
+    VERTICAL_SPREAD = "vertical_spread"  # Same expiry, different strikes
+    CALENDAR_SPREAD = "calendar_spread"  # Same strike, different expiries (horizontal)
+    DIAGONAL_SPREAD = "diagonal_spread"  # Different strike and expiry
+    STRADDLE = "straddle"  # Same strike call + put
+    STRANGLE = "strangle"  # Different strike call + put
+    COVERED_CALL = "covered_call"  # Long stock + short call
+    PROTECTIVE_PUT = "protective_put"  # Long stock + long put
+    COLLAR = "collar"  # Long stock + put + short call
 
     # Three-leg strategies
-    BUTTERFLY = "butterfly"                    # 1-2-1 ratio at 3 strikes
-    RATIO_SPREAD = "ratio_spread"              # Unequal ratios (e.g., 1x2)
+    BUTTERFLY = "butterfly"  # 1-2-1 ratio at 3 strikes
+    RATIO_SPREAD = "ratio_spread"  # Unequal ratios (e.g., 1x2)
 
     # Four-leg strategies
-    IRON_CONDOR = "iron_condor"               # Put spread + call spread
-    IRON_BUTTERFLY = "iron_butterfly"         # Straddle + strangle wings
-    BOX_SPREAD = "box_spread"                 # Call spread + put spread at same strikes
-    DOUBLE_DIAGONAL = "double_diagonal"       # Two diagonal spreads
+    IRON_CONDOR = "iron_condor"  # Put spread + call spread
+    IRON_BUTTERFLY = "iron_butterfly"  # Straddle + strangle wings
+    BOX_SPREAD = "box_spread"  # Call spread + put spread at same strikes
+    DOUBLE_DIAGONAL = "double_diagonal"  # Two diagonal spreads
 
     # Custom
-    CUSTOM = "custom"                         # User-defined legs
+    CUSTOM = "custom"  # User-defined legs
 
 
 class LegAction(str, Enum):
     """Action for a combo leg."""
+
     BUY = "BUY"
     SELL = "SELL"
 
@@ -124,14 +127,16 @@ class OpenClose(str, Enum):
 
     Required for regulatory reporting (exchange rules).
     """
-    OPEN = "O"      # Opening new position
-    CLOSE = "C"     # Closing existing position
-    SAME = "S"      # Same as previous (auto-determined)
+
+    OPEN = "O"  # Opening new position
+    CLOSE = "C"  # Closing existing position
+    SAME = "S"  # Same as previous (auto-determined)
 
 
 # =============================================================================
 # Combo Leg Definition
 # =============================================================================
+
 
 @dataclass
 class OptionsComboLeg:
@@ -146,6 +151,7 @@ class OptionsComboLeg:
         open_close: Open/Close designation
         con_id: IB contract ID (filled automatically)
     """
+
     contract: OptionsContractSpec
     action: LegAction
     ratio: int = 1
@@ -195,6 +201,7 @@ class OptionsComboLeg:
 # Combo Order Definition
 # =============================================================================
 
+
 @dataclass
 class OptionsComboOrder:
     """
@@ -210,6 +217,7 @@ class OptionsComboOrder:
         exchange: Exchange routing (default: SMART)
         client_order_id: Optional client order ID
     """
+
     legs: List[OptionsComboLeg]
     strategy: ComboStrategy = ComboStrategy.CUSTOM
     order_type: str = "LIMIT"
@@ -362,6 +370,7 @@ class OptionsComboOrderResult:
         commission: Total commission
         error_message: Error message if failed
     """
+
     success: bool
     order_id: Optional[str] = None
     client_order_id: Optional[str] = None
@@ -377,6 +386,7 @@ class OptionsComboOrderResult:
 # =============================================================================
 # Strategy Builders
 # =============================================================================
+
 
 class ComboStrategyBuilder:
     """
@@ -894,6 +904,7 @@ class ComboStrategyBuilder:
 # IB Options Combo Execution Adapter
 # =============================================================================
 
+
 class IBOptionsComboAdapter:
     """
     IB adapter for combo/spread order execution.
@@ -1071,8 +1082,16 @@ class IBOptionsComboAdapter:
                 client_order_id=combo_order.client_order_id,
                 status=trade.orderStatus.status,
                 filled_qty=int(trade.orderStatus.filled),
-                avg_fill_price=Decimal(str(trade.orderStatus.avgFillPrice)) if trade.orderStatus.avgFillPrice else None,
-                commission=Decimal(str(trade.orderStatus.commission)) if trade.orderStatus.commission else Decimal(0),
+                avg_fill_price=(
+                    Decimal(str(trade.orderStatus.avgFillPrice))
+                    if trade.orderStatus.avgFillPrice
+                    else None
+                ),
+                commission=(
+                    Decimal(str(trade.orderStatus.commission))
+                    if trade.orderStatus.commission
+                    else Decimal(0)
+                ),
                 raw_response={"trade": str(trade)},
             )
 
@@ -1345,6 +1364,7 @@ class IBOptionsComboAdapter:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_ib_options_combo_adapter(
     execution_adapter: IBOptionsOrderExecutionAdapter,

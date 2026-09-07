@@ -31,7 +31,7 @@ References:
 - Klitgaard & Weir (2004): "Exchange Rate Changes and Net Positions"
 - CFTC Commitments of Traders Explanation
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 Version: 1.0.0
 """
@@ -56,6 +56,7 @@ import pandas as pd
 # Optional dependencies
 try:
     import requests
+
     HAS_REQUESTS = True
 except ImportError:
     HAS_REQUESTS = False
@@ -72,25 +73,25 @@ CFTC_BASE_URL = "https://www.cftc.gov/files/dea/history"
 
 # COT report type files
 COT_FILES = {
-    "legacy_futures": "deacot{year}.zip",           # Legacy Futures Only
-    "legacy_combined": "dea_com_txt_{year}.zip",    # Legacy Combined
-    "disaggregated": "f_year{year}.zip",            # Disaggregated
-    "tff": "tff_year{year}.zip",                    # Traders in Financial Futures
+    "legacy_futures": "deacot{year}.zip",  # Legacy Futures Only
+    "legacy_combined": "dea_com_txt_{year}.zip",  # Legacy Combined
+    "disaggregated": "f_year{year}.zip",  # Disaggregated
+    "tff": "tff_year{year}.zip",  # Traders in Financial Futures
 }
 
 # Currency futures contract codes (CFTC)
 # Format: CFTC Market Code -> Currency
 CFTC_CURRENCY_CODES = {
-    "099741": "EUR",   # Euro FX
-    "096742": "GBP",   # British Pound
-    "097741": "JPY",   # Japanese Yen
-    "092741": "CHF",   # Swiss Franc
-    "232741": "AUD",   # Australian Dollar
-    "090741": "CAD",   # Canadian Dollar
-    "112741": "NZD",   # New Zealand Dollar
-    "098662": "BRL",   # Brazilian Real
-    "095741": "MXN",   # Mexican Peso
-    "096661": "ZAR",   # South African Rand
+    "099741": "EUR",  # Euro FX
+    "096742": "GBP",  # British Pound
+    "097741": "JPY",  # Japanese Yen
+    "092741": "CHF",  # Swiss Franc
+    "232741": "AUD",  # Australian Dollar
+    "090741": "CAD",  # Canadian Dollar
+    "112741": "NZD",  # New Zealand Dollar
+    "098662": "BRL",  # Brazilian Real
+    "095741": "MXN",  # Mexican Peso
+    "096661": "ZAR",  # South African Rand
 }
 
 # Reverse mapping
@@ -100,10 +101,10 @@ CURRENCY_TO_CFTC = {v: k for k, v in CFTC_CURRENCY_CODES.items()}
 CURRENCY_TO_PAIR = {
     "EUR": "EUR_USD",
     "GBP": "GBP_USD",
-    "JPY": "USD_JPY",   # Note: JPY is inverted
-    "CHF": "USD_CHF",   # Note: CHF is inverted
+    "JPY": "USD_JPY",  # Note: JPY is inverted
+    "CHF": "USD_CHF",  # Note: CHF is inverted
     "AUD": "AUD_USD",
-    "CAD": "USD_CAD",   # Note: CAD is inverted
+    "CAD": "USD_CAD",  # Note: CAD is inverted
     "NZD": "NZD_USD",
 }
 
@@ -143,6 +144,7 @@ TFF_COLUMNS = {
 # DATA CLASSES
 # =============================================================================
 
+
 @dataclass
 class COTPosition:
     """
@@ -159,6 +161,7 @@ class COTPosition:
         long_positions: Total long positions
         short_positions: Total short positions
     """
+
     currency: str
     report_date: datetime
     net_long: float
@@ -218,6 +221,7 @@ class COTPosition:
 @dataclass
 class COTConfig:
     """Configuration for COT data loading."""
+
     cache_dir: str = DEFAULT_COT_CACHE_DIR
     report_type: str = "legacy"  # "legacy", "tff", "disaggregated"
     use_noncommercial: bool = True  # Use non-commercial (speculator) positions
@@ -229,6 +233,7 @@ class COTConfig:
 # =============================================================================
 # COT DATA LOADER
 # =============================================================================
+
 
 class COTDataLoader:
     """
@@ -635,14 +640,16 @@ class COTDataLoader:
                 continue
 
             for pos in positions:
-                all_data.append({
-                    "currency": currency,
-                    "report_date": pos.report_date,
-                    "net_long": pos.net_long,
-                    "net_long_pct": pos.net_long_pct,
-                    "change_1w": pos.change_1w,
-                    "open_interest": pos.open_interest,
-                })
+                all_data.append(
+                    {
+                        "currency": currency,
+                        "report_date": pos.report_date,
+                        "net_long": pos.net_long,
+                        "net_long_pct": pos.net_long_pct,
+                        "change_1w": pos.change_1w,
+                        "open_interest": pos.open_interest,
+                    }
+                )
 
         if not all_data:
             return pd.DataFrame()
@@ -670,7 +677,7 @@ class COTDataLoader:
         pivot = df.pivot(
             index="report_date",
             columns="currency",
-            values=["net_long", "net_long_pct", "open_interest"]
+            values=["net_long", "net_long_pct", "open_interest"],
         )
 
         # Flatten column names
@@ -695,6 +702,7 @@ class COTDataLoader:
 # =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
+
 
 def create_mock_cot_data(
     currencies: List[str],
@@ -838,17 +846,26 @@ if __name__ == "__main__":
     import argparse
     import logging
     from datetime import datetime
-    
+
     parser = argparse.ArgumentParser(description="CFTC COT Data Loader CLI")
-    parser.add_argument("--symbols", default="", help="Comma-separated symbols to process (e.g. EUR,GBP,JPY)")
-    parser.add_argument("--lookback", type=int, default=52, help="Lookback weeks for Z-score calculation")
-    parser.add_argument("--report-type", default="legacy_combined", choices=["legacy_futures", "legacy_combined", "disaggregated", "tff"], help="Type of CFTC COT report")
+    parser.add_argument(
+        "--symbols", default="", help="Comma-separated symbols to process (e.g. EUR,GBP,JPY)"
+    )
+    parser.add_argument(
+        "--lookback", type=int, default=52, help="Lookback weeks for Z-score calculation"
+    )
+    parser.add_argument(
+        "--report-type",
+        default="legacy_combined",
+        choices=["legacy_futures", "legacy_combined", "disaggregated", "tff"],
+        help="Type of CFTC COT report",
+    )
     parser.add_argument("--cache-dir", default="data/cot_cache", help="Path to cache directory")
     args = parser.parse_args()
 
     # Configure logging to see download progress
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-    
+
     # Map report types for COTDataLoader
     # The config expects report_type to be legacy or tff or disaggregated.
     mapped_report_type = "legacy"
@@ -862,15 +879,16 @@ if __name__ == "__main__":
         cache_dir=args.cache_dir,
         report_type=mapped_report_type,
         zscore_lookback=args.lookback,
-        auto_download=True
+        auto_download=True,
     )
-    
+
     loader = COTDataLoader(cfg)
-    
-    print(f"Запуск загрузки CFTC COT данных... Report Type: {args.report_type}, Cache: {args.cache_dir}")
+
+    print(
+        f"Запуск загрузки CFTC COT данных... Report Type: {args.report_type}, Cache: {args.cache_dir}"
+    )
     # Download and load data from 2020 to current year
     current_year = datetime.now().year
     loader.load_data(start_year=2020, end_year=current_year)
     loader.save_cache()
     print("Готово. COT кэш успешно сохранен.")
-

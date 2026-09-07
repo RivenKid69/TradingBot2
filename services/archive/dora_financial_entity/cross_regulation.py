@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class Regulation(Enum):
     """Supported regulations for alignment."""
+
     DORA = "dora"
     AI_ACT = "ai_act"
     NIS2 = "nis2"
@@ -36,6 +37,7 @@ class Regulation(Enum):
 @dataclass
 class ReportingRequirement:
     """Regulatory reporting deadline."""
+
     regulation: Regulation
     stage: str
     deadline: datetime
@@ -46,6 +48,7 @@ class ReportingRequirement:
 @dataclass
 class IncidentAlignmentResult:
     """Aggregate reporting deadlines across regimes."""
+
     detection_time: datetime
     classification_time: datetime
     requirements: List[ReportingRequirement] = field(default_factory=list)
@@ -63,6 +66,7 @@ class IncidentAlignmentResult:
 @dataclass
 class RiskFrameworkAlignment:
     """Combined risk registry view across regulations."""
+
     combined_risks: Dict[str, Dict[str, str]]  # risk_id -> {source: level}
     overlaps: Set[str] = field(default_factory=set)
     only_dora: Set[str] = field(default_factory=set)
@@ -72,6 +76,7 @@ class RiskFrameworkAlignment:
 @dataclass
 class LoggingAlignmentResult:
     """Alignment result for logging obligations."""
+
     combined_categories: Set[str]
     missing_in_dora: Set[str]
     missing_in_ai_act: Set[str]
@@ -102,7 +107,9 @@ class DORARegulationIntegration:
         classification_time: datetime,
     ) -> List[ReportingRequirement]:
         detection_deadline = detection_time + timedelta(hours=self.dora_detection_deadline_hours)
-        classification_deadline = classification_time + timedelta(hours=self.dora_classification_deadline_hours)
+        classification_deadline = classification_time + timedelta(
+            hours=self.dora_classification_deadline_hours
+        )
         earliest = min(detection_deadline, classification_deadline)
 
         requirements = [
@@ -210,8 +217,14 @@ class DORARegulationIntegration:
             else:
                 combined[risk_id] = {"ai_act": level}
 
-        only_dora = set(dora_risks.keys()) - overlaps - (set(ai_act_risks.keys()) & set(dora_risks.keys()))
-        only_ai_act = set(ai_act_risks.keys()) - overlaps - (set(ai_act_risks.keys()) & set(dora_risks.keys()))
+        only_dora = (
+            set(dora_risks.keys()) - overlaps - (set(ai_act_risks.keys()) & set(dora_risks.keys()))
+        )
+        only_ai_act = (
+            set(ai_act_risks.keys())
+            - overlaps
+            - (set(ai_act_risks.keys()) & set(dora_risks.keys()))
+        )
 
         return RiskFrameworkAlignment(
             combined_risks=combined,
@@ -253,4 +266,3 @@ class DORARegulationIntegration:
             missing_in_ai_act=missing_in_ai_act,
             unified_schema=minimum_schema,
         )
-

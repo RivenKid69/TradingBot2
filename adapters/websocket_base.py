@@ -63,8 +63,10 @@ logger = logging.getLogger(__name__)
 # ENUMS AND TYPES
 # =============================================================================
 
+
 class ConnectionState(Enum):
     """WebSocket connection state."""
+
     DISCONNECTED = auto()
     CONNECTING = auto()
     CONNECTED = auto()
@@ -80,6 +82,7 @@ class ConnectionState(Enum):
 
 class MessageType(Enum):
     """Type of WebSocket message."""
+
     TEXT = "text"
     BINARY = "binary"
     PING = "ping"
@@ -94,6 +97,7 @@ T = TypeVar("T")  # Generic message type
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
+
 
 @dataclass
 class WebSocketConfig:
@@ -128,6 +132,7 @@ class WebSocketConfig:
         log_messages: Log all messages (verbose)
         log_heartbeat: Log heartbeat messages
     """
+
     url: str
     api_key: str = ""
     api_secret: str = ""
@@ -163,6 +168,7 @@ class WebSocketConfig:
 @dataclass
 class ConnectionStats:
     """Statistics for WebSocket connection."""
+
     connected_at: Optional[datetime] = None
     disconnected_at: Optional[datetime] = None
     reconnect_count: int = 0
@@ -189,6 +195,7 @@ class ConnectionStats:
 # MESSAGE WRAPPER
 # =============================================================================
 
+
 @dataclass
 class WebSocketMessage(Generic[T]):
     """
@@ -201,6 +208,7 @@ class WebSocketMessage(Generic[T]):
         received_at: Timestamp when received
         sequence: Message sequence number
     """
+
     data: T
     raw: Union[str, bytes]
     message_type: MessageType = MessageType.TEXT
@@ -211,6 +219,7 @@ class WebSocketMessage(Generic[T]):
 # =============================================================================
 # HANDLERS INTERFACE
 # =============================================================================
+
 
 class WebSocketHandlers(ABC):
     """
@@ -295,6 +304,7 @@ class DefaultHandlers(WebSocketHandlers):
 # =============================================================================
 # ASYNC WEBSOCKET CLIENT
 # =============================================================================
+
 
 class AsyncWebSocket:
     """
@@ -771,16 +781,17 @@ class AsyncWebSocket:
                 self._config.reconnect_max_attempts > 0
                 and self._reconnect_attempts > self._config.reconnect_max_attempts
             ):
-                logger.error(f"Max reconnect attempts ({self._config.reconnect_max_attempts}) exceeded")
+                logger.error(
+                    f"Max reconnect attempts ({self._config.reconnect_max_attempts}) exceeded"
+                )
                 async with self._state_lock:
                     self._state = ConnectionState.ERROR
                 return
 
             # Calculate backoff delay
             delay = min(
-                self._config.reconnect_delay_initial * (
-                    self._config.reconnect_delay_multiplier ** (self._reconnect_attempts - 1)
-                ),
+                self._config.reconnect_delay_initial
+                * (self._config.reconnect_delay_multiplier ** (self._reconnect_attempts - 1)),
                 self._config.reconnect_delay_max,
             )
 
@@ -804,6 +815,7 @@ class AsyncWebSocket:
 # =============================================================================
 # SYNC WRAPPER
 # =============================================================================
+
 
 class SyncWebSocket:
     """
@@ -1033,6 +1045,7 @@ class SyncWebSocket:
 # =============================================================================
 # EXCHANGE-SPECIFIC HANDLERS
 # =============================================================================
+
 
 class AlpacaWebSocketHandlers(WebSocketHandlers):
     """

@@ -297,10 +297,7 @@ class TestScenario:
     def all_steps(self) -> List[ScenarioStep]:
         """Get all steps across all phases."""
         return (
-            self.setup_steps +
-            self.execution_steps +
-            self.verification_steps +
-            self.teardown_steps
+            self.setup_steps + self.execution_steps + self.verification_steps + self.teardown_steps
         )
 
     def get_duration_ms(self) -> float:
@@ -407,10 +404,18 @@ class TestScenario:
             preconditions=self.preconditions,
             test_steps=test_steps,
             expected_result="; ".join(self.pass_criteria),
-            result=TestResult.PASS if self.passed() else TestResult.FAIL if self.failed() else TestResult.PENDING,
+            result=(
+                TestResult.PASS
+                if self.passed()
+                else TestResult.FAIL if self.failed() else TestResult.PENDING
+            ),
             details=self.result_summary,
             duration_ms=self.get_duration_ms(),
-            timestamp=datetime.fromtimestamp(self.start_timestamp_ns / 1e9) if self.start_timestamp_ns else None,
+            timestamp=(
+                datetime.fromtimestamp(self.start_timestamp_ns / 1e9)
+                if self.start_timestamp_ns
+                else None
+            ),
             tester=self.executed_by,
         )
 
@@ -482,9 +487,15 @@ class TestScenario:
 
         # Parse steps
         scenario.setup_steps = [ScenarioStep.from_dict(s) for s in data.get("setup_steps", [])]
-        scenario.execution_steps = [ScenarioStep.from_dict(s) for s in data.get("execution_steps", [])]
-        scenario.verification_steps = [ScenarioStep.from_dict(s) for s in data.get("verification_steps", [])]
-        scenario.teardown_steps = [ScenarioStep.from_dict(s) for s in data.get("teardown_steps", [])]
+        scenario.execution_steps = [
+            ScenarioStep.from_dict(s) for s in data.get("execution_steps", [])
+        ]
+        scenario.verification_steps = [
+            ScenarioStep.from_dict(s) for s in data.get("verification_steps", [])
+        ]
+        scenario.teardown_steps = [
+            ScenarioStep.from_dict(s) for s in data.get("teardown_steps", [])
+        ]
 
         return scenario
 
@@ -529,63 +540,81 @@ def get_kill_switch_scenarios() -> List[TestScenario]:
         ],
     )
 
-    scenario.add_setup_step(ScenarioStep(
-        step_id="KS-001-S1",
-        description="Connect to test venue(s)",
-        action="Establish connection to test trading venue(s)",
-        expected_result="Connection established, ready to trade",
-    ))
-    scenario.add_setup_step(ScenarioStep(
-        step_id="KS-001-S2",
-        description="Submit test orders",
-        action="Submit 10 test orders across available venues",
-        expected_result="10 pending orders confirmed",
-    ))
+    scenario.add_setup_step(
+        ScenarioStep(
+            step_id="KS-001-S1",
+            description="Connect to test venue(s)",
+            action="Establish connection to test trading venue(s)",
+            expected_result="Connection established, ready to trade",
+        )
+    )
+    scenario.add_setup_step(
+        ScenarioStep(
+            step_id="KS-001-S2",
+            description="Submit test orders",
+            action="Submit 10 test orders across available venues",
+            expected_result="10 pending orders confirmed",
+        )
+    )
 
-    scenario.add_execution_step(ScenarioStep(
-        step_id="KS-001-E1",
-        description="Record pre-trigger state",
-        action="Record number of pending orders and timestamp",
-        expected_result="State recorded",
-    ))
-    scenario.add_execution_step(ScenarioStep(
-        step_id="KS-001-E2",
-        description="Trigger kill switch",
-        action="Trigger kill switch with scope=ALL",
-        expected_result="Kill switch triggered, event recorded",
-    ))
-    scenario.add_execution_step(ScenarioStep(
-        step_id="KS-001-E3",
-        description="Measure cancellation time",
-        action="Wait for all cancellations and record time",
-        expected_result="All orders cancelled within 1 second",
-    ))
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="KS-001-E1",
+            description="Record pre-trigger state",
+            action="Record number of pending orders and timestamp",
+            expected_result="State recorded",
+        )
+    )
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="KS-001-E2",
+            description="Trigger kill switch",
+            action="Trigger kill switch with scope=ALL",
+            expected_result="Kill switch triggered, event recorded",
+        )
+    )
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="KS-001-E3",
+            description="Measure cancellation time",
+            action="Wait for all cancellations and record time",
+            expected_result="All orders cancelled within 1 second",
+        )
+    )
 
-    scenario.add_verification_step(ScenarioStep(
-        step_id="KS-001-V1",
-        description="Verify all orders cancelled",
-        action="Query order status for all orders",
-        expected_result="All orders in CANCELLED state",
-    ))
-    scenario.add_verification_step(ScenarioStep(
-        step_id="KS-001-V2",
-        description="Verify new orders blocked",
-        action="Attempt to submit new order",
-        expected_result="Order rejected - kill switch active",
-    ))
-    scenario.add_verification_step(ScenarioStep(
-        step_id="KS-001-V3",
-        description="Verify audit trail",
-        action="Query audit trail for kill switch event",
-        expected_result="Event logged with timestamp, reason, affected orders",
-    ))
+    scenario.add_verification_step(
+        ScenarioStep(
+            step_id="KS-001-V1",
+            description="Verify all orders cancelled",
+            action="Query order status for all orders",
+            expected_result="All orders in CANCELLED state",
+        )
+    )
+    scenario.add_verification_step(
+        ScenarioStep(
+            step_id="KS-001-V2",
+            description="Verify new orders blocked",
+            action="Attempt to submit new order",
+            expected_result="Order rejected - kill switch active",
+        )
+    )
+    scenario.add_verification_step(
+        ScenarioStep(
+            step_id="KS-001-V3",
+            description="Verify audit trail",
+            action="Query audit trail for kill switch event",
+            expected_result="Event logged with timestamp, reason, affected orders",
+        )
+    )
 
-    scenario.add_teardown_step(ScenarioStep(
-        step_id="KS-001-T1",
-        description="Reset kill switch",
-        action="Reset kill switch to normal state",
-        expected_result="Trading enabled",
-    ))
+    scenario.add_teardown_step(
+        ScenarioStep(
+            step_id="KS-001-T1",
+            description="Reset kill switch",
+            action="Reset kill switch to normal state",
+            expected_result="Trading enabled",
+        )
+    )
 
     scenarios.append(scenario)
 
@@ -609,30 +638,38 @@ def get_kill_switch_scenarios() -> List[TestScenario]:
         ],
     )
 
-    scenario2.add_execution_step(ScenarioStep(
-        step_id="KS-002-E1",
-        description="Submit orders to multiple venues",
-        action="Submit orders to Venue A and Venue B",
-        expected_result="Orders pending on both venues",
-    ))
-    scenario2.add_execution_step(ScenarioStep(
-        step_id="KS-002-E2",
-        description="Trigger venue-specific kill switch",
-        action="Trigger kill switch for Venue A only",
-        expected_result="Kill switch triggered for Venue A",
-    ))
-    scenario2.add_verification_step(ScenarioStep(
-        step_id="KS-002-V1",
-        description="Verify Venue A orders cancelled",
-        action="Query Venue A order status",
-        expected_result="All Venue A orders cancelled",
-    ))
-    scenario2.add_verification_step(ScenarioStep(
-        step_id="KS-002-V2",
-        description="Verify Venue B orders active",
-        action="Query Venue B order status",
-        expected_result="Venue B orders still active",
-    ))
+    scenario2.add_execution_step(
+        ScenarioStep(
+            step_id="KS-002-E1",
+            description="Submit orders to multiple venues",
+            action="Submit orders to Venue A and Venue B",
+            expected_result="Orders pending on both venues",
+        )
+    )
+    scenario2.add_execution_step(
+        ScenarioStep(
+            step_id="KS-002-E2",
+            description="Trigger venue-specific kill switch",
+            action="Trigger kill switch for Venue A only",
+            expected_result="Kill switch triggered for Venue A",
+        )
+    )
+    scenario2.add_verification_step(
+        ScenarioStep(
+            step_id="KS-002-V1",
+            description="Verify Venue A orders cancelled",
+            action="Query Venue A order status",
+            expected_result="All Venue A orders cancelled",
+        )
+    )
+    scenario2.add_verification_step(
+        ScenarioStep(
+            step_id="KS-002-V2",
+            description="Verify Venue B orders active",
+            action="Query Venue B order status",
+            expected_result="Venue B orders still active",
+        )
+    )
 
     scenarios.append(scenario2)
 
@@ -669,38 +706,48 @@ def get_pre_trade_scenarios() -> List[TestScenario]:
         ],
     )
 
-    scenario.add_setup_step(ScenarioStep(
-        step_id="PT-001-S1",
-        description="Get reference price",
-        action="Query current reference price for test instrument",
-        expected_result="Reference price obtained",
-    ))
+    scenario.add_setup_step(
+        ScenarioStep(
+            step_id="PT-001-S1",
+            description="Get reference price",
+            action="Query current reference price for test instrument",
+            expected_result="Reference price obtained",
+        )
+    )
 
-    scenario.add_execution_step(ScenarioStep(
-        step_id="PT-001-E1",
-        description="Submit order above collar",
-        action="Submit order with price 10% above reference",
-        expected_result="Order rejected",
-    ))
-    scenario.add_execution_step(ScenarioStep(
-        step_id="PT-001-E2",
-        description="Submit order below collar",
-        action="Submit order with price 10% below reference",
-        expected_result="Order rejected",
-    ))
-    scenario.add_execution_step(ScenarioStep(
-        step_id="PT-001-E3",
-        description="Submit order within collar",
-        action="Submit order with price 2% above reference",
-        expected_result="Order accepted",
-    ))
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="PT-001-E1",
+            description="Submit order above collar",
+            action="Submit order with price 10% above reference",
+            expected_result="Order rejected",
+        )
+    )
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="PT-001-E2",
+            description="Submit order below collar",
+            action="Submit order with price 10% below reference",
+            expected_result="Order rejected",
+        )
+    )
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="PT-001-E3",
+            description="Submit order within collar",
+            action="Submit order with price 2% above reference",
+            expected_result="Order accepted",
+        )
+    )
 
-    scenario.add_verification_step(ScenarioStep(
-        step_id="PT-001-V1",
-        description="Verify rejection reason",
-        action="Check rejection reason for first two orders",
-        expected_result="PRICE_COLLAR rejection reason",
-    ))
+    scenario.add_verification_step(
+        ScenarioStep(
+            step_id="PT-001-V1",
+            description="Verify rejection reason",
+            action="Check rejection reason for first two orders",
+            expected_result="PRICE_COLLAR rejection reason",
+        )
+    )
 
     scenarios.append(scenario)
 
@@ -723,18 +770,22 @@ def get_pre_trade_scenarios() -> List[TestScenario]:
         ],
     )
 
-    scenario2.add_execution_step(ScenarioStep(
-        step_id="PT-002-E1",
-        description="Send messages within limit",
-        action="Send 50 orders over 1 second",
-        expected_result="All orders accepted",
-    ))
-    scenario2.add_execution_step(ScenarioStep(
-        step_id="PT-002-E2",
-        description="Send messages exceeding limit",
-        action="Send 150 orders over 1 second",
-        expected_result="Excess orders throttled/rejected",
-    ))
+    scenario2.add_execution_step(
+        ScenarioStep(
+            step_id="PT-002-E1",
+            description="Send messages within limit",
+            action="Send 50 orders over 1 second",
+            expected_result="All orders accepted",
+        )
+    )
+    scenario2.add_execution_step(
+        ScenarioStep(
+            step_id="PT-002-E2",
+            description="Send messages exceeding limit",
+            action="Send 150 orders over 1 second",
+            expected_result="Excess orders throttled/rejected",
+        )
+    )
 
     scenarios.append(scenario2)
 
@@ -771,38 +822,48 @@ def get_stress_test_scenarios() -> List[TestScenario]:
         ],
     )
 
-    scenario.add_setup_step(ScenarioStep(
-        step_id="STR-001-S1",
-        description="Record baseline metrics",
-        action="Record normal latency and throughput",
-        expected_result="Baseline metrics recorded",
-    ))
+    scenario.add_setup_step(
+        ScenarioStep(
+            step_id="STR-001-S1",
+            description="Record baseline metrics",
+            action="Record normal latency and throughput",
+            expected_result="Baseline metrics recorded",
+        )
+    )
 
-    scenario.add_execution_step(ScenarioStep(
-        step_id="STR-001-E1",
-        description="Generate 2x normal load",
-        action="Send messages at 2x normal rate for 5 minutes",
-        expected_result="High load sustained",
-    ))
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="STR-001-E1",
+            description="Generate 2x normal load",
+            action="Send messages at 2x normal rate for 5 minutes",
+            expected_result="High load sustained",
+        )
+    )
 
-    scenario.add_verification_step(ScenarioStep(
-        step_id="STR-001-V1",
-        description="Check message loss",
-        action="Compare sent vs. processed messages",
-        expected_result="Zero message loss",
-    ))
-    scenario.add_verification_step(ScenarioStep(
-        step_id="STR-001-V2",
-        description="Check latency",
-        action="Compare stress latency to baseline",
-        expected_result="Latency within 150% of baseline",
-    ))
-    scenario.add_verification_step(ScenarioStep(
-        step_id="STR-001-V3",
-        description="Verify risk controls",
-        action="Test pre-trade controls during stress",
-        expected_result="All controls functioning",
-    ))
+    scenario.add_verification_step(
+        ScenarioStep(
+            step_id="STR-001-V1",
+            description="Check message loss",
+            action="Compare sent vs. processed messages",
+            expected_result="Zero message loss",
+        )
+    )
+    scenario.add_verification_step(
+        ScenarioStep(
+            step_id="STR-001-V2",
+            description="Check latency",
+            action="Compare stress latency to baseline",
+            expected_result="Latency within 150% of baseline",
+        )
+    )
+    scenario.add_verification_step(
+        ScenarioStep(
+            step_id="STR-001-V3",
+            description="Verify risk controls",
+            action="Test pre-trade controls during stress",
+            expected_result="All controls functioning",
+        )
+    )
 
     scenarios.append(scenario)
 
@@ -826,18 +887,22 @@ def get_stress_test_scenarios() -> List[TestScenario]:
         ],
     )
 
-    scenario2.add_execution_step(ScenarioStep(
-        step_id="STR-002-E1",
-        description="Simulate volatility spike",
-        action="Feed market data with 5x normal volatility",
-        expected_result="System receives volatile data",
-    ))
-    scenario2.add_verification_step(ScenarioStep(
-        step_id="STR-002-V1",
-        description="Verify order quality",
-        action="Check all orders during volatility period",
-        expected_result="No erroneous orders generated",
-    ))
+    scenario2.add_execution_step(
+        ScenarioStep(
+            step_id="STR-002-E1",
+            description="Simulate volatility spike",
+            action="Feed market data with 5x normal volatility",
+            expected_result="System receives volatile data",
+        )
+    )
+    scenario2.add_verification_step(
+        ScenarioStep(
+            step_id="STR-002-V1",
+            description="Verify order quality",
+            action="Check all orders during volatility period",
+            expected_result="No erroneous orders generated",
+        )
+    )
 
     scenarios.append(scenario2)
 
@@ -874,24 +939,30 @@ def get_business_continuity_scenarios() -> List[TestScenario]:
         ],
     )
 
-    scenario.add_execution_step(ScenarioStep(
-        step_id="BCP-001-E1",
-        description="Simulate primary failure",
-        action="Trigger simulated primary system failure",
-        expected_result="Kill switch triggered",
-    ))
-    scenario.add_execution_step(ScenarioStep(
-        step_id="BCP-001-E2",
-        description="Initiate failover",
-        action="Start failover to backup system",
-        expected_result="Failover process started",
-    ))
-    scenario.add_verification_step(ScenarioStep(
-        step_id="BCP-001-V1",
-        description="Verify RTO met",
-        action="Check time to recovery",
-        expected_result="Recovery within RTO",
-    ))
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="BCP-001-E1",
+            description="Simulate primary failure",
+            action="Trigger simulated primary system failure",
+            expected_result="Kill switch triggered",
+        )
+    )
+    scenario.add_execution_step(
+        ScenarioStep(
+            step_id="BCP-001-E2",
+            description="Initiate failover",
+            action="Start failover to backup system",
+            expected_result="Failover process started",
+        )
+    )
+    scenario.add_verification_step(
+        ScenarioStep(
+            step_id="BCP-001-V1",
+            description="Verify RTO met",
+            action="Check time to recovery",
+            expected_result="Recovery within RTO",
+        )
+    )
 
     scenarios.append(scenario)
 
@@ -1045,9 +1116,7 @@ class ScenarioExecutor:
 
             step.duration_ms = (time.time() - start_time) * 1000
 
-            logger.info(
-                f"Step {step.step_id} [{phase_name}]: {'PASS' if step.passed else 'FAIL'}"
-            )
+            logger.info(f"Step {step.step_id} [{phase_name}]: {'PASS' if step.passed else 'FAIL'}")
 
             if not step.passed and self.stop_on_step_failure:
                 return False

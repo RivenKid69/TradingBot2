@@ -174,7 +174,11 @@ class TestBrokerRateLimiter:
 
         # At 100% utilization, the result is valid as long as we tracked it
         assert result.utilization >= 80.0  # At or above warning threshold
-        assert result.status in [RateLimitStatus.OK, RateLimitStatus.WARNING, RateLimitStatus.THROTTLED]
+        assert result.status in [
+            RateLimitStatus.OK,
+            RateLimitStatus.WARNING,
+            RateLimitStatus.THROTTLED,
+        ]
 
     def test_different_users_independent(self, limiter):
         """Test that different users have independent limits."""

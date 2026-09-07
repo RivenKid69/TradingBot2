@@ -58,7 +58,7 @@ ROLLOVER_KEEPOUT_MINUTES = 30
 
 # Weekend start/end (in ET)
 WEEKEND_START_HOUR_ET = 17  # Friday 5pm ET
-WEEKEND_END_HOUR_ET = 17    # Sunday 5pm ET
+WEEKEND_END_HOUR_ET = 17  # Sunday 5pm ET
 
 # Session liquidity factors (relative to London session)
 SESSION_LIQUIDITY = {
@@ -80,7 +80,7 @@ SESSION_SPREAD_MULT = {
     ForexSessionType.NEW_YORK: 1.00,
     ForexSessionType.LONDON_NY_OVERLAP: 0.80,  # Tightest spreads
     ForexSessionType.TOKYO_LONDON_OVERLAP: 1.10,
-    ForexSessionType.WEEKEND: float('inf'),  # No trading
+    ForexSessionType.WEEKEND: float("inf"),  # No trading
     ForexSessionType.OFF_HOURS: 2.00,
 }
 
@@ -107,6 +107,7 @@ class ForexSessionInfo:
         in_rollover_window: Whether in rollover keepout window
         active_sessions: All currently active sessions
     """
+
     session: ForexSessionType
     is_open: bool
     liquidity_factor: float = 1.0
@@ -134,6 +135,7 @@ class RoutingDecision:
         warnings: List of warnings/advisories
         optimal_window_utc: Suggested optimal execution window
     """
+
     should_submit: bool
     session: ForexSessionType
     liquidity_factor: float = 1.0
@@ -178,7 +180,7 @@ def get_current_forex_session(
             session=ForexSessionType.WEEKEND,
             is_open=False,
             liquidity_factor=0.0,
-            spread_multiplier=float('inf'),
+            spread_multiplier=float("inf"),
             in_rollover_window=False,
             active_sessions=[ForexSessionType.WEEKEND],
         )
@@ -355,7 +357,7 @@ class ForexSessionRouter:
                 should_submit=False,
                 session=ForexSessionType.WEEKEND,
                 liquidity_factor=0.0,
-                spread_multiplier=float('inf'),
+                spread_multiplier=float("inf"),
                 recommended_delay_sec=self._seconds_to_market_open(timestamp_ms),
                 reason="Forex market is closed (weekend)",
                 warnings=["Market closed. Order will be queued for Sunday 5pm ET open."],
@@ -397,9 +399,8 @@ class ForexSessionRouter:
                     spread_multiplier=session_info.spread_multiplier,
                     recommended_delay_sec=None,  # Wait until Monday
                     reason="Large order near weekend. Weekend gap risk too high.",
-                    warnings=warnings + [
-                        "Weekend gaps can be significant. Consider waiting until Monday."
-                    ],
+                    warnings=warnings
+                    + ["Weekend gaps can be significant. Consider waiting until Monday."],
                 )
 
         # Check minimum liquidity
@@ -413,20 +414,17 @@ class ForexSessionRouter:
                 spread_multiplier=session_info.spread_multiplier,
                 recommended_delay_sec=self._seconds_to_optimal_window(),
                 reason=f"Low liquidity session ({session_info.session.value}). "
-                       f"Recommend waiting for higher liquidity.",
+                f"Recommend waiting for higher liquidity.",
                 warnings=[
                     f"Current liquidity factor: {session_info.liquidity_factor:.2f}",
-                    f"Optimal window: {optimal[0]}:00-{optimal[1]}:00 UTC "
-                    f"(London/NY overlap)",
+                    f"Optimal window: {optimal[0]}:00-{optimal[1]}:00 UTC " f"(London/NY overlap)",
                 ],
                 optimal_window_utc=optimal,
             )
 
         # Large order handling
         if size_usd > self.large_order_threshold_usd:
-            warnings.append(
-                f"Large order (${size_usd:,.0f}). Consider splitting or using TWAP."
-            )
+            warnings.append(f"Large order (${size_usd:,.0f}). Consider splitting or using TWAP.")
             # Recommend London/NY overlap for large orders
             if session_info.session not in (
                 ForexSessionType.LONDON,
@@ -447,8 +445,7 @@ class ForexSessionRouter:
             )
         elif session_info.session == ForexSessionType.TOKYO:
             warnings.append(
-                "Tokyo session: Good liquidity for JPY pairs. "
-                "EUR/USD may have wider spreads."
+                "Tokyo session: Good liquidity for JPY pairs. " "EUR/USD may have wider spreads."
             )
 
         # All checks passed - submit

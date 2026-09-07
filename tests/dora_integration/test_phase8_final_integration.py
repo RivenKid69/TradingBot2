@@ -33,11 +33,13 @@ class TestPhase8IntegrationLayerCompleteness:
     def test_version_is_2_0_0(self) -> None:
         """Verify integration layer version is 2.0.0."""
         from services.dora_integration import __version__
+
         assert __version__ == "2.0.0", f"Expected version 2.0.0, got {__version__}"
 
     def test_migration_phase_is_8(self) -> None:
         """Verify migration phase is 8."""
         from services.dora_integration import __migration_phase__
+
         assert __migration_phase__ == 8, f"Expected phase 8, got {__migration_phase__}"
 
     def test_all_subpackages_importable(self) -> None:
@@ -54,8 +56,7 @@ class TestPhase8IntegrationLayerCompleteness:
         for subpackage in subpackages:
             try:
                 module = __import__(
-                    f"services.dora_integration.{subpackage}",
-                    fromlist=[subpackage]
+                    f"services.dora_integration.{subpackage}", fromlist=[subpackage]
                 )
                 assert hasattr(module, "__all__"), f"{subpackage} missing __all__"
                 assert len(module.__all__) > 0, f"{subpackage} has empty __all__"
@@ -70,9 +71,9 @@ class TestPhase8IntegrationLayerCompleteness:
         expected_min_exports = 150  # Conservative estimate
         actual_exports = len(dora_integration.__all__)
 
-        assert actual_exports >= expected_min_exports, (
-            f"Expected at least {expected_min_exports} exports, got {actual_exports}"
-        )
+        assert (
+            actual_exports >= expected_min_exports
+        ), f"Expected at least {expected_min_exports} exports, got {actual_exports}"
 
 
 class TestPhase8DueDiligenceLayer:
@@ -434,6 +435,7 @@ class TestPhase8FacadeIntegrity:
     def test_facade_version(self) -> None:
         """Verify facade version matches integration layer."""
         from services import dora
+
         assert dora.__version__ == "2.1.0", f"Expected 2.1.0, got {dora.__version__}"
 
     def test_facade_reexports_integration(self) -> None:
@@ -488,13 +490,26 @@ class TestPhase8ModuleCount:
     def test_integration_module_count(self) -> None:
         """Verify 21 modules in integration layer."""
         expected_modules = {
-            "due_diligence": ["audit_readiness", "provider_info_package",
-                             "pooled_audit_support", "compliance_dashboard"],
-            "incident_interface": ["client_incident_notification", "incident_classification",
-                                   "incident_reporting", "cyber_threat_notification",
-                                   "communication"],
-            "third_party": ["concentration_risk", "ctpp_oversight", "third_party_risk",
-                           "third_party_incidents", "subcontractor_management"],
+            "due_diligence": [
+                "audit_readiness",
+                "provider_info_package",
+                "pooled_audit_support",
+                "compliance_dashboard",
+            ],
+            "incident_interface": [
+                "client_incident_notification",
+                "incident_classification",
+                "incident_reporting",
+                "cyber_threat_notification",
+                "communication",
+            ],
+            "third_party": [
+                "concentration_risk",
+                "ctpp_oversight",
+                "third_party_risk",
+                "third_party_incidents",
+                "subcontractor_management",
+            ],
             "contracts": ["contractual_requirements", "sla_guardrails", "exit_strategies"],
             "reporting": ["unified_reporting", "reporting_templates", "register_of_information"],
             "sharing": ["information_sharing"],
@@ -523,9 +538,9 @@ class TestPhase8DirectoryCleanup:
         # Get all .py files (excluding __pycache__)
         py_files = [f for f in dora_path.glob("*.py") if f.name != "__init__.py"]
 
-        assert len(py_files) == 0, (
-            f"services/dora/ should only have __init__.py, found: {[f.name for f in py_files]}"
-        )
+        assert (
+            len(py_files) == 0
+        ), f"services/dora/ should only have __init__.py, found: {[f.name for f in py_files]}"
 
     def test_no_duplicate_modules(self) -> None:
         """Verify no duplicate modules exist in services/dora/."""

@@ -254,10 +254,11 @@ All business documentation has been synchronized with Design Doc CCEA Cloud (202
 | docs/CYBERSECURITY_FRAMEWORK.md | §1.1 | CCEA Security Model, Threat Model, CI/CD Guardrails | ✅ Aligned |
 | docs/DATA_PROTECTION_POLICY.md | §1.1 | CCEA Data Protection Model, Telemetry Redaction Pipeline | ✅ Aligned |
 | README.md | Architecture section | CCEA overview, Security Design Commitments, Product Modes | ✅ Aligned |
-| claude.md | §CCEA | Legal Posture, Threat Model, Safe Defaults | ✅ Aligned |
+| `../../PLATFORM_REFERENCE.md` | §CCEA | Legal Posture, Threat Model, Safe Defaults | ✅ Aligned |
 | docs/CCEA_OVERVIEW.md | Full document | Comprehensive CCEA documentation | ✅ Aligned |
 
 **Alignment Criteria Met:**
+
 - All documents reference CCEA architecture
 - Zone separation (Cloud/Agent) documented in all relevant files
 - Security design commitments (no secrets in Cloud, no orders from Cloud) stated consistently
@@ -277,6 +278,7 @@ All business documentation has been synchronized with Design Doc CCEA Cloud (202
 ---
 
 **Document Control:**
+
 - Author: CCEA Architecture Team
 - Last Updated: 2025-12-16
 - All Phases Completed: Phase 1-10, Phase 11 (Docs)

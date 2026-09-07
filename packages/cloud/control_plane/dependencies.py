@@ -235,9 +235,7 @@ def decode_token(token: str) -> Dict[str, Any]:
 
 
 async def get_current_user(
-    credentials: Annotated[
-        Optional[HTTPAuthorizationCredentials], Depends(security)
-    ] = None,
+    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)] = None,
 ) -> CurrentUser:
     """
     Get current authenticated user from JWT token.
@@ -275,6 +273,7 @@ async def get_current_user(
     if jti:
         # Import here to avoid circular import
         from .security.jwt_revocation import is_token_revoked
+
         if is_token_revoked(jti):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -293,9 +292,7 @@ async def get_current_user(
 
 
 async def get_current_agent(
-    credentials: Annotated[
-        Optional[HTTPAuthorizationCredentials], Depends(security)
-    ] = None,
+    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)] = None,
 ) -> CurrentAgent:
     """
     Get current authenticated agent from JWT token.
@@ -336,9 +333,7 @@ async def get_current_agent(
 
 
 async def get_optional_user(
-    credentials: Annotated[
-        Optional[HTTPAuthorizationCredentials], Depends(security)
-    ] = None,
+    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)] = None,
 ) -> Optional[CurrentUser]:
     """
     Get current user if authenticated, None otherwise.

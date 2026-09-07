@@ -29,7 +29,7 @@ def test_version_by_content_hash(store):
     # тот же контент → НЕ новая версия (без дубля)
     v1b = store.write("momentum", df.copy(), asof_ms=2000)
     assert v1b.version == 1
-    assert v1b.asof_ms == 2000              # asof обновился
+    assert v1b.asof_ms == 2000  # asof обновился
     # изменённый контент → v2
     v2 = store.write("momentum", _df(1), asof_ms=3000)
     assert v2.version == 2
@@ -53,8 +53,8 @@ def test_read_latest_version_and_specific(store):
 
 
 def test_asof_read_is_pit(store):
-    store.write("f", _df(0), asof_ms=1000)   # v1 @ asof 1000
-    store.write("f", _df(1), asof_ms=2000)   # v2 @ asof 2000
+    store.write("f", _df(0), asof_ms=1000)  # v1 @ asof 1000
+    store.write("f", _df(1), asof_ms=2000)  # v2 @ asof 2000
     # запрос на дату 1500 → видит только v1 (PIT)
     df_15 = store.read("f", asof_ms=1500)
     assert content_hash(df_15) == content_hash(_df(0))

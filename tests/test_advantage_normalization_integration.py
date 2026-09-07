@@ -8,6 +8,7 @@ following standard PPO practice (OpenAI Baselines, Stable-Baselines3).
 
 import pytest
 import numpy as np
+
 torch = pytest.importorskip("torch")
 
 
@@ -47,8 +48,8 @@ def test_global_normalization_preserves_relative_ordering():
     """
     # Create three groups with different advantage levels
     group_a = np.array([100.0, 110.0, 120.0], dtype=np.float32)  # High
-    group_b = np.array([10.0, 12.0, 14.0], dtype=np.float32)      # Medium
-    group_c = np.array([-5.0, -6.0, -4.0], dtype=np.float32)      # Low
+    group_b = np.array([10.0, 12.0, 14.0], dtype=np.float32)  # Medium
+    group_c = np.array([-5.0, -6.0, -4.0], dtype=np.float32)  # Low
 
     advantages = np.concatenate([group_a, group_b, group_c])
 
@@ -89,10 +90,10 @@ def test_global_normalization_consistency_across_epochs():
 
     # Simulate different groupings (as would happen with different batch sizes)
     # Epoch 1: Groups of 2
-    groups_epoch1 = [advantages_normalized[i:i+2] for i in range(0, 6, 2)]
+    groups_epoch1 = [advantages_normalized[i : i + 2] for i in range(0, 6, 2)]
 
     # Epoch 2: Groups of 3
-    groups_epoch2 = [advantages_normalized[i:i+3] for i in range(0, 6, 3)]
+    groups_epoch2 = [advantages_normalized[i : i + 3] for i in range(0, 6, 3)]
 
     # Verify that the normalized values are the SAME regardless of grouping
     # (This would NOT be true with per-group normalization!)
@@ -103,8 +104,9 @@ def test_global_normalization_consistency_across_epochs():
         epoch1_idx_within = i % 2
         retrieved_epoch1 = groups_epoch1[epoch1_idx_group][epoch1_idx_within]
 
-        assert abs(val - retrieved_epoch1) < 1e-7, \
-            f"Value {i} should be consistent in epoch 1 grouping"
+        assert (
+            abs(val - retrieved_epoch1) < 1e-7
+        ), f"Value {i} should be consistent in epoch 1 grouping"
 
     print("✓ Normalized advantages are consistent across different groupings")
 
@@ -147,32 +149,33 @@ def test_implementation_uses_global_normalization():
     source = inspect.getsource(DistributionalPPO.collect_rollouts)
 
     # Should have global normalization code
-    assert "self.normalize_advantage" in source, \
-        "Should check normalize_advantage flag"
-    assert "advantages_flat = rollout_buffer.advantages.reshape(-1)" in source, \
-        "Should flatten entire buffer for global statistics"
-    assert "np.mean(advantages_flat)" in source, \
-        "Should compute mean over entire buffer"
-    assert "np.std(advantages_flat, ddof=1)" in source, \
-        "Should compute std over entire buffer with ddof=1 for unbiased estimate"
-    assert "rollout_buffer.advantages = " in source, \
-        "Should update buffer with normalized advantages"
+    assert "self.normalize_advantage" in source, "Should check normalize_advantage flag"
+    assert (
+        "advantages_flat = rollout_buffer.advantages.reshape(-1)" in source
+    ), "Should flatten entire buffer for global statistics"
+    assert "np.mean(advantages_flat)" in source, "Should compute mean over entire buffer"
+    assert (
+        "np.std(advantages_flat, ddof=1)" in source
+    ), "Should compute std over entire buffer with ddof=1 for unbiased estimate"
+    assert (
+        "rollout_buffer.advantages = " in source
+    ), "Should update buffer with normalized advantages"
 
     # Check train() does NOT have per-group normalization
     train_source = inspect.getsource(DistributionalPPO.train)
 
     # Should NOT compute per-group statistics
-    assert "group_advantages_for_stats" not in train_source, \
-        "Should NOT collect advantages for per-group statistics"
-    assert "group_adv_mean = " not in train_source, \
-        "Should NOT compute per-group mean"
-    assert "group_adv_std = " not in train_source, \
-        "Should NOT compute per-group std"
+    assert (
+        "group_advantages_for_stats" not in train_source
+    ), "Should NOT collect advantages for per-group statistics"
+    assert "group_adv_mean = " not in train_source, "Should NOT compute per-group mean"
+    assert "group_adv_std = " not in train_source, "Should NOT compute per-group std"
 
     # Should have comment about global normalization
-    assert "already normalized globally" in train_source.lower() or \
-           "already globally normalized" in train_source.lower(), \
-        "Should document that advantages are already normalized"
+    assert (
+        "already normalized globally" in train_source.lower()
+        or "already globally normalized" in train_source.lower()
+    ), "Should document that advantages are already normalized"
 
     print("✓ Implementation uses global normalization correctly")
 
@@ -199,15 +202,18 @@ def test_no_per_group_statistics_in_train():
     relevant_section = source[loop_start:grad_step_idx]
 
     # Should NOT see advantage normalization in this section
-    assert "advantages_selected_raw - " not in relevant_section or \
-           "group_adv_mean" not in relevant_section, \
-        "Should NOT normalize advantages during training loop"
+    assert (
+        "advantages_selected_raw - " not in relevant_section
+        or "group_adv_mean" not in relevant_section
+    ), "Should NOT normalize advantages during training loop"
 
-    assert "advantages.mean()" not in relevant_section, \
-        "Should NOT compute advantage mean in training loop"
+    assert (
+        "advantages.mean()" not in relevant_section
+    ), "Should NOT compute advantage mean in training loop"
 
-    assert "advantages.std(" not in relevant_section, \
-        "Should NOT compute advantage std in training loop"
+    assert (
+        "advantages.std(" not in relevant_section
+    ), "Should NOT compute advantage std in training loop"
 
     print("✓ No per-group statistics computation in train()")
 
@@ -222,11 +228,9 @@ def test_consistency_with_stable_baselines3_approach():
     Then used as-is during training.
     """
     # Simulate SB3 approach
-    advantages = np.array([
-        [50.0, 60.0, 70.0],
-        [10.0, 15.0, 20.0],
-        [-5.0, -10.0, -15.0]
-    ], dtype=np.float32)
+    advantages = np.array(
+        [[50.0, 60.0, 70.0], [10.0, 15.0, 20.0], [-5.0, -10.0, -15.0]], dtype=np.float32
+    )
 
     # SB3: normalize entire buffer once
     mean = float(np.mean(advantages))

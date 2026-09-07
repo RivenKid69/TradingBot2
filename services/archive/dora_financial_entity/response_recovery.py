@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class IncidentSeverity(Enum):
     """Incident severity levels."""
+
     P1_CRITICAL = "p1_critical"  # Critical business impact
     P2_HIGH = "p2_high"  # Significant impact
     P3_MEDIUM = "p3_medium"  # Moderate impact
@@ -52,6 +54,7 @@ class IncidentSeverity(Enum):
 
 class IncidentStatus(Enum):
     """Incident lifecycle status."""
+
     NEW = "new"
     TRIAGED = "triaged"
     INVESTIGATING = "investigating"
@@ -65,6 +68,7 @@ class IncidentStatus(Enum):
 
 class IncidentCategory(Enum):
     """ICT incident categories per DORA."""
+
     CYBER_ATTACK = "cyber_attack"
     SYSTEM_FAILURE = "system_failure"
     DATA_BREACH = "data_breach"
@@ -79,6 +83,7 @@ class IncidentCategory(Enum):
 
 class EscalationLevel(Enum):
     """Escalation levels."""
+
     L1_OPERATIONS = "l1_operations"
     L2_ENGINEERING = "l2_engineering"
     L3_MANAGEMENT = "l3_management"
@@ -88,6 +93,7 @@ class EscalationLevel(Enum):
 
 class CrisisStatus(Enum):
     """Crisis status."""
+
     STANDBY = "standby"
     ACTIVATED = "activated"
     ESCALATED = "escalated"
@@ -97,6 +103,7 @@ class CrisisStatus(Enum):
 
 class RecoveryStatus(Enum):
     """Recovery operation status."""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -108,6 +115,7 @@ class RecoveryStatus(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ICTIncident:
     """
@@ -115,6 +123,7 @@ class ICTIncident:
 
     Documents ICT-related incidents requiring response.
     """
+
     incident_id: str = ""
     title: str = ""
     description: str = ""
@@ -217,6 +226,7 @@ class ResponseProcedure:
     """
     Incident response procedure.
     """
+
     procedure_id: str = ""
     name: str = ""
     description: str = ""
@@ -257,6 +267,7 @@ class EscalationRule:
     """
     Escalation rule definition.
     """
+
     rule_id: str = ""
     name: str = ""
     description: str = ""
@@ -288,6 +299,7 @@ class CrisisEvent:
     """
     Crisis event record.
     """
+
     crisis_id: str = ""
     title: str = ""
     description: str = ""
@@ -332,6 +344,7 @@ class RecoveryAction:
     """
     Recovery action record.
     """
+
     action_id: str = ""
     incident_id: str = ""
     action_type: str = ""  # "restore", "failover", "rebuild", "workaround"
@@ -367,9 +380,11 @@ class RecoveryAction:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ResponseRecoveryConfig:
     """Configuration for Response and Recovery module."""
+
     # Response times (target in minutes)
     target_response_time_p1_minutes: int = 15
     target_response_time_p2_minutes: int = 30
@@ -404,6 +419,7 @@ class ResponseRecoveryConfig:
 # =============================================================================
 # Main Response and Recovery Class
 # =============================================================================
+
 
 class DORAResponseRecovery:
     """
@@ -508,9 +524,9 @@ class DORAResponseRecovery:
 
         # Determine if reportable
         incident.is_reportable = (
-            severity == IncidentSeverity.P1_CRITICAL or
-            category == IncidentCategory.CYBER_ATTACK or
-            category == IncidentCategory.DATA_BREACH
+            severity == IncidentSeverity.P1_CRITICAL
+            or category == IncidentCategory.CYBER_ATTACK
+            or category == IncidentCategory.DATA_BREACH
         )
 
         incident.regulatory_notification_required = (
@@ -524,12 +540,15 @@ class DORAResponseRecovery:
         if severity == self.config.crisis_activation_threshold:
             self._consider_crisis_activation(incident)
 
-        self._log_event("incident_created", {
-            "incident_id": incident.incident_id,
-            "title": title,
-            "severity": severity.value,
-            "category": category.value,
-        })
+        self._log_event(
+            "incident_created",
+            {
+                "incident_id": incident.incident_id,
+                "title": title,
+                "severity": severity.value,
+                "category": category.value,
+            },
+        )
 
         logger.warning(f"Incident created: {incident.incident_id} - {title} ({severity.value})")
         return incident
@@ -552,10 +571,13 @@ class DORAResponseRecovery:
             incident.incident_commander = incident_commander
             incident.last_updated = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("response_started", {
-            "incident_id": incident_id,
-            "responders": responders,
-        })
+        self._log_event(
+            "response_started",
+            {
+                "incident_id": incident_id,
+                "responders": responders,
+            },
+        )
 
         return incident
 
@@ -575,10 +597,13 @@ class DORAResponseRecovery:
             incident.containment_actions = containment_actions or []
             incident.last_updated = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("incident_contained", {
-            "incident_id": incident_id,
-            "containment_actions": containment_actions,
-        })
+        self._log_event(
+            "incident_contained",
+            {
+                "incident_id": incident_id,
+                "containment_actions": containment_actions,
+            },
+        )
 
         return incident
 
@@ -602,10 +627,13 @@ class DORAResponseRecovery:
             incident.root_cause_category = root_cause_category
             incident.last_updated = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("incident_resolved", {
-            "incident_id": incident_id,
-            "root_cause": root_cause,
-        })
+        self._log_event(
+            "incident_resolved",
+            {
+                "incident_id": incident_id,
+                "root_cause": root_cause,
+            },
+        )
 
         return incident
 
@@ -641,7 +669,8 @@ class DORAResponseRecovery:
         """Get all open incidents."""
         with self._lock:
             return [
-                i for i in self._incidents.values()
+                i
+                for i in self._incidents.values()
                 if i.status not in (IncidentStatus.RESOLVED, IncidentStatus.CLOSED)
             ]
 
@@ -706,21 +735,27 @@ class DORAResponseRecovery:
         # Notify
         if self.config.notification_callback:
             try:
-                self.config.notification_callback("incident_escalated", {
-                    "incident_id": incident_id,
-                    "from_level": from_level.value,
-                    "to_level": to_level.value,
-                    "reason": reason,
-                })
+                self.config.notification_callback(
+                    "incident_escalated",
+                    {
+                        "incident_id": incident_id,
+                        "from_level": from_level.value,
+                        "to_level": to_level.value,
+                        "reason": reason,
+                    },
+                )
             except Exception as e:
                 logger.error(f"Escalation notification failed: {e}")
 
-        self._log_event("incident_escalated", {
-            "incident_id": incident_id,
-            "from_level": from_level.value,
-            "to_level": to_level.value,
-            "reason": reason,
-        })
+        self._log_event(
+            "incident_escalated",
+            {
+                "incident_id": incident_id,
+                "from_level": from_level.value,
+                "to_level": to_level.value,
+                "reason": reason,
+            },
+        )
 
         logger.warning(f"Incident {incident_id} escalated to {to_level.value}")
         return incident
@@ -798,18 +833,24 @@ class DORAResponseRecovery:
         # Notify
         if self.config.notification_callback:
             try:
-                self.config.notification_callback("crisis_activated", {
-                    "crisis_id": crisis.crisis_id,
-                    "title": title,
-                    "commander": crisis_commander,
-                })
+                self.config.notification_callback(
+                    "crisis_activated",
+                    {
+                        "crisis_id": crisis.crisis_id,
+                        "title": title,
+                        "commander": crisis_commander,
+                    },
+                )
             except Exception as e:
                 logger.error(f"Crisis notification failed: {e}")
 
-        self._log_event("crisis_activated", {
-            "crisis_id": crisis.crisis_id,
-            "title": title,
-        })
+        self._log_event(
+            "crisis_activated",
+            {
+                "crisis_id": crisis.crisis_id,
+                "title": title,
+            },
+        )
 
         logger.critical(f"CRISIS ACTIVATED: {crisis.crisis_id} - {title}")
         return crisis
@@ -826,11 +867,13 @@ class DORAResponseRecovery:
                 return None
 
             crisis = self._crises[crisis_id]
-            crisis.actions_taken.append({
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "action": action_description,
-                "by": action_by,
-            })
+            crisis.actions_taken.append(
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "action": action_description,
+                    "by": action_by,
+                }
+            )
 
         return crisis
 
@@ -847,12 +890,14 @@ class DORAResponseRecovery:
                 return None
 
             crisis = self._crises[crisis_id]
-            crisis.decisions_made.append({
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "decision": decision,
-                "decided_by": decided_by,
-                "rationale": rationale,
-            })
+            crisis.decisions_made.append(
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "decision": decision,
+                    "decided_by": decided_by,
+                    "rationale": rationale,
+                }
+            )
 
         return crisis
 
@@ -873,10 +918,13 @@ class DORAResponseRecovery:
             crisis.deactivated_by = deactivated_by
             crisis.resolution_summary = resolution_summary
 
-        self._log_event("crisis_deactivated", {
-            "crisis_id": crisis_id,
-            "resolution_summary": resolution_summary,
-        })
+        self._log_event(
+            "crisis_deactivated",
+            {
+                "crisis_id": crisis_id,
+                "resolution_summary": resolution_summary,
+            },
+        )
 
         logger.info(f"Crisis deactivated: {crisis_id}")
         return crisis
@@ -892,9 +940,7 @@ class DORAResponseRecovery:
     def _consider_crisis_activation(self, incident: ICTIncident) -> None:
         """Consider if crisis should be activated for an incident."""
         if incident.severity == IncidentSeverity.P1_CRITICAL:
-            logger.warning(
-                f"P1 incident {incident.incident_id} may require crisis activation"
-            )
+            logger.warning(f"P1 incident {incident.incident_id} may require crisis activation")
 
     # =========================================================================
     # Recovery Management
@@ -989,10 +1035,13 @@ class DORAResponseRecovery:
             action.status = RecoveryStatus.ROLLED_BACK
             action.rollback_executed = True
 
-        self._log_event("recovery_rolled_back", {
-            "action_id": action_id,
-            "reason": rollback_reason,
-        })
+        self._log_event(
+            "recovery_rolled_back",
+            {
+                "action_id": action_id,
+                "reason": rollback_reason,
+            },
+        )
 
         return action
 
@@ -1018,11 +1067,14 @@ class DORAResponseRecovery:
             incident.status = IncidentStatus.POST_INCIDENT
             incident.last_updated = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("post_incident_review_completed", {
-            "incident_id": incident_id,
-            "lessons_count": len(lessons_learned or []),
-            "improvements_count": len(improvement_actions or []),
-        })
+        self._log_event(
+            "post_incident_review_completed",
+            {
+                "incident_id": incident_id,
+                "lessons_count": len(lessons_learned or []),
+                "improvements_count": len(improvement_actions or []),
+            },
+        )
 
         return incident
 
@@ -1030,9 +1082,9 @@ class DORAResponseRecovery:
         """Get incidents pending post-incident review."""
         with self._lock:
             return [
-                i for i in self._incidents.values()
-                if i.status == IncidentStatus.RESOLVED
-                and not i.post_incident_review_completed
+                i
+                for i in self._incidents.values()
+                if i.status == IncidentStatus.RESOLVED and not i.post_incident_review_completed
             ]
 
     # =========================================================================
@@ -1046,20 +1098,20 @@ class DORAResponseRecovery:
             open_incidents = self.get_open_incidents()
 
             # Calculate metrics
-            resolved_incidents = [
-                i for i in all_incidents if i.resolution_time
-            ]
+            resolved_incidents = [i for i in all_incidents if i.resolution_time]
 
             avg_response_time = None
             avg_resolution_time = None
 
             if resolved_incidents:
                 response_times = [
-                    i.time_to_respond_minutes for i in resolved_incidents
+                    i.time_to_respond_minutes
+                    for i in resolved_incidents
                     if i.time_to_respond_minutes is not None
                 ]
                 resolution_times = [
-                    i.time_to_resolve_minutes for i in resolved_incidents
+                    i.time_to_resolve_minutes
+                    for i in resolved_incidents
                     if i.time_to_resolve_minutes is not None
                 ]
 
@@ -1099,7 +1151,8 @@ class DORAResponseRecovery:
                 "recovery_actions": {
                     "total": len(self._recovery_actions),
                     "in_progress": sum(
-                        1 for a in self._recovery_actions.values()
+                        1
+                        for a in self._recovery_actions.values()
                         if a.status == RecoveryStatus.IN_PROGRESS
                     ),
                 },
@@ -1145,6 +1198,7 @@ class DORAResponseRecovery:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_response_recovery(
     config: Optional[ResponseRecoveryConfig] = None,

@@ -28,6 +28,7 @@ __all__ = [
 ]
 
 import logging  # stdlib (no local 'logging' module shadows it); frozen-bundle safe
+
 seasonality_logger = logging.getLogger("seasonality").getChild(__name__)
 
 # Clamp limits applied to liquidity and latency seasonality multipliers.
@@ -189,9 +190,7 @@ def load_hourly_seasonality(
         with open(path, "rb") as f:
             raw = f.read()
         digest = hashlib.sha256(raw).hexdigest()
-        seasonality_logger.info(
-            "Loaded seasonality multipliers from %s (sha256=%s)", path, digest
-        )
+        seasonality_logger.info("Loaded seasonality multipliers from %s (sha256=%s)", path, digest)
         if expected_hash and digest.lower() != expected_hash.lower():
             seasonality_logger.warning(
                 "Seasonality hash mismatch for %s: expected %s got %s",
@@ -258,9 +257,7 @@ def load_seasonality(path: str) -> Dict[str, np.ndarray]:
         with open(path, "rb") as f:
             raw = f.read()
         digest = hashlib.sha256(raw).hexdigest()
-        seasonality_logger.info(
-            "Loaded seasonality multipliers from %s (sha256=%s)", path, digest
-        )
+        seasonality_logger.info("Loaded seasonality multipliers from %s (sha256=%s)", path, digest)
         data = json.loads(raw.decode("utf-8"))
     except FileNotFoundError:
         raise
@@ -275,17 +272,11 @@ def load_seasonality(path: str) -> Dict[str, np.ndarray]:
             if key in obj:
                 arr = _coerce_seasonality_payload(obj[key])
                 if arr is None:
-                    raise ValueError(
-                        "Seasonality array '%s' must be a sequence or mapping" % key
-                    )
+                    raise ValueError("Seasonality array '%s' must be a sequence or mapping" % key)
                 if arr.shape[0] not in (HOURS_IN_WEEK, 7):
-                    raise ValueError(
-                        "Seasonality array '%s' must have length 168 or 7" % key
-                    )
+                    raise ValueError("Seasonality array '%s' must have length 168 or 7" % key)
                 if np.any(arr <= 0):
-                    raise ValueError(
-                        "Seasonality array '%s' must contain positive values" % key
-                    )
+                    raise ValueError("Seasonality array '%s' must contain positive values" % key)
                 if key in {"liquidity", "latency"}:
                     arr = np.clip(arr, SEASONALITY_MULT_MIN, SEASONALITY_MULT_MAX)
                 res[key] = arr
@@ -354,9 +345,7 @@ def watch_seasonality_file(
                         last_data = data
                         last_mtime = mtime
             except Exception:
-                seasonality_logger.exception(
-                    "Error while watching seasonality file %s", path
-                )
+                seasonality_logger.exception("Error while watching seasonality file %s", path)
             time.sleep(float(poll_interval))
 
     t = threading.Thread(target=_loop, daemon=True)
@@ -450,9 +439,7 @@ def parse_time_to_ms(s: str) -> int:
     if zs.lower() in ("now",):
         return int(datetime.now(tz=timezone.utc).timestamp() * 1000)
     if zs.lower() in ("today",):
-        dt = datetime.now(tz=timezone.utc).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        dt = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         return int(dt.timestamp() * 1000)
     if zs.isdigit():
         v = int(zs)

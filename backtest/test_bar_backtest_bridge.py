@@ -72,7 +72,9 @@ def _bar_bridge_cls(monkeypatch: pytest.MonkeyPatch) -> type[Any]:
     def _load_specs(*_args: Any, **_kwargs: Any) -> tuple[dict, dict]:  # pragma: no cover - stub
         return {}, {}
 
-    def _round_price_to_tick(price: float, _tick: float, *_args: Any, **_kwargs: Any) -> float:  # pragma: no cover - stub
+    def _round_price_to_tick(
+        price: float, _tick: float, *_args: Any, **_kwargs: Any
+    ) -> float:  # pragma: no cover - stub
         return float(price)
 
     specs_mod.load_specs = _load_specs  # type: ignore[attr-defined]
@@ -158,9 +160,7 @@ def test_orders_attach_bar_payload_and_track_costs(bar_bridge_cls: type[Any]) ->
     assert first_report["bar_cost_usd"] == pytest.approx(cost_usd)
     assert first_report["fee_total"] == pytest.approx(cost_usd)
     assert bridge._cum_cost_usd == pytest.approx(cost_usd)  # type: ignore[attr-defined]
-    assert first_report["instructions"] == [
-        {"kind": "rebalance", "slices_total": 1}
-    ]
+    assert first_report["instructions"] == [{"kind": "rebalance", "slices_total": 1}]
 
     executor.queue_execute_meta(
         {
@@ -181,17 +181,11 @@ def test_orders_attach_bar_payload_and_track_costs(bar_bridge_cls: type[Any]) ->
     assert executor.seen_orders == [order_one, order_two]
     second_cost = 150.0 * 10.0 / 10_000.0
     assert second_report["bar_pnl"] == pytest.approx(-second_cost)
-    assert second_report["equity_before_costs"] == pytest.approx(
-        first_report["equity"]
-    )
+    assert second_report["equity_before_costs"] == pytest.approx(first_report["equity"])
     assert second_report["equity"] == pytest.approx(500.0 - cost_usd - second_cost)
     assert bridge._cum_cost_usd == pytest.approx(cost_usd + second_cost)  # type: ignore[attr-defined]
-    assert second_report["cumulative_pnl"] == pytest.approx(
-        -cost_usd - second_cost
-    )
-    assert second_report["instructions"] == [
-        {"kind": "twap", "slices_total": 2}
-    ]
+    assert second_report["cumulative_pnl"] == pytest.approx(-cost_usd - second_cost)
+    assert second_report["instructions"] == [{"kind": "twap", "slices_total": 2}]
 
 
 def test_apply_exchange_rules_preserves_side_enum(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -373,7 +367,9 @@ def test_missing_price_skips_execution(bar_bridge_cls: type[Any]) -> None:
         [0.0, 3.0, 0.0],
     ],
 )
-def test_position_quantity_fallback_updates(bar_bridge_cls: type[Any], qty_sequence: Sequence[float]) -> None:
+def test_position_quantity_fallback_updates(
+    bar_bridge_cls: type[Any], qty_sequence: Sequence[float]
+) -> None:
     symbol = "BNBUSDT"
     executor = _StubBarExecutor(symbol)
     bridge = bar_bridge_cls(

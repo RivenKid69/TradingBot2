@@ -19,6 +19,7 @@ This affects:
 import math
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 
@@ -49,9 +50,13 @@ class TestQuantileLevelsBug:
         max_diff = np.max(np.abs(actual_taus - expected_taus))
         print(f"\nQuantile Levels Formula Mismatch (N={N}):")
         print(f"τ₀: {actual_taus[0]:.6f} (actual) vs {expected_taus[0]:.6f} (expected)")
-        print(f"    Difference: {(actual_taus[0] - expected_taus[0]) / expected_taus[0] * 100:.2f}%")
+        print(
+            f"    Difference: {(actual_taus[0] - expected_taus[0]) / expected_taus[0] * 100:.2f}%"
+        )
         print(f"τ₂₀: {actual_taus[-1]:.6f} (actual) vs {expected_taus[-1]:.6f} (expected)")
-        print(f"    Difference: {(actual_taus[-1] - expected_taus[-1]) / expected_taus[-1] * 100:.2f}%")
+        print(
+            f"    Difference: {(actual_taus[-1] - expected_taus[-1]) / expected_taus[-1] * 100:.2f}%"
+        )
         print(f"Max absolute difference: {max_diff:.6f}")
 
         # ASSERTION: Verify mismatch exists (4-5% at extremes)
@@ -97,7 +102,7 @@ class TestQuantileLevelsBug:
         expected_alpha_idx = max(0, int(math.floor(expected_alpha_idx_float)))  # 0
 
         # Find actual index where tau > alpha
-        actual_alpha_idx = np.searchsorted(actual_taus, alpha, side='right') - 1
+        actual_alpha_idx = np.searchsorted(actual_taus, alpha, side="right") - 1
         actual_alpha_idx = max(0, actual_alpha_idx)
 
         print(f"\nCVaR Index Computation (α={alpha}, N={N}):")
@@ -108,7 +113,9 @@ class TestQuantileLevelsBug:
 
         # For alpha=0.05, actual_taus[0]=0.02273 < 0.05 < actual_taus[1]=0.06818
         # So CVaR should use quantiles 0 and 1 for interpolation
-        assert actual_taus[0] < alpha < actual_taus[1], "Alpha should fall between first two quantiles"
+        assert (
+            actual_taus[0] < alpha < actual_taus[1]
+        ), "Alpha should fall between first two quantiles"
 
     @pytest.mark.parametrize("alpha", [0.01, 0.05, 0.10, 0.25])
     def test_cvar_bias_for_different_alphas(self, alpha):
@@ -244,11 +251,13 @@ class TestCVaRComputationWithBug:
 
         # Create synthetic quantile predictions (standard normal quantiles)
         from scipy.stats import norm
+
         expected_taus = (np.arange(N) + 0.5) / N
         true_quantile_values = torch.tensor(
-            [norm.ppf(tau) for tau in expected_taus],
-            dtype=torch.float32
-        ).unsqueeze(0)  # [1, N]
+            [norm.ppf(tau) for tau in expected_taus], dtype=torch.float32
+        ).unsqueeze(
+            0
+        )  # [1, N]
 
         # CVaR code's logic (simplified)
         alpha_idx_float = alpha * N - 0.5  # 0.05 * 21 - 0.5 = 0.55

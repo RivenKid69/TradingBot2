@@ -49,6 +49,7 @@
 ```
 
 **Notes:**
+
 - Token имеет TTL (например, 1 час)
 - Private key никогда не покидает Agent
 - Cloud хранит только public key
@@ -129,6 +130,7 @@
 ```
 
 **Notes:**
+
 - REQUEST_START_RUN всегда требует local approve
 - Agent тянет артефакт только по digest
 - Signature verification обязательна
@@ -200,6 +202,7 @@
 ```
 
 **Notes:**
+
 - Upgrade = TRADING_IMPACTING → требует approve
 - Agent показывает diff (версия, конфиг, risk profile)
 - Graceful stop старой версии перед запуском новой
@@ -241,6 +244,7 @@
 ```
 
 **Notes:**
+
 - Stop/Pause = safety operations → не требуют approve
 - Agent немедленно исполняет
 - Cancel open orders включен в stop flow
@@ -300,6 +304,7 @@
 ```
 
 **Notes:**
+
 - Rotation требует local approval
 - Новый ключ генерируется локально
 - Старый ключ удаляется после подтверждения
@@ -364,6 +369,7 @@
 ```
 
 **Notes:**
+
 - Export = DATA_SENSITIVE → требует approval + reason
 - Redaction ОБЯЗАТЕЛЬНА и не может быть отключена
 - Событие экспорта логируется в audit trail
@@ -424,6 +430,7 @@
 ```
 
 **Notes:**
+
 - Kill switch = автономное действие Agent
 - Flatten только если разрешено local policy
 - Cloud получает уведомление, но не контролирует
@@ -481,6 +488,7 @@
 ```
 
 **Notes:**
+
 - Heartbeat: ~30 секунд
 - Telemetry: настраиваемая частота
 - Redaction всегда применяется
@@ -557,6 +565,7 @@
 ```
 
 **Notes:**
+
 - Preflight выполняется перед каждым start/upgrade
 - Все проверки локальные
 - Broker connectivity проверяется без раскрытия секретов в Cloud
@@ -565,6 +574,7 @@
 ---
 
 **Document Control:**
+
 - Author: CCEA Architecture Team
 - Last Updated: 2025-12-16
 - Implementation Status: **Implementation aligns with Design Doc specifications**

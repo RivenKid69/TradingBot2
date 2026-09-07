@@ -134,6 +134,7 @@ from impl_exercise_probability import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def standard_params():
     """Standard option parameters for testing."""
@@ -188,13 +189,14 @@ def dividend_schedule():
     """Standard dividend schedule."""
     return DividendSchedule(
         ex_dates=[0.1, 0.2],  # 0.1 and 0.2 years from now
-        amounts=[1.0, 1.0],   # $1 each
+        amounts=[1.0, 1.0],  # $1 each
     )
 
 
 # =============================================================================
 # GREEKS TESTS (50 tests)
 # =============================================================================
+
 
 class TestScalarGreeks:
     """Test scalar Greeks calculations."""
@@ -404,9 +406,7 @@ class TestVectorizedGreeks:
         vols = np.full(n, standard_params["volatility"])
         is_calls = np.ones(n, dtype=bool)
 
-        result = compute_all_greeks_batch(
-            spots, strikes, times, rates, yields_, vols, is_calls
-        )
+        result = compute_all_greeks_batch(spots, strikes, times, rates, yields_, vols, is_calls)
 
         assert isinstance(result, BatchGreeksResult)
         assert len(result.delta) == n
@@ -480,9 +480,7 @@ class TestVectorizedGreeks:
         vols = np.random.uniform(0.1, 0.5, n)
         is_calls = np.random.choice([True, False], n)
 
-        result = compute_all_greeks_batch(
-            spots, strikes, times, rates, yields_, vols, is_calls
-        )
+        result = compute_all_greeks_batch(spots, strikes, times, rates, yields_, vols, is_calls)
 
         assert result.n_options == n
         assert len(result.delta) == n
@@ -522,6 +520,7 @@ class TestVectorizedGreeks:
 # =============================================================================
 # PRICING TESTS (40 tests)
 # =============================================================================
+
 
 class TestBlackScholesPricing:
     """Test Black-Scholes pricing."""
@@ -626,7 +625,9 @@ class TestBinomialPricing:
     def test_crr_matches_bs_at_limit(self, standard_params):
         """CRR should converge to BS with many steps."""
         bs_price = black_scholes_price(**standard_params, is_call=True)
-        crr_price = crr_binomial_price(**standard_params, is_call=True, is_american=False, n_steps=500)
+        crr_price = crr_binomial_price(
+            **standard_params, is_call=True, is_american=False, n_steps=500
+        )
         assert abs(crr_price - bs_price) < 0.05
 
     def test_lr_second_order_convergence(self, standard_params):
@@ -634,7 +635,9 @@ class TestBinomialPricing:
         bs_price = black_scholes_price(**standard_params, is_call=True)
 
         lr_51 = leisen_reimer_price(**standard_params, is_call=True, is_american=False, n_steps=51)
-        lr_101 = leisen_reimer_price(**standard_params, is_call=True, is_american=False, n_steps=101)
+        lr_101 = leisen_reimer_price(
+            **standard_params, is_call=True, is_american=False, n_steps=101
+        )
 
         error_51 = abs(lr_51 - bs_price)
         error_101 = abs(lr_101 - bs_price)
@@ -693,12 +696,8 @@ class TestJumpDiffusionPricing:
 
     def test_jd_put_call_parity(self, standard_params, jump_params):
         """Put-call parity should approximately hold for JD."""
-        call = merton_jump_diffusion_price(
-            **standard_params, is_call=True, jump_params=jump_params
-        )
-        put = merton_jump_diffusion_price(
-            **standard_params, is_call=False, jump_params=jump_params
-        )
+        call = merton_jump_diffusion_price(**standard_params, is_call=True, jump_params=jump_params)
+        put = merton_jump_diffusion_price(**standard_params, is_call=False, jump_params=jump_params)
 
         S = standard_params["spot"]
         K = standard_params["strike"]
@@ -733,6 +732,7 @@ class TestUnifiedPricingInterface:
 # =============================================================================
 # IV CALCULATION TESTS (30 tests)
 # =============================================================================
+
 
 class TestIVCalculation:
     """Test implied volatility calculation."""
@@ -891,10 +891,12 @@ class TestIVCalculation:
         is_calls = np.ones(n, dtype=bool)
 
         # Generate prices
-        prices = np.array([
-            black_scholes_price(s, k, t, r, y, v, True)
-            for s, k, t, r, y, v in zip(spots, strikes, times, rates, yields_, true_vols)
-        ])
+        prices = np.array(
+            [
+                black_scholes_price(s, k, t, r, y, v, True)
+                for s, k, t, r, y, v in zip(spots, strikes, times, rates, yields_, true_vols)
+            ]
+        )
 
         ivs, errors, converged = calculate_iv_batch(
             prices, spots, strikes, times, rates, yields_, is_calls
@@ -993,6 +995,7 @@ class TestIVSolverAlgorithms:
 # JUMP CALIBRATION TESTS (25 tests)
 # =============================================================================
 
+
 class TestJumpCalibration:
     """Test jump parameter calibration."""
 
@@ -1001,7 +1004,7 @@ class TestJumpCalibration:
         np.random.seed(42)
         # Simulate jump-diffusion returns
         n = 500
-        dt = 1/252
+        dt = 1 / 252
         sigma = 0.2
         lambda_ = 2.0
         mu_j = -0.03
@@ -1028,7 +1031,7 @@ class TestJumpCalibration:
         """MLE calibration should work."""
         np.random.seed(42)
         n = 500
-        dt = 1/252
+        dt = 1 / 252
         returns = np.random.normal(0, 0.01, n)
 
         result = calibrate_from_mle(returns, dt)
@@ -1046,12 +1049,12 @@ class TestJumpCalibration:
         is_calls = np.array([True, True, True, True, True])
 
         # Generate "market" prices
-        prices = np.array([
-            merton_jump_diffusion_price(
-                spot, k, t, 0.05, 0.02, 0.20, True, true_params
-            )
-            for k, t in zip(strikes, maturities)
-        ])
+        prices = np.array(
+            [
+                merton_jump_diffusion_price(spot, k, t, 0.05, 0.02, 0.20, True, true_params)
+                for k, t in zip(strikes, maturities)
+            ]
+        )
 
         result = calibrate_from_options(
             option_prices=prices,
@@ -1094,14 +1097,16 @@ class TestJumpCalibration:
         strikes = np.array([95, 100, 105])
         maturities = np.array([0.25, 0.25, 0.25])
         is_calls = np.array([True, True, True])
-        prices = np.array([
-            black_scholes_price(spot, k, t, 0.05, 0.02, 0.25, True)
-            for k, t in zip(strikes, maturities)
-        ])
+        prices = np.array(
+            [
+                black_scholes_price(spot, k, t, 0.05, 0.02, 0.25, True)
+                for k, t in zip(strikes, maturities)
+            ]
+        )
 
         cal_input = CalibrationInput(
             returns=returns,
-            dt=1/252,
+            dt=1 / 252,
             option_prices=prices,
             strikes=strikes,
             maturities=maturities,
@@ -1126,7 +1131,7 @@ class TestJumpCalibration:
         result = calibrator.calibrate(
             method=CalibrationMethod.HISTORICAL_MOMENTS,
             returns=returns,
-            dt=1/252,
+            dt=1 / 252,
         )
 
         assert result.converged
@@ -1137,6 +1142,7 @@ class TestJumpCalibration:
 # =============================================================================
 # DISCRETE DIVIDENDS TESTS (25 tests)
 # =============================================================================
+
 
 class TestDiscreteDividends:
     """Test discrete dividend handling."""
@@ -1291,6 +1297,7 @@ class TestDiscreteDividends:
 # EXERCISE PROBABILITY TESTS (30 tests)
 # =============================================================================
 
+
 class TestExerciseProbability:
     """Test early exercise probability calculations."""
 
@@ -1397,7 +1404,9 @@ class TestExerciseProbability:
 
         if result.exercise_boundary is not None:
             assert len(result.exercise_boundary.times) > 0
-            assert len(result.exercise_boundary.boundary_prices) == len(result.exercise_boundary.times)
+            assert len(result.exercise_boundary.boundary_prices) == len(
+                result.exercise_boundary.times
+            )
 
     def test_ls_different_basis_functions(self, standard_params):
         """Different basis functions should produce similar results."""
@@ -1512,6 +1521,7 @@ class TestExerciseProbability:
 # INTEGRATION TESTS
 # =============================================================================
 
+
 class TestIntegration:
     """Integration tests across components."""
 
@@ -1587,6 +1597,7 @@ class TestIntegration:
 # =============================================================================
 # EDGE CASES AND ERROR HANDLING
 # =============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and error handling."""
@@ -1683,9 +1694,7 @@ class TestEdgeCases:
         vols = np.array([])
         is_calls = np.array([], dtype=bool)
 
-        result = compute_all_greeks_batch(
-            spots, strikes, times, rates, yields_, vols, is_calls
-        )
+        result = compute_all_greeks_batch(spots, strikes, times, rates, yields_, vols, is_calls)
 
         assert result.n_options == 0
 
@@ -1693,6 +1702,7 @@ class TestEdgeCases:
 # =============================================================================
 # PERFORMANCE TESTS
 # =============================================================================
+
 
 class TestPerformance:
     """Performance regression tests."""
@@ -1709,10 +1719,9 @@ class TestPerformance:
         is_calls = np.random.choice([True, False], n)
 
         import time
+
         start = time.perf_counter()
-        result = compute_all_greeks_batch(
-            spots, strikes, times, rates, yields_, vols, is_calls
-        )
+        result = compute_all_greeks_batch(spots, strikes, times, rates, yields_, vols, is_calls)
         elapsed = time.perf_counter() - start
 
         # Should complete in reasonable time (< 1 second for 1000 options)
@@ -1730,12 +1739,15 @@ class TestPerformance:
         vols = np.full(n, 0.25)
         is_calls = np.ones(n, dtype=bool)
 
-        prices = np.array([
-            black_scholes_price(s, k, t, r, y, v, True)
-            for s, k, t, r, y, v in zip(spots, strikes, times, rates, yields_, vols)
-        ])
+        prices = np.array(
+            [
+                black_scholes_price(s, k, t, r, y, v, True)
+                for s, k, t, r, y, v in zip(spots, strikes, times, rates, yields_, vols)
+            ]
+        )
 
         import time
+
         start = time.perf_counter()
         ivs, _, converged = calculate_iv_batch(
             prices, spots, strikes, times, rates, yields_, is_calls
@@ -1749,6 +1761,7 @@ class TestPerformance:
 # =============================================================================
 # CONTRACT SPECS AND ENUMS TESTS
 # =============================================================================
+
 
 class TestContractSpecs:
     """Test contract specifications and enums."""
@@ -1771,6 +1784,7 @@ class TestContractSpecs:
     def test_options_contract_spec_creation(self):
         """OptionsContractSpec should be creatable."""
         from decimal import Decimal
+
         spec = OptionsContractSpec(
             symbol="SPY",
             underlying="SPY",
@@ -2077,13 +2091,17 @@ class TestBlackScholesPricingExtended:
     def test_bs_call_upper_bound(self, standard_params):
         """Call price should be at most S*e^(-qT)."""
         price = black_scholes_price(**standard_params, is_call=True)
-        upper = standard_params["spot"] * np.exp(-standard_params["dividend_yield"] * standard_params["time_to_expiry"])
+        upper = standard_params["spot"] * np.exp(
+            -standard_params["dividend_yield"] * standard_params["time_to_expiry"]
+        )
         assert price <= upper
 
     def test_bs_put_upper_bound(self, standard_params):
         """Put price should be at most K*e^(-rT)."""
         price = black_scholes_price(**standard_params, is_call=False)
-        upper = standard_params["strike"] * np.exp(-standard_params["rate"] * standard_params["time_to_expiry"])
+        upper = standard_params["strike"] * np.exp(
+            -standard_params["rate"] * standard_params["time_to_expiry"]
+        )
         assert price <= upper
 
     def test_bs_put_call_parity(self, standard_params):
@@ -2166,8 +2184,9 @@ class TestBlackScholesPricingExtended:
         """Zero volatility call should equal forward intrinsic value."""
         params = {**standard_params, "volatility": 1e-10, "strike": 90.0}
         price = black_scholes_price(**params, is_call=True)
-        fwd_intrinsic = (params["spot"] * np.exp(-params["dividend_yield"] * params["time_to_expiry"]) -
-                        params["strike"] * np.exp(-params["rate"] * params["time_to_expiry"]))
+        fwd_intrinsic = params["spot"] * np.exp(
+            -params["dividend_yield"] * params["time_to_expiry"]
+        ) - params["strike"] * np.exp(-params["rate"] * params["time_to_expiry"])
         assert abs(price - max(fwd_intrinsic, 0)) < 1e-6
 
     def test_bs_very_high_volatility(self, standard_params):
@@ -2195,19 +2214,27 @@ class TestBinomialPricingExtended:
     def test_leisen_reimer_converges_to_bs_european(self, american_params):
         """Leisen-Reimer should converge to BS for European options."""
         bs_price = black_scholes_price(**american_params, is_call=True)
-        lr_price = leisen_reimer_price(**american_params, is_call=True, is_american=False, n_steps=501)
+        lr_price = leisen_reimer_price(
+            **american_params, is_call=True, is_american=False, n_steps=501
+        )
         assert abs(lr_price - bs_price) < 0.01
 
     def test_leisen_reimer_american_geq_european(self, american_params):
         """American option should be worth at least as much as European."""
-        european = leisen_reimer_price(**american_params, is_call=True, is_american=False, n_steps=201)
-        american = leisen_reimer_price(**american_params, is_call=True, is_american=True, n_steps=201)
+        european = leisen_reimer_price(
+            **american_params, is_call=True, is_american=False, n_steps=201
+        )
+        american = leisen_reimer_price(
+            **american_params, is_call=True, is_american=True, n_steps=201
+        )
         assert american >= european - 1e-6
 
     def test_crr_converges_to_bs(self, american_params):
         """CRR should converge to BS for European options."""
         bs_price = black_scholes_price(**american_params, is_call=True)
-        crr_price = crr_binomial_price(**american_params, is_call=True, is_american=False, n_steps=500)
+        crr_price = crr_binomial_price(
+            **american_params, is_call=True, is_american=False, n_steps=500
+        )
         assert abs(crr_price - bs_price) < 0.05
 
     def test_american_put_early_exercise_value(self, american_params):
@@ -2235,8 +2262,12 @@ class TestBinomialPricingExtended:
     def test_binomial_step_convergence(self, american_params):
         """More steps should give more accurate results."""
         bs_price = black_scholes_price(**american_params, is_call=True)
-        price_101 = crr_binomial_price(**american_params, is_call=True, is_american=False, n_steps=101)
-        price_501 = crr_binomial_price(**american_params, is_call=True, is_american=False, n_steps=501)
+        price_101 = crr_binomial_price(
+            **american_params, is_call=True, is_american=False, n_steps=101
+        )
+        price_501 = crr_binomial_price(
+            **american_params, is_call=True, is_american=False, n_steps=501
+        )
         error_101 = abs(price_101 - bs_price)
         error_501 = abs(price_501 - bs_price)
         assert error_501 < error_101
@@ -2327,6 +2358,7 @@ class TestBinomialPricingExtended:
         price = leisen_reimer_price(**params, is_call=True, is_american=True, n_steps=201)
         assert price > 0
         assert np.isfinite(price)
+
     def test_binomial_extreme_underflow(self) -> None:
         """CRR and LR binomial trees should handle extreme low vol/short expiry without ZeroDivisionError."""
         params = {
@@ -2340,7 +2372,7 @@ class TestBinomialPricingExtended:
         # This would raise ZeroDivisionError before the fix due to u - d underflow to 0.0
         price_crr = crr_binomial_price(**params, is_call=True, n_steps=200)
         price_lr = leisen_reimer_price(**params, is_call=True, n_steps=201)
-        
+
         # Zero-volatility intrinsic price
         assert price_crr >= 0.0
         assert price_lr >= 0.0
@@ -2354,7 +2386,7 @@ class TestBinomialPricingExtended:
         call_strikes = np.array([110.0, 120.0])
         # Put strikes containing a zero strike
         put_strikes = np.array([0.0, 90.0])
-        
+
         # This would raise ZeroDivisionError before the fix due to division by k^2
         strike = variance_swap_strike(
             call_prices=call_prices,
@@ -2377,7 +2409,7 @@ class TestBinomialPricingExtended:
             rate=0.0,
             dividend_yield=0.02,
             volatility=0.20,
-            is_call=True
+            is_call=True,
         )
         assert price > 0.0
         assert np.isfinite(price)
@@ -2393,7 +2425,7 @@ class TestBinomialPricingExtended:
             dividend_yield=0.02,
             volatility=0.20,
             is_call=True,
-            jump_params=jp
+            jump_params=jp,
         )
         assert price > 0.0
         assert np.isfinite(price)
@@ -2405,7 +2437,7 @@ class TestBinomialPricingExtended:
             calibrate_from_moments(np.array([0.01, -0.02]), dt=0.0)
         with pytest.raises(CalibrationError):
             calibrate_from_mle(np.array([0.01, -0.02]), dt=-1.0)
-            
+
         # Test option calibration invalid inputs
         with pytest.raises(CalibrationError):
             calibrate_from_options(
@@ -2416,8 +2448,9 @@ class TestBinomialPricingExtended:
                 spot=0.0,  # invalid spot
                 rate=0.05,
                 dividend_yield=0.02,
-                base_volatility=0.20
+                base_volatility=0.20,
             )
+
 
 class TestJumpDiffusionExtended:
     """Extended jump-diffusion tests (additional 11 tests)."""
@@ -2609,9 +2642,9 @@ class TestJumpDiffusionExtended:
         divs = np.array([0.0, 0.01, 0.02, 0.0])
         vols = np.array([0.2, 0.3, 0.25, 0.15])
         is_calls = np.array([True, False, True, False])
-        
+
         jp = JumpParams(lambda_intensity=1.5, mu_jump=-0.1, sigma_jump=0.2)
-        
+
         # Calculate scalar values
         scalar_prices = []
         for i in range(len(spots)):
@@ -2626,7 +2659,7 @@ class TestJumpDiffusionExtended:
                 jump_params=jp,
             )
             scalar_prices.append(p)
-            
+
         # Calculate vectorized values
         vec_prices = merton_jump_diffusion_price_vec(
             spot=spots,
@@ -2640,7 +2673,7 @@ class TestJumpDiffusionExtended:
             jump_mean=jp.mu_jump,
             jump_vol=jp.sigma_jump,
         )
-        
+
         # Assert match
         np.testing.assert_allclose(vec_prices, scalar_prices, rtol=1e-5, atol=1e-5)
 
@@ -2670,21 +2703,38 @@ class TestVarianceSwap:
     def test_variance_swap_strike_atm_vol_approx(self):
         """Variance swap strike should approach ATM vol squared with dense strike coverage."""
         # Need wide strike range with many points for accurate variance swap integration
-        strikes = np.array([70.0, 75.0, 80.0, 85.0, 90.0, 92.5, 95.0, 97.5,
-                           100.0, 102.5, 105.0, 107.5, 110.0, 115.0, 120.0, 125.0, 130.0])
+        strikes = np.array(
+            [
+                70.0,
+                75.0,
+                80.0,
+                85.0,
+                90.0,
+                92.5,
+                95.0,
+                97.5,
+                100.0,
+                102.5,
+                105.0,
+                107.5,
+                110.0,
+                115.0,
+                120.0,
+                125.0,
+                130.0,
+            ]
+        )
         atm_vol = 0.20
         T = 0.25
         r = 0.05
 
         # Generate BS prices at constant vol
-        call_prices = np.array([
-            black_scholes_price(100.0, k, T, r, 0.0, atm_vol, is_call=True)
-            for k in strikes
-        ])
-        put_prices = np.array([
-            black_scholes_price(100.0, k, T, r, 0.0, atm_vol, is_call=False)
-            for k in strikes
-        ])
+        call_prices = np.array(
+            [black_scholes_price(100.0, k, T, r, 0.0, atm_vol, is_call=True) for k in strikes]
+        )
+        put_prices = np.array(
+            [black_scholes_price(100.0, k, T, r, 0.0, atm_vol, is_call=False) for k in strikes]
+        )
 
         strike = variance_swap_strike(
             call_prices,
@@ -2737,13 +2787,27 @@ class TestVarianceSwap:
         strikes = np.array([90.0, 95.0, 100.0, 105.0, 110.0])
 
         # Flat vol
-        flat_calls = np.array([black_scholes_price(100, k, 0.25, 0.05, 0, 0.20, True) for k in strikes])
-        flat_puts = np.array([black_scholes_price(100, k, 0.25, 0.05, 0, 0.20, False) for k in strikes])
+        flat_calls = np.array(
+            [black_scholes_price(100, k, 0.25, 0.05, 0, 0.20, True) for k in strikes]
+        )
+        flat_puts = np.array(
+            [black_scholes_price(100, k, 0.25, 0.05, 0, 0.20, False) for k in strikes]
+        )
 
         # Skewed vol (higher for lower strikes)
         skewed_vols = [0.30, 0.25, 0.20, 0.18, 0.17]
-        skewed_calls = np.array([black_scholes_price(100, k, 0.25, 0.05, 0, v, True) for k, v in zip(strikes, skewed_vols)])
-        skewed_puts = np.array([black_scholes_price(100, k, 0.25, 0.05, 0, v, False) for k, v in zip(strikes, skewed_vols)])
+        skewed_calls = np.array(
+            [
+                black_scholes_price(100, k, 0.25, 0.05, 0, v, True)
+                for k, v in zip(strikes, skewed_vols)
+            ]
+        )
+        skewed_puts = np.array(
+            [
+                black_scholes_price(100, k, 0.25, 0.05, 0, v, False)
+                for k, v in zip(strikes, skewed_vols)
+            ]
+        )
 
         flat_strike = variance_swap_strike(
             flat_calls,
@@ -2770,10 +2834,16 @@ class TestVarianceSwap:
     def test_variance_swap_strike_positive(self):
         """Variance strike should always be positive."""
         # Need enough strikes for proper integration
-        strikes = np.array([70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 105.0, 110.0, 115.0, 120.0, 125.0, 130.0])
+        strikes = np.array(
+            [70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 105.0, 110.0, 115.0, 120.0, 125.0, 130.0]
+        )
         vol = 0.25
-        call_prices = np.array([black_scholes_price(100, k, 0.5, 0.03, 0, vol, True) for k in strikes])
-        put_prices = np.array([black_scholes_price(100, k, 0.5, 0.03, 0, vol, False) for k in strikes])
+        call_prices = np.array(
+            [black_scholes_price(100, k, 0.5, 0.03, 0, vol, True) for k in strikes]
+        )
+        put_prices = np.array(
+            [black_scholes_price(100, k, 0.5, 0.03, 0, vol, False) for k in strikes]
+        )
 
         strike = variance_swap_strike(
             call_prices,
@@ -2807,13 +2877,41 @@ class TestVarianceSwap:
     def test_variance_swap_strike_longer_expiry(self):
         """Longer expiry should affect variance strike."""
         # Need dense strikes for proper integration
-        strikes = np.array([70.0, 75.0, 80.0, 85.0, 90.0, 92.5, 95.0, 97.5, 100.0, 102.5, 105.0, 107.5, 110.0, 115.0, 120.0, 125.0, 130.0])
+        strikes = np.array(
+            [
+                70.0,
+                75.0,
+                80.0,
+                85.0,
+                90.0,
+                92.5,
+                95.0,
+                97.5,
+                100.0,
+                102.5,
+                105.0,
+                107.5,
+                110.0,
+                115.0,
+                120.0,
+                125.0,
+                130.0,
+            ]
+        )
 
-        short_calls = np.array([black_scholes_price(100, k, 0.25, 0.05, 0, 0.20, True) for k in strikes])
-        short_puts = np.array([black_scholes_price(100, k, 0.25, 0.05, 0, 0.20, False) for k in strikes])
+        short_calls = np.array(
+            [black_scholes_price(100, k, 0.25, 0.05, 0, 0.20, True) for k in strikes]
+        )
+        short_puts = np.array(
+            [black_scholes_price(100, k, 0.25, 0.05, 0, 0.20, False) for k in strikes]
+        )
 
-        long_calls = np.array([black_scholes_price(100, k, 1.0, 0.05, 0, 0.20, True) for k in strikes])
-        long_puts = np.array([black_scholes_price(100, k, 1.0, 0.05, 0, 0.20, False) for k in strikes])
+        long_calls = np.array(
+            [black_scholes_price(100, k, 1.0, 0.05, 0, 0.20, True) for k in strikes]
+        )
+        long_puts = np.array(
+            [black_scholes_price(100, k, 1.0, 0.05, 0, 0.20, False) for k in strikes]
+        )
 
         short_strike = variance_swap_strike(
             short_calls,
@@ -2999,7 +3097,9 @@ class TestIVSolverExtended:
         """American call IV via tree should work."""
         params = {**standard_params, "dividend_yield": 0.05}
         true_vol = 0.25
-        price = leisen_reimer_price(**params, volatility=true_vol, is_call=True, is_american=True, n_steps=201)
+        price = leisen_reimer_price(
+            **params, volatility=true_vol, is_call=True, is_american=True, n_steps=201
+        )
         result = calculate_iv_american(**params, market_price=price, is_call=True)
         if result.converged:
             assert abs(result.implied_volatility - true_vol) < 0.01
@@ -3007,7 +3107,9 @@ class TestIVSolverExtended:
     def test_iv_american_put(self, standard_params):
         """American put IV via tree should work."""
         true_vol = 0.25
-        price = leisen_reimer_price(**standard_params, volatility=true_vol, is_call=False, is_american=True, n_steps=201)
+        price = leisen_reimer_price(
+            **standard_params, volatility=true_vol, is_call=False, is_american=True, n_steps=201
+        )
         result = calculate_iv_american(**standard_params, market_price=price, is_call=False)
         if result.converged:
             assert abs(result.implied_volatility - true_vol) < 0.01
@@ -3018,12 +3120,12 @@ class TestIVSolverExtended:
         price = black_scholes_price(**standard_params, volatility=true_vol, is_call=True)
         result = calculate_iv(**standard_params, market_price=price, is_call=True)
 
-        assert hasattr(result, 'implied_volatility')
-        assert hasattr(result, 'converged')
-        assert hasattr(result, 'iterations')
-        assert hasattr(result, 'error')
-        assert hasattr(result, 'method')
-        assert hasattr(result, 'model_price')
+        assert hasattr(result, "implied_volatility")
+        assert hasattr(result, "converged")
+        assert hasattr(result, "iterations")
+        assert hasattr(result, "error")
+        assert hasattr(result, "method")
+        assert hasattr(result, "model_price")
 
     def test_iv_model_price_matches_input(self, standard_params):
         """Model price from result should match input."""
@@ -3204,19 +3306,19 @@ class TestVectorizedGreeksExtended:
     def test_batch_second_order_greeks(self, batch_params):
         """Batch should calculate second-order Greeks."""
         result = compute_all_greeks_batch(**batch_params)
-        assert hasattr(result, 'vanna')
-        assert hasattr(result, 'volga')
-        assert hasattr(result, 'charm')
+        assert hasattr(result, "vanna")
+        assert hasattr(result, "volga")
+        assert hasattr(result, "charm")
         assert np.all(np.isfinite(result.vanna))
         assert np.all(np.isfinite(result.volga))
 
     def test_batch_third_order_greeks(self, batch_params):
         """Batch should calculate third-order Greeks."""
         result = compute_all_greeks_batch(**batch_params)
-        assert hasattr(result, 'speed')
-        assert hasattr(result, 'color')
-        assert hasattr(result, 'zomma')
-        assert hasattr(result, 'ultima')
+        assert hasattr(result, "speed")
+        assert hasattr(result, "color")
+        assert hasattr(result, "zomma")
+        assert hasattr(result, "ultima")
         assert np.all(np.isfinite(result.speed))
         assert np.all(np.isfinite(result.color))
 
@@ -3354,46 +3456,68 @@ class TestLongstaffSchwartzMC:
         """LSMC American call without dividend should equal European."""
         params = {**lsmc_params, "dividend_yield": 0.0}
         european = black_scholes_price(**params, is_call=True)
-        result = longstaff_schwartz(**params, is_call=True, n_paths=50000, n_steps=100, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=True, n_paths=50000, n_steps=100, random_seed=42
+        )
         # Should be close (within Monte Carlo error)
         assert abs(result.price - european) < 0.5
 
     def test_lsmc_american_geq_european_put(self, lsmc_params):
         """LSMC American put should be worth at least European."""
         european = black_scholes_price(**lsmc_params, is_call=False)
-        result = longstaff_schwartz(**lsmc_params, is_call=False, n_paths=10000, n_steps=50, random_seed=42)
+        result = longstaff_schwartz(
+            **lsmc_params, is_call=False, n_paths=10000, n_steps=50, random_seed=42
+        )
         assert result.price >= european * 0.95  # Allow some MC error
 
     def test_lsmc_put_intrinsic_floor(self, lsmc_params):
         """LSMC put should be at least intrinsic value."""
         params = {**lsmc_params, "strike": 110.0}  # ITM put
         intrinsic = params["strike"] - params["spot"]
-        result = longstaff_schwartz(**params, is_call=False, n_paths=10000, n_steps=50, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=False, n_paths=10000, n_steps=50, random_seed=42
+        )
         assert result.price >= intrinsic * 0.95
 
     def test_lsmc_call_intrinsic_floor(self, lsmc_params):
         """LSMC call should be at least intrinsic value."""
         params = {**lsmc_params, "strike": 90.0}  # ITM call
         intrinsic = params["spot"] - params["strike"]
-        result = longstaff_schwartz(**params, is_call=True, n_paths=10000, n_steps=50, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=True, n_paths=10000, n_steps=50, random_seed=42
+        )
         assert result.price >= intrinsic * 0.95
 
     def test_lsmc_deep_otm_put_small(self, lsmc_params):
         """Deep OTM put should be small."""
         params = {**lsmc_params, "strike": 70.0}
-        result = longstaff_schwartz(**params, is_call=False, n_paths=10000, n_steps=50, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=False, n_paths=10000, n_steps=50, random_seed=42
+        )
         assert result.price < 2.0
 
     def test_lsmc_deep_otm_call_small(self, lsmc_params):
         """Deep OTM call should be small."""
         params = {**lsmc_params, "strike": 130.0}
-        result = longstaff_schwartz(**params, is_call=True, n_paths=10000, n_steps=50, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=True, n_paths=10000, n_steps=50, random_seed=42
+        )
         assert result.price < 2.0
 
     def test_lsmc_more_paths_reduces_variance(self, lsmc_params):
         """More paths should reduce variance."""
-        prices_small = [longstaff_schwartz(**lsmc_params, is_call=False, n_paths=1000, n_steps=50, random_seed=i).price for i in range(5)]
-        prices_large = [longstaff_schwartz(**lsmc_params, is_call=False, n_paths=20000, n_steps=50, random_seed=i).price for i in range(5)]
+        prices_small = [
+            longstaff_schwartz(
+                **lsmc_params, is_call=False, n_paths=1000, n_steps=50, random_seed=i
+            ).price
+            for i in range(5)
+        ]
+        prices_large = [
+            longstaff_schwartz(
+                **lsmc_params, is_call=False, n_paths=20000, n_steps=50, random_seed=i
+            ).price
+            for i in range(5)
+        ]
 
         std_small = np.std(prices_small)
         std_large = np.std(prices_large)
@@ -3402,42 +3526,58 @@ class TestLongstaffSchwartzMC:
 
     def test_lsmc_seed_reproducibility(self, lsmc_params):
         """Same seed should give same result."""
-        result1 = longstaff_schwartz(**lsmc_params, is_call=False, n_paths=5000, n_steps=50, random_seed=12345)
-        result2 = longstaff_schwartz(**lsmc_params, is_call=False, n_paths=5000, n_steps=50, random_seed=12345)
+        result1 = longstaff_schwartz(
+            **lsmc_params, is_call=False, n_paths=5000, n_steps=50, random_seed=12345
+        )
+        result2 = longstaff_schwartz(
+            **lsmc_params, is_call=False, n_paths=5000, n_steps=50, random_seed=12345
+        )
         assert result1.price == result2.price
 
     def test_lsmc_different_seeds_different_results(self, lsmc_params):
         """Different seeds should give different results."""
-        result1 = longstaff_schwartz(**lsmc_params, is_call=False, n_paths=5000, n_steps=50, random_seed=1)
-        result2 = longstaff_schwartz(**lsmc_params, is_call=False, n_paths=5000, n_steps=50, random_seed=2)
+        result1 = longstaff_schwartz(
+            **lsmc_params, is_call=False, n_paths=5000, n_steps=50, random_seed=1
+        )
+        result2 = longstaff_schwartz(
+            **lsmc_params, is_call=False, n_paths=5000, n_steps=50, random_seed=2
+        )
         # Should be different (with high probability)
         assert result1.price != result2.price
 
     def test_lsmc_convergence_to_binomial(self, lsmc_params):
         """LSMC should converge to binomial price."""
         binomial = leisen_reimer_price(**lsmc_params, is_call=False, is_american=True, n_steps=201)
-        result = longstaff_schwartz(**lsmc_params, is_call=False, n_paths=50000, n_steps=100, random_seed=42)
+        result = longstaff_schwartz(
+            **lsmc_params, is_call=False, n_paths=50000, n_steps=100, random_seed=42
+        )
         # Should be within 1%
         assert abs(result.price - binomial) / binomial < 0.02
 
     def test_lsmc_high_volatility(self, lsmc_params):
         """LSMC should handle high volatility."""
         params = {**lsmc_params, "volatility": 0.60}
-        result = longstaff_schwartz(**params, is_call=False, n_paths=10000, n_steps=50, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=False, n_paths=10000, n_steps=50, random_seed=42
+        )
         assert result.price > 0
         assert np.isfinite(result.price)
 
     def test_lsmc_long_expiry(self, lsmc_params):
         """LSMC should handle long expiry."""
         params = {**lsmc_params, "time_to_expiry": 2.0}
-        result = longstaff_schwartz(**params, is_call=False, n_paths=10000, n_steps=100, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=False, n_paths=10000, n_steps=100, random_seed=42
+        )
         assert result.price > 0
         assert np.isfinite(result.price)
 
     def test_lsmc_short_expiry(self, lsmc_params):
         """LSMC should handle short expiry."""
         params = {**lsmc_params, "time_to_expiry": 0.05}
-        result = longstaff_schwartz(**params, is_call=False, n_paths=10000, n_steps=25, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=False, n_paths=10000, n_steps=25, random_seed=42
+        )
         assert result.price >= 0
         assert np.isfinite(result.price)
 
@@ -3445,6 +3585,8 @@ class TestLongstaffSchwartzMC:
         """Deep ITM put should show early exercise value."""
         params = {**lsmc_params, "strike": 120.0}  # Deep ITM
         european = black_scholes_price(**params, is_call=False)
-        result = longstaff_schwartz(**params, is_call=False, n_paths=20000, n_steps=50, random_seed=42)
+        result = longstaff_schwartz(
+            **params, is_call=False, n_paths=20000, n_steps=50, random_seed=42
+        )
         # American should be significantly higher due to early exercise
         assert result.price > european

@@ -192,7 +192,7 @@ def _sortino(returns: np.ndarray, rf_per_step: float = 0.0, ann_factor: float = 
     ex = returns - rf_per_step
     neg = ex.copy()
     neg[neg > 0] = 0.0
-    ds = float(np.sqrt(np.nanmean(neg ** 2)))  # downside std
+    ds = float(np.sqrt(np.nanmean(neg**2)))  # downside std
     mu = float(np.nanmean(ex))
     if not math.isfinite(ds) or ds == 0.0:
         return float("nan")
@@ -220,9 +220,18 @@ def _vwap(px: pd.Series, qty: pd.Series) -> float:
 def compute_trade_metrics(trades: pd.DataFrame) -> TradeMetrics:
     if trades is None or trades.empty:
         return TradeMetrics(
-            n_trades=0, n_buy=0, n_sell=0, win_rate=float("nan"), avg_pnl=float("nan"),
-            median_pnl=float("nan"), std_pnl=float("nan"), gross_profit=0.0, gross_loss=0.0,
-            avg_slippage_bps=float("nan"), avg_spread_bps=float("nan"), vwap_price=float("nan")
+            n_trades=0,
+            n_buy=0,
+            n_sell=0,
+            win_rate=float("nan"),
+            avg_pnl=float("nan"),
+            median_pnl=float("nan"),
+            std_pnl=float("nan"),
+            gross_profit=0.0,
+            gross_loss=0.0,
+            avg_slippage_bps=float("nan"),
+            avg_spread_bps=float("nan"),
+            vwap_price=float("nan"),
         )
     t = trades.copy()
     # если нет pnl на трейд, приблизим как side_sign * (price - ref_price_prev)*qty — но в наших трейдах нет ref_prev,
@@ -251,10 +260,16 @@ def compute_trade_metrics(trades: pd.DataFrame) -> TradeMetrics:
         gross_profit = float(pnl[pnl > 0].sum())
         gross_loss = float(-pnl[pnl < 0].sum())
 
-    avg_slip = float(t["slippage_bps"].mean()) if "slippage_bps" in t.columns and len(t) else float("nan")
-    avg_spread = float(t["spread_bps"].mean()) if "spread_bps" in t.columns and len(t) else float("nan")
-    vwap = _vwap(t["price"] if "price" in t.columns else pd.Series(dtype=float),
-                 t["qty"] if "qty" in t.columns else pd.Series(dtype=float))
+    avg_slip = (
+        float(t["slippage_bps"].mean()) if "slippage_bps" in t.columns and len(t) else float("nan")
+    )
+    avg_spread = (
+        float(t["spread_bps"].mean()) if "spread_bps" in t.columns and len(t) else float("nan")
+    )
+    vwap = _vwap(
+        t["price"] if "price" in t.columns else pd.Series(dtype=float),
+        t["qty"] if "qty" in t.columns else pd.Series(dtype=float),
+    )
 
     return TradeMetrics(
         n_trades=n_trades,
@@ -273,10 +288,7 @@ def compute_trade_metrics(trades: pd.DataFrame) -> TradeMetrics:
 
 
 def compute_equity_metrics(
-    reports: pd.DataFrame,
-    *,
-    capital_base: float = 10_000.0,
-    rf_annual: float = 0.0
+    reports: pd.DataFrame, *, capital_base: float = 10_000.0, rf_annual: float = 0.0
 ) -> EquityMetrics:
     """
     reports: ожидаем хотя бы ts_ms, equity, fee_total, funding_cashflow.
@@ -285,10 +297,23 @@ def compute_equity_metrics(
     """
     if reports is None or reports.empty:
         return EquityMetrics(
-            start_ts=0, end_ts=0, num_points=0, pnl_total=0.0, pnl_mean_step=float("nan"),
-            pnl_std_step=float("nan"), sharpe=float("nan"), sortino=float("nan"), cvar=float("nan"),
-            calmar=float("nan"), max_drawdown=0.0, max_dd_start_ts=0, max_dd_end_ts=0,
-            avg_step_seconds=float("nan"), turnover=float("nan"), fees_sum=0.0, funding_cashflow_sum=0.0
+            start_ts=0,
+            end_ts=0,
+            num_points=0,
+            pnl_total=0.0,
+            pnl_mean_step=float("nan"),
+            pnl_std_step=float("nan"),
+            sharpe=float("nan"),
+            sortino=float("nan"),
+            cvar=float("nan"),
+            calmar=float("nan"),
+            max_drawdown=0.0,
+            max_dd_start_ts=0,
+            max_dd_end_ts=0,
+            avg_step_seconds=float("nan"),
+            turnover=float("nan"),
+            fees_sum=0.0,
+            funding_cashflow_sum=0.0,
         )
 
     r = reports.copy()
@@ -312,9 +337,11 @@ def compute_equity_metrics(
         returns = d_eq.values.astype(float)
         ann_factor = 1.0
     else:
-        returns = (d_eq.values.astype(float) / float(capital_base))
+        returns = d_eq.values.astype(float) / float(capital_base)
         # аппроксимируем годовой множитель из среднего шага
-        ann_factor = _annualize_factor(avg_dt_s) if math.isfinite(avg_dt_s) and avg_dt_s > 0 else 1.0
+        ann_factor = (
+            _annualize_factor(avg_dt_s) if math.isfinite(avg_dt_s) and avg_dt_s > 0 else 1.0
+        )
 
     # rf per step
     rf_per_step = 0.0
@@ -357,7 +384,9 @@ def compute_equity_metrics(
         num_points=int(len(r)),
         pnl_total=float(pnl_total),
         pnl_mean_step=float(np.nanmean(d_eq.values.astype(float))) if len(d_eq) else float("nan"),
-        pnl_std_step=float(np.nanstd(d_eq.values.astype(float), ddof=1)) if len(d_eq) > 1 else float("nan"),
+        pnl_std_step=(
+            float(np.nanstd(d_eq.values.astype(float), ddof=1)) if len(d_eq) > 1 else float("nan")
+        ),
         sharpe=float(sharpe),
         sortino=float(sortino),
         cvar=float(cvar),
@@ -389,9 +418,14 @@ def calculate_metrics(
     computed for each profile separately.
     """
     if isinstance(trades, pd.DataFrame) and "execution_profile" in trades.columns:
-        tdict = {n: g.drop(columns=["execution_profile"]) for n, g in trades.groupby("execution_profile")}
+        tdict = {
+            n: g.drop(columns=["execution_profile"]) for n, g in trades.groupby("execution_profile")
+        }
         if isinstance(equity, pd.DataFrame) and "execution_profile" in equity.columns:
-            edict = {n: equity[equity["execution_profile"] == n].drop(columns=["execution_profile"]) for n in tdict}
+            edict = {
+                n: equity[equity["execution_profile"] == n].drop(columns=["execution_profile"])
+                for n in tdict
+            }
         else:
             edict = {n: equity for n in tdict}
         return calculate_metrics(
@@ -420,7 +454,9 @@ def calculate_metrics(
         return metrics
 
     if isinstance(equity, pd.DataFrame) and "execution_profile" in equity.columns:
-        edict = {n: g.drop(columns=["execution_profile"]) for n, g in equity.groupby("execution_profile")}
+        edict = {
+            n: g.drop(columns=["execution_profile"]) for n, g in equity.groupby("execution_profile")
+        }
         return calculate_metrics(
             trades if isinstance(trades, dict) else {"": trades},
             edict,

@@ -17,6 +17,7 @@ Reference:
 - Design Doc CCEA Cloud.txt: Multi-tenant isolation
 - SOC2/ISO27001: Data segregation requirements
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -69,7 +70,8 @@ def upgrade() -> None:
         return
 
     # Create helper function for checking workspace access
-    op.execute("""
+    op.execute(
+        """
         CREATE OR REPLACE FUNCTION ccea_get_current_workspace_id()
         RETURNS uuid
         LANGUAGE sql
@@ -77,10 +79,12 @@ def upgrade() -> None:
         AS $$
             SELECT NULLIF(current_setting('app.current_workspace_id', true), '')::uuid;
         $$;
-    """)
+    """
+    )
 
     # Create helper function to check if user is admin/superuser
-    op.execute("""
+    op.execute(
+        """
         CREATE OR REPLACE FUNCTION ccea_is_admin()
         RETURNS boolean
         LANGUAGE sql
@@ -88,7 +92,8 @@ def upgrade() -> None:
         AS $$
             SELECT COALESCE(current_setting('app.is_admin', true)::boolean, false);
         $$;
-    """)
+    """
+    )
 
     # Enable RLS on all tenant-scoped tables
     for table in TENANT_SCOPED_TABLES:
@@ -100,7 +105,8 @@ def upgrade() -> None:
 
         # Create policy for workspace isolation
         # Policy name: {table}_workspace_isolation
-        op.execute(f"""
+        op.execute(
+            f"""
             CREATE POLICY {table}_workspace_isolation ON {table}
             FOR ALL
             USING (
@@ -111,7 +117,8 @@ def upgrade() -> None:
                 ccea_is_admin()
                 OR workspace_id = ccea_get_current_workspace_id()
             );
-        """)
+        """
+        )
 
     # Special handling for org-scoped tables (roles)
     for table in ORG_SCOPED_TABLES:
@@ -119,7 +126,8 @@ def upgrade() -> None:
         op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;")
 
         # Roles need org-level isolation, with optional workspace scoping
-        op.execute(f"""
+        op.execute(
+            f"""
             CREATE POLICY {table}_org_isolation ON {table}
             FOR ALL
             USING (
@@ -138,11 +146,13 @@ def upgrade() -> None:
                     WHERE id = ccea_get_current_workspace_id()
                 )
             );
-        """)
+        """
+        )
 
     # Create helper view for tenant-safe command polling
     # This view pre-filters commands by workspace for agent polling
-    op.execute("""
+    op.execute(
+        """
         CREATE OR REPLACE VIEW pending_commands_view AS
         SELECT
             c.id,
@@ -162,14 +172,17 @@ def upgrade() -> None:
         WHERE c.status IN ('pending', 'sent', 'approved')
         AND (c.expires_at IS NULL OR c.expires_at > NOW())
         AND c.workspace_id = ccea_get_current_workspace_id();
-    """)
+    """
+    )
 
     # Create index on commands for efficient agent polling
-    op.execute("""
+    op.execute(
+        """
         CREATE INDEX IF NOT EXISTS ix_commands_agent_pending
         ON commands (agent_id, status)
         WHERE status IN ('pending', 'sent', 'approved');
-    """)
+    """
+    )
 
 
 def downgrade() -> None:

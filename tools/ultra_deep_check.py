@@ -25,6 +25,7 @@ print("-" * 80)
 
 try:
     from obs_builder import build_observation_vector
+
     print("✓ obs_builder successfully imported")
 
     # Create test observation
@@ -105,7 +106,7 @@ try:
         macd=10.0,
         macd_signal=8.0,
         momentum=5.0,
-        atr=float('nan'),  # NaN ATR (warmup)
+        atr=float("nan"),  # NaN ATR (warmup)
         cci=25.0,
         obv=10000.0,
         bb_lower=49500.0,
@@ -142,7 +143,9 @@ try:
         print("  ✓ vol_proxy is NOT NaN during warmup (BUG FIXED!)")
     else:
         print("  ✗ CRITICAL: vol_proxy is NaN during warmup!")
-        errors.append("CRITICAL: vol_proxy NaN during warmup (regression detected - atr_fallback not working)")
+        errors.append(
+            "CRITICAL: vol_proxy NaN during warmup (regression detected - atr_fallback not working)"
+        )
 
     if np.isfinite(obs2[22]):
         print("  ✓ vol_proxy is finite during warmup")
@@ -159,6 +162,7 @@ except Exception as e:
     print(f"✗ Error during runtime test: {e}")
     errors.append(f"Runtime test error: {e}")
     import traceback
+
     traceback.print_exc()
 
 # ============================================================================
@@ -173,7 +177,8 @@ n_features_values = {}
 # feature_config.py
 try:
     from feature_config import N_FEATURES as fc_N_FEATURES
-    n_features_values['feature_config.py'] = fc_N_FEATURES
+
+    n_features_values["feature_config.py"] = fc_N_FEATURES
     print(f"✓ feature_config.py: N_FEATURES = {fc_N_FEATURES}")
 except Exception as e:
     print(f"✗ Error importing from feature_config.py: {e}")
@@ -218,7 +223,7 @@ for pattern, description in suspect_patterns:
     found_in = []
     for file_path in files_to_check:
         if file_path.exists():
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 content = f.read()
                 if re.search(pattern, content):
                     found_in.append(file_path.name)
@@ -239,7 +244,7 @@ print("-" * 80)
 
 test_file = Path("tests/test_atr_validity_flag.py")
 if test_file.exists():
-    with open(test_file, 'r') as f:
+    with open(test_file, "r") as f:
         test_content = f.read()
 
     coverage_checks = [
@@ -282,18 +287,18 @@ critical_indices = {
 
 for doc_name, doc_path in docs.items():
     if doc_path.exists():
-        with open(doc_path, 'r') as f:
+        with open(doc_path, "r") as f:
             doc_content = f.read()
 
         print(f"\n{doc_name}:")
         for feature, expected_idx in critical_indices.items():
             # Look for patterns like "| 22 | vol_proxy" or "obs[22] ... vol_proxy"
             patterns = [
-                rf'\|\s*{expected_idx}\s*\|.*{feature}',
-                rf'{feature}.*\|\s*{expected_idx}\s*\|',
-                rf'obs\[{expected_idx}\].*{feature}',
-                rf'{feature}.*obs\[{expected_idx}\]',
-                rf'{expected_idx}:.*{feature}|{feature}.*{expected_idx}:',
+                rf"\|\s*{expected_idx}\s*\|.*{feature}",
+                rf"{feature}.*\|\s*{expected_idx}\s*\|",
+                rf"obs\[{expected_idx}\].*{feature}",
+                rf"{feature}.*obs\[{expected_idx}\]",
+                rf"{expected_idx}:.*{feature}|{feature}.*{expected_idx}:",
             ]
 
             found = any(re.search(p, doc_content, re.IGNORECASE) for p in patterns)

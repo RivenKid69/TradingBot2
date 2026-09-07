@@ -27,7 +27,7 @@ def test_clipf_logic():
         return value
 
     # Тест 1: NaN входное значение
-    result = _clipf_fixed(float('nan'), -1.0, 1.0)
+    result = _clipf_fixed(float("nan"), -1.0, 1.0)
     assert result == 0.0, f"Expected 0.0 for NaN input, got {result}"
     print("✓ NaN input -> 0.0")
 
@@ -64,13 +64,13 @@ def test_indicator_defaults():
 
     # Тестовые случаи: (indicator_value, default, expected_result, description)
     test_cases = [
-        (float('nan'), 50.0, 50.0, "RSI: neutral zone"),
+        (float("nan"), 50.0, 50.0, "RSI: neutral zone"),
         (42.0, 50.0, 42.0, "RSI: valid value"),
-        (float('nan'), 0.0, 0.0, "MACD: no divergence"),
+        (float("nan"), 0.0, 0.0, "MACD: no divergence"),
         (1.5, 0.0, 1.5, "MACD: valid value"),
-        (float('nan'), 0.0, 0.0, "Momentum: no movement"),
+        (float("nan"), 0.0, 0.0, "Momentum: no movement"),
         (10.0, 0.0, 10.0, "Momentum: valid value"),
-        (float('nan'), 1.0, 1.0, "ATR: 1% of price default"),
+        (float("nan"), 1.0, 1.0, "ATR: 1% of price default"),
         (15.0, 1.0, 15.0, "ATR: valid value"),
     ]
 
@@ -105,8 +105,8 @@ def test_derived_features():
 
     # 1. bb_squeeze
     print("\n--- bb_squeeze ---")
-    bb_lower_nan = float('nan')
-    bb_upper_nan = float('nan')
+    bb_lower_nan = float("nan")
+    bb_upper_nan = float("nan")
     bb_valid = not math.isnan(bb_lower_nan)
 
     if bb_valid:
@@ -133,14 +133,16 @@ def test_derived_features():
 
     # 2. price_momentum
     print("\n--- price_momentum ---")
-    momentum_nan = float('nan')
+    momentum_nan = float("nan")
 
     if not math.isnan(momentum_nan):
         price_momentum = math.tanh(momentum_nan / (price * 0.01 + 1e-8))
     else:
         price_momentum = 0.0
 
-    assert price_momentum == 0.0, f"Expected price_momentum=0.0 for NaN momentum, got {price_momentum}"
+    assert (
+        price_momentum == 0.0
+    ), f"Expected price_momentum=0.0 for NaN momentum, got {price_momentum}"
     assert not math.isnan(price_momentum), "price_momentum must not be NaN!"
     print(f"✓ price_momentum with NaN momentum: {price_momentum} (not NaN)")
 
@@ -156,8 +158,8 @@ def test_derived_features():
 
     # 3. trend_strength
     print("\n--- trend_strength ---")
-    macd_nan = float('nan')
-    macd_signal_nan = float('nan')
+    macd_nan = float("nan")
+    macd_signal_nan = float("nan")
 
     if not math.isnan(macd_nan) and not math.isnan(macd_signal_nan):
         trend_strength = math.tanh((macd_nan - macd_signal_nan) / (price * 0.01 + 1e-8))
@@ -198,15 +200,15 @@ def test_complete_observation():
     # Индикаторы (некоторые NaN)
     ma5 = 100.0
     ma20 = 99.5
-    rsi14 = float('nan')      # Первые 14 баров
-    macd = float('nan')       # Первые ~26 баров
-    macd_signal = float('nan')
-    momentum = float('nan')   # Первые 10 баров
-    atr = float('nan')        # Первые 14 баров
-    cci = float('nan')        # Первые 20 баров
+    rsi14 = float("nan")  # Первые 14 баров
+    macd = float("nan")  # Первые ~26 баров
+    macd_signal = float("nan")
+    momentum = float("nan")  # Первые 10 баров
+    atr = float("nan")  # Первые 14 баров
+    cci = float("nan")  # Первые 20 баров
     obv = 1000.0
-    bb_lower = float('nan')   # Первые 20 баров
-    bb_upper = float('nan')
+    bb_lower = float("nan")  # Первые 20 баров
+    bb_upper = float("nan")
 
     # Применяем логику безопасной обработки
     def safe_value(val, default):
@@ -295,4 +297,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ ОШИБКА ПРИ ВЫПОЛНЕНИИ ТЕСТОВ: {e}")
         import traceback
+
         traceback.print_exc()

@@ -33,6 +33,7 @@ _lock = threading.Lock()
 # ---------------------------------------------------------------------------
 # State persistence helpers
 
+
 def _load_state() -> None:
     """Load counters and timestamps from :data:`_state_path`."""
     global _tripped
@@ -59,11 +60,14 @@ def _load_state() -> None:
 
 def _save_state() -> None:
     data = {"counters": _counters, "last_ts": _last_ts, "tripped": _tripped}
-    atomic_write_with_retry(_state_path, json.dumps(data, separators=(",", ":")), retries=3, backoff=0.1)
+    atomic_write_with_retry(
+        _state_path, json.dumps(data, separators=(",", ":")), retries=3, backoff=0.1
+    )
 
 
 # ---------------------------------------------------------------------------
 # Configuration
+
 
 def init(cfg: Dict[str, Any]) -> None:
     """Initialise kill switch settings from *cfg*.
@@ -83,17 +87,9 @@ def init(cfg: Dict[str, Any]) -> None:
 
     _limits = {
         "rest": int(
-            cfg.get("rest_limit")
-            or cfg.get("rest_error_limit")
-            or cfg.get("rest_errors")
-            or 0
+            cfg.get("rest_limit") or cfg.get("rest_error_limit") or cfg.get("rest_errors") or 0
         ),
-        "ws": int(
-            cfg.get("ws_limit")
-            or cfg.get("ws_error_limit")
-            or cfg.get("ws_errors")
-            or 0
-        ),
+        "ws": int(cfg.get("ws_limit") or cfg.get("ws_error_limit") or cfg.get("ws_errors") or 0),
         "duplicates": int(cfg.get("duplicate_limit") or cfg.get("duplicates") or 0),
         "stale": int(cfg.get("stale_limit") or cfg.get("stale") or 0),
     }
@@ -106,6 +102,7 @@ def init(cfg: Dict[str, Any]) -> None:
 
 # ---------------------------------------------------------------------------
 # Internal helpers
+
 
 def _maybe_reset_all(now: float) -> None:
     for k in list(_counters.keys()):
@@ -141,7 +138,7 @@ def _trip() -> None:
     - НО гарантирует атомарность counter + state
     - Для production с высокой частотой ошибок можно добавить async writer
 
-    Reference: CLAUDE.md → "НЕ БАГИ" → #23
+    Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #23
     ═══════════════════════════════════════════════════════════════════════════
     """
     global _tripped
@@ -158,6 +155,7 @@ def _trip() -> None:
 
 # ---------------------------------------------------------------------------
 # Public API
+
 
 def record_error(kind: str) -> None:
     """Record a REST or websocket error."""

@@ -1,4 +1,5 @@
 """Comprehensive tests for services.retry module."""
+
 import asyncio
 import random
 import time
@@ -145,7 +146,7 @@ class TestRetrySyncDecorator:
 
         assert "ValueError" in classified
 
-    @patch('services.ops_kill_switch.record_error')
+    @patch("services.ops_kill_switch.record_error")
     def test_retry_sync_records_error_to_kill_switch(self, mock_record):
         """Test error is recorded to kill switch."""
         cfg = RetryConfig(max_attempts=2, backoff_base_s=0.01)
@@ -162,7 +163,7 @@ class TestRetrySyncDecorator:
 
         mock_record.assert_called_with("rest")
 
-    @patch('services.ops_kill_switch.manual_reset')
+    @patch("services.ops_kill_switch.manual_reset")
     def test_retry_sync_resets_kill_switch_on_success(self, mock_reset):
         """Test kill switch is reset on successful retry."""
         cfg = RetryConfig(max_attempts=3, backoff_base_s=0.01)
@@ -288,7 +289,7 @@ class TestRetryAsyncDecorator:
 
         assert "ValueError" in classified
 
-    @patch('services.ops_kill_switch.record_error')
+    @patch("services.ops_kill_switch.record_error")
     async def test_retry_async_records_error_to_kill_switch(self, mock_record):
         """Test error is recorded to kill switch."""
         cfg = RetryConfig(max_attempts=2, backoff_base_s=0.01)
@@ -305,7 +306,7 @@ class TestRetryAsyncDecorator:
 
         mock_record.assert_called_with("rest")
 
-    @patch('services.ops_kill_switch.manual_reset')
+    @patch("services.ops_kill_switch.manual_reset")
     async def test_retry_async_resets_kill_switch_on_success(self, mock_reset):
         """Test kill switch is reset on successful retry."""
         cfg = RetryConfig(max_attempts=3, backoff_base_s=0.01)

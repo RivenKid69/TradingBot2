@@ -4,11 +4,12 @@ Comprehensive test for tbr_momentum with ROC (Rate of Change) implementation.
 Tests the fix that changes from absolute difference to percentage change.
 """
 
+
 def test_roc_calculation():
     """Test ROC calculation logic."""
-    print("="*70)
+    print("=" * 70)
     print("TEST 1: ROC (Rate of Change) Calculation Logic")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     # Симуляция ratio_list с реалистичными значениями TBR
     ratio_list = [0.50, 0.52, 0.54, 0.56, 0.58, 0.60, 0.62, 0.64, 0.66, 0.68]
@@ -21,7 +22,7 @@ def test_roc_calculation():
 
     print("СТАРАЯ ФОРМУЛА (absolute difference): momentum = current - past")
     print("НОВАЯ ФОРМУЛА (ROC): momentum = (current - past) / past")
-    print("\n" + "-"*70 + "\n")
+    print("\n" + "-" * 70 + "\n")
 
     for window, name in zip(windows, window_names):
         print(f"Window {name} (window={window} bars):")
@@ -43,13 +44,13 @@ def test_roc_calculation():
             print(f"  Difference: {abs(new_momentum - old_momentum):.6f}")
             print()
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("ANALYSIS: Why ROC is better")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     # Демонстрация проблемы с абсолютной разницей
     print("Scenario 1: Same absolute change, different base levels")
-    print("-"*70)
+    print("-" * 70)
 
     scenarios = [
         {"base": 0.30, "change": 0.10, "desc": "Bear market (low TBR)"},
@@ -68,56 +69,53 @@ def test_roc_calculation():
         print(f"  TBR: {base:.2f} → {new_value:.2f} (change: +{change:.2f})")
         print(f"  Absolute difference: {abs_diff:.6f} (same!)")
         print(f"  ROC: {roc:.6f} ({roc*100:.1f}%)")
-        print(f"  → ROC correctly shows {roc*100:.1f}% vs {change/scenarios[1]['base']*100:.1f}% difference")
+        print(
+            f"  → ROC correctly shows {roc*100:.1f}% vs {change/scenarios[1]['base']*100:.1f}% difference"
+        )
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("✓ ROC accounts for base level, absolute difference does not!")
-    print("="*70)
+    print("=" * 70)
 
 
 def test_edge_cases():
     """Test edge cases for ROC calculation."""
-    print("\n\n" + "="*70)
+    print("\n\n" + "=" * 70)
     print("TEST 2: Edge Cases")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     edge_cases = [
         {
             "name": "Past = 0, Current > 0 (rare but possible)",
             "past": 0.0,
             "current": 0.5,
-            "expected_behavior": "Should handle gracefully, return 1.0 (large positive change)"
+            "expected_behavior": "Should handle gracefully, return 1.0 (large positive change)",
         },
         {
             "name": "Past = 0, Current = 0",
             "past": 0.0,
             "current": 0.0,
-            "expected_behavior": "Should return 0.0 (no change)"
+            "expected_behavior": "Should return 0.0 (no change)",
         },
         {
             "name": "Past very small (near zero)",
             "past": 1e-12,
             "current": 0.5,
-            "expected_behavior": "Should trigger fallback (past < threshold)"
+            "expected_behavior": "Should trigger fallback (past < threshold)",
         },
         {
             "name": "Normal case: positive momentum",
             "past": 0.50,
             "current": 0.60,
-            "expected_behavior": "ROC = (0.60 - 0.50) / 0.50 = 0.20 (20%)"
+            "expected_behavior": "ROC = (0.60 - 0.50) / 0.50 = 0.20 (20%)",
         },
         {
             "name": "Normal case: negative momentum",
             "past": 0.60,
             "current": 0.50,
-            "expected_behavior": "ROC = (0.50 - 0.60) / 0.60 = -0.1667 (-16.67%)"
+            "expected_behavior": "ROC = (0.50 - 0.60) / 0.60 = -0.1667 (-16.67%)",
         },
-        {
-            "name": "No change",
-            "past": 0.55,
-            "current": 0.55,
-            "expected_behavior": "ROC = 0.0"
-        },
+        {"name": "No change", "past": 0.55, "current": 0.55, "expected_behavior": "ROC = 0.0"},
     ]
 
     for case in edge_cases:
@@ -138,37 +136,37 @@ def test_edge_cases():
         print(f"  Expected: {case['expected_behavior']}")
         print(f"  ✓ OK")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("✓ All edge cases handled correctly!")
-    print("="*70)
+    print("=" * 70)
 
 
 def test_comparison_with_real_scenarios():
     """Test with realistic market scenarios."""
-    print("\n\n" + "="*70)
+    print("\n\n" + "=" * 70)
     print("TEST 3: Real Market Scenarios")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     scenarios = [
         {
             "name": "Strong Bull Run",
             "ratios": [0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.72, 0.74],
-            "desc": "Steadily increasing buying pressure"
+            "desc": "Steadily increasing buying pressure",
         },
         {
             "name": "Strong Bear Market",
             "ratios": [0.65, 0.60, 0.55, 0.50, 0.45, 0.40, 0.38, 0.36],
-            "desc": "Steadily decreasing buying pressure"
+            "desc": "Steadily decreasing buying pressure",
         },
         {
             "name": "Consolidation",
             "ratios": [0.50, 0.51, 0.50, 0.49, 0.50, 0.51, 0.50, 0.49],
-            "desc": "Low momentum, sideways movement"
+            "desc": "Low momentum, sideways movement",
         },
         {
             "name": "Volatile Market",
             "ratios": [0.50, 0.65, 0.45, 0.70, 0.40, 0.68, 0.42, 0.66],
-            "desc": "High momentum swings"
+            "desc": "High momentum swings",
         },
     ]
 
@@ -202,16 +200,16 @@ def test_comparison_with_real_scenarios():
             print(f"  OLD 12h momentum: {old_momentum:+.6f}")
             print(f"  NEW 12h momentum (ROC): {new_momentum:+.6f} ({new_momentum*100:+.2f}%)")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("✓ ROC provides more meaningful signals across different market conditions!")
-    print("="*70)
+    print("=" * 70)
 
 
 def test_statistical_properties():
     """Test statistical properties of ROC vs absolute difference."""
-    print("\n\n" + "="*70)
+    print("\n\n" + "=" * 70)
     print("TEST 4: Statistical Properties")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     import math
 
@@ -228,7 +226,7 @@ def test_statistical_properties():
     # Calculate momentums for all valid windows (window=1)
     for i in range(2, len(ratios)):
         current = ratios[i]
-        past = ratios[i-1]
+        past = ratios[i - 1]
 
         old_mom = current - past
         new_mom = (current - past) / past
@@ -238,10 +236,10 @@ def test_statistical_properties():
 
     # Calculate basic statistics
     old_mean = sum(old_momentums) / len(old_momentums)
-    old_std = math.sqrt(sum((x - old_mean)**2 for x in old_momentums) / len(old_momentums))
+    old_std = math.sqrt(sum((x - old_mean) ** 2 for x in old_momentums) / len(old_momentums))
 
     new_mean = sum(new_momentums) / len(new_momentums)
-    new_std = math.sqrt(sum((x - new_mean)**2 for x in new_momentums) / len(new_momentums))
+    new_std = math.sqrt(sum((x - new_mean) ** 2 for x in new_momentums) / len(new_momentums))
 
     print("Statistics for momentum (window=1):")
     print(f"\nOLD (absolute difference):")
@@ -255,15 +253,15 @@ def test_statistical_properties():
     print(f"  Range: [{min(new_momentums):.6f}, {max(new_momentums):.6f}]")
     print(f"         [{min(new_momentums)*100:.3f}%, {max(new_momentums)*100:.3f}%]")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("✓ ROC provides scale-independent momentum measurement!")
-    print("="*70)
+    print("=" * 70)
 
 
 if __name__ == "__main__":
-    print("\n" + "╔" + "═"*68 + "╗")
-    print("║" + " "*10 + "TBR MOMENTUM ROC FIX - COMPREHENSIVE TEST" + " "*17 + "║")
-    print("╚" + "═"*68 + "╝\n")
+    print("\n" + "╔" + "═" * 68 + "╗")
+    print("║" + " " * 10 + "TBR MOMENTUM ROC FIX - COMPREHENSIVE TEST" + " " * 17 + "║")
+    print("╚" + "═" * 68 + "╝\n")
 
     try:
         test_roc_calculation()
@@ -271,12 +269,12 @@ if __name__ == "__main__":
         test_comparison_with_real_scenarios()
         test_statistical_properties()
 
-        print("\n\n" + "╔" + "═"*68 + "╗")
-        print("║" + " "*18 + "✅ ALL TESTS PASSED! ✅" + " "*19 + "║")
-        print("╚" + "═"*68 + "╝\n")
+        print("\n\n" + "╔" + "═" * 68 + "╗")
+        print("║" + " " * 18 + "✅ ALL TESTS PASSED! ✅" + " " * 19 + "║")
+        print("╚" + "═" * 68 + "╝\n")
 
         print("\nSummary of the fix:")
-        print("─"*70)
+        print("─" * 70)
         print("❌ OLD: momentum = current - past (absolute difference)")
         print("   Problem: Doesn't account for base level")
         print()
@@ -286,10 +284,11 @@ if __name__ == "__main__":
         print("   • Scale-independent (comparable across time periods)")
         print("   • Standard practice in technical analysis")
         print("   • Better signal quality for ML models")
-        print("─"*70)
+        print("─" * 70)
 
     except Exception as e:
         print(f"\n❌ TEST FAILED: {e}")
         import traceback
+
         traceback.print_exc()
         raise

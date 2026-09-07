@@ -16,7 +16,6 @@ This document describes the integration of UPGD (Utility-based Perturbed Gradien
 
 - **Learning Rate Multiplier**: Fixed a bug in `AdaptiveUPGD.step` where the perturbed update was scaled by `-2.0 * lr` instead of `-1.0 * lr`. The implementation now correctly uses `-1.0 * lr`, matching the standard UPGD algorithm. **Status: Verified (2025-11-30).**
 
-
 ## Available Optimizers
 
 ### 1. UPGD (Basic)
@@ -24,6 +23,7 @@ This document describes the integration of UPGD (Utility-based Perturbed Gradien
 The core UPGD optimizer with utility-based weight protection.
 
 **Algorithm**:
+
 1. Compute utility for each parameter: `u = -grad * param`
 2. Track exponential moving average of utility
 3. Find global maximum utility across all parameters
@@ -31,6 +31,7 @@ The core UPGD optimizer with utility-based weight protection.
 5. Apply update: `param -= lr * (grad + noise) * (1 - scaled_utility)`
 
 **Default Parameters**:
+
 - `lr`: 1e-5
 - `weight_decay`: 0.001
 - `beta_utility`: 0.999 (EMA decay for utility)
@@ -43,12 +44,14 @@ The core UPGD optimizer with utility-based weight protection.
 Combines UPGD with Adam-style adaptive learning rates for improved performance in deep networks.
 
 **Features**:
+
 - First and second moment estimates (like Adam)
 - Utility-based weight protection
 - Adaptive learning rate per parameter
 - Bias correction for both moments and utility
 
 **Default Parameters**:
+
 - `lr`: 1e-5
 - `weight_decay`: 0.001
 - `beta_utility`: 0.999
@@ -64,12 +67,14 @@ Combines UPGD with Adam-style adaptive learning rates for improved performance i
 UPGD with AdamW-style decoupled weight decay for better regularization.
 
 **Features**:
+
 - Decoupled weight decay (applied to parameters, not gradients)
 - Drop-in replacement for AdamW
 - Adaptive learning rates
 - Utility-based protection
 
 **Default Parameters**:
+
 - `lr`: 1e-4
 - `betas`: (0.9, 0.999)
 - `eps`: 1e-8
@@ -146,6 +151,7 @@ model = DistributionalPPO(
 ### Recommended Configurations
 
 #### For Standard Training (Default AdaptiveUPGD)
+
 ```python
 # Default configuration (recommended for most use cases)
 model = DistributionalPPO(
@@ -173,6 +179,7 @@ model = DistributionalPPO(
 ```
 
 #### For Strong Regularization (UPGDW)
+
 ```python
 model = DistributionalPPO(
     "MlpPolicy",
@@ -188,6 +195,7 @@ model = DistributionalPPO(
 ```
 
 #### For Continual Learning Tasks
+
 ```python
 model = DistributionalPPO(
     "MlpPolicy",
@@ -205,23 +213,27 @@ model = DistributionalPPO(
 ## Key Hyperparameters
 
 ### Learning Rate (`lr`)
+
 - Controls step size
 - Recommended: 1e-4 to 3e-4 for RL tasks
 - Lower values for continual learning
 
 ### Beta Utility (`beta_utility`)
+
 - EMA decay rate for utility tracking
 - Range: [0.9, 0.999]
 - Higher values → more stable utility estimates
 - Lower values → faster adaptation to new patterns
 
 ### Sigma (`sigma`)
+
 - Standard deviation of perturbation noise
 - Range: [0.0001, 0.01]
 - Higher values → more exploration, less forgetting
 - Lower values → less noise, more stable updates
 
 ### Weight Decay
+
 - L2 regularization strength
 - UPGD/AdaptiveUPGD: coupled (default 0.001)
 - UPGDW: decoupled (default 0.01)
@@ -310,6 +322,7 @@ assert isinstance(model.policy.optimizer, AdaptiveUPGD)
 ### Log Optimizer Info
 
 The optimizer class is automatically logged:
+
 ```python
 model.logger.record("config/optimizer_class", optimizer_name)
 ```
@@ -319,6 +332,7 @@ model.logger.record("config/optimizer_class", optimizer_name)
 ### Issue: NaN or Inf in parameters
 
 **Solution**: Reduce learning rate or sigma
+
 ```python
 optimizer_kwargs={"lr": 1e-5, "sigma": 0.0001}
 ```
@@ -326,6 +340,7 @@ optimizer_kwargs={"lr": 1e-5, "sigma": 0.0001}
 ### Issue: No learning progress
 
 **Solution**: Increase learning rate or reduce utility EMA
+
 ```python
 optimizer_kwargs={"lr": 1e-3, "beta_utility": 0.9}
 ```
@@ -333,6 +348,7 @@ optimizer_kwargs={"lr": 1e-3, "beta_utility": 0.9}
 ### Issue: Catastrophic forgetting
 
 **Solution**: Increase sigma and beta_utility
+
 ```python
 optimizer_kwargs={"sigma": 0.01, "beta_utility": 0.999}
 ```
@@ -340,6 +356,7 @@ optimizer_kwargs={"sigma": 0.01, "beta_utility": 0.999}
 ### Issue: Too much noise in learning
 
 **Solution**: Decrease sigma
+
 ```python
 optimizer_kwargs={"sigma": 0.0001}
 ```
@@ -349,6 +366,7 @@ optimizer_kwargs={"sigma": 0.0001}
 ### Unit Tests
 
 Run optimizer unit tests:
+
 ```bash
 python -m pytest tests/test_upgd_optimizer.py -v
 ```
@@ -356,6 +374,7 @@ python -m pytest tests/test_upgd_optimizer.py -v
 ### Integration Tests
 
 Run integration tests with DistributionalPPO:
+
 ```bash
 python -m pytest tests/test_upgd_integration.py -v
 ```
@@ -373,7 +392,8 @@ run_all_tests()
 
 ### Migration Guide
 
-#### If you want the old behavior (AdamW):
+#### If you want the old behavior (AdamW)
+
 ```python
 # Explicitly specify AdamW
 model = DistributionalPPO(
@@ -383,7 +403,8 @@ model = DistributionalPPO(
 )
 ```
 
-#### If you want the new behavior (AdaptiveUPGD - now default):
+#### If you want the new behavior (AdaptiveUPGD - now default)
+
 ```python
 # Simply omit optimizer_class (NEW default)
 model = DistributionalPPO(
@@ -400,7 +421,8 @@ model = DistributionalPPO(
 )
 ```
 
-#### Using UPGDW as AdamW replacement:
+#### Using UPGDW as AdamW replacement
+
 ```python
 # UPGDW provides AdamW-style interface with UPGD benefits
 model = DistributionalPPO(
@@ -424,6 +446,7 @@ model = DistributionalPPO(
    - More stability needed → lower sigma (e.g., 0.0001)
 
 3. **Use with CVaR optimization**: UPGD complements CVaR constraints well
+
    ```python
    model = DistributionalPPO(
        ...,
@@ -460,7 +483,7 @@ ai-quant-platform/
 
 ### Integration Points
 
-1. **DistributionalPPO.__init__**: Accept `optimizer_class` and `optimizer_kwargs`
+1. **DistributionalPPO.**init****: Accept `optimizer_class` and `optimizer_kwargs`
 2. **DistributionalPPO._get_optimizer_class**: Map string to optimizer class
 3. **DistributionalPPO._get_optimizer_kwargs**: Build kwargs with defaults
 4. **DistributionalPPO._setup_model**: Create optimizer instance
@@ -484,6 +507,7 @@ Potential improvements:
 ## Support
 
 For issues or questions:
+
 - Check existing tests for usage examples
 - Review this documentation
 - Examine optimizer source code for implementation details

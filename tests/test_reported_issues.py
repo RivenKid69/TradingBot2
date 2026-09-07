@@ -41,27 +41,29 @@ def test_problem_1_close_orig_loss():
     print("=" * 80)
 
     # Create sample data
-    df_original = pd.DataFrame({
-        'timestamp': [1000, 2000, 3000, 4000, 5000],
-        'close': [100.0, 101.0, 102.0, 103.0, 104.0],
-        'volume': [1000.0, 1100.0, 1200.0, 1300.0, 1400.0],
-        'rsi_14': [50.0, 55.0, 60.0, 65.0, 70.0],
-    })
+    df_original = pd.DataFrame(
+        {
+            "timestamp": [1000, 2000, 3000, 4000, 5000],
+            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "volume": [1000.0, 1100.0, 1200.0, 1300.0, 1400.0],
+            "rsi_14": [50.0, 55.0, 60.0, 65.0, 70.0],
+        }
+    )
 
     print("\n1. Original DataFrame:")
-    print(df_original[['timestamp', 'close', 'rsi_14']])
+    print(df_original[["timestamp", "close", "rsi_14"]])
 
     # Fit and transform
     pipe = FeaturePipeline()
-    pipe.fit({'test': df_original})
+    pipe.fit({"test": df_original})
 
     df_transformed = pipe.transform_df(df_original.copy())
 
     print("\n2. After transform_df():")
-    print(df_transformed[['timestamp', 'close', 'rsi_14']])
+    print(df_transformed[["timestamp", "close", "rsi_14"]])
 
     print("\n3. Check for close_orig column:")
-    if 'close_orig' in df_transformed.columns:
+    if "close_orig" in df_transformed.columns:
         print("   [OK] close_orig column EXISTS")
         print(f"   Original prices preserved: {df_transformed['close_orig'].values}")
     else:
@@ -74,21 +76,21 @@ def test_problem_1_close_orig_loss():
     print(f"   Shifted close:  {df_transformed['close'].values}")
 
     # Check if shift was applied
-    if pd.isna(df_transformed['close'].iloc[0]):
+    if pd.isna(df_transformed["close"].iloc[0]):
         print("   [OK] Shift was applied (first value is NaN)")
     else:
         print("   [FAIL] Shift was NOT applied")
 
     # Check if original values are accessible
-    original_close_at_t1 = df_original['close'].iloc[1]  # 101.0
-    shifted_close_at_t1 = df_transformed['close'].iloc[1]  # Should be 100.0 (shifted)
+    original_close_at_t1 = df_original["close"].iloc[1]  # 101.0
+    shifted_close_at_t1 = df_transformed["close"].iloc[1]  # Should be 100.0 (shifted)
 
     print(f"\n5. Example at t=1 (timestamp=2000):")
     print(f"   Original close[t=1]: {original_close_at_t1}")
     print(f"   Shifted close[t=1]:  {shifted_close_at_t1}")
 
-    if 'close_orig' in df_transformed.columns:
-        close_orig_at_t1 = df_transformed['close_orig'].iloc[1]
+    if "close_orig" in df_transformed.columns:
+        close_orig_at_t1 = df_transformed["close_orig"].iloc[1]
         print(f"   close_orig[t=1]:     {close_orig_at_t1}")
         if close_orig_at_t1 == original_close_at_t1:
             print("   [OK] close_orig correctly preserves original price")
@@ -99,7 +101,7 @@ def test_problem_1_close_orig_loss():
 
     print("\n" + "=" * 80)
     print("VERDICT for Problem #1:")
-    if 'close_orig' not in df_transformed.columns:
+    if "close_orig" not in df_transformed.columns:
         print("[WARNING]  PROBLEM CONFIRMED: close_orig is NOT created")
         print("    Impact: Original price $P_t$ is lost after transformation")
         print("    Consequence: Execution simulator and PnL calc cannot access current price")
@@ -133,7 +135,7 @@ def test_problem_2_timestamp_inconsistency():
 
     # Test Case 1: CSV path
     print("\n1. CSV Data Source (via _read_raw):")
-    csv_temp = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv')
+    csv_temp = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".csv")
     csv_data = """open_time,close_time,open,high,low,close,volume,quote_asset_volume,number_of_trades,taker_buy_base_asset_volume,taker_buy_quote_asset_volume
 0,14399,100.0,105.0,99.0,102.0,1000.0,102000.0,500,600.0,61200.0
 14400,28799,102.0,107.0,101.0,105.0,1100.0,115500.0,550,650.0,68250.0
@@ -151,59 +153,71 @@ def test_problem_2_timestamp_inconsistency():
         print(f"   Expected after fix:   timestamp = close_time = 14399 (CLOSE TIME)")
 
         # After fix: CSV should use close_time (CLOSE TIME), not floor division (OPEN TIME)
-        if df_csv['timestamp'].iloc[0] == 14399:
+        if df_csv["timestamp"].iloc[0] == 14399:
             print("   [OK] CSV timestamp = 14399 (CLOSE TIME - matches Parquet behavior)")
         else:
-            print(f"   [WARNING]  CSV timestamp = {df_csv['timestamp'].iloc[0]} (unexpected - should be 14399)")
+            print(
+                f"   [WARNING]  CSV timestamp = {df_csv['timestamp'].iloc[0]} (unexpected - should be 14399)"
+            )
 
     finally:
         os.unlink(csv_temp.name)
 
     # Test Case 2: Parquet path (explicit close_time column)
     print("\n2. Parquet Data Source (via _normalize_ohlcv) - close_time column:")
-    df_parquet_close = pd.DataFrame({
-        'close_time': [14399, 28799],  # Binance convention: end - 1ms
-        'open': [100.0, 102.0],
-        'high': [105.0, 107.0],
-        'low': [99.0, 101.0],
-        'close': [102.0, 105.0],
-        'volume': [1000.0, 1100.0],
-    })
+    df_parquet_close = pd.DataFrame(
+        {
+            "close_time": [14399, 28799],  # Binance convention: end - 1ms
+            "open": [100.0, 102.0],
+            "high": [105.0, 107.0],
+            "low": [99.0, 101.0],
+            "close": [102.0, 105.0],
+            "volume": [1000.0, 1100.0],
+        }
+    )
 
     df_normalized_close = _normalize_ohlcv(df_parquet_close, "test_close.parquet")
     print(f"   First bar close_time: {df_parquet_close['close_time'].iloc[0]} (03:59:59)")
     print(f"   Computed timestamp:   {df_normalized_close['timestamp'].iloc[0]}")
 
-    if df_normalized_close['timestamp'].iloc[0] == 14399:
+    if df_normalized_close["timestamp"].iloc[0] == 14399:
         print("   [OK] Parquet timestamp = 14399 (CLOSE TIME - end of 00:00-04:00 bar)")
     else:
-        print(f"   [WARNING]  Parquet timestamp = {df_normalized_close['timestamp'].iloc[0]} (unexpected)")
+        print(
+            f"   [WARNING]  Parquet timestamp = {df_normalized_close['timestamp'].iloc[0]} (unexpected)"
+        )
 
     # Test Case 3: Parquet path (explicit open_time column)
     print("\n3. Parquet Data Source (via _normalize_ohlcv) - open_time column:")
-    df_parquet_open = pd.DataFrame({
-        'open_time': [0, 14400],  # Start of bar
-        'open': [100.0, 102.0],
-        'high': [105.0, 107.0],
-        'low': [99.0, 101.0],
-        'close': [102.0, 105.0],
-        'volume': [1000.0, 1100.0],
-    })
+    df_parquet_open = pd.DataFrame(
+        {
+            "open_time": [0, 14400],  # Start of bar
+            "open": [100.0, 102.0],
+            "high": [105.0, 107.0],
+            "low": [99.0, 101.0],
+            "close": [102.0, 105.0],
+            "volume": [1000.0, 1100.0],
+        }
+    )
 
     df_normalized_open = _normalize_ohlcv(df_parquet_open, "test_open.parquet")
     print(f"   First bar open_time:  {df_parquet_open['open_time'].iloc[0]} (00:00:00)")
     print(f"   Computed timestamp:   {df_normalized_open['timestamp'].iloc[0]}")
-    print(f"   Calculation:          open_time + BAR_DURATION = {df_parquet_open['open_time'].iloc[0]} + 14400 = {df_parquet_open['open_time'].iloc[0] + 14400}")
+    print(
+        f"   Calculation:          open_time + BAR_DURATION = {df_parquet_open['open_time'].iloc[0]} + 14400 = {df_parquet_open['open_time'].iloc[0] + 14400}"
+    )
 
-    if df_normalized_open['timestamp'].iloc[0] == 14400:
+    if df_normalized_open["timestamp"].iloc[0] == 14400:
         print("   [OK] Parquet timestamp = 14400 (CLOSE TIME - end of 00:00-04:00 bar)")
-        print("   [WARNING]  NOTE: This differs from Binance close_time by 1 second (14400 vs 14399)")
+        print(
+            "   [WARNING]  NOTE: This differs from Binance close_time by 1 second (14400 vs 14399)"
+        )
 
     # Compare all three
     print("\n4. Timestamp Comparison for Same Bar (00:00-04:00):")
-    csv_ts = df_csv['timestamp'].iloc[0]  # Use actual CSV timestamp (should be 14399 after fix)
-    parquet_close_ts = df_normalized_close['timestamp'].iloc[0]  # 14399
-    parquet_open_ts = df_normalized_open['timestamp'].iloc[0]    # 14400
+    csv_ts = df_csv["timestamp"].iloc[0]  # Use actual CSV timestamp (should be 14399 after fix)
+    parquet_close_ts = df_normalized_close["timestamp"].iloc[0]  # 14399
+    parquet_open_ts = df_normalized_open["timestamp"].iloc[0]  # 14400
 
     # After fix: CSV should use CLOSE TIME like Parquet
     csv_label = "CLOSE TIME" if csv_ts == 14399 else f"value={csv_ts}"
@@ -215,8 +229,12 @@ def test_problem_2_timestamp_inconsistency():
     diff_csv_parquet_close = abs(parquet_close_ts - csv_ts)
     diff_csv_parquet_open = abs(parquet_open_ts - csv_ts)
 
-    print(f"   CSV vs Parquet(close_time): {diff_csv_parquet_close} seconds ({diff_csv_parquet_close / 3600:.1f} hours)")
-    print(f"   CSV vs Parquet(open_time):  {diff_csv_parquet_open} seconds ({diff_csv_parquet_open / 3600:.1f} hours)")
+    print(
+        f"   CSV vs Parquet(close_time): {diff_csv_parquet_close} seconds ({diff_csv_parquet_close / 3600:.1f} hours)"
+    )
+    print(
+        f"   CSV vs Parquet(open_time):  {diff_csv_parquet_open} seconds ({diff_csv_parquet_open / 3600:.1f} hours)"
+    )
 
     if diff_csv_parquet_close >= 14400 or diff_csv_parquet_open >= 14400:
         print("\n   [WARNING]  INCONSISTENCY DETECTED: ~4 hour offset between data sources!")
@@ -227,8 +245,12 @@ def test_problem_2_timestamp_inconsistency():
         print("   - Creates look-ahead bias or lag in combined datasets")
     else:
         print("\n   [OK] CONSISTENCY VERIFIED: Timestamps aligned within tolerance")
-        print(f"   CSV vs Parquet(close_time): {diff_csv_parquet_close} seconds ({diff_csv_parquet_close / 3600:.3f} hours)")
-        print(f"   CSV vs Parquet(open_time):  {diff_csv_parquet_open} seconds ({diff_csv_parquet_open / 3600:.3f} hours)")
+        print(
+            f"   CSV vs Parquet(close_time): {diff_csv_parquet_close} seconds ({diff_csv_parquet_close / 3600:.3f} hours)"
+        )
+        print(
+            f"   CSV vs Parquet(open_time):  {diff_csv_parquet_open} seconds ({diff_csv_parquet_open / 3600:.3f} hours)"
+        )
 
     print("\n" + "=" * 80)
     print("VERDICT for Problem #2:")
@@ -241,7 +263,9 @@ def test_problem_2_timestamp_inconsistency():
     else:
         print("[OK]  PROBLEM FIXED: Timestamps are now consistent")
         print(f"    CSV now uses CLOSE TIME (same as Parquet)")
-        print(f"    Time offset: ~{diff_csv_parquet_close / 3600:.3f} hours (within 1 second tolerance)")
+        print(
+            f"    Time offset: ~{diff_csv_parquet_close / 3600:.3f} hours (within 1 second tolerance)"
+        )
         return True
 
 
@@ -286,6 +310,6 @@ def main():
     return problem_1_ok and problem_2_ok
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     all_ok = main()
     sys.exit(0 if all_ok else 1)

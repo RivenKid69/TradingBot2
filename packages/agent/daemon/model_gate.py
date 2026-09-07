@@ -37,8 +37,7 @@ def find_model_files(root: Any) -> List[Path]:
     if root.is_file():
         return [root] if root.suffix.lower() in MODEL_EXTENSIONS else []
     return [
-        p for p in sorted(root.rglob("*"))
-        if p.is_file() and p.suffix.lower() in MODEL_EXTENSIONS
+        p for p in sorted(root.rglob("*")) if p.is_file() and p.suffix.lower() in MODEL_EXTENSIONS
     ]
 
 
@@ -69,7 +68,8 @@ def verify_artifact_models(
         logger.info(
             "model-gate[%s]: no model checkpoint under %s (code-only strategy?) — "
             "manifest digest + sandbox controls apply, signature gate N/A",
-            context, extracted_path,
+            context,
+            extracted_path,
         )
         return []
 
@@ -83,7 +83,10 @@ def verify_artifact_models(
         )
     logger.info(
         "model-gate[%s]: %d checkpoint(s) verified (policy=%s, live=%s)",
-        context, len(verdicts), eff_policy, live,
+        context,
+        len(verdicts),
+        eff_policy,
+        live,
     )
     return verdicts
 

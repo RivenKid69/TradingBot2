@@ -7,7 +7,7 @@ set -e
 KEY_FILES=(
     "README.md"
     "ARCHITECTURE.md"
-    "CLAUDE.md"
+    "docs/PLATFORM_REFERENCE.md"
     "BUILD_INSTRUCTIONS.md"
     "DOCS_INDEX.md"
 )

@@ -44,10 +44,10 @@ DEFAULT_PEAK_STATE = os.path.join("state", "live_risk_peak.json")
 class LiveRiskLimits:
     """Пользовательские лимиты (из configs/risk.yaml → lite_limits)."""
 
-    daily_loss_limit_usd: Optional[float] = None   # день -X$ → halt
-    max_drawdown_pct: Optional[float] = None        # % от пика equity → halt (напр. 15 = 15%)
-    max_leverage: Optional[float] = None            # gross exposure / equity cap
-    max_concentration_pct: Optional[float] = None   # % equity на инструмент
+    daily_loss_limit_usd: Optional[float] = None  # день -X$ → halt
+    max_drawdown_pct: Optional[float] = None  # % от пика equity → halt (напр. 15 = 15%)
+    max_leverage: Optional[float] = None  # gross exposure / equity cap
+    max_concentration_pct: Optional[float] = None  # % equity на инструмент
     pdt_guard_enabled: bool = False
     span_guard_enabled: bool = False
     greeks_guard_enabled: bool = False
@@ -65,9 +65,15 @@ class LiveRiskLimits:
 
     @property
     def any_enforced(self) -> bool:
-        return any(v is not None for v in (
-            self.daily_loss_limit_usd, self.max_drawdown_pct,
-            self.max_leverage, self.max_concentration_pct))
+        return any(
+            v is not None
+            for v in (
+                self.daily_loss_limit_usd,
+                self.max_drawdown_pct,
+                self.max_leverage,
+                self.max_concentration_pct,
+            )
+        )
 
 
 def load_live_risk_limits(path: Optional[str] = None) -> LiveRiskLimits:
@@ -158,13 +164,14 @@ class LiveRiskMonitor:
         time_fn: Callable[[], float] = None,  # type: ignore[assignment]
     ) -> None:
         import time as _time
+
         self._loader = limits_loader
         self._halt = halt_callback
         self._peak_path = peak_state_path
         self._time = time_fn or _time.time
         self._lock = threading.RLock()
         self._peak_equity: Optional[float] = None
-        self._breached: Optional[str] = None      # какой лимит пробит (идемпотентность)
+        self._breached: Optional[str] = None  # какой лимит пробит (идемпотентность)
         self._last_status: Dict[str, Any] = {"status": "no_data"}
         self._load_peak()
 
@@ -173,6 +180,7 @@ class LiveRiskMonitor:
     def _load_peak(self) -> None:
         try:
             from services.utils_app import read_json
+
             d = read_json(self._peak_path)
             if isinstance(d, dict) and isinstance(d.get("peak_equity"), (int, float)):
                 self._peak_equity = float(d["peak_equity"])
@@ -182,8 +190,10 @@ class LiveRiskMonitor:
     def _save_peak(self) -> None:
         try:
             from services.utils_app import atomic_write_json
-            atomic_write_json(self._peak_path, {"peak_equity": self._peak_equity,
-                                                "at": self._time()})
+
+            atomic_write_json(
+                self._peak_path, {"peak_equity": self._peak_equity, "at": self._time()}
+            )
         except Exception:
             pass
 
@@ -201,7 +211,9 @@ class LiveRiskMonitor:
 
     # ------------------------------------------------------------ evaluate
 
-    def evaluate(self, ledger_snapshot: Dict[str, Any], *, auto_halt: bool = True) -> Dict[str, Any]:
+    def evaluate(
+        self, ledger_snapshot: Dict[str, Any], *, auto_halt: bool = True
+    ) -> Dict[str, Any]:
         """Оценить текущее состояние против лимитов. При hard breach (и
         ``auto_halt``) один раз вызывает halt_callback."""
         limits = self._loader()
@@ -219,18 +231,26 @@ class LiveRiskMonitor:
             leverage = (gross / equity) if equity > 0 else 0.0
 
             breaches = []
-            if (limits.daily_loss_limit_usd is not None and limits.daily_loss_limit_usd > 0
-                    and day_pnl <= -limits.daily_loss_limit_usd):
+            if (
+                limits.daily_loss_limit_usd is not None
+                and limits.daily_loss_limit_usd > 0
+                and day_pnl <= -limits.daily_loss_limit_usd
+            ):
                 breaches.append(BREACH_DAILY_LOSS)
-            if (limits.max_drawdown_pct is not None and limits.max_drawdown_pct > 0
-                    and drawdown_pct >= limits.max_drawdown_pct):
+            if (
+                limits.max_drawdown_pct is not None
+                and limits.max_drawdown_pct > 0
+                and drawdown_pct >= limits.max_drawdown_pct
+            ):
                 breaches.append(BREACH_DRAWDOWN)
 
             def _usage(cur, lim):
                 return (abs(cur) / lim * 100.0) if (lim and lim > 0) else None
 
             status = {
-                "status": "breached" if breaches else ("armed" if limits.any_enforced else "no_limits"),
+                "status": (
+                    "breached" if breaches else ("armed" if limits.any_enforced else "no_limits")
+                ),
                 "enforced": limits.any_enforced,
                 "limits": limits.as_public(),
                 "equity": round(equity, 2),
@@ -251,11 +271,18 @@ class LiveRiskMonitor:
             # Idempotent auto-halt: триггерим только на НОВОМ пробое.
             if breaches and auto_halt and self._breached is None and self._halt is not None:
                 self._breached = breaches[0]
-                reason = ("Дневной лимит убытка пробит" if BREACH_DAILY_LOSS in breaches
-                          else "Макс. просадка пробита")
-                payload = {"reason": reason, "breaches": breaches,
-                           "day_pnl": day_pnl, "drawdown_pct": drawdown_pct,
-                           "limits": limits.as_public()}
+                reason = (
+                    "Дневной лимит убытка пробит"
+                    if BREACH_DAILY_LOSS in breaches
+                    else "Макс. просадка пробита"
+                )
+                payload = {
+                    "reason": reason,
+                    "breaches": breaches,
+                    "day_pnl": day_pnl,
+                    "drawdown_pct": drawdown_pct,
+                    "limits": limits.as_public(),
+                }
                 logger.error("live-risk: CIRCUIT BREAKER — %s (%s)", reason, payload)
                 try:
                     self._halt(payload)

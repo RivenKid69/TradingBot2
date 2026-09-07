@@ -50,7 +50,7 @@ def _emit_deprecation_warning(module_name: str) -> None:
         f"building products for financial entities, not for ICT provider use. "
         f"Module: {module_name}",
         DeprecationWarning,
-        stacklevel=3
+        stacklevel=3,
     )
 
 
@@ -448,11 +448,9 @@ __all__ = [
     # Version info
     "__version__",
     "__archive_date__",
-
     # =========================================================================
     # Phase 0: Proportionality Assessment
     # =========================================================================
-
     # Scope Verification (Article 2)
     "DORAEntityType",
     "DORAScopeResult",
@@ -461,7 +459,6 @@ __all__ = [
     "DORAScope",
     "create_scope_verifier",
     "get_entity_type_description",
-
     # Function Classification (Article 3(22))
     "FunctionCriticality",
     "ImpairmentType",
@@ -472,7 +469,6 @@ __all__ = [
     "create_function_classifier",
     "get_platform_functions",
     "get_ict_providers",
-
     # Proportionality (Articles 4, 16)
     "DORARegime",
     "ExemptionType",
@@ -482,11 +478,9 @@ __all__ = [
     "ProportionalityAssessor",
     "create_proportionality_assessor",
     "assess_entity_proportionality",
-
     # =========================================================================
     # Phase 1: ICT Risk Management Framework (Articles 5-16)
     # =========================================================================
-
     # Governance (Article 5)
     "GovernanceRole",
     "DefenceLine",
@@ -500,7 +494,6 @@ __all__ = [
     "DORAGovernanceFramework",
     "create_governance_framework",
     "MANDATORY_TRAINING_TOPICS",
-
     # ICT Risk Management Framework (Article 6)
     "PolicyCategory",
     "ControlDomain",
@@ -512,7 +505,6 @@ __all__ = [
     "ICTRisk",
     "DORAICTRiskFramework",
     "create_ict_risk_framework",
-
     # ICT Systems (Article 7)
     "SystemCriticality",
     "SystemType",
@@ -526,7 +518,6 @@ __all__ = [
     "SystemUpgrade",
     "DORAICTSystemsManager",
     "create_ict_systems_manager",
-
     # ICT Identification (Article 8)
     "AssetType",
     "AssetClassification",
@@ -541,7 +532,6 @@ __all__ = [
     "BusinessFunction",
     "DORAICTIdentification",
     "create_ict_identification",
-
     # Protection and Prevention (Article 9)
     "SecurityControlCategory",
     "AccessControlType",
@@ -555,7 +545,6 @@ __all__ = [
     "DataProtectionPolicy",
     "DORAProtection",
     "create_protection",
-
     # Detection (Article 10)
     "AnomalyType",
     "AlertSeverity",
@@ -568,7 +557,6 @@ __all__ = [
     "SinglePointOfFailure",
     "DORADetection",
     "create_detection",
-
     # Response and Recovery (Article 11)
     "IncidentSeverity",
     "IncidentStatus",
@@ -581,7 +569,6 @@ __all__ = [
     "RecoveryAction",
     "DORAResponseRecovery",
     "create_response_recovery",
-
     # Backup and Recovery (Article 12)
     "BackupType",
     "BackupFrequency",
@@ -596,7 +583,6 @@ __all__ = [
     "RestorationProcedure",
     "DORABackupRecovery",
     "create_backup_recovery",
-
     # Learning and Evolving (Article 13)
     "ReviewType",
     "LessonCategory",
@@ -614,7 +600,6 @@ __all__ = [
     "InformationShare",
     "DORALearning",
     "create_dora_learning",
-
     # ICT Business Continuity (Article 15)
     "ContinuityStatus",
     "CriticalityLevel",
@@ -631,7 +616,6 @@ __all__ = [
     "AlternativeArrangement",
     "DORAICTBusinessContinuity",
     "create_dora_ict_business_continuity",
-
     # Simplified Framework (Article 16)
     "EntitySize",
     "SimplifiedControlCategory",
@@ -648,11 +632,9 @@ __all__ = [
     "ESSENTIAL_CONTROLS",
     "DORASimplifiedFramework",
     "create_dora_simplified_framework",
-
     # =========================================================================
     # Phase 2: ICT Incident Management (Articles 17-23)
     # =========================================================================
-
     # Incident Management (Article 17)
     "ICTEventType",
     "IncidentPhase",
@@ -664,7 +646,6 @@ __all__ = [
     "IncidentManagementConfig",
     "DORAIncidentManagement",
     "create_incident_management",
-
     # Supervisory Feedback (Article 22)
     "FeedbackType",
     "FeedbackPriority",
@@ -678,11 +659,9 @@ __all__ = [
     "AnonymisedInsight",
     "DORASupervisioryFeedback",
     "create_supervisory_feedback",
-
     # =========================================================================
     # Phase 3: Digital Resilience Testing (Articles 24-27)
     # =========================================================================
-
     # Resilience Testing (Article 24)
     "TestCategory",
     "TestFrequency",
@@ -697,7 +676,6 @@ __all__ = [
     "ResilienceTestingConfig",
     "DORAResilienceTestingProgramme",
     "create_resilience_testing_programme",
-
     # ICT Testing (Article 25)
     "ICTSystemType",
     "TestingPriority",
@@ -712,7 +690,6 @@ __all__ = [
     "ICTTestingConfig",
     "DORAICTSystemTesting",
     "create_ict_system_testing",
-
     # TLPT (Article 26)
     "TLPTPhase",
     "TLPTStatus",
@@ -732,7 +709,6 @@ __all__ = [
     "TLPTConfig",
     "DORAThreadLedPenetrationTesting",
     "create_tlpt",
-
     # Tester Management (Article 27)
     "TesterRole",
     "CertificationCategory",
@@ -749,7 +725,6 @@ __all__ = [
     "TesterManagementConfig",
     "DORATestermanagement",
     "create_tester_management",
-
     # Pooled Testing (Article 26(3))
     "PooledTestStatus",
     "ParticipantRole",
@@ -765,11 +740,9 @@ __all__ = [
     "PooledTestingConfig",
     "DORAPooledTesting",
     "create_pooled_testing",
-
     # =========================================================================
     # Phase 5: Information Sharing & Integration
     # =========================================================================
-
     # Cross Regulation
     "Regulation",
     "ReportingRequirement",
@@ -777,7 +750,6 @@ __all__ = [
     "RiskFrameworkAlignment",
     "LoggingAlignmentResult",
     "DORARegulationIntegration",
-
     # Training Participation (FE side - requesting training from providers)
     "TrainingType",
     "ParticipationMode",

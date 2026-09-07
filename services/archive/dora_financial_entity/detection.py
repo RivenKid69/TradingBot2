@@ -43,8 +43,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class AnomalyType(Enum):
     """Anomaly types per DORA Article 10."""
+
     NETWORK_TRAFFIC = "network_traffic"
     SYSTEM_PERFORMANCE = "system_performance"
     USER_BEHAVIOR = "user_behavior"
@@ -57,6 +59,7 @@ class AnomalyType(Enum):
 
 class AlertSeverity(Enum):
     """Alert severity levels."""
+
     INFO = "info"
     LOW = "low"
     MEDIUM = "medium"
@@ -66,6 +69,7 @@ class AlertSeverity(Enum):
 
 class AlertStatus(Enum):
     """Alert status."""
+
     NEW = "new"
     ACKNOWLEDGED = "acknowledged"
     INVESTIGATING = "investigating"
@@ -76,6 +80,7 @@ class AlertStatus(Enum):
 
 class DetectionMethod(Enum):
     """Detection methods."""
+
     THRESHOLD_BASED = "threshold_based"
     STATISTICAL = "statistical"
     MACHINE_LEARNING = "machine_learning"
@@ -87,6 +92,7 @@ class DetectionMethod(Enum):
 
 class IncidentCategory(Enum):
     """ICT incident categories."""
+
     SECURITY = "security"
     AVAILABILITY = "availability"
     PERFORMANCE = "performance"
@@ -99,6 +105,7 @@ class IncidentCategory(Enum):
 
 class MonitoringStatus(Enum):
     """Monitoring system status."""
+
     ACTIVE = "active"
     PAUSED = "paused"
     MAINTENANCE = "maintenance"
@@ -110,6 +117,7 @@ class MonitoringStatus(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class DetectionRule:
     """
@@ -117,6 +125,7 @@ class DetectionRule:
 
     Defines criteria for detecting anomalies and incidents.
     """
+
     rule_id: str = ""
     name: str = ""
     description: str = ""
@@ -171,6 +180,7 @@ class DetectionAlert:
 
     Documents detected anomalies or potential incidents.
     """
+
     alert_id: str = ""
     rule_id: str = ""
     rule_name: str = ""
@@ -231,6 +241,7 @@ class PerformanceMetric:
     """
     Performance metric for monitoring.
     """
+
     metric_id: str = ""
     metric_name: str = ""
     system_id: str = ""
@@ -268,6 +279,7 @@ class SinglePointOfFailure:
 
     Per DORA Article 10(2), entities must identify potential SPOFs.
     """
+
     spof_id: str = ""
     name: str = ""
     description: str = ""
@@ -308,6 +320,7 @@ class DetectionCapability:
     """
     Detection capability assessment.
     """
+
     capability_id: str = ""
     name: str = ""
     description: str = ""
@@ -336,9 +349,11 @@ class DetectionCapability:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class DetectionConfig:
     """Configuration for DORA Detection module."""
+
     # Alert thresholds
     default_alert_threshold: float = 80.0
     critical_alert_threshold: float = 95.0
@@ -373,6 +388,7 @@ class DetectionConfig:
 # =============================================================================
 # Main Detection Class
 # =============================================================================
+
 
 class DORADetection:
     """
@@ -483,11 +499,14 @@ class DORADetection:
         with self._lock:
             self._rules[rule.rule_id] = rule
 
-        self._log_event("rule_created", {
-            "rule_id": rule.rule_id,
-            "name": name,
-            "threshold": threshold_value,
-        })
+        self._log_event(
+            "rule_created",
+            {
+                "rule_id": rule.rule_id,
+                "name": name,
+                "threshold": threshold_value,
+            },
+        )
 
         return rule
 
@@ -560,9 +579,7 @@ class DORADetection:
             cutoff = (
                 datetime.now(timezone.utc) - timedelta(hours=self.config.metric_retention_hours)
             ).isoformat()
-            self._metrics[system_id] = [
-                m for m in self._metrics[system_id] if m.timestamp > cutoff
-            ]
+            self._metrics[system_id] = [m for m in self._metrics[system_id] if m.timestamp > cutoff]
 
         # Check against rules
         for rule in self._rules.values():
@@ -707,11 +724,14 @@ class DORADetection:
             except Exception as e:
                 logger.error(f"Alert callback failed: {e}")
 
-        self._log_event("alert_created", {
-            "alert_id": alert.alert_id,
-            "rule_id": rule.rule_id,
-            "severity": alert.severity.value,
-        })
+        self._log_event(
+            "alert_created",
+            {
+                "alert_id": alert.alert_id,
+                "rule_id": rule.rule_id,
+                "severity": alert.severity.value,
+            },
+        )
 
         logger.warning(f"Alert: {alert.title} ({alert.severity.value})")
         return alert
@@ -772,8 +792,8 @@ class DORADetection:
     def _is_duplicate_alert(self, rule_id: str, source_system: str) -> bool:
         """Check for duplicate alert within deduplication window."""
         cutoff = (
-            datetime.now(timezone.utc) -
-            timedelta(seconds=self.config.alert_deduplication_window_seconds)
+            datetime.now(timezone.utc)
+            - timedelta(seconds=self.config.alert_deduplication_window_seconds)
         ).isoformat()
 
         with self._lock:
@@ -848,15 +868,18 @@ class DORADetection:
         """Get all open (unresolved) alerts."""
         with self._lock:
             return [
-                a for a in self._alerts
-                if a.status in (AlertStatus.NEW, AlertStatus.ACKNOWLEDGED, AlertStatus.INVESTIGATING)
+                a
+                for a in self._alerts
+                if a.status
+                in (AlertStatus.NEW, AlertStatus.ACKNOWLEDGED, AlertStatus.INVESTIGATING)
             ]
 
     def get_critical_alerts(self) -> List[DetectionAlert]:
         """Get critical and high severity open alerts."""
         with self._lock:
             return [
-                a for a in self._alerts
+                a
+                for a in self._alerts
                 if a.severity in (AlertSeverity.CRITICAL, AlertSeverity.HIGH)
                 and a.status not in (AlertStatus.RESOLVED, AlertStatus.FALSE_POSITIVE)
             ]
@@ -918,11 +941,14 @@ class DORADetection:
         with self._lock:
             self._spofs[spof.spof_id] = spof
 
-        self._log_event("spof_identified", {
-            "spof_id": spof.spof_id,
-            "name": name,
-            "criticality": criticality,
-        })
+        self._log_event(
+            "spof_identified",
+            {
+                "spof_id": spof.spof_id,
+                "name": name,
+                "criticality": criticality,
+            },
+        )
 
         logger.info(f"SPOF identified: {name} ({criticality})")
         return spof
@@ -936,7 +962,8 @@ class DORADetection:
         """Get SPOFs without mitigation."""
         with self._lock:
             return [
-                s for s in self._spofs.values()
+                s
+                for s in self._spofs.values()
                 if s.mitigation_status != "implemented" and not s.redundancy_exists
             ]
 
@@ -1047,8 +1074,7 @@ class DORADetection:
                         for s in AlertSeverity
                     },
                     "by_status": {
-                        s.value: sum(1 for a in self._alerts if a.status == s)
-                        for s in AlertStatus
+                        s.value: sum(1 for a in self._alerts if a.status == s) for s in AlertStatus
                     },
                 },
                 "spofs": {
@@ -1099,6 +1125,7 @@ class DORADetection:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_detection(
     config: Optional[DetectionConfig] = None,

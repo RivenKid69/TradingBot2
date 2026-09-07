@@ -97,6 +97,7 @@ logger = logging.getLogger(__name__)
 
 class JobState(Enum):
     """Job lifecycle state."""
+
     PENDING = auto()
     VALIDATING = auto()
     QUEUED = auto()
@@ -111,6 +112,7 @@ class JobState(Enum):
 
 class JobTerminationReason(Enum):
     """Reason for job termination."""
+
     COMPLETED = auto()
     TIMEOUT = auto()
     OOM = auto()
@@ -127,6 +129,7 @@ class JobConfig:
     """
     Configuration for a research job.
     """
+
     # Identity
     job_id: str = field(default_factory=lambda: str(uuid4()))
     tenant_id: str = ""
@@ -177,6 +180,7 @@ class ResearchJob:
     """
     Research job instance.
     """
+
     config: JobConfig
 
     # State
@@ -227,6 +231,7 @@ class JobResult:
     """
     Complete result of job execution.
     """
+
     job_id: str = ""
     tenant_id: str = ""
 
@@ -443,9 +448,7 @@ class ResearchJobExecutor:
         job.state = JobState.QUEUED
         job.state_changed_at = datetime.utcnow()
 
-        future = self._executor.submit(
-            self._execute_job, job, code, input_data, files
-        )
+        future = self._executor.submit(self._execute_job, job, code, input_data, files)
 
         with self._lock:
             self._futures[job.config.job_id] = future

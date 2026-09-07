@@ -102,8 +102,9 @@ class TestBrokerTermsWarnings:
         for broker in SupportedBroker:
             warning = BROKER_TERMS_WARNINGS.get(broker, "").lower()
             # Should mention withdrawal restrictions
-            assert "withdraw" in warning or "transfer" in warning, \
-                f"Warning for {broker.value} should mention withdrawal restrictions"
+            assert (
+                "withdraw" in warning or "transfer" in warning
+            ), f"Warning for {broker.value} should mention withdrawal restrictions"
 
 
 class TestBrokerRateLimits:
@@ -155,7 +156,7 @@ class TestInMemoryBrokerTermsStorage:
             broker=SupportedBroker.ALPACA,
             terms_version="2024.1",
             acknowledged_at=datetime.now(timezone.utc),
-            ip_address="127.0.0.1"
+            ip_address="127.0.0.1",
         )
         storage.save(ack)
 
@@ -171,7 +172,7 @@ class TestInMemoryBrokerTermsStorage:
             broker=SupportedBroker.ALPACA,
             terms_version="2023.1",
             acknowledged_at=datetime(2023, 1, 1, tzinfo=timezone.utc),
-            ip_address="127.0.0.1"
+            ip_address="127.0.0.1",
         )
         ack2 = BrokerTermsAcknowledgment(
             acknowledgment_id="ack_002",
@@ -179,7 +180,7 @@ class TestInMemoryBrokerTermsStorage:
             broker=SupportedBroker.ALPACA,
             terms_version="2024.1",
             acknowledged_at=datetime(2024, 6, 1, tzinfo=timezone.utc),
-            ip_address="127.0.0.1"
+            ip_address="127.0.0.1",
         )
         storage.save(ack1)
         storage.save(ack2)
@@ -201,7 +202,7 @@ class TestInMemoryBrokerTermsStorage:
                 broker=broker,
                 terms_version="2024.1",
                 acknowledged_at=datetime.now(timezone.utc),
-                ip_address="127.0.0.1"
+                ip_address="127.0.0.1",
             )
             storage.save(ack)
 
@@ -216,7 +217,7 @@ class TestInMemoryBrokerTermsStorage:
             broker=SupportedBroker.ALPACA,
             terms_version="2024.1",
             acknowledged_at=datetime.now(timezone.utc),
-            ip_address="127.0.0.1"
+            ip_address="127.0.0.1",
         )
         storage.save(ack)
 
@@ -260,9 +261,7 @@ class TestBrokerTermsService:
     def test_record_acknowledgment(self, service):
         """Verify acknowledgment is recorded correctly."""
         ack = service.record_acknowledgment(
-            user_id="user_001",
-            broker=SupportedBroker.ALPACA,
-            ip_address="127.0.0.1"
+            user_id="user_001", broker=SupportedBroker.ALPACA, ip_address="127.0.0.1"
         )
 
         assert ack is not None
@@ -273,9 +272,7 @@ class TestBrokerTermsService:
     def test_has_valid_acknowledgment_after_record(self, service):
         """Verify has_valid_acknowledgment returns True after recording."""
         service.record_acknowledgment(
-            user_id="user_001",
-            broker=SupportedBroker.ALPACA,
-            ip_address="127.0.0.1"
+            user_id="user_001", broker=SupportedBroker.ALPACA, ip_address="127.0.0.1"
         )
 
         assert service.has_valid_acknowledgment("user_001", SupportedBroker.ALPACA)
@@ -287,9 +284,7 @@ class TestBrokerTermsService:
     def test_version_change_requires_reacknowledgment(self, service):
         """Verify version change invalidates previous acknowledgment."""
         service.record_acknowledgment(
-            user_id="user_001",
-            broker=SupportedBroker.ALPACA,
-            ip_address="127.0.0.1"
+            user_id="user_001", broker=SupportedBroker.ALPACA, ip_address="127.0.0.1"
         )
 
         # Change the version
@@ -301,36 +296,27 @@ class TestBrokerTermsService:
     def test_require_acknowledgment_before_key_submission_raises(self, service):
         """Verify require_acknowledgment raises when not acknowledged."""
         with pytest.raises(BrokerTermsNotAcknowledgedError) as exc_info:
-            service.require_acknowledgment_before_key_submission(
-                "new_user", SupportedBroker.ALPACA
-            )
+            service.require_acknowledgment_before_key_submission("new_user", SupportedBroker.ALPACA)
 
         assert exc_info.value.broker == SupportedBroker.ALPACA
 
     def test_require_acknowledgment_before_key_submission_passes(self, service):
         """Verify require_acknowledgment passes when acknowledged."""
         service.record_acknowledgment(
-            user_id="user_001",
-            broker=SupportedBroker.ALPACA,
-            ip_address="127.0.0.1"
+            user_id="user_001", broker=SupportedBroker.ALPACA, ip_address="127.0.0.1"
         )
 
         # Should not raise
-        service.require_acknowledgment_before_key_submission(
-            "user_001", SupportedBroker.ALPACA
-        )
+        service.require_acknowledgment_before_key_submission("user_001", SupportedBroker.ALPACA)
 
     def test_get_pending_acknowledgments(self, service):
         """Verify get_pending_acknowledgments returns correct list."""
         service.record_acknowledgment(
-            user_id="user_001",
-            broker=SupportedBroker.ALPACA,
-            ip_address="127.0.0.1"
+            user_id="user_001", broker=SupportedBroker.ALPACA, ip_address="127.0.0.1"
         )
 
         pending = service.get_pending_acknowledgments(
-            "user_001",
-            brokers=[SupportedBroker.ALPACA, SupportedBroker.BINANCE]
+            "user_001", brokers=[SupportedBroker.ALPACA, SupportedBroker.BINANCE]
         )
 
         assert SupportedBroker.BINANCE in pending
@@ -339,11 +325,7 @@ class TestBrokerTermsService:
     def test_get_user_acknowledgments(self, service):
         """Verify get_user_acknowledgments returns all user's acknowledgments."""
         for broker in [SupportedBroker.ALPACA, SupportedBroker.BINANCE]:
-            service.record_acknowledgment(
-                user_id="user_001",
-                broker=broker,
-                ip_address="127.0.0.1"
-            )
+            service.record_acknowledgment(user_id="user_001", broker=broker, ip_address="127.0.0.1")
 
         acks = service.get_user_acknowledgments("user_001")
         assert len(acks) == 2
@@ -351,9 +333,7 @@ class TestBrokerTermsService:
     def test_delete_user_acknowledgments(self, service):
         """Verify delete_user_acknowledgments removes all user data."""
         service.record_acknowledgment(
-            user_id="user_001",
-            broker=SupportedBroker.ALPACA,
-            ip_address="127.0.0.1"
+            user_id="user_001", broker=SupportedBroker.ALPACA, ip_address="127.0.0.1"
         )
 
         deleted = service.delete_user_acknowledgments("user_001")
@@ -363,9 +343,7 @@ class TestBrokerTermsService:
     def test_get_acknowledgment_status(self, service):
         """Verify get_acknowledgment_status generates correct report."""
         service.record_acknowledgment(
-            user_id="user_001",
-            broker=SupportedBroker.ALPACA,
-            ip_address="127.0.0.1"
+            user_id="user_001", broker=SupportedBroker.ALPACA, ip_address="127.0.0.1"
         )
 
         status = service.get_acknowledgment_status("user_001")
@@ -391,7 +369,7 @@ class TestAcknowledgmentSerialization:
             terms_version="2024.1",
             acknowledged_at=datetime.now(timezone.utc),
             ip_address="127.0.0.1",
-            metadata={"extra": "data"}
+            metadata={"extra": "data"},
         )
 
         data = ack.to_dict()
@@ -420,10 +398,7 @@ class TestBrokerTermsNotAcknowledgedError:
 
     def test_custom_message(self):
         """Verify custom message is used."""
-        error = BrokerTermsNotAcknowledgedError(
-            SupportedBroker.ALPACA,
-            "Custom error message"
-        )
+        error = BrokerTermsNotAcknowledgedError(SupportedBroker.ALPACA, "Custom error message")
         assert error.message == "Custom error message"
 
 
@@ -440,9 +415,7 @@ class TestAllBrokersIntegration:
         """Verify all brokers can be acknowledged."""
         for broker in SupportedBroker:
             ack = service.record_acknowledgment(
-                user_id="user_001",
-                broker=broker,
-                ip_address="127.0.0.1"
+                user_id="user_001", broker=broker, ip_address="127.0.0.1"
             )
             assert ack is not None
             assert service.has_valid_acknowledgment("user_001", broker)

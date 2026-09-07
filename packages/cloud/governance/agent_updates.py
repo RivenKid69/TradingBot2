@@ -27,8 +27,10 @@ from uuid import uuid4
 # Enums and Constants
 # =============================================================================
 
+
 class UpdateChannel(str, Enum):
     """Update channels for agent releases."""
+
     STABLE = "stable"
     BETA = "beta"
     CANARY = "canary"
@@ -37,6 +39,7 @@ class UpdateChannel(str, Enum):
 
 class RolloutStatus(str, Enum):
     """Status of a rollout stage or overall rollout."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     PAUSED = "paused"
@@ -48,6 +51,7 @@ class RolloutStatus(str, Enum):
 
 class UpdateResult(str, Enum):
     """Result of an individual agent update."""
+
     SUCCESS = "success"
     FAILED = "failed"
     TIMEOUT = "timeout"
@@ -57,6 +61,7 @@ class UpdateResult(str, Enum):
 
 class UpdateEventType(str, Enum):
     """Types of update events."""
+
     UPDATE_PUBLISHED = "update_published"
     ROLLOUT_STARTED = "rollout_started"
     ROLLOUT_STAGE_STARTED = "rollout_stage_started"
@@ -92,9 +97,11 @@ MIN_STAGE_WAIT_MINUTES = 15
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class AgentUpdate:
     """An agent update package."""
+
     update_id: str = field(default_factory=lambda: str(uuid4()))
     version: str = ""  # semver
     channel: UpdateChannel = UpdateChannel.STABLE
@@ -173,6 +180,7 @@ class AgentUpdate:
 @dataclass
 class RolloutCriteria:
     """Criteria for proceeding with a rollout stage."""
+
     min_success_rate: float = 0.95  # 95% success required
     max_error_rate: float = DEFAULT_ERROR_RATE_THRESHOLD
     min_agents_updated: int = 1
@@ -196,6 +204,7 @@ class RolloutCriteria:
 @dataclass
 class RolloutStageMetrics:
     """Metrics for a rollout stage."""
+
     agents_targeted: int = 0
     agents_updated: int = 0
     agents_failed: int = 0
@@ -221,6 +230,7 @@ class RolloutStageMetrics:
 @dataclass
 class RolloutStage:
     """A stage in a staged rollout."""
+
     stage_id: str = field(default_factory=lambda: str(uuid4()))
     stage_name: str = ""  # e.g., "canary", "early_adopter", "general"
     stage_order: int = 0
@@ -238,18 +248,26 @@ class RolloutStage:
         issues = []
 
         if self.metrics.success_rate < self.criteria.min_success_rate:
-            issues.append(f"Success rate {self.metrics.success_rate:.1%} below threshold {self.criteria.min_success_rate:.1%}")
+            issues.append(
+                f"Success rate {self.metrics.success_rate:.1%} below threshold {self.criteria.min_success_rate:.1%}"
+            )
 
         if self.metrics.error_rate > self.criteria.max_error_rate:
-            issues.append(f"Error rate {self.metrics.error_rate:.1%} above threshold {self.criteria.max_error_rate:.1%}")
+            issues.append(
+                f"Error rate {self.metrics.error_rate:.1%} above threshold {self.criteria.max_error_rate:.1%}"
+            )
 
         if self.metrics.agents_updated < self.criteria.min_agents_updated:
-            issues.append(f"Only {self.metrics.agents_updated} agents updated, need {self.criteria.min_agents_updated}")
+            issues.append(
+                f"Only {self.metrics.agents_updated} agents updated, need {self.criteria.min_agents_updated}"
+            )
 
         if self.started_at:
             elapsed_minutes = (datetime.now(timezone.utc) - self.started_at).total_seconds() / 60
             if elapsed_minutes < self.criteria.min_wait_minutes:
-                issues.append(f"Must wait {self.criteria.min_wait_minutes - elapsed_minutes:.0f} more minutes")
+                issues.append(
+                    f"Must wait {self.criteria.min_wait_minutes - elapsed_minutes:.0f} more minutes"
+                )
 
         if self.criteria.require_manual_approval and not self.criteria.approved_by:
             issues.append("Manual approval required but not received")
@@ -275,6 +293,7 @@ class RolloutStage:
 @dataclass
 class RolloutPlan:
     """A staged rollout plan."""
+
     rollout_id: str = field(default_factory=lambda: str(uuid4()))
     update_id: str = ""
     version: str = ""
@@ -307,7 +326,9 @@ class RolloutPlan:
             metrics.agents_failed += stage.metrics.agents_failed
             metrics.agents_skipped += stage.metrics.agents_skipped
             for error_type, count in stage.metrics.errors_by_type.items():
-                metrics.errors_by_type[error_type] = metrics.errors_by_type.get(error_type, 0) + count
+                metrics.errors_by_type[error_type] = (
+                    metrics.errors_by_type.get(error_type, 0) + count
+                )
 
         total = metrics.agents_updated + metrics.agents_failed
         if total > 0:
@@ -340,6 +361,7 @@ class RolloutPlan:
 @dataclass
 class RollbackRequest:
     """A rollback request."""
+
     rollback_id: str = field(default_factory=lambda: str(uuid4()))
     rollout_id: str = ""
     from_version: str = ""
@@ -363,14 +385,17 @@ class RollbackRequest:
             self.evidence_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "rollback_id": self.rollback_id,
-            "rollout_id": self.rollout_id,
-            "from_version": self.from_version,
-            "to_version": self.to_version,
-            "requested_at": self.requested_at.isoformat(),
-            "requested_by": self.requested_by,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "rollback_id": self.rollback_id,
+                "rollout_id": self.rollout_id,
+                "from_version": self.from_version,
+                "to_version": self.to_version,
+                "requested_at": self.requested_at.isoformat(),
+                "requested_by": self.requested_by,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -398,6 +423,7 @@ class RollbackRequest:
 @dataclass
 class ChangeWindow:
     """Change window for enterprise updates."""
+
     allowed_days: Set[int] = field(default_factory=lambda: {0, 1, 2, 3, 4})  # Mon-Fri
     start_hour: int = 2  # UTC hour (0-23)
     end_hour: int = 6  # UTC hour (0-23)
@@ -464,6 +490,7 @@ class ChangeWindow:
 @dataclass
 class VersionPin:
     """Enterprise version pinning."""
+
     pin_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     pinned_version: str = ""
@@ -499,6 +526,7 @@ class VersionPin:
 @dataclass
 class AgentUpdateRecord:
     """Record of an individual agent update."""
+
     record_id: str = field(default_factory=lambda: str(uuid4()))
     agent_id: str = ""
     workspace_id: str = ""
@@ -532,6 +560,7 @@ class AgentUpdateRecord:
 @dataclass
 class UpdateEvent:
     """Event in the update audit log."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     event_type: UpdateEventType = UpdateEventType.UPDATE_PUBLISHED
@@ -550,16 +579,19 @@ class UpdateEvent:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "workspace_id": self.workspace_id,
-            "event_type": self.event_type.value,
-            "timestamp": self.timestamp.isoformat(),
-            "actor_id": self.actor_id,
-            "rollout_id": self.rollout_id,
-            "version": self.version,
-            "result": self.result,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "workspace_id": self.workspace_id,
+                "event_type": self.event_type.value,
+                "timestamp": self.timestamp.isoformat(),
+                "actor_id": self.actor_id,
+                "rollout_id": self.rollout_id,
+                "version": self.version,
+                "result": self.result,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -582,6 +614,7 @@ class UpdateEvent:
 @dataclass
 class AgentUpdateStats:
     """Statistics for agent updates."""
+
     workspace_id: str = ""
     total_updates_published: int = 0
     total_rollouts: int = 0
@@ -615,6 +648,7 @@ class AgentUpdateStats:
 # =============================================================================
 # Agent Update Service
 # =============================================================================
+
 
 class AgentUpdateService:
     """
@@ -912,7 +946,9 @@ class AgentUpdateService:
                         stage.metrics.agents_failed += 1
                         if error:
                             error_type = error.split(":")[0] if ":" in error else "unknown"
-                            stage.metrics.errors_by_type[error_type] = stage.metrics.errors_by_type.get(error_type, 0) + 1
+                            stage.metrics.errors_by_type[error_type] = (
+                                stage.metrics.errors_by_type.get(error_type, 0) + 1
+                            )
                     elif result == UpdateResult.SKIPPED:
                         stage.metrics.agents_skipped += 1
 
@@ -926,10 +962,16 @@ class AgentUpdateService:
                     if stage.metrics.error_rate >= plan.pause_on_error_rate:
                         plan.status = RolloutStatus.PAUSED
                         stage.status = RolloutStatus.PAUSED
-                        stage.error = f"Error rate {stage.metrics.error_rate:.1%} exceeded threshold"
+                        stage.error = (
+                            f"Error rate {stage.metrics.error_rate:.1%} exceeded threshold"
+                        )
 
         # Log event
-        event_type = UpdateEventType.AGENT_UPDATED if result == UpdateResult.SUCCESS else UpdateEventType.AGENT_UPDATE_FAILED
+        event_type = (
+            UpdateEventType.AGENT_UPDATED
+            if result == UpdateResult.SUCCESS
+            else UpdateEventType.AGENT_UPDATE_FAILED
+        )
         event = UpdateEvent(
             workspace_id=workspace_id,
             event_type=event_type,
@@ -1118,7 +1160,11 @@ class AgentUpdateService:
             if not plan:
                 raise ValueError(f"Rollout {rollout_id} not found")
 
-            if plan.status in (RolloutStatus.COMPLETED, RolloutStatus.CANCELLED, RolloutStatus.ROLLED_BACK):
+            if plan.status in (
+                RolloutStatus.COMPLETED,
+                RolloutStatus.CANCELLED,
+                RolloutStatus.ROLLED_BACK,
+            ):
                 raise ValueError(f"Rollout is in {plan.status.value} status, cannot cancel")
 
             plan.status = RolloutStatus.CANCELLED
@@ -1291,7 +1337,11 @@ class AgentUpdateService:
                 rollback.status = RolloutStatus.COMPLETED
 
         # Log event
-        event_type = UpdateEventType.ROLLBACK_COMPLETED if rollback.status == RolloutStatus.COMPLETED else UpdateEventType.ROLLBACK_FAILED
+        event_type = (
+            UpdateEventType.ROLLBACK_COMPLETED
+            if rollback.status == RolloutStatus.COMPLETED
+            else UpdateEventType.ROLLBACK_FAILED
+        )
         event = UpdateEvent(
             event_type=event_type,
             actor_id="system",
@@ -1526,10 +1576,16 @@ class AgentUpdateService:
         success_rate = agents_updated / total if total > 0 else 0.0
 
         # Calculate average rollout duration
-        completed_rollouts = [r for r in rollouts if r.status == RolloutStatus.COMPLETED and r.started_at and r.completed_at]
+        completed_rollouts = [
+            r
+            for r in rollouts
+            if r.status == RolloutStatus.COMPLETED and r.started_at and r.completed_at
+        ]
         avg_duration = 0.0
         if completed_rollouts:
-            durations = [(r.completed_at - r.started_at).total_seconds() / 3600 for r in completed_rollouts]
+            durations = [
+                (r.completed_at - r.started_at).total_seconds() / 3600 for r in completed_rollouts
+            ]
             avg_duration = sum(durations) / len(durations)
 
         return AgentUpdateStats(
@@ -1538,7 +1594,9 @@ class AgentUpdateService:
             total_rollouts=len(rollouts),
             rollouts_completed=len([r for r in rollouts if r.status == RolloutStatus.COMPLETED]),
             rollouts_failed=len([r for r in rollouts if r.status == RolloutStatus.FAILED]),
-            rollouts_rolled_back=len([r for r in rollouts if r.status == RolloutStatus.ROLLED_BACK]),
+            rollouts_rolled_back=len(
+                [r for r in rollouts if r.status == RolloutStatus.ROLLED_BACK]
+            ),
             agents_updated_30d=agents_updated,
             agents_failed_30d=agents_failed,
             success_rate_30d=success_rate,

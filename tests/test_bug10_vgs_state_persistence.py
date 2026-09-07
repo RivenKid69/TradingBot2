@@ -4,11 +4,14 @@ Specialized Test for Bug #10: VGS State Not Preserved Across Save/Load
 This test precisely localizes the issue where VGS internal state
 (step_count, EMAs) is not correctly preserved during model save/load cycles.
 """
+
 import pytest
 import tempfile
 from pathlib import Path
+
 gym = pytest.importorskip("gymnasium")
 import numpy as np
+
 torch = pytest.importorskip("torch")
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO
@@ -66,10 +69,10 @@ def test_vgs_state_preservation():
     print("3. Capturing VGS state before save...")
     vgs_before = model._variance_gradient_scaler
     state_before = {
-        'step_count': vgs_before._step_count,
-        'grad_mean_ema': vgs_before._grad_mean_ema,
-        'grad_var_ema': vgs_before._grad_var_ema,
-        'grad_norm_ema': vgs_before._grad_norm_ema,
+        "step_count": vgs_before._step_count,
+        "grad_mean_ema": vgs_before._grad_mean_ema,
+        "grad_var_ema": vgs_before._grad_var_ema,
+        "grad_norm_ema": vgs_before._grad_norm_ema,
     }
 
     print(f"   step_count: {state_before['step_count']}")
@@ -89,14 +92,16 @@ def test_vgs_state_preservation():
         # Check what's actually saved
         print("5. Inspecting saved state_dict...")
         import zipfile
-        with zipfile.ZipFile(save_path, 'r') as archive:
+
+        with zipfile.ZipFile(save_path, "r") as archive:
             files_in_archive = archive.namelist()
             print(f"   Files in archive: {files_in_archive}")
 
             # Try to load pytorch variables
-            if 'pytorch_variables.pth' in files_in_archive:
-                with archive.open('pytorch_variables.pth') as f:
+            if "pytorch_variables.pth" in files_in_archive:
+                with archive.open("pytorch_variables.pth") as f:
                     import io
+
                     # Security Note: weights_only=False is acceptable here because:
                     # 1. This is a test file with controlled checkpoint creation
                     # 2. The checkpoint is created within this test (not from external source)
@@ -106,7 +111,7 @@ def test_vgs_state_preservation():
                     print(f"   Keys in pytorch_variables.pth:")
                     for key in pytorch_vars.keys():
                         print(f"     - {key}")
-                        if 'vgs' in key.lower() or 'variance' in key.lower():
+                        if "vgs" in key.lower() or "variance" in key.lower():
                             print(f"       VGS-related key found: {key}")
                             print(f"       Value: {pytorch_vars[key]}")
         print()
@@ -121,10 +126,10 @@ def test_vgs_state_preservation():
         print("7. Capturing VGS state after load...")
         vgs_after = loaded_model._variance_gradient_scaler
         state_after = {
-            'step_count': vgs_after._step_count,
-            'grad_mean_ema': vgs_after._grad_mean_ema,
-            'grad_var_ema': vgs_after._grad_var_ema,
-            'grad_norm_ema': vgs_after._grad_norm_ema,
+            "step_count": vgs_after._step_count,
+            "grad_mean_ema": vgs_after._grad_mean_ema,
+            "grad_var_ema": vgs_after._grad_var_ema,
+            "grad_norm_ema": vgs_after._grad_norm_ema,
         }
 
         print(f"   step_count: {state_after['step_count']}")
@@ -137,14 +142,16 @@ def test_vgs_state_preservation():
         print("8. Comparing states...")
         print("-" * 80)
 
-        step_count_matches = state_after['step_count'] == state_before['step_count']
+        step_count_matches = state_after["step_count"] == state_before["step_count"]
         print(f"   Step count preserved: {step_count_matches}")
         print(f"     Before: {state_before['step_count']}")
         print(f"     After:  {state_after['step_count']}")
 
-        if state_before['grad_mean_ema'] is not None:
-            if state_after['grad_mean_ema'] is not None:
-                mean_ema_matches = abs(state_after['grad_mean_ema'] - state_before['grad_mean_ema']) < 1e-6
+        if state_before["grad_mean_ema"] is not None:
+            if state_after["grad_mean_ema"] is not None:
+                mean_ema_matches = (
+                    abs(state_after["grad_mean_ema"] - state_before["grad_mean_ema"]) < 1e-6
+                )
                 print(f"   Mean EMA preserved: {mean_ema_matches}")
                 print(f"     Before: {state_before['grad_mean_ema']}")
                 print(f"     After:  {state_after['grad_mean_ema']}")
@@ -157,9 +164,11 @@ def test_vgs_state_preservation():
             mean_ema_matches = True
             print(f"   Mean EMA: N/A (not initialized)")
 
-        if state_before['grad_var_ema'] is not None:
-            if state_after['grad_var_ema'] is not None:
-                var_ema_matches = abs(state_after['grad_var_ema'] - state_before['grad_var_ema']) < 1e-6
+        if state_before["grad_var_ema"] is not None:
+            if state_after["grad_var_ema"] is not None:
+                var_ema_matches = (
+                    abs(state_after["grad_var_ema"] - state_before["grad_var_ema"]) < 1e-6
+                )
                 print(f"   Var EMA preserved: {var_ema_matches}")
                 print(f"     Before: {state_before['grad_var_ema']}")
                 print(f"     After:  {state_after['grad_var_ema']}")
@@ -172,9 +181,11 @@ def test_vgs_state_preservation():
             var_ema_matches = True
             print(f"   Var EMA: N/A (not initialized)")
 
-        if state_before['grad_norm_ema'] is not None:
-            if state_after['grad_norm_ema'] is not None:
-                norm_ema_matches = abs(state_after['grad_norm_ema'] - state_before['grad_norm_ema']) < 1e-6
+        if state_before["grad_norm_ema"] is not None:
+            if state_after["grad_norm_ema"] is not None:
+                norm_ema_matches = (
+                    abs(state_after["grad_norm_ema"] - state_before["grad_norm_ema"]) < 1e-6
+                )
                 print(f"   Norm EMA preserved: {norm_ema_matches}")
                 print(f"     Before: {state_before['grad_norm_ema']}")
                 print(f"     After:  {state_after['grad_norm_ema']}")

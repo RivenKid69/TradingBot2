@@ -45,6 +45,7 @@ class RiskBasicImpl:
     def __init__(self, cfg: RiskBasicCfg | None = None, **kwargs) -> None:
         if cfg is None:
             import dataclasses
+
             cfg_fields = {f.name for f in dataclasses.fields(RiskBasicCfg)}
             cfg_params = {k: v for k, v in kwargs.items() if k in cfg_fields}
             cfg = RiskBasicCfg(**cfg_params)
@@ -133,35 +134,43 @@ class RiskBasicImpl:
             except Exception:
                 data = {}
 
-        max_total_notional = exposure_defaults.get("max_total_notional", data.get("max_total_notional"))
-        max_total_exposure_pct = exposure_defaults.get("max_total_exposure_pct", data.get("max_total_exposure_pct"))
-        exposure_buffer_frac = exposure_defaults.get("exposure_buffer_frac", data.get("exposure_buffer_frac", 0.0))
+        max_total_notional = exposure_defaults.get(
+            "max_total_notional", data.get("max_total_notional")
+        )
+        max_total_exposure_pct = exposure_defaults.get(
+            "max_total_exposure_pct", data.get("max_total_exposure_pct")
+        )
+        exposure_buffer_frac = exposure_defaults.get(
+            "exposure_buffer_frac", data.get("exposure_buffer_frac", 0.0)
+        )
 
         clean_data = dict(data)
         clean_data.pop("max_total_notional", None)
         clean_data.pop("max_total_exposure_pct", None)
         clean_data.pop("exposure_buffer_frac", None)
 
-        return RiskBasicImpl(RiskBasicCfg(
-            enabled=bool(clean_data.get("enabled", True)),
-            max_abs_position_qty=float(clean_data.get("max_abs_position_qty", 0.0)),
-            max_abs_position_notional=float(clean_data.get("max_abs_position_notional", 0.0)),
-            max_order_notional=float(clean_data.get("max_order_notional", 0.0)),
-            max_orders_per_min=int(clean_data.get("max_orders_per_min", 60)),
-            max_orders_window_s=int(clean_data.get("max_orders_window_s", 60)),
-            daily_loss_limit=float(clean_data.get("daily_loss_limit", 0.0)),
-            pause_seconds_on_violation=int(clean_data.get("pause_seconds_on_violation", 300)),
-            daily_reset_utc_hour=int(clean_data.get("daily_reset_utc_hour", 0)),
-            max_entries_per_day=(
-                None
-                if clean_data.get("max_entries_per_day") is None
-                else int(clean_data.get("max_entries_per_day"))
-            ),
-            max_total_notional=(
-                None if max_total_notional is None else float(max_total_notional)
-            ),
-            max_total_exposure_pct=(
-                None if max_total_exposure_pct is None else float(max_total_exposure_pct)
-            ),
-            exposure_buffer_frac=float(exposure_buffer_frac or 0.0),
-        ))
+        return RiskBasicImpl(
+            RiskBasicCfg(
+                enabled=bool(clean_data.get("enabled", True)),
+                max_abs_position_qty=float(clean_data.get("max_abs_position_qty", 0.0)),
+                max_abs_position_notional=float(clean_data.get("max_abs_position_notional", 0.0)),
+                max_order_notional=float(clean_data.get("max_order_notional", 0.0)),
+                max_orders_per_min=int(clean_data.get("max_orders_per_min", 60)),
+                max_orders_window_s=int(clean_data.get("max_orders_window_s", 60)),
+                daily_loss_limit=float(clean_data.get("daily_loss_limit", 0.0)),
+                pause_seconds_on_violation=int(clean_data.get("pause_seconds_on_violation", 300)),
+                daily_reset_utc_hour=int(clean_data.get("daily_reset_utc_hour", 0)),
+                max_entries_per_day=(
+                    None
+                    if clean_data.get("max_entries_per_day") is None
+                    else int(clean_data.get("max_entries_per_day"))
+                ),
+                max_total_notional=(
+                    None if max_total_notional is None else float(max_total_notional)
+                ),
+                max_total_exposure_pct=(
+                    None if max_total_exposure_pct is None else float(max_total_exposure_pct)
+                ),
+                exposure_buffer_frac=float(exposure_buffer_frac or 0.0),
+            )
+        )

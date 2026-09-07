@@ -135,7 +135,9 @@ class AlpacaConnector(BaseBrokerConnector):
                 self._client = {"headers": headers, "base_url": self._base_url}
                 self._connected = True
                 self._last_heartbeat = datetime.utcnow()
-                logger.info(f"Connected to Alpaca via REST ({'paper' if self._sandbox else 'live'})")
+                logger.info(
+                    f"Connected to Alpaca via REST ({'paper' if self._sandbox else 'live'})"
+                )
                 return True
 
         except Exception as e:
@@ -306,7 +308,9 @@ class AlpacaConnector(BaseBrokerConnector):
             broker_order_id=data.get("id"),
             status=self._map_order_status(data.get("status", "new")),
             filled_quantity=Decimal(data.get("filled_qty", "0")),
-            avg_fill_price=Decimal(data["filled_avg_price"]) if data.get("filled_avg_price") else None,
+            avg_fill_price=(
+                Decimal(data["filled_avg_price"]) if data.get("filled_avg_price") else None
+            ),
             timestamp=datetime.utcnow(),
             raw_response=data,
         )
@@ -627,11 +631,13 @@ class AlpacaConnector(BaseBrokerConnector):
                 statuses = self._trading_client.close_all_positions(cancel_orders=True)
                 results = []
                 for status in statuses:
-                    results.append(OrderResult(
-                        success=status.status == 200,
-                        client_order_id="",
-                        broker_order_id=str(status.body.get("id")) if status.body else None,
-                    ))
+                    results.append(
+                        OrderResult(
+                            success=status.status == 200,
+                            client_order_id="",
+                            broker_order_id=str(status.body.get("id")) if status.body else None,
+                        )
+                    )
                 return results
             else:
                 import requests
@@ -643,7 +649,9 @@ class AlpacaConnector(BaseBrokerConnector):
                 )
 
                 if response.status_code >= 400:
-                    return [OrderResult(success=False, client_order_id="", error_message=response.text)]
+                    return [
+                        OrderResult(success=False, client_order_id="", error_message=response.text)
+                    ]
 
                 data = response.json()
                 return [
@@ -771,7 +779,9 @@ class AlpacaConnector(BaseBrokerConnector):
             stop_price=Decimal(str(order.stop_price)) if order.stop_price else None,
             avg_fill_price=Decimal(str(order.filled_avg_price)) if order.filled_avg_price else None,
             status=self._map_order_status(order.status.value),
-            time_in_force=TimeInForce(order.time_in_force.value) if order.time_in_force else TimeInForce.GTC,
+            time_in_force=(
+                TimeInForce(order.time_in_force.value) if order.time_in_force else TimeInForce.GTC
+            ),
             created_at=order.created_at,
             updated_at=order.updated_at,
             filled_at=order.filled_at,
@@ -789,7 +799,9 @@ class AlpacaConnector(BaseBrokerConnector):
             filled_quantity=Decimal(data.get("filled_qty", "0")),
             limit_price=Decimal(data["limit_price"]) if data.get("limit_price") else None,
             stop_price=Decimal(data["stop_price"]) if data.get("stop_price") else None,
-            avg_fill_price=Decimal(data["filled_avg_price"]) if data.get("filled_avg_price") else None,
+            avg_fill_price=(
+                Decimal(data["filled_avg_price"]) if data.get("filled_avg_price") else None
+            ),
             status=self._map_order_status(data.get("status", "new")),
             time_in_force=TimeInForce(data.get("time_in_force", "gtc")),
         )

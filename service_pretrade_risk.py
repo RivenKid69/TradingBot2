@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from scipy.stats import norm as _norm
+
     _HAS_SCIPY = True
 except Exception:  # pragma: no cover
     _norm = None
@@ -58,17 +59,18 @@ def _phi(x: float) -> float:
 @dataclass
 class RiskLimits:
     """Лимиты на риск-метрики (любой None → не проверяется)."""
-    var_max: Optional[float] = None       # VaR (доля капитала) ≤ var_max
-    cvar_max: Optional[float] = None      # CVaR (доля капитала) ≤ cvar_max
-    vol_max: Optional[float] = None       # портфельная σ (период) ≤ vol_max
-    factor_caps: Optional[Dict[str, float]] = None   # |(Bᵀw)_f| ≤ cap
-    scenario_loss_max: Optional[float] = None        # худший сценарный P&L ≥ -scenario_loss_max
+
+    var_max: Optional[float] = None  # VaR (доля капитала) ≤ var_max
+    cvar_max: Optional[float] = None  # CVaR (доля капитала) ≤ cvar_max
+    vol_max: Optional[float] = None  # портфельная σ (период) ≤ vol_max
+    factor_caps: Optional[Dict[str, float]] = None  # |(Bᵀw)_f| ≤ cap
+    scenario_loss_max: Optional[float] = None  # худший сценарный P&L ≥ -scenario_loss_max
 
 
 @dataclass
 class ScenarioResult:
     name: str
-    pnl: float                  # P&L портфеля в сценарии (доля капитала)
+    pnl: float  # P&L портфеля в сценарии (доля капитала)
     var: Optional[float] = None
     detail: Dict[str, Any] = field(default_factory=dict)
 
@@ -80,12 +82,12 @@ class ScenarioResult:
 #   vol_mult     : realized-vol multiplier vs the calm regime
 #   corr_shift   : pull of pairwise correlations toward +1 (diversification collapse)
 NAMED_STRESS_SCENARIOS: Dict[str, Dict[str, float]] = {
-    "2008_gfc":          {"market_shock": -0.40, "vol_mult": 3.0, "corr_shift": 0.40},
-    "2020_covid":        {"market_shock": -0.34, "vol_mult": 4.0, "corr_shift": 0.50},
-    "2010_flash_crash":  {"market_shock": -0.09, "vol_mult": 5.0, "corr_shift": 0.60},
-    "2015_chf_unpeg":    {"market_shock": -0.03, "vol_mult": 3.0, "corr_shift": 0.30},
-    "2018_q4_selloff":   {"market_shock": -0.20, "vol_mult": 2.0, "corr_shift": 0.30},
-    "2022_rates_shock":  {"market_shock": -0.25, "vol_mult": 1.8, "corr_shift": 0.25},
+    "2008_gfc": {"market_shock": -0.40, "vol_mult": 3.0, "corr_shift": 0.40},
+    "2020_covid": {"market_shock": -0.34, "vol_mult": 4.0, "corr_shift": 0.50},
+    "2010_flash_crash": {"market_shock": -0.09, "vol_mult": 5.0, "corr_shift": 0.60},
+    "2015_chf_unpeg": {"market_shock": -0.03, "vol_mult": 3.0, "corr_shift": 0.30},
+    "2018_q4_selloff": {"market_shock": -0.20, "vol_mult": 2.0, "corr_shift": 0.30},
+    "2022_rates_shock": {"market_shock": -0.25, "vol_mult": 1.8, "corr_shift": 0.25},
 }
 
 
@@ -110,13 +112,20 @@ class PreTradeRiskReport:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "approved": self.approved, "var": self.var, "cvar": self.cvar, "vol": self.vol,
+            "approved": self.approved,
+            "var": self.var,
+            "cvar": self.cvar,
+            "vol": self.vol,
             "factor_exposure": self.factor_exposure,
             "scenarios": [s.__dict__ for s in self.scenarios],
             "worst_scenario": (self.worst_scenario.__dict__ if self.worst_scenario else None),
-            "violations": list(self.violations), "metrics": self.metrics,
-            "mc_var": self.mc_var, "mc_cvar": self.mc_cvar, "mc_dist": self.mc_dist,
-            "component_var": self.component_var, "marginal_var": self.marginal_var,
+            "violations": list(self.violations),
+            "metrics": self.metrics,
+            "mc_var": self.mc_var,
+            "mc_cvar": self.mc_cvar,
+            "mc_dist": self.mc_dist,
+            "component_var": self.component_var,
+            "marginal_var": self.marginal_var,
             "named_scenarios": [s.__dict__ for s in self.named_scenarios],
         }
 
@@ -145,7 +154,11 @@ class PreTradeRiskAnalyzer:
         w = w.astype("float64").dropna()
         symbols = list(w.index)
         if isinstance(self._cov, pd.DataFrame):
-            Sigma = self._cov.reindex(index=symbols, columns=symbols).fillna(0.0).to_numpy(dtype="float64")
+            Sigma = (
+                self._cov.reindex(index=symbols, columns=symbols)
+                .fillna(0.0)
+                .to_numpy(dtype="float64")
+            )
         else:
             Sigma = np.asarray(self._cov, dtype="float64")
         wv = w.to_numpy(dtype="float64")
@@ -168,8 +181,15 @@ class PreTradeRiskAnalyzer:
         return float(max(0.0, (_phi(z) / max(alpha, 1e-6)) * sigma - mean))
 
     def monte_carlo_var_cvar(
-        self, w: pd.Series, alpha: float = 0.05, *, n_sims: int = 20_000,
-        dist: str = "normal", dof: int = 5, seed: int = 12345, mean: float = 0.0,
+        self,
+        w: pd.Series,
+        alpha: float = 0.05,
+        *,
+        n_sims: int = 20_000,
+        dist: str = "normal",
+        dof: int = 5,
+        seed: int = 12345,
+        mean: float = 0.0,
     ):
         """Monte-Carlo VaR/CVaR by simulating portfolio P&L from N(0, Σ) or a
         Student-t copula (fat tails). Returns (var, cvar). Glasserman (2004)."""
@@ -220,7 +240,11 @@ class PreTradeRiskAnalyzer:
         return float(full - self.parametric_var(w_wo, alpha))
 
     def named_scenarios(
-        self, w: pd.Series, *, alpha: float = 0.05, betas: Optional[pd.Series] = None,
+        self,
+        w: pd.Series,
+        *,
+        alpha: float = 0.05,
+        betas: Optional[pd.Series] = None,
         scenarios: Optional[Dict[str, Dict[str, float]]] = None,
     ) -> List[ScenarioResult]:
         """Apply the named historical-stress library (2008/2020/...) to THIS portfolio.
@@ -236,12 +260,22 @@ class PreTradeRiskAnalyzer:
             vol_mult = float(p.get("vol_mult", 1.0))
             corr_shift = float(p.get("corr_shift", 0.0))
             mkt_pnl = float((beta * wv).sum() * mkt)
-            S_stab = self._shift_correlations((vol_mult ** 2) * S, corr_shift)
+            S_stab = self._shift_correlations((vol_mult**2) * S, corr_shift)
             stressed_var = float(_z_alpha(alpha) * math.sqrt(max(0.0, wv @ S_stab @ wv)))
-            out.append(ScenarioResult(
-                name, mkt_pnl - stressed_var, var=stressed_var,
-                detail={"market_shock": mkt, "vol_mult": vol_mult, "corr_shift": corr_shift,
-                        "directional_pnl": mkt_pnl, "stressed_var": stressed_var}))
+            out.append(
+                ScenarioResult(
+                    name,
+                    mkt_pnl - stressed_var,
+                    var=stressed_var,
+                    detail={
+                        "market_shock": mkt,
+                        "vol_mult": vol_mult,
+                        "corr_shift": corr_shift,
+                        "directional_pnl": mkt_pnl,
+                        "stressed_var": stressed_var,
+                    },
+                )
+            )
         return out
 
     def historical_var_cvar(self, w: pd.Series, returns: pd.DataFrame, alpha: float = 0.05):
@@ -287,33 +321,61 @@ class PreTradeRiskAnalyzer:
         # 1) рыночный шок −10%: P&L = Σ β_i w_i · shock (β из exposures[market] или =1)
         beta = self._resolve_betas(symbols, betas)
         mkt_pnl = float((beta * wv).sum() * market_shock)
-        out.append(ScenarioResult(f"market_shock_{int(market_shock*100)}pct", mkt_pnl,
-                                  detail={"beta_dot_w": float((beta * wv).sum())}))
+        out.append(
+            ScenarioResult(
+                f"market_shock_{int(market_shock*100)}pct",
+                mkt_pnl,
+                detail={"beta_dot_w": float((beta * wv).sum())},
+            )
+        )
 
         # 2) рост волатильности ×vol_mult → VaR пересчитывается на масштабированной Σ
-        S_vol = (vol_mult ** 2) * S
+        S_vol = (vol_mult**2) * S
         vol_var = float(_z_alpha(alpha) * math.sqrt(max(0.0, wv @ S_vol @ wv)))
-        out.append(ScenarioResult(f"vol_x{vol_mult}", -vol_var, var=vol_var,
-                                  detail={"stressed_vol": float(math.sqrt(max(0.0, wv @ S_vol @ wv)))}))
+        out.append(
+            ScenarioResult(
+                f"vol_x{vol_mult}",
+                -vol_var,
+                var=vol_var,
+                detail={"stressed_vol": float(math.sqrt(max(0.0, wv @ S_vol @ wv)))},
+            )
+        )
 
         # 3) сдвиг корреляций: ρ → ρ + corr_shift·(1−ρ) (к 1), диагональ (дисперсии) сохраняем
         S_corr = self._shift_correlations(S, corr_shift)
         corr_var = float(_z_alpha(alpha) * math.sqrt(max(0.0, wv @ S_corr @ wv)))
-        out.append(ScenarioResult(f"corr_shift_+{corr_shift}", -corr_var, var=corr_var,
-                                  detail={"stressed_vol": float(math.sqrt(max(0.0, wv @ S_corr @ wv)))}))
+        out.append(
+            ScenarioResult(
+                f"corr_shift_+{corr_shift}",
+                -corr_var,
+                var=corr_var,
+                detail={"stressed_vol": float(math.sqrt(max(0.0, wv @ S_corr @ wv)))},
+            )
+        )
 
         # 4) комбинированный «кризис»: шок + рост vol + сдвиг корр
-        S_combo = self._shift_correlations((vol_mult ** 2) * S, corr_shift)
+        S_combo = self._shift_correlations((vol_mult**2) * S, corr_shift)
         combo_var = float(_z_alpha(alpha) * math.sqrt(max(0.0, wv @ S_combo @ wv)))
-        out.append(ScenarioResult("crisis_combo", mkt_pnl - combo_var, var=combo_var,
-                                  detail={"market_pnl": mkt_pnl, "stressed_var": combo_var}))
+        out.append(
+            ScenarioResult(
+                "crisis_combo",
+                mkt_pnl - combo_var,
+                var=combo_var,
+                detail={"market_pnl": mkt_pnl, "stressed_var": combo_var},
+            )
+        )
         return out
 
     def _resolve_betas(self, symbols: Sequence[str], betas: Optional[pd.Series]) -> np.ndarray:
         if betas is not None:
             return betas.reindex(symbols).fillna(1.0).to_numpy(dtype="float64")
         if self._exposures is not None and self.market_factor in self._exposures.columns:
-            return self._exposures[self.market_factor].reindex(symbols).fillna(1.0).to_numpy(dtype="float64")
+            return (
+                self._exposures[self.market_factor]
+                .reindex(symbols)
+                .fillna(1.0)
+                .to_numpy(dtype="float64")
+            )
         return np.ones(len(symbols))
 
     @staticmethod
@@ -356,8 +418,9 @@ class PreTradeRiskAnalyzer:
             cvar = self.parametric_cvar(w_target, alpha)
         fexp = self.factor_exposures(w_target)
         scens = self.scenario_grid(w_target, alpha=alpha, **(scenario_kwargs or {}))
-        named = self.named_scenarios(w_target, alpha=alpha,
-                                     betas=(scenario_kwargs or {}).get("betas"))
+        named = self.named_scenarios(
+            w_target, alpha=alpha, betas=(scenario_kwargs or {}).get("betas")
+        )
         all_scens = scens + named
         worst = min(all_scens, key=lambda s: s.pnl) if all_scens else None
         # Monte-Carlo VaR/CVaR + Euler risk attribution
@@ -365,7 +428,8 @@ class PreTradeRiskAnalyzer:
         if monte_carlo:
             try:
                 mc_var, mc_cvar = self.monte_carlo_var_cvar(
-                    w_target, alpha, n_sims=mc_sims, dist=mc_dist)
+                    w_target, alpha, n_sims=mc_sims, dist=mc_dist
+                )
             except Exception as exc:  # pragma: no cover
                 logger.warning("MC VaR failed: %s", exc)
         try:
@@ -384,16 +448,30 @@ class PreTradeRiskAnalyzer:
             for f, cap in L.factor_caps.items():
                 if f in fexp and abs(fexp[f]) > cap + 1e-12:
                     viol.append(f"factor {f} {fexp[f]:.4f} > {cap}")
-        if L.scenario_loss_max is not None and worst is not None and worst.pnl < -L.scenario_loss_max - 1e-12:
+        if (
+            L.scenario_loss_max is not None
+            and worst is not None
+            and worst.pnl < -L.scenario_loss_max - 1e-12
+        ):
             viol.append(f"scenario '{worst.name}' loss {worst.pnl:.4f} < -{L.scenario_loss_max}")
 
         approved = (len(viol) == 0) if strict else True
         return PreTradeRiskReport(
-            approved=approved, var=var, cvar=cvar, vol=vol, factor_exposure=fexp,
-            scenarios=scens, worst_scenario=worst, violations=viol,
+            approved=approved,
+            var=var,
+            cvar=cvar,
+            vol=vol,
+            factor_exposure=fexp,
+            scenarios=scens,
+            worst_scenario=worst,
+            violations=viol,
             metrics={"alpha": alpha, "n_symbols": int(len(w_target.dropna()))},
-            mc_var=mc_var, mc_cvar=mc_cvar, mc_dist=(mc_dist if monte_carlo else None),
-            component_var=comp, marginal_var=marg, named_scenarios=named,
+            mc_var=mc_var,
+            mc_cvar=mc_cvar,
+            mc_dist=(mc_dist if monte_carlo else None),
+            component_var=comp,
+            marginal_var=marg,
+            named_scenarios=named,
         )
 
 
@@ -404,8 +482,9 @@ class FactorExposureMonitor:
     хранит историю и сигналит о пробоях (для real-time контроля в течение дня).
     """
 
-    def __init__(self, exposures: pd.DataFrame, factor_caps: Dict[str, float],
-                 *, history: int = 512) -> None:
+    def __init__(
+        self, exposures: pd.DataFrame, factor_caps: Dict[str, float], *, history: int = 512
+    ) -> None:
         self.exposures = exposures
         self.factor_caps = dict(factor_caps)
         self._hist: List[Dict[str, Any]] = []
@@ -415,14 +494,20 @@ class FactorExposureMonitor:
         B = self.exposures.reindex(index=list(weights.index)).fillna(0.0)
         fexp = B.mul(weights.reindex(B.index).fillna(0.0), axis=0).sum()
         exposure = {str(k): float(v) for k, v in fexp.items()}
-        breaches = [f"{f}={exposure.get(f, 0.0):.4f} > {cap}"
-                    for f, cap in self.factor_caps.items()
-                    if abs(exposure.get(f, 0.0)) > cap + 1e-12]
-        rec = {"ts_ms": ts_ms, "exposure": exposure, "breaches": breaches,
-               "within_limits": (len(breaches) == 0)}
+        breaches = [
+            f"{f}={exposure.get(f, 0.0):.4f} > {cap}"
+            for f, cap in self.factor_caps.items()
+            if abs(exposure.get(f, 0.0)) > cap + 1e-12
+        ]
+        rec = {
+            "ts_ms": ts_ms,
+            "exposure": exposure,
+            "breaches": breaches,
+            "within_limits": (len(breaches) == 0),
+        }
         self._hist.append(rec)
         if len(self._hist) > self._max_hist:
-            self._hist = self._hist[-self._max_hist:]
+            self._hist = self._hist[-self._max_hist :]
         if breaches:
             logger.warning("FactorExposureMonitor breaches: %s", breaches)
         return rec
@@ -435,6 +520,9 @@ class FactorExposureMonitor:
 
 
 __all__ = [
-    "RiskLimits", "ScenarioResult", "PreTradeRiskReport",
-    "PreTradeRiskAnalyzer", "FactorExposureMonitor",
+    "RiskLimits",
+    "ScenarioResult",
+    "PreTradeRiskReport",
+    "PreTradeRiskAnalyzer",
+    "FactorExposureMonitor",
 ]

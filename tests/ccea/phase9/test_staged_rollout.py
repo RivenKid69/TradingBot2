@@ -398,9 +398,7 @@ class TestStagedRolloutManager:
         rollout = manager.create_rollout(name="Rollback Test")
         await manager.start_rollout(rollout.id)
 
-        success, error = await manager.trigger_rollback(
-            rollout.id, "High failure rate"
-        )
+        success, error = await manager.trigger_rollback(rollout.id, "High failure rate")
 
         assert success is True
         assert rollout.state == RolloutState.ROLLED_BACK
@@ -496,10 +494,7 @@ class TestStagedRolloutManager:
 
         # Same agent should always get same result
         agent_id = uuid4()
-        results = [
-            manager.is_agent_in_rollout(agent_id, rollout.id)
-            for _ in range(10)
-        ]
+        results = [manager.is_agent_in_rollout(agent_id, rollout.id) for _ in range(10)]
 
         assert all(r == results[0] for r in results)
 
@@ -622,9 +617,7 @@ class TestCallbacks:
     @pytest.mark.asyncio
     async def test_stage_change_callback(self, stage_change_callback):
         """Test stage change callback is called."""
-        manager = StagedRolloutManager(
-            on_stage_change=stage_change_callback
-        )
+        manager = StagedRolloutManager(on_stage_change=stage_change_callback)
 
         rollout = manager.create_rollout(name="Callback Test")
         await manager.start_rollout(rollout.id)
@@ -639,9 +632,7 @@ class TestCallbacks:
     @pytest.mark.asyncio
     async def test_rollback_callback(self, rollback_callback):
         """Test rollback callback is called."""
-        manager = StagedRolloutManager(
-            on_rollback=rollback_callback
-        )
+        manager = StagedRolloutManager(on_rollback=rollback_callback)
 
         rollout = manager.create_rollout(name="Rollback Callback")
         await manager.start_rollout(rollout.id)

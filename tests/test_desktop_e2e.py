@@ -106,7 +106,8 @@ def test_desktop_launch_paper_shutdown_restart(tmp_path: Path) -> None:
         try:
             status = _wait_json(
                 f"{base}/api/ccea/status",
-                lambda value: value.get("state") == "error" or (
+                lambda value: value.get("state") == "error"
+                or (
                     value.get("state") == "running"
                     and value.get("agent", {}).get("cloud_connected") is True
                     and value.get("agent", {}).get("vault_unlocked") is True

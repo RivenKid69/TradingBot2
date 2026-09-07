@@ -53,12 +53,14 @@ logger = logging.getLogger(__name__)
 # Enums
 # =============================================================================
 
+
 class QMSElementType(Enum):
     """
     QMS elements as defined by EU AI Act Article 17(1).
 
     Each element corresponds to a specific requirement in the regulation.
     """
+
     REGULATORY_COMPLIANCE = "regulatory_compliance"  # (a)
     DESIGN_CONTROL = "design_control"  # (b)
     DEVELOPMENT_QA = "development_qa"  # (c)
@@ -75,6 +77,7 @@ class QMSElementType(Enum):
 
 class ProcedureStatus(Enum):
     """Status of QMS procedures."""
+
     DRAFT = "draft"
     UNDER_REVIEW = "under_review"
     APPROVED = "approved"
@@ -85,6 +88,7 @@ class ProcedureStatus(Enum):
 
 class AuditType(Enum):
     """Types of QMS audits."""
+
     INTERNAL = "internal"
     EXTERNAL = "external"
     REGULATORY = "regulatory"
@@ -94,6 +98,7 @@ class AuditType(Enum):
 
 class AuditStatus(Enum):
     """Status of QMS audits."""
+
     PLANNED = "planned"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -103,6 +108,7 @@ class AuditStatus(Enum):
 
 class FindingSeverity(Enum):
     """Severity of audit findings."""
+
     OBSERVATION = 1
     MINOR = 2
     MAJOR = 3
@@ -111,6 +117,7 @@ class FindingSeverity(Enum):
 
 class ChangeType(Enum):
     """Types of changes requiring control."""
+
     ALGORITHM = "algorithm"
     DATA_SOURCE = "data_source"
     TRAINING_PROCESS = "training_process"
@@ -122,6 +129,7 @@ class ChangeType(Enum):
 
 class ChangeImpact(Enum):
     """Impact assessment of changes."""
+
     NONE = 0
     LOW = 1
     MEDIUM = 2
@@ -131,6 +139,7 @@ class ChangeImpact(Enum):
 
 class CAPAType(Enum):
     """Types of corrective/preventive actions."""
+
     CORRECTIVE = "corrective"
     PREVENTIVE = "preventive"
     IMPROVEMENT = "improvement"
@@ -138,6 +147,7 @@ class CAPAType(Enum):
 
 class CAPAStatus(Enum):
     """Status of CAPA actions."""
+
     INITIATED = "initiated"
     INVESTIGATING = "investigating"
     ACTION_PLANNED = "action_planned"
@@ -150,6 +160,7 @@ class CAPAStatus(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class QMSProcedure:
     """
@@ -157,6 +168,7 @@ class QMSProcedure:
 
     Represents a documented procedure that forms part of the QMS.
     """
+
     procedure_id: str
     element_type: QMSElementType
     title: str
@@ -187,7 +199,9 @@ class QMSProcedure:
 
     def __post_init__(self):
         if not self.procedure_id:
-            self.procedure_id = f"QMS-{self.element_type.value.upper()[:3]}-{uuid.uuid4().hex[:6].upper()}"
+            self.procedure_id = (
+                f"QMS-{self.element_type.value.upper()[:3]}-{uuid.uuid4().hex[:6].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
         self.updated_at = datetime.now(timezone.utc).isoformat()
@@ -200,6 +214,7 @@ class AuditFinding:
 
     Documents non-conformances or observations from audits.
     """
+
     finding_id: str
     audit_id: str
     severity: FindingSeverity
@@ -239,6 +254,7 @@ class QMSAudit:
 
     Documents internal and external audits of the quality management system.
     """
+
     audit_id: str
     audit_type: AuditType
     title: str
@@ -298,6 +314,7 @@ class DesignReview:
 
     Documents design control activities including verification and validation.
     """
+
     review_id: str
     title: str
     design_phase: str  # concept, preliminary, detailed, final
@@ -341,6 +358,7 @@ class ChangeRequest:
 
     Documents and tracks changes that require evaluation and approval.
     """
+
     change_id: str
     change_type: ChangeType
     title: str
@@ -394,6 +412,7 @@ class CAPARecord:
 
     Documents actions taken to address non-conformances and prevent recurrence.
     """
+
     capa_id: str
     capa_type: CAPAType
     title: str
@@ -450,6 +469,7 @@ class ResourceRecord:
 
     Documents resources needed for AI system lifecycle.
     """
+
     resource_id: str
     resource_type: str  # human, infrastructure, tool, data, supplier
     name: str
@@ -490,6 +510,7 @@ class AccountabilityRecord:
 
     Documents roles and responsibilities for AI system compliance.
     """
+
     role_id: str
     role_name: str
     role_description: str
@@ -530,11 +551,13 @@ class AccountabilityRecord:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class QMSConfig:
     """
     Configuration for Quality Management System.
     """
+
     # Organization info
     organization_name: str = ""
     organization_id: str = ""
@@ -564,6 +587,7 @@ class QMSConfig:
 # =============================================================================
 # Main QMS Class
 # =============================================================================
+
 
 class QualityManagementSystem:
     """
@@ -687,10 +711,13 @@ class QualityManagementSystem:
             procedure.reviewer = reviewer
             procedure.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("procedure_submitted_for_review", {
-            "procedure_id": procedure_id,
-            "reviewer": reviewer,
-        })
+        self._log_event(
+            "procedure_submitted_for_review",
+            {
+                "procedure_id": procedure_id,
+                "reviewer": reviewer,
+            },
+        )
         return procedure
 
     def approve_procedure(
@@ -712,16 +739,17 @@ class QualityManagementSystem:
 
             # Set review date
             review_delta = timedelta(days=self.config.procedure_review_months * 30)
-            procedure.review_date = (
-                datetime.now(timezone.utc) + review_delta
-            ).isoformat()
+            procedure.review_date = (datetime.now(timezone.utc) + review_delta).isoformat()
 
             procedure.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("procedure_approved", {
-            "procedure_id": procedure_id,
-            "approver": approver,
-        })
+        self._log_event(
+            "procedure_approved",
+            {
+                "procedure_id": procedure_id,
+                "approver": approver,
+            },
+        )
         logger.info(f"Procedure approved: {procedure_id}")
         return procedure
 
@@ -739,12 +767,14 @@ class QualityManagementSystem:
             procedure = self._procedures[procedure_id]
 
             # Record revision
-            procedure.revision_history.append({
-                "version": procedure.version,
-                "date": procedure.updated_at,
-                "changes": changes,
-                "author": author,
-            })
+            procedure.revision_history.append(
+                {
+                    "version": procedure.version,
+                    "date": procedure.updated_at,
+                    "changes": changes,
+                    "author": author,
+                }
+            )
 
             # Increment version
             major, minor = procedure.version.split(".")
@@ -753,10 +783,13 @@ class QualityManagementSystem:
             procedure.author = author
             procedure.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("procedure_revised", {
-            "procedure_id": procedure_id,
-            "new_version": procedure.version,
-        })
+        self._log_event(
+            "procedure_revised",
+            {
+                "procedure_id": procedure_id,
+                "new_version": procedure.version,
+            },
+        )
         return procedure
 
     def get_procedure(self, procedure_id: str) -> Optional[QMSProcedure]:
@@ -772,8 +805,7 @@ class QualityManagementSystem:
     def get_effective_procedures(self) -> List[QMSProcedure]:
         """Get all effective procedures."""
         with self._lock:
-            return [p for p in self._procedures.values()
-                    if p.status == ProcedureStatus.EFFECTIVE]
+            return [p for p in self._procedures.values() if p.status == ProcedureStatus.EFFECTIVE]
 
     def get_procedures_due_for_review(self) -> List[QMSProcedure]:
         """Get procedures that are due for review."""
@@ -830,11 +862,14 @@ class QualityManagementSystem:
         with self._lock:
             self._audits[audit.audit_id] = audit
 
-        self._log_event("audit_created", {
-            "audit_id": audit.audit_id,
-            "type": audit_type.value,
-            "title": title,
-        })
+        self._log_event(
+            "audit_created",
+            {
+                "audit_id": audit.audit_id,
+                "type": audit_type.value,
+                "title": title,
+            },
+        )
         logger.info(f"Audit created: {audit.audit_id}")
         return audit
 
@@ -879,11 +914,14 @@ class QualityManagementSystem:
 
             self._audits[audit_id].findings.append(finding)
 
-        self._log_event("finding_added", {
-            "audit_id": audit_id,
-            "finding_id": finding.finding_id,
-            "severity": severity.name,
-        })
+        self._log_event(
+            "finding_added",
+            {
+                "audit_id": audit_id,
+                "finding_id": finding.finding_id,
+                "severity": severity.name,
+            },
+        )
         return finding
 
     def close_finding(
@@ -904,10 +942,13 @@ class QualityManagementSystem:
                     finding.closure_date = datetime.now(timezone.utc).isoformat()
                     finding.closure_evidence = closure_evidence
 
-                    self._log_event("finding_closed", {
-                        "audit_id": audit_id,
-                        "finding_id": finding_id,
-                    })
+                    self._log_event(
+                        "finding_closed",
+                        {
+                            "audit_id": audit_id,
+                            "finding_id": finding_id,
+                        },
+                    )
                     return finding
 
             raise ValueError(f"Finding {finding_id} not found in audit {audit_id}")
@@ -933,12 +974,15 @@ class QualityManagementSystem:
             if audit.critical_findings or audit.major_findings:
                 audit.follow_up_required = True
 
-        self._log_event("audit_completed", {
-            "audit_id": audit_id,
-            "total_findings": len(audit.findings),
-            "critical": len(audit.critical_findings),
-            "major": len(audit.major_findings),
-        })
+        self._log_event(
+            "audit_completed",
+            {
+                "audit_id": audit_id,
+                "total_findings": len(audit.findings),
+                "critical": len(audit.critical_findings),
+                "major": len(audit.major_findings),
+            },
+        )
         logger.info(f"Audit completed: {audit_id}")
         return audit
 
@@ -950,8 +994,11 @@ class QualityManagementSystem:
     def get_open_audits(self) -> List[QMSAudit]:
         """Get all open audits."""
         with self._lock:
-            return [a for a in self._audits.values()
-                    if a.status in (AuditStatus.PLANNED, AuditStatus.IN_PROGRESS)]
+            return [
+                a
+                for a in self._audits.values()
+                if a.status in (AuditStatus.PLANNED, AuditStatus.IN_PROGRESS)
+            ]
 
     def get_audits_with_open_findings(self) -> List[QMSAudit]:
         """Get audits that have open findings."""
@@ -998,10 +1045,13 @@ class QualityManagementSystem:
         with self._lock:
             self._design_reviews[review.review_id] = review
 
-        self._log_event("design_review_created", {
-            "review_id": review.review_id,
-            "phase": design_phase,
-        })
+        self._log_event(
+            "design_review_created",
+            {
+                "review_id": review.review_id,
+                "phase": design_phase,
+            },
+        )
         return review
 
     def complete_design_review(
@@ -1028,10 +1078,13 @@ class QualityManagementSystem:
                 review.approver = approver
                 review.approval_date = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("design_review_completed", {
-            "review_id": review_id,
-            "status": status,
-        })
+        self._log_event(
+            "design_review_completed",
+            {
+                "review_id": review_id,
+                "status": status,
+            },
+        )
         return review
 
     def get_design_review(self, review_id: str) -> Optional[DesignReview]:
@@ -1079,10 +1132,13 @@ class QualityManagementSystem:
         with self._lock:
             self._change_requests[change.change_id] = change
 
-        self._log_event("change_request_created", {
-            "change_id": change.change_id,
-            "type": change_type.value,
-        })
+        self._log_event(
+            "change_request_created",
+            {
+                "change_id": change.change_id,
+                "type": change_type.value,
+            },
+        )
         logger.info(f"Change request created: {change.change_id}")
         return change
 
@@ -1104,15 +1160,18 @@ class QualityManagementSystem:
             change.affected_components = affected_components or []
             change.risk_assessment = risk_assessment
             change.requires_revalidation = requires_revalidation
-            change.requires_conformity_reassessment = (impact == ChangeImpact.SUBSTANTIAL)
+            change.requires_conformity_reassessment = impact == ChangeImpact.SUBSTANTIAL
             change.status = "under_review"
             change.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("change_impact_assessed", {
-            "change_id": change_id,
-            "impact": impact.name,
-            "requires_reassessment": change.requires_conformity_reassessment,
-        })
+        self._log_event(
+            "change_impact_assessed",
+            {
+                "change_id": change_id,
+                "impact": impact.name,
+                "requires_reassessment": change.requires_conformity_reassessment,
+            },
+        )
         return change
 
     def approve_change(
@@ -1133,10 +1192,13 @@ class QualityManagementSystem:
             change.implementation_plan = implementation_plan
             change.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("change_approved", {
-            "change_id": change_id,
-            "approver": approver,
-        })
+        self._log_event(
+            "change_approved",
+            {
+                "change_id": change_id,
+                "approver": approver,
+            },
+        )
         logger.info(f"Change approved: {change_id}")
         return change
 
@@ -1155,10 +1217,13 @@ class QualityManagementSystem:
             change.rejection_reason = rejection_reason
             change.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("change_rejected", {
-            "change_id": change_id,
-            "reason": rejection_reason,
-        })
+        self._log_event(
+            "change_rejected",
+            {
+                "change_id": change_id,
+                "reason": rejection_reason,
+            },
+        )
         return change
 
     def implement_change(
@@ -1180,9 +1245,12 @@ class QualityManagementSystem:
             change.verification_results = verification_results
             change.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("change_implemented", {
-            "change_id": change_id,
-        })
+        self._log_event(
+            "change_implemented",
+            {
+                "change_id": change_id,
+            },
+        )
         logger.info(f"Change implemented: {change_id}")
         return change
 
@@ -1194,14 +1262,16 @@ class QualityManagementSystem:
     def get_pending_changes(self) -> List[ChangeRequest]:
         """Get pending change requests."""
         with self._lock:
-            return [c for c in self._change_requests.values()
-                    if c.status in ("submitted", "under_review")]
+            return [
+                c
+                for c in self._change_requests.values()
+                if c.status in ("submitted", "under_review")
+            ]
 
     def get_substantial_changes(self) -> List[ChangeRequest]:
         """Get changes that require conformity reassessment."""
         with self._lock:
-            return [c for c in self._change_requests.values()
-                    if c.requires_conformity_reassessment]
+            return [c for c in self._change_requests.values() if c.requires_conformity_reassessment]
 
     # =========================================================================
     # CAPA Management
@@ -1246,11 +1316,14 @@ class QualityManagementSystem:
         with self._lock:
             self._capas[capa.capa_id] = capa
 
-        self._log_event("capa_created", {
-            "capa_id": capa.capa_id,
-            "type": capa_type.value,
-            "source": source,
-        })
+        self._log_event(
+            "capa_created",
+            {
+                "capa_id": capa.capa_id,
+                "type": capa_type.value,
+                "source": source,
+            },
+        )
         logger.info(f"CAPA created: {capa.capa_id}")
         return capa
 
@@ -1273,11 +1346,14 @@ class QualityManagementSystem:
             capa.status = CAPAStatus.INVESTIGATING
             capa.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("capa_root_cause_analyzed", {
-            "capa_id": capa_id,
-            "method": analysis_method,
-            "root_causes_count": len(root_causes),
-        })
+        self._log_event(
+            "capa_root_cause_analyzed",
+            {
+                "capa_id": capa_id,
+                "method": analysis_method,
+                "root_causes_count": len(root_causes),
+            },
+        )
         return capa
 
     def plan_capa_actions(
@@ -1299,10 +1375,13 @@ class QualityManagementSystem:
             capa.status = CAPAStatus.ACTION_PLANNED
             capa.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("capa_actions_planned", {
-            "capa_id": capa_id,
-            "actions_count": len(actions),
-        })
+        self._log_event(
+            "capa_actions_planned",
+            {
+                "capa_id": capa_id,
+                "actions_count": len(actions),
+            },
+        )
         return capa
 
     def implement_capa_action(
@@ -1359,10 +1438,13 @@ class QualityManagementSystem:
 
             capa.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("capa_verified", {
-            "capa_id": capa_id,
-            "is_effective": is_effective,
-        })
+        self._log_event(
+            "capa_verified",
+            {
+                "capa_id": capa_id,
+                "is_effective": is_effective,
+            },
+        )
         logger.info(f"CAPA verified: {capa_id} - Effective: {is_effective}")
         return capa
 
@@ -1374,8 +1456,7 @@ class QualityManagementSystem:
     def get_open_capas(self) -> List[CAPARecord]:
         """Get all open CAPAs."""
         with self._lock:
-            return [c for c in self._capas.values()
-                    if c.status != CAPAStatus.CLOSED]
+            return [c for c in self._capas.values() if c.status != CAPAStatus.CLOSED]
 
     def get_overdue_capas(self) -> List[CAPARecord]:
         """Get CAPAs that are past their target date."""
@@ -1510,8 +1591,9 @@ class QualityManagementSystem:
         with self._lock:
             # Procedure metrics
             total_procedures = len(self._procedures)
-            effective_procedures = len([p for p in self._procedures.values()
-                                       if p.status == ProcedureStatus.EFFECTIVE])
+            effective_procedures = len(
+                [p for p in self._procedures.values() if p.status == ProcedureStatus.EFFECTIVE]
+            )
             due_for_review = len(self.get_procedures_due_for_review())
 
             # Audit metrics
@@ -1670,29 +1752,31 @@ class QualityManagementSystem:
 
         with self._lock:
             # Get audit summary
-            recent_audits = [a for a in self._audits.values()
-                           if a.status == AuditStatus.COMPLETED][-5:]
+            recent_audits = [a for a in self._audits.values() if a.status == AuditStatus.COMPLETED][
+                -5:
+            ]
 
             # Get CAPA effectiveness
-            closed_capas = [c for c in self._capas.values()
-                          if c.status == CAPAStatus.CLOSED]
+            closed_capas = [c for c in self._capas.values() if c.status == CAPAStatus.CLOSED]
             effective_capas = [c for c in closed_capas if c.is_effective]
 
             capa_effectiveness = (
-                len(effective_capas) / len(closed_capas) * 100
-                if closed_capas else 100
+                len(effective_capas) / len(closed_capas) * 100 if closed_capas else 100
             )
 
         return {
             "report_date": datetime.now(timezone.utc).isoformat(),
             "period_covered": f"Last {self.config.management_review_months} months",
             "overall_compliance": status,
-            "recent_audits": [{
-                "id": a.audit_id,
-                "title": a.title,
-                "findings_count": len(a.findings),
-                "status": a.status.value,
-            } for a in recent_audits],
+            "recent_audits": [
+                {
+                    "id": a.audit_id,
+                    "title": a.title,
+                    "findings_count": len(a.findings),
+                    "status": a.status.value,
+                }
+                for a in recent_audits
+            ],
             "capa_effectiveness_percent": capa_effectiveness,
             "recommendations": self._generate_recommendations(status),
         }
@@ -1706,9 +1790,7 @@ class QualityManagementSystem:
                 QMSElementType(e) for e in status["covered_elements"]
             )
             for element in missing:
-                recommendations.append(
-                    f"Develop procedure for {element.value} element"
-                )
+                recommendations.append(f"Develop procedure for {element.value} element")
 
         if status["procedures"]["due_for_review"] > 0:
             recommendations.append(
@@ -1716,9 +1798,7 @@ class QualityManagementSystem:
             )
 
         if status["capas"]["overdue"] > 0:
-            recommendations.append(
-                f"Address {status['capas']['overdue']} overdue CAPA(s)"
-            )
+            recommendations.append(f"Address {status['capas']['overdue']} overdue CAPA(s)")
 
         return recommendations
 
@@ -1746,6 +1826,7 @@ class QualityManagementSystem:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_qms(
     config: Optional[Union[Dict[str, Any], QMSConfig]] = None,

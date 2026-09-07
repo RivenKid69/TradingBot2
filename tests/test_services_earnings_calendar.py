@@ -11,7 +11,7 @@ Tests cover:
 - Module-level convenience functions
 - Crypto backward compatibility
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 
@@ -420,10 +420,12 @@ class TestDataFrameOperations:
             config = EarningsCalendarConfig(cache_dir=Path(tmpdir))
             service = EarningsCalendarService(config=config)
 
-            df = pd.DataFrame({
-                "close": [100.0, 101.0, 102.0],
-                "date": ["2024-01-20", "2024-01-25", "2024-01-30"],
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [100.0, 101.0, 102.0],
+                    "date": ["2024-01-20", "2024-01-25", "2024-01-30"],
+                }
+            )
 
             result = service.add_earnings_to_df(df, "AAPL")
 
@@ -450,10 +452,12 @@ class TestDataFrameOperations:
             config = EarningsCalendarConfig(cache_dir=Path(tmpdir))
             service = EarningsCalendarService(config=config)
 
-            df = pd.DataFrame({
-                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-                "date": pd.date_range("2024-01-20", periods=5).astype(str),
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                    "date": pd.date_range("2024-01-20", periods=5).astype(str),
+                }
+            )
 
             result = service.add_earnings_to_df_vectorized(df, "AAPL")
 
@@ -471,14 +475,16 @@ class TestDataFrameOperations:
             config = EarningsCalendarConfig(cache_dir=Path(tmpdir))
             service = EarningsCalendarService(config=config)
 
-            df = pd.DataFrame({
-                "open": [100.0, 101.0],
-                "high": [105.0, 106.0],
-                "low": [95.0, 96.0],
-                "close": [102.0, 103.0],
-                "volume": [1000, 1100],
-                "date": ["2024-01-20", "2024-01-21"],
-            })
+            df = pd.DataFrame(
+                {
+                    "open": [100.0, 101.0],
+                    "high": [105.0, 106.0],
+                    "low": [95.0, 96.0],
+                    "close": [102.0, 103.0],
+                    "volume": [1000, 1100],
+                    "date": ["2024-01-20", "2024-01-21"],
+                }
+            )
 
             result = service.add_earnings_to_df(df, "AAPL")
 
@@ -535,10 +541,12 @@ class TestModuleLevelFunctions:
 
         mock_fetch.return_value = []
 
-        df = pd.DataFrame({
-            "close": [100.0],
-            "date": ["2024-01-20"],
-        })
+        df = pd.DataFrame(
+            {
+                "close": [100.0],
+                "date": ["2024-01-20"],
+            }
+        )
 
         result = add_earnings_to_df(df, "AAPL")
 
@@ -560,10 +568,12 @@ class TestCryptoBackwardCompatibility:
             service = EarningsCalendarService(config=config)
 
             # Crypto DataFrame (no earnings concept)
-            df = pd.DataFrame({
-                "close": [50000.0, 50100.0],
-                "volume": [1000, 1100],
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [50000.0, 50100.0],
+                    "volume": [1000, 1100],
+                }
+            )
 
             # Should not raise, should just return df unchanged or with defaults
             result = service.add_earnings_to_df(df, "BTCUSD")
@@ -584,10 +594,12 @@ class TestCryptoBackwardCompatibility:
             config = EarningsCalendarConfig(cache_dir=Path(tmpdir))
             service = EarningsCalendarService(config=config)
 
-            df = pd.DataFrame({
-                "close": [100.0],
-                "date": ["2024-01-20"],
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [100.0],
+                    "date": ["2024-01-20"],
+                }
+            )
 
             result = service.add_earnings_to_df(df, "NONEXISTENT")
 
@@ -714,10 +726,12 @@ class TestEdgeCases:
             config = EarningsCalendarConfig(cache_dir=Path(tmpdir))
             service = EarningsCalendarService(config=config)
 
-            df = pd.DataFrame({
-                "close": [100.0, 101.0],
-                "volume": [1000, 1100],
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [100.0, 101.0],
+                    "volume": [1000, 1100],
+                }
+            )
 
             # Should not raise, should return df unchanged
             result = service.add_earnings_to_df(df, "AAPL")
@@ -736,9 +750,7 @@ class TestEdgeCases:
             service = EarningsCalendarService(config=config)
 
             # Pre-populate with far future earnings
-            service._earnings_cache["AAPL"] = [
-                {"report_date": "2025-12-25"}  # Far in future
-            ]
+            service._earnings_cache["AAPL"] = [{"report_date": "2025-12-25"}]  # Far in future
             service._cache_timestamps["AAPL"] = datetime.now()
 
             features = service.compute_earnings_features("AAPL", "2024-01-01")

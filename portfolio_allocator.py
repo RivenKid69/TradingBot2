@@ -5,6 +5,7 @@ vector and enforces a set of portfolio level constraints.  It does not submit
 orders – the caller is responsible for mapping the resulting weights to any
 execution layer.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
@@ -125,7 +126,9 @@ class DeterministicPortfolioAllocator:
         weights = weights[weights.abs() > 0]
         return weights.sort_index()
 
-    def _apply_overrides(self, overrides: MutableMapping[str, float | int | None]) -> PortfolioConstraints:
+    def _apply_overrides(
+        self, overrides: MutableMapping[str, float | int | None]
+    ) -> PortfolioConstraints:
         params = asdict(self.constraints)
         for key, value in overrides.items():
             if key not in params or value is None:
@@ -140,7 +143,9 @@ class DeterministicPortfolioAllocator:
         )
 
     @staticmethod
-    def _coerce_prev(prev: Mapping[str, float] | pd.Series | None, new_index: pd.Index) -> pd.Series | None:
+    def _coerce_prev(
+        prev: Mapping[str, float] | pd.Series | None, new_index: pd.Index
+    ) -> pd.Series | None:
         if prev is None:
             return None
         if isinstance(prev, pd.Series):

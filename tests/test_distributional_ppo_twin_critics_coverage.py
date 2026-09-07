@@ -5,6 +5,7 @@ Targets the uncovered lines in train() related to:
 - distributional_vf_clip_mode settings
 - normalize_returns with VF clipping
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -22,6 +23,7 @@ torch.manual_seed(42)
 
 def _make_env(max_steps: int = 8, n_envs: int = 1) -> DummyVecEnv:
     """Create minimal test environment."""
+
     def _env_fn():
         import gymnasium
 
@@ -87,6 +89,7 @@ def _setup_and_collect(model, env, n_steps=8):
 # =============================================================================
 # Distributional VF Clip Mode Tests
 # =============================================================================
+
 
 class TestDistributionalVfClipModes:
     """Test all distributional_vf_clip_mode settings."""
@@ -156,6 +159,7 @@ class TestDistributionalVfClipModes:
 # VF Clip with Normalize Returns
 # =============================================================================
 
+
 class TestVfClipWithNormalizeReturns:
     """Test VF clipping with normalize_returns enabled."""
 
@@ -203,6 +207,7 @@ class TestVfClipWithNormalizeReturns:
 # VF Clip Variance Factor
 # =============================================================================
 
+
 class TestVfClipVarianceFactor:
     """Test distributional_vf_clip_variance_factor settings."""
 
@@ -249,6 +254,7 @@ class TestVfClipVarianceFactor:
 # VF Clip Warmup
 # =============================================================================
 
+
 class TestVfClipWarmup:
     """Test VF clip warmup behavior."""
 
@@ -282,6 +288,7 @@ class TestVfClipWarmup:
 # =============================================================================
 # VF Clip Threshold EV
 # =============================================================================
+
 
 class TestVfClipThresholdEv:
     """Test vf_clip_threshold_ev settings."""
@@ -330,6 +337,7 @@ class TestVfClipThresholdEv:
 # Multiple Epochs with VF Clip
 # =============================================================================
 
+
 class TestMultipleEpochsVfClip:
     """Test VF clipping with multiple training epochs."""
 
@@ -364,6 +372,7 @@ class TestMultipleEpochsVfClip:
 # Small and Large Clip Ranges
 # =============================================================================
 
+
 class TestClipRangeSizes:
     """Test different clip range sizes."""
 
@@ -395,6 +404,7 @@ class TestClipRangeSizes:
 # =============================================================================
 # Combined Configurations
 # =============================================================================
+
 
 class TestCombinedConfigurations:
     """Test combined configuration scenarios."""
@@ -456,6 +466,7 @@ class TestCombinedConfigurations:
 # Multi-Environment with VF Clip
 # =============================================================================
 
+
 class TestMultiEnvVfClip:
     """Test VF clipping with multiple environments."""
 
@@ -492,6 +503,7 @@ class TestMultiEnvVfClip:
 # VF Clip with Different VF Coefficients
 # =============================================================================
 
+
 class TestVfClipWithVfCoef:
     """Test VF clipping with different vf_coef values."""
 
@@ -525,6 +537,7 @@ class TestVfClipWithVfCoef:
 # =============================================================================
 # Learn Method with VF Clip
 # =============================================================================
+
 
 class TestLearnWithVfClip:
     """Test learn() method with VF clipping."""

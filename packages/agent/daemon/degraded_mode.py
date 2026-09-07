@@ -26,6 +26,7 @@ class DegradedMode(Enum):
     Each mode has specific behavior and restrictions.
     Design Doc 9.6, 13.2: Cloud down / network down handling.
     """
+
     NORMAL = auto()  # Full functionality
     CLOUD_UNREACHABLE = auto()  # Cloud connection lost (Design Doc 9.6)
     NETWORK_DEGRADED = auto()  # Partial network issues
@@ -43,6 +44,7 @@ class TradingMode(Enum):
     Agent trading mode.
     Design Doc 9.6: Different behavior in BACKTEST vs PAPER vs LIVE.
     """
+
     BACKTEST = "backtest"  # No real broker, cloud optional
     PAPER = "paper"  # Paper trading, cloud optional
     LIVE = "live"  # Live trading, strict degradation policy
@@ -50,6 +52,7 @@ class TradingMode(Enum):
 
 class DegradedModeAction(Enum):
     """Actions to take in degraded mode."""
+
     CONTINUE = "continue"  # Continue normally
     RESTRICT = "restrict"  # Restrict new orders
     CLOSE_ONLY = "close_only"  # Only allow position closing
@@ -64,6 +67,7 @@ class DegradedModeConfig:
 
     Design Doc 9.6, 13.2: Specific policies for LIVE mode cloud loss.
     """
+
     # Trading mode (affects degradation policy)
     trading_mode: TradingMode = TradingMode.PAPER
 
@@ -136,6 +140,7 @@ class DegradedModeEvent:
     """
     Record of degraded mode event.
     """
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     mode: DegradedMode = DegradedMode.NORMAL
     action_taken: DegradedModeAction = DegradedModeAction.CONTINUE
@@ -638,9 +643,15 @@ class DegradedModeManager:
                 "is_halted": self.is_halted(),
                 "is_paused": self.is_paused(),
                 "active_events": [e.to_dict() for e in self._active_events.values()],
-                "last_cloud_contact": self._last_cloud_contact.isoformat() if self._last_cloud_contact else None,
-                "last_data_update": self._last_data_update.isoformat() if self._last_data_update else None,
-                "last_broker_contact": self._last_broker_contact.isoformat() if self._last_broker_contact else None,
+                "last_cloud_contact": (
+                    self._last_cloud_contact.isoformat() if self._last_cloud_contact else None
+                ),
+                "last_data_update": (
+                    self._last_data_update.isoformat() if self._last_data_update else None
+                ),
+                "last_broker_contact": (
+                    self._last_broker_contact.isoformat() if self._last_broker_contact else None
+                ),
             }
 
     def get_history(self, limit: int = 100) -> List[Dict[str, Any]]:

@@ -6,6 +6,7 @@ Focuses on:
 - Advantage normalization edge cases
 - EV filtering paths
 """
+
 from __future__ import annotations
 
 import math
@@ -40,9 +41,7 @@ def _make_env(max_steps: int = 8) -> DummyVecEnv:
     def _env_fn():
         class _Env(gymnasium.Env):
             def __init__(self):
-                self.action_space = spaces.Box(
-                    low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-                )
+                self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
                 self.observation_space = spaces.Box(
                     low=-10.0, high=10.0, shape=(4,), dtype=np.float32
                 )
@@ -202,7 +201,7 @@ class TestAdvantageNormalizationEdgeCases:
         model = _make_model(env, normalize_advantage=True)
         _setup_and_collect(model, env)
         # Manipulate buffer to have zero-std advantages
-        if hasattr(model.rollout_buffer, 'advantages'):
+        if hasattr(model.rollout_buffer, "advantages"):
             model.rollout_buffer.advantages = np.ones_like(model.rollout_buffer.advantages) * 0.1
         model.train()
         env.close()
@@ -212,7 +211,7 @@ class TestAdvantageNormalizationEdgeCases:
         env = _make_env()
         model = _make_model(env, normalize_advantage=True)
         _setup_and_collect(model, env)
-        if hasattr(model.rollout_buffer, 'advantages'):
+        if hasattr(model.rollout_buffer, "advantages"):
             model.rollout_buffer.advantages = np.random.randn(8, 1).astype(np.float32) * 1e-8
         model.train()
         env.close()
@@ -428,12 +427,11 @@ class TestMultiEnvEdgeCases:
 
     def test_two_envs(self):
         """Cover two environments."""
+
         def _env_fn():
             class _Env(gymnasium.Env):
                 def __init__(self):
-                    self.action_space = spaces.Box(
-                        low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-                    )
+                    self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
                     self.observation_space = spaces.Box(
                         low=-10.0, high=10.0, shape=(4,), dtype=np.float32
                     )

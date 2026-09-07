@@ -2,10 +2,13 @@ import math
 import types
 
 import pytest
+
 pytest.importorskip("torch")
 
 try:  # noqa: SIM105
-    from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+    from tests import (
+        test_distributional_ppo_raw_outliers,
+    )  # noqa: F401  # ensure RL stubs are installed
 except ImportError:  # pragma: no cover - optional dependency for local pytest setups
     pass
 

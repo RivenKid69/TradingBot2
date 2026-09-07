@@ -36,9 +36,11 @@ STATUSES_WITHOUT_EVIDENCE = {"PLANNED", "IN_PROGRESS", "N/A"}
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class TraceabilityViolation:
     """Represents a traceability violation."""
+
     line_number: int
     row_content: str
     requirement_id: str
@@ -47,14 +49,14 @@ class TraceabilityViolation:
 
     def __str__(self) -> str:
         return (
-            f"Line {self.line_number}: {self.requirement_id} is {self.status} "
-            f"but {self.reason}"
+            f"Line {self.line_number}: {self.requirement_id} is {self.status} " f"but {self.reason}"
         )
 
 
 @dataclass
 class TraceabilityCheckResult:
     """Result of traceability check."""
+
     violations: List[TraceabilityViolation] = field(default_factory=list)
     rows_checked: int = 0
     done_count: int = 0
@@ -69,6 +71,7 @@ class TraceabilityCheckResult:
 # ============================================================================
 # Traceability Parsing and Validation
 # ============================================================================
+
 
 def parse_markdown_table_row(line: str) -> Optional[List[str]]:
     """
@@ -87,7 +90,7 @@ def parse_markdown_table_row(line: str) -> Optional[List[str]]:
     # Skip separator rows (e.g., |---|---|---|)
     # Check if all cells contain only dashes, colons, and spaces
     cells_content = line[1:-1]  # Remove leading/trailing |
-    if re.match(r'^[\s\-:|]+$', cells_content):
+    if re.match(r"^[\s\-:|]+$", cells_content):
         return None
 
     # Split by | and strip whitespace
@@ -149,16 +152,16 @@ def check_done_has_evidence(cells: List[str], table_headers: List[str]) -> Optio
 
     # Also check for inline evidence in any column (file references, test names, etc.)
     evidence_patterns = [
-        r'\.py\b',      # Python files
-        r'\.json\b',    # JSON files
-        r'\.md\b',      # Markdown files
-        r'\.yml\b',     # YAML files (CI workflows)
-        r'\.yaml\b',    # YAML files
-        r'\.toml\b',    # TOML config files
-        r'\.ini\b',     # INI config files
-        r'test_\w+',    # Test names
-        r'docs/',       # Documentation paths
-        r'ccea/',       # CCEA module paths
+        r"\.py\b",  # Python files
+        r"\.json\b",  # JSON files
+        r"\.md\b",  # Markdown files
+        r"\.yml\b",  # YAML files (CI workflows)
+        r"\.yaml\b",  # YAML files
+        r"\.toml\b",  # TOML config files
+        r"\.ini\b",  # INI config files
+        r"test_\w+",  # Test names
+        r"docs/",  # Documentation paths
+        r"ccea/",  # CCEA module paths
     ]
 
     for cell in cells:
@@ -186,13 +189,15 @@ def validate_traceability_matrix(matrix_path: Path) -> TraceabilityCheckResult:
     result = TraceabilityCheckResult()
 
     if not matrix_path.exists():
-        result.add_violation(TraceabilityViolation(
-            line_number=0,
-            row_content="",
-            requirement_id="N/A",
-            status="N/A",
-            reason=f"Matrix file not found: {matrix_path}",
-        ))
+        result.add_violation(
+            TraceabilityViolation(
+                line_number=0,
+                row_content="",
+                requirement_id="N/A",
+                status="N/A",
+                reason=f"Matrix file not found: {matrix_path}",
+            )
+        )
         return result
 
     with open(matrix_path, "r", encoding="utf-8") as f:
@@ -213,7 +218,7 @@ def validate_traceability_matrix(matrix_path: Path) -> TraceabilityCheckResult:
                 continue
 
         # Skip separator rows
-        if re.match(r'^\|[\s\-:]+\|$', stripped):
+        if re.match(r"^\|[\s\-:]+\|$", stripped):
             continue
 
         # Parse table data row
@@ -244,13 +249,15 @@ def validate_traceability_matrix(matrix_path: Path) -> TraceabilityCheckResult:
                             status = cells[i].strip()
                             break
 
-                    result.add_violation(TraceabilityViolation(
-                        line_number=line_num,
-                        row_content=stripped[:100] + "..." if len(stripped) > 100 else stripped,
-                        requirement_id=req_id,
-                        status=status,
-                        reason=violation_reason,
-                    ))
+                    result.add_violation(
+                        TraceabilityViolation(
+                            line_number=line_num,
+                            row_content=stripped[:100] + "..." if len(stripped) > 100 else stripped,
+                            requirement_id=req_id,
+                            status=status,
+                            reason=violation_reason,
+                        )
+                    )
         elif not stripped.startswith("|") and in_table:
             # End of table
             in_table = False
@@ -263,13 +270,12 @@ def validate_traceability_matrix(matrix_path: Path) -> TraceabilityCheckResult:
 # CLI Interface
 # ============================================================================
 
+
 def main() -> int:
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Traceability Matrix Check"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Traceability Matrix Check")
     parser.add_argument(
         "--matrix",
         type=Path,

@@ -189,8 +189,9 @@ class TracingMiddleware(BaseHTTPMiddleware):
             attributes["http.request_id"] = request_id
 
         # Workspace ID (from path or header)
-        workspace_id = request.path_params.get("workspace_id") or \
-                       request.headers.get("x-workspace-id")
+        workspace_id = request.path_params.get("workspace_id") or request.headers.get(
+            "x-workspace-id"
+        )
         if workspace_id:
             attributes["ccea.workspace_id"] = str(workspace_id)
 
@@ -248,6 +249,7 @@ def trace_route(
         async def get_item(item_id: str):
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -313,6 +315,7 @@ def trace_route(
                     raise
 
         import asyncio
+
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         return sync_wrapper
@@ -342,6 +345,7 @@ def trace_db_query(
         with trace_db_query("SELECT", "SELECT * FROM users WHERE id = ?"):
             result = await session.execute(query)
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -405,6 +409,7 @@ def trace_db_query(
                     raise
 
         import asyncio
+
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         return sync_wrapper

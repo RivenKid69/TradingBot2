@@ -33,39 +33,72 @@ logger = logging.getLogger(__name__)
 
 # CME-символ → yahoo continuous-прокси тикер.
 DEFAULT_CME_YAHOO_MAP = {
-    "ES": "ES=F", "NQ": "NQ=F", "YM": "YM=F", "RTY": "RTY=F",
-    "ZN": "ZN=F", "ZB": "ZB=F", "ZF": "ZF=F", "ZT": "ZT=F",
-    "CL": "CL=F", "NG": "NG=F", "RB": "RB=F", "HO": "HO=F",
-    "GC": "GC=F", "SI": "SI=F", "HG": "HG=F",
-    "6E": "6E=F", "6J": "6J=F", "6B": "6B=F", "6A": "6A=F",
-    "ZC": "ZC=F", "ZS": "ZS=F", "ZW": "ZW=F",
+    "ES": "ES=F",
+    "NQ": "NQ=F",
+    "YM": "YM=F",
+    "RTY": "RTY=F",
+    "ZN": "ZN=F",
+    "ZB": "ZB=F",
+    "ZF": "ZF=F",
+    "ZT": "ZT=F",
+    "CL": "CL=F",
+    "NG": "NG=F",
+    "RB": "RB=F",
+    "HO": "HO=F",
+    "GC": "GC=F",
+    "SI": "SI=F",
+    "HG": "HG=F",
+    "6E": "6E=F",
+    "6J": "6J=F",
+    "6B": "6B=F",
+    "6A": "6A=F",
+    "ZC": "ZC=F",
+    "ZS": "ZS=F",
+    "ZW": "ZW=F",
 }
 
 
 class ContinuousProxySource:
     """Free continuous-прокси (yahoo ES=F…) как PriceSource. pit_quality=approx (honest)."""
 
-    def __init__(self, *, vendor: str = "yahoo", ticker_map: Optional[Mapping[str, str]] = None,
-                 inner: Any = None) -> None:
+    def __init__(
+        self,
+        *,
+        vendor: str = "yahoo",
+        ticker_map: Optional[Mapping[str, str]] = None,
+        inner: Any = None,
+    ) -> None:
         self._map = dict(ticker_map or DEFAULT_CME_YAHOO_MAP)
-        self._inner = inner or AdapterPriceSource(vendor=vendor, pit_quality=PIT_APPROX,
-                                                  name=f"free:{vendor}:continuous")
+        self._inner = inner or AdapterPriceSource(
+            vendor=vendor, pit_quality=PIT_APPROX, name=f"free:{vendor}:continuous"
+        )
         self.meta = DataSourceMeta(
-            name="continuous-proxy", vendor=vendor, kind="price", pit_quality=PIT_APPROX,
+            name="continuous-proxy",
+            vendor=vendor,
+            kind="price",
+            pit_quality=PIT_APPROX,
             notes="Back-adjusted continuous proxy (yahoo, unknown roll method).",
         )
 
     def _ticker(self, symbol: str) -> str:
         return self._map.get(symbol, symbol)
 
-    def get_bars(self, symbols: Sequence[str], timeframe: str, *,
-                 start_ms: Optional[int] = None, end_ms: Optional[int] = None,
-                 limit: int = 1000) -> Dict[str, pd.DataFrame]:
+    def get_bars(
+        self,
+        symbols: Sequence[str],
+        timeframe: str,
+        *,
+        start_ms: Optional[int] = None,
+        end_ms: Optional[int] = None,
+        limit: int = 1000,
+    ) -> Dict[str, pd.DataFrame]:
         out: Dict[str, pd.DataFrame] = {}
         for sym in symbols:
             tk = self._ticker(sym)
             try:
-                fetched = self._inner.get_bars([tk], timeframe, start_ms=start_ms, end_ms=end_ms, limit=limit)
+                fetched = self._inner.get_bars(
+                    [tk], timeframe, start_ms=start_ms, end_ms=end_ms, limit=limit
+                )
             except Exception as exc:  # pragma: no cover - сеть
                 logger.warning("ContinuousProxySource get_bars(%s→%s) failed: %s", sym, tk, exc)
                 continue
@@ -91,12 +124,22 @@ def build_roll_accurate_panel(
 class CarryEnricher:
     """front/back → front/back/carry/roll_yield (carry = (front−back)/back). BYO-провайдер, PIT-true."""
 
-    def __init__(self, *, fb_provider: Callable[[Sequence[str]], pd.DataFrame],
-                 publish_lag_ms: int = 0, vendor: str = "byo") -> None:
+    def __init__(
+        self,
+        *,
+        fb_provider: Callable[[Sequence[str]], pd.DataFrame],
+        publish_lag_ms: int = 0,
+        vendor: str = "byo",
+    ) -> None:
         self._fb_provider = fb_provider
         self._publish_lag_ms = int(publish_lag_ms)
-        self.meta = DataSourceMeta(name="carry", vendor=vendor, kind="enrich", pit_quality=PIT_TRUE,
-                                   notes="Front/back basis → carry/roll-yield (both observable).")
+        self.meta = DataSourceMeta(
+            name="carry",
+            vendor=vendor,
+            kind="enrich",
+            pit_quality=PIT_TRUE,
+            notes="Front/back basis → carry/roll-yield (both observable).",
+        )
 
     def columns(self) -> List[str]:
         return ["front", "back", "carry", "roll_yield"]
@@ -113,8 +156,14 @@ class CarryEnricher:
             for c in self.columns():
                 out[c] = np.nan
             return out
-        out = PanelBuilder.asof_join(panel, long, value_cols=["front", "back"], ts_col="publish_ts",
-                                     symbol_col="symbol", publish_lag_ms=self._publish_lag_ms)
+        out = PanelBuilder.asof_join(
+            panel,
+            long,
+            value_cols=["front", "back"],
+            ts_col="publish_ts",
+            symbol_col="symbol",
+            publish_lag_ms=self._publish_lag_ms,
+        )
         back = out["back"].astype("float64").replace(0.0, np.nan)
         out["carry"] = (out["front"].astype("float64") - back) / back
         out["roll_yield"] = out["carry"]
@@ -136,7 +185,10 @@ def build_futures_enricher(name: str, cfg: Any) -> Optional[Any]:
 
 
 __all__ = [
-    "DEFAULT_CME_YAHOO_MAP", "ContinuousProxySource",
-    "build_roll_accurate_panel", "CarryEnricher",
-    "FUTURES_ENRICHERS", "build_futures_enricher",
+    "DEFAULT_CME_YAHOO_MAP",
+    "ContinuousProxySource",
+    "build_roll_accurate_panel",
+    "CarryEnricher",
+    "FUTURES_ENRICHERS",
+    "build_futures_enricher",
 ]

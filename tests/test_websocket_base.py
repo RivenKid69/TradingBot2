@@ -33,6 +33,7 @@ from adapters.websocket_base import (
 # WebSocketConfig Tests
 # =============================================================================
 
+
 class TestWebSocketConfig:
     """Tests for WebSocketConfig validation and defaults."""
 
@@ -87,6 +88,7 @@ class TestWebSocketConfig:
 # =============================================================================
 # ConnectionStats Tests
 # =============================================================================
+
 
 class TestConnectionStats:
     """Tests for ConnectionStats tracking."""
@@ -143,6 +145,7 @@ class TestConnectionStats:
 # WebSocketMessage Tests
 # =============================================================================
 
+
 class TestWebSocketMessage:
     """Tests for WebSocketMessage."""
 
@@ -183,6 +186,7 @@ class TestWebSocketMessage:
 # AlpacaWebSocketHandlers Tests
 # =============================================================================
 
+
 class TestAlpacaWebSocketHandlers:
     """Tests for Alpaca WebSocket handlers."""
 
@@ -213,6 +217,7 @@ class TestAlpacaWebSocketHandlers:
 # PolygonWebSocketHandlers Tests
 # =============================================================================
 
+
 class TestPolygonWebSocketHandlers:
     """Tests for Polygon WebSocket handlers."""
 
@@ -242,6 +247,7 @@ class TestPolygonWebSocketHandlers:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestWebSocketIntegration:
     """Integration tests for WebSocket components."""

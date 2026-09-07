@@ -21,6 +21,7 @@ pytest.importorskip("sortedcontainers")
 
 try:
     from lob_state_cython import _compute_reward_cython
+
     HAVE_LOB_STATE_CYTHON = True
 except ImportError:
     HAVE_LOB_STATE_CYTHON = False
@@ -62,7 +63,7 @@ class TestRiskPenaltyNormalization:
             trades_this_step=0,
             trade_frequency_penalty=0.0,
             executed_notional=0.0,
-            turnover_penalty_coef=0.0
+            turnover_penalty_coef=0.0,
         )
 
         # Case 2: net_worth very low (100) - large drop
@@ -83,7 +84,7 @@ class TestRiskPenaltyNormalization:
             trades_this_step=0,
             trade_frequency_penalty=0.0,
             executed_notional=0.0,
-            turnover_penalty_coef=0.0
+            turnover_penalty_coef=0.0,
         )
 
         # CRITICAL ASSERTION: Risk penalty should be SIMILAR despite huge net_worth drop
@@ -115,9 +116,10 @@ class TestRiskPenaltyNormalization:
 
         # reward_diff should be close to pnl_diff (not 100x larger)
         # Allow 2x margin for drawdown penalty contribution
-        assert reward_diff < pnl_diff * 2.0, \
-            f"Reward difference ({reward_diff:.3f}) should be close to PnL difference ({pnl_diff:.3f}), " \
+        assert reward_diff < pnl_diff * 2.0, (
+            f"Reward difference ({reward_diff:.3f}) should be close to PnL difference ({pnl_diff:.3f}), "
             f"not exploded by risk penalty. Old bug would give reward_diff ~ 10.0+"
+        )
 
     def test_same_position_same_penalty_regardless_of_current_networth(self):
         """
@@ -149,7 +151,7 @@ class TestRiskPenaltyNormalization:
                 trades_this_step=0,
                 trade_frequency_penalty=0.0,
                 executed_notional=0.0,
-                turnover_penalty_coef=0.0
+                turnover_penalty_coef=0.0,
             )
             penalties.append(potential)
 
@@ -169,8 +171,9 @@ class TestRiskPenaltyNormalization:
 
         # Verify base penalty is close to expected (within tanh transformation)
         # tanh(-0.02) ≈ -0.02 (for small values)
-        assert abs(base_penalty - expected_risk_penalty) < 0.01, \
-            f"Base penalty {base_penalty:.4f} should be close to {expected_risk_penalty:.4f}"
+        assert (
+            abs(base_penalty - expected_risk_penalty) < 0.01
+        ), f"Base penalty {base_penalty:.4f} should be close to {expected_risk_penalty:.4f}"
 
         # OLD BUG: penalties would vary wildly (100x range)
         # NEW FIX: penalties should vary only due to drawdown component (not risk component)
@@ -179,8 +182,9 @@ class TestRiskPenaltyNormalization:
         # Range should be dominated by drawdown, not risk penalty explosion
         # Drawdown contribution: (peak - net_worth) / peak ranges from 0.0 to 0.998
         # So penalty_range should be ~ O(1), not O(100)
-        assert penalty_range < 2.0, \
-            f"Penalty range {penalty_range:.3f} should be reasonable, not exploded by risk penalty"
+        assert (
+            penalty_range < 2.0
+        ), f"Penalty range {penalty_range:.3f} should be reasonable, not exploded by risk penalty"
 
     def test_edge_case_zero_prev_networth_uses_fallback(self):
         """
@@ -209,7 +213,7 @@ class TestRiskPenaltyNormalization:
             trades_this_step=0,
             trade_frequency_penalty=0.0,
             executed_notional=0.0,
-            turnover_penalty_coef=0.0
+            turnover_penalty_coef=0.0,
         )
 
         # Should not crash or produce inf/nan
@@ -247,7 +251,7 @@ class TestRiskPenaltyNormalization:
             trades_this_step=0,
             trade_frequency_penalty=0.0,
             executed_notional=0.0,
-            turnover_penalty_coef=0.0
+            turnover_penalty_coef=0.0,
         )
 
         # Should not crash or produce inf/nan
@@ -280,7 +284,7 @@ class TestRiskPenaltyNormalization:
             trades_this_step=0,
             trade_frequency_penalty=0.0,
             executed_notional=0.0,
-            turnover_penalty_coef=0.0
+            turnover_penalty_coef=0.0,
         )
 
         # Should use fallback baseline_capital = 1.0
@@ -322,7 +326,7 @@ class TestRiskPenaltyNormalization:
             trades_this_step=0,
             trade_frequency_penalty=0.0,
             executed_notional=0.0,
-            turnover_penalty_coef=0.0
+            turnover_penalty_coef=0.0,
         )
 
         # SIMULATED OLD BEHAVIOR (what it would have been):
@@ -337,9 +341,10 @@ class TestRiskPenaltyNormalization:
 
         # OLD bug: ratio = 20x (penalty explodes)
         # NEW fix: penalty is 20x smaller and stable
-        assert ratio > 10.0, \
-            f"Old penalty ({old_risk_penalty:.3f}) should be ~20x larger than new ({new_risk_penalty:.3f}), " \
+        assert ratio > 10.0, (
+            f"Old penalty ({old_risk_penalty:.3f}) should be ~20x larger than new ({new_risk_penalty:.3f}), "
             f"ratio = {ratio:.1f}x"
+        )
 
         # Verify new behavior produces reasonable reward
         assert abs(reward_new) < 5.0, "New reward should be reasonable (not exploded)"
@@ -368,11 +373,13 @@ class TestRiskPenaltyNormalization:
             trades_this_step=0,
             trade_frequency_penalty=0.0,
             executed_notional=0.0,
-            turnover_penalty_coef=0.0
+            turnover_penalty_coef=0.0,
         )
 
         # With zero position and no drawdown, potential should be ~0
-        assert abs(potential) < 0.01, f"Zero position should give ~zero potential, got {potential:.4f}"
+        assert (
+            abs(potential) < 0.01
+        ), f"Zero position should give ~zero potential, got {potential:.4f}"
 
     def test_large_position_appropriate_penalty(self):
         """
@@ -402,15 +409,16 @@ class TestRiskPenaltyNormalization:
             trades_this_step=0,
             trade_frequency_penalty=0.0,
             executed_notional=0.0,
-            turnover_penalty_coef=0.0
+            turnover_penalty_coef=0.0,
         )
 
         # Risk penalty = -0.1 * 1000 * 500 / 100000 = -0.5
         expected_risk_penalty = -risk_aversion_variance * units * atr / prev_net_worth
 
         # Potential = tanh(-0.5) ≈ -0.46
-        assert abs(potential1 - expected_risk_penalty) < 0.1, \
-            f"Large position penalty {potential1:.4f} should be close to {expected_risk_penalty:.4f}"
+        assert (
+            abs(potential1 - expected_risk_penalty) < 0.1
+        ), f"Large position penalty {potential1:.4f} should be close to {expected_risk_penalty:.4f}"
 
         # Should not explode
         assert abs(reward1) < 5.0, "Large position reward should not explode"

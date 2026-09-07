@@ -57,7 +57,7 @@ def max_drawdown(returns: np.ndarray) -> float:
     eq = np.cumprod(1.0 + returns)
     peak = np.maximum.accumulate(eq)
     dd = (eq - peak) / peak
-    return float(-dd.min())   # positive number = depth
+    return float(-dd.min())  # positive number = depth
 
 
 # ---------------------------------------------------------------------------
@@ -71,9 +71,9 @@ def _stationary_indices(n: int, mean_block: float, rng: np.random.Generator) -> 
     for t in range(n):
         idx[t] = i
         if rng.random() < p:
-            i = int(rng.integers(0, n))      # start a new block
+            i = int(rng.integers(0, n))  # start a new block
         else:
-            i = (i + 1) % n                  # continue (circular)
+            i = (i + 1) % n  # continue (circular)
     return idx
 
 
@@ -105,8 +105,15 @@ def block_bootstrap(
     n = r.size
     point = float(statistic(r)) if n else 0.0
     if n < 4:
-        return {"point": point, "mean": point, "se": 0.0, "ci_low": point,
-                "ci_high": point, "p_value": float("nan"), "n_boot": 0}
+        return {
+            "point": point,
+            "mean": point,
+            "se": 0.0,
+            "ci_low": point,
+            "ci_high": point,
+            "p_value": float("nan"),
+            "n_boot": 0,
+        }
     if mean_block is None:
         mean_block = max(2.0, float(n) ** (1.0 / 3.0))
     rng = np.random.default_rng(seed)
@@ -119,15 +126,22 @@ def block_bootstrap(
         stats[b] = statistic(r[idx])
     stats = stats[np.isfinite(stats)]
     if stats.size == 0:
-        return {"point": point, "mean": point, "se": 0.0, "ci_low": point,
-                "ci_high": point, "p_value": float("nan"), "n_boot": 0}
+        return {
+            "point": point,
+            "mean": point,
+            "se": 0.0,
+            "ci_low": point,
+            "ci_high": point,
+            "p_value": float("nan"),
+            "n_boot": 0,
+        }
     return {
         "point": point,
         "mean": float(np.mean(stats)),
         "se": float(np.std(stats, ddof=1)),
         "ci_low": float(np.quantile(stats, 0.025)),
         "ci_high": float(np.quantile(stats, 0.975)),
-        "p_value": float(np.mean(stats <= 0.0)),   # one-sided P[stat ≤ 0]
+        "p_value": float(np.mean(stats <= 0.0)),  # one-sided P[stat ≤ 0]
         "n_boot": int(stats.size),
         "mean_block": float(mean_block),
         "method": method,
@@ -146,18 +160,36 @@ def bootstrap_report(
     """Block-bootstrap CIs for Sharpe, CAGR and max-drawdown of a return series."""
     return {
         "sharpe": block_bootstrap(
-            returns, lambda x: sharpe(x, periods_per_year),
-            n_boot=n_boot, mean_block=mean_block, method=method, seed=seed),
+            returns,
+            lambda x: sharpe(x, periods_per_year),
+            n_boot=n_boot,
+            mean_block=mean_block,
+            method=method,
+            seed=seed,
+        ),
         "cagr": block_bootstrap(
-            returns, lambda x: cagr(x, periods_per_year),
-            n_boot=n_boot, mean_block=mean_block, method=method, seed=seed + 1),
+            returns,
+            lambda x: cagr(x, periods_per_year),
+            n_boot=n_boot,
+            mean_block=mean_block,
+            method=method,
+            seed=seed + 1,
+        ),
         "max_drawdown": block_bootstrap(
-            returns, max_drawdown,
-            n_boot=n_boot, mean_block=mean_block, method=method, seed=seed + 2),
+            returns,
+            max_drawdown,
+            n_boot=n_boot,
+            mean_block=mean_block,
+            method=method,
+            seed=seed + 2,
+        ),
     }
 
 
 __all__ = [
-    "block_bootstrap", "bootstrap_report",
-    "sharpe", "cagr", "max_drawdown",
+    "block_bootstrap",
+    "bootstrap_report",
+    "sharpe",
+    "cagr",
+    "max_drawdown",
 ]

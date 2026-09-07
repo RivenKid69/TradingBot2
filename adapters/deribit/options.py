@@ -70,7 +70,17 @@ import requests
 
 from adapters.base import MarketDataAdapter, OrderExecutionAdapter, OrderResult
 from adapters.models import AccountInfo, ExchangeVendor, MarketType
-from core_models import Bar, Tick, Order as CoreOrder, ExecReport, Position as CorePosition, Side as CoreSide, OrderType as CoreOrderType, ExecStatus, Liquidity
+from core_models import (
+    Bar,
+    Tick,
+    Order as CoreOrder,
+    ExecReport,
+    Position as CorePosition,
+    Side as CoreSide,
+    OrderType as CoreOrderType,
+    ExecStatus,
+    Liquidity,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -101,9 +111,18 @@ TICK_SIZE = {
 
 # Month code mapping for instrument names
 MONTH_CODES = {
-    1: "JAN", 2: "FEB", 3: "MAR", 4: "APR",
-    5: "MAY", 6: "JUN", 7: "JUL", 8: "AUG",
-    9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC",
+    1: "JAN",
+    2: "FEB",
+    3: "MAR",
+    4: "APR",
+    5: "MAY",
+    6: "JUN",
+    7: "JUL",
+    8: "AUG",
+    9: "SEP",
+    10: "OCT",
+    11: "NOV",
+    12: "DEC",
 }
 MONTH_CODES_REVERSE = {v: k for k, v in MONTH_CODES.items()}
 
@@ -112,8 +131,10 @@ MONTH_CODES_REVERSE = {v: k for k, v in MONTH_CODES.items()}
 # Enums
 # =============================================================================
 
+
 class DeribitOptionType(str, Enum):
     """Option type for Deribit options."""
+
     CALL = "call"
     PUT = "put"
 
@@ -130,6 +151,7 @@ class DeribitOptionType(str, Enum):
 
 class DeribitOrderType(str, Enum):
     """Order types supported by Deribit."""
+
     LIMIT = "limit"
     MARKET = "market"
     STOP_LIMIT = "stop_limit"
@@ -138,6 +160,7 @@ class DeribitOrderType(str, Enum):
 
 class DeribitOrderState(str, Enum):
     """Order states on Deribit."""
+
     OPEN = "open"
     FILLED = "filled"
     REJECTED = "rejected"
@@ -147,6 +170,7 @@ class DeribitOrderState(str, Enum):
 
 class DeribitTimeInForce(str, Enum):
     """Time in force options for Deribit orders."""
+
     GTC = "good_til_cancelled"
     IOC = "immediate_or_cancel"
     FOK = "fill_or_kill"
@@ -154,6 +178,7 @@ class DeribitTimeInForce(str, Enum):
 
 class DeribitDirection(str, Enum):
     """Trade direction."""
+
     BUY = "buy"
     SELL = "sell"
 
@@ -161,6 +186,7 @@ class DeribitDirection(str, Enum):
 # =============================================================================
 # Utility Functions
 # =============================================================================
+
 
 def parse_deribit_instrument_name(instrument_name: str) -> Dict[str, Any]:
     """
@@ -331,6 +357,7 @@ def _compute_inverse_put_payoff(
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class DeribitGreeks:
     """
@@ -339,11 +366,12 @@ class DeribitGreeks:
     Note: Deribit provides Greeks in inverse terms (per underlying unit).
     Delta is the most commonly used Greek for crypto options.
     """
+
     delta: Decimal
     gamma: Decimal
     theta: Decimal  # Per day decay in underlying units
-    vega: Decimal   # Sensitivity to 1% IV change
-    rho: Decimal    # Interest rate sensitivity
+    vega: Decimal  # Sensitivity to 1% IV change
+    rho: Decimal  # Interest rate sensitivity
 
     @classmethod
     def from_api_response(cls, data: Dict[str, Any]) -> "DeribitGreeks":
@@ -374,6 +402,7 @@ class DeribitOptionContract:
         min_trade_amount: Minimum order size
         is_active: Whether the contract is currently tradeable
     """
+
     instrument_name: str
     underlying: str
     expiration: date
@@ -445,19 +474,20 @@ class DeribitOptionQuote:
 
     All prices are in the underlying cryptocurrency (inverse pricing).
     """
+
     instrument_name: str
     timestamp_ms: int
     bid_price: Optional[Decimal]  # Best bid in underlying
     ask_price: Optional[Decimal]  # Best ask in underlying
-    bid_size: Optional[Decimal]   # Size at best bid
-    ask_size: Optional[Decimal]   # Size at best ask
+    bid_size: Optional[Decimal]  # Size at best bid
+    ask_size: Optional[Decimal]  # Size at best ask
     last_price: Optional[Decimal]
-    mark_price: Decimal           # Mark price for margining
-    index_price: Decimal          # Underlying index price (USD)
-    underlying_price: Decimal     # Spot price of underlying
-    mark_iv: Decimal              # Implied volatility at mark price
-    bid_iv: Optional[Decimal]     # IV at bid
-    ask_iv: Optional[Decimal]     # IV at ask
+    mark_price: Decimal  # Mark price for margining
+    index_price: Decimal  # Underlying index price (USD)
+    underlying_price: Decimal  # Spot price of underlying
+    mark_iv: Decimal  # Implied volatility at mark price
+    bid_iv: Optional[Decimal]  # IV at bid
+    ask_iv: Optional[Decimal]  # IV at ask
     greeks: Optional[DeribitGreeks] = None
     open_interest: Decimal = Decimal("0")
     volume_24h: Decimal = Decimal("0")
@@ -523,8 +553,9 @@ class DeribitOptionQuote:
 @dataclass
 class DeribitOrderbookLevel:
     """Single level in the order book."""
+
     price: Decimal  # In underlying
-    size: Decimal   # In contracts
+    size: Decimal  # In contracts
 
 
 @dataclass
@@ -534,6 +565,7 @@ class DeribitOrderbook:
 
     Prices are in the underlying cryptocurrency.
     """
+
     instrument_name: str
     timestamp_ms: int
     bids: List[DeribitOrderbookLevel]  # Sorted by price descending
@@ -592,8 +624,9 @@ class DVOLData:
 
     Available for both BTC and ETH.
     """
-    underlying: str              # "BTC" or "ETH"
-    value: Decimal               # Current DVOL value (annualized IV)
+
+    underlying: str  # "BTC" or "ETH"
+    value: Decimal  # Current DVOL value (annualized IV)
     timestamp_ms: int
     high_24h: Optional[Decimal] = None
     low_24h: Optional[Decimal] = None
@@ -619,6 +652,7 @@ class DeribitInstrumentInfo:
 
     Includes trading parameters and current status.
     """
+
     instrument_name: str
     underlying: str
     expiration: date
@@ -628,8 +662,8 @@ class DeribitInstrumentInfo:
     contract_size: Decimal
     tick_size: Decimal
     min_trade_amount: Decimal
-    maker_commission: Decimal    # e.g., 0.0003 = 0.03%
-    taker_commission: Decimal    # e.g., 0.0003 = 0.03%
+    maker_commission: Decimal  # e.g., 0.0003 = 0.03%
+    taker_commission: Decimal  # e.g., 0.0003 = 0.03%
     is_active: bool
     creation_timestamp: int
     expiration_timestamp: int
@@ -672,20 +706,21 @@ class DeribitPosition:
     Size is in contracts (positive = long, negative = short).
     P&L is in the underlying cryptocurrency (inverse settlement).
     """
+
     instrument_name: str
-    size: Decimal                    # Positive = long, negative = short
-    average_price: Decimal           # Entry price in underlying
-    mark_price: Decimal              # Current mark price
-    index_price: Decimal             # Underlying index price
-    realized_pnl: Decimal            # In underlying
-    unrealized_pnl: Decimal          # In underlying (floating)
-    total_pnl: Decimal               # realized + unrealized
-    delta: Decimal                   # Position delta
-    gamma: Decimal                   # Position gamma
-    theta: Decimal                   # Position theta
-    vega: Decimal                    # Position vega
-    maintenance_margin: Decimal      # Required margin in underlying
-    initial_margin: Decimal          # Initial margin in underlying
+    size: Decimal  # Positive = long, negative = short
+    average_price: Decimal  # Entry price in underlying
+    mark_price: Decimal  # Current mark price
+    index_price: Decimal  # Underlying index price
+    realized_pnl: Decimal  # In underlying
+    unrealized_pnl: Decimal  # In underlying (floating)
+    total_pnl: Decimal  # realized + unrealized
+    delta: Decimal  # Position delta
+    gamma: Decimal  # Position gamma
+    theta: Decimal  # Position theta
+    vega: Decimal  # Position vega
+    maintenance_margin: Decimal  # Required margin in underlying
+    initial_margin: Decimal  # Initial margin in underlying
 
     @property
     def is_long(self) -> bool:
@@ -728,14 +763,15 @@ class DeribitOrder:
     """
     Order to be submitted to Deribit.
     """
+
     instrument_name: str
     direction: DeribitDirection
-    amount: Decimal              # In contracts
+    amount: Decimal  # In contracts
     order_type: DeribitOrderType = DeribitOrderType.LIMIT
     price: Optional[Decimal] = None  # Required for limit orders
     time_in_force: DeribitTimeInForce = DeribitTimeInForce.GTC
     reduce_only: bool = False
-    post_only: bool = False      # Maker-only order
+    post_only: bool = False  # Maker-only order
     label: Optional[str] = None  # Client order ID
 
     def to_api_params(self) -> Dict[str, Any]:
@@ -769,6 +805,7 @@ class DeribitOrderResult:
     """
     Result of an order submission or query.
     """
+
     order_id: str
     instrument_name: str
     direction: DeribitDirection
@@ -780,7 +817,7 @@ class DeribitOrderResult:
     order_type: DeribitOrderType
     creation_timestamp: int
     last_update_timestamp: int
-    commission: Decimal          # In underlying
+    commission: Decimal  # In underlying
     label: Optional[str] = None
 
     @property
@@ -808,7 +845,9 @@ class DeribitOrderResult:
             amount=Decimal(str(data["amount"])),
             price=Decimal(str(data["price"])) if data.get("price") else None,
             filled_amount=Decimal(str(data.get("filled_amount", 0))),
-            average_price=Decimal(str(data["average_price"])) if data.get("average_price") else None,
+            average_price=(
+                Decimal(str(data["average_price"])) if data.get("average_price") else None
+            ),
             order_state=DeribitOrderState(data["order_state"]),
             order_type=DeribitOrderType(data["order_type"]),
             creation_timestamp=data.get("creation_timestamp", 0),
@@ -821,6 +860,7 @@ class DeribitOrderResult:
 # =============================================================================
 # Rate Limiter
 # =============================================================================
+
 
 class DeribitRateLimiter:
     """
@@ -854,8 +894,7 @@ class DeribitRateLimiter:
             now = time.monotonic()
             elapsed = now - self._last_update
             self._tokens = min(
-                float(self._burst_size),
-                self._tokens + elapsed * self._requests_per_second
+                float(self._burst_size), self._tokens + elapsed * self._requests_per_second
             )
             self._last_update = now
 
@@ -874,6 +913,7 @@ class DeribitRateLimiter:
 # =============================================================================
 # API Client
 # =============================================================================
+
 
 class DeribitAPIClient:
     """
@@ -902,10 +942,7 @@ class DeribitAPIClient:
     @property
     def is_authenticated(self) -> bool:
         """Check if we have valid authentication."""
-        return (
-            self._access_token is not None
-            and time.time() < self._token_expiry
-        )
+        return self._access_token is not None and time.time() < self._token_expiry
 
     def authenticate(self) -> bool:
         """
@@ -1113,6 +1150,7 @@ class DeribitAPIClient:
 # =============================================================================
 # Market Data Adapter
 # =============================================================================
+
 
 class DeribitOptionsMarketDataAdapter(MarketDataAdapter):
     """
@@ -1425,6 +1463,7 @@ class DeribitOptionsMarketDataAdapter(MarketDataAdapter):
 # Order Execution Adapter
 # =============================================================================
 
+
 class DeribitOptionsOrderExecutionAdapter(OrderExecutionAdapter):
     """
     Order execution adapter for Deribit options.
@@ -1700,6 +1739,7 @@ class DeribitOptionsOrderExecutionAdapter(OrderExecutionAdapter):
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_deribit_options_market_data_adapter(
     testnet: bool = True,

@@ -39,6 +39,7 @@ from services.ai_act.testing_framework import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def temp_dir():
     """Create temporary directory."""
@@ -69,6 +70,7 @@ def framework(testing_config):
 # =============================================================================
 # Test Enums
 # =============================================================================
+
 
 class TestEnums:
     """Test enum definitions."""
@@ -128,6 +130,7 @@ class TestEnums:
 # =============================================================================
 # Test Data Classes
 # =============================================================================
+
 
 class TestDataClasses:
     """Test data class initialization."""
@@ -268,6 +271,7 @@ class TestDataClasses:
 # Test Metric Management
 # =============================================================================
 
+
 class TestMetricManagement:
     """Test metric management functionality."""
 
@@ -332,6 +336,7 @@ class TestMetricManagement:
 # =============================================================================
 # Test Scenario Management
 # =============================================================================
+
 
 class TestScenarioManagement:
     """Test scenario management functionality."""
@@ -399,15 +404,14 @@ class TestScenarioManagement:
             category=TestCategory.FUNCTIONAL,
         )
 
-        elderly_scenarios = framework.get_scenarios_for_vulnerable_group(
-            VulnerableGroup.ELDERLY
-        )
+        elderly_scenarios = framework.get_scenarios_for_vulnerable_group(VulnerableGroup.ELDERLY)
         assert len(elderly_scenarios) == 1
 
 
 # =============================================================================
 # Test Suite Management
 # =============================================================================
+
 
 class TestSuiteManagement:
     """Test suite management functionality."""
@@ -456,6 +460,7 @@ class TestSuiteManagement:
 # =============================================================================
 # Test Execution
 # =============================================================================
+
 
 class TestExecution_:
     """Test execution functionality."""
@@ -535,6 +540,7 @@ class TestExecution_:
 # Test Statistical Analysis
 # =============================================================================
 
+
 class TestStatisticalAnalysis:
     """Test statistical analysis functionality."""
 
@@ -548,9 +554,38 @@ class TestStatisticalAnalysis:
         )
 
         # Generate sample values
-        values = [0.92, 0.93, 0.91, 0.94, 0.92, 0.93, 0.91, 0.92, 0.93, 0.94,
-                  0.92, 0.93, 0.91, 0.92, 0.93, 0.94, 0.92, 0.93, 0.91, 0.92,
-                  0.92, 0.93, 0.91, 0.94, 0.92, 0.93, 0.91, 0.92, 0.93, 0.94]
+        values = [
+            0.92,
+            0.93,
+            0.91,
+            0.94,
+            0.92,
+            0.93,
+            0.91,
+            0.92,
+            0.93,
+            0.94,
+            0.92,
+            0.93,
+            0.91,
+            0.92,
+            0.93,
+            0.94,
+            0.92,
+            0.93,
+            0.91,
+            0.92,
+            0.92,
+            0.93,
+            0.91,
+            0.94,
+            0.92,
+            0.93,
+            0.91,
+            0.92,
+            0.93,
+            0.94,
+        ]
 
         analysis = framework.analyze_metric_results(metric.metric_id, values)
 
@@ -587,9 +622,38 @@ class TestStatisticalAnalysis:
         )
 
         # Generate values below threshold
-        values = [0.85, 0.86, 0.84, 0.85, 0.86, 0.84, 0.85, 0.86, 0.84, 0.85,
-                  0.85, 0.86, 0.84, 0.85, 0.86, 0.84, 0.85, 0.86, 0.84, 0.85,
-                  0.85, 0.86, 0.84, 0.85, 0.86, 0.84, 0.85, 0.86, 0.84, 0.85]
+        values = [
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+            0.86,
+            0.84,
+            0.85,
+        ]
 
         analysis = framework.analyze_metric_results(metric.metric_id, values)
 
@@ -599,6 +663,7 @@ class TestStatisticalAnalysis:
 # =============================================================================
 # Test Real-World Testing
 # =============================================================================
+
 
 class TestRealWorldTesting:
     """Test real-world testing functionality per Article 60."""
@@ -697,6 +762,7 @@ class TestRealWorldTesting:
 # Test Compliance Reporting
 # =============================================================================
 
+
 class TestComplianceReporting:
     """Test compliance reporting functionality."""
 
@@ -744,6 +810,7 @@ class TestComplianceReporting:
 # =============================================================================
 # Test Factory Functions
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Test factory functions."""
@@ -798,6 +865,7 @@ class TestFactoryFunctions:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -842,6 +910,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Thread Safety
 # =============================================================================
+
 
 class TestThreadSafety:
     """Test thread safety."""

@@ -6,6 +6,7 @@ correctly uses unclipped targets for explained variance computation.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional
@@ -59,16 +60,12 @@ class TestEvaluationSectionTargetHandling:
         value_target_scale_effective = 1.0
 
         # Evaluation path without normalize_returns (line 7130-7144)
-        target_returns_norm_unclipped = (
-            (returns_raw / base_scale) * value_target_scale_effective
-        )
+        target_returns_norm_unclipped = (returns_raw / base_scale) * value_target_scale_effective
         # [10.0, -10.0, 8.0, -8.0]
 
         value_clip_limit_scaled = 5.0
         target_returns_norm = torch.clamp(
-            target_returns_norm_unclipped,
-            min=-value_clip_limit_scaled,
-            max=value_clip_limit_scaled
+            target_returns_norm_unclipped, min=-value_clip_limit_scaled, max=value_clip_limit_scaled
         )
         # [5.0, -5.0, 5.0, -5.0] - CLIPPED
 
@@ -170,7 +167,7 @@ class TestEvaluationSectionTargetHandling:
         weighted_mean = (target_norm_col * weights_tensor).sum() / weights_tensor.sum()
 
         # Calculate expected
-        expected = (10.0*1.0 + (-10.0)*0.5 + 8.0*0.8 + (-8.0)*0.3) / (1.0 + 0.5 + 0.8 + 0.3)
+        expected = (10.0 * 1.0 + (-10.0) * 0.5 + 8.0 * 0.8 + (-8.0) * 0.3) / (1.0 + 0.5 + 0.8 + 0.3)
         # = (10.0 - 5.0 + 6.4 - 2.4) / 2.6 = 9.0 / 2.6 = 3.46
 
         assert weighted_mean.item() == pytest.approx(expected, rel=1e-4)
@@ -251,7 +248,8 @@ class TestEvaluationSectionTargetHandling:
 
         # Calculate error from clipping
         error = torch.abs(
-            (target_returns_norm - target_returns_norm_unclipped) / target_returns_norm_unclipped.clamp(min=1e-6)
+            (target_returns_norm - target_returns_norm_unclipped)
+            / target_returns_norm_unclipped.clamp(min=1e-6)
         ).mean()
         assert error.item() > 0.85  # >85% error from clipping!
 
@@ -334,7 +332,7 @@ class TestEvaluationSectionEdgeCases:
 
         # All magnitudes should be preserved
         assert target_norm_col[1, 0].item() == pytest.approx(-10.0)  # Large
-        assert target_norm_col[0, 0].item() == pytest.approx(0.1)    # Small
+        assert target_norm_col[0, 0].item() == pytest.approx(0.1)  # Small
 
 
 class TestEvaluationVsPrediction:
@@ -361,7 +359,7 @@ class TestEvaluationVsPrediction:
 
         # Should be comparable (both in same normalized space)
         diff = target_norm_col - predictions
-        mse = (diff ** 2).mean()
+        mse = (diff**2).mean()
 
         # MSE should be reasonable (not wildly different scales)
         assert mse.item() > 0.0
@@ -387,10 +385,7 @@ class TestEvaluationVsPrediction:
         target_returns_norm_raw_train = (returns_raw - ret_mu) / ret_std
 
         # Should be identical
-        assert torch.allclose(
-            target_norm_col_eval.squeeze(),
-            target_returns_norm_raw_train
-        )
+        assert torch.allclose(target_norm_col_eval.squeeze(), target_returns_norm_raw_train)
 
         # Both should have extreme values preserved
         assert target_norm_col_eval[0, 0].item() == pytest.approx(10.0)

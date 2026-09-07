@@ -22,6 +22,7 @@ This migration adds:
 9. approval_records.previous_state_digest - State before change
 10. approval_records.new_state_digest - State after change
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -56,8 +57,8 @@ def upgrade() -> None:
             "halt_reason",
             sa.String(50),
             nullable=True,
-            comment="HaltReason enum value per Design Doc 9.4"
-        )
+            comment="HaltReason enum value per Design Doc 9.4",
+        ),
     )
     op.add_column(
         "deployments",
@@ -65,8 +66,8 @@ def upgrade() -> None:
             "halt_details",
             json_type,
             nullable=True,
-            comment="Full halt context: trigger_source, metrics, recovery_action"
-        )
+            comment="Full halt context: trigger_source, metrics, recovery_action",
+        ),
     )
     op.add_column(
         "deployments",
@@ -74,8 +75,8 @@ def upgrade() -> None:
             "halted_at",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="Timestamp when halt occurred"
-        )
+            comment="Timestamp when halt occurred",
+        ),
     )
 
     # Index for querying halted deployments
@@ -83,7 +84,7 @@ def upgrade() -> None:
         "ix_deployment_halt_reason",
         "deployments",
         ["halt_reason"],
-        postgresql_where=sa.text("halt_reason IS NOT NULL")
+        postgresql_where=sa.text("halt_reason IS NOT NULL"),
     )
 
     # ============================================================================
@@ -95,8 +96,8 @@ def upgrade() -> None:
             "halt_reason",
             sa.String(50),
             nullable=True,
-            comment="HaltReason enum value per Design Doc 9.4"
-        )
+            comment="HaltReason enum value per Design Doc 9.4",
+        ),
     )
     op.add_column(
         "runs",
@@ -104,8 +105,8 @@ def upgrade() -> None:
             "halt_details",
             json_type,
             nullable=True,
-            comment="Full halt context: trigger_source, metrics, recovery_action"
-        )
+            comment="Full halt context: trigger_source, metrics, recovery_action",
+        ),
     )
     op.add_column(
         "runs",
@@ -113,8 +114,8 @@ def upgrade() -> None:
             "halted_at",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="Timestamp when halt occurred"
-        )
+            comment="Timestamp when halt occurred",
+        ),
     )
 
     # Index for querying halted runs
@@ -122,7 +123,7 @@ def upgrade() -> None:
         "ix_run_halt_reason",
         "runs",
         ["halt_reason"],
-        postgresql_where=sa.text("halt_reason IS NOT NULL")
+        postgresql_where=sa.text("halt_reason IS NOT NULL"),
     )
 
     # ============================================================================
@@ -134,8 +135,8 @@ def upgrade() -> None:
             "config_blob_digest",
             sa.String(128),
             nullable=True,
-            comment="ConfigBlob digest at approval time for audit verification"
-        )
+            comment="ConfigBlob digest at approval time for audit verification",
+        ),
     )
     op.add_column(
         "approval_records",
@@ -143,8 +144,8 @@ def upgrade() -> None:
             "manifest_digest",
             sa.String(128),
             nullable=True,
-            comment="Artifact manifest digest at approval time"
-        )
+            comment="Artifact manifest digest at approval time",
+        ),
     )
     op.add_column(
         "approval_records",
@@ -152,8 +153,8 @@ def upgrade() -> None:
             "previous_state_digest",
             sa.String(128),
             nullable=True,
-            comment="Digest of state before change (for diff)"
-        )
+            comment="Digest of state before change (for diff)",
+        ),
     )
     op.add_column(
         "approval_records",
@@ -161,8 +162,8 @@ def upgrade() -> None:
             "new_state_digest",
             sa.String(128),
             nullable=True,
-            comment="Digest of state after change (for diff)"
-        )
+            comment="Digest of state after change (for diff)",
+        ),
     )
 
     # Indexes for digest lookups
@@ -170,13 +171,13 @@ def upgrade() -> None:
         "ix_approval_config_digest",
         "approval_records",
         ["config_blob_digest"],
-        postgresql_where=sa.text("config_blob_digest IS NOT NULL")
+        postgresql_where=sa.text("config_blob_digest IS NOT NULL"),
     )
     op.create_index(
         "ix_approval_manifest_digest",
         "approval_records",
         ["manifest_digest"],
-        postgresql_where=sa.text("manifest_digest IS NOT NULL")
+        postgresql_where=sa.text("manifest_digest IS NOT NULL"),
     )
 
     # ============================================================================
@@ -190,8 +191,8 @@ def upgrade() -> None:
             nullable=True,
             default=1,
             server_default="1",
-            comment="Key version for rotation tracking"
-        )
+            comment="Key version for rotation tracking",
+        ),
     )
     op.add_column(
         "agents",
@@ -199,8 +200,8 @@ def upgrade() -> None:
             "previous_public_key",
             sa.Text(),
             nullable=True,
-            comment="Previous public key for grace period during rotation"
-        )
+            comment="Previous public key for grace period during rotation",
+        ),
     )
     op.add_column(
         "agents",
@@ -208,8 +209,8 @@ def upgrade() -> None:
             "key_rotated_at",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="Timestamp of last key rotation"
-        )
+            comment="Timestamp of last key rotation",
+        ),
     )
     op.add_column(
         "agents",
@@ -217,8 +218,8 @@ def upgrade() -> None:
             "key_rotation_grace_until",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="Until when previous key is still valid"
-        )
+            comment="Until when previous key is still valid",
+        ),
     )
 
     # ============================================================================
@@ -230,8 +231,8 @@ def upgrade() -> None:
             "mfa_backup_codes_hash",
             sa.Text(),
             nullable=True,
-            comment="Hashed backup codes for MFA recovery"
-        )
+            comment="Hashed backup codes for MFA recovery",
+        ),
     )
     op.add_column(
         "users",
@@ -239,8 +240,8 @@ def upgrade() -> None:
             "mfa_verified_at",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="When MFA was successfully verified first time"
-        )
+            comment="When MFA was successfully verified first time",
+        ),
     )
     op.add_column(
         "users",
@@ -250,8 +251,8 @@ def upgrade() -> None:
             nullable=True,
             default=0,
             server_default="0",
-            comment="Failed MFA attempts for lockout"
-        )
+            comment="Failed MFA attempts for lockout",
+        ),
     )
     op.add_column(
         "users",
@@ -259,8 +260,8 @@ def upgrade() -> None:
             "mfa_locked_until",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="MFA lockout expiry time"
-        )
+            comment="MFA lockout expiry time",
+        ),
     )
 
 

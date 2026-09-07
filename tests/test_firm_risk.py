@@ -18,7 +18,10 @@ import pandas as pd
 import pytest
 
 from service_firm_risk import (
-    FirmPosition, FirmRiskAggregator, HierLimits, positions_from_books,
+    FirmPosition,
+    FirmRiskAggregator,
+    HierLimits,
+    positions_from_books,
 )
 
 
@@ -128,12 +131,14 @@ def test_historical_engine_and_attribution():
     rng = np.random.default_rng(42)
     units = ["AAPL", "XOM", "ES", "EURUSD"]
     vols = np.array([0.02, 0.025, 0.015, 0.008])
-    corr = np.array([
-        [1.0, 0.3, 0.6, -0.1],
-        [0.3, 1.0, 0.4, 0.0],
-        [0.6, 0.4, 1.0, -0.2],
-        [-0.1, 0.0, -0.2, 1.0],
-    ])
+    corr = np.array(
+        [
+            [1.0, 0.3, 0.6, -0.1],
+            [0.3, 1.0, 0.4, 0.0],
+            [0.6, 0.4, 1.0, -0.2],
+            [-0.1, 0.0, -0.2, 1.0],
+        ]
+    )
     L = np.linalg.cholesky(corr)
     Z = rng.standard_normal((4000, 4))
     R = (Z @ L.T) * vols
@@ -193,6 +198,7 @@ def test_empty_positions_safe():
 
 def test_to_dict_serializable():
     import json
+
     rep = _agg().aggregate(_positions(), capital={"FIRM": 1_000_000})
     blob = json.dumps(rep.to_dict())
     assert "diversification_benefit" in blob

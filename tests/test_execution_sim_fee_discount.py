@@ -80,9 +80,7 @@ def test_negative_fee_reduces_cumulative_fee(monkeypatch):
         self._fees_last_quote_equivalent = -2.5
         return -1.0
 
-    monkeypatch.setattr(
-        ExecutionSimulator, "_compute_trade_fee", fake_compute_trade_fee
-    )
+    monkeypatch.setattr(ExecutionSimulator, "_compute_trade_fee", fake_compute_trade_fee)
 
     proto = ActionProto(action_type=ActionType.MARKET, volume_frac=1.0)
 

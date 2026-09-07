@@ -1,6 +1,8 @@
 from datetime import datetime, timezone, timedelta
 import numpy as np
-import pathlib, sys, importlib.util
+import pathlib
+import sys
+import importlib.util
 import logging
 
 import pytest
@@ -121,4 +123,3 @@ def test_timestamp_hour_index_alignment_across_components():
     assert lat._mult_sum[idx_expected] == pytest.approx(lat_mult[idx_expected])
     assert sim._last_liquidity == pytest.approx(5.0 * liq_mult[idx_expected])
     assert sim._last_spread_bps == pytest.approx(1.0 * spr_mult[idx_expected])
-

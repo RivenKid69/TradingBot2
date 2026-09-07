@@ -39,13 +39,13 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_EQUITY_RULE = ExchangeRule(
     symbol="",
-    tick_size=Decimal("0.01"),       # Standard US equity tick size
-    step_size=Decimal("1"),          # Whole shares (fractional supported by broker)
-    min_notional=Decimal("1"),       # $1 minimum
-    min_qty=Decimal("1"),            # 1 share minimum
-    max_qty=None,                    # No max
+    tick_size=Decimal("0.01"),  # Standard US equity tick size
+    step_size=Decimal("1"),  # Whole shares (fractional supported by broker)
+    min_notional=Decimal("1"),  # $1 minimum
+    min_qty=Decimal("1"),  # 1 share minimum
+    max_qty=None,  # No max
     price_precision=2,
-    qty_precision=4,                 # Fractional shares
+    qty_precision=4,  # Fractional shares
     market_type=MarketType.EQUITY,
     lot_size=1,
     is_tradable=True,
@@ -57,6 +57,7 @@ DEFAULT_EQUITY_RULE = ExchangeRule(
 # =============================================================================
 # POLYGON EXCHANGE INFO ADAPTER
 # =============================================================================
+
 
 class PolygonExchangeInfoAdapter(ExchangeInfoAdapter):
     """
@@ -106,6 +107,7 @@ class PolygonExchangeInfoAdapter(ExchangeInfoAdapter):
                 raise ValueError("Polygon API key required")
             try:
                 from polygon import RESTClient
+
                 self._rest_client = RESTClient(api_key=self._api_key)
             except ImportError:
                 raise ImportError(
@@ -234,7 +236,11 @@ class PolygonExchangeInfoAdapter(ExchangeInfoAdapter):
                 is_fractionable=True,  # Broker-dependent
                 status="active" if getattr(details, "active", True) else "inactive",
                 listed_date=str(getattr(details, "list_date", "")),
-                delisted_date=str(getattr(details, "delisted_utc", "")) if hasattr(details, "delisted_utc") else None,
+                delisted_date=(
+                    str(getattr(details, "delisted_utc", ""))
+                    if hasattr(details, "delisted_utc")
+                    else None
+                ),
                 raw_data=details.__dict__ if hasattr(details, "__dict__") else {},
             )
 
@@ -317,17 +323,79 @@ class PolygonExchangeInfoAdapter(ExchangeInfoAdapter):
         sorting by volume from market data.
         """
         popular = [
-            "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
-            "BRK.B", "UNH", "JNJ", "XOM", "JPM", "V", "PG", "MA",
-            "HD", "CVX", "MRK", "ABBV", "LLY", "AVGO", "PEP", "KO",
-            "COST", "TMO", "WMT", "MCD", "CSCO", "ACN", "ABT",
-            "DHR", "VZ", "ADBE", "CRM", "CMCSA", "NKE", "INTC",
-            "TXN", "NEE", "PM", "QCOM", "UNP", "HON", "LOW",
-            "IBM", "AMAT", "GE", "CAT", "BA", "AMD", "PYPL",
+            "AAPL",
+            "MSFT",
+            "GOOGL",
+            "AMZN",
+            "NVDA",
+            "META",
+            "TSLA",
+            "BRK.B",
+            "UNH",
+            "JNJ",
+            "XOM",
+            "JPM",
+            "V",
+            "PG",
+            "MA",
+            "HD",
+            "CVX",
+            "MRK",
+            "ABBV",
+            "LLY",
+            "AVGO",
+            "PEP",
+            "KO",
+            "COST",
+            "TMO",
+            "WMT",
+            "MCD",
+            "CSCO",
+            "ACN",
+            "ABT",
+            "DHR",
+            "VZ",
+            "ADBE",
+            "CRM",
+            "CMCSA",
+            "NKE",
+            "INTC",
+            "TXN",
+            "NEE",
+            "PM",
+            "QCOM",
+            "UNP",
+            "HON",
+            "LOW",
+            "IBM",
+            "AMAT",
+            "GE",
+            "CAT",
+            "BA",
+            "AMD",
+            "PYPL",
             # Popular ETFs
-            "SPY", "QQQ", "IWM", "DIA", "VTI", "VOO", "EEM",
-            "XLF", "XLE", "XLK", "XLV", "XLI", "GLD", "SLV",
-            "TLT", "HYG", "LQD", "VNQ", "ARKK", "SOXL", "TQQQ",
+            "SPY",
+            "QQQ",
+            "IWM",
+            "DIA",
+            "VTI",
+            "VOO",
+            "EEM",
+            "XLF",
+            "XLE",
+            "XLK",
+            "XLV",
+            "XLI",
+            "GLD",
+            "SLV",
+            "TLT",
+            "HYG",
+            "LQD",
+            "VNQ",
+            "ARKK",
+            "SOXL",
+            "TQQQ",
         ]
 
         return popular[:limit]

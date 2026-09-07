@@ -7,11 +7,12 @@ This module tests the following fixes:
 3. cql_beta validation (Issue #4)
 5. Mediator dead code removal (Issue #5 - code smell, no runtime test needed)
 
-Reference: CLAUDE.md bug fix documentation
+Reference: docs/PLATFORM_REFERENCE.md bug fix documentation
 """
 
 import math
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 import pandas as pd
@@ -21,6 +22,7 @@ from unittest.mock import MagicMock, patch
 # =============================================================================
 # Issue #1: UPGDW Min-Max Normalization Tests
 # =============================================================================
+
 
 class TestUPGDWMinMaxNormalization:
     """Tests for UPGDW optimizer with proper min-max normalization.
@@ -143,6 +145,7 @@ class TestUPGDWMinMaxNormalization:
 # Issue #3: Data Exhaustion Truncation Tests
 # =============================================================================
 
+
 class TestDataExhaustionTruncation:
     """Tests for proper episode truncation when data is exhausted.
 
@@ -160,13 +163,15 @@ class TestDataExhaustionTruncation:
         from unittest.mock import MagicMock
 
         env = MagicMock()
-        env.df = pd.DataFrame({
-            "close": [100.0, 101.0, 102.0],
-            "open": [99.0, 100.0, 101.0],
-            "high": [101.0, 102.0, 103.0],
-            "low": [98.0, 99.0, 100.0],
-            "volume": [1000, 1100, 1200],
-        })
+        env.df = pd.DataFrame(
+            {
+                "close": [100.0, 101.0, 102.0],
+                "open": [99.0, 100.0, 101.0],
+                "high": [101.0, 102.0, 103.0],
+                "low": [98.0, 99.0, 100.0],
+                "volume": [1000, 1100, 1200],
+            }
+        )
         env.observation_space = MagicMock()
         env.observation_space.shape = (85,)
         return env
@@ -183,7 +188,7 @@ class TestDataExhaustionTruncation:
 
         # Verify the truncation logic exists in the module
         source = tp.__file__
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Check for the truncation logic markers
@@ -200,8 +205,9 @@ class TestDataExhaustionTruncation:
 
         # Verify code structure
         import trading_patchnew as tp
+
         source = tp.__file__
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, "r", encoding="utf-8") as f:
             content = f.read()
 
         assert '"truncated_reason": "data_exhausted"' in content
@@ -212,6 +218,7 @@ class TestDataExhaustionTruncation:
 # =============================================================================
 # Issue #4: cql_beta Validation Tests
 # =============================================================================
+
 
 class TestCqlBetaValidation:
     """Tests for cql_beta parameter validation.
@@ -227,8 +234,9 @@ class TestCqlBetaValidation:
         # We can't easily instantiate DistributionalPPO without a full env,
         # but we can check that the validation code exists
         import distributional_ppo as dppo
+
         source = dppo.__file__
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Check for validation logic
@@ -238,8 +246,9 @@ class TestCqlBetaValidation:
     def test_cql_beta_negative_raises_error(self):
         """Verify that cql_beta < 0 raises ValueError."""
         import distributional_ppo as dppo
+
         source = dppo.__file__
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, "r", encoding="utf-8") as f:
             content = f.read()
 
         # The validation should catch both zero and negative values
@@ -248,8 +257,9 @@ class TestCqlBetaValidation:
     def test_cql_beta_positive_value_accepted(self):
         """Verify that positive cql_beta values are accepted (default=5.0)."""
         import distributional_ppo as dppo
+
         source = dppo.__file__
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Default value should be positive
@@ -259,6 +269,7 @@ class TestCqlBetaValidation:
 # =============================================================================
 # Issue #5: Mediator Dead Code Removal Tests
 # =============================================================================
+
 
 class TestMediatorDeadCodeRemoval:
     """Tests verifying dead code was removed from mediator.py.
@@ -272,8 +283,9 @@ class TestMediatorDeadCodeRemoval:
     def test_dead_none_check_removed(self):
         """Verify the dead `is None` check was removed."""
         import mediator
+
         source = mediator.__file__
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, "r", encoding="utf-8") as f:
             content = f.read()
 
         # The old code had: if (prev_price_val is None or prev_price_val <= 0.0)
@@ -287,16 +299,16 @@ class TestMediatorDeadCodeRemoval:
 
         # Test various inputs
         assert Mediator._coerce_finite(None) == 0.0
-        assert Mediator._coerce_finite(float('nan')) == 0.0
-        assert Mediator._coerce_finite(float('inf')) == 0.0
+        assert Mediator._coerce_finite(float("nan")) == 0.0
+        assert Mediator._coerce_finite(float("inf")) == 0.0
         assert Mediator._coerce_finite(42.5) == 42.5
         assert Mediator._coerce_finite("invalid") == 0.0
 
         # All return values should be float, never None
         results = [
             Mediator._coerce_finite(None),
-            Mediator._coerce_finite(float('nan')),
-            Mediator._coerce_finite(float('inf')),
+            Mediator._coerce_finite(float("nan")),
+            Mediator._coerce_finite(float("inf")),
             Mediator._coerce_finite(42.5),
             Mediator._coerce_finite("invalid"),
         ]
@@ -308,6 +320,7 @@ class TestMediatorDeadCodeRemoval:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestBugFixesIntegration:
     """Integration tests ensuring all bug fixes work together."""

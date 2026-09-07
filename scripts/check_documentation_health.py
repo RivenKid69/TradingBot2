@@ -27,16 +27,17 @@ from typing import List, Dict, Tuple, Set
 from collections import defaultdict
 
 # Set UTF-8 encoding for Windows console
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
 # Core documentation files that MUST exist
 REQUIRED_CORE_DOCS = [
     "README.md",
-    "CLAUDE.md",
+    "docs/PLATFORM_REFERENCE.md",
     "DOCS_INDEX.md",
     "ARCHITECTURE.md",
     "CHANGELOG.md",
@@ -48,14 +49,18 @@ REQUIRED_CORE_DOCS = [
 # Required sections in core docs
 REQUIRED_SECTIONS = {
     "README.md": ["Статус Проекта", "Основные Возможности", "Быстрый Старт"],
-    "CLAUDE.md": ["СТАТУС ПРОЕКТА", "КРИТИЧЕСКИЕ ИСПРАВЛЕНИЯ", "Архитектура проекта"],
+    "docs/PLATFORM_REFERENCE.md": [
+        "СТАТУС ПРОЕКТА",
+        "КРИТИЧЕСКИЕ ИСПРАВЛЕНИЯ",
+        "Архитектура проекта",
+    ],
     "DOCS_INDEX.md": ["CRITICAL - READ FIRST", "Core Documentation"],
     "CHANGELOG.md": ["[2.1.0] - 2025-11-21"],
 }
 
 # Age thresholds
 MAX_AGE_DAYS_CRITICAL = 30  # Critical docs should be updated within 1 month
-MAX_AGE_DAYS_NORMAL = 90    # Normal docs should be updated within 3 months
+MAX_AGE_DAYS_NORMAL = 90  # Normal docs should be updated within 3 months
 
 
 class DocumentationHealthChecker:
@@ -139,7 +144,7 @@ class DocumentationHealthChecker:
         broken_links = []
 
         # Pattern for markdown links: [text](link)
-        link_pattern = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
+        link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
         for md_file in self.root_dir.rglob("*.md"):
             # Skip archived files
@@ -169,7 +174,9 @@ class DocumentationHealthChecker:
                 target_path = (md_file.parent / link_path).resolve()
 
                 if not target_path.exists():
-                    broken_links.append((str(md_file.relative_to(self.root_dir)), link_text, link_url))
+                    broken_links.append(
+                        (str(md_file.relative_to(self.root_dir)), link_text, link_url)
+                    )
                     self.log_error(f"Broken link in {md_file.name}: [{link_text}]({link_url})")
 
         return broken_links
@@ -250,11 +257,13 @@ class DocumentationHealthChecker:
                 similarity = intersection / union if union > 0 else 0
 
                 if similarity > threshold:
-                    duplicates.append((
-                        str(file1.relative_to(self.root_dir)),
-                        str(file2.relative_to(self.root_dir)),
-                        similarity
-                    ))
+                    duplicates.append(
+                        (
+                            str(file1.relative_to(self.root_dir)),
+                            str(file2.relative_to(self.root_dir)),
+                            similarity,
+                        )
+                    )
                     self.log_warning(
                         f"High similarity ({similarity:.1%}) between "
                         f"{file1.name} and {file2.name}"
@@ -286,9 +295,9 @@ class DocumentationHealthChecker:
 
     def run_all_checks(self) -> bool:
         """Run all health checks."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("AI-Powered Quantitative Research Platform Documentation Health Check")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
         # 1. Check core docs exist
         core_exist = self.check_core_docs_exist()
@@ -309,9 +318,9 @@ class DocumentationHealthChecker:
         counts = self.count_docs()
 
         # Summary
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("SUMMARY")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
         print(f"Documentation Counts:")
         print(f"  - Total .md files: {counts['total_md']}")
@@ -338,9 +347,9 @@ class DocumentationHealthChecker:
         print()
 
         # Pass/Fail Criteria
-        print("="*70)
+        print("=" * 70)
         print("PASS/FAIL CRITERIA")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
         criteria_passed = 0
         criteria_total = 6
@@ -353,11 +362,13 @@ class DocumentationHealthChecker:
             print("[FAIL] Some core documentation files missing")
 
         # Criterion 2: Core docs up to date (< 1 month)
-        if len(outdated['critical']) == 0:
+        if len(outdated["critical"]) == 0:
             print(f"[PASS] All core docs updated within {MAX_AGE_DAYS_CRITICAL} days")
             criteria_passed += 1
         else:
-            print(f"[WARN] {len(outdated['critical'])} core docs outdated (>{MAX_AGE_DAYS_CRITICAL}d)")
+            print(
+                f"[WARN] {len(outdated['critical'])} core docs outdated (>{MAX_AGE_DAYS_CRITICAL}d)"
+            )
 
         # Criterion 3: No broken links
         if len(broken) == 0:
@@ -381,17 +392,19 @@ class DocumentationHealthChecker:
             print(f"[WARN] High duplicate content ({len(duplicates)} pairs >80% similar)")
 
         # Criterion 6: Root directory clean (< 20 .md files)
-        if counts['root_md'] < 20:
+        if counts["root_md"] < 20:
             print(f"[PASS] Root directory clean ({counts['root_md']} .md files)")
             criteria_passed += 1
         else:
             print(f"[WARN] Too many files in root ({counts['root_md']} .md files, target <20)")
 
         print()
-        print("="*70)
-        print(f"OVERALL SCORE: {criteria_passed}/{criteria_total} criteria passed "
-              f"({criteria_passed/criteria_total*100:.0f}%)")
-        print("="*70)
+        print("=" * 70)
+        print(
+            f"OVERALL SCORE: {criteria_passed}/{criteria_total} criteria passed "
+            f"({criteria_passed/criteria_total*100:.0f}%)"
+        )
+        print("=" * 70)
 
         # Overall health
         if criteria_passed == criteria_total:
@@ -414,20 +427,11 @@ def main():
         description="Check documentation health for AI-Powered Quantitative Research Platform"
     )
     parser.add_argument(
-        "--root",
-        default=".",
-        help="Root directory of the project (default: current directory)"
+        "--root", default=".", help="Root directory of the project (default: current directory)"
     )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Verbose output"
-    )
-    parser.add_argument(
-        "--fix",
-        action="store_true",
-        help="Auto-fix issues where possible (NOT IMPLEMENTED YET)"
+        "--fix", action="store_true", help="Auto-fix issues where possible (NOT IMPLEMENTED YET)"
     )
 
     args = parser.parse_args()

@@ -174,7 +174,7 @@ class TestTimeSyncChecker:
         # Drift should trigger callback
         # In real usage, check() would call this
 
-    @patch.object(TimeSyncChecker, '_query_ntp')
+    @patch.object(TimeSyncChecker, "_query_ntp")
     def test_check_mocked(self, mock_query, checker):
         """Test check with mocked NTP."""
         mock_query.return_value = TimeSyncResult(
@@ -190,7 +190,7 @@ class TestTimeSyncChecker:
         assert result.drift_ms == 100
         assert checker.last_result == result
 
-    @patch.object(TimeSyncChecker, '_query_ntp')
+    @patch.object(TimeSyncChecker, "_query_ntp")
     def test_check_all_servers_fail(self, mock_query, checker):
         """Test when all NTP servers fail."""
         mock_query.side_effect = Exception("Connection failed")
@@ -200,7 +200,7 @@ class TestTimeSyncChecker:
         assert result.synchronized is False
         assert "failed" in result.error.lower()
 
-    @patch.object(TimeSyncChecker, '_query_ntp')
+    @patch.object(TimeSyncChecker, "_query_ntp")
     def test_check_drift_callback(self, mock_query, checker):
         """Test drift callback is called."""
         callback = MagicMock()
@@ -222,7 +222,7 @@ class TestTimeSyncChecker:
 class TestVerifyTimeSync:
     """Tests for verify_time_sync utility."""
 
-    @patch.object(TimeSyncChecker, 'check')
+    @patch.object(TimeSyncChecker, "check")
     def test_verify_success(self, mock_check):
         """Test successful verification."""
         mock_check.return_value = TimeSyncResult(
@@ -237,7 +237,7 @@ class TestVerifyTimeSync:
         assert isinstance(ok, bool)
         assert isinstance(message, str)
 
-    @patch.object(TimeSyncChecker, 'check')
+    @patch.object(TimeSyncChecker, "check")
     def test_verify_drift_exceeded(self, mock_check):
         """Test drift exceeded."""
         mock_check.return_value = TimeSyncResult(
@@ -251,7 +251,7 @@ class TestVerifyTimeSync:
         assert ok is False
         assert "exceeds" in message.lower()
 
-    @patch.object(TimeSyncChecker, 'check')
+    @patch.object(TimeSyncChecker, "check")
     def test_verify_not_synchronized(self, mock_check):
         """Test not synchronized."""
         mock_check.return_value = TimeSyncResult(

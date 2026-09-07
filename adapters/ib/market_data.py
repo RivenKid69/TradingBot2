@@ -54,6 +54,7 @@ logger = logging.getLogger(__name__)
 # Try to import ib_insync, but don't fail if not installed
 try:
     from ib_insync import IB, ContFuture, Future, util
+
     IB_INSYNC_AVAILABLE = True
 except ImportError:
     IB_INSYNC_AVAILABLE = False
@@ -117,6 +118,7 @@ CONTRACT_MAP: Dict[str, Dict[str, str]] = {
 # IB Rate Limiter
 # =========================
 
+
 class IBRateLimiter:
     """
     Comprehensive IB TWS API rate limiter.
@@ -145,12 +147,12 @@ class IBRateLimiter:
     """
 
     # Rate limit constants (with safety margins)
-    MSG_PER_SEC = 45                    # General: 50 limit, 45 for safety
-    HIST_PER_10MIN = 55                 # Historical: 60 limit, 55 for safety
-    HIST_IDENTICAL_PER_10MIN = 5        # Identical requests: 6 limit
-    SUBSCRIPTION_PER_SEC = 1            # Market data subscribe
-    MAX_MARKET_DATA_LINES = 100         # Concurrent market data subscriptions
-    MAX_SCANNER_SUBSCRIPTIONS = 10      # Concurrent scanner subscriptions
+    MSG_PER_SEC = 45  # General: 50 limit, 45 for safety
+    HIST_PER_10MIN = 55  # Historical: 60 limit, 55 for safety
+    HIST_IDENTICAL_PER_10MIN = 5  # Identical requests: 6 limit
+    SUBSCRIPTION_PER_SEC = 1  # Market data subscribe
+    MAX_MARKET_DATA_LINES = 100  # Concurrent market data subscriptions
+    MAX_SCANNER_SUBSCRIPTIONS = 10  # Concurrent scanner subscriptions
 
     def __init__(self) -> None:
         self._message_times: List[float] = []
@@ -272,6 +274,7 @@ class IBRateLimiter:
 # IB Connection Manager
 # =========================
 
+
 class IBConnectionManager:
     """
     Production-grade IB TWS connection lifecycle manager.
@@ -295,7 +298,7 @@ class IBConnectionManager:
     """
 
     HEARTBEAT_INTERVAL_SEC = 30  # IB requires activity every 60s, we use 30 for safety
-    MAX_MESSAGES_PER_SEC = 45    # IB limit is 50, leave margin for safety
+    MAX_MESSAGES_PER_SEC = 45  # IB limit is 50, leave margin for safety
     RECONNECT_DELAYS = [1, 2, 5, 10, 30, 60, 120]  # Exponential backoff (seconds)
     MAX_RECONNECT_ATTEMPTS = len(RECONNECT_DELAYS)
 
@@ -347,8 +350,7 @@ class IBConnectionManager:
         """
         if not IB_INSYNC_AVAILABLE:
             raise ImportError(
-                "ib_insync is required for IB adapters. "
-                "Install with: pip install ib_insync"
+                "ib_insync is required for IB adapters. " "Install with: pip install ib_insync"
             )
 
         for attempt, delay in enumerate(self.RECONNECT_DELAYS):
@@ -462,6 +464,7 @@ class IBConnectionManager:
 # IB Market Data Adapter
 # =========================
 
+
 class IBMarketDataAdapter(MarketDataAdapter):
     """
     Interactive Brokers market data adapter.
@@ -554,8 +557,7 @@ class IBMarketDataAdapter(MarketDataAdapter):
 
         # Get contract details from mapping
         details = CONTRACT_MAP.get(
-            symbol.upper(),
-            {"exchange": exchange or self._default_exchange, "currency": "USD"}
+            symbol.upper(), {"exchange": exchange or self._default_exchange, "currency": "USD"}
         )
 
         actual_exchange = exchange or details.get("exchange", self._default_exchange)
@@ -766,7 +768,7 @@ class IBMarketDataAdapter(MarketDataAdapter):
     def _parse_ib_bar(self, symbol: str, ib_bar: Any) -> Bar:
         """Convert IB bar to our Bar model."""
         # IB returns datetime objects
-        ts_ms = int(ib_bar.date.timestamp() * 1000) if hasattr(ib_bar.date, 'timestamp') else 0
+        ts_ms = int(ib_bar.date.timestamp() * 1000) if hasattr(ib_bar.date, "timestamp") else 0
 
         return Bar(
             ts=ts_ms,
@@ -806,9 +808,22 @@ class IBMarketDataAdapter(MarketDataAdapter):
         """Calculate IB duration string based on limit and timeframe."""
         # Map timeframe to approximate minutes
         timeframe_minutes = {
-            "1m": 1, "2m": 2, "3m": 3, "5m": 5, "10m": 10, "15m": 15,
-            "20m": 20, "30m": 30, "1h": 60, "2h": 120, "3h": 180,
-            "4h": 240, "8h": 480, "1d": 1440, "1w": 10080, "1M": 43200,
+            "1m": 1,
+            "2m": 2,
+            "3m": 3,
+            "5m": 5,
+            "10m": 10,
+            "15m": 15,
+            "20m": 20,
+            "30m": 30,
+            "1h": 60,
+            "2h": 120,
+            "3h": 180,
+            "4h": 240,
+            "8h": 480,
+            "1d": 1440,
+            "1w": 10080,
+            "1M": 43200,
         }
 
         minutes = timeframe_minutes.get(timeframe, 60)

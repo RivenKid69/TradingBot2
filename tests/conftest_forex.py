@@ -32,6 +32,7 @@ import json
 # OANDA Configuration Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def oanda_config() -> Dict[str, Any]:
     """Basic OANDA configuration for testing."""
@@ -60,9 +61,11 @@ def oanda_config_live() -> Dict[str, Any]:
 # Mock OANDA API Response Fixtures
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class MockOandaPrice:
     """Mock OANDA price quote."""
+
     instrument: str
     bid: Decimal
     ask: Decimal
@@ -73,6 +76,7 @@ class MockOandaPrice:
     def spread_pips(self) -> float:
         """Calculate spread in pips."""
         from adapters.models import get_pip_size
+
         spread = float(self.ask - self.bid)
         pip_size = get_pip_size(self.instrument)
         return spread / pip_size if pip_size > 0 else 0.0
@@ -80,22 +84,25 @@ class MockOandaPrice:
     def to_oanda_response(self) -> Dict[str, Any]:
         """Convert to OANDA v20 API response format."""
         return {
-            "prices": [{
-                "asks": [{"price": str(self.ask), "liquidity": 1000000}],
-                "bids": [{"price": str(self.bid), "liquidity": 1000000}],
-                "closeoutAsk": str(self.ask),
-                "closeoutBid": str(self.bid),
-                "instrument": self.instrument,
-                "status": "tradeable" if self.tradeable else "non-tradeable",
-                "time": self.time,
-                "tradeable": self.tradeable,
-            }]
+            "prices": [
+                {
+                    "asks": [{"price": str(self.ask), "liquidity": 1000000}],
+                    "bids": [{"price": str(self.bid), "liquidity": 1000000}],
+                    "closeoutAsk": str(self.ask),
+                    "closeoutBid": str(self.bid),
+                    "instrument": self.instrument,
+                    "status": "tradeable" if self.tradeable else "non-tradeable",
+                    "time": self.time,
+                    "tradeable": self.tradeable,
+                }
+            ]
         }
 
 
 @dataclass(frozen=True)
 class MockOandaCandle:
     """Mock OANDA candlestick data."""
+
     instrument: str
     time: str
     open: Decimal
@@ -163,16 +170,18 @@ def mock_eurusd_candles() -> List[MockOandaCandle]:
     candles = []
     for i in range(24):  # 24 hours of data
         hour_str = f"{i:02d}"
-        candles.append(MockOandaCandle(
-            instrument="EUR_USD",
-            time=f"2025-01-15T{hour_str}:00:00.000000000Z",
-            open=base_price + Decimal(str(i * 0.0001)),
-            high=base_price + Decimal(str((i + 1) * 0.0001)),
-            low=base_price + Decimal(str((i - 0.5) * 0.0001)) if i > 0 else base_price,
-            close=base_price + Decimal(str((i + 0.5) * 0.0001)),
-            volume=10000 + (i * 500),
-            complete=True,
-        ))
+        candles.append(
+            MockOandaCandle(
+                instrument="EUR_USD",
+                time=f"2025-01-15T{hour_str}:00:00.000000000Z",
+                open=base_price + Decimal(str(i * 0.0001)),
+                high=base_price + Decimal(str((i + 1) * 0.0001)),
+                low=base_price + Decimal(str((i - 0.5) * 0.0001)) if i > 0 else base_price,
+                close=base_price + Decimal(str((i + 0.5) * 0.0001)),
+                volume=10000 + (i * 500),
+                complete=True,
+            )
+        )
     return candles
 
 
@@ -306,12 +315,18 @@ def mock_oanda_account_response() -> Dict[str, Any]:
 # Forex Data Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def forex_major_pairs() -> List[str]:
     """List of major forex pairs."""
     return [
-        "EUR_USD", "USD_JPY", "GBP_USD", "USD_CHF",
-        "AUD_USD", "USD_CAD", "NZD_USD",
+        "EUR_USD",
+        "USD_JPY",
+        "GBP_USD",
+        "USD_CHF",
+        "AUD_USD",
+        "USD_CAD",
+        "NZD_USD",
     ]
 
 
@@ -319,8 +334,12 @@ def forex_major_pairs() -> List[str]:
 def forex_jpy_crosses() -> List[str]:
     """List of JPY cross pairs."""
     return [
-        "EUR_JPY", "GBP_JPY", "AUD_JPY", "CHF_JPY",
-        "CAD_JPY", "NZD_JPY",
+        "EUR_JPY",
+        "GBP_JPY",
+        "AUD_JPY",
+        "CHF_JPY",
+        "CAD_JPY",
+        "NZD_JPY",
     ]
 
 
@@ -328,8 +347,13 @@ def forex_jpy_crosses() -> List[str]:
 def forex_exotic_pairs() -> List[str]:
     """List of exotic pairs."""
     return [
-        "USD_TRY", "USD_ZAR", "USD_MXN", "USD_SGD",
-        "USD_HKD", "USD_NOK", "USD_SEK",
+        "USD_TRY",
+        "USD_ZAR",
+        "USD_MXN",
+        "USD_SGD",
+        "USD_HKD",
+        "USD_NOK",
+        "USD_SEK",
     ]
 
 
@@ -339,23 +363,43 @@ def sample_forex_ohlcv_data() -> List[Dict[str, Any]]:
     return [
         {
             "timestamp": "2025-01-15T00:00:00Z",
-            "open": 1.08000, "high": 1.08150, "low": 1.07950, "close": 1.08100, "volume": 50000,
+            "open": 1.08000,
+            "high": 1.08150,
+            "low": 1.07950,
+            "close": 1.08100,
+            "volume": 50000,
         },
         {
             "timestamp": "2025-01-15T01:00:00Z",
-            "open": 1.08100, "high": 1.08200, "low": 1.08050, "close": 1.08150, "volume": 45000,
+            "open": 1.08100,
+            "high": 1.08200,
+            "low": 1.08050,
+            "close": 1.08150,
+            "volume": 45000,
         },
         {
             "timestamp": "2025-01-15T02:00:00Z",
-            "open": 1.08150, "high": 1.08250, "low": 1.08100, "close": 1.08200, "volume": 40000,
+            "open": 1.08150,
+            "high": 1.08250,
+            "low": 1.08100,
+            "close": 1.08200,
+            "volume": 40000,
         },
         {
             "timestamp": "2025-01-15T03:00:00Z",
-            "open": 1.08200, "high": 1.08300, "low": 1.08150, "close": 1.08250, "volume": 35000,
+            "open": 1.08200,
+            "high": 1.08300,
+            "low": 1.08150,
+            "close": 1.08250,
+            "volume": 35000,
         },
         {
             "timestamp": "2025-01-15T04:00:00Z",
-            "open": 1.08250, "high": 1.08350, "low": 1.08200, "close": 1.08300, "volume": 30000,
+            "open": 1.08250,
+            "high": 1.08350,
+            "low": 1.08200,
+            "close": 1.08300,
+            "volume": 30000,
         },
     ]
 
@@ -376,6 +420,7 @@ def sample_forex_tick_data() -> List[Dict[str, Any]]:
 # Session and Timing Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def session_test_times() -> List[Tuple[int, int, str]]:
     """Test times for different forex sessions: (hour_utc, day_of_week, expected_session)."""
@@ -385,14 +430,14 @@ def session_test_times() -> List[Tuple[int, int, str]]:
         (14, 1, "london_ny_overlap"),  # Tuesday 14:00 UTC
         (15, 2, "london_ny_overlap"),  # Wednesday 15:00 UTC
         # London session
-        (8, 0, "london"),   # Monday 08:00 UTC
+        (8, 0, "london"),  # Monday 08:00 UTC
         (10, 1, "london"),  # Tuesday 10:00 UTC
         # New York session (after London close)
         (17, 0, "new_york"),  # Monday 17:00 UTC
         (18, 1, "new_york"),  # Tuesday 18:00 UTC
         # Tokyo session
-        (2, 0, "tokyo"),   # Monday 02:00 UTC
-        (5, 1, "tokyo"),   # Tuesday 05:00 UTC
+        (2, 0, "tokyo"),  # Monday 02:00 UTC
+        (5, 1, "tokyo"),  # Tuesday 05:00 UTC
         # Tokyo/London overlap
         (8, 0, "tokyo_london_overlap"),  # Monday 08:00 UTC
         # Sydney session
@@ -408,10 +453,10 @@ def session_test_times() -> List[Tuple[int, int, str]]:
 def weekend_times() -> List[Tuple[int, int]]:
     """Times when forex market is closed: (hour_utc, day_of_week)."""
     return [
-        (0, 5),   # Saturday 00:00 UTC
+        (0, 5),  # Saturday 00:00 UTC
         (12, 5),  # Saturday 12:00 UTC
         (23, 5),  # Saturday 23:00 UTC
-        (0, 6),   # Sunday 00:00 UTC
+        (0, 6),  # Sunday 00:00 UTC
         (12, 6),  # Sunday 12:00 UTC
         (20, 6),  # Sunday 20:00 UTC (before open)
     ]
@@ -432,6 +477,7 @@ def high_liquidity_times() -> List[Tuple[int, int]]:
 # Mock API Client Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def mock_oanda_client():
     """Create a mock OANDA API client."""
@@ -445,12 +491,14 @@ def mock_oanda_client():
     # Mock pricing methods
     client.pricing.get.return_value = MagicMock(
         body={
-            "prices": [{
-                "instrument": "EUR_USD",
-                "bids": [{"price": "1.08500"}],
-                "asks": [{"price": "1.08515"}],
-                "tradeable": True,
-            }]
+            "prices": [
+                {
+                    "instrument": "EUR_USD",
+                    "bids": [{"price": "1.08500"}],
+                    "asks": [{"price": "1.08515"}],
+                    "tradeable": True,
+                }
+            ]
         }
     )
 
@@ -496,12 +544,12 @@ CURRENCY_PAIR_TEST_DATA = [
 
 # Session timing test data: (hour_utc, day_of_week, expected_liquidity_range)
 SESSION_LIQUIDITY_TEST_DATA = [
-    (14, 0, (1.2, 1.5)),   # London/NY overlap - highest
-    (10, 1, (1.0, 1.2)),   # London - high
+    (14, 0, (1.2, 1.5)),  # London/NY overlap - highest
+    (10, 1, (1.0, 1.2)),  # London - high
     (18, 2, (0.9, 1.15)),  # New York - moderate-high
-    (3, 3, (0.6, 0.9)),    # Tokyo - moderate
-    (23, 6, (0.5, 0.8)),   # Sydney - lower
-    (12, 5, (0.0, 0.0)),   # Weekend - zero
+    (3, 3, (0.6, 0.9)),  # Tokyo - moderate
+    (23, 6, (0.5, 0.8)),  # Sydney - lower
+    (12, 5, (0.0, 0.0)),  # Weekend - zero
 ]
 
 

@@ -22,7 +22,7 @@ def test_ret_4h_not_zero():
         bar_duration_minutes=240,
         rsi_period=14,
         yang_zhang_windows=None,
-        parkinson_windows=None
+        parkinson_windows=None,
     )
 
     print("=" * 80)
@@ -62,10 +62,10 @@ def test_ret_4h_not_zero():
             taker_buy_base=500.0,
             open_price=price - 50,
             high=price + 50,
-            low=price - 50
+            low=price - 50,
         )
 
-        actual_ret = feats.get("ret_4h", float('nan'))
+        actual_ret = feats.get("ret_4h", float("nan"))
         expected_ret = expected_returns[i]
 
         # Проверка: для i=0 ret должен быть 0 (нет предыдущих данных)
@@ -121,11 +121,13 @@ def test_ret_4h_not_zero():
 
         # Правильное вычисление
         if len(prices_deque) > lb:
-            price_lb_ago = float(prices_deque[-(lb+1)])
+            price_lb_ago = float(prices_deque[-(lb + 1)])
             ret_correct = math.log(current_price / price_lb_ago)
             print(f"ПРАВИЛЬНОЕ ВЫЧИСЛЕНИЕ:")
             print(f"  price_{lb}_bars_ago = prices_deque[-{lb+1}] = {price_lb_ago}")
-            print(f"  ret_4h = log({current_price} / {price_lb_ago}) = {ret_correct:.6f}  # ✓ ПРАВИЛЬНО!")
+            print(
+                f"  ret_4h = log({current_price} / {price_lb_ago}) = {ret_correct:.6f}  # ✓ ПРАВИЛЬНО!"
+            )
 
     print("=" * 80)
 
@@ -146,5 +148,6 @@ def test_ret_4h_not_zero():
 
 if __name__ == "__main__":
     import sys
+
     success = test_ret_4h_not_zero()
     sys.exit(0 if success else 1)

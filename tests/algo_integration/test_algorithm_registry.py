@@ -468,12 +468,14 @@ class TestAlgorithmRegistry:
             firm_name="Test Firm",
             require_responsible_person=False,
         )
-        registry.register(AlgorithmRecord(
-            name="Algo1",
-            status=AlgorithmStatus.PRODUCTION,
-            responsible_person="John",
-            risk_controls=[AlgorithmRiskControl(control_type="test", description="test")],
-        ))
+        registry.register(
+            AlgorithmRecord(
+                name="Algo1",
+                status=AlgorithmStatus.PRODUCTION,
+                responsible_person="John",
+                risk_controls=[AlgorithmRiskControl(control_type="test", description="test")],
+            )
+        )
 
         report = registry.generate_annual_self_assessment()
         assert "assessment_type" in report

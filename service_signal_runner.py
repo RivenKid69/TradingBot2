@@ -118,6 +118,7 @@ from api.spot_signals import SpotSignalEnvelope
 from core_config import (
     CommonRunConfig,
     ClockSyncConfig,
+    load_config,
     ThrottleConfig,
     OpsKillSwitchConfig,
     MonitoringConfig,
@@ -444,9 +445,7 @@ class _ScheduleNoTradeChecker:
             self._custom_windows = []
 
         self._enabled = bool(
-            self._daily_windows
-            or self._funding_buffer_min > 0
-            or self._custom_windows
+            self._daily_windows or self._funding_buffer_min > 0 or self._custom_windows
         )
 
     @property
@@ -471,9 +470,7 @@ class _ScheduleNoTradeChecker:
         funding_hit = False
         if self._funding_buffer_min > 0:
             try:
-                funding_hit = bool(
-                    _in_funding_buffer(ts_arr, self._funding_buffer_min)[0]
-                )
+                funding_hit = bool(_in_funding_buffer(ts_arr, self._funding_buffer_min)[0])
             except Exception:
                 funding_hit = False
 
@@ -725,9 +722,7 @@ class _Worker:
         except (TypeError, ValueError):
             self._portfolio_equity = None
         try:
-            weight_cap = (
-                float(max_total_weight) if max_total_weight is not None else None
-            )
+            weight_cap = float(max_total_weight) if max_total_weight is not None else None
         except (TypeError, ValueError):
             weight_cap = None
         if weight_cap is not None:
@@ -739,9 +734,7 @@ class _Worker:
         self._pending_weight_refs: Dict[int, Any] = {}
         self._symbol_equity: Dict[str, float] = {}
         entry_cfg = self._resolve_entry_limiter_config(executor)
-        self._entry_limiter = DailyEntryLimiter(
-            entry_cfg.limit, entry_cfg.reset_hour
-        )
+        self._entry_limiter = DailyEntryLimiter(entry_cfg.limit, entry_cfg.reset_hour)
         self._entry_lock = threading.Lock()
         if self._entry_limiter.enabled:
             try:
@@ -801,16 +794,16 @@ class _Worker:
         self._spread_cache_max_ms = cache_ttl
         self._spread_injections: Dict[str, Dict[str, float | int | None]] = {}
         self._last_prices: Dict[str, float] = {}
-        self._rest_helper = self._resolve_rest_helper(
-            rest_candidates or ()
-        )
+        self._rest_helper = self._resolve_rest_helper(rest_candidates or ())
         self._rest_backoff_until: Dict[str, float] = {}
         self._rest_backoff_step: Dict[str, float] = {}
         self._dispatch_stack: list[Any] = []
         self._order_meta_sidecar: "weakref.WeakKeyDictionary[Any, Dict[str, Any]]" = (
             weakref.WeakKeyDictionary()
         )
-        self._order_meta_fallback: dict[int, tuple[weakref.ReferenceType[Any] | None, Dict[str, Any]]] = {}
+        self._order_meta_fallback: dict[
+            int, tuple[weakref.ReferenceType[Any] | None, Dict[str, Any]]
+        ] = {}
         if self._state_enabled:
             self._seed_last_prices_from_state()
             self._load_exposure_state()
@@ -1050,9 +1043,7 @@ class _Worker:
         except Exception:
             pass
 
-    def _advance_symbol_cooldown(
-        self, symbol: str, bar_ts: int, *, new_bar: bool
-    ) -> None:
+    def _advance_symbol_cooldown(self, symbol: str, bar_ts: int, *, new_bar: bool) -> None:
         if not new_bar or not self._cooldown_settings.enabled:
             return
         sym = str(symbol).upper()
@@ -1098,9 +1089,7 @@ class _Worker:
         _, delta, _ = self._resolve_weight_targets(symbol, payload)
         return delta
 
-    def _maybe_drop_due_to_cooldown(
-        self, symbol: str, order: Any, bar_ts_ms: int
-    ) -> bool:
+    def _maybe_drop_due_to_cooldown(self, symbol: str, order: Any, bar_ts_ms: int) -> bool:
         settings = self._cooldown_settings
         if not settings.suppress_small_deltas:
             return False
@@ -1202,9 +1191,7 @@ class _Worker:
             if ident in visited:
                 continue
             visited.add(ident)
-            if isinstance(obj, SequenceABC) and not isinstance(
-                obj, (str, bytes, bytearray)
-            ):
+            if isinstance(obj, SequenceABC) and not isinstance(obj, (str, bytes, bytearray)):
                 for item in obj:
                     if item is not None:
                         queue.append(item)
@@ -1239,9 +1226,7 @@ class _Worker:
         visited: set[int] = set()
         while queue:
             item = queue.popleft()
-            if isinstance(item, SequenceABC) and not isinstance(
-                item, (str, bytes, bytearray)
-            ):
+            if isinstance(item, SequenceABC) and not isinstance(item, (str, bytes, bytearray)):
                 for elem in item:
                     if elem is not None:
                         queue.append(elem)
@@ -1316,7 +1301,9 @@ class _Worker:
                     if not isinstance(mapping_view, MappingABC):
                         continue
                     mapping_item = mapping_view
-                elif isinstance(item, SequenceABC) and not isinstance(item, (str, bytes, bytearray)):
+                elif isinstance(item, SequenceABC) and not isinstance(
+                    item, (str, bytes, bytearray)
+                ):
                     for elem in item:
                         if elem is not None:
                             queue.append(elem)
@@ -1333,10 +1320,14 @@ class _Worker:
                         _collect(value)
                     if value is None:
                         continue
-                    if isinstance(value, MappingABC) or (
-                        isinstance(value, SequenceABC)
-                        and not isinstance(value, (str, bytes, bytearray))
-                    ) or hasattr(value, "__dict__"):
+                    if (
+                        isinstance(value, MappingABC)
+                        or (
+                            isinstance(value, SequenceABC)
+                            and not isinstance(value, (str, bytes, bytearray))
+                        )
+                        or hasattr(value, "__dict__")
+                    ):
                         queue.append(value)
 
         if isinstance(payload, MappingABC):
@@ -1389,9 +1380,7 @@ class _Worker:
             "qty_filled",
             "fill_filled",
         )
-        requested = self._coerce_float(
-            self._find_in_mapping(snapshot, requested_keys)
-        )
+        requested = self._coerce_float(self._find_in_mapping(snapshot, requested_keys))
         filled = self._coerce_float(self._find_in_mapping(snapshot, filled_keys))
         if requested is None or filled is None:
             ratio = self._coerce_float(
@@ -1513,9 +1502,7 @@ class _Worker:
             cap_value = None
         adv_value = self._coerce_float(snapshot.get("adv_quote"))
         if adv_value is None:
-            adv_value = self._coerce_float(
-                self._find_in_mapping(decision, ("adv_quote",))
-            )
+            adv_value = self._coerce_float(self._find_in_mapping(decision, ("adv_quote",)))
         if adv_value is None:
             adv_value = self._coerce_float(self._find_in_mapping(snapshot, ("adv_quote",)))
         if adv_value is not None and adv_value <= 0.0:
@@ -1645,13 +1632,9 @@ class _Worker:
                     ("realized_slippage_bps", "realized_cost_bps"),
                 )
             )
-        bias_val = self._coerce_float(
-            self._find_in_mapping(decision, ("cost_bias_bps",))
-        )
+        bias_val = self._coerce_float(self._find_in_mapping(decision, ("cost_bias_bps",)))
         if bias_val is None and snapshot is not None:
-            bias_val = self._coerce_float(
-                self._find_in_mapping(snapshot, ("cost_bias_bps",))
-            )
+            bias_val = self._coerce_float(self._find_in_mapping(snapshot, ("cost_bias_bps",)))
         if bias_val is None and realized_cost is not None and cost_estimate is not None:
             bias_val = realized_cost - cost_estimate
         if cost_estimate is not None:
@@ -1915,7 +1898,6 @@ class _Worker:
         except Exception:
             return str(value)
 
-
     def _set_last_price(self, symbol: str, price: Any) -> None:
         sym = str(symbol).upper()
         if not sym:
@@ -2020,11 +2002,7 @@ class _Worker:
                     return dict(result)
         attrs = getattr(value, "__dict__", None)
         if isinstance(attrs, MappingABC):
-            return {
-                k: v
-                for k, v in attrs.items()
-                if not callable(v)
-            }
+            return {k: v for k, v in attrs.items() if not callable(v)}
         return {}
 
     def _extract_signal_payload(self, order: Any) -> Dict[str, Any]:
@@ -2354,6 +2332,7 @@ class _Worker:
             if candidate is None:
                 candidate = economics
             econ_map = self._materialize_mapping(candidate)
+
         def _get_float(key: str, default: float = 0.0) -> float:
             try:
                 value = float(econ_map.get(key, payload.get(key, default)))
@@ -2515,12 +2494,8 @@ class _Worker:
             envelope_payload["delta_weight"] = resolved_delta
         return envelope_payload, valid_until_ms, adv_quote
 
-    def _build_drop_envelope(
-        self, order: Any, symbol: str, bar_close_ms: int
-    ) -> Any | None:
-        payload, payload_valid_until_ms, adv_quote = self._build_envelope_payload(
-            order, symbol
-        )
+    def _build_drop_envelope(self, order: Any, symbol: str, bar_close_ms: int) -> Any | None:
+        payload, payload_valid_until_ms, adv_quote = self._build_envelope_payload(order, symbol)
         try:
             meta_map = self._ensure_order_meta(order)
         except Exception:
@@ -2537,9 +2512,7 @@ class _Worker:
             base_bar_close_ms = 0
         expires_at_ms = max(created_ts, base_bar_close_ms)
         if self._ws_dedup_timeframe_ms > 0 and created_ts > 0:
-            expires_at_ms = max(
-                expires_at_ms, created_ts + self._ws_dedup_timeframe_ms
-            )
+            expires_at_ms = max(expires_at_ms, created_ts + self._ws_dedup_timeframe_ms)
         ttl_timeframe_ms = self._resolve_ttl_timeframe_ms(log_if_invalid=False)
         if ttl_timeframe_ms is not None and ttl_timeframe_ms > 0:
             try:
@@ -2570,9 +2543,7 @@ class _Worker:
         except Exception:
             return None
 
-    def _log_drop_envelope(
-        self, order: Any, symbol: str, bar_close_ms: int, reason: str
-    ) -> None:
+    def _log_drop_envelope(self, order: Any, symbol: str, bar_close_ms: int, reason: str) -> None:
         try:
             envelope = self._build_drop_envelope(order, symbol, bar_close_ms)
         except Exception:
@@ -2770,9 +2741,7 @@ class _Worker:
         else:
             self._positions[sym] = qty
 
-    def _normalize_weight_targets(
-        self, orders: Sequence[Any]
-    ) -> tuple[list[Any], bool]:
+    def _normalize_weight_targets(self, orders: Sequence[Any]) -> tuple[list[Any], bool]:
         if not orders or self._execution_mode != "bar":
             return list(orders), False
         cap = self._max_total_weight
@@ -3015,9 +2984,7 @@ class _Worker:
                 continue
             order = info["order"]
             try:
-                current_weight = float(
-                    scaled_current.get(symbol, info.get("current", 0.0))
-                )
+                current_weight = float(scaled_current.get(symbol, info.get("current", 0.0)))
             except (TypeError, ValueError):
                 current_weight = 0.0
             if not math.isfinite(current_weight) or current_weight < 0.0:
@@ -3055,8 +3022,7 @@ class _Worker:
             economics_map = self._coerce_mapping(payload_map.get("economics"))
             if economics_map is not None:
                 payload_map["economics"] = (
-                    self._scale_turnover_mapping(economics_map, order_factor)
-                    or economics_map
+                    self._scale_turnover_mapping(economics_map, order_factor) or economics_map
                 )
             decision_map = self._coerce_mapping(payload_map.get("decision"))
             if decision_map is not None:
@@ -3065,8 +3031,7 @@ class _Worker:
                 decision_econ = self._coerce_mapping(decision_map.get("economics"))
                 if decision_econ is not None:
                     decision_map["economics"] = (
-                        self._scale_turnover_mapping(decision_econ, order_factor)
-                        or decision_econ
+                        self._scale_turnover_mapping(decision_econ, order_factor) or decision_econ
                     )
             info["payload"] = payload_map
             info["target"] = new_target
@@ -3077,8 +3042,7 @@ class _Worker:
             meta_economics = self._coerce_mapping(meta_map.get("economics"))
             if meta_economics is not None:
                 meta_map["economics"] = (
-                    self._scale_turnover_mapping(meta_economics, order_factor)
-                    or meta_economics
+                    self._scale_turnover_mapping(meta_economics, order_factor) or meta_economics
                 )
             meta_decision = self._coerce_mapping(meta_map.get("decision"))
             if meta_decision is not None:
@@ -3086,8 +3050,7 @@ class _Worker:
                 decision_econ = self._coerce_mapping(meta_decision.get("economics"))
                 if decision_econ is not None:
                     meta_decision["economics"] = (
-                        self._scale_turnover_mapping(decision_econ, order_factor)
-                        or decision_econ
+                        self._scale_turnover_mapping(decision_econ, order_factor) or decision_econ
                     )
                 meta_map["decision"] = meta_decision
             self._pending_weight[id(order)] = {
@@ -3164,9 +3127,7 @@ class _Worker:
         }
         return True
 
-    def _stage_exposure_adjustments(
-        self, orders: Sequence[Any], ts_ms: int
-    ) -> None:
+    def _stage_exposure_adjustments(self, orders: Sequence[Any], ts_ms: int) -> None:
         if not orders:
             return
         if self._execution_mode == "bar":
@@ -3220,9 +3181,7 @@ class _Worker:
             meta_map = self._ensure_order_meta(order)
             payload = self._extract_signal_payload(order)
             equity_override = self._resolve_order_equity(order, payload, symbol)
-            target_weight, delta_weight, _ = self._resolve_weight_targets(
-                symbol, payload
-            )
+            target_weight, delta_weight, _ = self._resolve_weight_targets(symbol, payload)
             exec_meta = self._coerce_mapping(meta_map.get("_bar_execution"))
             try:
                 self._pending_weight_refs.setdefault(id(order), weakref.ref(order))
@@ -3294,15 +3253,11 @@ class _Worker:
             else:
                 self._weights[symbol] = applied_target
             applied_delta = (
-                executed_delta
-                if executed_delta is not None
-                else applied_target - prev_weight
+                executed_delta if executed_delta is not None else applied_target - prev_weight
             )
             if equity_override is not None and equity_override > 0.0:
                 self._symbol_equity[symbol] = float(equity_override)
-            self._apply_weight_to_positions(
-                symbol, applied_target, equity_override=equity_override
-            )
+            self._apply_weight_to_positions(symbol, applied_target, equity_override=equity_override)
             turnover_to_record: float | None = executed_turnover
             if turnover_to_record is not None:
                 if turnover_to_record <= 0.0:
@@ -3474,9 +3429,7 @@ class _Worker:
         return daily_reset_key(ts_val, self._daily_reset_hour)
 
     def _daily_symbol_tracker(self, symbol: str, day_key: str) -> Dict[str, Any]:
-        tracker = self._daily_symbol_turnover.setdefault(
-            symbol, {"day": day_key, "total": 0.0}
-        )
+        tracker = self._daily_symbol_turnover.setdefault(symbol, {"day": day_key, "total": 0.0})
         if tracker.get("day") != day_key:
             tracker["day"] = day_key
             tracker["total"] = 0.0
@@ -3512,9 +3465,7 @@ class _Worker:
             except Exception:
                 portfolio_day = None
         try:
-            portfolio_used = float(
-                self._daily_portfolio_turnover.get("total", 0.0) or 0.0
-            )
+            portfolio_used = float(self._daily_portfolio_turnover.get("total", 0.0) or 0.0)
         except (TypeError, ValueError):
             portfolio_used = 0.0
         return {
@@ -3847,14 +3798,12 @@ class _Worker:
             decision_norm = self._coerce_mapping(decision_map.get("normalization"))
             if decision_norm is not None:
                 decision_map["normalization"] = (
-                    self._scale_normalization_metadata(decision_norm, scale)
-                    or decision_norm
+                    self._scale_normalization_metadata(decision_norm, scale) or decision_norm
                 )
             decision_econ = self._coerce_mapping(decision_map.get("economics"))
             if decision_econ is not None:
                 decision_map["economics"] = (
-                    self._scale_turnover_mapping(decision_econ, scale)
-                    or decision_econ
+                    self._scale_turnover_mapping(decision_econ, scale) or decision_econ
                 )
         meta_economics = self._coerce_mapping(meta_map.get("economics"))
         if meta_economics is not None:
@@ -3873,15 +3822,13 @@ class _Worker:
             decision_econ = self._coerce_mapping(meta_decision.get("economics"))
             if decision_econ is not None:
                 meta_decision["economics"] = (
-                    self._scale_turnover_mapping(decision_econ, scale)
-                    or decision_econ
+                    self._scale_turnover_mapping(decision_econ, scale) or decision_econ
                 )
             meta_map["decision"] = meta_decision
         meta_normalization = self._coerce_mapping(meta_map.get("normalization"))
         if meta_normalization is not None:
             meta_map["normalization"] = (
-                self._scale_normalization_metadata(meta_normalization, scale)
-                or meta_normalization
+                self._scale_normalization_metadata(meta_normalization, scale) or meta_normalization
             )
         pending = self._pending_weight.get(id(order))
         if isinstance(pending, dict):
@@ -3897,8 +3844,7 @@ class _Worker:
             pending_norm = self._coerce_mapping(pending.get("normalization"))
             if pending_norm is not None:
                 pending["normalization"] = (
-                    self._scale_normalization_metadata(pending_norm, scale)
-                    or pending_norm
+                    self._scale_normalization_metadata(pending_norm, scale) or pending_norm
                 )
         return True
 
@@ -4193,8 +4139,7 @@ class _Worker:
         if (
             prev_state not in (None, SignalPosition.FLAT)
             and new_state not in (None, SignalPosition.FLAT)
-            and self._format_signal_state(prev_state)
-            != self._format_signal_state(new_state)
+            and self._format_signal_state(prev_state) != self._format_signal_state(new_state)
         ):
             # For reversals we keep the exit leg to flatten the position but block the
             # subsequent entry, thus the signal state is rolled back to flat.
@@ -4270,22 +4215,11 @@ class _Worker:
             if not symbol:
                 continue
             with self._entry_lock:
-                allowed = self._entry_limiter.allow(
-                    symbol, ts_ms, entry_steps=steps
-                )
-                snapshot = (
-                    self._entry_limiter.snapshot(symbol) if not allowed else {}
-                )
-                if (
-                    allowed
-                    and steps > 0
-                    and self._state_enabled
-                    and self._entry_limiter.enabled
-                ):
+                allowed = self._entry_limiter.allow(symbol, ts_ms, entry_steps=steps)
+                snapshot = self._entry_limiter.snapshot(symbol) if not allowed else {}
+                if allowed and steps > 0 and self._state_enabled and self._entry_limiter.enabled:
                     try:
-                        state_storage.update_state(
-                            entry_limits=self._entry_limiter.export_state()
-                        )
+                        state_storage.update_state(entry_limits=self._entry_limiter.export_state())
                     except Exception:
                         pass
             if allowed:
@@ -4304,10 +4238,9 @@ class _Worker:
 
     def prewarm_dynamic_guard(
         self,
-        history: Mapping[str, Sequence[Bar]]
-        | Sequence[Bar]
-        | Sequence[tuple[str, Sequence[Bar]]]
-        | None,
+        history: (
+            Mapping[str, Sequence[Bar]] | Sequence[Bar] | Sequence[tuple[str, Sequence[Bar]]] | None
+        ),
     ) -> None:
         """Seed the dynamic guard with historical bars if available."""
 
@@ -4451,20 +4384,12 @@ class _Worker:
                     if isinstance(entry, Bar):
                         bar_obj = entry
                         spread_val = _infer_spread_from_bar(entry)
-                    elif (
-                        isinstance(entry, tuple)
-                        and len(entry) == 2
-                        and isinstance(entry[0], Bar)
-                    ):
+                    elif isinstance(entry, tuple) and len(entry) == 2 and isinstance(entry[0], Bar):
                         bar_obj = entry[0]
                         spread_val = _coerce_spread(entry[1])
                         if spread_val is None:
                             spread_val = _infer_spread_from_bar(bar_obj)
-                    elif (
-                        isinstance(entry, tuple)
-                        and len(entry) == 2
-                        and isinstance(entry[1], Bar)
-                    ):
+                    elif isinstance(entry, tuple) and len(entry) == 2 and isinstance(entry[1], Bar):
                         bar_obj = entry[1]
                         spread_val = _coerce_spread(entry[0])
                         if spread_val is None:
@@ -4680,12 +4605,7 @@ class _Worker:
             ask_val = float(ask)
         except Exception:
             return
-        if not (
-            math.isfinite(bid_val)
-            and math.isfinite(ask_val)
-            and bid_val > 0
-            and ask_val > 0
-        ):
+        if not (math.isfinite(bid_val) and math.isfinite(ask_val) and bid_val > 0 and ask_val > 0):
             return
         mid_val: float | None = None
         mid_candidate = (bid_val + ask_val) * 0.5
@@ -4805,9 +4725,7 @@ class _Worker:
             except Exception:
                 pass
 
-    def _extract_features(
-        self, bar: Bar, *, skip_metrics: bool = False
-    ) -> dict[str, Any]:
+    def _extract_features(self, bar: Bar, *, skip_metrics: bool = False) -> dict[str, Any]:
         raw_feats = self._fp.update(bar, skip_metrics=skip_metrics)
         if isinstance(raw_feats, dict):
             return dict(raw_feats)
@@ -4841,12 +4759,7 @@ class _Worker:
                 blocked = True
                 detail = "WINDOW_NOT_READY"
             sigma = getattr(snapshot, "current_sigma", None)
-            if (
-                not blocked
-                and sigma_thr > 0.0
-                and sigma is not None
-                and float(sigma) > sigma_thr
-            ):
+            if not blocked and sigma_thr > 0.0 and sigma is not None and float(sigma) > sigma_thr:
                 blocked = True
                 detail = "SIGMA_THRESHOLD"
             median = getattr(snapshot, "current_vol_median", None)
@@ -4911,9 +4824,7 @@ class _Worker:
             reason_label,
         )
 
-    def _should_skip_idempotent(
-        self, key: str | None, symbol: str, bar_ts_ms: int
-    ) -> bool:
+    def _should_skip_idempotent(self, key: str | None, symbol: str, bar_ts_ms: int) -> bool:
         if not key:
             return False
         if key in self._idempotency_cache:
@@ -4995,9 +4906,7 @@ class _Worker:
                 dispatcher(envelope)
             except Exception as exc:
                 try:
-                    self._logger.error(
-                        "failed to dispatch signal envelope: %s", exc
-                    )
+                    self._logger.error("failed to dispatch signal envelope: %s", exc)
                 except Exception:
                     pass
 
@@ -5031,9 +4940,7 @@ class _Worker:
             execute(order_obj)
         except Exception:
             try:
-                self._logger.exception(
-                    "failed to execute bar order from envelope", exc_info=True
-                )
+                self._logger.exception("failed to execute bar order from envelope", exc_info=True)
             except Exception:
                 pass
         else:
@@ -5159,9 +5066,7 @@ class _Worker:
         except Exception:
             pass
         meta_map = self._ensure_order_meta(o)
-        payload, payload_valid_until_ms, adv_quote = self._build_envelope_payload(
-            o, symbol
-        )
+        payload, payload_valid_until_ms, adv_quote = self._build_envelope_payload(o, symbol)
         if adv_quote is not None:
             meta_map["adv_quote"] = adv_quote
         equity_override = self._resolve_order_equity(o, payload, symbol)
@@ -5175,11 +5080,7 @@ class _Worker:
                 else:
                     if math.isfinite(fallback_val) and fallback_val > 0.0:
                         equity_override = fallback_val
-        if (
-            equity_override is not None
-            and math.isfinite(equity_override)
-            and equity_override > 0.0
-        ):
+        if equity_override is not None and math.isfinite(equity_override) and equity_override > 0.0:
             try:
                 meta_map["equity_usd"] = float(equity_override)
             except Exception:
@@ -5238,11 +5139,7 @@ class _Worker:
                 published = False
             finally:
                 if stack_pushed and (
-                    not published
-                    or (
-                        self._dispatch_stack
-                        and self._dispatch_stack[-1] is o
-                    )
+                    not published or (self._dispatch_stack and self._dispatch_stack[-1] is o)
                 ):
                     try:
                         self._dispatch_stack.pop()
@@ -5263,9 +5160,7 @@ class _Worker:
                     execute(o)
                 except Exception:
                     try:
-                        self._logger.exception(
-                            "failed to execute bar order inline", exc_info=True
-                        )
+                        self._logger.exception("failed to execute bar order inline", exc_info=True)
                     except Exception:
                         pass
         if self._execution_mode != "bar":
@@ -5300,12 +5195,8 @@ class _Worker:
             return PipelineResult(action="pass", stage=Stage.PUBLISH, decision=o)
         if self._maybe_drop_due_to_cooldown(symbol, o, bar_open_ms):
             self._rollback_exposure(o)
-            return PipelineResult(
-                action="drop", stage=Stage.PUBLISH, reason=Reason.OTHER
-            )
-        throttle_stage_cfg = (
-            self._pipeline_cfg.get("throttle") if self._pipeline_cfg else None
-        )
+            return PipelineResult(action="drop", stage=Stage.PUBLISH, reason=Reason.OTHER)
+        throttle_stage_cfg = self._pipeline_cfg.get("throttle") if self._pipeline_cfg else None
         throttle_enabled = (
             self._throttle_cfg is not None
             and self._throttle_cfg.enabled
@@ -5323,9 +5214,7 @@ class _Worker:
                     self._queue.append((exp, symbol, bar_close_ms, bar_open_ms, o))
                     self._update_queue_metrics()
                     try:
-                        monitoring.throttle_enqueued_count.labels(
-                            symbol, reason or ""
-                        ).inc()
+                        monitoring.throttle_enqueued_count.labels(symbol, reason or "").inc()
                     except Exception:
                         pass
                     return PipelineResult(action="queue", stage=Stage.PUBLISH)
@@ -5343,15 +5232,11 @@ class _Worker:
                     ).inc()
                 except Exception:
                     pass
-                return PipelineResult(
-                    action="drop", stage=Stage.PUBLISH, reason=Reason.OTHER
-                )
+                return PipelineResult(action="drop", stage=Stage.PUBLISH, reason=Reason.OTHER)
         if not self._emit(o, symbol, bar_close_ms, bar_open_ms=bar_open_ms):
             self._refund_tokens(symbol)
             self._rollback_exposure(o)
-            return PipelineResult(
-                action="drop", stage=Stage.PUBLISH, reason=Reason.OTHER
-            )
+            return PipelineResult(action="drop", stage=Stage.PUBLISH, reason=Reason.OTHER)
         self._commit_exposure(o, bar_close_ms=bar_close_ms)
         return PipelineResult(action="pass", stage=Stage.PUBLISH, decision=o)
 
@@ -5381,9 +5266,7 @@ class _Worker:
                 except Exception:
                     pass
                 try:
-                    monitoring.throttle_dropped_count.labels(
-                        symbol, "QUEUE_EXPIRED"
-                    ).inc()
+                    monitoring.throttle_dropped_count.labels(symbol, "QUEUE_EXPIRED").inc()
                 except Exception:
                     pass
                 continue
@@ -5501,9 +5384,7 @@ class _Worker:
             total_events = emitted_count + duplicates_count
             if runtime_monitoring is not None:
                 try:
-                    runtime_monitoring.record_signals(
-                        bar.symbol, emitted_count, duplicates_count
-                    )
+                    runtime_monitoring.record_signals(bar.symbol, emitted_count, duplicates_count)
                 except Exception:
                     pass
                 snapshot = self._extract_monitoring_snapshot(self._executor)
@@ -5535,9 +5416,7 @@ class _Worker:
                         metrics_bar_ts = bar_metrics.get("bar_ts")
                         try:
                             metrics_bar_ts_int = (
-                                int(metrics_bar_ts)
-                                if metrics_bar_ts is not None
-                                else None
+                                int(metrics_bar_ts) if metrics_bar_ts is not None else None
                             )
                         except (TypeError, ValueError):
                             metrics_bar_ts_int = None
@@ -5547,17 +5426,11 @@ class _Worker:
                                     bar.symbol,
                                     decisions=int(bar_metrics.get("decisions", 0)),
                                     act_now=int(bar_metrics.get("act_now", 0)),
-                                    turnover_usd=float(
-                                        bar_metrics.get("turnover_usd", 0.0)
-                                    ),
+                                    turnover_usd=float(bar_metrics.get("turnover_usd", 0.0)),
                                     cap_usd=bar_metrics.get("cap_usd"),
                                     impact_mode=bar_metrics.get("impact_mode"),
-                                    modeled_cost_bps=bar_metrics.get(
-                                        "modeled_cost_bps"
-                                    ),
-                                    realized_slippage_bps=bar_metrics.get(
-                                        "realized_slippage_bps"
-                                    ),
+                                    modeled_cost_bps=bar_metrics.get("modeled_cost_bps"),
+                                    realized_slippage_bps=bar_metrics.get("realized_slippage_bps"),
                                     cost_bias_bps=bar_metrics.get("cost_bias_bps"),
                                     bar_ts=bar_metrics.get("bar_ts"),
                                 )
@@ -5632,9 +5505,7 @@ class _Worker:
         if self._queue is not None:
             emitted.extend(self._drain_queue())
 
-        ttl_stage_cfg = (
-            self._pipeline_cfg.get("ttl") if self._pipeline_cfg else None
-        )
+        ttl_stage_cfg = self._pipeline_cfg.get("ttl") if self._pipeline_cfg else None
         ttl_enabled = ttl_stage_cfg is None or ttl_stage_cfg.enabled
         ttl_timeframe_ms = self._resolve_ttl_timeframe_ms(log_if_invalid=ttl_enabled)
 
@@ -5682,9 +5553,7 @@ class _Worker:
             now_ms=clock.now_ms(),
             enforce=self._enforce_closed_bars,
             lag_ms=self._close_lag_ms,
-            stage_cfg=(
-                self._pipeline_cfg.get("closed_bar") if self._pipeline_cfg else None
-            ),
+            stage_cfg=(self._pipeline_cfg.get("closed_bar") if self._pipeline_cfg else None),
         )
         if guard_res.action == "drop":
             try:
@@ -5807,29 +5676,21 @@ class _Worker:
                     pass
                 return _finalize()
 
-        policy_stage_cfg = (
-            self._pipeline_cfg.get("policy") if self._pipeline_cfg else None
-        )
+        policy_stage_cfg = self._pipeline_cfg.get("policy") if self._pipeline_cfg else None
         policy_stage_enabled = policy_stage_cfg is None or policy_stage_cfg.enabled
         precomputed_feats: dict[str, Any] | None = None
         if policy_stage_enabled and self._signal_quality_cfg.enabled:
-            allowed, feats = self._apply_signal_quality_filter(
-                bar, skip_metrics=skip_metrics
-            )
+            allowed, feats = self._apply_signal_quality_filter(bar, skip_metrics=skip_metrics)
             precomputed_feats = feats
             if not allowed:
                 return _finalize()
 
         if policy_stage_enabled and precomputed_feats is None:
-            precomputed_feats = self._extract_features(
-                bar, skip_metrics=skip_metrics
-            )
+            precomputed_feats = self._extract_features(bar, skip_metrics=skip_metrics)
         elif not policy_stage_enabled and precomputed_feats is None:
             precomputed_feats = {}
 
-        windows_stage_cfg = (
-            self._pipeline_cfg.get("windows") if self._pipeline_cfg else None
-        )
+        windows_stage_cfg = self._pipeline_cfg.get("windows") if self._pipeline_cfg else None
         win_res, win_reason = self._evaluate_no_trade_windows(
             int(bar.ts),
             bar.symbol,
@@ -5837,9 +5698,7 @@ class _Worker:
         )
         if win_res.action == "drop":
             try:
-                log_reason = "maintenance" if win_reason else getattr(
-                    win_res.reason, "name", ""
-                )
+                log_reason = "maintenance" if win_reason else getattr(win_res.reason, "name", "")
                 payload = {
                     "stage": win_res.stage.name,
                     "reason": log_reason,
@@ -5850,8 +5709,8 @@ class _Worker:
             except Exception:
                 pass
             try:
-                reason_label = "maintenance" if win_reason else (
-                    win_res.reason.name if win_res.reason else ""
+                reason_label = (
+                    "maintenance" if win_reason else (win_res.reason.name if win_res.reason else "")
                 )
                 pipeline_stage_drop_count.labels(
                     bar.symbol,
@@ -5994,9 +5853,7 @@ class _Worker:
                 payload_map = self._coerce_mapping(meta_map.get("payload"))
                 if payload_map is not None:
                     payload_map["bar"] = (
-                        bar_payload_snapshot
-                        if bar_payload_snapshot is not None
-                        else bar_snapshot
+                        bar_payload_snapshot if bar_payload_snapshot is not None else bar_snapshot
                     )
                     meta_map["payload"] = payload_map
 
@@ -6054,9 +5911,7 @@ class _Worker:
                 bar.symbol,
                 bar_open_ms,
                 bar_close_ms=bar_close_ms,
-                stage_cfg=(
-                    self._pipeline_cfg.get("publish") if self._pipeline_cfg else None
-                ),
+                stage_cfg=(self._pipeline_cfg.get("publish") if self._pipeline_cfg else None),
             )
             if res.action == "pass":
                 emitted.append(o)
@@ -6131,9 +5986,7 @@ async def worker_loop(bus: "EventBus", worker: _Worker) -> None:
         raise
 
 
-def _attach_monitoring_target(
-    target: Any, agg: MonitoringAggregator | None
-) -> None:
+def _attach_monitoring_target(target: Any, agg: MonitoringAggregator | None) -> None:
     """Best-effort attachment of ``agg`` to ``target`` if supported."""
 
     if agg is None or target is None:
@@ -6292,9 +6145,7 @@ class ServiceSignalRunner:
         if self.monitoring_agg is not None:
             _attach_monitoring_target(self.adapter, self.monitoring_agg)
             for name in ("source", "market_data"):
-                _attach_monitoring_target(
-                    getattr(self.adapter, name, None), self.monitoring_agg
-                )
+                _attach_monitoring_target(getattr(self.adapter, name, None), self.monitoring_agg)
 
         if self.signal_quality_cfg.enabled:
             self.logger.info(
@@ -6329,28 +6180,18 @@ class ServiceSignalRunner:
                             "funding_buffer_min": getattr(
                                 maintenance_cfg, "funding_buffer_min", None
                             ),
-                            "daily_utc": list(
-                                getattr(maintenance_cfg, "daily_utc", []) or []
-                            ),
-                            "custom_ms": list(
-                                getattr(maintenance_cfg, "custom_ms", []) or []
-                            ),
+                            "daily_utc": list(getattr(maintenance_cfg, "daily_utc", []) or []),
+                            "custom_ms": list(getattr(maintenance_cfg, "custom_ms", []) or []),
                         }
                 else:
                     maintenance_payload = {
                         "funding_buffer_min": getattr(
                             self.no_trade_cfg, "funding_buffer_min", None
                         ),
-                        "daily_utc": list(
-                            getattr(self.no_trade_cfg, "daily_utc", []) or []
-                        ),
-                        "custom_ms": list(
-                            getattr(self.no_trade_cfg, "custom_ms", []) or []
-                        ),
+                        "daily_utc": list(getattr(self.no_trade_cfg, "daily_utc", []) or []),
+                        "custom_ms": list(getattr(self.no_trade_cfg, "custom_ms", []) or []),
                     }
-                self.logger.info(
-                    "no-trade maintenance config: %s", maintenance_payload
-                )
+                self.logger.info("no-trade maintenance config: %s", maintenance_payload)
             except Exception:
                 pass
             try:
@@ -6359,9 +6200,7 @@ class ServiceSignalRunner:
                 age_sec: float | None = None
                 if exists:
                     try:
-                        age_sec = max(
-                            0.0, time.time() - maintenance_path.stat().st_mtime
-                        )
+                        age_sec = max(0.0, time.time() - maintenance_path.stat().st_mtime)
                     except Exception:
                         age_sec = None
                 age_repr = None
@@ -6409,9 +6248,7 @@ class ServiceSignalRunner:
                 try:
                     from sim_logging import LogWriter, LogConfig  # type: ignore
 
-                    sim._logger = LogWriter(
-                        LogConfig.from_dict(logging_config), run_id=run_id
-                    )
+                    sim._logger = LogWriter(LogConfig.from_dict(logging_config), run_id=run_id)
                 except Exception:
                     pass
 
@@ -6524,21 +6361,15 @@ class ServiceSignalRunner:
         calibration_enabled: bool | None = None
         if run_cfg is not None:
             updates_enabled = bool(getattr(run_cfg, "slippage_regime_updates", True))
-            calibration_enabled = bool(
-                getattr(run_cfg, "slippage_calibration_enabled", False)
-            )
+            calibration_enabled = bool(getattr(run_cfg, "slippage_calibration_enabled", False))
         slippage_target = self._resolve_slippage_target()
         if not updates_enabled or slippage_target is None:
             return
         slippage_obj, setter = slippage_target
         if calibration_enabled is None:
-            calibration_enabled = bool(
-                getattr(slippage_obj, "_calibration_enabled", False)
-            )
+            calibration_enabled = bool(getattr(slippage_obj, "_calibration_enabled", False))
         elif not calibration_enabled:
-            calibration_enabled = bool(
-                getattr(slippage_obj, "_calibration_enabled", False)
-            )
+            calibration_enabled = bool(getattr(slippage_obj, "_calibration_enabled", False))
         if not calibration_enabled:
             return
         source = self._resolve_market_regime_source()
@@ -6550,33 +6381,25 @@ class ServiceSignalRunner:
                 try:
                     setter(initial)
                 except Exception:
-                    self.logger.debug(
-                        "failed to seed slippage market regime", exc_info=True
-                    )
+                    self.logger.debug("failed to seed slippage market regime", exc_info=True)
             return
         register, initial = source
         if initial is not None:
             try:
                 setter(initial)
             except Exception:
-                self.logger.debug(
-                    "failed to seed slippage market regime", exc_info=True
-                )
+                self.logger.debug("failed to seed slippage market regime", exc_info=True)
 
         def _listener(regime: Any) -> None:
             try:
                 setter(regime)
             except Exception:
-                self.logger.debug(
-                    "failed to forward market regime to slippage", exc_info=True
-                )
+                self.logger.debug("failed to forward market regime to slippage", exc_info=True)
 
         try:
             register(_listener)
         except Exception:
-            self.logger.debug(
-                "failed to register market regime listener", exc_info=True
-            )
+            self.logger.debug("failed to register market regime listener", exc_info=True)
         else:
             self._slippage_regime_listener = _listener
 
@@ -6656,11 +6479,7 @@ class ServiceSignalRunner:
                 if val is not None
             }
         if isinstance(value, (set, tuple, list)):
-            return [
-                ServiceSignalRunner._to_jsonable(item)
-                for item in value
-                if item is not None
-            ]
+            return [ServiceSignalRunner._to_jsonable(item) for item in value if item is not None]
         try:
             return str(value)
         except Exception:
@@ -6693,15 +6512,11 @@ class ServiceSignalRunner:
                     params.setdefault("cooldown_small_delta", candidate)
         return params
 
-    def _record_init_failure(
-        self, reason: str, details: Mapping[str, Any] | None = None
-    ) -> None:
+    def _record_init_failure(self, reason: str, details: Mapping[str, Any] | None = None) -> None:
         self._init_failure_reason = reason
         if isinstance(details, MappingABC):
             sanitized = {
-                str(key): self._to_jsonable(val)
-                for key, val in details.items()
-                if val is not None
+                str(key): self._to_jsonable(val) for key, val in details.items() if val is not None
             }
         elif details is not None:
             sanitized = {"detail": self._to_jsonable(details)}
@@ -6739,9 +6554,7 @@ class ServiceSignalRunner:
                 if "symbols" in value:
                     _add(value.get("symbols"))
                 return
-            if isinstance(value, SequenceABC) and not isinstance(
-                value, (str, bytes, bytearray)
-            ):
+            if isinstance(value, SequenceABC) and not isinstance(value, (str, bytes, bytearray)):
                 for item in value:
                     _add(item)
 
@@ -6870,9 +6683,7 @@ class ServiceSignalRunner:
             except FileNotFoundError:
                 continue
             except Exception:
-                self.logger.exception(
-                    "failed to load symbol specs: path=%s", path_obj
-                )
+                self.logger.exception("failed to load symbol specs: path=%s", path_obj)
                 continue
             if isinstance(payload, MappingABC):
                 candidate_payloads.append(payload)
@@ -7031,9 +6842,7 @@ class ServiceSignalRunner:
             self._symbol_specs = {}
         if not quotes_map:
             try:
-                self.logger.warning(
-                    "symbol quote metadata unavailable; skipping quote guard"
-                )
+                self.logger.warning("symbol quote metadata unavailable; skipping quote guard")
             except Exception:
                 pass
             self._symbol_quote_assets = {}
@@ -7071,8 +6880,7 @@ class ServiceSignalRunner:
                 details["missing"] = missing
             self._record_init_failure("mixed_quote", details)
             raise MixedQuoteError(
-                "configured symbols reference multiple quote assets: "
-                + ", ".join(unique_quotes)
+                "configured symbols reference multiple quote assets: " + ", ".join(unique_quotes)
             )
 
         if unique_quotes:
@@ -7398,7 +7206,10 @@ class ServiceSignalRunner:
         except Exception:
             self.logger.exception("failed to reconfigure signal bus")
         self.ws_dedup_enabled = enabled
-        fsync_mode = str(data.get("fsync_mode", self._signal_writer_options.get("fsync_mode", "batch")) or "batch")
+        fsync_mode = str(
+            data.get("fsync_mode", self._signal_writer_options.get("fsync_mode", "batch"))
+            or "batch"
+        )
         rotate_daily = bool(
             data.get("rotate_daily", self._signal_writer_options.get("rotate_daily", True))
         )
@@ -7469,9 +7280,7 @@ class ServiceSignalRunner:
                 live_raw = {}
             if isinstance(live_raw, MappingABC):
                 try:
-                    self._base_pipeline_cfg = _parse_pipeline_config(
-                        live_raw.get("pipeline", {})
-                    )
+                    self._base_pipeline_cfg = _parse_pipeline_config(live_raw.get("pipeline", {}))
                 except Exception as exc:
                     self.logger.warning("invalid base pipeline config: %s", exc)
                 else:
@@ -7692,11 +7501,7 @@ class ServiceSignalRunner:
             changed = True
         self._handle_safe_stop_flag(shutdown, stop_event)
         marker_path = self._dirty_marker_path
-        if (
-            self._dirty_restart
-            and marker_path is not None
-            and not marker_path.exists()
-        ):
+        if self._dirty_restart and marker_path is not None and not marker_path.exists():
             self._dirty_restart = False
             self._dirty_restart_detected_at = None
             changed = True
@@ -7712,9 +7517,7 @@ class ServiceSignalRunner:
             snapshot_config(self.cfg.snapshot_config_path, self.cfg.artifacts_dir)
 
         logs_dir = self.cfg.logs_dir or "logs"
-        marker_path = Path(
-            self.cfg.marker_path or os.path.join(logs_dir, "shutdown.marker")
-        )
+        marker_path = Path(self.cfg.marker_path or os.path.join(logs_dir, "shutdown.marker"))
         try:
             marker_path.parent.mkdir(parents=True, exist_ok=True)
         except Exception:
@@ -7836,9 +7639,7 @@ class ServiceSignalRunner:
                 except Exception:
                     orders_summary = {}
 
-                candidate_weights = _extract_bar_initial_weights_from_state(
-                    loaded_state
-                )
+                candidate_weights = _extract_bar_initial_weights_from_state(loaded_state)
                 if candidate_weights:
                     bar_initial_weights = candidate_weights
 
@@ -7965,9 +7766,7 @@ class ServiceSignalRunner:
 
                 if config_snapshot:
                     try:
-                        self.logger.info(
-                            "config snapshot restored (%d keys)", len(config_snapshot)
-                        )
+                        self.logger.info("config snapshot restored (%d keys)", len(config_snapshot))
                     except Exception:
                         pass
 
@@ -8052,9 +7851,7 @@ class ServiceSignalRunner:
         if self.cfg.kill_switch_ops.flag_path:
             ops_cfg["flag_path"] = self.cfg.kill_switch_ops.flag_path
         if self.cfg.kill_switch_ops.alert_command:
-            ops_cfg["alert_command"] = shlex.split(
-                self.cfg.kill_switch_ops.alert_command
-            )
+            ops_cfg["alert_command"] = shlex.split(self.cfg.kill_switch_ops.alert_command)
         ops_kill_switch.init(ops_cfg)
 
         ops_flush_stop = threading.Event()
@@ -8185,9 +7982,7 @@ class ServiceSignalRunner:
             except (TypeError, ValueError):
                 portfolio_equity = None
             try:
-                portfolio_weight_cap = (
-                    float(weight_cap_raw) if weight_cap_raw is not None else None
-                )
+                portfolio_weight_cap = float(weight_cap_raw) if weight_cap_raw is not None else None
             except (TypeError, ValueError):
                 portfolio_weight_cap = None
             if portfolio_weight_cap is not None:
@@ -8259,9 +8054,7 @@ class ServiceSignalRunner:
             no_trade_cfg=self.no_trade_cfg,
             pipeline_cfg=self.pipeline_cfg,
             signal_quality_cfg=self.signal_quality_cfg,
-            zero_signal_alert=getattr(
-                self.monitoring_cfg.thresholds, "zero_signals", 0
-            ),
+            zero_signal_alert=getattr(self.monitoring_cfg.thresholds, "zero_signals", 0),
             state_enabled=self.cfg.state.enabled,
             rest_candidates=rest_candidates,
             monitoring=self.monitoring_agg,
@@ -8278,9 +8071,7 @@ class ServiceSignalRunner:
         self._write_runner_status()
         if self._portfolio_limits_cfg:
             try:
-                guard_cfg = PortfolioLimitConfig.from_mapping(
-                    self._portfolio_limits_cfg
-                )
+                guard_cfg = PortfolioLimitConfig.from_mapping(self._portfolio_limits_cfg)
             except Exception:
                 guard_cfg = PortfolioLimitConfig()
             if guard_cfg.enabled:
@@ -8404,9 +8195,7 @@ class ServiceSignalRunner:
         json_path = self.cfg.snapshot_metrics_json or os.path.join(
             logs_dir, "snapshot_metrics.json"
         )
-        csv_path = self.cfg.snapshot_metrics_csv or os.path.join(
-            logs_dir, "snapshot_metrics.csv"
-        )
+        csv_path = self.cfg.snapshot_metrics_csv or os.path.join(logs_dir, "snapshot_metrics.csv")
         snapshot_stop = threading.Event()
         snapshot_thread: threading.Thread | None = None
         if self.monitoring_cfg.enabled and self.cfg.snapshot_metrics_sec > 0:
@@ -8464,9 +8253,7 @@ class ServiceSignalRunner:
                     try:
                         _persist_state("interval")
                     except Exception:
-                        self.logger.exception(
-                            "unexpected error during periodic state persistence"
-                        )
+                        self.logger.exception("unexpected error during periodic state persistence")
 
             state_thread = threading.Thread(target=_state_loop, daemon=True)
             state_thread.start()
@@ -8483,10 +8270,7 @@ class ServiceSignalRunner:
             loop = asyncio.new_event_loop()
 
             async def _run_workers() -> None:
-                tasks = [
-                    asyncio.create_task(worker_loop(bus, worker))
-                    for _ in range(n_workers)
-                ]
+                tasks = [asyncio.create_task(worker_loop(bus, worker)) for _ in range(n_workers)]
                 try:
                     await asyncio.gather(*tasks)
                 finally:
@@ -8502,13 +8286,9 @@ class ServiceSignalRunner:
             loop_thread = threading.Thread(target=_loop_runner, daemon=True)
             loop_thread.start()
             shutdown.on_stop(bus.close)
-            shutdown.on_finalize(
-                lambda: loop_thread.join(timeout=1.0) if loop_thread else None
-            )
+            shutdown.on_finalize(lambda: loop_thread.join(timeout=1.0) if loop_thread else None)
 
-        ws_client = getattr(self.adapter, "ws", None) or getattr(
-            self.adapter, "source", None
-        )
+        ws_client = getattr(self.adapter, "ws", None) or getattr(self.adapter, "source", None)
         _attach_monitoring_target(ws_client, self.monitoring_agg)
         if ws_client is not None and hasattr(ws_client, "stop"):
 
@@ -8574,17 +8354,13 @@ class ServiceSignalRunner:
         shutdown.on_finalize(
             lambda: (
                 self._clock_thread.join(
-                    timeout=(
-                        self.clock_sync_cfg.refresh_sec if self.clock_sync_cfg else 1.0
-                    )
+                    timeout=(self.clock_sync_cfg.refresh_sec if self.clock_sync_cfg else 1.0)
                 )
                 if self._clock_thread is not None
                 else None
             )
         )
-        shutdown.on_finalize(
-            lambda: signal_bus.shutdown() if signal_bus.ENABLED else None
-        )
+        shutdown.on_finalize(lambda: signal_bus.shutdown() if signal_bus.ENABLED else None)
         shutdown.on_finalize(_final_summary)
 
         shutdown.register(signal.SIGINT, signal.SIGTERM)
@@ -8607,9 +8383,7 @@ class ServiceSignalRunner:
                 backoff = self.clock_sync_cfg.refresh_sec
                 while not self._clock_stop.wait(backoff):
                     before = clock.last_sync_at
-                    drift_local = clock.sync_clock(
-                        client, self.clock_sync_cfg, monitoring
-                    )
+                    drift_local = clock.sync_clock(client, self.clock_sync_cfg, monitoring)
                     success = clock.last_sync_at != before
                     try:
                         monitoring.report_clock_sync(
@@ -8622,9 +8396,7 @@ class ServiceSignalRunner:
                             monitoring.clock_sync_fail.inc()
                         except Exception:
                             pass
-                        backoff = min(
-                            backoff * 2.0, self.clock_sync_cfg.refresh_sec * 10.0
-                        )
+                        backoff = min(backoff * 2.0, self.clock_sync_cfg.refresh_sec * 10.0)
                         continue
                     backoff = self.clock_sync_cfg.refresh_sec
                     if drift_local > self.clock_sync_cfg.kill_threshold_ms:
@@ -8713,9 +8485,7 @@ class ServiceSignalRunner:
             if qty_val is None:
                 return None
             avg_val = _safe_float(
-                data.get("avg_price")
-                or data.get("avgPrice")
-                or data.get("price")
+                data.get("avg_price") or data.get("avgPrice") or data.get("price")
             )
             ts_val = _safe_int(
                 data.get("last_update_ms")
@@ -8744,17 +8514,14 @@ class ServiceSignalRunner:
             data = dict(raw)
             key = _order_key(data) or ""
             symbol = str(data.get("symbol") or default_symbol or "")
-            client_id = data.get("clientOrderId") or data.get("client_order_id") or data.get("client_id")
+            client_id = (
+                data.get("clientOrderId") or data.get("client_order_id") or data.get("client_id")
+            )
             order_id = data.get("orderId") or data.get("order_id") or data.get("id")
             side = data.get("side")
             if side in (None, "") and data.get("is_buy") is not None:
                 side = "BUY" if bool(data.get("is_buy")) else "SELL"
-            qty = (
-                data.get("qty")
-                or data.get("quantity")
-                or data.get("origQty")
-                or data.get("size")
-            )
+            qty = data.get("qty") or data.get("quantity") or data.get("origQty") or data.get("size")
             price = data.get("price") or data.get("avg_price") or data.get("limit_price")
             status = data.get("status") or data.get("state")
             ts_candidate = (
@@ -8778,9 +8545,7 @@ class ServiceSignalRunner:
                 "ts_ms": ts_val,
             }
             normalized_key = (
-                normalized["orderId"]
-                or normalized["clientOrderId"]
-                or (key if key else None)
+                normalized["orderId"] or normalized["clientOrderId"] or (key if key else None)
             )
             if not normalized_key:
                 normalized_key = (
@@ -8876,9 +8641,7 @@ class ServiceSignalRunner:
                         continue
                     key, normalized = _normalize_order_payload(item)
                     open_orders_cache[str(key)] = normalized
-                raw_last_processed = (
-                    getattr(current_state, "last_processed_bar_ms", {}) or {}
-                )
+                raw_last_processed = getattr(current_state, "last_processed_bar_ms", {}) or {}
                 if isinstance(raw_last_processed, MappingABC):
                     for sym, ts in raw_last_processed.items():
                         ts_val = _safe_int(ts)
@@ -8981,9 +8744,7 @@ class ServiceSignalRunner:
                             payload["qty"] = qty_val
                             changed = True
                         price_update = (
-                            data.get("price")
-                            or data.get("avg_price")
-                            or data.get("fill_price")
+                            data.get("price") or data.get("avg_price") or data.get("fill_price")
                         )
                         price_val = _safe_float(price_update)
                         if price_val is not None and price_val != payload.get("price"):
@@ -9011,13 +8772,9 @@ class ServiceSignalRunner:
                         if prev_symbol_ts is None or ts_ms >= prev_symbol_ts:
                             last_processed_cache[symbol] = ts_ms
                             last_processed_changed = True
-                    prev_global = last_processed_cache.get(
-                        state_storage.LAST_PROCESSED_GLOBAL_KEY
-                    )
+                    prev_global = last_processed_cache.get(state_storage.LAST_PROCESSED_GLOBAL_KEY)
                     if prev_global is None or ts_ms > prev_global:
-                        last_processed_cache[
-                            state_storage.LAST_PROCESSED_GLOBAL_KEY
-                        ] = ts_ms
+                        last_processed_cache[state_storage.LAST_PROCESSED_GLOBAL_KEY] = ts_ms
                         last_processed_changed = True
 
                 seen_snapshot = _capture_seen_signals()
@@ -9083,12 +8840,8 @@ def from_config(
     """Build dependencies from ``cfg`` and run :class:`ServiceSignalRunner`."""
 
     timing_defaults, timing_profiles = load_timing_profiles()
-    exec_profile = getattr(
-        cfg, "execution_profile", ExecutionProfile.MKT_OPEN_NEXT_H1
-    )
-    resolved_timing = resolve_execution_timing(
-        exec_profile, timing_defaults, timing_profiles
-    )
+    exec_profile = getattr(cfg, "execution_profile", ExecutionProfile.MKT_OPEN_NEXT_H1)
+    resolved_timing = resolve_execution_timing(exec_profile, timing_defaults, timing_profiles)
 
     def _parse_timeframe_to_ms(value: Any) -> int:
         try:
@@ -9273,9 +9026,7 @@ def from_config(
     # WS deduplication overrides
     ws_cfg = rt_cfg.get("ws", {})
     cfg.ws_dedup.enabled = bool(ws_cfg.get("enabled", cfg.ws_dedup.enabled))
-    cfg.ws_dedup.persist_path = str(
-        ws_cfg.get("persist_path", cfg.ws_dedup.persist_path)
-    )
+    cfg.ws_dedup.persist_path = str(ws_cfg.get("persist_path", cfg.ws_dedup.persist_path))
     cfg.ws_dedup.log_skips = bool(ws_cfg.get("log_skips", cfg.ws_dedup.log_skips))
 
     # Throttle configuration overrides
@@ -9283,24 +9034,16 @@ def from_config(
     if throttle_cfg:
         cfg.throttle.enabled = bool(throttle_cfg.get("enabled", cfg.throttle.enabled))
         global_cfg = throttle_cfg.get("global", {})
-        cfg.throttle.global_.rps = float(
-            global_cfg.get("rps", cfg.throttle.global_.rps)
-        )
-        cfg.throttle.global_.burst = int(
-            global_cfg.get("burst", cfg.throttle.global_.burst)
-        )
+        cfg.throttle.global_.rps = float(global_cfg.get("rps", cfg.throttle.global_.rps))
+        cfg.throttle.global_.burst = int(global_cfg.get("burst", cfg.throttle.global_.burst))
         sym_cfg = throttle_cfg.get("symbol", {})
         cfg.throttle.symbol.rps = float(sym_cfg.get("rps", cfg.throttle.symbol.rps))
         cfg.throttle.symbol.burst = int(sym_cfg.get("burst", cfg.throttle.symbol.burst))
         cfg.throttle.mode = str(throttle_cfg.get("mode", cfg.throttle.mode))
         q_cfg = throttle_cfg.get("queue", {})
-        cfg.throttle.queue.max_items = int(
-            q_cfg.get("max_items", cfg.throttle.queue.max_items)
-        )
+        cfg.throttle.queue.max_items = int(q_cfg.get("max_items", cfg.throttle.queue.max_items))
         cfg.throttle.queue.ttl_ms = int(q_cfg.get("ttl_ms", cfg.throttle.queue.ttl_ms))
-        cfg.throttle.time_source = str(
-            throttle_cfg.get("time_source", cfg.throttle.time_source)
-        )
+        cfg.throttle.time_source = str(throttle_cfg.get("time_source", cfg.throttle.time_source))
 
     # Kill switch overrides
     kill_cfg = rt_cfg.get("ops", {}).get("kill_switch", {})
@@ -9311,12 +9054,8 @@ def from_config(
         cfg.kill_switch.ws_failures = float(
             kill_cfg.get("ws_failures", cfg.kill_switch.ws_failures)
         )
-        cfg.kill_switch.error_rate = float(
-            kill_cfg.get("error_rate", cfg.kill_switch.error_rate)
-        )
-        cfg.kill_switch_ops.enabled = bool(
-            kill_cfg.get("enabled", cfg.kill_switch_ops.enabled)
-        )
+        cfg.kill_switch.error_rate = float(kill_cfg.get("error_rate", cfg.kill_switch.error_rate))
+        cfg.kill_switch_ops.enabled = bool(kill_cfg.get("enabled", cfg.kill_switch_ops.enabled))
         cfg.kill_switch_ops.error_limit = int(
             kill_cfg.get("error_limit", cfg.kill_switch_ops.error_limit)
         )
@@ -9324,16 +9063,12 @@ def from_config(
             kill_cfg.get("duplicate_limit", cfg.kill_switch_ops.duplicate_limit)
         )
         cfg.kill_switch_ops.stale_intervals_limit = int(
-            kill_cfg.get(
-                "stale_intervals_limit", cfg.kill_switch_ops.stale_intervals_limit
-            )
+            kill_cfg.get("stale_intervals_limit", cfg.kill_switch_ops.stale_intervals_limit)
         )
         cfg.kill_switch_ops.reset_cooldown_sec = int(
             kill_cfg.get("reset_cooldown_sec", cfg.kill_switch_ops.reset_cooldown_sec)
         )
-        cfg.kill_switch_ops.flag_path = kill_cfg.get(
-            "flag_path", cfg.kill_switch_ops.flag_path
-        )
+        cfg.kill_switch_ops.flag_path = kill_cfg.get("flag_path", cfg.kill_switch_ops.flag_path)
         cfg.kill_switch_ops.alert_command = kill_cfg.get(
             "alert_command", cfg.kill_switch_ops.alert_command
         )
@@ -9381,15 +9116,9 @@ def from_config(
     shutdown_cfg.update(rt_cfg.get("shutdown", {}))
 
     if ops_retry:
-        cfg.retry.max_attempts = int(
-            ops_retry.get("max_attempts", cfg.retry.max_attempts)
-        )
-        cfg.retry.backoff_base_s = float(
-            ops_retry.get("backoff_base_s", cfg.retry.backoff_base_s)
-        )
-        cfg.retry.max_backoff_s = float(
-            ops_retry.get("max_backoff_s", cfg.retry.max_backoff_s)
-        )
+        cfg.retry.max_attempts = int(ops_retry.get("max_attempts", cfg.retry.max_attempts))
+        cfg.retry.backoff_base_s = float(ops_retry.get("backoff_base_s", cfg.retry.backoff_base_s))
+        cfg.retry.max_backoff_s = float(ops_retry.get("max_backoff_s", cfg.retry.max_backoff_s))
 
     # Ensure components receive the bus if they accept it
     try:
@@ -9410,9 +9139,7 @@ def from_config(
         except Exception:
             mon_data = {}
         mon_section = mon_data.get("monitoring", {}) or {}
-        monitoring_cfg.enabled = bool(
-            mon_section.get("enabled", monitoring_cfg.enabled)
-        )
+        monitoring_cfg.enabled = bool(mon_section.get("enabled", monitoring_cfg.enabled))
         monitoring_cfg.snapshot_metrics_sec = int(
             mon_section.get("snapshot_metrics_sec", monitoring_cfg.snapshot_metrics_sec)
         )
@@ -9445,12 +9172,8 @@ def from_config(
             except (TypeError, ValueError):
                 pass
         al = mon_data.get("alerts", {}) or {}
-        monitoring_cfg.alerts.enabled = bool(
-            al.get("enabled", monitoring_cfg.alerts.enabled)
-        )
-        monitoring_cfg.alerts.command = al.get(
-            "command", monitoring_cfg.alerts.command
-        )
+        monitoring_cfg.alerts.enabled = bool(al.get("enabled", monitoring_cfg.alerts.enabled))
+        monitoring_cfg.alerts.command = al.get("command", monitoring_cfg.alerts.command)
         if "channel" in al:
             channel = al.get("channel")
             if channel is not None:

@@ -116,7 +116,7 @@ def test_capacity_monotonic_degradation():
     grid = [1e5, 1e6, 5e6, 1e7, 5e7, 1e8]
     res = capacity_curve(gross, turnover, adv_usd=1e7, aum_grid=grid, impact_coef=0.1)
     sharpes = [p["sharpe"] for p in res["curve"]]
-    assert np.all(np.diff(sharpes) <= 1e-9)        # монотонно не растёт
+    assert np.all(np.diff(sharpes) <= 1e-9)  # монотонно не растёт
     assert "capacity_aum" in res and res["capacity_aum"] >= 0
     assert np.isfinite(res["base_sharpe"])
     # avg cost растёт с AUM
@@ -134,7 +134,14 @@ def test_trust_report_json():
     cap = capacity_curve(r[:60], np.full(60, 0.2), adv_usd=1e7, aum_grid=[1e6, 1e8])
     rep = trust_report(r, n_trials=50, trial_performance=M, capacity=cap)
 
-    assert {"deflated_sharpe", "probabilistic_sharpe", "pbo", "capacity", "verdict", "sharpe_annual"} <= set(rep)
+    assert {
+        "deflated_sharpe",
+        "probabilistic_sharpe",
+        "pbo",
+        "capacity",
+        "verdict",
+        "sharpe_annual",
+    } <= set(rep)
     assert 0.0 <= rep["deflated_sharpe"] <= 1.0
     assert isinstance(rep["pbo"], float)
     assert rep["verdict"] in {"strong", "moderate", "weak", "likely_overfit", "insufficient_data"}

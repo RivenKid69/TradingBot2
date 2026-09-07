@@ -32,12 +32,24 @@ def _write_table(df: pd.DataFrame, path: str) -> None:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Применить калибратор (Platt/Isotonic) к колонке score в датасете.")
-    ap.add_argument("--data", required=True, help="Файл с предсказаниями (CSV/Parquet). Должна быть колонка score.")
+    ap = argparse.ArgumentParser(
+        description="Применить калибратор (Platt/Isotonic) к колонке score в датасете."
+    )
+    ap.add_argument(
+        "--data",
+        required=True,
+        help="Файл с предсказаниями (CSV/Parquet). Должна быть колонка score.",
+    )
     ap.add_argument("--model", required=True, help="JSON калибратора (models/calibrator.json).")
     ap.add_argument("--score_col", default="score", help="Имя колонки со скором.")
-    ap.add_argument("--out_col", default="score_calibrated", help="Имя новой колонки для калиброванной вероятности.")
-    ap.add_argument("--out", default="", help="Куда сохранить (по умолчанию рядом с суффиксом _calibrated).")
+    ap.add_argument(
+        "--out_col",
+        default="score_calibrated",
+        help="Имя новой колонки для калиброванной вероятности.",
+    )
+    ap.add_argument(
+        "--out", default="", help="Куда сохранить (по умолчанию рядом с суффиксом _calibrated)."
+    )
     args = ap.parse_args()
 
     df = _read_table(args.data)

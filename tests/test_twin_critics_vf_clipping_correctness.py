@@ -13,6 +13,7 @@ Purpose: Ensure the fix is correct and prevent regressions
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
@@ -114,10 +115,12 @@ class TestIndependentClipping:
 
         # CRITICAL CHECKS:
         # 1. Separate old values are stored
-        assert rollout_data.old_value_quantiles_critic1 is not None, \
-            "old_value_quantiles_critic1 must be stored for independent clipping"
-        assert rollout_data.old_value_quantiles_critic2 is not None, \
-            "old_value_quantiles_critic2 must be stored for independent clipping"
+        assert (
+            rollout_data.old_value_quantiles_critic1 is not None
+        ), "old_value_quantiles_critic1 must be stored for independent clipping"
+        assert (
+            rollout_data.old_value_quantiles_critic2 is not None
+        ), "old_value_quantiles_critic2 must be stored for independent clipping"
 
         # 2. Old values for each critic are DIFFERENT (not shared)
         old_q1 = rollout_data.old_value_quantiles_critic1
@@ -127,8 +130,9 @@ class TestIndependentClipping:
         # Note: Due to randomness, they might be close, but should not be exactly identical
         # We check that at least some samples are different
         num_different = (torch.tensor(old_q1) != torch.tensor(old_q2)).sum()
-        assert num_different > 0, \
-            "old_value_quantiles_critic1 and critic2 must be different (independent)"
+        assert (
+            num_different > 0
+        ), "old_value_quantiles_critic1 and critic2 must be different (independent)"
 
         # 3. Verify that shared old_value_quantiles is NOT used for clipping (fallback only)
         # This is verified by checking that use_twin_vf_clipping is True during training
@@ -155,17 +159,20 @@ class TestIndependentClipping:
         rollout_data = next(rollout_data_gen)
 
         # CRITICAL CHECKS:
-        assert rollout_data.old_value_probs_critic1 is not None, \
-            "old_value_probs_critic1 must be stored"
-        assert rollout_data.old_value_probs_critic2 is not None, \
-            "old_value_probs_critic2 must be stored"
+        assert (
+            rollout_data.old_value_probs_critic1 is not None
+        ), "old_value_probs_critic1 must be stored"
+        assert (
+            rollout_data.old_value_probs_critic2 is not None
+        ), "old_value_probs_critic2 must be stored"
 
         # Probs should be different for each critic
         old_probs_1 = rollout_data.old_value_probs_critic1
         old_probs_2 = rollout_data.old_value_probs_critic2
         num_different = (torch.tensor(old_probs_1) != torch.tensor(old_probs_2)).sum()
-        assert num_different > 0, \
-            "old_value_probs_critic1 and critic2 must be different (independent)"
+        assert (
+            num_different > 0
+        ), "old_value_probs_critic1 and critic2 must be different (independent)"
 
 
 class TestGradientFlow:
@@ -194,18 +201,19 @@ class TestGradientFlow:
 
         # For Twin Critics, the second critic is in a separate head
         # Access via mlp_extractor which contains both critics
-        assert hasattr(policy, 'value_net'), "value_net (critic 1) should exist"
+        assert hasattr(policy, "value_net"), "value_net (critic 1) should exist"
 
         # Check that Twin Critics are actually being used by verifying
         # the _use_twin_critics flag
-        assert getattr(policy, '_use_twin_critics', False), \
-            "Twin Critics should be enabled"
+        assert getattr(policy, "_use_twin_critics", False), "Twin Critics should be enabled"
 
         # The key test is that training completed successfully with VF clipping,
         # which implicitly verifies gradient flow (otherwise training would fail)
         assert model.num_timesteps == 256
 
-    def test_categorical_both_critics_receive_gradients(self, simple_env, categorical_policy_config):
+    def test_categorical_both_critics_receive_gradients(
+        self, simple_env, categorical_policy_config
+    ):
         """
         Verify gradient flow for categorical critics.
         """
@@ -224,8 +232,9 @@ class TestGradientFlow:
         policy = model.policy
 
         # Verify Twin Critics are enabled
-        assert getattr(policy, '_use_twin_critics', False), \
-            "Twin Critics should be enabled for categorical critic"
+        assert getattr(
+            policy, "_use_twin_critics", False
+        ), "Twin Critics should be enabled for categorical critic"
 
         # Verify training completed (implicit gradient flow test)
         assert model.num_timesteps == 256
@@ -262,7 +271,7 @@ class TestPPOSemantics:
 
         # Verify VF clipping was actually used (check internal flag)
         # The fact that training completed without errors validates the semantics
-        assert hasattr(model.policy, '_use_twin_critics')
+        assert hasattr(model.policy, "_use_twin_critics")
 
 
 class TestAllModesWork:
@@ -314,17 +323,18 @@ class TestNoFallbackWarnings:
 
         # Train and verify no warnings
         import warnings
+
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             model.learn(total_timesteps=128, log_interval=None)
 
             # Check for fallback warnings
             fallback_warnings = [
-                warning for warning in w
-                if "fallback" in str(warning.message).lower()
+                warning for warning in w if "fallback" in str(warning.message).lower()
             ]
-            assert len(fallback_warnings) == 0, \
-                f"No fallback warnings should be issued. Found: {[str(w.message) for w in fallback_warnings]}"
+            assert (
+                len(fallback_warnings) == 0
+            ), f"No fallback warnings should be issued. Found: {[str(w.message) for w in fallback_warnings]}"
 
 
 class TestBackwardCompatibility:

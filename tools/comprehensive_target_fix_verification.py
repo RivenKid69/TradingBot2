@@ -47,28 +47,28 @@ class ComprehensiveVerifier:
         print("\n=== Training Quantile Path ===")
 
         # Check 1: Uses target_returns_norm_raw_selected
-        pattern = r'targets_norm_for_loss\s*=\s*target_returns_norm_raw_selected\.reshape'
+        pattern = r"targets_norm_for_loss\s*=\s*target_returns_norm_raw_selected\.reshape"
         matches = re.findall(pattern, self.code)
         self.check(
             "Training quantile uses unclipped target",
             len(matches) >= 1,
-            "Missing: targets_norm_for_loss = target_returns_norm_raw_selected.reshape(...)"
+            "Missing: targets_norm_for_loss = target_returns_norm_raw_selected.reshape(...)",
         )
 
         # Check 2: Does NOT use target_returns_norm_selected (clipped)
-        wrong_pattern = r'targets_norm_for_loss\s*=\s*target_returns_norm_selected\.reshape'
+        wrong_pattern = r"targets_norm_for_loss\s*=\s*target_returns_norm_selected\.reshape"
         wrong_matches = re.findall(wrong_pattern, self.code)
         self.check(
             "Training quantile does NOT use clipped target",
             len(wrong_matches) == 0,
-            f"Found incorrect usage: targets_norm_for_loss = target_returns_norm_selected"
+            f"Found incorrect usage: targets_norm_for_loss = target_returns_norm_selected",
         )
 
         # Check 3: Comment explains the fix
         self.check(
             "Training quantile has explanatory comment",
             "CRITICAL FIX: Use UNCLIPPED target" in self.code,
-            "Missing explanatory comment"
+            "Missing explanatory comment",
         )
 
     def verify_training_distributional_path(self):
@@ -76,29 +76,29 @@ class ComprehensiveVerifier:
         print("\n=== Training Distributional (C51) Path ===")
 
         # Check 1: Uses target_returns_norm_raw for C51 projection
-        pattern = r'clamped_targets\s*=\s*target_returns_norm_raw\.clamp'
+        pattern = r"clamped_targets\s*=\s*target_returns_norm_raw\.clamp"
         matches = re.findall(pattern, self.code)
         self.check(
             "Distributional uses unclipped target for projection",
             len(matches) >= 1,
-            "Missing: clamped_targets = target_returns_norm_raw.clamp(...)"
+            "Missing: clamped_targets = target_returns_norm_raw.clamp(...)",
         )
 
         # Check 2: Comment about preventing double-clipping
         self.check(
             "Distributional has explanatory comment",
-            "Use UNCLIPPED target for distributional projection" in self.code or
-            "Only clamp to support bounds" in self.code,
-            "Missing explanatory comment about preventing double-clipping"
+            "Use UNCLIPPED target for distributional projection" in self.code
+            or "Only clamp to support bounds" in self.code,
+            "Missing explanatory comment about preventing double-clipping",
         )
 
         # Check 3: Clamps to support bounds [v_min, v_max]
-        pattern = r'target_returns_norm_raw\.clamp\s*\(\s*self\.policy\.v_min'
+        pattern = r"target_returns_norm_raw\.clamp\s*\(\s*self\.policy\.v_min"
         matches = re.findall(pattern, self.code)
         self.check(
             "Distributional clamps to support bounds",
             len(matches) >= 1,
-            "Should clamp to [v_min, v_max] support bounds"
+            "Should clamp to [v_min, v_max] support bounds",
         )
 
     def verify_evaluation_section(self):
@@ -106,30 +106,30 @@ class ComprehensiveVerifier:
         print("\n=== Evaluation Section ===")
 
         # Check 1: Uses target_returns_norm_unclipped
-        pattern = r'target_norm_col\s*=\s*target_returns_norm_unclipped\.reshape'
+        pattern = r"target_norm_col\s*=\s*target_returns_norm_unclipped\.reshape"
         matches = re.findall(pattern, self.code)
         self.check(
             "Evaluation uses unclipped target",
             len(matches) >= 1,
-            "Missing: target_norm_col = target_returns_norm_unclipped.reshape(...)"
+            "Missing: target_norm_col = target_returns_norm_unclipped.reshape(...)",
         )
 
         # Check 2: Does NOT use target_returns_norm (clipped)
         # (But target_returns_norm should still exist for statistics)
-        pattern = r'target_norm_col\s*=\s*target_returns_norm\.reshape'
+        pattern = r"target_norm_col\s*=\s*target_returns_norm\.reshape"
         wrong_matches = re.findall(pattern, self.code)
         self.check(
             "Evaluation does NOT use clipped target",
             len(wrong_matches) == 0,
-            "Found incorrect usage in evaluation section"
+            "Found incorrect usage in evaluation section",
         )
 
         # Check 3: Comment explains the fix
         self.check(
             "Evaluation has explanatory comment",
-            "Use UNCLIPPED targets for explained variance" in self.code or
-            "Do NOT clip targets in eval" in self.code,
-            "Missing explanatory comment in evaluation section"
+            "Use UNCLIPPED targets for explained variance" in self.code
+            or "Do NOT clip targets in eval" in self.code,
+            "Missing explanatory comment in evaluation section",
         )
 
     def verify_explained_variance_batches(self):
@@ -137,12 +137,12 @@ class ComprehensiveVerifier:
         print("\n=== Explained Variance Batches ===")
 
         # Check: value_target_batches_norm uses unclipped
-        pattern = r'value_target_batches_norm\.append\s*\(\s*target_returns_norm_raw_selected'
+        pattern = r"value_target_batches_norm\.append\s*\(\s*target_returns_norm_raw_selected"
         matches = re.findall(pattern, self.code, re.DOTALL)
         self.check(
             "EV batches use unclipped target",
             len(matches) >= 1,
-            "value_target_batches_norm should append target_returns_norm_raw_selected"
+            "value_target_batches_norm should append target_returns_norm_raw_selected",
         )
 
     def verify_consistency_fixes(self):
@@ -150,21 +150,21 @@ class ComprehensiveVerifier:
         print("\n=== Consistency Fixes ===")
 
         # Check 1: weight_tensor uses correct .numel()
-        pattern = r'target_returns_norm_raw_selected\.numel\(\)'
+        pattern = r"target_returns_norm_raw_selected\.numel\(\)"
         matches = re.findall(pattern, self.code)
         self.check(
             "weight_tensor uses correct numel()",
             len(matches) >= 1,
-            "weight_tensor should use target_returns_norm_raw_selected.numel()"
+            "weight_tensor should use target_returns_norm_raw_selected.numel()",
         )
 
         # Check 2: expected_group_len uses correct shape
-        pattern = r'expected_group_len\s*=.*target_returns_norm_raw_selected'
+        pattern = r"expected_group_len\s*=.*target_returns_norm_raw_selected"
         matches = re.findall(pattern, self.code)
         self.check(
             "expected_group_len uses correct shape",
             len(matches) >= 1,
-            "expected_group_len should use target_returns_norm_raw_selected"
+            "expected_group_len should use target_returns_norm_raw_selected",
         )
 
     def verify_statistics_logging(self):
@@ -172,21 +172,21 @@ class ComprehensiveVerifier:
         print("\n=== Statistics and Logging ===")
 
         # Statistics SHOULD use clipped targets (to measure clipping)
-        pattern = r'target_norm_for_stats\s*=\s*target_returns_norm_selected'
+        pattern = r"target_norm_for_stats\s*=\s*target_returns_norm_selected"
         matches = re.findall(pattern, self.code)
         self.check(
             "Statistics use clipped target (intentional)",
             len(matches) >= 1,
-            warning_msg="Statistics might not be using clipped targets for logging"
+            warning_msg="Statistics might not be using clipped targets for logging",
         )
 
         # Debug stats recording should exist
-        pattern = r'_record_value_debug_stats'
+        pattern = r"_record_value_debug_stats"
         matches = re.findall(pattern, self.code)
         self.check(
             "Debug statistics recording preserved",
             len(matches) >= 10,
-            warning_msg="Fewer debug stats recordings than expected"
+            warning_msg="Fewer debug stats recordings than expected",
         )
 
     def verify_no_regressions(self):
@@ -194,30 +194,30 @@ class ComprehensiveVerifier:
         print("\n=== Regression Checks ===")
 
         # Check 1: Predictions still clipped
-        pattern = r'value_pred_raw_clipped\s*=\s*torch\.clamp'
+        pattern = r"value_pred_raw_clipped\s*=\s*torch\.clamp"
         matches = re.findall(pattern, self.code)
         self.check(
             "Predictions still clipped (no regression)",
             len(matches) >= 1,
-            "Value predictions should still be clipped"
+            "Value predictions should still be clipped",
         )
 
         # Check 2: old_values_raw_tensor still used
-        pattern = r'old_values_raw_tensor'
+        pattern = r"old_values_raw_tensor"
         matches = re.findall(pattern, self.code)
         self.check(
             "old_values_raw_tensor still used (no regression)",
             len(matches) >= 5,
-            "old_values_raw_tensor should still be used for prediction clipping"
+            "old_values_raw_tensor should still be used for prediction clipping",
         )
 
         # Check 3: clip_range_vf checks still present
-        pattern = r'if\s+clip_range_vf'
+        pattern = r"if\s+clip_range_vf"
         matches = re.findall(pattern, self.code)
         self.check(
             "clip_range_vf checks preserved (no regression)",
             len(matches) >= 2,
-            "clip_range_vf conditional checks missing"
+            "clip_range_vf conditional checks missing",
         )
 
     def verify_both_normalize_returns_paths(self):
@@ -225,21 +225,21 @@ class ComprehensiveVerifier:
         print("\n=== Both normalize_returns Paths ===")
 
         # Path 1: normalize_returns=True (uses ret_mu, ret_std)
-        pattern = r'target_returns_norm_raw\s*=\s*\(\s*target_returns_raw\s*-\s*ret_mu_tensor\s*\)\s*/\s*ret_std_tensor'
+        pattern = r"target_returns_norm_raw\s*=\s*\(\s*target_returns_raw\s*-\s*ret_mu_tensor\s*\)\s*/\s*ret_std_tensor"
         matches = re.findall(pattern, self.code)
         self.check(
             "normalize_returns=True path exists",
             len(matches) >= 1,
-            "normalize_returns=True normalization path missing"
+            "normalize_returns=True normalization path missing",
         )
 
         # Path 2: normalize_returns=False (uses base_scale)
-        pattern = r'target_returns_norm_raw\s*=\s*\(\s*\(target_returns_raw\s*/.*base_scale'
+        pattern = r"target_returns_norm_raw\s*=\s*\(\s*\(target_returns_raw\s*/.*base_scale"
         matches = re.findall(pattern, self.code, re.DOTALL)
         self.check(
             "normalize_returns=False path exists",
             len(matches) >= 1,
-            "normalize_returns=False normalization path missing"
+            "normalize_returns=False normalization path missing",
         )
 
     def verify_ppo_formula_documented(self):
@@ -250,19 +250,19 @@ class ComprehensiveVerifier:
         self.check(
             "L^CLIP_VF formula documented",
             "L^CLIP_VF" in self.code,
-            "PPO VF clipping formula not documented"
+            "PPO VF clipping formula not documented",
         )
 
         self.check(
             "V_targ unchanged requirement documented",
             "V_targ must remain unchanged" in self.code,
-            "Requirement that V_targ remains unchanged not documented"
+            "Requirement that V_targ remains unchanged not documented",
         )
 
         self.check(
             "PPO paper reference present",
             "PPO" in self.code and ("formula" in self.code or "paper" in self.code),
-            "PPO paper/formula reference missing"
+            "PPO paper/formula reference missing",
         )
 
     def verify_variable_naming(self):
@@ -273,19 +273,19 @@ class ComprehensiveVerifier:
         self.check(
             "target_returns_norm_raw variable exists",
             "target_returns_norm_raw" in self.code,
-            "target_returns_norm_raw variable missing"
+            "target_returns_norm_raw variable missing",
         )
 
         self.check(
             "target_returns_norm_unclipped variable exists",
             "target_returns_norm_unclipped" in self.code,
-            "target_returns_norm_unclipped variable missing"
+            "target_returns_norm_unclipped variable missing",
         )
 
         self.check(
             "target_returns_norm_raw_selected variable exists",
             "target_returns_norm_raw_selected" in self.code,
-            "target_returns_norm_raw_selected variable missing"
+            "target_returns_norm_raw_selected variable missing",
         )
 
     def find_all_target_usages(self) -> List[Tuple[int, str]]:
@@ -301,10 +301,10 @@ class ComprehensiveVerifier:
         ]
 
         usages = []
-        lines = self.code.split('\n')
+        lines = self.code.split("\n")
         for i, line in enumerate(lines, 1):
             for var in target_vars:
-                if var in line and not line.strip().startswith('#'):
+                if var in line and not line.strip().startswith("#"):
                     usages.append((i, line.strip()))
 
         print(f"Found {len(usages)} target variable usages")
@@ -315,7 +315,7 @@ class ComprehensiveVerifier:
         print("\n=== Unused/Misused Variables ===")
 
         # target_returns_norm_selected should ONLY be used for statistics
-        pattern = r'target_returns_norm_selected'
+        pattern = r"target_returns_norm_selected"
         matches = list(re.finditer(pattern, self.code))
 
         # Count non-statistics usages
@@ -327,23 +327,25 @@ class ComprehensiveVerifier:
             context = self.code[start:end]
 
             # Check if it's for statistics/logging
-            if 'stats' not in context.lower() and 'numel' not in context.lower():
+            if "stats" not in context.lower() and "numel" not in context.lower():
                 # Check if it's the definition line
-                if '=' in context and 'target_returns_norm_selected' in context:
-                    before_equals = context[:context.index('=')]
-                    if 'target_returns_norm_selected' in before_equals:
+                if "=" in context and "target_returns_norm_selected" in context:
+                    before_equals = context[: context.index("=")]
+                    if "target_returns_norm_selected" in before_equals:
                         # This is the definition, not usage
                         continue
 
                 # This might be incorrect usage
-                line_num = self.code[:match.start()].count('\n') + 1
-                print(f"  Line {line_num}: {context[max(0, match.start()-start-20):min(len(context), match.end()-start+20)]}")
+                line_num = self.code[: match.start()].count("\n") + 1
+                print(
+                    f"  Line {line_num}: {context[max(0, match.start()-start-20):min(len(context), match.end()-start+20)]}"
+                )
                 non_stats_usages += 1
 
         self.check(
             "target_returns_norm_selected used only for statistics",
             non_stats_usages <= 2,  # Allow definition lines
-            warning_msg=f"Found {non_stats_usages} non-statistics usages of clipped targets"
+            warning_msg=f"Found {non_stats_usages} non-statistics usages of clipped targets",
         )
 
     def generate_summary(self):
@@ -353,7 +355,9 @@ class ComprehensiveVerifier:
         print("=" * 70)
 
         print(f"\nChecks passed: {self.checks_passed}/{self.checks_total}")
-        success_rate = (self.checks_passed / self.checks_total * 100) if self.checks_total > 0 else 0
+        success_rate = (
+            (self.checks_passed / self.checks_total * 100) if self.checks_total > 0 else 0
+        )
         print(f"Success rate: {success_rate:.1f}%")
 
         if self.issues:
@@ -420,6 +424,7 @@ def main():
     except Exception as e:
         print(f"❌ ERROR: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

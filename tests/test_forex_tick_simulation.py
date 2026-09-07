@@ -11,7 +11,7 @@ Tests cover:
 5. Market conditions and spread dynamics
 6. Session-based tick rates
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 
@@ -21,6 +21,7 @@ from typing import List
 
 import numpy as np
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob.forex_tick_simulation import (
@@ -49,6 +50,7 @@ from lob.forex_tick_simulation import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def tick_config() -> TickSimulationConfig:
     """Create a tick simulation config."""
@@ -76,6 +78,7 @@ def tick_executor(tick_generator: TickGenerator) -> TickLevelExecutor:
 # =============================================================================
 # Tick Tests
 # =============================================================================
+
 
 class TestTick:
     """Tests for Tick dataclass."""
@@ -219,6 +222,7 @@ class TestSpreadState:
 # TickSimulationConfig Tests
 # =============================================================================
 
+
 class TestTickSimulationConfig:
     """Tests for TickSimulationConfig."""
 
@@ -247,6 +251,7 @@ class TestTickSimulationConfig:
 # =============================================================================
 # TickGenerator Tests
 # =============================================================================
+
 
 class TestTickGenerator:
     """Tests for TickGenerator."""
@@ -314,12 +319,8 @@ class TestTickGenerator:
         )
         gen = TickGenerator(config=config, initial_mid=1.1000)
 
-        normal_tick = gen.generate_tick(
-            market_condition=MarketCondition.NORMAL
-        )
-        news_tick = gen.generate_tick(
-            market_condition=MarketCondition.NEWS_EVENT
-        )
+        normal_tick = gen.generate_tick(market_condition=MarketCondition.NORMAL)
+        news_tick = gen.generate_tick(market_condition=MarketCondition.NEWS_EVENT)
 
         # News spread should be wider (usually)
         # Note: stochastic, so we check the mechanism works
@@ -327,10 +328,12 @@ class TestTickGenerator:
 
     def test_generate_tick_stream(self, tick_generator: TickGenerator) -> None:
         """Test generating tick stream."""
-        ticks = list(tick_generator.generate_tick_stream(
-            duration_sec=1.0,
-            start_timestamp_ns=time.time_ns(),
-        ))
+        ticks = list(
+            tick_generator.generate_tick_stream(
+                duration_sec=1.0,
+                start_timestamp_ns=time.time_ns(),
+            )
+        )
 
         # Should have multiple ticks
         assert len(ticks) > 0
@@ -345,10 +348,12 @@ class TestTickGenerator:
         for session in ["sydney", "london", "new_york"]:
             config = TickSimulationConfig(session=session, seed=42)
             gen = TickGenerator(config=config, initial_mid=1.10)
-            ticks = list(gen.generate_tick_stream(
-                duration_sec=5.0,
-                start_timestamp_ns=1000000000,
-            ))
+            ticks = list(
+                gen.generate_tick_stream(
+                    duration_sec=5.0,
+                    start_timestamp_ns=1000000000,
+                )
+            )
             ticks_by_session[session] = len(ticks)
 
         # London should have more ticks than Sydney
@@ -376,6 +381,7 @@ class TestTickGenerator:
 # =============================================================================
 # TickLevelExecutor Tests
 # =============================================================================
+
 
 class TestTickLevelExecutor:
     """Tests for TickLevelExecutor."""
@@ -563,6 +569,7 @@ class TestTickLevelExecutor:
 # TickPriceImpact Tests
 # =============================================================================
 
+
 class TestTickPriceImpact:
     """Tests for TickPriceImpact model."""
 
@@ -696,6 +703,7 @@ class TestTickPriceImpact:
 # Factory Function Tests
 # =============================================================================
 
+
 class TestCreateTickSimulator:
     """Tests for create_tick_simulator factory."""
 
@@ -743,6 +751,7 @@ class TestCreateTickSimulator:
 # Integration Tests
 # =============================================================================
 
+
 class TestTickSimulationIntegration:
     """Integration tests for tick simulation."""
 
@@ -756,10 +765,12 @@ class TestTickSimulationIntegration:
         )
 
         # Generate ticks for 10 seconds
-        ticks = list(gen.generate_tick_stream(
-            duration_sec=10.0,
-            start_timestamp_ns=time.time_ns(),
-        ))
+        ticks = list(
+            gen.generate_tick_stream(
+                duration_sec=10.0,
+                start_timestamp_ns=time.time_ns(),
+            )
+        )
 
         assert len(ticks) > 10
 
@@ -830,6 +841,7 @@ class TestTickSimulationIntegration:
 # =============================================================================
 # Edge Case Tests
 # =============================================================================
+
 
 class TestTickSimulationEdgeCases:
     """Edge case tests for tick simulation."""

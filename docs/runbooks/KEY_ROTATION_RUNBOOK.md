@@ -41,6 +41,7 @@ print(km.get_key_info())
 ```
 
 Expected output:
+
 ```
 {
   'platform': 'Linux',
@@ -389,24 +390,31 @@ assert is_valid, "Pack signature verification failed"
 ### 7.1 Common Issues
 
 **Issue: Keychain not available**
+
 ```
 KeychainNotAvailableError: OS keychain not available
 ```
+
 Solution: Install OS keychain support
+
 - macOS: Built-in
 - Linux: `apt install gnome-keyring` or `secret-tool`
 - Windows: Built-in Credential Manager
 
 **Issue: Signature verification fails**
+
 ```
 VerificationError: Invalid signature
 ```
+
 Solution: Check that the correct public key is configured
 
 **Issue: Key file permission denied**
+
 ```
 PermissionError: [Errno 13] Permission denied
 ```
+
 Solution: Check file permissions (should be 0600 for private keys)
 
 ### 7.2 Recovery Procedures

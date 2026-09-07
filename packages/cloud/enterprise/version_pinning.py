@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class PinType(Enum):
     """Type of version pin."""
+
     EXACT = "exact"  # Pin to exact version
     MAJOR = "major"  # Pin to major version (e.g., 1.x.x)
     MINOR = "minor"  # Pin to minor version (e.g., 1.2.x)
@@ -39,6 +40,7 @@ class PinType(Enum):
 
 class PinScope(Enum):
     """Scope of version pin."""
+
     GLOBAL = "global"  # All agents
     ORGANIZATION = "organization"  # Organization-wide
     WORKSPACE = "workspace"  # Workspace-specific
@@ -47,6 +49,7 @@ class PinScope(Enum):
 
 class WindowType(Enum):
     """Type of change window."""
+
     MAINTENANCE = "maintenance"  # Regular maintenance window
     EMERGENCY = "emergency"  # Emergency updates (bypasses restrictions)
     BLACKOUT = "blackout"  # No changes allowed
@@ -55,6 +58,7 @@ class WindowType(Enum):
 @dataclass
 class VersionConstraint:
     """Version constraint definition."""
+
     id: UUID = field(default_factory=uuid4)
     name: str = ""
 
@@ -119,6 +123,7 @@ class VersionConstraint:
 @dataclass
 class ChangeWindow:
     """Change window definition."""
+
     id: UUID = field(default_factory=uuid4)
     name: str = ""
     window_type: WindowType = WindowType.MAINTENANCE
@@ -174,6 +179,7 @@ class ChangeWindow:
 @dataclass
 class VersionPinConfig:
     """Configuration for version pinning manager."""
+
     # Global constraints
     global_min_version: str = "0.9.0"
     global_max_version: str = ""  # Empty = no max
@@ -215,6 +221,7 @@ class VersionPinConfig:
 @dataclass
 class VersionCheckResult:
     """Result of version compatibility check."""
+
     is_allowed: bool = False
     reason: str = ""
     constraint_id: Optional[UUID] = None
@@ -246,7 +253,9 @@ class VersionCheckResult:
             "min_allowed": self.min_allowed,
             "max_allowed": self.max_allowed,
             "in_change_window": self.in_change_window,
-            "next_window_start": self.next_window_start.isoformat() if self.next_window_start else None,
+            "next_window_start": (
+                self.next_window_start.isoformat() if self.next_window_start else None
+            ),
             "recommended_version": self.recommended_version,
             "requires_approval": self.requires_approval,
         }
@@ -482,9 +491,7 @@ class VersionPinningManager:
         )
 
         # Get applicable constraints
-        constraints = self._get_applicable_constraints(
-            agent_id, workspace_id, organization_id
-        )
+        constraints = self._get_applicable_constraints(agent_id, workspace_id, organization_id)
 
         # Check each constraint
         for constraint in constraints:
@@ -496,9 +503,7 @@ class VersionPinningManager:
                 continue
 
             # Check version against constraint
-            allowed, reason = self._check_constraint(
-                constraint, current_version, target_version
-            )
+            allowed, reason = self._check_constraint(constraint, current_version, target_version)
 
             if not allowed:
                 result.is_allowed = False
@@ -512,9 +517,7 @@ class VersionPinningManager:
                 # Notify
                 if self._on_version_blocked:
                     try:
-                        self._on_version_blocked(
-                            agent_id, target_version, reason
-                        )
+                        self._on_version_blocked(agent_id, target_version, reason)
                     except Exception as e:
                         logger.error(f"Version blocked callback error: {e}")
 
@@ -527,9 +530,7 @@ class VersionPinningManager:
 
         # Check change window
         if self.config.enable_change_windows and not is_emergency:
-            in_window, next_start = self._check_change_window(
-                workspace_id, organization_id
-            )
+            in_window, next_start = self._check_change_window(workspace_id, organization_id)
             result.in_change_window = in_window
             result.next_window_start = next_start
 
@@ -567,12 +568,18 @@ class VersionPinningManager:
             if self.config.global_min_schema_version:
                 min_v = pkg_version.parse(self.config.global_min_schema_version)
                 if schema_v < min_v:
-                    return False, f"Schema version {schema_version} below minimum {self.config.global_min_schema_version}"
+                    return (
+                        False,
+                        f"Schema version {schema_version} below minimum {self.config.global_min_schema_version}",
+                    )
 
             if self.config.global_max_schema_version:
                 max_v = pkg_version.parse(self.config.global_max_schema_version)
                 if schema_v > max_v:
-                    return False, f"Schema version {schema_version} above maximum {self.config.global_max_schema_version}"
+                    return (
+                        False,
+                        f"Schema version {schema_version} above maximum {self.config.global_max_schema_version}",
+                    )
 
             # Check workspace constraints
             if workspace_id:
@@ -610,9 +617,7 @@ class VersionPinningManager:
         Returns:
             (min_version, max_version, excluded_versions)
         """
-        constraints = self._get_applicable_constraints(
-            agent_id, workspace_id, organization_id
-        )
+        constraints = self._get_applicable_constraints(agent_id, workspace_id, organization_id)
 
         min_version = self.config.global_min_version
         max_version = self.config.global_max_version
@@ -624,12 +629,18 @@ class VersionPinningManager:
 
             # Most restrictive min
             if constraint.min_version:
-                if not min_version or self._compare_versions(constraint.min_version, min_version) > 0:
+                if (
+                    not min_version
+                    or self._compare_versions(constraint.min_version, min_version) > 0
+                ):
                     min_version = constraint.min_version
 
             # Most restrictive max
             if constraint.max_version:
-                if not max_version or self._compare_versions(constraint.max_version, max_version) < 0:
+                if (
+                    not max_version
+                    or self._compare_versions(constraint.max_version, max_version) < 0
+                ):
                     max_version = constraint.max_version
 
             # Union of excluded
@@ -701,7 +712,8 @@ class VersionPinningManager:
 
         if workspace_id:
             constraints = [
-                c for c in constraints
+                c
+                for c in constraints
                 if c.workspace_id == workspace_id or c.pin_scope == PinScope.GLOBAL
             ]
 
@@ -719,10 +731,7 @@ class VersionPinningManager:
         windows = list(self._windows.values())
 
         if workspace_id:
-            windows = [
-                w for w in windows
-                if w.workspace_id == workspace_id or not w.workspace_id
-            ]
+            windows = [w for w in windows if w.workspace_id == workspace_id or not w.workspace_id]
 
         if active_only:
             windows = [w for w in windows if w.is_active]
@@ -750,13 +759,9 @@ class VersionPinningManager:
         """Get statistics."""
         return {
             "total_constraints": len(self._constraints),
-            "active_constraints": sum(
-                1 for c in self._constraints.values() if c.is_active
-            ),
+            "active_constraints": sum(1 for c in self._constraints.values() if c.is_active),
             "total_windows": len(self._windows),
-            "active_windows": sum(
-                1 for w in self._windows.values() if w.is_active
-            ),
+            "active_windows": sum(1 for w in self._windows.values() if w.is_active),
             "config": self.config.to_dict(),
         }
 
@@ -944,17 +949,13 @@ class VersionPinningManager:
         # Check today
         if now.weekday() in window.days_of_week:
             if now.time() < window.start_time:
-                return datetime.combine(
-                    current_date, window.start_time, tzinfo=timezone.utc
-                )
+                return datetime.combine(current_date, window.start_time, tzinfo=timezone.utc)
 
         # Find next valid day
         for i in range(1, 8):
             next_date = current_date + timedelta(days=i)
             if next_date.weekday() in window.days_of_week:
-                return datetime.combine(
-                    next_date, window.start_time, tzinfo=timezone.utc
-                )
+                return datetime.combine(next_date, window.start_time, tzinfo=timezone.utc)
 
         return None
 

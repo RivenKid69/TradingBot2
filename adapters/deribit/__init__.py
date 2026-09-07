@@ -137,6 +137,7 @@ __all__ = [
 # Registry Registration
 # =========================
 
+
 def _register_deribit_adapters() -> None:
     """Register Deribit adapters with the global registry."""
     try:

@@ -48,17 +48,13 @@ class TestApprovalRequest:
 
     def test_is_expired_false_initially(self):
         """Test request is not expired initially."""
-        request = ApprovalRequest(
-            expires_at=datetime.utcnow() + timedelta(minutes=5)
-        )
+        request = ApprovalRequest(expires_at=datetime.utcnow() + timedelta(minutes=5))
 
         assert request.is_expired is False
 
     def test_is_expired_true_after_timeout(self):
         """Test request is expired after timeout."""
-        request = ApprovalRequest(
-            expires_at=datetime.utcnow() - timedelta(minutes=1)
-        )
+        request = ApprovalRequest(expires_at=datetime.utcnow() - timedelta(minutes=1))
 
         assert request.is_expired is True
 

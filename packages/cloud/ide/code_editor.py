@@ -44,16 +44,18 @@ MAX_CONCURRENT_EDITORS: Final[int] = 10
 EDITOR_SESSION_TIMEOUT: Final[int] = 60
 
 # Supported languages
-SUPPORTED_LANGUAGES: Final[frozenset] = frozenset({
-    "python",
-    "yaml",
-    "json",
-    "markdown",
-    "toml",
-    "ini",
-    "shell",
-    "dockerfile",
-})
+SUPPORTED_LANGUAGES: Final[frozenset] = frozenset(
+    {
+        "python",
+        "yaml",
+        "json",
+        "markdown",
+        "toml",
+        "ini",
+        "shell",
+        "dockerfile",
+    }
+)
 
 
 # ============================================================================
@@ -63,6 +65,7 @@ SUPPORTED_LANGUAGES: Final[frozenset] = frozenset({
 
 class Language(str, Enum):
     """Supported programming languages."""
+
     PYTHON = "python"
     YAML = "yaml"
     JSON = "json"
@@ -76,6 +79,7 @@ class Language(str, Enum):
 
 class ChangeType(str, Enum):
     """Type of file change."""
+
     INSERT = "insert"
     DELETE = "delete"
     REPLACE = "replace"
@@ -83,6 +87,7 @@ class ChangeType(str, Enum):
 
 class DiagnosticSeverity(str, Enum):
     """Diagnostic message severity (LSP-compatible)."""
+
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"
@@ -97,6 +102,7 @@ class DiagnosticSeverity(str, Enum):
 @dataclass
 class Position:
     """Position in a text document (0-indexed)."""
+
     line: int
     character: int
 
@@ -111,6 +117,7 @@ class Position:
 @dataclass
 class Range:
     """Range in a text document."""
+
     start: Position
     end: Position
 
@@ -132,6 +139,7 @@ class FileChange:
 
     Supports Operational Transformation for collaborative editing.
     """
+
     change_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     change_type: ChangeType = ChangeType.INSERT
     range: Range = field(default_factory=lambda: Range(Position(0, 0), Position(0, 0)))
@@ -158,7 +166,11 @@ class FileChange:
             change_type=ChangeType(data["change_type"]),
             range=Range.from_dict(data["range"]),
             text=data.get("text", ""),
-            timestamp=datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else datetime.now(timezone.utc),
+            timestamp=(
+                datetime.fromisoformat(data["timestamp"])
+                if "timestamp" in data
+                else datetime.now(timezone.utc)
+            ),
             user_id=UUID(data["user_id"]) if data.get("user_id") else None,
             version=data.get("version", 0),
         )
@@ -167,6 +179,7 @@ class FileChange:
 @dataclass
 class Diagnostic:
     """Diagnostic message (error, warning, etc.)."""
+
     range: Range
     severity: DiagnosticSeverity
     message: str
@@ -186,6 +199,7 @@ class Diagnostic:
 @dataclass
 class CompletionItem:
     """Code completion suggestion."""
+
     label: str
     kind: str = "text"  # text, function, class, variable, etc.
     detail: Optional[str] = None
@@ -211,6 +225,7 @@ class EditorSession:
 
     Tracks file content, changes, and collaborative cursors.
     """
+
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     workspace_id: UUID = field(default_factory=uuid.uuid4)
     user_id: UUID = field(default_factory=uuid.uuid4)
@@ -258,6 +273,7 @@ class EditorSession:
 @dataclass
 class SyntaxToken:
     """Token for syntax highlighting."""
+
     start: int
     end: int
     token_type: str  # keyword, string, comment, number, etc.
@@ -278,35 +294,38 @@ class SyntaxHighlighter:
 
     # Python syntax patterns
     PYTHON_PATTERNS = [
-        (r'\b(def|class|if|elif|else|for|while|try|except|finally|with|as|import|from|return|yield|raise|break|continue|pass|lambda|and|or|not|in|is|True|False|None|async|await)\b', "keyword"),
-        (r'\b(self|cls)\b', "variable.language"),
-        (r'@\w+', "decorator"),
-        (r'#.*$', "comment"),
+        (
+            r"\b(def|class|if|elif|else|for|while|try|except|finally|with|as|import|from|return|yield|raise|break|continue|pass|lambda|and|or|not|in|is|True|False|None|async|await)\b",
+            "keyword",
+        ),
+        (r"\b(self|cls)\b", "variable.language"),
+        (r"@\w+", "decorator"),
+        (r"#.*$", "comment"),
         (r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'', "string.docstring"),
         (r'"[^"\\]*(?:\\.[^"\\]*)*"|\'[^\'\\]*(?:\\.[^\'\\]*)*\'', "string"),
-        (r'\b\d+\.?\d*(?:[eE][+-]?\d+)?\b', "number"),
-        (r'\b[A-Z][A-Z0-9_]*\b', "constant"),
-        (r'\b[A-Z][a-zA-Z0-9]*\b', "type"),
-        (r'\b__\w+__\b', "variable.special"),
+        (r"\b\d+\.?\d*(?:[eE][+-]?\d+)?\b", "number"),
+        (r"\b[A-Z][A-Z0-9_]*\b", "constant"),
+        (r"\b[A-Z][a-zA-Z0-9]*\b", "type"),
+        (r"\b__\w+__\b", "variable.special"),
     ]
 
     # YAML syntax patterns
     YAML_PATTERNS = [
-        (r'#.*$', "comment"),
-        (r'^[\s]*[\w_-]+(?=\s*:)', "property"),
-        (r':\s*$', "punctuation"),
+        (r"#.*$", "comment"),
+        (r"^[\s]*[\w_-]+(?=\s*:)", "property"),
+        (r":\s*$", "punctuation"),
         (r'"[^"]*"|\'[^\']*\'', "string"),
-        (r'\b(true|false|null|yes|no|on|off)\b', "keyword"),
-        (r'\b\d+\.?\d*\b', "number"),
-        (r'^\s*-\s', "punctuation"),
+        (r"\b(true|false|null|yes|no|on|off)\b", "keyword"),
+        (r"\b\d+\.?\d*\b", "number"),
+        (r"^\s*-\s", "punctuation"),
     ]
 
     # JSON syntax patterns
     JSON_PATTERNS = [
         (r'"[^"\\]*(?:\\.[^"\\]*)*"\s*:', "property"),
         (r'"[^"\\]*(?:\\.[^"\\]*)*"', "string"),
-        (r'\b(true|false|null)\b', "keyword"),
-        (r'-?\b\d+\.?\d*(?:[eE][+-]?\d+)?\b', "number"),
+        (r"\b(true|false|null)\b", "keyword"),
+        (r"-?\b\d+\.?\d*(?:[eE][+-]?\d+)?\b", "number"),
     ]
 
     def __init__(self):
@@ -715,10 +734,10 @@ class CodeEditorService:
         if position.line >= len(lines):
             return completions
 
-        line = lines[position.line][:position.character]
+        line = lines[position.line][: position.character]
 
         # Extract word prefix
-        word_match = re.search(r'(\w+)$', line)
+        word_match = re.search(r"(\w+)$", line)
         prefix = word_match.group(1).lower() if word_match else ""
 
         # Built-in completions
@@ -748,21 +767,27 @@ class CodeEditorService:
 
         for label, kind, doc in builtins:
             if label.lower().startswith(prefix):
-                completions.append(CompletionItem(
-                    label=label,
-                    kind=kind,
-                    documentation=doc,
-                ))
+                completions.append(
+                    CompletionItem(
+                        label=label,
+                        kind=kind,
+                        documentation=doc,
+                    )
+                )
 
         # Add variables from content
-        var_pattern = re.compile(r'\b([a-z_][a-z0-9_]*)\s*=', re.IGNORECASE)
+        var_pattern = re.compile(r"\b([a-z_][a-z0-9_]*)\s*=", re.IGNORECASE)
         for match in var_pattern.finditer(content):
             var_name = match.group(1)
-            if var_name.lower().startswith(prefix) and var_name not in [c.label for c in completions]:
-                completions.append(CompletionItem(
-                    label=var_name,
-                    kind="variable",
-                ))
+            if var_name.lower().startswith(prefix) and var_name not in [
+                c.label for c in completions
+            ]:
+                completions.append(
+                    CompletionItem(
+                        label=var_name,
+                        kind="variable",
+                    )
+                )
 
         return completions[:50]  # Limit suggestions
 
@@ -775,42 +800,48 @@ class CodeEditorService:
         except SyntaxError as e:
             line = (e.lineno or 1) - 1
             col = (e.offset or 1) - 1
-            diagnostics.append(Diagnostic(
-                range=Range(
-                    start=Position(line=line, character=col),
-                    end=Position(line=line, character=col + 1),
-                ),
-                severity=DiagnosticSeverity.ERROR,
-                message=str(e.msg),
-                source="python",
-            ))
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=line, character=col),
+                        end=Position(line=line, character=col + 1),
+                    ),
+                    severity=DiagnosticSeverity.ERROR,
+                    message=str(e.msg),
+                    source="python",
+                )
+            )
 
         # Check for common issues
         lines = content.split("\n")
         for i, line in enumerate(lines):
             # Trailing whitespace
             if line.rstrip() != line and line.strip():
-                diagnostics.append(Diagnostic(
-                    range=Range(
-                        start=Position(line=i, character=len(line.rstrip())),
-                        end=Position(line=i, character=len(line)),
-                    ),
-                    severity=DiagnosticSeverity.HINT,
-                    message="Trailing whitespace",
-                    source="style",
-                ))
+                diagnostics.append(
+                    Diagnostic(
+                        range=Range(
+                            start=Position(line=i, character=len(line.rstrip())),
+                            end=Position(line=i, character=len(line)),
+                        ),
+                        severity=DiagnosticSeverity.HINT,
+                        message="Trailing whitespace",
+                        source="style",
+                    )
+                )
 
             # Line too long
             if len(line) > 120:
-                diagnostics.append(Diagnostic(
-                    range=Range(
-                        start=Position(line=i, character=120),
-                        end=Position(line=i, character=len(line)),
-                    ),
-                    severity=DiagnosticSeverity.WARNING,
-                    message="Line too long (>120 characters)",
-                    source="style",
-                ))
+                diagnostics.append(
+                    Diagnostic(
+                        range=Range(
+                            start=Position(line=i, character=120),
+                            end=Position(line=i, character=len(line)),
+                        ),
+                        severity=DiagnosticSeverity.WARNING,
+                        message="Line too long (>120 characters)",
+                        source="style",
+                    )
+                )
 
         return diagnostics
 

@@ -70,9 +70,7 @@ def test_extract_payload_supports_various_meta_containers(executor: BarExecutor)
         def __init__(self, payload: object) -> None:
             self.payload = payload
 
-    dict_result = executor._extract_payload(
-        {"payload": {"delta_weight": 0.1, "edge_bps": 9}}
-    )
+    dict_result = executor._extract_payload({"payload": {"delta_weight": 0.1, "edge_bps": 9}})
     model_result = executor._extract_payload({"payload": DumpingPayload()})
     envelope_direct = executor._extract_payload(envelope)
     envelope_nested = executor._extract_payload({"payload": envelope})
@@ -145,4 +143,3 @@ def test_normalize_symbol_specs_recognizes_aliases_and_sanitizes(
     assert ada_spec.min_notional == Decimal("0")
     assert ada_spec.step_size == Decimal("0")
     assert ada_spec.tick_size == Decimal("0")
-

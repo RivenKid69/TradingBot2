@@ -82,9 +82,14 @@ def _collect_stats(env, regime: str, steps: int) -> Dict[str, np.ndarray]:
     }
 
 
-def compare_regime_distributions(env, reference_path: str, n_steps: int = 1000, tolerance: float = 0.1,
-                                 quantiles: Tuple[float, ...] = (0.25, 0.5, 0.75),
-                                 raise_on_fail: bool = True) -> Tuple[Dict[str, Dict[str, float]], bool]:
+def compare_regime_distributions(
+    env,
+    reference_path: str,
+    n_steps: int = 1000,
+    tolerance: float = 0.1,
+    quantiles: Tuple[float, ...] = (0.25, 0.5, 0.75),
+    raise_on_fail: bool = True,
+) -> Tuple[Dict[str, Dict[str, float]], bool]:
     """Compare sampled regime distributions with reference quantiles.
 
     Returns a dictionary of metrics and a boolean flag whether all metrics are within tolerance.
@@ -113,6 +118,7 @@ def make_env(use_dummy: bool):
     if not use_dummy:
         try:
             from trading_patchnew import TradingEnv  # type: ignore
+
             return _wrap_action_space_if_needed(TradingEnv())
         except Exception:
             print("⚠️  Falling back to dummy environment")
@@ -121,14 +127,24 @@ def make_env(use_dummy: bool):
 
 def main(argv=None) -> bool:
     parser = argparse.ArgumentParser(description="Validate regime distributions")
-    parser.add_argument("--ref", default="configs/reference_regime_distributions.json", help="Path to reference JSON")
+    parser.add_argument(
+        "--ref",
+        default="configs/reference_regime_distributions.json",
+        help="Path to reference JSON",
+    )
     parser.add_argument("--steps", type=int, default=1000, help="Number of samples per regime")
-    parser.add_argument("--tolerance", type=float, default=0.1, help="Maximum allowed relative diff")
-    parser.add_argument("--use-dummy-env", action="store_true", help="Force using dummy environment")
+    parser.add_argument(
+        "--tolerance", type=float, default=0.1, help="Maximum allowed relative diff"
+    )
+    parser.add_argument(
+        "--use-dummy-env", action="store_true", help="Force using dummy environment"
+    )
     args = parser.parse_args(argv)
 
     env = make_env(args.use_dummy_env or os.getenv("USE_DUMMY_ENV") == "1")
-    metrics, ok = compare_regime_distributions(env, args.ref, args.steps, args.tolerance, raise_on_fail=False)
+    metrics, ok = compare_regime_distributions(
+        env, args.ref, args.steps, args.tolerance, raise_on_fail=False
+    )
     for regime, vals in metrics.items():
         print(f"Regime: {regime}")
         for name, value in vals.items():
@@ -142,6 +158,7 @@ def main(argv=None) -> bool:
 
 if __name__ == "__main__":  # pragma: no cover - CLI
     import sys
+
     success = main()
     if not success:
         sys.exit(1)

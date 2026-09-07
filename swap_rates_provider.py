@@ -23,7 +23,7 @@ References:
 - OANDA Financing Documentation
 - "Currency Carry Trade" - Burnside et al. (2011)
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 Version: 1.0.0
 """
@@ -45,6 +45,7 @@ import pandas as pd
 # Optional dependencies
 try:
     import requests
+
     HAS_REQUESTS = True
 except ImportError:
     HAS_REQUESTS = False
@@ -70,14 +71,14 @@ TRIPLE_ROLLOVER_DAYS = [2]  # Wednesday (0=Monday)
 # Major currency interest rates (as of late 2024)
 # These serve as fallback when live data unavailable
 DEFAULT_RATES: Dict[str, float] = {
-    "USD": 5.25,   # Federal Funds Rate
-    "EUR": 4.00,   # ECB Deposit Rate
-    "GBP": 5.25,   # BOE Bank Rate
+    "USD": 5.25,  # Federal Funds Rate
+    "EUR": 4.00,  # ECB Deposit Rate
+    "GBP": 5.25,  # BOE Bank Rate
     "JPY": -0.10,  # BOJ Policy Rate
-    "CHF": 1.50,   # SNB Policy Rate
-    "AUD": 4.35,   # RBA Cash Rate
-    "CAD": 5.00,   # BOC Policy Rate
-    "NZD": 5.50,   # RBNZ OCR
+    "CHF": 1.50,  # SNB Policy Rate
+    "AUD": 4.35,  # RBA Cash Rate
+    "CAD": 5.00,  # BOC Policy Rate
+    "NZD": 5.50,  # RBNZ OCR
 }
 
 # Default cache directory
@@ -87,6 +88,7 @@ DEFAULT_SWAP_CACHE_DIR = "data/swap_cache"
 # =============================================================================
 # DATA CLASSES
 # =============================================================================
+
 
 @dataclass
 class SwapRates:
@@ -102,6 +104,7 @@ class SwapRates:
         timestamp: When rates were fetched
         source: Data source
     """
+
     symbol: str
     long_swap_pips: float
     short_swap_pips: float
@@ -198,6 +201,7 @@ class SwapRates:
 @dataclass
 class SwapProviderConfig:
     """Configuration for swap rate providers."""
+
     oanda_api_key: Optional[str] = None
     oanda_account_id: Optional[str] = None
     practice: bool = True
@@ -210,6 +214,7 @@ class SwapProviderConfig:
 # =============================================================================
 # BASE SWAP PROVIDER
 # =============================================================================
+
 
 class SwapRatesProvider(ABC):
     """Abstract base class for swap rate providers."""
@@ -251,6 +256,7 @@ class SwapRatesProvider(ABC):
 # =============================================================================
 # INTEREST RATE BASED PROVIDER
 # =============================================================================
+
 
 class InterestRateSwapProvider(SwapRatesProvider):
     """
@@ -391,18 +397,21 @@ class InterestRateSwapProvider(SwapRatesProvider):
             return pd.DataFrame()
 
         # Generate daily entries
-        dates = pd.date_range(start=start_date, end=end_date, freq='D', tz=timezone.utc)
+        dates = pd.date_range(start=start_date, end=end_date, freq="D", tz=timezone.utc)
 
-        return pd.DataFrame({
-            'timestamp': dates,
-            'long_swap': [swaps.long_swap_pips] * len(dates),
-            'short_swap': [swaps.short_swap_pips] * len(dates),
-        })
+        return pd.DataFrame(
+            {
+                "timestamp": dates,
+                "long_swap": [swaps.long_swap_pips] * len(dates),
+                "short_swap": [swaps.short_swap_pips] * len(dates),
+            }
+        )
 
 
 # =============================================================================
 # OANDA SWAP PROVIDER
 # =============================================================================
+
 
 class OandaSwapProvider(SwapRatesProvider):
     """
@@ -536,18 +545,21 @@ class OandaSwapProvider(SwapRatesProvider):
         if swaps is None:
             return pd.DataFrame()
 
-        dates = pd.date_range(start=start_date, end=end_date, freq='D', tz=timezone.utc)
+        dates = pd.date_range(start=start_date, end=end_date, freq="D", tz=timezone.utc)
 
-        return pd.DataFrame({
-            'timestamp': dates,
-            'long_swap': [swaps.long_swap_pips] * len(dates),
-            'short_swap': [swaps.short_swap_pips] * len(dates),
-        })
+        return pd.DataFrame(
+            {
+                "timestamp": dates,
+                "long_swap": [swaps.long_swap_pips] * len(dates),
+                "short_swap": [swaps.short_swap_pips] * len(dates),
+            }
+        )
 
 
 # =============================================================================
 # CACHED SWAP PROVIDER
 # =============================================================================
+
 
 class CachedSwapProvider(SwapRatesProvider):
     """
@@ -626,22 +638,26 @@ class CachedSwapProvider(SwapRatesProvider):
         if end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=timezone.utc)
 
-        swaps = [s for s in self._cache[key]
-                 if s.timestamp and start_date <= s.timestamp <= end_date]
+        swaps = [
+            s for s in self._cache[key] if s.timestamp and start_date <= s.timestamp <= end_date
+        ]
 
         if not swaps:
             return pd.DataFrame()
 
-        return pd.DataFrame({
-            'timestamp': [s.timestamp for s in swaps],
-            'long_swap': [s.long_swap_pips for s in swaps],
-            'short_swap': [s.short_swap_pips for s in swaps],
-        })
+        return pd.DataFrame(
+            {
+                "timestamp": [s.timestamp for s in swaps],
+                "long_swap": [s.long_swap_pips for s in swaps],
+                "short_swap": [s.short_swap_pips for s in swaps],
+            }
+        )
 
 
 # =============================================================================
 # UNIFIED SWAP RATES INTERFACE
 # =============================================================================
+
 
 class SwapRatesManager:
     """
@@ -735,6 +751,7 @@ class SwapRatesManager:
 # =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
+
 
 def calculate_carry_cost(
     symbol: str,

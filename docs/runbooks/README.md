@@ -40,6 +40,7 @@ This directory contains operational runbooks for incident response, recovery pro
 > **DEPLOYMENT-SPECIFIC CONFIGURATION REQUIRED**
 >
 > The contacts below are **template placeholders**. Before production use:
+>
 > 1. Copy this file to your deployment-specific runbooks directory
 > 2. Replace all `@example.com` addresses with actual team contacts
 > 3. Verify contacts are reachable and on-call schedules are active
@@ -54,6 +55,7 @@ This directory contains operational runbooks for incident response, recovery pro
 | Platform Lead | `<CONFIGURE: platform@your-domain.com>` | Major outages |
 
 **Environment Variable Override** (recommended for automation):
+
 ```bash
 # Set in deployment environment
 CCEA_OPS_CONTACT="ops@your-domain.com"

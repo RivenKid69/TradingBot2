@@ -42,6 +42,7 @@ class TestPhase1ModuleImports:
             MultiClientIncidentCoordinator,
             create_incident_coordinator,
         )
+
         assert DORAuditReadiness is not None
         assert AuditType is not None
 
@@ -63,6 +64,7 @@ class TestPhase1ModuleImports:
             DORAProviderInfoPackage,
             create_provider_info_package,
         )
+
         assert DORAProviderInfoPackage is not None
         assert ICTServiceType is not None
 
@@ -86,6 +88,7 @@ class TestPhase1ModuleImports:
             get_audit_scope_areas,
             get_report_types,
         )
+
         assert PooledAuditSupport is not None
         assert AuditReportType is not None
 
@@ -101,6 +104,7 @@ class TestPhase1ModuleImports:
             DORAComplianceReport,
             DORAComplianceDashboard,
         )
+
         assert DORAComplianceDashboard is not None
         assert IssueSeverity is not None
 
@@ -128,12 +132,15 @@ class TestPhase1DoraIntegrationImports:
             DORAComplianceDashboard,
             IssueSeverity,
         )
-        assert all([
-            DORAuditReadiness,
-            DORAProviderInfoPackage,
-            PooledAuditSupport,
-            DORAComplianceDashboard,
-        ])
+
+        assert all(
+            [
+                DORAuditReadiness,
+                DORAProviderInfoPackage,
+                PooledAuditSupport,
+                DORAComplianceDashboard,
+            ]
+        )
 
 
 class TestPhase1BackwardCompatibility:
@@ -148,6 +155,7 @@ class TestPhase1BackwardCompatibility:
             EvidenceType,
             create_audit_readiness,
         )
+
         service = create_audit_readiness()
         assert isinstance(service, DORAuditReadiness)
 
@@ -159,6 +167,7 @@ class TestPhase1BackwardCompatibility:
             PooledAuditStatus,
             create_pooled_audit_support,
         )
+
         service = create_pooled_audit_support()
         assert isinstance(service, PooledAuditSupport)
 
@@ -171,6 +180,7 @@ class TestPhase1BackwardCompatibility:
             ComplianceIssue,
             Deadline,
         )
+
         dashboard = DORAComplianceDashboard(current_phase=4)
         assert dashboard is not None
 
@@ -180,6 +190,7 @@ class TestPhase1BackwardCompatibility:
             MultiClientIncidentCoordinator,
             create_incident_coordinator,
         )
+
         coordinator = create_incident_coordinator()
         assert isinstance(coordinator, MultiClientIncidentCoordinator)
 
@@ -194,6 +205,7 @@ class TestPhase1BasicFunctionality:
             AuditType,
             AuditScope,
         )
+
         service = DORAuditReadiness()
         request = service.create_audit_request(
             requesting_entity="TEST-BANK-001",
@@ -212,6 +224,7 @@ class TestPhase1BasicFunctionality:
             AuditReportType,
             AuditScopeArea,
         )
+
         service = PooledAuditSupport()
         cert = service.register_certification(
             certification_type=AuditReportType.ISO27001,
@@ -232,6 +245,7 @@ class TestPhase1BasicFunctionality:
             IssueSeverity,
             DeadlineStatus,
         )
+
         dashboard = DORAComplianceDashboard(current_phase=4, target_phase=5)
 
         # Add deadline
@@ -265,6 +279,7 @@ class TestPhase1BasicFunctionality:
         from services.dora_integration.due_diligence import (
             create_incident_coordinator,
         )
+
         coordinator = create_incident_coordinator()
         incident = coordinator.create_incident(
             incident_type="SERVICE_DEGRADATION",
@@ -282,6 +297,7 @@ class TestPhase1BasicFunctionality:
             ServiceDescription,
             ICTServiceType,
         )
+
         service = DORAProviderInfoPackage()
         # Add service to package using ServiceDescription object
         svc_desc = ServiceDescription(
@@ -292,8 +308,7 @@ class TestPhase1BasicFunctionality:
         )
         service.add_service(svc_desc)
         package = service.generate_package(
-            client_id="CLIENT-001",
-            client_name="Test Financial Entity"
+            client_id="CLIENT-001", client_name="Test Financial Entity"
         )
         assert package.package_id
 
@@ -304,6 +319,7 @@ class TestPhase1ClassInstantiation:
     def test_dora_audit_readiness_instantiation(self):
         """Test DORAuditReadiness instantiation."""
         from services.dora_integration.due_diligence import DORAuditReadiness
+
         service = DORAuditReadiness()
         assert service is not None
         assert service.config is not None
@@ -311,12 +327,14 @@ class TestPhase1ClassInstantiation:
     def test_pooled_audit_support_instantiation(self):
         """Test PooledAuditSupport instantiation."""
         from services.dora_integration.due_diligence import PooledAuditSupport
+
         service = PooledAuditSupport()
         assert service is not None
 
     def test_compliance_dashboard_instantiation(self):
         """Test DORAComplianceDashboard instantiation."""
         from services.dora_integration.due_diligence import DORAComplianceDashboard
+
         dashboard = DORAComplianceDashboard(current_phase=3)
         assert dashboard is not None
         assert dashboard.current_phase == 3
@@ -324,12 +342,14 @@ class TestPhase1ClassInstantiation:
     def test_provider_info_package_instantiation(self):
         """Test DORAProviderInfoPackage instantiation."""
         from services.dora_integration.due_diligence import DORAProviderInfoPackage
+
         service = DORAProviderInfoPackage()
         assert service is not None
 
     def test_incident_coordinator_instantiation(self):
         """Test MultiClientIncidentCoordinator instantiation."""
         from services.dora_integration.due_diligence import create_incident_coordinator
+
         coordinator = create_incident_coordinator()
         assert coordinator is not None
 
@@ -340,30 +360,35 @@ class TestPhase1FactoryFunctions:
     def test_create_audit_readiness_factory(self):
         """Test create_audit_readiness factory function."""
         from services.dora_integration.due_diligence import create_audit_readiness
+
         service = create_audit_readiness()
         assert service is not None
 
     def test_create_pooled_audit_support_factory(self):
         """Test create_pooled_audit_support factory function."""
         from services.dora_integration.due_diligence import create_pooled_audit_support
+
         service = create_pooled_audit_support()
         assert service is not None
 
     def test_create_provider_info_package_factory(self):
         """Test create_provider_info_package factory function."""
         from services.dora_integration.due_diligence import create_provider_info_package
+
         service = create_provider_info_package()
         assert service is not None
 
     def test_create_incident_coordinator_factory(self):
         """Test create_incident_coordinator factory function."""
         from services.dora_integration.due_diligence import create_incident_coordinator
+
         coordinator = create_incident_coordinator()
         assert coordinator is not None
 
     def test_get_standard_evidence_templates_factory(self):
         """Test get_standard_evidence_templates factory function."""
         from services.dora_integration.due_diligence import get_standard_evidence_templates
+
         templates = get_standard_evidence_templates()
         assert isinstance(templates, list)
         assert len(templates) > 0
@@ -378,6 +403,7 @@ class TestPhase1Aliases:
             ServiceDescription,
             ICTServiceDescription,
         )
+
         assert ServiceDescription is ICTServiceDescription
 
     def test_data_location_alias(self):
@@ -386,6 +412,7 @@ class TestPhase1Aliases:
             DataLocation,
             DataLocationInfo,
         )
+
         assert DataLocation is DataLocationInfo
 
     def test_provider_generator_alias(self):
@@ -394,4 +421,5 @@ class TestPhase1Aliases:
             DORAProviderInfoPackage,
             ProviderInfoPackageGenerator,
         )
+
         assert DORAProviderInfoPackage is ProviderInfoPackageGenerator

@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TelemetryBatch:
     """Batch of telemetry events for export."""
+
     agent_id: str
     batch_id: str
     events: List[TelemetryEvent]
