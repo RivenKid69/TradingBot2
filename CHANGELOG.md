@@ -335,7 +335,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 - **Documentation Modernization** (2025-11-21)
   - Modernized all core documentation to Version 2.1
-  - Updated [claude.md](claude.md) - Main project documentation (v2.0 → v2.1)
+  - Updated [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) - Main project documentation (v2.0 → v2.1)
   - Completely rewrote [README.md](README.md) - Comprehensive project overview
   - Updated [DOCS_INDEX.md](DOCS_INDEX.md) - Navigation hub with critical fixes
   - Enhanced [distributional_ppo.py](distributional_ppo.py) - Expanded class docstring (1 line → 58 lines)
@@ -367,6 +367,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 ## [Unreleased]
 
 ### Added
+
 - **Seasonality Support**: Introduced hour-of-week seasonality multipliers to improve simulation fidelity.
   - **Required actions**:
     - Regenerate multipliers with the quick-start script.
@@ -392,12 +393,14 @@ from services.core.risk_controls import EnhancedKillSwitch
   ensuring partial/deferred execution when caps bind.
 
 ### Deprecated
+
 - `LatencyImpl.dump_latency_multipliers` and
   `LatencyImpl.load_latency_multipliers` have been replaced by
   `dump_multipliers` and `load_multipliers`. The old names continue to work but
   emit `DeprecationWarning`. See the migration guide for details.
 
 ### Fixed
+
 - **CRITICAL BUG #10: Temporal causality violation in stale data** (2025-11-20)
   - Fixed critical issue where stale bars were returned with PREVIOUS timestamp instead
     of CURRENT timestamp, violating temporal causality and corrupting model training

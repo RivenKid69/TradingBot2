@@ -31,6 +31,7 @@ from packages.agent.approval.models import ApprovalRequest
 ```
 
 **Reason for Deprecation**:
+
 - `packages.agent` provides complete implementation with:
   - Local vault for credential management
   - Policy firewall with hard caps
@@ -57,6 +58,7 @@ from packages.cloud.control_plane.services.command_service import CommandService
 ```
 
 **Reason for Deprecation**:
+
 - `packages.cloud.control_plane` provides:
   - Full FastAPI application with routers
   - Database models with Alembic migrations
@@ -71,11 +73,13 @@ from packages.cloud.control_plane.services.command_service import CommandService
 **Location**: `packages/agent/`
 
 **Entry Point**:
+
 ```bash
 python -m packages.agent.daemon.agentd --config configs/agent.yaml
 ```
 
 **Components**:
+
 | Directory | Purpose |
 |-----------|---------|
 | `packages/agent/daemon/` | Agent daemon, configuration |
@@ -92,11 +96,13 @@ python -m packages.agent.daemon.agentd --config configs/agent.yaml
 **Location**: `packages/cloud/control_plane/`
 
 **Entry Point**:
+
 ```bash
 uvicorn packages.cloud.control_plane.app:app --host 0.0.0.0 --port 8000
 ```
 
 **Components**:
+
 | Directory | Purpose |
 |-----------|---------|
 | `packages/cloud/control_plane/routers/` | API endpoints |
@@ -123,6 +129,7 @@ make artifact-check-cloud
 ```
 
 **Cloud Artifact** (`ccea_cloud-*.whl`) contains:
+
 - `packages/cloud/`
 - `packages/shared/`
 - `ccea/artifact/`
@@ -133,6 +140,7 @@ make artifact-check-cloud
 - `ccea/telemetry/`
 
 **Cloud Artifact NEVER contains**:
+
 - `packages/agent/`
 - `ccea/agent/`
 - `ccea/control_plane/`
@@ -159,5 +167,5 @@ The following guardrails prevent usage of deprecated modules in production:
 
 - [ARCHITECTURE.md](../../ARCHITECTURE.md) - Current architecture documentation
 - [Design Doc CCEA Cloud.txt](../../archive/root_files/Design Doc CCEA Cloud.txt) - Original design document
-- [packages/agent/__init__.py](../../packages/agent/__init__.py) - Canonical Agent package
+- [packages/agent/**init**.py](../../packages/agent/__init__.py) - Canonical Agent package
 - [packages/cloud/control_plane/](../../packages/cloud/control_plane/) - Canonical Control Plane

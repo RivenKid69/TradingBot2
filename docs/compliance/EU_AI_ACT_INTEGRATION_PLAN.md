@@ -1,4 +1,5 @@
 # EU AI Act Integration Plan
+
 # План интеграции EU AI Act tooling в CustodiaCloud
 
 **Версия документа**: 1.6
@@ -46,12 +47,14 @@
 CustodiaCloud **не** делает self‑classification (например, “high‑risk AI” или “GPAI”) в документах. Применимость статей и процедур зависит от конкретного deployment‑контекста, ролей сторон и юрисдикции и должна подтверждаться квалифицированным counsel.
 
 Этот документ описывает:
+
 - модули прозрачности/документации (Article 50/53 — deployment‑dependent)
 - опциональный набор модулей, покрывающих Articles 9–17 как “risk‑first over‑engineering” (не юридическое утверждение)
 
 ### Связь с существующим регулированием
 
 Согласно [EU AI Act интеграции с MiFID II/MiFIR](https://www.eurofi.net/wp-content/uploads/2024/12/ii.2-ai-act-key-measures-and-implications-for-financial-services.pdf):
+
 - AI Act дополняет существующие требования MiFID II для algorithmic trading
 - Требования к internal governance в финансовых сервисах (EBA, ESMA) применяются совместно
 - Model Risk Management (MRM) frameworks требуют обновления
@@ -95,6 +98,7 @@ CustodiaCloud **не** делает self‑classification (например, “
 ---
 
 # Phase 1: Foundation & Risk Management System
+
 ## Фаза 1: Основы и система управления рисками
 
 **Длительность**: 8-10 недель
@@ -139,6 +143,7 @@ class AIActRiskMitigation:
 ```
 
 **Требования Article 9**:
+
 - [x] Continuous iterative process throughout lifecycle
 - [ ] Risk identification for intended use and foreseeable misuse
 - [ ] Risk evaluation and estimation
@@ -161,6 +166,7 @@ class AIActRiskMitigation:
 #### 1.1.3 Integration с существующим risk_guard.py
 
 **Задачи**:
+
 1. Расширить `RiskConfig` для AI Act требований
 2. Добавить категоризацию рисков по AI Act taxonomy
 3. Создать audit trail для всех risk events
@@ -185,6 +191,7 @@ class AIActRiskConfig(RiskConfig):
 **Файл**: `services/ai_act/human_oversight.py`
 
 Согласно Article 14(4), система должна позволять операторам:
+
 - (a) Properly understand the capacities and limitations of the system
 - (b) Duly monitor its operation and detect anomalies/dysfunctions
 - (c) Remain aware of automation bias tendency
@@ -336,6 +343,7 @@ pytest tests/test_ai_act_robustness.py -v
 ---
 
 # Phase 2: Technical Documentation & Logging
+
 ## Фаза 2: Техническая документация и журналирование
 
 **Длительность**: 8-10 недель
@@ -502,6 +510,7 @@ class TechnicalDocumentationGenerator:
 **Файл**: `services/ai_act/logging_system.py`
 
 Согласно Article 12, логи должны записывать события для:
+
 - (a) Identifying situations presenting risk
 - (b) Facilitating post-market monitoring
 - (c) Monitoring operation of high-risk AI systems
@@ -582,6 +591,7 @@ class AIActEventBus(EventBus):
 **Файл**: `services/ai_act/data_governance.py`
 
 Согласно Article 10(2), данные должны быть:
+
 - Relevant
 - Sufficiently representative
 - Free of errors
@@ -669,6 +679,7 @@ pytest tests/test_ai_act_data_governance.py -v
 ---
 
 # Phase 3: Quality Management System & Testing
+
 ## Фаза 3: Система менеджмента качества и тестирование
 
 **Длительность**: 6-8 недель
@@ -802,6 +813,7 @@ jobs:
 **Файл**: `services/ai_act/cybersecurity.py`
 
 Согласно Article 15(5), защита от:
+
 - Data poisoning
 - Model poisoning
 - Adversarial examples
@@ -894,6 +906,7 @@ class PostMarketMonitoringSystem:
 ---
 
 # Phase 4: Conformity Assessment & Deployment
+
 ## Фаза 4: Оценка соответствия и развёртывание
 
 **Длительность**: 4-6 недель
@@ -1005,6 +1018,7 @@ Place: [place]
 **Цель**: Подготовить registration в EU database согласно Article 49.
 
 **Задачи**:
+
 1. Prepare registration information
 2. Register in EU database when available
 3. Update registration for substantial modifications
@@ -1153,12 +1167,14 @@ AI-Powered-Quantitative-Research-Platform/
 ## 📚 References & Sources
 
 ### Official EU Sources
+
 - [EU AI Act Official Text](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689)
 - [EC AI Act Policy Page](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)
 - [AI Act Service Desk](https://ai-act-service-desk.ec.europa.eu/)
 - [Artificial Intelligence Act EU Website](https://artificialintelligenceact.eu/)
 
 ### Key Articles
+
 - [Article 6: High-Risk Classification](https://artificialintelligenceact.eu/article/6/)
 - [Article 9: Risk Management System](https://artificialintelligenceact.eu/article/9/)
 - [Article 10: Data Governance](https://artificialintelligenceact.eu/article/10/)
@@ -1173,6 +1189,7 @@ AI-Powered-Quantitative-Research-Platform/
 - [Annex IV: Technical Documentation](https://artificialintelligenceact.eu/annex/4/)
 
 ### Industry Analysis
+
 - [Goodwin Law: AI Act for Financial Services](https://www.goodwinlaw.com/en/insights/publications/2024/08/alerts-practices-pif-key-points-for-financial-services-businesses)
 - [Eurofi: AI Act Key Measures for Financial Services](https://www.eurofi.net/wp-content/uploads/2024/12/ii.2-ai-act-key-measures-and-implications-for-financial-services.pdf)
 - [Consultancy.eu: AI Act Impact on Financial Institutions](https://www.consultancy.eu/news/11237/the-eu-ai-act-the-impact-on-financial-services-institutions)
@@ -1180,10 +1197,12 @@ AI-Powered-Quantitative-Research-Platform/
 - [Holistic AI: Conformity Assessments Guide](https://www.holisticai.com/blog/conformity-assessments-in-the-eu-ai-act)
 
 ### Compliance Tools
+
 - [EU AI Act Compliance Checker](https://artificialintelligenceact.eu/assessment/eu-ai-act-compliance-checker/)
 - [IAPP EU AI Act Compliance Matrix](https://iapp.org/resources/article/eu-ai-act-compliance-matrix/)
 
 ### Academic & Technical
+
 - [SSRN: Human Oversight under Article 14](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5147196)
 - [Robustness and Cybersecurity in EU AI Act (arXiv)](https://arxiv.org/html/2502.16184v1)
 
@@ -1217,9 +1236,9 @@ AI-Powered-Quantitative-Research-Platform/
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2025-12-06 | Claude | Initial comprehensive plan |
-| 1.1 | 2025-12-08 | Claude | Phase 1 completion (372 tests) |
-| 1.2 | 2025-12-08 | Claude | Phase 2 completion (236 tests) |
-| 1.3 | 2025-12-08 | Claude | Phase 3 completion (318 tests) |
-| 1.4 | 2025-12-08 | Claude | Phase 4 completion (81 tests) - Total: 1007 tests |
-| 1.5 | 2025-12-10 | Claude | GPAI Phase 2 completion - Model Card & User Acknowledgment |
+| 1.0 | 2025-12-06 | Sultan Suyunbayev | Initial comprehensive plan |
+| 1.1 | 2025-12-08 | Sultan Suyunbayev | Phase 1 completion (372 tests) |
+| 1.2 | 2025-12-08 | Sultan Suyunbayev | Phase 2 completion (236 tests) |
+| 1.3 | 2025-12-08 | Sultan Suyunbayev | Phase 3 completion (318 tests) |
+| 1.4 | 2025-12-08 | Sultan Suyunbayev | Phase 4 completion (81 tests) - Total: 1007 tests |
+| 1.5 | 2025-12-10 | Sultan Suyunbayev | GPAI Phase 2 completion - Model Card & User Acknowledgment |

@@ -41,7 +41,7 @@ References:
     - CRSP delisting methodology
 
 FIX (2025-11-28): Added as part of Issue #6 "Survivorship Bias" fix.
-Reference: CLAUDE.md → "Survivorship Bias" → "Нет механизма для исключения delisted"
+Reference: docs/PLATFORM_REFERENCE.md → "Survivorship Bias" → "Нет механизма для исключения delisted"
 """
 
 from __future__ import annotations

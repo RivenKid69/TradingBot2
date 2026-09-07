@@ -41,7 +41,7 @@ Best Practices:
     - Pre-filter by tradability and liquidity
     - Handle network errors gracefully
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

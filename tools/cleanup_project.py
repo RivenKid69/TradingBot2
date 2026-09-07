@@ -75,7 +75,7 @@ class ProjectCleanup:
             "README.md",
             "ARCHITECTURE.md",
             "BUILD_INSTRUCTIONS.md",
-            "CLAUDE.md",
+            "docs/PLATFORM_REFERENCE.md",
             "CONTRIBUTING.md",
             "CHANGELOG.md",
             "DOCS_INDEX.md",

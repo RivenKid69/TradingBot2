@@ -7,7 +7,7 @@ CRITICAL #3: CVaR Division by Small Alpha (safe division protection)
 CRITICAL #4: LSTM Gradient Monitoring (per-layer gradient logging)
 CRITICAL #5: NaN/Inf Silent Propagation (detection before backward())
 
-Author: AI Assistant
+Author: Sultan Suyunbayev
 Date: 2025-11-20
 """
 

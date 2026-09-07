@@ -35,7 +35,7 @@ References:
 - CME Group Contract Specs: https://www.cmegroup.com/trading/equity-index/
 - Phase 8: Training Integration from FUTURES_INTEGRATION_PLAN.md
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-12-02
 """
 

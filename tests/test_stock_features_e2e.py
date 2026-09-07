@@ -9,7 +9,7 @@ This test module verifies:
 3. Crypto data path remains unaffected (backward compatibility)
 4. TradingEnv works correctly with both crypto and stock data
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

@@ -186,7 +186,7 @@ class FeaturePipeline:
     stock-specific features when processing equity data. This prevents
     the common mistake of forgetting to call add_stock_features() manually.
 
-    Reference: CLAUDE.md → Issue #5 "FeaturePipeline не asset_class aware"
+    Reference: docs/PLATFORM_REFERENCE.md → Issue #5 "FeaturePipeline не asset_class aware"
     """
 
     # Valid asset classes
@@ -514,7 +514,7 @@ class FeaturePipeline:
                 # После shift: SMA[t] и Return[t] оба представляют данные на момент t-1
                 # → Temporal alignment сохраняется!
                 #
-                # Reference: CLAUDE.md → "НЕ БАГИ" → #24
+                # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #24
                 # ═══════════════════════════════════════════════════════════════════════
                 for col in cols_to_shift:
                     frame_copy[col] = frame_copy[col].shift(1)
@@ -697,7 +697,7 @@ class FeaturePipeline:
         # add stock-specific features (gaps, earnings proximity, dividends).
         # This prevents the common mistake of forgetting to call add_stock_features().
         #
-        # Reference: CLAUDE.md → Issue #5 "FeaturePipeline не asset_class aware"
+        # Reference: docs/PLATFORM_REFERENCE.md → Issue #5 "FeaturePipeline не asset_class aware"
         # ═══════════════════════════════════════════════════════════════════════
         if self.asset_class == "equity" and self.auto_stock_features:
             # Only add if not already present (check for gap_pct as marker)
@@ -792,7 +792,7 @@ class FeaturePipeline:
             # - Scikit-learn RobustScaler: Clips test data using train quantiles
             # - De Prado (2018) "Advances in Financial ML": Consistent winsorization
             #
-            # Reference: CLAUDE.md → "НЕ БАГИ" → #25
+            # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #25
             # ═══════════════════════════════════════════════════════════════════════
             if "winsorize_bounds" in ms:
                 lower, upper = ms["winsorize_bounds"]

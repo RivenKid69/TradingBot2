@@ -51,6 +51,7 @@ configs/
 ## Forex-Specific Factors (L2+ TCA Model)
 
 8-factor parametric model:
+
 1. √Participation (Almgren-Chriss)
 2. Session liquidity (Tokyo/London/NY)
 3. Spread regime

@@ -22,6 +22,7 @@ This policy defines the consent requirements for support staff access to custome
 ## 2. Scope
 
 This policy applies to:
+
 - All support staff (Level 1, Level 2, Level 3)
 - All customer data in Cloud-zone systems
 - All support-related data access including:
@@ -32,6 +33,7 @@ This policy applies to:
   - Reviewing audit trails
 
 **Excluded:**
+
 - Aggregated, anonymized metrics (no consent required)
 - Security incident investigation (break-glass procedure applies)
 - Legal obligation compliance (separate procedure)
@@ -154,6 +156,7 @@ Every support data access consent must include:
 **Step 1: Support Agent Initiates Request**
 
 Support agent in the admin console:
+
 1. Opens support ticket
 2. Clicks "Request Data Access"
 3. Selects scope (what data needed)
@@ -163,12 +166,14 @@ Support agent in the admin console:
 **Step 2: Customer Notification**
 
 System automatically:
+
 1. Identifies authorized workspace admins
 2. Sends consent request email
 3. Creates pending consent record
 4. Logs request in audit trail
 
 Email template:
+
 ```
 Subject: Support Data Access Request [TICKET-XXXXX]
 
@@ -208,12 +213,14 @@ Platform Support Team
 **Step 3: Customer Approves or Denies**
 
 On approval:
+
 1. Consent record activated
 2. Expiry time calculated
 3. Audit event created: `SUPPORT_CONSENT_GRANTED`
 4. Support agent notified
 
 On denial:
+
 1. Request closed
 2. Audit event created: `SUPPORT_CONSENT_DENIED`
 3. Support agent notified
@@ -221,6 +228,7 @@ On denial:
 **Step 4: Data Access**
 
 While consent is active:
+
 1. Support agent can access approved scope
 2. Every data access logged with consent_id reference
 3. Customer can view access log in real-time
@@ -228,11 +236,13 @@ While consent is active:
 **Step 5: Consent Ends**
 
 Consent ends when:
+
 - Expiry time reached (automatic)
 - Customer revokes (immediate)
 - Ticket closed (automatic)
 
 On end:
+
 1. Access immediately blocked
 2. Audit event created: `SUPPORT_CONSENT_EXPIRED` or `SUPPORT_CONSENT_REVOKED`
 3. Support session terminated
@@ -388,6 +398,7 @@ Customers can view in Account Settings > Privacy > Support Access:
 ### 8.2 Real-time Notifications
 
 Customers receive notifications for:
+
 - New consent requests
 - Consent activation
 - Data access events (optional, configurable)
@@ -432,6 +443,7 @@ RAW telemetry access generates enhanced audit:
 ### 10.1 Support Staff Training
 
 All support staff must complete:
+
 - Consent policy training (initial + annual)
 - Data protection awareness (annual)
 - CCEA architecture overview (initial)
@@ -440,6 +452,7 @@ All support staff must complete:
 ### 10.2 Training Records
 
 Training completion tracked in HR system with:
+
 - Staff ID
 - Training module
 - Completion date
@@ -462,6 +475,7 @@ Training completion tracked in HR system with:
 ### 11.2 Reporting
 
 Monthly report to DPO:
+
 - Total consent requests
 - Grant/deny ratio
 - Average consent duration

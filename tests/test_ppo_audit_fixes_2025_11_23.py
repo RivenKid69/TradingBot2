@@ -8,7 +8,7 @@ Tests cover two confirmed issues:
 All other issues (1,2,3,5,6) were false positives.
 
 Created: 2025-11-23
-Author: Claude Code (Anthropic)
+Author: Sultan Suyunbayev
 """
 
 import math

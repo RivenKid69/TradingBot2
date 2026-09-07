@@ -169,6 +169,7 @@ The platform supports 5 asset classes and numerous features. **For initial valid
 ### Pivot Criteria
 
 We will consider pivoting if after 3 months:
+
 - Activation rate < 50%
 - NPS < 0
 - Zero conversion intent

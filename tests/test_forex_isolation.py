@@ -15,7 +15,7 @@ Key Isolation Properties:
 Test Count Target: 35 tests
 
 References:
-    - CLAUDE.md: Isolation verification requirements
+    - docs/PLATFORM_REFERENCE.md: Isolation verification requirements
     - docs/FOREX_INTEGRATION_PLAN.md: Phase 10 requirements
 """
 

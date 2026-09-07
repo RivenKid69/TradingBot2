@@ -113,7 +113,7 @@ ARCHITECTURE.md — новая диаграмма Cloud/Agent/Shared, прото
 `docs/DOCUMENTATION_CANON_DESIGN.md` — каноничное позиционирование software/ICT provider, без фрейминга исполнения «за клиента», с едиными терминами CustodiaCloud/CCEA.
 Добавить новые разделы:
 docs/CCEA_OVERVIEW.md (boundary, threat model, legal posture).
-docs/cloud/* (control plane API, builder, registry, privacy).
+docs/cloud/*(control plane API, builder, registry, privacy).
 docs/agent/* (install, local vault, approvals, policies, degraded modes).
 docs/schemas/* (manifest + protocol JSON schemas).
 runbooks: incident/kill‑switch, recovery, safe‑degraded.

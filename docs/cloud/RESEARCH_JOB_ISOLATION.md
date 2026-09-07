@@ -9,6 +9,7 @@ Cloud research jobs (backtests, simulations, training runs) execute user-provide
 ## Security Requirements
 
 User code execution in Cloud must:
+
 1. **Isolate** - No access to other tenants' data or resources
 2. **Limit** - CPU, RAM, time, and network restrictions
 3. **Monitor** - Detect and prevent abuse patterns
@@ -436,6 +437,7 @@ ccea jobs events job_abc123
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](../CCEA_OVERVIEW.md)
 - [Resource Quotas](./GOVERNANCE.md#resource-quotas)
 - [Security Trust Center](../security/TRUST_CENTER.md)

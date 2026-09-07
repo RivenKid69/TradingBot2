@@ -35,6 +35,7 @@ live in the OS keychain on the device and orders are created locally — no serv
 ```
 
 **Boundary & lifecycle**
+
 - The Rust shell owns no business logic. It spawns the sidecar, reads the
   `RIVEN_PORT=` handshake, waits for the port to accept connections, opens the
   main window, and asks `/api/desktop/shutdown` to flush the Agent/SQLite stores
@@ -44,6 +45,7 @@ live in the OS keychain on the device and orders are created locally — no serv
 - Auth stays in `loopback` mode (default) — identical behaviour to the MVP.
 
 **Key files**
+
 | Path | Role |
 |------|------|
 | `../desktop_backend.py` | Python sidecar entry (runtime-root, port handshake, uvicorn) |
@@ -57,6 +59,7 @@ live in the OS keychain on the device and orders are created locally — no serv
 | `scripts/` | Build + dev runners (Win `.ps1`, macOS/Linux `.sh`) |
 
 The only changes to the existing app were minimal and backward-compatible:
+
 1. `app.py` — the Streamlit wrapper is now guarded so plain import (sidecar /
    `uvicorn app:api`) does not run Streamlit; `streamlit run app.py` still works.
 2. `index.html` — `getApiBase()` honours an injected `window.RIVEN_API_BASE`
@@ -134,11 +137,13 @@ Outputs: Windows → NSIS/MSI installer; macOS → `.app` + `.dmg`.
 ## Code signing & notarization
 
 ### Windows
+
 Sign the installer with your Authenticode certificate (configure
 `bundle.windows.certificateThumbprint` / sign the produced installer), or use
 `signtool`. Unsigned installers trigger SmartScreen warnings.
 
 ### macOS (required for distribution)
+
 Gatekeeper rejects unsigned/un-notarized apps. The `.app` **and the embedded
 sidecar** must be signed (hardened runtime) and notarized. The provided
 `Entitlements.plist` grants the JIT / executable-memory entitlements Python

@@ -11,7 +11,7 @@ Tests cover:
 5. Wednesday triple swap calculation
 6. Quality indicators and staleness detection
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

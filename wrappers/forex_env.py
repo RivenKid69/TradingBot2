@@ -30,7 +30,7 @@ Usage:
     obs, info = wrapped_env.reset()
     obs, reward, terminated, truncated, info = wrapped_env.step(action)
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

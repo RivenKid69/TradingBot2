@@ -11,6 +11,7 @@
 ## Executive Summary
 
 This batch addressed 5 tech debt findings from CTO due diligence. Results:
+
 - **1 item Closed** with code fix (arch-options-contract-spec)
 - **4 items verified as Controlled** with enhanced artifacts (L1-slippage, L2-fill, L4-tif, testing-tif-conformance)
 
@@ -93,10 +94,12 @@ This batch addressed 5 tech debt findings from CTO due diligence. Results:
 | **Control Artifact** | `tests/test_options_adapters.py::TestAdditionalPolygon::test_polygon_contract_to_spec` (passing) |
 
 **Code Changes**:
+
 1. `adapters/polygon/options.py:115-131`: Added `symbol=self.to_occ_symbol()` to `to_contract_spec()` method
 2. `tests/test_options_adapters.py:1925-1943`: Removed try/except with pytest.skip; added full field validation
 
 **Test Verification**:
+
 ```
 python3 -m pytest tests/test_options_adapters.py::TestAdditionalPolygon::test_polygon_contract_to_spec -v
 Result: PASSED
@@ -141,6 +144,7 @@ Output: 1 passed in 0.98s
 ## Decisions Requiring Separate Action
 
 None. All findings either:
+
 1. Fixed with code (arch-options-contract-spec)
 2. Verified as appropriately Controlled with enhanced artifacts (L1, L2, L4, testing-tif)
 
@@ -149,6 +153,7 @@ None. All findings either:
 ## Architecture Compliance
 
 All changes comply with CCEA Design Doc:
+
 - **Section 5.1**: "Live Intent is created only on Agent" - sim-to-live calibration is per-deployment client responsibility
 - **Section 4.2**: "Broker Connectors are AGENT ZONE ONLY" - options adapter is Cloud research component
 - Per Documentation Canon Section 4.3: No performance promises; validation is per-deployment

@@ -94,6 +94,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 # PART A — ДВИЖОК
 
 ### Stage A1 — Scaffolding, core-контракты, Panel API
+
 - **Цель:** базовые типы и Panel; включить `mode: cross_sectional` как no-op ветку.
 - **Новые файлы:** `core_portfolio.py` (Protocols: `UniverseProvider`, `Signal`, `AlphaModel`, `RiskModel`,
   `PortfolioConstructor`, `CrossSectionalStrategy`; типы `Panel`, `TargetWeights`, `RebalanceEvent`);
@@ -105,6 +106,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** Panel строится из существующих parquet; контракты импортируются; текущие тесты зелёные.
 
 ### Stage A2 — Data sources (free + BYO) + total-return
+
 - **Цель:** единый слой источников котировок/доходностей с бесплатными коннекторами и BYO.
 - **Новые файлы:** `impl_data_sources.py` (`PriceSource` Protocol; `FreePriceSource` поверх `adapters/yahoo`,
   `adapters/binance` public; `ParquetPriceSource` = BYO; `FundamentalsSource` Protocol + `FreeFundamentals`
@@ -116,6 +118,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** одинаковый интерфейс для free и BYO; leakage-guard на фундаментал работает.
 
 ### Stage A3 — Universe (PIT) layer
+
 - **Цель:** survivorship-free состав юниверса на дату.
 - **Новые файлы:** `impl_universe.py` (`UniverseProvider` поверх `services/survivorship.UniverseSnapshot` +
   `DelistingTracker`; `StaticUniverse` (список из конфига) + `IndexMembershipUniverse` (история состава, BYO);
@@ -126,6 +129,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** бэктест сможет итерироваться по историческому составу; honest-флаг survivorship проставлен.
 
 ### Stage A4 — Signal framework + cross-sectional transforms + IC
+
 - **Цель:** каркас сигналов и поперечные преобразования (без asset-конкретики — она в Part B).
 - **Новые файлы:** `impl_cross_sectional.py` (`rank`, `zscore`, `winsorize`, `neutralize(by=[sector,beta,size])`
   через регрессию, `decay`/half-life); `service_signals.py` (`SignalLibrary` реестр; базовый `Signal` ABC;
@@ -137,6 +141,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** можно зарегистрировать сигнал-заглушку и получить нормализованный + IC-отчёт.
 
 ### Stage A5 — Risk model (Σ)
+
 - **Цель:** факторная ковариация активов.
 - **Новые файлы:** `service_risk_model.py` (`FactorRiskModel`: exposures B через
   `portfolio_constraints.FactorTiltValidator.set_factor_loadings`, factor cov F (EWMA/Ledoit-Wolf),
@@ -147,6 +152,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** для N имён отдаётся стабильная Σ + экспозиции для оптимизатора и attribution.
 
 ### Stage A6 — Alpha model (μ) + RL-as-signal
+
 - **Цель:** комбинация сигналов в ожидаемую доходность; RL как сигнал.
 - **Новые файлы:** `service_alpha.py` (`AlphaModel`: `EqualWeightAlpha`, `ICWeightedAlpha`, `RidgeAlpha`,
   опц. `GBMAlpha`; rolling-fit, purge-aware); `impl_rl_signal.py` (`RLAlphaSignal` — обёртка над
@@ -157,6 +163,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** из набора сигналов получаем μ; RL участвует измеримо (ненулевой IC-вклад).
 
 ### Stage A7 — Portfolio optimizer (w*)
+
 - **Цель:** ядро оптимизации.
 - **Новые файлы:** `service_optimizer.py` (`PortfolioOptimizer`: режимы `mean_variance`, `max_sharpe`,
   `risk_parity`, `min_variance`, `equal_weight`, `black_litterman`; solver = cvxpy/osqp; **аналитический
@@ -168,6 +175,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** μ+Σ+constraints → исполнимый вектор w*.
 
 ### Stage A8 — Cross-sectional backtest engine
+
 - **Цель:** бэктест поверх Panel (не per-instrument env).
 - **Новые файлы:** `service_xs_backtest.py` (цикл по датам ребаланса: universe→signals→μ→Σ→w*→trade-list→
   costs→apply returns→equity/exposures/turnover; журнал по датам); `core_xs_results.py` (структуры
@@ -178,6 +186,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** прогон cross-sectional long-short на синтетическом юниверсе даёт корректную equity-кривую.
 
 ### Stage A9 — Backtest validation / Trust Report
+
 - **Цель:** анти-оверфит и доверие (P0-ценность).
 - **Новые файлы:** `service_backtest_validation.py` (Deflated Sharpe Ratio, PBO через combinatorial purged CV,
   purged & embargoed K-fold, multiple-testing haircut, IS/OOS деградация); `impl_capacity.py` (capacity-кривая
@@ -187,6 +196,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** по любому бэктесту генерируется «Trust Report» (JSON) с DSR, PBO, capacity.
 
 ### Stage A10 — Attribution engine
+
 - **Цель:** разложение P&L и риска.
 - **Новые файлы:** `service_attribution.py` (factor P&L attribution = factor_return×exposure + specific;
   сигнальная attribution; Brinson allocation/selection; tear-sheet JSON + экспорт-структура для PDF).
@@ -195,6 +205,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** для прогона отдаётся attribution-отчёт; tie-out с total P&L.
 
 ### Stage A11 — Live execution (weights→Intents→Agent) + portfolio risk guards
+
 - **Цель:** ребаланс в live через CCEA.
 - **Новые файлы:** `service_xs_live.py` (на дату ребаланса: target_weights → ноционалы → набор Intents →
   передача Agent; reconciliation через `services/position_sync`); `service_xs_portfolio_risk.py`
@@ -206,6 +217,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** симулированный ребаланс портфеля проходит через Intent-слой и риск-гарды.
 
 ### Stage A12 — Backend API + script entrypoints + config schema
+
 - **Цель:** сетевой и CLI доступ к движку.
 - **Новые файлы:** `script_xs_backtest.py`, `script_xs_live.py` (CLI entrypoints, слой `script_`);
   `configs/config_xs_template.yaml` (схема из дизайн-дока).
@@ -217,6 +229,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** `python script_xs_backtest.py --config configs/config_xs_template.yaml` даёт Trust Report.
 
 ### Stage A13 — UI (Lite ветка + Pro экраны)
+
 - **Цель:** вывести функционал в интерфейс, аддитивно к текущему.
 - **Изменяем (аддитивно):** `index.html` —
   - Lite «ИИ-пайплайн»: новая ветка **«Cross-sectional портфель»** (выбор юниверса, чекбоксы сигналов,
@@ -237,6 +250,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 > config-пресет + UI-пресет + тесты. Движок (A) не меняется — только плагины.
 
 ### Stage B1 — Crypto (рекомендуемый первый)
+
 - **Новые файлы:** `signals/crypto_signals.py` (momentum 30/90d, short-term reversal, **funding-carry**,
   **basis** spot-perp, size/mcap, опц. on-chain-заглушка с BYO-слотом); `risk/crypto_factors.py`
   (BTC-beta, sector L1/DeFi/..., size).
@@ -247,6 +261,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** полный cross-sectional крипто-контур на бесплатных данных, end-to-end + Trust Report.
 
 ### Stage B2 — Equity (US)
+
 - **Новые файлы:** `signals/equity_signals.py` (momentum 12-1, value E/P,B/P,FCF-yield, quality ROE/accruals,
   low-vol, size); `risk/equity_factors.py` (market, size, value, momentum, sector — Barra-lite).
 - **Free data:** `adapters/yahoo`/yfinance (цены + базовый фундаментал). **Honest-note:** free-фундаментал НЕ
@@ -257,6 +272,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** equity market-neutral контур работает; ограничения free-данных явно задокументированы в UI.
 
 ### Stage B3 — Futures (CME / continuous)
+
 - **Новые файлы:** `impl_continuous_futures.py` (back-adjusted непрерывные серии поверх `impl_cme_rollover`);
   `signals/futures_signals.py` (trend 50/100/200, carry/roll-yield, value, vol-target); `risk/futures_factors.py`
   (asset-class факторы: equity-index/rates/energy/metals/ag/FX).
@@ -267,6 +283,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** диверсифицированный фьючерсный risk-parity контур end-to-end.
 
 ### Stage B4 — Forex (G10/EM)
+
 - **Новые файлы:** `signals/forex_signals.py` (carry, momentum/trend, value/PPP, terms-of-trade);
   `risk/forex_factors.py` (USD-beta, carry, value).
 - **Free data:** `adapters/oanda` practice / бесплатные FX-серии + BYO.
@@ -276,6 +293,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 - **Acceptance:** FX cross-sectional carry/momentum контур end-to-end.
 
 ### Stage B5 — Options (ОТДЕЛЬНЫЙ greeks-оптимизатор)
+
 - **Цель:** опционы — другая машинерия: портфель экспозиций по греческим, не directional веса.
 - **Новые файлы:** `service_options_portfolio.py` (`OptionsPortfolioConstructor`: vol-risk-premium,
   skew, dispersion, term-structure сигналы → структуры; **greeks-neutral** ограничения delta/vega/gamma;
@@ -293,6 +311,7 @@ PART C — КРОСС-ASSET (опционально, последним)
 # PART C — КРОСС-ASSET (последним, опционально)
 
 ### Stage C1 — Unified cross-asset portfolio
+
 - **Цель:** один оптимизатор по equity+futures+FX+crypto одновременно (true multi-asset).
 - **Новые файлы:** `service_cross_asset.py` (унифицированный риск-агрегатор, нормализация валют в базовую,
   общий vol-target, кросс-asset ковариация; верхний risk-parity между классами).
@@ -512,7 +531,8 @@ PART C — КРОСС-ASSET (опционально, последним)
 ## 🎉 ВЕСЬ ПЛАН ЗАВЕРШЁН (Part A + Part B + C1)
 
 **Part A** (движок A1–A13) + **Part B** (5 вертикалей B1–B5: crypto/equity/futures/forex directional + options greeks)
-+ **C1** (unified cross-asset) = полная про-парадигма **«десятки сигналов → риск-модель → портфельная оптимизация
+
+- **C1** (unified cross-asset) = полная про-парадигма **«десятки сигналов → риск-модель → портфельная оптимизация
 по всему юниверсу»** на ВСЕХ 5 классах активов + кросс-asset объединение. Всё аддитивно (новый `mode:
 cross_sectional`), на бесплатных/synthetic данных с honest `pit_quality` + BYO-слотами, тесно интегрировано в Pro-режим
 MVP (5-классовый Cross-Sectional Lab + greeks-конструктор + cross-asset карта + API `/api/xs/*`). **175 xs-тестов
@@ -566,6 +586,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 ## Архитектурный фундамент (общий для D0-D7)
 
 **Что есть сейчас (точки интеграции):**
+
 - `impl_data_sources.py`: `AdapterPriceSource` (free OHLCV через `adapters.registry`), `ParquetPriceSource`/
   `ParquetFundamentals` (BYO, PIT-true), `FreeFundamentals` (yfinance снапшот, PIT-none), `total_return_index`,
   `DataSourceMeta(pit_quality)`. **Сейчас free-путь тянет ТОЛЬКО OHLCV** (`bars_to_frame`) → все non-price сигналы
@@ -579,6 +600,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
   `conformal_confidence_from_widths` — **готов**, не хватает инференс-адаптера (checkpoint→utility) и pipeline-kind.
 
 ### Stage D0 — Unified data-assembly layer (фундамент)
+
 - **Цель:** один оркестратор `price source + enrichment sources → собранная панель` с провенансом и `pit_quality`
   по КАЖДОЙ колонке, кэшем и honest data-quality отчётом. База для D1-D5.
 - **Новые файлы:** `service_xs_data.py` (`DataAssembler`: `assemble(symbols, timeframe, price_source,
@@ -595,6 +617,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 - **Acceptance:** собранная панель с провенансом + honest data-quality, кэш работает, обратная совместимость.
 
 ### Stage D1 — Crypto free end-to-end (Binance)
+
 - **Цель:** crypto-сигналы funding_carry/basis/size «оживают» на бесплатных Binance-данных.
 - **Новые файлы:** `loaders/crypto_enrich.py` (`FundingEnricher` поверх `binance/futures_market_data.
   get_funding_rate_history` → колонка `funding_rate`, asof-join к барам с publish-lag; `BasisEnricher` spot-vs-perp
@@ -608,6 +631,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 - **Acceptance:** полный crypto-контур на 100% бесплатных данных (prices+funding), end-to-end backtest + Trust Report.
 
 ### Stage D2 — Equity free + РЕАЛЬНЫЙ PIT-фундаментал
+
 - **Цель:** честный backtest value/quality (E/P, B/P, ROE…) — ядро «реального PIT-фундаментала».
 - **Новые файлы:** `loaders/equity_enrich.py` (`TotalReturnEnricher` — reuse `total_return_index` поверх yahoo
   dividends/splits → total-return цены; `PITFundamentalsEnricher` — обёртка `ParquetFundamentals` + `asof_join
@@ -626,6 +650,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 - **Acceptance:** equity value/quality честно backtest-able на BYO PIT; free-ограничения явны в UI/логах.
 
 ### Stage D3 — Forex free (OANDA) + дифференциалы ставок
+
 - **Новые файлы:** `loaders/forex_enrich.py` (`OandaPriceSource`-обёртка через `adapters/oanda`; `RateDiffEnricher`
   — free/BYO короткие ставки по валютам → `rate_base`/`rate_quote`/`rate_diff`; PPP/reer = BYO honest).
 - **Интеграция:** `enrich: [rate_diff]` в `config_xs_forex.yaml` free-варианте; fx_carry оживает.
@@ -634,6 +659,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 - **Acceptance:** FX carry+momentum на бесплатных/практик-данных end-to-end.
 
 ### Stage D4 — Futures continuous free + roll-accurate
+
 - **Новые файлы:** `loaders/futures_enrich.py` (`ContinuousProxySource` — yahoo/stooq `ES=F…` уже-back-adjusted
   прокси, honest `pit_quality=approx`; `RollAccurateAssembler` — BYO контракты → `impl_continuous_futures.
   build_continuous_panel(method=ratio|diff)`; `CarryEnricher` front/back → `carry`/`roll_yield`).
@@ -642,6 +668,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 - **Acceptance:** диверсиф. CTA на continuous-прокси (free) или roll-accurate (BYO) end-to-end.
 
 ### Stage D5 — Options free (Deribit/yfinance EOD) + IV-поверхность
+
 - **Новые файлы:** `loaders/options_enrich.py` (`DeribitIVEnricher` — free крипто-опционы (IV/greeks/DVOL) →
   `iv`/`realized_vol`/`skew`/`term_slope`; `YFinanceChainEnricher` — EOD US chains, honest ограниченно;
   `OptionsBookLoader` — chain → список `OptionLeg` для greeks-конструктора с реальными IV).
@@ -650,6 +677,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 - **Acceptance:** options-vol сигналы + greeks-конструктор на free Deribit/EOD данных.
 
 ### Stage D6 — RLAlphaSignal в пресетах (headline)
+
 - **Цель:** обученная Distributional-PPO политика = ОДИН измеримый сигнал (IC рядом с классикой). **Training НЕ
   трогаем** — только инференс по checkpoint.
 - **Новые файлы:** `service_rl_inference.py` (`RLInferenceAdapter`: загрузка checkpoint Distributional-PPO →
@@ -669,6 +697,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 - **Acceptance:** RL как сигнал в реальном пресете, IC измерим, ноль изменений в обучении, graceful-fallback.
 
 ### Stage D7 — Data-Quality & PIT-validation gate (про-grade финал)
+
 - **Цель:** «Data Trust» как параллель «Backtest Trust Report» — то, что отличает институционал.
 - **Новые файлы:** `service_data_quality.py` (`pit_leak_scan` — ни одна backtest-колонка не использует publish_ts из
   будущего; `coverage_report`; `staleness`; агрегатор `survivorship`/`pit_quality` по сигналам через провенанс;
@@ -681,6 +710,7 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 - **Acceptance:** honest data-quality gate; пользователь ВИДИТ, что сигнал честен (PIT) или только live-screening.
 
 ## Прогресс Part D
+
 - [x] **D0 — unified data-assembly layer: DONE** — `core_xs_data.py` (`ColumnProvenance` [column/source/vendor/
       pit_quality/free], `DataQualityReport` [coverage по колонкам, per-symbol coverage, first/last ts, staleness,
       survivorship, worst_pit, **verdict ok|warn|poor**]); `impl_data_cache.py` (`ParquetCache` — атомарный parquet-

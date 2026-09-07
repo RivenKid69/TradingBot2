@@ -4,7 +4,7 @@ Test suite for categorical critic numerical stability improvements.
 Tests the torch.clamp approach for numerical stability in categorical critic
 VF clipping (Problem #1 from TWIN_CRITICS_NUMERICAL_STABILITY_ANALYSIS.md).
 
-Author: Claude Code
+Author: Sultan Suyunbayev
 Date: 2025-11-22
 """
 

@@ -39,6 +39,7 @@ str(np.dtype('float64'))  # 'float64' (unchanged for common types)
 ### 2. Array API Standard Alignment
 
 NumPy 2.0 aligns with the Array API standard, affecting:
+
 - `np.bool` → `np.bool_` (already deprecated in 1.x)
 - `np.int` → `np.int_` (already deprecated in 1.x)
 - `np.float` → `np.float64` (already deprecated in 1.x)
@@ -93,6 +94,7 @@ Before migration, verify ecosystem compatibility:
 ### 2. Cython Rebuild Requirement
 
 All Cython modules must be rebuilt against NumPy 2.x headers:
+
 - `lob_state_cython.pyx`
 - `execlob_book.pyx`
 - `coreworkspace.pyx`
@@ -105,22 +107,26 @@ All Cython modules must be rebuilt against NumPy 2.x headers:
 ### Phase 1: Compatibility Testing (Pre-Migration)
 
 1. **Create compatibility branch**
+
    ```bash
    git checkout -b feature/numpy-2x-compatibility
    ```
 
 2. **Update constraint temporarily**
+
    ```toml
    # pyproject.toml
    "numpy>=2.0.0,<3.0.0",
    ```
 
 3. **Rebuild Cython extensions**
+
    ```bash
    make clean && make build
    ```
 
 4. **Run full test suite**
+
    ```bash
    make test
    ```
@@ -130,6 +136,7 @@ All Cython modules must be rebuilt against NumPy 2.x headers:
 ### Phase 2: Code Updates
 
 1. **Replace deprecated aliases** (if any found)
+
    ```python
    # Before
    np.float  # Deprecated
@@ -145,11 +152,13 @@ All Cython modules must be rebuilt against NumPy 2.x headers:
 ### Phase 3: Dependency Updates
 
 1. Update `pyproject.toml`:
+
    ```toml
    "numpy>=2.0.0,<3.0.0",
    ```
 
 2. Regenerate lockfiles:
+
    ```bash
    make lock-cpu lock-gpu
    ```
@@ -192,6 +201,7 @@ All Cython modules must be rebuilt against NumPy 2.x headers:
 ## Monitoring
 
 Post-migration monitoring:
+
 - [ ] No new NumPy deprecation warnings in CI
 - [ ] Backtest results within numerical tolerance (1e-6)
 - [ ] No performance regression >5%

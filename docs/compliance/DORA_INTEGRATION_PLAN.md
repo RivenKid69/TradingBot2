@@ -1,5 +1,7 @@
 # DORA Integration Plan
+
 # Digital Operational Resilience Act (EU Regulation 2022/2554)
+
 # План интеграции в CustodiaCloud
 
 **Версия документа**: 4.1.0
@@ -17,11 +19,13 @@
 > так и актуальные требования для ICT Providers. Мы позиционируемся как **ICT Third-Party Service Provider (Art. 30)**.
 >
 > **Текущая архитектура:**
+>
 > - `services/dora_integration/` — активные модули для ICT Provider обязательств
 > - `services/archive/dora_financial_entity/` — заархивированные FE-специфичные модули
 > - `configs/dora/` — активные конфиги (digital_resilience_strategy, third_party_management, information_sharing)
 >
 > **Заархивированные FE конфиги** (перемещены в `services/archive/dora_financial_entity/configs/`):
+>
 > - `entity_classification.yaml` — классификация FE по Art. 2
 > - `nca_identification.yaml` — идентификация NCA для FE
 > - `proportionality_assessment.yaml` — определение режима (Art. 4, 16)
@@ -158,6 +162,7 @@ class DORAScope:
 Согласно [DORA Article 3(22)](https://www.dora-info.eu/dora/article-3/):
 
 > "Critical or important function" means a function, the disruption of which would **materially impair**:
+>
 > 1. The financial performance of a financial entity, OR
 > 2. The soundness or continuity of its services and activities, OR
 > 3. The continuing compliance with authorization conditions or regulatory obligations
@@ -486,12 +491,14 @@ provider_identification:
 ### v3.0 Critical Fix #7: Microenterprise Definition (CORRECTED)
 
 **НЕВЕРНО в v2.0**:
+
 ```python
 # WRONG
 return self.employee_count < 10 and self.annual_turnover_eur < 2_000_000
 ```
 
 **ПРАВИЛЬНО** (EU Recommendation 2003/361):
+
 ```python
 # CORRECT - OR not AND for turnover/balance sheet
 @property
@@ -606,6 +613,7 @@ RTS_CONTROLS = {
 | **Microenterprises** (any type) | ✅ Частичные исключения | Art. 6(6), 28(2) |
 
 **Для нашей платформы**:
+
 - Если квалифицируемся как **microenterprise** (<10 сотрудников, <€2M оборот): применяется упрощенный режим
 - Исключения для microenterprises:
   - НЕ требуется third-party ICT risk strategy (Art. 28(2))
@@ -736,6 +744,7 @@ major_incident_determination:
 | **B_99.01** | Definitions | Entity-specific definitions | Custom definitions |
 
 **Relational Keys** (связи между templates):
+
 - `contractual_arrangement_reference_number` — связывает B_02.* с B_03-07
 - `lei_entity_using_ict_services` — идентификация нашей entity
 - `ict_service_provider_identifier` — идентификация провайдера
@@ -798,6 +807,7 @@ class RealisticThirdPartyCompliance:
 **Проверка применимости Article 26**:
 
 TLPT обязателен ТОЛЬКО для entities designated by competent authorities на основе:
+
 - Systemic importance
 - ICT risk profile
 - Size and complexity
@@ -846,6 +856,7 @@ tlpt_assessment:
 Это НЕ наши requirements. Это как ESAs будут надзирать за designated CTPPs (AWS, Microsoft, Google).
 
 **Что это значит для нас**:
+
 1. Мы НЕ реализуем Articles 31-44
 2. Мы проверяем, используем ли мы designated CTPPs
 3. Если да — нам нужно учитывать ESA recommendations для наших contracts
@@ -913,6 +924,7 @@ Digital Operational Resilience Act (DORA) — регулирование ЕС, �
 ### Scope of Application
 
 Платформа попадает под действие DORA как:
+
 - **Инвестиционная фирма** (Article 2(1)(e)) — использование алгоритмической торговли
 - **Пользователь ICT-сервисов третьих сторон** — интеграции с Binance, Alpaca, Polygon, OANDA, Interactive Brokers, Deribit
 
@@ -991,6 +1003,7 @@ Phase 0 (Proportionality) ──┬──→ Phase 1 (Risk Management)
 ---
 
 # Phase 0: Proportionality Assessment (NEW)
+
 ## Articles 4, 16 — ОБЯЗАТЕЛЬНО ПЕРВЫМ
 
 **Приоритет**: P0 - IMMEDIATE (определяет scope всех остальных фаз)
@@ -1147,6 +1160,7 @@ entity_classification:
 ---
 
 # Phase 1: ICT Risk Management Framework
+
 ## Articles 5-16 Implementation (CORRECTED: включает 15-16)
 
 **Приоритет**: P0 (Critical Path)
@@ -1158,6 +1172,7 @@ entity_classification:
 #### 1.1.1 Management Body Responsibilities
 
 **Требования Article 5(2)**:
+
 - Ultimate responsibility for ICT risk management lies with management body
 - Define, approve, oversee implementation of ICT risk management framework
 - Approve digital operational resilience strategy
@@ -1187,6 +1202,7 @@ DORAGovernanceFramework:
 ```
 
 **Ключевые аспекты для реализации**:
+
 - [ ] Создать структуру для управленческого контроля ICT рисков
 - [ ] Интеграция с существующим `QualityManagementSystem`
 - [ ] Определить роли и ответственность по DORA
@@ -1195,6 +1211,7 @@ DORAGovernanceFramework:
 #### 1.1.2 Digital Operational Resilience Strategy
 
 **Требования Article 6(8)**:
+
 - Стратегия должна описывать реализацию ICT risk management framework
 - Устанавливать risk tolerance level
 - Определять clear information security objectives
@@ -1203,6 +1220,7 @@ DORAGovernanceFramework:
 **Файл**: `config/dora/digital_resilience_strategy.yaml`
 
 **Элементы стратегии** (per Article 6(8)):
+
 1. Risk tolerance level для ICT risk
 2. Information security objectives с KPIs
 3. ICT reference architecture explanation
@@ -1215,6 +1233,7 @@ DORAGovernanceFramework:
 #### 1.2.1 Framework Structure
 
 **Требования Article 6(1-7)**:
+
 - Documented framework with strategies, policies, procedures
 - Minimize impact of ICT risk
 - Subject to internal audit
@@ -1252,6 +1271,7 @@ class DORAICTRiskFramework:
 #### 1.2.2 ICT Systems, Protocols and Tools (Article 7)
 
 **Требования**:
+
 - Use and maintain updated ICT systems
 - Design ICT systems ensuring resilience, continuity, availability
 - Proportionate to business needs
@@ -1259,6 +1279,7 @@ class DORAICTRiskFramework:
 **Файл**: `services/dora/ict_systems.py`
 
 **Ключевые компоненты**:
+
 ```
 ICTSystemsManagement:
 ├── ICTAssetInventory
@@ -1284,6 +1305,7 @@ ICTSystemsManagement:
 ### 1.3 Identification (Article 8)
 
 **Требования Article 8(1-6)**:
+
 - Identify all sources of ICT risk
 - Identify all ICT-supported business functions
 - Identify all assets and their criticality
@@ -1327,6 +1349,7 @@ ICT_THIRD_PARTY_PROVIDERS = {
 ### 1.4 Protection and Prevention (Article 9)
 
 **Требования**:
+
 - Continuous monitoring and control of ICT systems
 - Implementation of ICT security policies
 - Mechanisms against intrusion and data misuse
@@ -1362,6 +1385,7 @@ DORAProtectionMeasures:
 ### 1.5 Detection (Article 10)
 
 **Требования**:
+
 - Mechanisms to detect anomalous activities
 - Multiple layers of control
 - Detection of single points of failure
@@ -1381,6 +1405,7 @@ DORAProtectionMeasures:
 ### 1.6 Response and Recovery (Article 11)
 
 **Требования**:
+
 - ICT business continuity policy
 - ICT response and recovery plans
 - Crisis communication plans
@@ -1389,6 +1414,7 @@ DORAProtectionMeasures:
 **Интеграция с MiFID II BCP**:
 
 Существующий `configs/compliance/mifid_compliance.yaml` уже содержит:
+
 - Business continuity configuration
 - RTO/RPO targets
 - BCP scenarios
@@ -1434,6 +1460,7 @@ class DORAResponseRecovery:
 ### 1.7 Backup Policies and Recovery (Article 12)
 
 **Требования**:
+
 - Backup policies and procedures
 - Restoration and recovery methods
 - Backup systems physically and logically segregated
@@ -1442,6 +1469,7 @@ class DORAResponseRecovery:
 **Интеграция**:
 
 Существующий `services/state_storage.py` и `configs/state.yaml`:
+
 - Snapshot interval
 - Backup retention
 - Atomic writes
@@ -1476,6 +1504,7 @@ DORABackupSystem:
 ### 1.8 Learning and Evolving (Article 13)
 
 **Требования**:
+
 - Gather information on vulnerabilities and threats
 - Assess impact of severe disruption
 - Post-incident reviews
@@ -1513,6 +1542,7 @@ class DORALearningSystem:
 ### 1.9 Communication (Article 14)
 
 **Требования**:
+
 - Crisis communication plans
 - Internal and external communication procedures
 - Disclosure obligations for ICT incidents
@@ -1541,6 +1571,7 @@ DORACommuncationPlan:
 ### 1.10 ICT Business Continuity Management (Article 15) — ДОБАВЛЕНО v2.0
 
 **Требования Article 15** (ранее пропущен):
+
 - ICT business continuity plans derived from BIA
 - Testing of ICT business continuity plans
 - Review after major changes or incidents
@@ -1609,12 +1640,14 @@ class DORABusinessContinuity:
 **Интеграция с MiFID II**:
 
 Существующий `configs/compliance/mifid_compliance.yaml` уже содержит:
+
 - `business_continuity` section
 - RTO/RPO targets
 - BCP scenarios
 - Drill requirements
 
 **Gap с DORA**:
+
 1. BIA не формализован → нужен `services/dora/bia.py`
 2. ICT-specific scenarios → расширить список
 3. Review triggers → автоматизировать post-incident review
@@ -1736,6 +1769,7 @@ tests/
 ```
 
 **Критерии завершения Phase 1**:
+
 - [ ] 100% тестовое покрытие всех новых модулей
 - [ ] Интеграционные тесты с существующими AI Act модулями
 - [ ] Документация обновлена
@@ -1744,6 +1778,7 @@ tests/
 ---
 
 # Phase 2: ICT Incident Management & Reporting
+
 ## Articles 17-23 Implementation
 
 **Приоритет**: P0 (Critical - Regulatory Reporting)
@@ -1752,6 +1787,7 @@ tests/
 ### 2.1 ICT-Related Incident Management Process (Article 17)
 
 **Требования**:
+
 - Process to detect, manage, and notify ICT-related incidents
 - Early warning indicators
 - Allocation of roles and responsibilities
@@ -1978,6 +2014,7 @@ class DORAIncidentReporter:
 ### 2.4 Notification of Significant Cyber Threats (Article 19(4))
 
 **Требования**:
+
 - Voluntary notification of significant cyber threats
 - Threats relevant to financial system, users, or clients
 
@@ -2013,6 +2050,7 @@ class CyberThreatNotification:
 ### 2.5 Harmonised Reporting Templates (Article 20)
 
 **Final Technical Standards** (Published OJ 20.02.2025):
+
 - **CDR 2025/301** - RTS on content and time limits for incident reports
 - **CIR 2025/302** - ITS on standard forms, templates, and procedures
 - Entry into force: 12 March 2025
@@ -2154,6 +2192,7 @@ tests/dora/
 ```
 
 **Критерии завершения Phase 2**:
+
 - [ ] All incident classification scenarios covered
 - [ ] ITS templates fully implemented
 - [ ] Integration with existing IncidentTracker
@@ -2163,6 +2202,7 @@ tests/dora/
 ---
 
 # Phase 3: Digital Resilience Testing
+
 ## Articles 24-27 Implementation
 
 **Приоритет**: P1 (High)
@@ -2171,6 +2211,7 @@ tests/dora/
 ### 3.1 General Requirements for Testing (Article 24)
 
 **Требования**:
+
 - Sound and comprehensive digital operational resilience testing programme
 - Range of assessments, tests, methodologies
 - Proportionate to size and risk profile
@@ -2242,6 +2283,7 @@ class DORAResilienceTestingProgramme:
 ### 3.2 Testing of ICT Tools and Systems (Article 25)
 
 **Требования**:
+
 - Apply testing programme to all ICT systems
 - Risk-based approach
 - Independent parties for testing
@@ -2287,12 +2329,14 @@ class ICTSystemTesting:
 ### 3.3 Threat-Led Penetration Testing (TLPT) (Article 26)
 
 **Требования**:
+
 - Advanced testing mimicking real threat actors
 - At least every 3 years for significant entities
 - Live production systems testing
 - Based on TIBER-EU framework
 
 **Применимость к нашей платформе**:
+
 - Проверить с NCA, требуется ли TLPT (зависит от размера/системности)
 - Для алгоритмической торговли вероятно требуется
 
@@ -2412,6 +2456,7 @@ class ThreatLedPenetrationTesting:
 | **Independence** | No conflicts of interest |
 
 **Internal vs External Testers**:
+
 - Internal: Allowed 2 out of 3 TLPTs
 - External: Required for 1 out of 3 TLPTs
 - Threat intelligence: Always from external party
@@ -2501,6 +2546,7 @@ tests/dora/
 ```
 
 **Критерии завершения Phase 3**:
+
 - [ ] Testing programme fully documented
 - [ ] Vulnerability scanning integrated
 - [ ] TLPT framework ready (engagement planning)
@@ -2510,6 +2556,7 @@ tests/dora/
 ---
 
 # Phase 4: Third-Party ICT Risk Management
+
 ## Articles 28-44 Implementation
 
 **Приоритет**: P0 (Critical - Core Platform Dependency)
@@ -2518,6 +2565,7 @@ tests/dora/
 ### 4.1 General Principles (Article 28)
 
 **Требования**:
+
 - Manage ICT third-party risk as integral part of ICT risk framework
 - Full responsibility remains with financial entity
 - Proportionate approach based on nature and criticality
@@ -2715,6 +2763,7 @@ register_of_information:
 ### 4.3 Contractual Arrangements (Articles 30)
 
 **Требования Article 30(2)** (basic ICT services):
+
 - Clear description of services
 - Locations of data processing
 - Service level descriptions
@@ -2722,6 +2771,7 @@ register_of_information:
 - Termination rights
 
 **Требования Article 30(3)** (critical/important functions):
+
 - All basic requirements plus:
 - Full service level agreements (SLAs)
 - Notice periods and reporting obligations
@@ -2954,6 +3004,7 @@ tests/dora/
 ```
 
 **Критерии завершения Phase 4**:
+
 - [ ] Register of Information fully populated
 - [ ] All provider contracts analyzed
 - [ ] Exit strategies documented for all critical providers
@@ -2963,6 +3014,7 @@ tests/dora/
 ---
 
 # Phase 5: Information Sharing & Final Integration
+
 ## Article 45 + Cross-Regulation Integration
 
 **Приоритет**: P1
@@ -2971,6 +3023,7 @@ tests/dora/
 ### 5.1 Information Sharing Arrangements (Article 45)
 
 **Требования**:
+
 - Share cyber threat information among trusted communities
 - Protect sensitive nature of shared information
 - Comply with data protection (GDPR)
@@ -3352,6 +3405,7 @@ Phase 5 (Integration) → Final integration
 ### 4. Testing Strategy
 
 Для каждой фазы:
+
 1. Unit tests для каждого модуля (>95% coverage)
 2. Integration tests с существующими модулями
 3. End-to-end compliance validation tests
@@ -3362,12 +3416,14 @@ Phase 5 (Integration) → Final integration
 ## References & Sources
 
 ### Official EU Sources
+
 - [DORA Full Text (EUR-Lex)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2554)
 - [ESMA DORA Page](https://www.esma.europa.eu/esmas-activities/digital-finance-and-innovation/digital-operational-resilience-act-dora)
 - [EBA DORA Technical Standards](https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/operational-resilience)
 - [EIOPA DORA Page](https://www.eiopa.europa.eu/digital-operational-resilience-act-dora_en)
 
 ### Technical Standards (RTS/ITS) — Final Regulations
+
 - [CDR 2024/1774 - RTS on ICT Risk Management Framework](https://eur-lex.europa.eu/eli/reg_del/2024/1774/oj/eng)
 - [CDR 2024/1772 - RTS on Incident Classification](https://eur-lex.europa.eu/eli/reg_del/2024/1772/oj/eng)
 - [CDR 2024/1773 - RTS on Third-Party Policy](https://eur-lex.europa.eu/eli/reg_del/2024/1773/oj/eng)
@@ -3378,6 +3434,7 @@ Phase 5 (Integration) → Final integration
 - [RTS on TLPT (OJ L 2025/1190)](https://eur-lex.europa.eu/eli/reg_del/2025/1190/oj/eng)
 
 ### DORA Articles Reference
+
 - [Article 5-11: ICT Risk Management](https://www.digital-operational-resilience-act.com/DORA_Articles.html)
 - [Article 11: Response and Recovery](https://www.digital-operational-resilience-act.com/Article_11.html)
 - [Article 12: Backup Policies](https://www.digital-operational-resilience-act.com/Article_12.html)
@@ -3387,6 +3444,7 @@ Phase 5 (Integration) → Final integration
 - [Article 45: Information Sharing](https://www.digital-operational-resilience-act.com/Article_45.html)
 
 ### Implementation Guides
+
 - [FS-ISAC DORA Implementation Guidance](https://www.fsisac.com/hubfs/Knowledge/DORA/FSISAC_DORA-ImplementationGuidance.pdf)
 - [IBM DORA Overview](https://www.ibm.com/think/topics/digital-operational-resilience-act)
 - [IT Governance DORA Guide](https://www.itgovernanceusa.com/eu-digital-operational-resilience-act)
@@ -3421,22 +3479,26 @@ Phase 5 (Integration) → Final integration
 ### Corrected Next Steps
 
 **IMMEDIATE (Phase 0)**:
+
 1. ⏰ Determine entity classification (microenterprise/small/standard)
 2. ⏰ Document applicable DORA regime
 3. ⏰ If simplified framework applies — reduce implementation scope
 
 **SHORT-TERM (Phases 4 + 1 parallel)**:
+
 1. 🔴 Register of Information — complete by **March 2025** for April submission
 2. Populate all 15 ITS templates
 3. Document gaps in third-party contracts (don't expect amendments)
 4. ICT Risk Management Framework (scope per Phase 0 result)
 
 **MEDIUM-TERM (Phases 2 + 3)**:
+
 1. Incident classification with 2024/1772 thresholds
 2. ITS reporting templates ready
 3. Basic testing programme (TLPT only if designated)
 
 **Sources**:
+
 - [DORA Full Text](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2554)
 - [Article 16 Simplified Framework](https://www.digital-operational-resilience-act.com/Article_16.html)
 - [Commission Delegated Regulation 2024/1772](https://eur-lex.europa.eu/eli/reg_del/2024/1772/oj/eng)
@@ -3449,10 +3511,10 @@ Phase 5 (Integration) → Final integration
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0.0 | 2025-12-08 | Claude | Initial comprehensive plan |
-| 2.0.0 | 2025-12-08 | Claude | **Critical corrections**: Added Phase 0 (Proportionality), Added Articles 15-16, Fixed incident thresholds (Reg. 2024/1772), Fixed Register of Information ITS structure (15 templates), Corrected Articles 31-44 scope, Added realistic third-party contract assessment, Fixed TLPT applicability, Reduced test count to mapped estimates |
-| 3.0.0 | 2025-12-08 | Claude | **Second critical review**: Added Phase -1 (DORA Scope Verification per Article 2), Added Critical/Important Function classification (Article 3(22)), Fixed incident timeline (4h OR 24h whichever EARLIER), Added NCA identification by country + submission platforms, Added ITS export format requirements (CSV + DPM 4.0), Added LEI handling for non-EU providers (alternative identifiers), Fixed microenterprise definition (OR not AND), Added full RTS JC 2023 86 control mapping (33 articles), Added country-specific submission deadlines |
-| 4.0.0 | 2025-12-08 | Claude | **Internal review corrections**: (1) Fixed Article 2(1)(b)→2(1)(e) for investment firms, (2) Updated CTPP section with 19 designated CTPPs (AWS, Google, Microsoft, etc. per 19 Nov 2025 ESA decision), (3) Updated incident reporting refs JC 2024-33→CDR 2025/301 + CIR 2025/302, (4) Fixed ITS template prefixes RT→B per DPM 4.0, (5) Fixed client threshold 10K→100K per RTS Art.9, (6) Fixed country deadlines (Germany: 11 Apr, France: 15 Apr), (7) Added reference date 31 March 2025, (8) Unified test counts to ~1015, (9) Added weekend/holiday extension and incident upgrade procedures per CDR 2025/301, (10) Updated all RTS/ITS references to final regulations |
+| 1.0.0 | 2025-12-08 | Sultan Suyunbayev | Initial comprehensive plan |
+| 2.0.0 | 2025-12-08 | Sultan Suyunbayev | **Critical corrections**: Added Phase 0 (Proportionality), Added Articles 15-16, Fixed incident thresholds (Reg. 2024/1772), Fixed Register of Information ITS structure (15 templates), Corrected Articles 31-44 scope, Added realistic third-party contract assessment, Fixed TLPT applicability, Reduced test count to mapped estimates |
+| 3.0.0 | 2025-12-08 | Sultan Suyunbayev | **Second critical review**: Added Phase -1 (DORA Scope Verification per Article 2), Added Critical/Important Function classification (Article 3(22)), Fixed incident timeline (4h OR 24h whichever EARLIER), Added NCA identification by country + submission platforms, Added ITS export format requirements (CSV + DPM 4.0), Added LEI handling for non-EU providers (alternative identifiers), Fixed microenterprise definition (OR not AND), Added full RTS JC 2023 86 control mapping (33 articles), Added country-specific submission deadlines |
+| 4.0.0 | 2025-12-08 | Sultan Suyunbayev | **Internal review corrections**: (1) Fixed Article 2(1)(b)→2(1)(e) for investment firms, (2) Updated CTPP section with 19 designated CTPPs (AWS, Google, Microsoft, etc. per 19 Nov 2025 ESA decision), (3) Updated incident reporting refs JC 2024-33→CDR 2025/301 + CIR 2025/302, (4) Fixed ITS template prefixes RT→B per DPM 4.0, (5) Fixed client threshold 10K→100K per RTS Art.9, (6) Fixed country deadlines (Germany: 11 Apr, France: 15 Apr), (7) Added reference date 31 March 2025, (8) Unified test counts to ~1015, (9) Added weekend/holiday extension and incident upgrade procedures per CDR 2025/301, (10) Updated all RTS/ITS references to final regulations |
 
 ---
 
@@ -3488,4 +3550,3 @@ Phase 5 (Integration) → Final integration
 | Reporting | ❓ | ❓ | ❓ |
 
 **Без ответов на эти вопросы дальнейшая реализация бессмысленна.**
-

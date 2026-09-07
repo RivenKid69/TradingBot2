@@ -11,6 +11,7 @@
 ## 🚀 Start Here
 
 ### For New Users
+
 | Document | Description |
 |----------|-------------|
 | [docs/DOCUMENTATION_CANON_DESIGN.md](docs/DOCUMENTATION_CANON_DESIGN.md) | ⭐ **Canonical product & documentation standard** - positioning, naming, legal-safe language, committee/investor narrative |
@@ -18,6 +19,7 @@
 | [QUICK_START.md](QUICK_START.md) | Quick reference for common commands |
 
 ### For Investors & Startup Visa Applications
+
 | Document | Description |
 |----------|-------------|
 | [docs/DOCUMENTATION_CANON_DESIGN.md](docs/DOCUMENTATION_CANON_DESIGN.md) | ⭐ **Canonical narrative** - product, GTM, pilot, funding ask, and safe wording |
@@ -27,9 +29,10 @@
 | [docs/HIRING_PLAN_STARTUP_VISA_BALTICS.md](docs/HIRING_PLAN_STARTUP_VISA_BALTICS.md) | **Hiring plan (Baltics)** - Latvia/Lithuania/Estonia startup visa-ready headcount, timeline, and budget |
 
 ### For Developers
+
 | Document | Description |
 |----------|-------------|
-| [claude.md](claude.md) | ⭐ **Master technical reference** - complete API documentation (RU) |
+| [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) | ⭐ **Master technical reference** - complete API documentation (RU) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture and design patterns |
 | [docs/AI_GUIDE.md](docs/AI_GUIDE.md) | AI agent context and instructions (EN) |
 
@@ -40,6 +43,7 @@
 **Reference (design/architecture docs; do not edit):** [docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt)
 
 ### Core Architecture
+
 | Document | Description |
 |----------|-------------|
 | [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md) | ⭐ **Обзор архитектуры** - Cloud/Agent разделение, зоны безопасности |
@@ -48,12 +52,14 @@
 | [CCEA State Machine](docs/architecture/CCEA_STATE_MACHINE.md) | Состояния Deployment и Run |
 
 ### Security & Privacy
+
 | Document | Description |
 |----------|-------------|
 | [CCEA Privacy](docs/architecture/CCEA_PRIVACY.md) | Приватность, GDPR, уровни телеметрии |
 | [CCEA CI Guardrails](docs/architecture/CCEA_CI_GUARDRAILS.md) | CI проверки безопасности границы |
 
 ### Operations & Business
+
 | Document | Description |
 |----------|-------------|
 | [CCEA Rollout Plan](docs/architecture/CCEA_ROLLOUT_PLAN.md) | Фазы внедрения и Open Questions |
@@ -61,12 +67,14 @@
 | [ToS Guidelines](docs/business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md) | Руководство по Terms of Service |
 
 ### Design Documents
+
 | Document | Description |
 |----------|-------------|
 | [Target Architecture](docs/design/CCEA_CLOUD/TARGET_CCEA_ARCHITECTURE.md) | Целевая архитектура с диаграммами |
 | [Cloud README](docs/cloud/README.md) | Cloud компоненты |
 
 **Ключевые принципы CCEA:**
+
 - **Cloud** = Research, Training, Backtest, Artifact Management (no trading)
 - **Agent** = Execution, Risk, Vault, Broker Integration (user-controlled)
 - **Граница** = Только lifecycle commands, никаких orders/intents/secrets
@@ -89,7 +97,7 @@
 
 | Файл | Описание |
 |------|----------|
-| [claude.md](claude.md) | ⭐ **Master reference** - полная документация (RU) |
+| [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) | ⭐ **Master reference** - полная документация (RU) |
 | [MVP_DOCUMENTATION.md](MVP_DOCUMENTATION.md) | 🛠️ **MVP Technical Documentation** - архитектура, контексты и логи (RU) |
 | [docs/AI_GUIDE.md](docs/AI_GUIDE.md) | 🤖 **AI Agent Guide** - context & instructions (EN) |
 | [README.md](README.md) | Обзор, установка, quick start и runbooks (sim/live/debug/release) |
@@ -127,12 +135,13 @@
 
 | Файл | Описание |
 |------|----------|
-| [claude.md#multi-exchange-support](claude.md) | ⭐ Multi-exchange adapters (Binance, Alpaca, Polygon) |
-| [claude.md#stock-training-backtest](claude.md) | Stock training & backtest pipeline |
-| [claude.md#execution-providers](claude.md) | Execution providers (L2 simulation) |
-| [claude.md#live-execution-improvements](claude.md) | Live execution improvements (Phase 9) |
+| [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) | ⭐ Multi-exchange adapters (Binance, Alpaca, Polygon) |
+| [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) | Stock training & backtest pipeline |
+| [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) | Execution providers (L2 simulation) |
+| [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) | Live execution improvements (Phase 9) |
 
 **Supported Assets:**
+
 - **Equities (MVP/beachhead)**: example integrations via Alpaca/Polygon (listed equities; market hours + extended)
 - **Options / futures / FX (foundation by design)**: supported via integration plans and adapters (enabled per customer pull/support capacity)
 - **Digital assets (optional expansion)**: adapters exist (e.g., Binance); committee-facing positioning treats this as optional, post equities-first validation
@@ -159,6 +168,7 @@
 | [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) | ⭐ **Master reference** - tooling + evidence exports to support client workflows |
 
 **Tooling coverage (internal engineering; not a compliance/certification claim):**
+
 - Phase 1: LEI, Clock Sync (RTS 25), Algorithm Registration
 - Phase 2: Transaction Reporting (RTS 22)
 - Phase 3: Kill Switch, Pre-Trade Controls, Real-Time Monitoring
@@ -177,6 +187,7 @@
 | [services/ai_act/](services/ai_act/) | AI Act-related tooling modules |
 
 **Implementation reports (engineering; not a legal classification or conformity statement):**
+
 | Фаза | Отчёт | Тесты |
 |------|-------|-------|
 | Phase 1 | [EU_AI_ACT_PHASE1_COMPLETION_REPORT.md](docs/compliance/EU_AI_ACT_PHASE1_COMPLETION_REPORT.md) | 372 |
@@ -195,6 +206,7 @@
 | [services/dora/](services/dora/) | DORA-related tooling modules |
 
 **Tooling coverage (internal engineering; not a compliance/certification claim):**
+
 - Phase 0: Proportionality Assessment & Scope Verification
 - Phase 1: ICT Risk Management Framework (Articles 5-16)
 - Phase 2: ICT Incident Management & Reporting (Articles 17-23)
@@ -216,6 +228,7 @@
 | [packages/cloud/governance/](packages/cloud/governance/) | 15+ модулей GDPR governance |
 
 **Tooling coverage (internal engineering; not a compliance/certification claim):**
+
 - Phase 0: Data Mapping, RoPA, Controller/Processor Roles
 - Phase 1: Transparency, Privacy Policy, DPA, DSAR SOP
 - Phase 2: Data Minimization, Telemetry Contracts, CI Guardrails
@@ -345,13 +358,13 @@ python tools/check_feature_parity.py
 
 | Задача | Куда смотреть |
 |--------|---------------|
-| Новичок в проекте | [claude.md](claude.md) |
+| Новичок в проекте | [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) |
 | Архитектура | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Быстрый старт | [QUICK_START.md](QUICK_START.md) |
 | Twin Critics | [docs/twin_critics.md](docs/twin_critics.md) |
 | UPGD Optimizer | [docs/UPGD_INTEGRATION.md](docs/UPGD_INTEGRATION.md) |
-| Multi-Asset (Stocks) | [claude.md](claude.md) (см. Phase 2-4, 9) |
-| Live Execution | [claude.md](claude.md) (см. Phase 9) |
+| Multi-Asset (Stocks) | [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) (см. Phase 2-4, 9) |
+| Live Execution | [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) (см. Phase 9) |
 | Seasonality | [docs/seasonality.md](docs/seasonality.md) |
 | MiFID II Alignment Toolkit | [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) |
 | EU AI Act Alignment Toolkit | [docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md](docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md) |

@@ -35,6 +35,7 @@ The Platform implements **Cloud-Controlled Execution Architecture (CCEA)**, whic
 You **MAY** use the Platform for:
 
 ### 3.1 Research and Development
+
 - Developing, testing, and refining trading strategies
 - Running backtests against historical market data
 - Performing quantitative research and analysis
@@ -42,18 +43,21 @@ You **MAY** use the Platform for:
 - Simulating trading strategies (paper trading)
 
 ### 3.2 Monitoring and Analytics
+
 - Monitoring performance metrics of deployed strategies
 - Analyzing trading results and generating reports
 - Receiving alerts and notifications about strategy performance
 - Reviewing aggregated telemetry from your local Agent (if deployed)
 
 ### 3.3 Lifecycle Management
+
 - Managing strategy deployments via the control plane
 - Configuring strategy parameters (non-secret configurations)
 - Scheduling backtest jobs and research tasks
 - Accessing strategy artifacts and build outputs
 
 ### 3.4 Educational and Informational
+
 - Learning about algorithmic trading concepts
 - Testing trading hypotheses
 - Understanding market dynamics through simulation
@@ -67,6 +71,7 @@ You **MUST NOT** use the Platform for:
 ### 4.1 Cloud Compute Abuse
 
 **Resource Abuse:**
+
 - Cryptocurrency mining or proof-of-work computations
 - Distributed denial-of-service (DDoS) attacks or participation in botnets
 - Running unauthorized services (proxies, VPNs, torrents)
@@ -74,6 +79,7 @@ You **MUST NOT** use the Platform for:
 - Intentionally consuming excessive resources to degrade service for others
 
 **Security Violations:**
+
 - Attempting to bypass authentication or authorization controls
 - Probing, scanning, or testing vulnerabilities of Platform systems
 - Attempting to access other users' data, strategies, or resources
@@ -83,6 +89,7 @@ You **MUST NOT** use the Platform for:
 ### 4.2 Protocol and Architecture Violations
 
 **CCEA Boundary Violations:**
+
 - Attempting to transmit broker API credentials to Cloud
 - Attempting to trigger order execution from Cloud
 - Circumventing telemetry redaction mechanisms
@@ -90,6 +97,7 @@ You **MUST NOT** use the Platform for:
 - Attempting to use Cloud for real-time trading instructions or order-like payloads intended to circumvent the Agent
 
 **Data Integrity:**
+
 - Manipulating or falsifying backtest results
 - Submitting false or misleading telemetry data
 - Corrupting shared datasets or research artifacts
@@ -97,12 +105,14 @@ You **MUST NOT** use the Platform for:
 ### 4.3 Financial and Regulatory Violations
 
 **Market Abuse:**
+
 - Developing strategies designed for market manipulation (spoofing, layering, wash trading)
 - Using the Platform to facilitate insider trading
 - Creating strategies that violate exchange rules or regulations
 - Developing tools for front-running or other unfair trading practices
 
 **Misrepresentation:**
+
 - Claiming the Platform provides investment advice
 - Representing Platform outputs as professional financial recommendations
 - Misleading others about the nature of AI-generated outputs
@@ -110,12 +120,14 @@ You **MUST NOT** use the Platform for:
 ### 4.4 Legal and Ethical Violations
 
 **Illegal Activities:**
+
 - Any activity that violates applicable laws or regulations
 - Money laundering or terrorist financing
 - Sanctions evasion
 - Fraud or deception
 
 **Harmful Content:**
+
 - Storing or processing content that is illegal, defamatory, or infringes third-party rights
 - Using Platform resources for harassment or abuse
 - Discriminatory practices or hate-related activities
@@ -146,6 +158,7 @@ Cloud research resources are subject to fair use limits:
 ### 5.2 Job Isolation
 
 All research jobs run in isolated sandboxes with:
+
 - No network egress except to approved data sources
 - Resource quotas (CPU, memory, time limits)
 - Automatic termination on quota exceeded
@@ -154,6 +167,7 @@ All research jobs run in isolated sandboxes with:
 ### 5.3 Abuse Detection
 
 We monitor for abuse patterns including:
+
 - Cryptocurrency mining signatures
 - Botnet communication patterns
 - Unauthorized network scanning
@@ -168,6 +182,7 @@ We monitor for abuse patterns including:
 ### 6.1 Investigation
 
 We reserve the right to investigate suspected violations of this AUP. Investigation may include:
+
 - Reviewing resource usage patterns
 - Analyzing job outputs and behaviors
 - Examining network traffic metadata
@@ -187,6 +202,7 @@ Upon confirmed violation, we may take one or more of the following actions:
 ### 6.3 Due Process
 
 Before taking remedial action (except in emergencies), we will:
+
 1. Notify you of the suspected violation
 2. Provide opportunity to respond (typically 5 business days)
 3. Consider your response in determining action
@@ -205,12 +221,14 @@ You may appeal enforcement actions by contacting legal@[company-domain].com with
 ### 7.1 How to Report
 
 If you become aware of AUP violations, please report them to:
+
 - **Email:** abuse@[company-domain].com
 - **Security Issues:** security@[company-domain].com
 
 ### 7.2 Report Contents
 
 Helpful reports include:
+
 - Description of the suspected violation
 - Evidence or indicators (if available)
 - Impact (if known)
@@ -227,6 +245,7 @@ We do not retaliate against good-faith reports of AUP violations.
 ### 8.1 Notification
 
 We may update this AUP as needed. Material changes will be:
+
 - Announced via email to registered users
 - Posted on the Platform with a prominent notice
 - Effective 30 days after notification (except for changes required by law)
@@ -240,6 +259,7 @@ Continued use of the Platform after changes become effective constitutes accepta
 ## 9. CONTACT
 
 For questions about this AUP:
+
 - **Email:** legal@[company-domain].com
 - **Abuse Reports:** abuse@[company-domain].com
 

@@ -33,6 +33,7 @@ Priority (highest to lowest):
 ```
 
 **Example:**
+
 ```
 Cloud suggests:     max_position_pct: 20%
 Artifact suggests:  max_position_pct: 15%
@@ -349,6 +350,7 @@ client_order_id = sha256(
 ```
 
 This ensures:
+
 - No duplicate orders on retry
 - Order tracking across restarts
 - Reconciliation mapping
@@ -497,6 +499,7 @@ reconciliation:
 ---
 
 **Related Documentation:**
+
 - [Approvals](./APPROVALS.md)
 - [Degraded Modes](./DEGRADED_MODES.md)
 - [Runbooks](../runbooks/)

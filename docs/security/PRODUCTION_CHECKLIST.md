@@ -28,6 +28,7 @@ The following environment variables MUST be set in production. The application w
 | `CCEA_JWT_ALGORITHM` | `HS256` (default) or `RS256` for asymmetric | Validated at startup |
 
 **Generate secure JWT secret**:
+
 ```bash
 # Option 1: OpenSSL
 openssl rand -base64 32

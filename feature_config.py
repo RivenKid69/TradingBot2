@@ -20,7 +20,7 @@
 # 1. Update BOTH this file AND obs_builder.pyx:build_observation_vector_c()
 # 2. Run pytest tests/test_feature_*.py to verify consistency
 #
-# Reference: CLAUDE.md → "НЕ БАГИ" → #50
+# Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #50
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Default normalization constants

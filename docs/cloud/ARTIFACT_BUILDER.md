@@ -5,6 +5,7 @@
 ## Overview
 
 The Artifact Builder is designed to create immutable, signed trading strategy artifacts. Artifacts are designed to be:
+
 - **Digest-pinned**: Content-addressable by SHA256
 - **Signed**: Cryptographically signed with cosign/GPG
 - **Documented**: Includes SBOM and provenance
@@ -58,6 +59,7 @@ ENTRYPOINT ["python", "-m", "strategy.main"]
 ```
 
 **Benefits:**
+
 - Immutable by content hash
 - Reproducible builds
 - Sandboxing support
@@ -423,6 +425,7 @@ jobs:
 ---
 
 **Related Documentation:**
+
 - [JSON Schemas](../schemas/README.md)
 - [Agent Verification](../agent/README.md)
 - [Security Best Practices](../security/TRUST_CENTER.md)

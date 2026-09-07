@@ -17,7 +17,7 @@ Test categories:
 - Backward compatibility with crypto (critical!)
 - Edge case handling
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

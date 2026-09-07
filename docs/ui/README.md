@@ -17,6 +17,7 @@ This directory contains UI guidelines, compliance requirements, and implementati
 ### 1. Transparency First
 
 Users must always know:
+
 - Whether they're in paper or live trading mode
 - When content is AI-generated
 - What data stays local vs. goes to Cloud
@@ -25,6 +26,7 @@ Users must always know:
 ### 2. Informed Consent
 
 All critical actions require explicit acknowledgment:
+
 - Registration: ToS, Privacy, Not-Advice
 - Live Trading: Risk warning, responsibility
 - Agent Setup: Architecture understanding
@@ -33,6 +35,7 @@ All critical actions require explicit acknowledgment:
 ### 3. Clear Architecture Communication
 
 CCEA architecture must be clearly explained:
+
 - Credentials stay local (Agent)
 - Cloud is designed not to execute orders
 - Hard caps cannot be overridden
@@ -41,6 +44,7 @@ CCEA architecture must be clearly explained:
 ### 4. Regulatory Compliance
 
 UI must comply with:
+
 - EU AI Act Article 50 (AI disclosure)
 - MiFID II information requirements
 - GDPR consent requirements
@@ -81,6 +85,7 @@ UI must comply with:
 ## Implementation
 
 See [ONBOARDING_GUARDRAILS.md](./ONBOARDING_GUARDRAILS.md) for detailed implementation requirements including:
+
 - HTML/form examples
 - Acknowledgment flows
 - Warning banner specifications

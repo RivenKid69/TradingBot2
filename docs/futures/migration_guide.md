@@ -456,6 +456,7 @@ pytest tests/test_equity_parametric_tca.py -v
 **Symptom**: `KeyError: 'funding_rate'` during training
 
 **Solution**:
+
 ```python
 # Provide default funding rate if missing
 funding_rate = bar_data.get("funding_rate", 0.0)
@@ -466,6 +467,7 @@ funding_rate = bar_data.get("funding_rate", 0.0)
 **Symptom**: `ValueError: Leverage 50 exceeds max 20 for notional $1,000,000`
 
 **Solution**:
+
 ```python
 # Use leverage guard to get max allowed
 guard = FuturesLeverageGuard()
@@ -480,6 +482,7 @@ max_leverage = guard.get_max_leverage_for_notional(
 **Symptom**: `KeyError: 'ES'` in SPAN calculation
 
 **Solution**:
+
 ```python
 # Ensure contract specs are loaded
 from impl_span_margin import load_contract_specs, create_span_calculator
@@ -493,6 +496,7 @@ calc = create_span_calculator(contract_specs=specs)
 **Symptom**: Orders rejected near settlement
 
 **Solution**:
+
 ```python
 # Check settlement time before trading
 from services.cme_risk_guards import SettlementRiskGuard
@@ -511,6 +515,7 @@ if result.risk_level == SettlementRiskLevel.IMMINENT:
 ### If Migration Fails
 
 1. **Disable futures features**:
+
 ```yaml
 features:
   unified_risk_guard:
@@ -518,11 +523,13 @@ features:
 ```
 
 2. **Revert to spot-only config**:
+
 ```yaml
 asset_class: crypto  # Not futures
 ```
 
 3. **Restore previous model checkpoint**:
+
 ```bash
 python script_live.py --checkpoint models/spot_model_v1.pt
 ```

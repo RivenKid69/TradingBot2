@@ -16,6 +16,7 @@
 | **Agent** | Live execution, хранение секретов, риск-контроли, создание ордеров | Работа без согласия пользователя |
 
 **Ключевые гарантии:**
+
 - Cloud **НИКОГДА** не хранит broker API keys
 - Cloud **НИКОГДА** не генерирует и не передаёт ордера
 - Все торговые операции происходят **ТОЛЬКО** в Agent локально
@@ -25,7 +26,7 @@
 ## Содержание
 
 1. [Установка](#установка)
-2. [Crypto (BTC/ETH на Binance)](#1-crypto-btceth-на-binance)
+2. [Crypto (BTC/ETH на Binance)](#1-crypto-btceth-на-binance--optional)
 3. [US Equities (акции на Alpaca)](#2-us-equities-акции-на-alpaca)
 4. [Forex (валюты на OANDA)](#3-forex-валюты-на-oanda)
 5. [Futures (фьючерсы)](#4-futures-фьючерсы)
@@ -382,6 +383,7 @@ export BINANCE_API_SECRET="your_secret"
 ```
 
 **Важно**:
+
 - Секреты хранятся в OS keychain или зашифрованном файле
 - Телеметрия автоматически редактируется перед отправкой в Cloud
 - Логи никогда не содержат секретов
@@ -435,6 +437,7 @@ python script_live.py --config configs/config_live.yaml --dry-run
 ```
 
 **Документация CCEA:**
+
 - [CCEA Overview](docs/CCEA_OVERVIEW.md) — полный обзор архитектуры
 - [Agent Installation](docs/agent/INSTALLATION.md) — установка Agent
 - [Local Vault](docs/agent/LOCAL_VAULT.md) — управление секретами
@@ -465,6 +468,7 @@ python tools/check_risk_config.py --config your_config.yaml
 ### 3. Запустите Live Execution (CCEA Architecture)
 
 **Production (через Agent):**
+
 ```bash
 # 1. Установите и настройте Agent (см. раздел "Live Trading (CCEA)")
 python -m packages.agent.daemon.agentd --config configs/agent.yaml
@@ -474,6 +478,7 @@ python -m packages.agent.daemon.agentd --config configs/agent.yaml
 ```
 
 **Development/Testing Only:**
+
 ```bash
 # Только для локального тестирования БЕЗ CCEA инфраструктуры
 # Crypto (Binance Testnet)

@@ -8,6 +8,7 @@
 > **Important**: This document describes the DORA compliance toolkit provided to clients. The status "Toolkit Ready" means all planned tools and controls have been implemented and passed internal automated tests. This does NOT constitute certification, independent audit, or guarantee of regulatory compliance. Test results are internal CI outputs; clients must conduct their own compliance assessment with qualified advisors.
 
 > **Note (v2.4)**: References to `services/compliance/` are historical. MiFID II compliance modules have been reorganized:
+>
 > - `services/core/risk_controls/` (universal risk controls, audit_trail, bcp)
 > - `services/algo_integration/` (B2B compliance toolkit)
 > - `services/archive/mifid_financial_entity/` (archived Investment Firm modules)
@@ -83,6 +84,7 @@
 | 40 | Archive non-applicable modules | N/A | `services/archive/dora_not_applicable/` |
 
 **Phase 1 Completion Summary:**
+
 - All 15 work blocks completed
 - Automated tests for DORA-related modules implemented
 - 2 new Python modules with associated tests
@@ -115,6 +117,7 @@
 ### 1.2 Key Findings
 
 **Well Implemented:**
+
 - Kill switch с graceful degradation
 - Recovery procedures (10 сценариев)
 - Service dependency mapping с failure domains
@@ -123,11 +126,13 @@
 - MiFID II compliance modules (BCP, audit trail)
 
 **Needs Repositioning (NOT over-engineered):**
+
 - `services/dora/` содержит модули, которые НУЖНЫ для ICT provider obligations
 - Проблема не в избыточности, а в неверном позиционировании (как financial entity вместо ICT provider)
 - Многие модули нужно адаптировать, не удалять
 
 **Missing/Weak:**
+
 - Audit readiness для регуляторных проверок
 - Subcontractor documentation (AWS, data providers)
 - Provider information package для клиентских ROI
@@ -168,6 +173,7 @@
 ### 2.2 Explicit Scope — CORRECTED
 
 **WE ARE:**
+
 - SaaS platform / ICT service provider for algo/AI trading
 - ICT third-party provider for regulated EU clients
 - **Subject to DORA via contractual requirements (Art. 28-30)**
@@ -175,6 +181,7 @@
 - Required to provide exit strategies and data portability
 
 **WE ARE NOT:**
+
 - Financial entity under DORA Article 2(1)(a-t) — no DIRECT NCA reporting
 - Designated Critical Third-Party Provider (CTPP) — yet
 - Responsible for client's internal DORA compliance program
@@ -214,11 +221,13 @@ mandatory_contract_clauses:
 ```
 
 **CRITICAL NOTES**:
+
 1. Art. 30(2)(d) is often missed — data access/recovery/return mechanisms are MANDATORY for ALL contracts
 2. Art. 30(2)(h) and (i) are also frequently overlooked but are mandatory
 3. Resilience testing participation is a **30(3)** requirement (critical functions only), not 30(2)
 
 **Art. 30(2)(d) Implementation** — Data Access, Recovery and Return:
+
 ```yaml
 data_access_recovery_clause:
   purpose: |
@@ -283,6 +292,7 @@ data_access_recovery_clause:
 ```
 
 **Art. 30(2)(i) Implementation** — Training Participation (ENHANCED v2.1):
+
 ```yaml
 training_participation_clause:
   # Reference: DORA Art. 30(2)(i) + Art. 13(6)
@@ -425,6 +435,7 @@ additional_requirements_critical:
 ```
 
 **CRITICAL DISTINCTION Art. 30(3)(c) vs (d)**:
+
 - **(c)** = Provider must HAVE business contingency plans (our internal BCP/DR)
 - **(d)** = Provider must PARTICIPATE in client's testing of contingency plans (joint exercises)
 
@@ -675,6 +686,7 @@ ctpp_monitoring:
 ```
 
 **Mitigation Strategy:**
+
 - Monitor client composition qualitatively, not just quantity
 - If ANY GSIB/O-SII becomes a client → immediately assess CTPP risk
 - Maintain documentation as if designation is possible
@@ -906,6 +918,7 @@ automated_ctpp_monitoring:
 Monitoring, logging, health-checks, graceful degradation встроены в архитектуру.
 
 **Implementation:**
+
 - Health endpoints на всех сервисах
 - Structured logging с correlation IDs
 - Circuit breakers для external dependencies
@@ -914,10 +927,12 @@ Monitoring, logging, health-checks, graceful degradation встроены в а�
 ### Principle 2: Clear Separation of Responsibilities
 
 Документация чётко разграничивает:
+
 - Что обеспечивает платформа (availability, monitoring, backups, audit support)
 - Что остаётся за клиентом (их internal DORA program, NCA reporting)
 
 **Implementation:**
+
 - Shared Responsibility Matrix
 - SLA templates с DORA clauses
 - Client-facing status page
@@ -927,6 +942,7 @@ Monitoring, logging, health-checks, graceful degradation встроены в а�
 DORA contractual requirements (Art. 30) — это не "Enterprise feature", а базовое требование для работы с EU clients.
 
 **Implementation:**
+
 - Standard contract templates с Art. 30(2) clauses
 - Enhanced templates для critical functions (Art. 30(3))
 - Audit readiness procedures
@@ -934,6 +950,7 @@ DORA contractual requirements (Art. 30) — это не "Enterprise feature", а
 ### Principle 4: Evidence-Friendly Architecture
 
 Все процессы имеют артефакты для client/auditor/NCA:
+
 - Structured logs с retention
 - Incident reports с timeline
 - DR test reports
@@ -943,6 +960,7 @@ DORA contractual requirements (Art. 30) — это не "Enterprise feature", а
 ### Principle 5: Audit-Ready Operations
 
 Готовность к проверкам клиентами и регуляторами:
+
 - Документированные процедуры
 - Access для аудиторов
 - Evidence preservation
@@ -1568,7 +1586,7 @@ infrastructure_reality_check:
       - "Multi-region deployment"
       - "24/7 on-call team (4+ FTE)"
       - "Automated DR testing"
-	      - "SOC 2 Type II report/attestation (if pursued)"
+       - "SOC 2 Type II report/attestation (if pursued)"
 
   contractual_guidance:
     principle: "Never promise what you cannot deliver"
@@ -1888,7 +1906,7 @@ contractual_sla_guardrails:
           - "Multi-region deployment"
           - "24/7 on-call team (4+ FTE)"
           - "Quarterly DR tests passing"
-	          - "SOC 2 Type II report/attestation (if pursued)"
+           - "SOC 2 Type II report/attestation (if pursued)"
 
   # =========================================================================
   # GUARDRAIL 4: CONTRACT REVIEW PROCESS
@@ -2343,10 +2361,10 @@ subcontractor_management:
       # CCEA NOTE: Client's Agent connects directly to Alpaca. Our Cloud has NO access to client credentials.
       has_data_access: false  # We do NOT store or access client API keys - handled by client's local Agent
       data_types_accessed: []  # Our Cloud receives NO brokerage credentials
-	      certifications:
-	        - "SOC 2 (vendor-provided report/attestation; verify with vendor)"
-	      regulatory_notes:
-	        - "Alpaca is a broker (vendor status); CustodiaCloud is a software/ICT provider and does not execute orders from the Cloud."
+       certifications:
+         - "SOC 2 (vendor-provided report/attestation; verify with vendor)"
+       regulatory_notes:
+         - "Alpaca is a broker (vendor status); CustodiaCloud is a software/ICT provider and does not execute orders from the Cloud."
       contract_reference: "Alpaca API Agreement (client's direct relationship)"
       is_material: false  # Client's integration, not ours
       supports_critical_functions: false  # Trading execution happens in client's Agent, not our Cloud
@@ -3502,7 +3520,7 @@ precontractual_portal_implementation:
       security_overview:
         - "Security whitepaper (PDF)"
         - "Architecture overview (high-level)"
-	        - "Security attestations list (if available)"
+         - "Security attestations list (if available)"
         - "Data handling summary"
 
       service_documentation:
@@ -3512,10 +3530,10 @@ precontractual_portal_implementation:
         - "Pricing models"
 
       trust_indicators:
-	        - "SOC 2 Type II report availability (under NDA, if applicable)"
-	        - "ISO 27001 status (if applicable)"
-	        - "GDPR posture summary (privacy-by-design; evidence exports)"
-	        - "DORA alignment summary (evidence toolkit; not a certification claim)"
+         - "SOC 2 Type II report availability (under NDA, if applicable)"
+         - "ISO 27001 status (if applicable)"
+         - "GDPR posture summary (privacy-by-design; evidence exports)"
+         - "DORA alignment summary (evidence toolkit; not a certification claim)"
 
   # =========================================================================
   # REGISTERED TIER (Email verification)
@@ -4525,7 +4543,7 @@ pooled_audit_framework:
 
     option_2_iso27001_reliance:
       name: "ISO/IEC 27001 (Optional Roadmap)"
-	      description: "Optional future audit/certification path to support procurement (no current certification claim)"
+       description: "Optional future audit/certification path to support procurement (no current certification claim)"
       legal_basis: "Art. 30(4) - third-party certifications (if applicable)"
       status: "PLANNED - evaluation/roadmap"
       target_date: "Q4 2025"
@@ -4537,7 +4555,7 @@ pooled_audit_framework:
 
       client_benefits:
         - "Internationally recognized standard"
-	        - "Surveillance audits (if applicable)"
+         - "Surveillance audits (if applicable)"
         - "Comprehensive ISMS coverage"
 
     option_3_joint_audit:
@@ -4857,6 +4875,7 @@ test_migration:
 **Test Report Artifact**: CI produces test results on each run; historical results in Actions logs
 
 **Goals:**
+
 - ✅ Enable procurement-ready contract templates with EU clients (no certification claim)
 - ✅ Establish evidence-pack readiness (internal)
 - ✅ Clean up non-applicable modules
@@ -4883,6 +4902,7 @@ test_migration:
 | 1.15 | Adapt pooled_testing.py → pooled_audit_support.py | MEDIUM | ✅ | `services/dora/pooled_audit_support.py` |
 
 **Deliverables (All Completed):**
+
 - ✅ DORA-aligned contract templates (incl. subcontracting approval)
 - ✅ Audit readiness package
 - ✅ Provider information package for client ROI
@@ -4894,6 +4914,7 @@ test_migration:
 - ✅ Pre-contractual security overview page (Trust Center)
 
 **New Python Modules Created:**
+
 - `services/dora/sla_guardrails.py` - SLA tier validation with engineering sign-off (40 tests)
 - `services/dora/pooled_audit_support.py` - Pooled audit coordination per Art. 30(4) (41 tests)
 
@@ -4902,6 +4923,7 @@ test_migration:
 ### Phase 2: Core Operational Resilience
 
 **Goals:**
+
 - Strengthen monitoring/logging/alerting
 - Improve DR/BCP with documented RTO/RPO
 - Enhance change management
@@ -4927,6 +4949,7 @@ test_migration:
 | 2.14 | Implement automated CTPP risk monitoring | MEDIUM | ✓ |
 
 **Deliverables:**
+
 - Tiered backup system with automated testing
 - Enhanced monitoring with SLA tracking
 - Structured logging across all services
@@ -4938,6 +4961,7 @@ test_migration:
 - Trust center portal (basic)
 
 **Gate:** Professional tier can be offered after:
+
 - [ ] Multi-AZ deployment completed
 - [ ] Sync replication enabled
 - [ ] On-call rotation established (Option B minimum)
@@ -4946,6 +4970,7 @@ test_migration:
 ### Phase 3: Enterprise Enhancements
 
 **Goals:**
+
 - Extended reporting for regulated clients
 - Joint testing support
 - On-prem deployment support
@@ -4965,12 +4990,13 @@ test_migration:
 | 3.8 | Feature flag system for Enterprise | LOW | |
 | 3.9 | Multi-region deployment | **HIGH** | ✓ |
 | 3.10 | 24/7 on-call (Option C: 4+ engineers) | **HIGH** | ✓ |
-	| 3.11 | Complete SOC 2 Type II audit/attestation (if pursued) | **HIGH** | ✓ |
+ | 3.11 | Complete SOC 2 Type II audit/attestation (if pursued) | **HIGH** | ✓ |
 | 3.12 | Implement pooled audit coordination | MEDIUM | ✓ |
 | 3.13 | Dedicated region deployment option | MEDIUM | ✓ |
-	| 3.14 | ISO 27001 audit/certification evaluation (optional) | MEDIUM | ✓ |
+ | 3.14 | ISO 27001 audit/certification evaluation (optional) | MEDIUM | ✓ |
 
 **Deliverables:**
+
 - Extended incident reporting system
 - Per-client monitoring
 - SIEM integration
@@ -4983,6 +5009,7 @@ test_migration:
 - Dedicated region option
 
 **Gate:** Enterprise tier can be offered after:
+
 - [ ] Multi-region deployment completed
 - [ ] 24/7 on-call team (4+ FTE)
 - [ ] Quarterly DR tests passing

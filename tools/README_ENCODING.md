@@ -9,6 +9,7 @@ This directory contains tools for maintaining consistent UTF-8 encoding across a
 Automatically normalizes problematic Unicode characters to ASCII-safe alternatives.
 
 **Replacements:**
+
 - Em-dash (--) → Double hyphen (--)
 - En-dash (-) → Single hyphen (-)
 - Non-breaking hyphen (-) → Regular hyphen (-)
@@ -23,7 +24,7 @@ Automatically normalizes problematic Unicode characters to ASCII-safe alternativ
 python tools/normalize_encoding.py --dry-run
 
 # Normalize specific files
-python tools/normalize_encoding.py README.md CLAUDE.md
+python tools/normalize_encoding.py README.md `../docs/PLATFORM_REFERENCE.md`
 
 # Normalize entire directory
 python tools/normalize_encoding.py docs/

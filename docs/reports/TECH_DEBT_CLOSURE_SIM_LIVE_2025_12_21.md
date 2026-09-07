@@ -45,6 +45,7 @@ The platform provides simulation tools; live execution validation is a client-si
 #### 3.1 Added Pre-Production Status Section
 
 New section in `SIMULATION_LIMITATIONS.md:17-31` clarifying:
+
 - Platform vs client responsibility matrix
 - Reference to CCEA Design Doc Section 5.1
 - Reference to Documentation Canon Section 4.3 (no performance promises)

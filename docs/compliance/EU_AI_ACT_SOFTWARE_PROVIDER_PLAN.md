@@ -16,10 +16,12 @@
 Текущая классификация (HIGH-RISK) является overcompliance. Algorithmic trading **не включён в Annex III** EU AI Act.
 
 **Правильная классификация**:
+
 - **Primary**: General-Purpose AI Model Provider (Article 53)
 - **Secondary**: Limited Risk AI System (Article 50 transparency)
 
 **Источники**:
+
 - [EU AI Act Article 50](https://artificialintelligenceact.eu/article/50/)
 - [EU AI Act Article 53](https://artificialintelligenceact.eu/article/53/)
 - [EC GPAI Guidelines July 2025](https://digital-strategy.ec.europa.eu/en/policies/ai-code-practice)
@@ -779,6 +781,7 @@ We implement state-of-the-art technologies to identify opt-out reservations:
 ### 4.2 Compliance Process
 
 ```
+
 Data Source Identified
         ↓
 Check robots.txt / TDMRep
@@ -788,6 +791,7 @@ Check robots.txt / TDMRep
     Record compliance check
         ↓
     Proceed with training
+
 ```
 
 ## 5. Data Sources Audit
@@ -1419,7 +1423,7 @@ class TestArticle53dCompliance:
 
 ---
 
-### 1.4 Update __init__.py
+### 1.4 Update **init**.py
 
 **File**: `services/ai_act/__init__.py` — добавить новые модули:
 
@@ -1464,6 +1468,7 @@ from .training_data_summary import (
 **Tests**: 133 tests (69 + 64) - pass rate at time of writing (verify via CI run; coverage may vary with code changes)
 
 **Deliverables**:
+
 - ✅ `services/ai_act/gpai_model_card.py` - GPAI Model Card system
 - ✅ `services/ai_act/user_acknowledgment.py` - User Acknowledgment system
 - ✅ `tests/test_ai_act_gpai_model_card.py` - 69 tests
@@ -2220,6 +2225,7 @@ class TestAcknowledgmentTexts:
 ---
 
 **Sources**:
+
 - [EU AI Act Article 50](https://artificialintelligenceact.eu/article/50/)
 - [EU AI Act Article 53](https://artificialintelligenceact.eu/article/53/)
 - [GPAI Code of Practice](https://digital-strategy.ec.europa.eu/en/policies/contents-code-gpai)

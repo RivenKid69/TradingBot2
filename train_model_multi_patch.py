@@ -288,7 +288,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 #   1. Backward compatibility with old training configs
 #   2. Historical reference
 #
-# WARNING: Do NOT enable PopArt without reviewing CLAUDE.md line 633 and
+# WARNING: Do NOT enable PopArt without reviewing docs/PLATFORM_REFERENCE.md line 633 and
 # running comprehensive tests. PopArt is disabled at initialization.
 # ==============================================================================
 

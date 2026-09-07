@@ -9,6 +9,7 @@
 ## Executive Summary
 
 All 13 tech debt items have been verified and closed with appropriate control artifacts. Each item now has either:
+
 - **Controlled status**: Active monitoring, documented mitigations, and control artifacts in place
 - **Closed status**: Issue resolved with verifiable evidence
 
@@ -213,6 +214,7 @@ For each item, the following was verified:
 All 13 items are now either Controlled or Closed. No remaining actions required for this audit batch.
 
 For Controlled items, ongoing monitoring via:
+
 - CI pipeline runs (test results, SAST scans)
 - Monthly audits (legacy model registry)
 - Quarterly reviews (DR drills, encryption verification)

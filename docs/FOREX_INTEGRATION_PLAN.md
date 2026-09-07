@@ -5,11 +5,13 @@
 Комплексный план интеграции FX в CustodiaCloud с параметрической TCA моделью (L2+) и OTC dealer simulation для повышения реалистичности симуляции. План не меняет CCEA boundary и не меняет equities-first коммерческий фокус (FX — расширение по validated demand).
 
 **Ключевое архитектурное решение**: Forex -- это OTC (Over-The-Counter) рынок с дилерскими котировками, а НЕ биржевой рынок с центральным order book. Поэтому:
+
 - Используется **L2+ Parametric TCA** (как для crypto/equity), НЕ L3 LOB simulation
 - **OTC Dealer Simulation** -- отдельный модуль в `services/`, НЕ в `lob/`
 - Концепция "L3" неприменима напрямую к OTC рынкам
 
 **Ключевой принцип тестирования**: Zero Regression Policy
+
 - **Mandatory regression gates** после каждой фазы
 - **Isolation tests** для предотвращения cross-contamination
 - **Backward compatibility tests** для сохранения API контрактов
@@ -38,6 +40,7 @@
 | **Swap points** | Pips/day | -0.5 pips/day | Long/Short asymmetric |
 
 **Pip Sizes по валютам**:
+
 - Standard (4 decimals): EUR, GBP, AUD, NZD, CHF, CAD → 0.0001
 - JPY pairs (2 decimals): USD/JPY, EUR/JPY, GBP/JPY → 0.01
 
@@ -46,6 +49,7 @@
 ## 🎯 Ключевые требования
 
 ### Функциональные
+
 1. **Полный pipeline** от загрузки данных до live trading
 2. **L2+ parametric TCA** с OTC dealer simulation (95%+ реализм)
 3. **Параллельность** с crypto/equity (никаких регрессий)
@@ -53,6 +57,7 @@
 5. **100% покрытие тестами** нового функционала + регрессионные тесты
 
 ### Архитектурные
+
 1. Использование существующего adapter registry pattern
 2. `ForexParametricSlippageProvider` в `execution_providers.py` (НЕ отдельный файл)
 3. OTC dealer simulation в `services/forex_dealer.py` (НЕ в `lob/`)
@@ -101,6 +106,7 @@
 | **Exotics** | USD/TRY, USD/ZAR, USD/MXN | 15-80 pips | 5-30 pips | 200-500 pips | $1-10B |
 
 **Spread Profiles** (для конфигурации):
+
 ```yaml
 spread_profiles:
   institutional:
@@ -251,6 +257,7 @@ AI-Powered-Quantitative-Research-Platform/
 **Цель**: Исследование и подготовка инфраструктуры
 
 #### 0.1 Market Research
+
 - [ ] Изучить OANDA v20 API documentation
 - [ ] Изучить альтернативы (IG Markets, Dukascopy, FXCM)
 - [ ] Собрать reference spreads по currency pairs (BIS Triennial Survey 2022)
@@ -259,6 +266,7 @@ AI-Powered-Quantitative-Research-Platform/
 - [ ] Изучить OANDA API rate limits (120 requests/sec)
 
 #### 0.2 Architecture Design
+
 - [ ] Финализировать file structure
 - [ ] Определить interfaces для forex adapters (следуя Alpaca pattern)
 - [ ] Спланировать backward compatibility checks
@@ -269,12 +277,14 @@ AI-Powered-Quantitative-Research-Platform/
   - **Swap rates**: OANDA API `/v3/accounts/{id}/instruments` (financing field)
 
 #### 0.3 Test Infrastructure
+
 - [ ] Создать test fixtures для forex data
 - [ ] Настроить mock OANDA API для тестов (VCR pattern)
 - [ ] Добавить forex в CI/CD pipeline
 - [ ] Setup property-based testing с Hypothesis
 
 **Deliverables**:
+
 - Research document
 - Finalized architecture diagram
 - Test infrastructure
@@ -444,6 +454,7 @@ class DataVendor(str, Enum):
 ```
 
 **Deliverables**:
+
 - Updated enums in `adapters/models.py`
 - Updated `AssetClass` in `execution_providers.py`
 - Updated registry lazy loading
@@ -458,7 +469,7 @@ class DataVendor(str, Enum):
 
 **Цель**: Полная реализация OANDA adapter по паттерну Alpaca
 
-#### 2.1 adapters/oanda/__init__.py
+#### 2.1 adapters/oanda/**init**.py
 
 ```python
 """
@@ -779,6 +790,7 @@ class OandaTradingHoursAdapter(TradingHoursAdapter):
 *Similar patterns to Alpaca adapters - see Phase 2 in original plan*
 
 **Deliverables**:
+
 - Complete OANDA adapter package (5 files)
 - Rate limiting implementation
 - DST-aware trading hours
@@ -1190,6 +1202,7 @@ class ForexParametricSlippageProvider:
 ```
 
 **Deliverables**:
+
 - `ForexParametricSlippageProvider` added to `execution_providers.py`
 - `ForexParametricConfig` with all 8 factors
 - `ForexFeeProvider` (returns 0, cost is in spread)
@@ -1490,6 +1503,7 @@ class SwapRatesProvider:
 ```
 
 **Deliverables**:
+
 - `forex_features.py` with full feature set
 - `features_pipeline.py` integration
 - Economic calendar integration with multiple sources
@@ -1846,6 +1860,7 @@ class ForexDealerSimulator:
 ```
 
 **Deliverables**:
+
 - `services/forex_dealer.py` (NOT in `lob/`)
 - `ForexDealerSimulator` with multi-dealer quotes
 - Last-look simulation
@@ -1890,7 +1905,7 @@ class SwapCostTracker:
         # ... implementation
 ```
 
-#### 6.2 services/forex_position_sync.py (~300 LOC) -- NEW!
+#### 6.2 services/forex_position_sync.py (~300 LOC) -- NEW
 
 ```python
 """
@@ -2010,7 +2025,7 @@ class ForexPositionSynchronizer:
             self._task.cancel()
 ```
 
-#### 6.3 services/forex_session_router.py (~250 LOC) -- NEW!
+#### 6.3 services/forex_session_router.py (~250 LOC) -- NEW
 
 ```python
 """
@@ -2138,6 +2153,7 @@ class ForexSessionRouter:
 ```
 
 **Deliverables**:
+
 - `services/forex_risk_guards.py` -- margin, leverage, swap tracking
 - `services/forex_position_sync.py` -- position synchronization
 - `services/forex_session_router.py` -- session-aware routing
@@ -2155,7 +2171,7 @@ class ForexSessionRouter:
 
 *Как в оригинальном плане*
 
-#### 7.2 scripts/download_swap_rates.py -- NEW!
+#### 7.2 scripts/download_swap_rates.py -- NEW
 
 ```python
 """
@@ -2173,7 +2189,7 @@ Usage:
 """
 ```
 
-#### 7.3 scripts/download_economic_calendar.py -- NEW!
+#### 7.3 scripts/download_economic_calendar.py -- NEW
 
 ```python
 """
@@ -2192,6 +2208,7 @@ Usage:
 ```
 
 **Deliverables**:
+
 - `scripts/download_forex_data.py`
 - `scripts/download_swap_rates.py`
 - `scripts/download_economic_calendar.py`
@@ -3100,6 +3117,7 @@ jobs:
 ```
 
 **Deliverables**:
+
 - **735+ tests total** (увеличено на 115 для regression/isolation/backward compat)
 - Property-based test suite (40 tests)
 - Stress test scenarios (20 tests)
@@ -3202,6 +3220,7 @@ jobs:
 ## 📚 References
 
 ### Academic
+
 - Lyons, R. (2001): "The Microstructure Approach to Exchange Rates", MIT Press
 - Evans, M. & Lyons, R. (2002): "Order Flow and Exchange Rate Dynamics", Journal of Political Economy
 - Berger, D. et al. (2008): "The Development of the Global FX Market", BIS Quarterly Review
@@ -3213,6 +3232,7 @@ jobs:
 - **Almgren, R. & Chriss, N. (2001)**: "Optimal Execution of Portfolio Transactions"
 
 ### Industry
+
 - **BIS (2022)**: Triennial Central Bank Survey of Foreign Exchange Markets
 - OANDA v20 API Documentation: https://developer.oanda.com/rest-live-v20/
 - CFTC Commitments of Traders Reports
@@ -3230,12 +3250,13 @@ jobs:
 
 ---
 
-**Author**: Claude AI
+**Author**: Sultan Suyunbayev
 **Version**: 2.1 (Testing & Regression Hardened)
 **Last Updated**: 2025-11-29
 **Reviewer Notes**:
 
 **v2.1 Changes (Regression & Testing Focus):**
+
 - Added comprehensive regression test suite (45 tests)
 - Added isolation test suite (35 tests)
 - Added backward compatibility tests (30 tests)
@@ -3249,6 +3270,7 @@ jobs:
 - Added Section 4 to Success Criteria (Regression Prevention)
 
 **v2.0 Changes:**
+
 - Fixed L3 terminology (OTC ≠ LOB)
 - Added missing services (position_sync, session_router)
 - Fixed file locations (execution_providers.py, services/)

@@ -15,7 +15,7 @@ Scenarios:
 Test Count Target: 30 tests
 
 References:
-    - CLAUDE.md: API contract preservation
+    - docs/PLATFORM_REFERENCE.md: API contract preservation
     - docs/FOREX_INTEGRATION_PLAN.md: Phase 10 requirements
 """
 

@@ -27,7 +27,7 @@ FIX:
 3. This eliminates the semantic conflict and ensures proper feature shifting
 
 References:
-- CLAUDE.md: DATA_LEAKAGE_FIX_REPORT_2025_11_23.md
+- docs/PLATFORM_REFERENCE.md: DATA_LEAKAGE_FIX_REPORT_2025_11_23.md
 - tests/test_data_leakage_prevention.py
 - Issue: Inconsistent close_orig semantics causing data leakage
 """

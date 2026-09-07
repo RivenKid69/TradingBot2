@@ -36,7 +36,7 @@ if sys.platform == 'win32':
 # Core documentation files that MUST exist
 REQUIRED_CORE_DOCS = [
     "README.md",
-    "CLAUDE.md",
+    "docs/PLATFORM_REFERENCE.md",
     "DOCS_INDEX.md",
     "ARCHITECTURE.md",
     "CHANGELOG.md",
@@ -48,7 +48,7 @@ REQUIRED_CORE_DOCS = [
 # Required sections in core docs
 REQUIRED_SECTIONS = {
     "README.md": ["Статус Проекта", "Основные Возможности", "Быстрый Старт"],
-    "CLAUDE.md": ["СТАТУС ПРОЕКТА", "КРИТИЧЕСКИЕ ИСПРАВЛЕНИЯ", "Архитектура проекта"],
+    "docs/PLATFORM_REFERENCE.md": ["СТАТУС ПРОЕКТА", "КРИТИЧЕСКИЕ ИСПРАВЛЕНИЯ", "Архитектура проекта"],
     "DOCS_INDEX.md": ["CRITICAL - READ FIRST", "Core Documentation"],
     "CHANGELOG.md": ["[2.1.0] - 2025-11-21"],
 }

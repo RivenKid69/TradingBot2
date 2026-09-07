@@ -10,7 +10,7 @@ This test suite provides 100% coverage including:
 - Multi-iteration full simulation
 - Mathematical correctness proofs
 
-Author: Claude (Anthropic)
+Author: Sultan Suyunbayev
 Date: 2025-11-18
 """
 

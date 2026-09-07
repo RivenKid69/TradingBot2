@@ -1,10 +1,10 @@
 """
-Tests documenting NOT BUGS #37-#44 from CLAUDE.md.
+Tests documenting NOT BUGS #37-#44 from docs/PLATFORM_REFERENCE.md.
 
 These tests verify that the investigated code patterns work as designed,
 confirming they are NOT bugs but intentional behavior.
 
-Reference: CLAUDE.md sections #37-#44
+Reference: docs/PLATFORM_REFERENCE.md sections #37-#44
 """
 
 import math

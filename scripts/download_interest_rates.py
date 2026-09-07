@@ -50,7 +50,7 @@ Columns:
     - series_id: FRED series ID
     - source: "fred"
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

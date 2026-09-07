@@ -32,7 +32,7 @@ References:
 - Andersen et al. (2003): "Micro Effects of Macro Announcements"
 - Ehrmann & Fratzscher (2005): "Exchange Rates and Fundamentals"
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 Version: 1.0.0
 """

@@ -30,12 +30,14 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Finding**: L3 slippage model uses spread-based estimate instead of full order book walk-through.
 
 **Control Artifacts**:
+
 - [docs/SIMULATION_LIMITATIONS.md](../SIMULATION_LIMITATIONS.md) - Section "L1: LOB Slippage Estimation (STUB)"
 - Code comments in `execution_providers.py:3278-3299` documenting limitation and mitigation
 
 **Required Metric for Closure**: TCA (Transaction Cost Analysis) report comparing simulated vs live slippage by order size and instrument.
 
 **Why Controlled (not Closed)**: This is a per-deployment calibration requirement. Per CCEA Design Doc Section 5.1, live execution validation is client responsibility. Platform provides:
+
 - Honest documentation of limitation
 - Alternative `StatisticalSlippageProvider` with calibration interface
 - Conservative multiplier recommendations (1.5x-2x)
@@ -56,12 +58,14 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Finding**: L3 matching engine simulation uses OHLCV fallback, does not model queue position or partial fills.
 
 **Control Artifacts**:
+
 - [docs/SIMULATION_LIMITATIONS.md](../SIMULATION_LIMITATIONS.md) - Section "L2: LOB Fill Simulation (STUB)"
 - Code warning in `LOBFillProvider.__init__()` directing users to `OHLCVFillProvider`
 
 **Required Metric for Closure**: Fill-rate comparison report (simulation vs paper/live) with queue position and partial fill analysis.
 
 **Why Controlled (not Closed)**: OHLCV fallback provides conservative baseline. Full LOB matching requires:
+
 - Queue position tracking (T2b milestone)
 - Time-price priority implementation
 - Validation against reference exchange matching engine
@@ -81,6 +85,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Finding**: IOC (Immediate-Or-Cancel) order type behaves as GTC in simulation. Tests are stubbed with GTEST_SKIP.
 
 **Control Artifacts**:
+
 - [docs/SIMULATION_LIMITATIONS.md](../SIMULATION_LIMITATIONS.md) - Section "L4: TIF-Conformance"
 - `tests/cpp/test_orderbook_tif_conformance.cpp` - Conformance test stub (GTC/POST_ONLY implemented, IOC skipped)
 - `OrderBook.cpp:70-79` - TODO comment for T2b milestone
@@ -88,6 +93,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Required Metric for Closure**: Conformance test report showing IOC behavior matches reference exchange matching engine.
 
 **Why Controlled (not Closed)**: T2b milestone dependency. Mitigation:
+
 - IOC avoidance recommended until implementation
 - GTC with manual cancel as workaround documented
 - POST_ONLY correctly implemented and tested
@@ -107,6 +113,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Finding**: DR testing not yet conducted; RTO/RPO values not validated.
 
 **Control Artifacts**:
+
 - [docs/runbooks/DR_DRILL.md](../runbooks/DR_DRILL.md) - Drill procedures with execution templates
 - [docs/security/TRUST_CENTER.md](../security/TRUST_CENTER.md) - Honest disclosure of limitation
 - Quarterly drill schedule documented
@@ -114,6 +121,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Required Metric for Closure**: DR drill execution report with measured RTO/RPO and recovery protocol validation.
 
 **Why Controlled (not Closed)**: Pre-revenue startup, infrastructure not yet deployed. Per Documentation Canon:
+
 - Limitation honestly disclosed ("DR testing: Not yet conducted")
 - Drill procedures documented and ready for execution
 - RTO/RPO stated as "design targets pending validation"
@@ -133,6 +141,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Finding**: No operational track record for latency, fill rates, uptime metrics.
 
 **Control Artifacts**:
+
 - [docs/ENTERPRISE_ADOPTION_RISK_MITIGATION.md](../ENTERPRISE_ADOPTION_RISK_MITIGATION.md) - Honest disclosure
 - Tech Debt Registry reference in document
 - SLO/SLI dashboard framework designed (pending deployment)
@@ -140,6 +149,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Required Metric for Closure**: SLO/SLI dashboard with historical uptime/latency/fill-rate metrics from production operations.
 
 **Why Controlled (not Closed)**: Pre-deployment stage with no customers. Per Documentation Canon:
+
 - "No operational track record yet" explicitly stated
 - Customer validation pathway documented (paper/sandbox runs, phased rollout)
 - Metrics framework designed and ready
@@ -159,6 +169,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Finding**: External penetration testing not conducted; no SOC2 audit.
 
 **Control Artifacts**:
+
 - [docs/security/SECURITY_ROADMAP.md](../security/SECURITY_ROADMAP.md) - Roadmap with funding dependencies
 - [docs/security/TRUST_CENTER.md](../security/TRUST_CENTER.md) - Status table with "Roadmap item (no vendor contract)"
 - Internal security practices active (code review, SAST, dependency scanning)
@@ -166,6 +177,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 **Required Metric for Closure**: External pentest report with vulnerability remediation tracking; SOC2 Type I/II report.
 
 **Why Controlled (not Closed)**: Funding-dependent roadmap item. Per Documentation Canon:
+
 - "Roadmap item (no vendor contract)" explicitly stated
 - "Not yet conducted" with target timeline ("2026 if funded")
 - Internal practices documented and active as interim control
@@ -201,6 +213,7 @@ All 6 items exist in `docs/reports/TECH_DEBT_REGISTRY.md`:
 ### 3. Documentation Canon Compliance
 
 All items follow Documentation Canon guidelines:
+
 - No absolute claims about completion or capability
 - Limitations honestly disclosed with "not yet", "pending", "planned" language
 - Mitigation strategies documented
@@ -218,6 +231,7 @@ All items follow Documentation Canon guidelines:
 3. **External audits requiring funding** (pentest/SOC2)
 
 Per the tech debt control framework, "Controlled" status is the correct classification because:
+
 - Risk is known and documented
 - Control artifact exists
 - Mitigation plan or alternative is specified

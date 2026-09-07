@@ -5,6 +5,7 @@
 ---
 
 ## Revision Notes
+
 - **V3 FINAL**: All issues resolved, verified against original table
 - certification.py moved to INTEGRATION (architectural decision - avoids cross-group dependency)
 - config.py split into 3 files (was monolithic)
@@ -92,6 +93,7 @@ ARCHIVE (9 modules): [certification removed]
 | 28 | nca_notification | 1233 | ARCHIVE | — |
 
 **Changes from original table:**
+
 - certification: ARCHIVE → INTEGRATION (architectural decision to avoid cross-group dependency)
 - gleif_client: dependency on lei_manager CONFIRMED (lazy import at line 132)
 - config: will be SPLIT into 3 files
@@ -103,6 +105,7 @@ ARCHIVE (9 modules): [certification removed]
 ## 3. Config Split Strategy
 
 Original `config.py` contains:
+
 - `LEIConfig` → ARCHIVE (FE-specific)
 - `ClockSyncComplianceConfig` → CORE
 - `AlgorithmRegistryConfig` → INTEGRATION
@@ -219,6 +222,7 @@ tests/
 ## 5. Migration Order (Topologically Sorted)
 
 ### Wave 1: No Dependencies (parallel safe)
+
 ```
 CORE:     audit_models, compliance_clock, enhanced_kill_switch,
           pre_trade_controls, realtime_monitor, bcp
@@ -229,6 +233,7 @@ ARCHIVE:  lei_manager, gleif_client, transaction_report, arm_client,
 ```
 
 ### Wave 2: Single Dependency
+
 ```
 CORE:     audit_storage (← audit_models)
 INTEG:    venue_analysis (← best_execution)
@@ -238,6 +243,7 @@ ARCHIVE:  (none)
 ```
 
 ### Wave 3: Multiple Dependencies
+
 ```
 CORE:     retention_policy (← audit_models, audit_storage)
 INTEG:    execution_quality_report (← best_execution, venue_analysis, tca_compliance)
@@ -245,11 +251,13 @@ ARCHIVE:  reporting_pipeline (← transaction_report, arm_client)
 ```
 
 ### Wave 4: Final
+
 ```
 CORE:     audit_trail_writer (← audit_models, audit_storage, retention_policy)
 ```
 
 ### Wave 5: Config Split
+
 ```
 Split config.py into 3 files after all modules migrated
 ```
@@ -793,7 +801,7 @@ git commit -m "refactor: split config.py into 3 group-specific configs"
 git tag checkpoint-8-config-split
 ```
 
-### PHASE 9: Create __init__.py Files
+### PHASE 9: Create **init**.py Files
 
 ```bash
 # Step 9.1: CORE __init__.py
@@ -1338,11 +1346,14 @@ from services.core.risk_controls import EnhancedKillSwitch
 ```
 
 ### Added
+
 - B2B compliance toolkit (`services.algo_integration`)
 - Backward compatibility facade with deprecation warnings
 
 ### Removed
+
 - Direct MiFID II terminology from core modules
+
 ```
 
 ### 13.3 API Documentation Update
@@ -1464,9 +1475,7 @@ Architecture:
 - INTEGRATION: MiFID II B2B toolkit (enterprise)
 - ARCHIVE: FE-only modules (not loaded)
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+"
 
 # FINAL CHECKPOINT
 git tag checkpoint-13-docs-complete

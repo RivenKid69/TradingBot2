@@ -3,6 +3,7 @@
 > **⚠️ CRITICAL LEGAL NOTICE — READ BEFORE USE**
 >
 > This document is a **draft template only** and does **NOT** constitute:
+>
 > - A legal declaration of conformity
 > - A certification or audit result
 > - An assertion that any system is compliant with the EU AI Act
@@ -241,6 +242,7 @@ This declaration is signed by the person authorized to sign on behalf of the pro
 ## Validity and Updates
 
 This declaration remains valid unless:
+
 - Substantial modifications are made to the AI system requiring reassessment (Article 6(3))
 - New requirements become applicable
 - Non-conformities are identified

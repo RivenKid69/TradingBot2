@@ -5,6 +5,7 @@
 Calibration allows tuning simulator parameters to match real market behavior. The L3 simulator provides calibration pipelines for fill probability, market impact, latency, and queue dynamics.
 
 **Files**:
+
 - `lob/calibration.py` (~1,129 lines) - Fill probability calibration
 - `lob/impact_calibration.py` (~1,059 lines) - Market impact calibration
 - `lob/calibration_pipeline.py` (~1,182 lines) - Unified L3 calibration

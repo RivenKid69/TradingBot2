@@ -38,12 +38,14 @@ python scripts/doctor.py --verbose
 ### Environment Variables
 
 **Crypto (Binance):**
+
 ```bash
 export BINANCE_API_KEY="your_key"
 export BINANCE_API_SECRET="your_secret"
 ```
 
 **Stocks (Alpaca):**
+
 ```bash
 export ALPACA_API_KEY="your_key"
 export ALPACA_API_SECRET="your_secret"
@@ -85,6 +87,7 @@ latency:
 ### Output
 
 Results are saved to:
+
 - `logs/` - Execution logs
 - `artifacts/` - Performance metrics, equity curves
 - Console - Summary statistics
@@ -138,6 +141,7 @@ tail -f logs/training.log
 ### Training Checkpoints
 
 Checkpoints are saved to `artifacts/`:
+
 - `best_model.zip` - Best performing model
 - `checkpoint_*.zip` - Periodic checkpoints
 - `final_model.zip` - Final model
@@ -239,6 +243,7 @@ curl http://localhost:8080/health
 ### Key Metrics to Monitor
 
 **Training:**
+
 - Policy loss (should decrease)
 - Value loss (should stabilize)
 - Entropy (should decrease slowly)
@@ -246,6 +251,7 @@ curl http://localhost:8080/health
 - KL divergence (should stay < 0.1)
 
 **Live Execution:**
+
 - P&L (total and daily)
 - Position sizes
 - Order fill rates
@@ -265,6 +271,7 @@ curl http://localhost:8080/metrics
 ```
 
 Response codes:
+
 - `200` - Healthy
 - `503` - Unhealthy (check logs)
 
@@ -275,32 +282,38 @@ Response codes:
 ### Kill Switch
 
 **Method 1: Flag File (Fastest)**
+
 ```bash
 touch state/kill_switch.flag
 ```
 
 **Method 2: Ctrl+C**
+
 - Press Ctrl+C once for graceful shutdown
 - Wait for "Shutdown complete" message
 - Press Ctrl+C again only if stuck
 
 **Method 3: Manual Position Close**
+
 - Log into exchange dashboard
 - Close all positions manually
 - Then kill the process
 
 **Method 4: API Key Revocation (Last Resort)**
+
 - Revoke API keys on exchange
 - This stops ALL API access immediately
 
 ### Recovery After Emergency Stop
 
 1. Remove kill switch flag:
+
    ```bash
    rm state/kill_switch.flag
    ```
 
 2. Check state files:
+
    ```bash
    ls -la state/
    ```
@@ -310,11 +323,13 @@ touch state/kill_switch.flag
    - Reconcile with local state
 
 4. Review logs for root cause:
+
    ```bash
    grep -i error logs/*.log | tail -100
    ```
 
 5. Run doctor before resuming:
+
    ```bash
    python scripts/doctor.py --verbose
    ```
@@ -328,6 +343,7 @@ touch state/kill_switch.flag
 **Symptom:** "Connection refused" or timeout errors
 
 **Solutions:**
+
 1. Check network connectivity
 2. Verify API endpoint URLs
 3. Check if exchange is under maintenance
@@ -344,7 +360,9 @@ latency:
 **Symptom:** "Timestamp outside recv window" errors
 
 **Solutions:**
+
 1. Sync system clock:
+
    ```bash
    # Windows
    w32tm /resync
@@ -354,6 +372,7 @@ latency:
    ```
 
 2. Configure clock sync in config:
+
    ```yaml
    clock_sync:
      refresh_sec: 60      # More frequent sync
@@ -366,12 +385,15 @@ latency:
 **Symptom:** "Too many requests" or 429 errors
 
 **Solutions:**
+
 1. Reduce signal frequency:
+
    ```yaml
    max_signals_per_sec: 2.0  # Lower value
    ```
 
 2. Increase backoff:
+
    ```yaml
    backoff_base_s: 5.0
    max_backoff_s: 120.0
@@ -382,6 +404,7 @@ latency:
 **Symptom:** Process killed, "MemoryError"
 
 **Solutions:**
+
 1. Reduce batch sizes
 2. Reduce number of symbols
 3. Use shorter history windows
@@ -392,6 +415,7 @@ latency:
 **Symptom:** "Model not found" or checkpoint errors
 
 **Solutions:**
+
 1. Verify checkpoint path exists
 2. Check model was saved correctly
 3. Ensure compatible Python/library versions
@@ -406,12 +430,15 @@ python -c "import zipfile; zipfile.ZipFile('artifacts/best_model.zip').namelist(
 **Symptom:** "Filters are stale" or quantizer errors
 
 **Solutions:**
+
 1. Update filters:
+
    ```bash
    python scripts/fetch_binance_filters.py --out data/binance_filters.json
    ```
 
 2. Update fees:
+
    ```bash
    python scripts/refresh_fees.py
    ```
@@ -485,6 +512,7 @@ This section covers procedures for EU regulated clients per DORA (Regulation EU 
 | Low | <24 hours | Dashboard | N/A |
 
 **Critical Incident Notification Steps:**
+
 1. Classify incident severity using `services/dora_integration/incident_interface/incident_classification.py`
 2. Identify affected clients (especially EU regulated)
 3. Draft initial notification using template below
@@ -493,6 +521,7 @@ This section covers procedures for EU regulated clients per DORA (Regulation EU 
 6. Prepare follow-up report within 4 hours
 
 **Notification Template:**
+
 ```
 Subject: [SEVERITY] Service Incident - [Brief Description]
 
@@ -518,6 +547,7 @@ This notification is provided per DORA Article 30(2)(f) contractual obligations.
 **Target Response Time:** 5 business days for standard requests, 24 hours for regulatory urgent (planning target; capacity dependent; not a guaranteed SLA commitment; actual terms defined in executed service agreements).
 
 **Audit Request Processing:**
+
 1. Log request in `services/dora/audit_readiness.py`
 2. Classify request type (client operational, NCA, third-party)
 3. Assign audit coordinator
@@ -527,6 +557,7 @@ This notification is provided per DORA Article 30(2)(f) contractual obligations.
 7. Document completion
 
 **Evidence Categories Available:**
+
 - ICT governance documentation
 - Security policies and procedures
 - Incident reports (client-specific)
@@ -537,6 +568,7 @@ This notification is provided per DORA Article 30(2)(f) contractual obligations.
 - SOC2/ISO27001 reports
 
 **Commands for Evidence Gathering:**
+
 ```bash
 # Generate client-specific audit log extract
 python -m services.dora.audit_readiness generate-evidence \
@@ -571,6 +603,7 @@ python -m services.data_export verify \
 ```
 
 **Export Contents:**
+
 - Trading strategies and configurations
 - Backtest results and performance history
 - Trained ML/RL models (ONNX format)
@@ -579,6 +612,7 @@ python -m services.data_export verify \
 - API configurations (excluding keys)
 
 **Timeline Commitment:**
+
 - Standard: 5 business days
 - Urgent: 48 hours
 - Insolvency scenario: 72 hours
@@ -596,6 +630,7 @@ python -m services.data_export verify \
 7. **Document** - log all information provided
 
 **Confidentiality Protection:**
+
 - Redact other clients' data
 - Escorted access only
 - Scope limited to requesting client's services
@@ -614,6 +649,7 @@ python -m services.dora.incident_classification classify \
 ```
 
 **Classification Outputs:**
+
 - CRITICAL: Data breach, >2h outage, >50% clients affected
 - HIGH: 30min-2h outage, security incident, <50% clients
 - MEDIUM: <30min outage, performance degradation
@@ -631,6 +667,7 @@ python -m services.dora.incident_classification classify \
 6. Update subcontractor risk assessment
 
 **Subcontractor Status Pages:**
+
 - AWS: https://status.aws.amazon.com/
 - Polygon: https://status.polygon.io/
 - Alpaca: https://status.alpaca.markets/
@@ -641,36 +678,43 @@ python -m services.dora.incident_classification classify \
 ## Quick Reference Commands
 
 ### Simulation
+
 ```bash
 python script_backtest.py --config configs/config_sim.yaml
 ```
 
 ### Training
+
 ```bash
 python train_model_multi_patch.py --config configs/config_train.yaml
 ```
 
 ### Evaluation
+
 ```bash
 python script_eval.py --config configs/config_eval.yaml --all-profiles
 ```
 
 ### Live (Dry Run)
+
 ```bash
 python script_live.py --config configs/config_live.yaml --dry-run
 ```
 
 ### Live (Real)
+
 ```bash
 python script_live.py --config configs/config_live.yaml
 ```
 
 ### Doctor Check
+
 ```bash
 python scripts/doctor.py --verbose
 ```
 
 ### Emergency Stop
+
 ```bash
 touch state/kill_switch.flag
 ```
@@ -680,7 +724,7 @@ touch state/kill_switch.flag
 ## Support
 
 - **Documentation:** See `docs/` directory
-- **Issues:** Check `CLAUDE.md` troubleshooting section
+- **Issues:** Check `PLATFORM_REFERENCE.md` troubleshooting section
 - **Tests:** Run `pytest tests/` to verify system health
 
 ---

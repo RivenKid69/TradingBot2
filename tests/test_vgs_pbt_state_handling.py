@@ -4,7 +4,7 @@ Tests verifying VGS state is properly handled during PBT exploit.
 These tests confirm that VGS state IS correctly serialized and restored,
 countering the false claim that "VGS state НЕ копируется".
 
-Reference: CLAUDE.md "НЕ БАГИ" #52
+Reference: docs/PLATFORM_REFERENCE.md "НЕ БАГИ" #52
 """
 
 import pytest

@@ -317,20 +317,20 @@ class TestRewardSemantics:
 
     def test_bankruptcy_is_catastrophic(self):
         """Test bankruptcy penalty is severe (-10.0)."""
-        # From CLAUDE.md: bankruptcy = -10.0 (catastrophic)
+        # From docs/PLATFORM_REFERENCE.md: bankruptcy = -10.0 (catastrophic)
         if hasattr(reward, 'BANKRUPTCY_PENALTY'):
             assert reward.BANKRUPTCY_PENALTY == -10.0
 
     def test_normal_reward_bounded(self):
         """Test normal rewards are bounded."""
-        # From CLAUDE.md: Normal reward ∈ [-2.3, 2.3]
+        # From docs/PLATFORM_REFERENCE.md: Normal reward ∈ [-2.3, 2.3]
         # This is a semantic test - verify constants if defined
         if hasattr(reward, 'MAX_NORMAL_REWARD'):
             assert abs(reward.MAX_NORMAL_REWARD) < 3.0
 
     def test_potential_shaping_smooth(self):
         """Test potential shaping provides smooth gradient."""
-        # From CLAUDE.md: Potential shaping warns agent BEFORE bankruptcy
+        # From docs/PLATFORM_REFERENCE.md: Potential shaping warns agent BEFORE bankruptcy
         # Semantic test - verify relevant functions exist
         if hasattr(reward, 'compute_risk_penalty'):
             assert callable(getattr(reward, 'compute_risk_penalty'))
@@ -342,19 +342,19 @@ class TestRiskManagerSemantics:
 
     def test_max_leverage_check(self):
         """Test max leverage is enforced."""
-        # From CLAUDE.md: max_leverage: 1.0 (no leverage by default)
+        # From docs/PLATFORM_REFERENCE.md: max_leverage: 1.0 (no leverage by default)
         if hasattr(risk_manager, 'MAX_LEVERAGE'):
             assert risk_manager.MAX_LEVERAGE >= 1.0
 
     def test_max_drawdown_check(self):
         """Test max drawdown is enforced."""
-        # From CLAUDE.md: max_drawdown_pct: 0.10 (10% default)
+        # From docs/PLATFORM_REFERENCE.md: max_drawdown_pct: 0.10 (10% default)
         if hasattr(risk_manager, 'MAX_DRAWDOWN_PCT'):
             assert 0 < risk_manager.MAX_DRAWDOWN_PCT <= 1.0
 
     def test_position_limits_enforced(self):
         """Test position limits are enforced."""
-        # From CLAUDE.md: max_position defined in risk.yaml
+        # From docs/PLATFORM_REFERENCE.md: max_position defined in risk.yaml
         if hasattr(risk_manager, 'check_position_limit'):
             # Function should enforce limits
             assert callable(getattr(risk_manager, 'check_position_limit'))
@@ -366,13 +366,13 @@ class TestObsBuilderSemantics:
 
     def test_nan_converted_to_zero(self):
         """Test NaN values are converted to 0.0."""
-        # From CLAUDE.md: NaN values в external features конвертируются в 0.0
+        # From docs/PLATFORM_REFERENCE.md: NaN values в external features конвертируются в 0.0
         if hasattr(obs_builder, 'NAN_VALUE'):
             assert obs_builder.NAN_VALUE == 0.0
 
     def test_external_features_semantic_ambiguity(self):
         """Test external features semantic ambiguity is documented."""
-        # From CLAUDE.md: Semantic ambiguity - missing data vs zero value
+        # From docs/PLATFORM_REFERENCE.md: Semantic ambiguity - missing data vs zero value
         # This is a documentation test
         # Verify module exists and is importable
         assert obs_builder is not None, "obs_builder module should be importable"

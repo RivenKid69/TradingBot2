@@ -11,7 +11,7 @@ Tests cover:
 5. Statistics tracking
 6. Edge cases and integration scenarios
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

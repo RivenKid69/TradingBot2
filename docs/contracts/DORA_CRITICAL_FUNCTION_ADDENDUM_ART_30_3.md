@@ -1,4 +1,5 @@
 # DORA Critical/Important Function Addendum
+
 ## Article 30(3) Additional Provisions
 
 **Version**: 1.2
@@ -15,6 +16,7 @@
 This Addendum supplements the base DORA ICT Service Provisions (Art. 30(2)) with additional requirements mandated when ICT services support Client's **critical or important functions** as defined in DORA Article 3(22).
 
 **This Addendum applies when:**
+
 - Client has designated Provider's services as supporting a critical/important function
 - Provider's services directly impact Client's ability to comply with authorization conditions
 - Provider's services support functions essential to Client's business model
@@ -59,6 +61,7 @@ See `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` and `services/dora/sla_guar
 **A.3 Performance Monitoring**
 
 Provider SHALL:
+
 - Maintain real-time monitoring dashboards accessible to Client
 - Provide API endpoints for Client's own monitoring integration
 - Alert Client automatically on any SLA threshold breach
@@ -152,6 +155,7 @@ Provider SHALL participate in Client's resilience testing including:
 **D.2 TLPT Support (Threat-Led Penetration Testing)**
 
 If Client is required to conduct TLPT per Article 26:
+
 - Provider SHALL cooperate fully with designated testers
 - Provider SHALL provide necessary access and documentation
 - Provider SHALL not obstruct or interfere with testing
@@ -184,6 +188,7 @@ Client (and Client's designated auditors) SHALL have **unrestricted** rights to:
 **E.2 NCA/Resolution Authority Access**
 
 Client's competent authority and resolution authority SHALL have:
+
 - All rights granted to Client under E.1
 - Right to direct access without going through Client
 - Right to conduct on-site inspections
@@ -193,6 +198,7 @@ Client's competent authority and resolution authority SHALL have:
 **E.3 No Impediment to Supervision**
 
 Provider SHALL NOT:
+
 - Impose contractual terms that obstruct effective supervision
 - Limit audit frequency without cause
 - Restrict scope of audits unreasonably
@@ -202,11 +208,13 @@ Provider SHALL NOT:
 **E.4 Pooled Audit Option**
 
 Per Article 30(4), Client may rely on:
+
 - Third-party certifications (SOC2 Type II, ISO 27001) **if and when obtained** (CustodiaCloud SOC2 roadmap target: 2027; not currently certified)
 - Pooled audit reports arranged by Provider (subject to provider obtaining such audits)
 - Joint audits with other financial entity clients
 
 Provider intends to support pooled audits (subject to operational maturity and audit engagement):
+
 - Organizing annual third-party audit (planned; timeline subject to resources and client demand)
 - Making audit reports available to participating clients (when obtained and per NDA)
 - Coordinating joint audit requests (subject to minimum participating client threshold)
@@ -225,6 +233,7 @@ Provider intends to support pooled audits (subject to operational maturity and a
 **F.1 Exit Planning**
 
 Provider SHALL maintain throughout the contract term:
+
 - Documented exit plan reviewed annually
 - Data export procedures tested semi-annually
 - Knowledge transfer documentation
@@ -242,6 +251,7 @@ Provider SHALL maintain throughout the contract term:
 **F.3 Transition Assistance**
 
 Provider SHALL provide:
+
 - Full data export in agreed formats (5 business days)
 - Knowledge transfer sessions (minimum 40 hours)
 - API documentation for successor integration
@@ -258,6 +268,7 @@ Provider SHALL provide:
 **F.5 Exit Testing**
 
 Provider SHALL:
+
 - Conduct annual exit plan testing
 - Document test results and remediation
 - Update exit plan based on system changes
@@ -270,6 +281,7 @@ Provider SHALL:
 **G.1 Supervisory Cooperation**
 
 Provider SHALL cooperate with supervisory oversight activities including:
+
 - Providing information for Client's regulatory reporting
 - Supporting on-site inspections by NCAs
 - Participating in supervisory stress testing if required
@@ -278,6 +290,7 @@ Provider SHALL cooperate with supervisory oversight activities including:
 **G.2 Information Provision**
 
 Upon Client or NCA request:
+
 - Information request response: 5 business days
 - Evidence collection: 10 business days
 - System access arrangements: 5 business days
@@ -285,6 +298,7 @@ Upon Client or NCA request:
 **G.3 Supervisory Contact**
 
 If NCA contacts Provider directly:
+
 - Provider SHALL notify Client within 24 hours
 - Provider SHALL coordinate response with Client
 - Provider SHALL not provide information that could harm Client without prior consultation
@@ -296,6 +310,7 @@ If NCA contacts Provider directly:
 **H.1 BCP Requirements**
 
 Provider SHALL implement:
+
 - Redundant infrastructure (multi-AZ minimum)
 - Real-time data replication for critical functions
 - Automated failover capabilities
@@ -304,6 +319,7 @@ Provider SHALL implement:
 **H.2 Service Availability Design Targets (Illustrative)**
 
 For critical functions (design targets; actual commitments per executed agreement):
+
 - No single point of failure in production systems (design goal)
 - Geographic redundancy for data storage (design goal)
 - Design target: 4-hour RTO for complete service recovery (validation pending DR testing)
@@ -312,6 +328,7 @@ For critical functions (design targets; actual commitments per executed agreemen
 **H.3 BCP Testing Evidence**
 
 Provider SHALL provide Client:
+
 - Annual BCP test summary report
 - Quarterly tabletop exercise summaries
 - Semi-annual DR test results
@@ -324,6 +341,7 @@ Provider SHALL provide Client:
 **I.1 Security Standards**
 
 Provider SHALL maintain appropriate security standards, including (where applicable/available):
+
 - SOC 2 Type II report (roadmap/when available)
 - ISO/IEC 27001 certification status (if pursued/available)
 - Regular penetration testing (annual minimum)
@@ -342,6 +360,7 @@ Provider SHALL maintain appropriate security standards, including (where applica
 **I.3 Security Testing**
 
 Provider SHALL conduct and share results of:
+
 - Annual penetration testing (third-party)
 - Quarterly vulnerability assessments
 - Continuous security monitoring
@@ -373,6 +392,7 @@ For services supporting critical/important functions:
 **J.3 Subcontractor Chain Monitoring**
 
 Provider SHALL:
+
 - Maintain complete subcontractor chain documentation
 - Monitor subcontractor performance continuously
 - Report subcontractor incidents within 4 hours
@@ -381,6 +401,7 @@ Provider SHALL:
 **J.4 Flow-Down Requirements**
 
 All subcontractor agreements SHALL include:
+
 - Audit rights for Client and NCA
 - Data location restrictions matching this Agreement
 - Security requirements equivalent to this Agreement
@@ -416,7 +437,6 @@ Date: ________________________________
 
 Signature: ____________________________
 
-
 **Provider Acceptance:**
 
 Name: ________________________________
@@ -430,6 +450,7 @@ Signature: ____________________________
 ---
 
 *Document Version Control:*
+
 - v1.0 (2025-01-17): Initial release aligned with DORA application date
 - v1.1 (2025-12-19): **Due diligence audit corrections**: Added critical disclaimer to Section A.1 clarifying all targets are "illustrative design targets; not current operational capabilities"; updated RTO/RPO table (C.3) with "Untested Design Target" column headers and "pending validation" notes; updated pooled audit section (E.4) to clarify SOC2 "if and when obtained" (roadmap target 2027; not currently certified)
 - v1.2 (2025-12-19): **Due diligence audit - pre-revenue status**: Strengthened top-level template disclaimer to explicitly state "pre-revenue startup with no current customers, no operational track record, and no validated infrastructure capacity"; changed A.1 section header and table column from "Target (Illustrative)" to "Aspirational Target (Unvalidated)"; added CRITICAL DISCLAIMER block before A.1 table stating targets are "unvalidated aspirational targets for planning purposes only" and require infrastructure implementation/validation before commitment.

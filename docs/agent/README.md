@@ -11,6 +11,7 @@ The Agent Zone handles all live trading operations locally on the user's infrast
 ### Design Doc Reference (§4.2)
 
 Agent components per Design Doc:
+
 - **Local Vault** - Keychain/encrypted file storage for broker API keys
 - **Approval UI** - CLI/GUI for local approval of TRADING_IMPACTING changes
 - **Policy Firewall** - Layered config + hard caps enforcement
@@ -351,6 +352,7 @@ ccea-agent preflight           # Run pre-flight checks
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](../CCEA_OVERVIEW.md)
 - [Cloud Documentation](../cloud/README.md)
 - [Runbooks](../runbooks/)

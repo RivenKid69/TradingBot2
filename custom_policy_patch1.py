@@ -983,7 +983,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # Оба пути корректно обрабатывают episode boundaries (episode_starts).
         # Production код протестирован и работает для обоих типов recurrent modules.
         #
-        # Reference: CLAUDE.md → "НЕ БАГИ" → #27
+        # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #27
         # ═══════════════════════════════════════════════════════════════════════════════
         if isinstance(recurrent_module, nn.GRU):
             if not lstm_states:
@@ -1430,7 +1430,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         #
         # For ent_coef > 0.01: consider increasing samples to 8-16
         #
-        # Reference: CLAUDE.md → "НЕ БАГИ" → #41
+        # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #41
         # ═══════════════════════════════════════════════════════════════════════════
         samples = 4
         entropy_accum: Optional[torch.Tensor] = None

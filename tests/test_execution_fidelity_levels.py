@@ -4,15 +4,15 @@ Tests for execution provider fidelity levels (L2 vs L2+ vs L3).
 
 This test suite validates the documented design trade-offs between different
 execution simulation fidelity levels. These are NOT bugs - they are intentional
-design choices documented in CLAUDE.md sections #54-#59.
+design choices documented in docs/PLATFORM_REFERENCE.md sections #54-#59.
 
 References:
-    - CLAUDE.md #54: L2 ADV Intraday Seasonality (by design)
-    - CLAUDE.md #55: L2 Temp/Perm Impact (by design)
-    - CLAUDE.md #56: L2 Static Spread (by design)
-    - CLAUDE.md #57: L2 Deterministic Fills (by design)
-    - CLAUDE.md #58: Whale Threshold Configurable
-    - CLAUDE.md #59: Reward Clipping Not Stacked
+    - docs/PLATFORM_REFERENCE.md #54: L2 ADV Intraday Seasonality (by design)
+    - docs/PLATFORM_REFERENCE.md #55: L2 Temp/Perm Impact (by design)
+    - docs/PLATFORM_REFERENCE.md #56: L2 Static Spread (by design)
+    - docs/PLATFORM_REFERENCE.md #57: L2 Deterministic Fills (by design)
+    - docs/PLATFORM_REFERENCE.md #58: Whale Threshold Configurable
+    - docs/PLATFORM_REFERENCE.md #59: Reward Clipping Not Stacked
 """
 
 import pytest

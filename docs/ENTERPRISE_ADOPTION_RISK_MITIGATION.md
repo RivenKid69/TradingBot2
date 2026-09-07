@@ -230,6 +230,7 @@ security_pipeline:
 ```
 
 **Deployment Package Includes**:
+
 - Docker images or bare-metal installation scripts
 - Infrastructure-as-Code (Terraform/Ansible)
 - Hardware sizing guide
@@ -391,6 +392,7 @@ General Data Protection Regulation requirements for data handling:
 | **Data Subject Rights** | Export, deletion, and portability APIs |
 
 **Data Processing Architecture**:
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                    GDPR-ALIGNED DATA PROCESSING                              │
@@ -898,6 +900,7 @@ Latency, fill rates, and uptime metrics depend on customer environment, venue co
 ### Call to Action
 
 For enterprise inquiries:
+
 - **Email**: enterprise@[company].com
 - **Demo Request**: [Company Website]/enterprise-demo
 - **Technical Documentation**: Available under NDA
@@ -941,6 +944,7 @@ Operations:
 ## Appendix B: Compliance Document Templates
 
 Available upon request:
+
 - MiFID II Algorithm Documentation Template
 - GDPR Data Processing Agreement
 - DORA ICT Risk Assessment Framework
@@ -950,6 +954,7 @@ Available upon request:
 ## Appendix C: Integration Samples
 
 Code samples and API documentation available in our developer portal:
+
 - REST API examples (Python, Java, C#)
 - WebSocket integration guide
 - FIX protocol configuration

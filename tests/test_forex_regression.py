@@ -17,7 +17,7 @@ Test Categories:
 Test Count Target: 45 tests
 
 References:
-    - CLAUDE.md: Regression Prevention Protocol
+    - docs/PLATFORM_REFERENCE.md: Regression Prevention Protocol
     - docs/FOREX_INTEGRATION_PLAN.md: Phase 10 requirements
 """
 

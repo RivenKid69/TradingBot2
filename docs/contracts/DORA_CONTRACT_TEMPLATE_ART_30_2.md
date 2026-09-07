@@ -1,4 +1,5 @@
 # DORA ICT Service Contract Template
+
 ## Article 30(2) Basic Provisions - All EU Clients
 
 **Version**: 1.0
@@ -34,11 +35,13 @@ The Provider shall deliver the following ICT services to the Client:
 **1.2 Service Boundaries**
 
 The Provider SHALL:
+
 - Provide services as described in Schedule A (Service Specifications)
 - Maintain service documentation current and accurate
 - Notify Client of material service changes per Section 2.3
 
 The Provider SHALL NOT:
+
 - Execute trades on Client's behalf without explicit authorization
 - Access Client's trading accounts except as required for service delivery
 - Make investment decisions for Client
@@ -73,6 +76,7 @@ Upon Client request, Provider SHALL ensure all Client data remains within the Eu
 **2.3 Location Change Notification**
 
 Provider SHALL notify Client:
+
 - **60 days in advance** of any planned change in data processing/storage location
 - **Immediately** if compelled to transfer data to a non-EU jurisdiction
 - Client may object within 30 days of notification
@@ -81,6 +85,7 @@ Provider SHALL notify Client:
 **2.4 Data Transfer Safeguards**
 
 Any data transfer outside the EU/EEA SHALL be subject to:
+
 - Standard Contractual Clauses (SCCs) per Commission Decision 2021/914
 - Supplementary measures as required by CJEU Schrems II ruling
 - Client approval for transfers to jurisdictions without adequacy decisions
@@ -102,6 +107,7 @@ Any data transfer outside the EU/EEA SHALL be subject to:
 **3.2 Authenticity Measures**
 
 Provider SHALL implement:
+
 - Multi-factor authentication for all user accounts
 - API authentication via secure tokens (OAuth 2.0 / API keys)
 - Mutual TLS for system-to-system communications
@@ -110,6 +116,7 @@ Provider SHALL implement:
 **3.3 Integrity Controls**
 
 Provider SHALL ensure:
+
 - All data at rest encrypted with AES-256
 - All data in transit encrypted with TLS 1.3
 - Cryptographic checksums (SHA-256) for data exports
@@ -119,6 +126,7 @@ Provider SHALL ensure:
 **3.4 Confidentiality Safeguards**
 
 Provider SHALL maintain:
+
 - Role-based access control (RBAC) for all systems
 - Logical separation of Client data from other clients
 - Staff background checks for personnel with data access
@@ -132,6 +140,7 @@ Provider SHALL maintain:
 **4.1 Data Access Rights**
 
 Client SHALL have:
+
 - Real-time access to own data via secure API
 - Self-service data export functionality
 - Read-only access to audit logs related to Client data
@@ -140,6 +149,7 @@ Client SHALL have:
 **4.2 Data Recovery**
 
 In the event of data loss or corruption:
+
 - Provider SHALL restore from backup within RTO (see Section 3.1)
 - Recovery Point Objective (RPO): Maximum 1 hour data loss
 - Client SHALL be notified within 30 minutes of any data loss event
@@ -158,6 +168,7 @@ Upon contract termination, expiration, or Provider insolvency:
 **4.4 Data Export Formats**
 
 All Client data SHALL be exportable in:
+
 - **JSON**: Structured data (strategies, configurations)
 - **CSV**: Tabular data (performance history, trades)
 - **SQL**: Database dumps (PostgreSQL-compatible)
@@ -167,6 +178,7 @@ All Client data SHALL be exportable in:
 **4.5 Data Scope**
 
 Export SHALL include:
+
 - All trading strategies and configurations
 - Backtest results and performance history
 - Trained ML/AI models and weights
@@ -175,6 +187,7 @@ Export SHALL include:
 - API integration configurations
 
 Export SHALL NOT include:
+
 - Platform proprietary source code
 - Other clients' data
 - Aggregated anonymized platform metrics
@@ -182,6 +195,7 @@ Export SHALL NOT include:
 **4.6 Insolvency Protection**
 
 Provider SHALL maintain:
+
 - Data escrow with [designated escrow provider]
 - Weekly full backups to escrow
 - Escrow access triggered by: insolvency filing, 30-day non-response
@@ -210,6 +224,7 @@ Provider SHALL maintain:
 **5.3 SLA Reporting**
 
 Provider SHALL provide:
+
 - Monthly SLA performance report by 5th business day
 - Real-time status page access
 - Automated alerts on threshold breaches
@@ -237,6 +252,7 @@ Provider SHALL provide:
 **6.2 Incident Assistance Obligations**
 
 Provider SHALL (per contracted tier):
+
 - Provide incident response for Critical/High severity (24/7 for applicable tiers)
 - Assist Client's incident investigation at no additional cost (Critical/High)
 - Provide incident reports within 24 hours of resolution
@@ -252,6 +268,7 @@ Provider SHALL (per contracted tier):
 **6.4 Incident Documentation**
 
 Provider SHALL maintain:
+
 - Incident timeline with all actions taken
 - Root cause analysis report
 - Remediation actions and evidence
@@ -264,6 +281,7 @@ Provider SHALL maintain:
 **7.1 Cooperation Scope**
 
 Provider SHALL fully cooperate with:
+
 - Client's competent authority (NCA)
 - Client's resolution authority
 - Other supervisory authorities with jurisdiction over Client
@@ -271,6 +289,7 @@ Provider SHALL fully cooperate with:
 **7.2 Cooperation Obligations**
 
 Provider SHALL:
+
 - Respond to information requests within 5 business days
 - Make personnel available for interviews as reasonably requested
 - Provide documentation relevant to Client's regulatory obligations
@@ -280,6 +299,7 @@ Provider SHALL:
 **7.3 Limitations**
 
 Provider cooperation is limited to:
+
 - Information and access relevant to services provided to specific Client
 - Protection of other clients' confidential information
 - Commercially sensitive information protected where possible
@@ -287,6 +307,7 @@ Provider cooperation is limited to:
 **7.4 Notice to Client**
 
 Provider SHALL notify Client within 24 hours of:
+
 - Any direct contact from Client's NCA regarding this arrangement
 - Any regulatory inquiry that may affect services to Client
 - Any enforcement action against Provider that could impact Client
@@ -302,6 +323,7 @@ Either party may terminate upon **90 days** written notice.
 **8.2 Termination for Cause**
 
 Client may terminate immediately or upon **30 days** notice if:
+
 - Provider commits material breach not cured within 30 days
 - Provider becomes insolvent or files for bankruptcy
 - Provider experiences security incident materially affecting Client
@@ -312,6 +334,7 @@ Client may terminate immediately or upon **30 days** notice if:
 **8.3 Regulatory Termination**
 
 Client may terminate immediately, without penalty, if:
+
 - Client's NCA or resolution authority directs termination
 - Applicable law prohibits the outsourcing arrangement
 - Provider designated as CTPP and fails oversight requirements
@@ -319,6 +342,7 @@ Client may terminate immediately, without penalty, if:
 **8.4 Transition Assistance**
 
 Upon any termination:
+
 - Provider SHALL provide transition assistance for minimum 90 days
 - Services continue during notice period at agreed service levels
 - Data export per Section 4.3 timelines
@@ -327,6 +351,7 @@ Upon any termination:
 **8.5 No Vendor Lock-in**
 
 Provider SHALL NOT:
+
 - Use proprietary data formats that impede portability
 - Impose technical barriers to data migration
 - Withhold documentation needed for transition
@@ -338,6 +363,7 @@ Provider SHALL NOT:
 **9.1 Security Awareness Programs**
 
 Provider SHALL participate in Client's ICT security awareness programs:
+
 - Annual security briefing session (minimum)
 - Additional sessions upon reasonable request
 - Remote participation preferred; on-site available
@@ -345,6 +371,7 @@ Provider SHALL participate in Client's ICT security awareness programs:
 **9.2 Digital Operational Resilience Training**
 
 Provider SHALL support Client's resilience training per Article 13(6):
+
 - Participate in scenario-based exercises
 - Support joint disaster recovery drills
 - Provide platform-specific training materials
@@ -352,6 +379,7 @@ Provider SHALL support Client's resilience training per Article 13(6):
 **9.3 Provider Contribution**
 
 Provider SHALL:
+
 - Present platform security architecture
 - Explain incident response procedures
 - Review shared responsibility model
@@ -378,6 +406,7 @@ Provider SHALL:
 **10.1 Current Subcontractors**
 
 See Annex B for complete subcontractor register including:
+
 - Subcontractor name and LEI (if available)
 - Services provided
 - Data processing locations
@@ -386,6 +415,7 @@ See Annex B for complete subcontractor register including:
 **10.2 Permitted Subcontracting**
 
 Provider may subcontract provided:
+
 - Subcontractor meets security standards equivalent to this Agreement
 - Client is notified per Section 10.3
 - Subcontractor agreement includes DORA-required terms
@@ -403,6 +433,7 @@ Provider may subcontract provided:
 **10.4 Objection Process**
 
 If Client objects to subcontracting change:
+
 1. Provider SHALL engage in good faith discussion within 10 business days
 2. Parties SHALL seek mutually acceptable alternative
 3. If unresolved, Client may terminate affected services with 90 days notice
@@ -412,18 +443,23 @@ If Client objects to subcontracting change:
 ## ANNEXES
 
 ### Annex A: Service Specifications
+
 [Detailed technical specifications for each service]
 
 ### Annex B: Subcontractor Register
+
 [Complete list of current subcontractors with required information]
 
 ### Annex C: Fee Schedule
+
 [Pricing for standard services, additional support, and transition assistance]
 
 ### Annex D: SLA Definitions
+
 [Detailed measurement methodology for each SLA metric]
 
 ### Annex E: Data Processing Agreement
+
 [GDPR-aligned DPA as required (legal review)]
 
 ---
@@ -442,7 +478,6 @@ Date: ________________________________
 
 Signature: ____________________________
 
-
 **Provider Acceptance:**
 
 Name: ________________________________
@@ -456,6 +491,7 @@ Signature: ____________________________
 ---
 
 *Document Version Control:*
+
 - v1.0 (2025-01-17): Initial release aligned with DORA application date
 - Based on Regulation (EU) 2022/2554 Article 30(2)(a-i)
 - Reviewed by: Legal, Compliance, Security, Operations

@@ -47,7 +47,7 @@ Columns in output:
     - symbol: Currency pair
     - session: Active session at bar time
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

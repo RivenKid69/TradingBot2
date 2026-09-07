@@ -11,6 +11,7 @@
 ## Executive Summary
 
 This batch closes 5 tech debt items from CTO due diligence findings:
+
 - **3 items CLOSED** with code fixes and verified tests
 - **2 items VERIFIED** as already Controlled with appropriate artifacts
 
@@ -93,12 +94,14 @@ All items now have clear technical evidence of risk control.
 ## Test Verification Results
 
 ### Winsorization Tests
+
 ```
 tests/test_winsorization_all_nan_fix.py::TestWinsorization_AllNaNColumns::test_fixed_behavior_all_nan_marked_and_preserved PASSED
 tests/test_winsorization_all_nan_fix.py::TestWinsorization_AllNaNColumns::test_fixed_behavior_warns_and_marks_invalid PASSED
 ```
 
 ### Indicator Initialization Tests
+
 ```
 tests/test_indicator_initialization_bugs.py::TestRSIInitializationBug::test_rsi_sma_initialization_fix_verified PASSED
 tests/test_indicator_initialization_bugs.py::TestRSIInitializationBug::test_rsi_correct_initialization_verified PASSED
@@ -116,11 +119,13 @@ tests/test_indicator_initialization_bugs.py::TestCCIMeanDeviationBug::test_cci_c
 ## Files Modified
 
 ### Code Files
+
 1. **transformers.py** (RSI fix)
    - Lines 939-945: Added `gain_history`, `loss_history` deques, `rsi_initialized` flag
    - Lines 1020-1037: Changed initialization logic to use SMA
 
 ### Test Files
+
 1. **tests/test_winsorization_all_nan_fix.py**
    - Lines 28-34: Updated docstring to reflect CLOSED status
    - Lines 128-175: Removed skip, updated to use caplog fixture
@@ -133,6 +138,7 @@ tests/test_indicator_initialization_bugs.py::TestCCIMeanDeviationBug::test_cci_c
    - Lines 403-455: Updated CCI tests
 
 ### Documentation Files
+
 1. **docs/reports/TECH_DEBT_REGISTRY.md**
    - Updated `testing-winsorization-allnan`: Controlled -> Closed
    - Updated `indicator-rsi-initialization`: Controlled -> Closed
@@ -165,6 +171,7 @@ tests/test_indicator_initialization_bugs.py::TestCCIMeanDeviationBug::test_cci_c
 | Skip Markers Removed | 3 |
 
 **Registry Status After Batch 12**:
+
 - Total Items: 76
 - Controlled: 21
 - Closed: 55

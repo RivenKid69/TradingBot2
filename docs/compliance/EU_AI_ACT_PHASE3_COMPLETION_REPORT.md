@@ -1,4 +1,5 @@
 # EU AI Act Phase 3 — Tooling Status (Draft)
+
 ## Quality Management System & Testing Framework (CustodiaCloud / CCEA)
 
 **Date**: 2025-12-08  
@@ -25,6 +26,7 @@ Phase 3 focuses on:
 4. **Post-market monitoring scaffolding** (governance signals and reporting workflows)
 
 All tooling must remain consistent with CCEA boundaries:
+
 - Secrets remain local (Agent)
 - Cloud does not send live trading instructions (orders/targets/signals)
 - Telemetry is redacted by design
@@ -44,4 +46,3 @@ Technical boundary reference: `archive/root_files/Design Doc CCEA Cloud.txt`.
 ## Notes on Configuration
 
 Configuration for QMS/testing/cybersecurity/post-market tooling is **deployment-specific**. Do not treat missing configuration paths as commitments; maintain placeholders until the relevant configuration exists and is validated for the target deployment.
-

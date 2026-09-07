@@ -25,6 +25,7 @@
 > - CustodiaCloud's DORA obligations derive from **Article 30** (contractual provisions with FE clients)
 >
 > **For CustodiaCloud's ICT Provider DORA posture, see:**
+>
 > - `docs/DORA_OPERATIONAL_RESILIENCE_PLAN.md` (Section 2: Target DORA Posture)
 > - `docs/contracts/DORA_CONTRACT_TEMPLATE_ART_30_2.md` (Article 30(2) contract provisions)
 > - `docs/contracts/DORA_CRITICAL_FUNCTION_ADDENDUM_ART_30_3.md` (Article 30(3) critical function addendum)
@@ -154,6 +155,7 @@ Per EU Recommendation 2003/361 (SME Definition):
 | Large Enterprise | ≥ 250 | ≥ €50M | [CHECK] |
 
 **Client Entity Metrics** (Client to Complete):
+
 - Employee Count: [CLIENT TO COMPLETE]
 - Annual Turnover (EUR): [CLIENT TO COMPLETE]
 - Balance Sheet (EUR): [CLIENT TO COMPLETE]
@@ -208,17 +210,20 @@ Based on the assessment:
 ### 5.2 Requirements by Regime
 
 #### Full Regime Requirements
+
 - Complete ICT risk management framework (Articles 5-15)
 - Full third-party risk strategy (Article 28)
 - Comprehensive testing program (Articles 24-25)
 - TLPT if designated (Article 26)
 
 #### Simplified Regime Requirements
+
 - Article 16 simplified framework (replaces Articles 5-15)
 - Basic third-party risk management
 - Simplified testing requirements
 
 #### Microenterprise Exemptions
+
 - No third-party ICT risk strategy (Article 28(2))
 - Simplified ICT risk management (Article 6(6))
 - No recurring incident assessment (CDR 2024/1772 Art. 11(3))
@@ -241,6 +246,7 @@ Based on the assessment:
 ## 7. Recommended Actions
 
 ### Immediate Actions (Within 2 Weeks)
+
 1. [ ] Complete entity identification (legal name, LEI)
 2. [ ] Document size metrics with evidence
 3. [ ] Determine entity type and authorization status
@@ -248,12 +254,14 @@ Based on the assessment:
 5. [ ] Complete this proportionality assessment
 
 ### Short-Term Actions (Within 1 Month)
+
 1. [ ] Obtain legal review of classification
 2. [ ] Begin Register of Information preparation
 3. [ ] Implement major incident reporting capability
 4. [ ] Document critical/important function classification
 
 ### Medium-Term Actions (Within 3 Months)
+
 1. [ ] Complete Register of Information
 2. [ ] Submit to NCA per deadline
 3. [ ] Implement proportionate ICT risk framework
@@ -307,6 +315,7 @@ Based on the assessment:
 ## Appendix B: Related Platform Modules
 
 **Archived Financial Entity Modules** (for building FE compliance tools):
+
 - `services/archive/dora_financial_entity/scope_verification.py` - Article 2 scope verification
 - `services/archive/dora_financial_entity/function_classification.py` - Article 3(22) function classification
 - `services/archive/dora_financial_entity/proportionality.py` - Articles 4, 16 proportionality assessment

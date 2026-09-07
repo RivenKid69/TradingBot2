@@ -38,6 +38,7 @@ for batch in dataloader:
 Basic utility-based optimizer with perturbation.
 
 **Parameters**:
+
 - `lr` (float): Learning rate (default: 1e-5)
 - `weight_decay` (float): L2 penalty (default: 0.001)
 - `beta_utility` (float): EMA decay for utility (default: 0.999)
@@ -48,6 +49,7 @@ Basic utility-based optimizer with perturbation.
 UPGD with Adam-style adaptive learning rates.
 
 **Parameters**:
+
 - `lr` (float): Learning rate (default: 1e-5)
 - `weight_decay` (float): L2 penalty (default: 0.001)
 - `beta_utility` (float): Utility EMA decay (default: 0.999)
@@ -61,6 +63,7 @@ UPGD with Adam-style adaptive learning rates.
 UPGD with decoupled weight decay (AdamW-style).
 
 **Parameters**:
+
 - `lr` (float): Learning rate (default: 1e-4)
 - `betas` (Tuple[float, float]): Moment decay rates (default: (0.9, 0.999))
 - `eps` (float): Numerical stability (default: 1e-8)

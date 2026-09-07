@@ -74,8 +74,8 @@ too, over loopback, holding no secrets and sending only lifecycle commands.
 
 **Environment-only guardrail failures (not boundary violations):** two are design-doc
 **SHA mismatches** from Windows CRLF vs the recorded LF hash; one is an ASCII-output
-check that trips because this machine's username (`Зефирка`) is Cyrillic and leaks
-into a temp path in the message.
+check that trips when the developer's account name is non-ASCII and leaks into a
+temp path in the message.
 
 ## Closed gaps (full trading loop + enterprise signing)
 

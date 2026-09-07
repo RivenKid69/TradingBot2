@@ -17,6 +17,7 @@ This Standard Operating Procedure (SOP) defines the process for handling Data Su
 ### 1.2 Scope
 
 This SOP applies to all DSAR requests received by the platform, including:
+
 - Access requests (Art. 15)
 - Rectification requests (Art. 16)
 - Erasure requests (Art. 17)
@@ -140,11 +141,13 @@ Agent-zone data (broker credentials, local execution logs, order/fill data unles
 ### 3.3 Extension Rules
 
 Extension to 60 days (total 90 days from receipt) is permitted when:
+
 - Request is complex (multiple data categories, technical extraction required)
 - Multiple requests from same data subject
 - Large volume of data involved
 
 **Requirements for extension:**
+
 - Data subject must be notified within 30 days
 - Notification must include reason for extension
 - Extension must be documented in DSAR record
@@ -158,6 +161,7 @@ Extension to 60 days (total 90 days from receipt) is permitted when:
 **Step 1.1: Request Receipt**
 
 Requests may be received via:
+
 - Email: dpo@[company-domain].com
 - Web form: Account Settings > Privacy > DSAR Request
 - Postal mail: [Company Address]
@@ -236,6 +240,7 @@ Verification level is proportional to request sensitivity:
 **Step 2.2: Request Validation**
 
 Check:
+
 - Is requestor a data subject (natural person)?
 - Does request relate to personal data we control?
 - Is request within scope (Cloud data)?
@@ -331,6 +336,7 @@ DSAR-XXXX-export/
 **Step 3.4: QA Review**
 
 Verify:
+
 - All requested data categories included
 - No third-party personal data included
 - Exemptions properly applied and documented
@@ -342,9 +348,11 @@ Verify:
 **Step 4.1: DPO Approval**
 
 For standard requests:
+
 - DSAR team lead approval sufficient
 
 For complex/high-risk requests:
+
 - DPO review and approval required
 - Document approval in DSAR record
 
@@ -421,6 +429,7 @@ Data Protection Team
 **Step 5.1: Archive Request**
 
 Update DSAR record:
+
 - Status: COMPLETED
 - Completed timestamp
 - Response method
@@ -458,6 +467,7 @@ DSAR records retained for 7 years (compliance audit trail).
 ### 5.1 Access Request (Art. 15)
 
 **Provide:**
+
 - Confirmation of processing
 - Copy of personal data
 - Processing purposes
@@ -473,6 +483,7 @@ DSAR records retained for 7 years (compliance audit trail).
 ### 5.2 Rectification Request (Art. 16)
 
 **Process:**
+
 1. Verify identity
 2. Review requested changes
 3. Update data if factually inaccurate
@@ -480,12 +491,14 @@ DSAR records retained for 7 years (compliance audit trail).
 5. Confirm completion
 
 **Limitations:**
+
 - Cannot change audit logs (integrity requirement)
 - Cannot change data required for legal purposes
 
 ### 5.3 Erasure Request (Art. 17)
 
 **Eligible for erasure:**
+
 - Account profile data
 - Strategy metadata (if user-owned)
 - Telemetry data (within retention period)
@@ -493,6 +506,7 @@ DSAR records retained for 7 years (compliance audit trail).
 - Non-audit logs
 
 **NOT eligible for erasure (exemptions):**
+
 - Audit logs (legal obligation, Art. 17(3)(b))
 - Approval records (legal obligation)
 - Data under legal hold
@@ -501,12 +515,14 @@ DSAR records retained for 7 years (compliance audit trail).
 ### 5.4 Restriction Request (Art. 18)
 
 **When applicable:**
+
 - Accuracy contested (until verified)
 - Processing unlawful but subject prefers restriction
 - No longer needed but subject needs for legal claims
 - Subject objected (pending verification)
 
 **Implementation:**
+
 - Mark data as restricted in database
 - Block processing except storage
 - Notify before lifting restriction
@@ -514,11 +530,13 @@ DSAR records retained for 7 years (compliance audit trail).
 ### 5.5 Portability Request (Art. 20)
 
 **Scope:**
+
 - Data provided by subject
 - Processed by automated means
 - Based on consent or contract
 
 **Format:**
+
 - JSON (machine-readable)
 - ZIP archive
 - Documented schema
@@ -526,11 +544,13 @@ DSAR records retained for 7 years (compliance audit trail).
 ### 5.6 Objection Request (Art. 21)
 
 **Types:**
+
 - Objection to legitimate interest processing
 - Objection to direct marketing
 - Objection to research/statistics
 
 **Response:**
+
 - Cease processing unless compelling legitimate grounds
 - Document assessment
 - Notify subject of outcome
@@ -542,6 +562,7 @@ DSAR records retained for 7 years (compliance audit trail).
 ### 6.1 Unverifiable Identity
 
 If identity cannot be verified after reasonable attempts:
+
 - Document verification attempts
 - Inform requestor of failure
 - Do not process request
@@ -550,14 +571,17 @@ If identity cannot be verified after reasonable attempts:
 ### 6.2 Excessive or Manifestly Unfounded Requests
 
 If request is:
+
 - Repetitive (same request, same data, short interval)
 - Manifestly unfounded
 
 Options:
+
 - Charge reasonable fee, OR
 - Refuse to act
 
 Requirements:
+
 - Document reasoning
 - DPO approval required
 - Inform requestor of decision and appeal rights
@@ -565,6 +589,7 @@ Requirements:
 ### 6.3 Third-Party Requests
 
 Requests from authorized representatives (lawyers, family):
+
 - Require proof of authorization
 - Verify subject's consent
 - Apply enhanced verification
@@ -604,6 +629,7 @@ Level 4: Legal Counsel
 ### 7.2 Reporting
 
 Monthly DSAR report to DPO:
+
 - Total requests received
 - Requests by type
 - Average processing time
@@ -614,6 +640,7 @@ Monthly DSAR report to DPO:
 ### 7.3 Annual Review
 
 Annual review of DSAR process:
+
 - Procedure effectiveness
 - Common issues
 - Process improvements

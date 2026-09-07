@@ -4,7 +4,7 @@ Simple unit tests for torch.clamp numerical stability improvements (Problem #1).
 These tests verify the numerical stability improvements without requiring
 full PPO initialization, making them faster and more focused.
 
-Author: Claude Code
+Author: Sultan Suyunbayev
 Date: 2025-11-22
 """
 

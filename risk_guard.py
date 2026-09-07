@@ -156,7 +156,7 @@ class RiskGuard:
         Двойной max() выглядит избыточным но корректен:
           max(max(window), nw) = max(всех элементов окна + текущий nw)
 
-        Reference: CLAUDE.md → "НЕ БАГИ" → #22
+        Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #22
         ═══════════════════════════════════════════════════════════════════════════
         """
         nw = float(state.cash) + float(state.units) * float(mid_price)

@@ -24,11 +24,13 @@ This runbook covers handling various degraded operational modes and their recove
 ## Cloud Unreachable
 
 ### Symptoms
+
 - Heartbeat failures in logs
 - "Cloud unreachable" warnings
 - Telemetry buffer growing
 
 ### Diagnosis
+
 ```bash
 # Check agent status
 ccea-agent status
@@ -43,22 +45,26 @@ ccea-agent telemetry buffer-status
 ### Response
 
 **If action=continue (default):**
+
 - Trading continues with last known config
 - Telemetry buffers locally
 - No new deployments possible
 - Monitor closely
 
 **If action=pause:**
+
 - Trading paused
 - Positions maintained
 - Await recovery
 
 **If action=halt:**
+
 - Trading stopped
 - Orders cancelled
 - Positions maintained
 
 ### Recovery
+
 ```bash
 # Wait for automatic reconnection
 # Or force reconnect
@@ -69,6 +75,7 @@ ccea-agent telemetry flush
 ```
 
 ### Escalation
+
 - After 1 hour: Alert on-call
 - After 4 hours: Escalate to platform team
 - After 24 hours: Consider manual halt
@@ -78,11 +85,13 @@ ccea-agent telemetry flush
 ## Data Feed Invalid
 
 ### Symptoms
+
 - "Data feed invalid" alerts
 - Kill switch may trigger
 - Strategy receiving stale data
 
 ### Diagnosis
+
 ```bash
 # Check data feed status
 ccea-agent data-feed status
@@ -95,11 +104,13 @@ ccea-agent doctor --check data-feed
 ```
 
 ### Response
+
 1. Agent automatically halts trading
 2. Open orders cancelled
 3. Positions maintained
 
 ### Recovery
+
 ```bash
 # Check if data feed recovered
 ccea-agent data-feed status
@@ -113,6 +124,7 @@ ccea-agent start
 ```
 
 ### Escalation
+
 - Immediate: Check broker status page
 - After 5 minutes: Contact broker support
 - After 30 minutes: Consider alternate data source
@@ -122,11 +134,13 @@ ccea-agent start
 ## Broker Errors
 
 ### Symptoms
+
 - Order rejections
 - API timeouts
 - Rate limiting messages
 
 ### Diagnosis
+
 ```bash
 # Check broker status
 ccea-agent broker status
@@ -139,16 +153,20 @@ ccea-agent broker rate-limit-status
 ```
 
 ### Response
+
 **If errors < threshold:**
+
 - Retry with backoff
 - Continue trading
 
 **If errors >= threshold:**
+
 - Trading paused
 - No new orders
 - Existing orders maintained
 
 ### Recovery
+
 ```bash
 # Check if errors cleared
 ccea-agent broker errors --last 5m
@@ -161,6 +179,7 @@ ccea-agent start
 ```
 
 ### Escalation
+
 - Immediate: Check broker status page
 - After 10 minutes: Review API permissions
 - After 30 minutes: Contact broker support
@@ -170,11 +189,13 @@ ccea-agent start
 ## Time Drift
 
 ### Symptoms
+
 - "Time drift" alerts
 - Timestamp validation failures
 - Kill switch triggered
 
 ### Diagnosis
+
 ```bash
 # Check time sync
 ccea-agent doctor --check time
@@ -187,11 +208,13 @@ ntpdate -q time.google.com
 ```
 
 ### Response
+
 1. Agent halts trading immediately
 2. Orders cancelled
 3. Positions maintained
 
 ### Recovery
+
 ```bash
 # Sync system time
 sudo ntpdate -u time.google.com
@@ -208,6 +231,7 @@ ccea-agent start
 ```
 
 ### Prevention
+
 - Enable automatic NTP sync
 - Monitor time drift
 - Alert on >500ms drift
@@ -217,11 +241,13 @@ ccea-agent start
 ## Resource Exhaustion
 
 ### Symptoms
+
 - High CPU/memory warnings
 - Slow response times
 - Out of memory errors
 
 ### Diagnosis
+
 ```bash
 # Check resources
 ccea-agent resource status
@@ -233,12 +259,15 @@ top
 ```
 
 ### Response
+
 **If above threshold:**
+
 - Trading paused
 - Non-essential processes stopped
 - GC triggered
 
 ### Recovery
+
 ```bash
 # Free memory
 ccea-agent cache clear
@@ -251,6 +280,7 @@ ccea-agent start
 ```
 
 ### Prevention
+
 - Set appropriate resource limits
 - Monitor disk space
 - Configure log rotation
@@ -260,11 +290,13 @@ ccea-agent start
 ## State Divergence
 
 ### Symptoms
+
 - Position mismatch alerts
 - Unknown orders detected
 - Reconciliation failures
 
 ### Diagnosis
+
 ```bash
 # Compare states
 ccea-agent reconcile diff
@@ -275,11 +307,13 @@ ccea-agent orders list --compare
 ```
 
 ### Response
+
 1. Agent halts immediately
 2. Manual intervention required
 3. **NO auto-recovery**
 
 ### Recovery
+
 ```bash
 # Stop agent
 ccea-agent stop
@@ -303,6 +337,7 @@ ccea-agent start
 ```
 
 ### Escalation
+
 - Immediate: Review all differences
 - Before resolution: Document current state
 - After resolution: Root cause analysis
@@ -312,6 +347,7 @@ ccea-agent start
 ## Monitoring Dashboard
 
 ### Key Metrics
+
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │ DEGRADED MODE STATUS                                                │
@@ -326,6 +362,7 @@ ccea-agent start
 ```
 
 ### Alert Thresholds
+
 | Metric | Warning | Critical |
 |--------|---------|----------|
 | Cloud disconnect | 5 min | 30 min |

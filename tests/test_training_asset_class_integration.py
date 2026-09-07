@@ -9,7 +9,7 @@ These tests verify that:
 3. asset_class detection works correctly from config
 4. load_all_data() routes correctly based on asset_class
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

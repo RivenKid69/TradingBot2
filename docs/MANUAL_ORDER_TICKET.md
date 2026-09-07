@@ -26,6 +26,7 @@
 (paper — на `_ensure_paper_engine`, live — на `_ensure_live_engine`).
 
 Валидация до отправки:
+
 - некорректная сторона / тип / количество ≤ 0 → отказ;
 - limit/stop-limit требуют положительную `limit_price`; stop/stop-limit — `stop_price`;
 - недопустимый TIF → отказ;

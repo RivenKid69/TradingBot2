@@ -24,12 +24,14 @@ the CustodiaCloud platform security posture and vendor due diligence requirement
 **Location**: `packages/agent/vault/local_vault.py`
 
 **Implementation**:
+
 - Algorithm: AES-256-GCM (via `cryptography.hazmat.primitives.ciphers.aead.AESGCM`)
 - Key Derivation: PBKDF2 with HMAC-SHA256
 - Key Length: 256 bits (32 bytes)
 - Nonce: 96 bits (12 bytes) per encryption operation
 
 **Verification**:
+
 ```python
 # Code excerpt from local_vault.py (lines 29-43)
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -56,16 +58,19 @@ kdf = PBKDF2HMAC(
 **Location**: `packages/agent/daemon/telemetry_buffer.py`
 
 **Current Implementation**:
+
 - SQLite storage for durable telemetry buffering (standard `sqlite3` module)
 - Mandatory redaction of sensitive data before persistence (lines 119-148)
 - Data is ephemeral by design (auto-cleanup after configurable retention period)
 
 **Security Controls in Place**:
+
 - Sensitive field redaction (API keys, secrets, tokens) - enforced by design (verify via redaction tests in CI; no disable flag exposed by design)
 - Restrictive file permissions on database file
 - Aggregated telemetry by default (RAW_ORDER_EVENTS requires explicit enterprise opt-in)
 
 **Encryption Status**: Plaintext SQLite
+
 - Current state: telemetry stored in plaintext SQLite with mandatory redaction
 - Roadmap: SQLCipher integration for at-rest encryption (Low priority per Gaps table)
 
@@ -76,11 +81,13 @@ kdf = PBKDF2HMAC(
 ### 3. Cloud Database
 
 **Implementation**:
+
 - PostgreSQL with transparent disk encryption
 - AWS RDS encryption at rest (when deployed on AWS)
 - Azure SQL TDE (when deployed on Azure)
 
 **Verification Evidence**:
+
 - Deployment configurations in `deploy/` directory
 - Cloud provider encryption enabled by default
 
@@ -95,11 +102,13 @@ kdf = PBKDF2HMAC(
 **Location**: `packages/agent/cloud/client.py`, `packages/cloud/api/`
 
 **Implementation (design target; verify via deployment configuration and TLS scans)**:
+
 - TLS 1.3 (minimum TLS 1.2)
 - Certificate pinning (optional, configurable)
 - mTLS for agent authentication (design goal; implementation dependent on deployment)
 
 **Verification**:
+
 ```python
 # HTTPS client configuration
 session = httpx.Client(
@@ -116,11 +125,13 @@ session = httpx.Client(
 **Location**: `adapters/`
 
 **Implementation**:
+
 - TLS for all broker API connections
 - WebSocket Secure (WSS) for real-time feeds
 - Broker-provided certificates designed to be validated (verify via adapter code review)
 
 **Verification Evidence**:
+
 - All broker adapters use `https://` and `wss://` endpoints (verify in codebase)
 - Certificate verification enabled by default in adapter configuration
 
@@ -129,6 +140,7 @@ session = httpx.Client(
 ### 3. Internal Service Communication
 
 **Implementation**:
+
 - gRPC with TLS between microservices
 - Service mesh encryption (when deployed with Istio/Linkerd)
 
@@ -141,6 +153,7 @@ session = httpx.Client(
 ### 1. Agent Vault Keys
 
 **Implementation**:
+
 - User-provided master key (not stored by design)
 - Derived keys for encryption operations
 - Key rotation supported via re-encryption
@@ -152,6 +165,7 @@ session = httpx.Client(
 **Location**: `packages/cloud/security/signing.py`
 
 **Implementation**:
+
 - Ed25519 for artifact signing
 - Keys stored in secure vault (HSM planned for production)
 
@@ -160,6 +174,7 @@ session = httpx.Client(
 ### 3. API Keys
 
 **Implementation**:
+
 - Argon2 hashing for API key storage
 - Secure token generation with 256-bit entropy
 

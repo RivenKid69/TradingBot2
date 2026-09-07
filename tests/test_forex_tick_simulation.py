@@ -11,7 +11,7 @@ Tests cover:
 5. Market conditions and spread dynamics
 6. Session-based tick rates
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

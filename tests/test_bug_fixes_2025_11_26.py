@@ -7,7 +7,7 @@ This module tests the following fixes:
 3. cql_beta validation (Issue #4)
 5. Mediator dead code removal (Issue #5 - code smell, no runtime test needed)
 
-Reference: CLAUDE.md bug fix documentation
+Reference: docs/PLATFORM_REFERENCE.md bug fix documentation
 """
 
 import math

@@ -22,6 +22,7 @@ Options chains present unique scalability challenges:
 ### Key Insight
 
 Most options series are inactive. At any moment:
+
 - **ATM options**: High activity, need full LOB
 - **OTM/ITM options**: Low activity, can be evicted or persisted to disk
 - **Deep OTM**: Minimal activity, rarely accessed
@@ -107,6 +108,7 @@ manager = create_options_lob_manager(
 ```
 
 Examples:
+
 - `SPY_241220_C_500` -- SPY Dec 2024 500 Call
 - `AAPL_250117_P_200` -- AAPL Jan 2025 200 Put
 
@@ -176,12 +178,14 @@ book = create_options_book(
 #### Memory Model
 
 With `max_depth=20`:
+
 - 20 bid levels × ~100 bytes = 2KB
 - 20 ask levels × ~100 bytes = 2KB
 - Aggregated overflow = ~50 bytes
 - **Total: ~5KB per LOB** (constant)
 
 For comparison, unlimited depth with 10,000 orders:
+
 - 10,000 orders × ~200 bytes = **2MB per LOB**
 
 #### Usage

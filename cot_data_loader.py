@@ -31,7 +31,7 @@ References:
 - Klitgaard & Weir (2004): "Exchange Rate Changes and Net Positions"
 - CFTC Commitments of Traders Explanation
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 Version: 1.0.0
 """

@@ -125,6 +125,7 @@ Lockfiles pin exact versions of Python dependencies to ensure reproducible insta
 ### Regeneration
 
 Lockfiles should be regenerated when:
+
 - Adding new dependencies
 - Updating existing dependencies
 - Security vulnerabilities require updates

@@ -1,4 +1,5 @@
 # Insurance & Indemnification Requirements
+
 ## DORA Contractual Protection
 
 **Version**: 1.0
@@ -86,6 +87,7 @@ This document outlines target insurance coverage requirements and indemnificatio
 ### 4.1 Standard Requirements
 
 For all clients, Provider maintains:
+
 - Minimum €5M cyber liability coverage
 - Minimum €5M professional liability coverage
 - A-rated or higher insurers
@@ -94,6 +96,7 @@ For all clients, Provider maintains:
 ### 4.2 Enterprise Requirements
 
 For Enterprise clients or those with higher exposure:
+
 - Increased coverage limits negotiable
 - Named insured endorsement available
 - Primary and non-contributory endorsement available
@@ -102,6 +105,7 @@ For Enterprise clients or those with higher exposure:
 ### 4.3 Regulatory Client Requirements
 
 For DORA-regulated financial entity clients:
+
 - Coverage specifically includes regulatory defense costs
 - Coverage for third-party provider failures included
 - Notification of material coverage changes (30 days)
@@ -114,6 +118,7 @@ For DORA-regulated financial entity clients:
 ### 5.1 Standard Certificate Contents
 
 Certificates of Insurance provided to clients include:
+
 - Policy numbers and effective dates
 - Coverage types and limits
 - Insurer names and ratings
@@ -182,6 +187,7 @@ Client shall indemnify, defend and hold harmless Provider from:
 ### 6.3 Mutual Indemnification
 
 Both parties shall indemnify each other for:
+
 - Breach of confidentiality obligations
 - Violation of applicable law
 - Misrepresentation in the agreement
@@ -209,6 +215,7 @@ Both parties shall indemnify each other for:
 ### 7.2 Exceptions to Limitations
 
 Limitations do NOT apply to:
+
 - Gross negligence or willful misconduct
 - Breach of confidentiality
 - Indemnification obligations
@@ -218,6 +225,7 @@ Limitations do NOT apply to:
 ### 7.3 DORA-Specific Considerations
 
 For DORA-regulated clients:
+
 - Liability limitations must not impede regulatory compliance
 - NCA access rights cannot be limited
 - Audit rights cannot be financially constrained
@@ -240,6 +248,7 @@ For DORA-regulated clients:
 ### 8.2 Force Majeure
 
 Neither party liable for failures due to:
+
 - Natural disasters
 - Acts of war or terrorism
 - Government actions
@@ -283,6 +292,7 @@ RESOLUTION
 ### 9.2 Client Claim Submission
 
 If Client believes they have a claim:
+
 1. Notify Provider in writing within 30 days of discovering issue
 2. Provide detailed description of alleged damages
 3. Provider acknowledges within 5 business days
@@ -315,15 +325,18 @@ If Client believes they have a claim:
 ## 11. Contact Information
 
 ### Insurance Inquiries
+
 - Email: legal@[platform-domain]
 - Response: 5 business days
 
 ### Certificate Requests
+
 - Client Portal: [Link]
 - Email: compliance@[platform-domain]
 - Response: 5 business days
 
 ### Claims
+
 - Email: claims@[platform-domain]
 - Urgent: [Legal hotline]
 - Response: 24 hours

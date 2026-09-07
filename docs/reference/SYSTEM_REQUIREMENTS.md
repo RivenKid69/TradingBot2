@@ -126,6 +126,7 @@ Required for building Cython/C++ extensions. See [BUILD_INSTRUCTIONS.md](BUILD_I
 | **Windows SDK** | 10.0.19041+ | Latest recommended |
 
 **Installation**:
+
 ```
 Visual Studio Installer -> Workloads -> "Desktop development with C++"
 ```
@@ -140,6 +141,7 @@ Visual Studio Installer -> Workloads -> "Desktop development with C++"
 | **python3-dev** | 3.12 | Python headers |
 
 **Installation (Ubuntu)**:
+
 ```bash
 sudo apt-get update
 sudo apt-get install build-essential python3-dev python3.12-dev
@@ -153,6 +155,7 @@ sudo apt-get install build-essential python3-dev python3.12-dev
 | **Clang** | 14+ | Bundled with Xcode |
 
 **Installation**:
+
 ```bash
 xcode-select --install
 ```
@@ -183,6 +186,7 @@ GPU acceleration provides 5-10x speedup for training. CPU-only operation is full
 | **cuDNN** | 8.9.x | Bundled with PyTorch |
 
 **Verification**:
+
 ```bash
 nvidia-smi
 # Should show driver version >= 525
@@ -388,6 +392,7 @@ make check-clean  # fails if generated artifacts remain
 ### "ModuleNotFoundError: No module named 'obs_builder'"
 
 Native extensions not built. Run:
+
 ```bash
 pip install -r requirements-build.txt
 python setup.py build_ext --inplace
@@ -397,6 +402,7 @@ python setup.py build_ext --inplace
 
 1. Check NVIDIA driver: `nvidia-smi`
 2. Reinstall PyTorch with CUDA:
+
    ```bash
    pip uninstall torch
    pip install torch --index-url https://download.pytorch.org/whl/cu121
@@ -405,6 +411,7 @@ python setup.py build_ext --inplace
 ### "ImportError: numpy.core.multiarray failed to import"
 
 NumPy version mismatch. Reinstall:
+
 ```bash
 pip install --force-reinstall numpy==1.26.4
 python setup.py build_ext --inplace  # Rebuild extensions
@@ -413,6 +420,7 @@ python setup.py build_ext --inplace  # Rebuild extensions
 ### "Python 3.12 not found"
 
 Install Python 3.12:
+
 - **Windows**: Download from [python.org](https://www.python.org/downloads/)
 - **Linux**: `sudo apt install python3.12 python3.12-dev python3.12-venv`
 - **macOS**: `brew install python@3.12`

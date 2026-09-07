@@ -27,12 +27,14 @@ Each closure follows the documented best practices and includes verification evi
 **Issue**: `torch.load(..., weights_only=False)` allowed arbitrary code execution.
 
 **Resolution**:
+
 - Implemented fail-closed approach: try `weights_only=True` first
 - Fallback to unsafe only with explicit `ALLOW_UNSAFE_MODEL_LOAD` env var
 - Added error logging with security metrics
 - Updated threat model documentation
 
 **Control Artifacts**:
+
 - Modified code in `adversarial/pbt_scheduler.py`
 - Updated `docs/security/THREAT_MODEL_MODEL_LOADING.md`
 - Registry entry: `security-model-loading`
@@ -51,11 +53,13 @@ Each closure follows the documented best practices and includes verification evi
 **Issue**: Critical rollout buffer had 0% test coverage.
 
 **Resolution**:
+
 - Created comprehensive test suite `tests/test_raw_recurrent_rollout_buffer.py`
 - Tests cover: `reset()`, `add()`, `_to_numpy()`, edge cases
 - Tests for twin critics support and distributional VF clipping
 
 **Control Artifacts**:
+
 - New test file: `tests/test_raw_recurrent_rollout_buffer.py`
 - Updated `tests/COMPREHENSIVE_TEST_REPORT.md`
 - Registry entry: `testing-rollout-buffer`
@@ -74,11 +78,13 @@ Each closure follows the documented best practices and includes verification evi
 **Issue**: Monolithic train() method needs complexity tracking.
 
 **Resolution**:
+
 - Added `radon` to `requirements-dev.txt`
 - Created CI job in `.github/workflows/build-and-test.yml` for complexity analysis
 - Complexity report artifact uploaded on each CI run
 
 **Control Artifacts**:
+
 - CI job with `radon cc` analysis
 - `complexity-report.json` artifact
 - Registry entry: `arch-train-monolith` (updated)
@@ -97,11 +103,13 @@ Each closure follows the documented best practices and includes verification evi
 **Issue**: Legacy fallback may produce different observation distributions.
 
 **Resolution**: Verified existing controls are adequate:
+
 - Fallback counter with periodic logging
 - Metrics emitted (`obs_builder_fallback_count`, `obs_builder_error_type`)
 - Warning logs for high fallback rates
 
 **Control Artifacts**:
+
 - Registry entry: `mediator-legacy-fallback` (status: Controlled)
 
 ---
@@ -118,11 +126,13 @@ Each closure follows the documented best practices and includes verification evi
 **Issue**: Default monitoring configuration has monitoring disabled.
 
 **Resolution**:
+
 - Created production-ready template `configs/monitoring.production.yaml`
 - Includes recommended thresholds and SLO/SLI targets
 - Documented that development default is intentionally disabled
 
 **Control Artifacts**:
+
 - New config: `configs/monitoring.production.yaml`
 - Registry entry: `ops-monitoring-defaults`
 
@@ -140,12 +150,14 @@ Each closure follows the documented best practices and includes verification evi
 **Issue**: RTO/RPO targets pending DR test validation.
 
 **Resolution**:
+
 - Created comprehensive DR drill runbook `docs/runbooks/DR_DRILL.md`
 - Includes Agent Recovery, Database Recovery, Full Infrastructure drill types
 - Drill execution template with RTO/RPO measurement procedures
 - Quarterly drill schedule established
 
 **Control Artifacts**:
+
 - New runbook: `docs/runbooks/DR_DRILL.md`
 - Registry entry: `ops-dr-testing` (updated)
 
@@ -163,11 +175,13 @@ Each closure follows the documented best practices and includes verification evi
 **Issue**: Build reproducibility not guaranteed without lockfiles.
 
 **Resolution**: Verified existing controls are adequate:
+
 - Lockfiles exist: `requirements-cpu.lock.txt`, `requirements-gpu.lock.txt`
 - CI runs `make verify-hash` on every build
 - BUILD_INSTRUCTIONS.md documents reproducibility procedures
 
 **Control Artifacts**:
+
 - Existing lockfiles
 - CI step: `make verify-hash`
 - Registry entry: `build-reproducibility`
@@ -186,6 +200,7 @@ Each closure follows the documented best practices and includes verification evi
 **Issue**: Encryption controls marked as pending verification.
 
 **Resolution**:
+
 - Created comprehensive verification report `docs/security/ENCRYPTION_VERIFICATION.md`
 - Documents encryption at rest (Vault, Telemetry DB, Cloud DB)
 - Documents encryption in transit (Agent-Cloud, Agent-Broker)
@@ -193,6 +208,7 @@ Each closure follows the documented best practices and includes verification evi
 - Updated SOC2_ROADMAP.md with verification status
 
 **Control Artifacts**:
+
 - New report: `docs/security/ENCRYPTION_VERIFICATION.md`
 - Updated: `docs/SOC2_ROADMAP.md`
 - Registry entry: `governance-encryption-verification`
@@ -202,12 +218,14 @@ Each closure follows the documented best practices and includes verification evi
 ## Created/Modified Files
 
 ### New Files Created
+
 1. `tests/test_raw_recurrent_rollout_buffer.py` - Buffer tests
 2. `configs/monitoring.production.yaml` - Production monitoring template
 3. `docs/runbooks/DR_DRILL.md` - DR drill runbook
 4. `docs/security/ENCRYPTION_VERIFICATION.md` - Encryption verification report
 
 ### Modified Files
+
 1. `adversarial/pbt_scheduler.py` - Fail-closed torch.load
 2. `requirements-dev.txt` - Added radon
 3. `.github/workflows/build-and-test.yml` - Added complexity analysis CI job

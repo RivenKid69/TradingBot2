@@ -15,9 +15,11 @@ This directory contains **templates and tooling notes** to support an EU AI Act 
 ## Assessment Documents
 
 ### Checklist
+
 - [checklist.md](checklist.md) - Complete conformity assessment checklist per Annex VI requirements
 
 ### Supporting Documents
+
 - [EU_DECLARATION_OF_CONFORMITY.md](../EU_DECLARATION_OF_CONFORMITY.md) - EU Declaration of Conformity (Article 47)
 - [INSTRUCTIONS_FOR_USE.md](../INSTRUCTIONS_FOR_USE.md) - Instructions for Use (Article 13)
 
@@ -26,16 +28,19 @@ This directory contains **templates and tooling notes** to support an EU AI Act 
 ## Assessment Process
 
 ### 1. Pre-Assessment
+
 1. Verify quality management system (Article 17)
 2. Examine technical documentation (Article 11)
 3. Complete checklist.md
 
 ### 2. Conformity Verification
+
 1. Verify conformity with Articles 8-15
 2. Review test results against defined metrics
 3. Validate risk management measures
 
 ### 3. Documentation
+
 1. If applicable, prepare the required provider documentation set
 2. If applicable, draw up an EU declaration of conformity (Article 47)
 3. If applicable, register in an EU database (Article 49)
@@ -60,6 +65,7 @@ print(f"Status: {result.assessment_decision}")
 ## Phase 4 Implementation
 
 The conformity assessment module was implemented in Phase 4:
+
 - [EU_AI_ACT_PHASE4_COMPLETION_REPORT.md](../EU_AI_ACT_PHASE4_COMPLETION_REPORT.md)
 - Implementation: `services/ai_act/conformity_assessment.py`
 - Tests: 81/81 passed

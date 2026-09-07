@@ -22,7 +22,7 @@ Issue #3: Reward=0 stuck with invalid price data [MEDIUM]
     Fix: Try multiple fallbacks: close → open → scan first 10 rows.
     Location: trading_patchnew.py:791-828
 
-Reference: CLAUDE.md sections "Troubleshooting" and "История критических исправлений"
+Reference: docs/PLATFORM_REFERENCE.md sections "Troubleshooting" and "История критических исправлений"
 Test count: 9 tests (2 for Issue #1, 1 for Issue #2, 3 for Issue #3, 3 regression)
 """
 from __future__ import annotations

@@ -34,7 +34,7 @@ References:
 - Chaboud et al. (2014): "Rise of the Machines: Algorithmic Trading in FX"
 - BIS (2022): Triennial Central Bank Survey
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

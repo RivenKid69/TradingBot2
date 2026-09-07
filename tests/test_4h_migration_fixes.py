@@ -7,7 +7,7 @@
 3. timeframe_ms = 14400000 в core_config.py
 4. Дефолтные параметры в transformers.py для 4h
 
-Автор: Claude AI
+Автор: Sultan Suyunbayev
 Дата: 2025-11-13
 """
 

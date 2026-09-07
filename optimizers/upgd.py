@@ -12,7 +12,7 @@ Algorithm:
     2. Track exponential moving average of utility with bias correction
     3. Find global MIN and MAX utility across all parameters
     4. Scale utility via min-max normalization then sigmoid (NOT sigmoid(u/global_max),
-       which inverts protection under negative utilities — CLAUDE.md "НЕ БАГИ" #5/#19/#28):
+       which inverts protection under negative utilities — docs/PLATFORM_REFERENCE.md "НЕ БАГИ" #5/#19/#28):
        normalized = (u - global_min) / (global_max - global_min + eps)
        scaled_utility = sigmoid(2 * (normalized - 0.5))
     5. Apply gradient update with perturbation: param -= lr * (grad + noise) * (1 - scaled_utility)
@@ -188,7 +188,7 @@ class UPGD(torch.optim.Optimizer):
                 # This gives full [0,1] range but has sharp boundaries and can cause
                 # instability with fully frozen or fully exposed weights.
                 #
-                # Reference: CLAUDE.md → "НЕ БАГИ" → #51
+                # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #51
                 # Reference: Dohare et al. (2023) "Maintaining Plasticity in Deep Continual Learning"
                 # ═══════════════════════════════════════════════════════════════════════════
                 scaled_utility = torch.sigmoid(2.0 * (normalized_utility - 0.5))

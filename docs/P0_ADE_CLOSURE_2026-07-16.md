@@ -39,7 +39,7 @@ had **no config file**, and the config builder passed **stale field names** to
     `data_stale_threshold_seconds` (old key names accepted as aliases).
   - Kill-switch pct thresholds are converted to `Decimal` (exact `0.30`, no
     float/Decimal mixing in the hard-cap comparisons).
-- Fixed the launch command in `CLAUDE.md` (`packages.agent.daemon`, not
+- Fixed the launch command in `PLATFORM_REFERENCE.md` (`packages.agent.daemon`, not
   `…daemon.agentd` — `agentd.py` has no `__main__`).
 
 Verified: `python -m packages.agent.daemon --config configs/agent.yaml --dry-run`

@@ -8,7 +8,7 @@ Comprehensive tests for Phase 4.5 equity features:
 4. Backward compatibility with crypto
 
 References:
-- CLAUDE.md: Phase 4.5 Unification
+- docs/PLATFORM_REFERENCE.md: Phase 4.5 Unification
 - services/trading_halts.py: LULD and MWCB implementation
 - trading_patchnew.py: Dividend adjustment in reward calculation
 """

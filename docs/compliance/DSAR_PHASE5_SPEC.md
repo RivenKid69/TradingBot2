@@ -11,6 +11,7 @@ This specification defines the implementation of GDPR Data Subject Access Reques
 ### 1.1 Scope
 
 The DSAR service handles requests for:
+
 - **Access** (Art. 15) - Right of access to personal data
 - **Portability** (Art. 20) - Right to data portability
 - **Erasure** (Art. 17) - Right to erasure ("right to be forgotten")
@@ -22,6 +23,7 @@ The DSAR service handles requests for:
 Due to the Cloud-Controlled Execution Architecture (CCEA), DSAR scope is limited to **Cloud-controlled data only**. Agent-zone data remains customer-controlled and outside DSAR scope.
 
 #### In-Scope Data Categories (Cloud)
+
 | Category | Description | Exportable | Deletable |
 |----------|-------------|------------|-----------|
 | telemetry_events | Agent telemetry | Yes | Yes |
@@ -39,6 +41,7 @@ Due to the Cloud-Controlled Execution Architecture (CCEA), DSAR scope is limited
 | billing_records | Invoices | Yes | **No** (7yr) |
 
 #### Out-of-Scope Data Categories (Agent)
+
 | Category | Reason |
 |----------|--------|
 | broker_credentials | Never transmitted to Cloud |
@@ -65,6 +68,7 @@ PENDING → AWAITING_VERIFICATION → VERIFIED → IN_PROGRESS → COMPLETED
 ### 2.2 Deadline Management
 
 Per GDPR Article 12(3):
+
 - **Standard deadline**: 30 calendar days from request
 - **Extension**: +60 days (once only) for complex requests
 - **Maximum total**: 90 days from request creation
@@ -256,6 +260,7 @@ if legal_hold_service.is_data_held(workspace_id, category):
 ### 6.3 Integrity
 
 Each audit entry has:
+
 - Unique ID (UUID)
 - Timestamp (UTC)
 - SHA-256 integrity hash
@@ -297,6 +302,7 @@ Each audit entry has:
 ## 8. Rate Limiting
 
 To prevent abuse:
+
 - **Maximum**: 12 requests per user per month
 - **Cooldown**: 24 hours between same-type requests
 - **Manifestly excessive**: May be refused per Art. 12(5)
@@ -379,20 +385,24 @@ GET /dsar/metrics?workspace_id={workspace_id}&period_days=30
 ## 10. Security Considerations
 
 ### 10.1 Authentication
+
 - All endpoints require authentication
 - Request creator verified via session
 
 ### 10.2 Authorization
+
 - Users can only access their own requests
 - Support can access workspace requests
 - Superuser can access all requests
 
 ### 10.3 Data Protection
+
 - Export files encrypted at rest
 - Download tokens are single-use
 - Audit logs are immutable
 
 ### 10.4 Logging
+
 - No PII in application logs
 - Full audit trail in audit log
 - Error messages sanitized
@@ -415,6 +425,7 @@ GET /dsar/metrics?workspace_id={workspace_id}&period_days=30
 ## 12. Testing Requirements
 
 ### 12.1 Unit Tests
+
 - Request creation with all types
 - Identity verification flow
 - Deadline calculations
@@ -422,12 +433,14 @@ GET /dsar/metrics?workspace_id={workspace_id}&period_days=30
 - Exemption handling
 
 ### 12.2 Integration Tests
+
 - End-to-end: create → verify → process → complete
 - Legal hold blocking
 - Audit trail completeness
 - Metrics accuracy
 
 ### 12.3 Security Tests
+
 - Token validation
 - Rate limiting
 - Authorization checks

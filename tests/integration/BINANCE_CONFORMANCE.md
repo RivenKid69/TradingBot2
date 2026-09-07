@@ -27,6 +27,7 @@ in the Agent environment, not in Cloud.
 | `reconcile_state()` | Implemented | Compares local vs remote state |
 
 **Design Rationale**:
+
 - Stubs are intentional fail-closed implementations per CCEA Design Doc
 - Cloud code MUST NOT execute live orders (Section 0.2, 0.4)
 - Attempting to call these functions produces explicit, auditable errors
@@ -35,6 +36,7 @@ in the Agent environment, not in Cloud.
 ### Agent-Side (Required for Live Trading)
 
 Live order execution requires Agent deployment with:
+
 1. Broker connector configured in Agent environment
 2. Secrets stored in Local Vault (Agent-side only)
 3. Local approval for TRADING_IMPACTING operations
@@ -72,6 +74,7 @@ Before any live deployment, the following tests MUST pass:
 ### Phase 2: Paper Trading Validation
 
 After sandbox tests pass:
+
 1. Execute paper trades for minimum 30 days
 2. Compare simulated vs paper execution metrics
 3. Document fill rate divergence
@@ -79,6 +82,7 @@ After sandbox tests pass:
 ### Phase 3: Live Deployment (Agent-Only)
 
 Agent implementation checklist:
+
 - [ ] Secrets stored in Local Vault (never in Cloud)
 - [ ] Order execution isolated in Agent process
 - [ ] Kill switch configured and tested

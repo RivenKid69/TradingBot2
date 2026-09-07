@@ -20,6 +20,7 @@
 **Canonical positioning / safe wording**: see `docs/DOCUMENTATION_CANON_DESIGN.md`.
 
 **Important notes (non-legal)**:
+
 - This document is for planning and evaluation; it is **not** legal, tax, or investment advice.
 - Startup visa/entrepreneur program criteria differ by country and case specifics; we will engage local counsel and approved facilitators/incubators where required.
 - Any financial projections are illustrative scenarios, not forecasts.
@@ -170,16 +171,19 @@ To become a leading provider of risk-first quantitative **research and deploymen
 We provide B2B software/ICT tools to professional systematic trading organizations. Our **Cloud-Controlled Execution Architecture (CCEA)** ensures clear operational boundaries:
 
 **What We Are**:
+
 - B2B quantitative research and deployment platform provider (software/ICT)
 - Strategy development, simulation/backtesting, and deployment tooling
 - Infrastructure for customers to run customer-controlled execution via their own Agent
 
 **What We Are NOT** (enforced by CCEA architecture):
+
 - We do **not** provide investment advice, portfolio management, or trade recommendations.
 - CustodiaCloud Cloud does **not** store customer broker credentials and does **not** send live trading instructions (orders/targets/signals).
 - Live execution (if used) occurs only via the customer-controlled Agent and the customer’s own broker accounts.
 
 **CCEA Security Design Commitments** (enforced at architecture level; verify via CI/tests):
+
 - Cloud is designed not to store broker API keys or trading credentials
 - Cloud is designed not to generate, transmit, or execute live trading instructions (orders/targets/signals)
 - Cloud is designed not to have access to exchange trading endpoints
@@ -237,6 +241,7 @@ We provide B2B software/ICT tools to professional systematic trading organizatio
 | **Conformal Prediction** | Distribution-free uncertainty bounds | Uncertainty bounds for risk-aware RL workflows |
 
 **Mathematical Foundation**:
+
 ```
 Traditional: maximize E[Return]
 Our Approach: maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
@@ -388,11 +393,13 @@ This architecture provides clear regulatory benefits:
 **Innovation**: Production-oriented implementation of CVaR-constrained reinforcement learning for trading (uncommon in commercial platforms).
 
 **Academic Foundation**:
+
 - Dabney et al. (2018), "Distributional RL with Quantile Regression", AAAI
 - Chow et al. (2015), "Risk-Constrained RL with Percentile Risk Criteria", JMLR
 - Bellemare et al. (2017), "Distributional Perspective on RL", ICML
 
 **Why This Matters**:
+
 - Financial markets have fat-tailed distributions (Mandelbrot, 1963; Cont, 2001)
 - Traditional RL optimizes average returns, ignoring catastrophic tail risks
 - Our approach explicitly penalizes the worst 5% of outcomes
@@ -405,10 +412,12 @@ This architecture provides clear regulatory benefits:
 **Innovation**: Production-oriented application of continual learning to financial reinforcement learning (uncommon in trading platforms).
 
 **Academic Foundation**:
+
 - Kirkpatrick et al. (2017), "Overcoming Catastrophic Forgetting", PNAS
 - Zenke et al. (2017), "Continual Learning Through Synaptic Intelligence"
 
 **Why This Matters**:
+
 - Financial markets undergo regime changes (bull/bear/sideways)
 - Traditional models "forget" how to trade in previous regimes
 - UPGD preserves knowledge while adapting to new conditions
@@ -421,10 +430,12 @@ This architecture provides clear regulatory benefits:
 **Innovation**: Production-oriented application of conformal prediction to trading risk management (uncommon in commercial platforms).
 
 **Academic Foundation**:
+
 - Romano et al. (2019), "Conformalized Quantile Regression", NeurIPS
 - Gibbs & Candes (2021), "Adaptive Conformal Inference Under Distribution Shift"
 
 **Why This Matters**:
+
 - Traditional uncertainty estimates assume i.i.d. data (violated in finance)
 - Conformal prediction provides **distribution-free** guarantees
 - Valid coverage even when model is completely wrong
@@ -439,6 +450,7 @@ This architecture provides clear regulatory benefits:
 #### 4.2.2 L3 LOB with Academic Models
 
 Complete order book simulation including:
+
 - Queue-reactive fill probability (Huang et al., 2015)
 - Market impact (Kyle, 1985; Almgren-Chriss, 2001)
 - Transient impact decay (Gatheral, 2010)
@@ -470,6 +482,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | Conformal Prediction Integration | Application | High (novel domain) |
 
 **Trade Secrets**:
+
 - Specific hyperparameter configurations (2+ years validation)
 - Feature engineering pipeline (63 features)
 - Training curriculum and data augmentation
@@ -489,6 +502,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **AI Trading Platform Segment** | USD 18.74B growth (2024-2029) | Technavio |
 
 **Key Growth Drivers**:
+
 1. **AI/ML Integration**: Machine learning adoption in trading strategies
 2. **Institutional Adoption**: 61% of algo trading by institutional investors (2024)
 3. **Equities Market Structure**: fragmented venues and increasing automation requirements
@@ -536,6 +550,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 #### 5.3.1 Primary: Proprietary Trading Firms
 
 **Market Characteristics**:
+
 - 200+ active prop firms in Europe (Amsterdam, London primarily)
 - Firm size: 10-500 traders
 - Focus: Market making, arbitrage, directional trading
@@ -551,6 +566,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 #### 5.3.2 Secondary: Quantitative Hedge Funds
 
 **Market Characteristics**:
+
 - AUM-based fee model
 - Higher compliance requirements
 - Longer sales cycles (3-6 months)
@@ -581,6 +597,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 **The Honest Assessment**: The algorithmic trading infrastructure market is competitive, with established players like QuantConnect (~500K community members) and significant venture-backed alternatives. However, our research reveals critical gaps that create an addressable niche for institutional-grade platforms targeting underserved European firms.
 
 **Strategic Insight**: Existing platforms fall into two categories:
+
 1. **Consumer/prosumer tools** (QuantConnect, Zipline) — feature-rich for backtesting, but typically lack institutional-grade execution modeling and governance/risk controls
 2. **Enterprise Systems** (Bloomberg AIM, Aladdin) — institutional-grade but EUR 250K-2M+ annually, inaccessible to firms under EUR 100M AUM
 
@@ -602,6 +619,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 #### 6.3.1 QuantConnect — Widely Used Developer Platform
 
 **Strengths We Acknowledge**:
+
 - Large developer community and strong documentation
 - Cloud backtesting and deployment tooling
 - Broad asset class coverage via integrations
@@ -680,11 +698,13 @@ Open-source backtesting libraries are valuable building blocks, but they typical
 #### 6.4.2 The European Prop Trading Ecosystem
 
 **Amsterdam Hub Statistics**:
+
 - 22+ firms in APT (Amsterdam Proprietary Trading) association
 - Major players: Optiver, IMC, Flow Traders, Da Vinci, All Options
 - Growing mid-tier segment (10-50 traders) underserved by enterprise vendors
 
 **Secondary European Hubs**:
+
 - **London**: Post-Brexit, EU-regulated entities seeking compliance-supporting infrastructure
 - **Frankfurt**: Deutsche Börse ecosystem, institutional market structure
 - **Paris**: Emerging fintech hub, strong quantitative finance talent
@@ -702,6 +722,7 @@ Open-source backtesting libraries are valuable building blocks, but they typical
 #### 6.4.3 European Regulatory Advantage
 
 CustodiaCloud is designed to support professional firms operating under EU/UK governance expectations by providing:
+
 - Pre-trade risk controls and kill-switch enforcement in the client-controlled Agent
 - Audit trails and evidence exports for review (including best-execution analysis tooling where applicable)
 - Change-control posture for trading-impacting changes (local approvals)
@@ -720,6 +741,7 @@ CustodiaCloud is designed to support professional firms operating under EU/UK go
 | **Multi-asset foundation** | Single architecture across assets; GTM remains equities-first | Requires unified abstractions |
 
 **Switching Cost Analysis**:
+
 - Trained models are platform-specific (action space, observation dimensions)
 - Feature engineering pipelines cannot be migrated to competitors
 - Integration with existing workflows (data feeds, brokers, risk systems)
@@ -727,6 +749,7 @@ CustodiaCloud is designed to support professional firms operating under EU/UK go
 ### 6.6 Competitive Positioning (Practical)
 
 We primarily compete against:
+
 1. **In-house builds** (high time and engineering cost)
 2. **Prosumer platforms adapted for professional use** (governance/evidence often missing)
 3. **High-cost enterprise OMS/EMS stacks** (pricing and implementation heavy for mid-market firms)
@@ -736,6 +759,7 @@ We win by providing a clear Cloud/Agent boundary, risk-first tooling, and govern
 ### 6.7 Competitive Response Strategy
 
 We stay ahead by:
+
 - Maintaining strict positioning (equities-first, EU-first, risk-first)
 - Converting pilot learnings into repeatable onboarding
 - Shipping governance/evidence features that become procurement blockers
@@ -758,12 +782,14 @@ We stay ahead by:
 #### Phase 1: Systematic Equities Teams (Months 1-12)
 
 **Why Start Here**:
+
 - Faster decision cycles (2-4 weeks vs. months)
 - Less regulatory friction (not managing external capital)
 - Clear ROI: infrastructure savings quantifiable
 - Reference-able customers for expansion
 
 **Target Profile**:
+
 - 10-100 traders
 - Equities-first (listed markets)
 - Existing quant capability but infrastructure pain
@@ -774,6 +800,7 @@ We stay ahead by:
 **Entry Strategy**: Leverage prop firm references and case studies
 
 **Target Profile**:
+
 - EUR 50M-500M AUM
 - Seeking infrastructure without building in-house
 - Focus on risk-adjusted returns
@@ -798,12 +825,14 @@ We stay ahead by:
 #### 7.3.1 Pilot Program
 
 **Structure**:
+
 - 3-month pilot at 50% discount
 - Hands-on onboarding support
 - Success metrics defined upfront
 - Conversion target: 70%+
 
 **Pilot Pricing**:
+
 - Small firm (5-10 seats): EUR 5,000/month
 - Medium firm (11-25 seats): EUR 15,000/month
 - Large firm (26-50 seats): EUR 30,000/month
@@ -811,6 +840,7 @@ We stay ahead by:
 #### 7.3.2 Reference Program
 
 **Incentives**:
+
 - 1 month free for successful referral
 - Co-marketing opportunities
 - Early access to new features
@@ -830,6 +860,7 @@ We stay ahead by:
 ## 8. Revenue Model and Financial Projections
 
 > **Important Note for Visa Committees**: This section presents *illustrative scenarios* to demonstrate business viability and planning rigor—not definitive forecasts. As emphasized throughout this document, we are a pre-revenue startup entering customer validation. Our projections are grounded in:
+>
 > - Bottom-up market analysis (not top-down aspirations)
 > - Industry benchmark data from reputable sources
 > - Conservative assumptions with explicit contingency planning
@@ -905,6 +936,7 @@ We stay ahead by:
 | **Cumulative paying customers** | 0 | 0 | 1 | 2-3 | **2-3** |
 
 **Year 1 Revenue Range**:
+
 - **Conservative**: 2 customers × EUR 2,500/month × 6 months ≈ **EUR 30,000 revenue** (≈ EUR 60,000 ARR run-rate at year-end)
 - **Base**: 3 customers × EUR 3,000/month × 8 months ≈ **EUR 72,000 revenue** (≈ EUR 108,000 ARR run-rate at year-end)
 
@@ -920,6 +952,7 @@ We stay ahead by:
 | **Net Revenue Retention** | N/A | 105% | 110% | Expansion and upsells |
 
 **Why These Numbers Are Achievable**:
+
 1. **Founder-led sales in Y1**: ~40 qualified conversations achievable by single founder
 2. **Reference customers in Y2**: First customers drive 30-40% of new deals via referrals
 3. **Sales hire in Y2**: Dedicated sales adds 50% pipeline capacity
@@ -940,6 +973,7 @@ We stay ahead by:
 | **Y3** | 18 | 500,000 | 41,667 | 150% |
 
 **Key Assumptions**:
+
 - Pilot→Paid conversion: 50% (vs 60% base)
 - Sales cycle: 6-8 months (vs 4-6 months)
 - Single founder sales through Y2
@@ -953,6 +987,7 @@ We stay ahead by:
 | **Y3** | 25 | 850,000 | 70,833 | 136% |
 
 **Key Assumptions**:
+
 - Pilot→Paid conversion: 60%
 - Sales cycle: 4-6 months
 - Sales hire in H2 Y1 or Q1 Y2
@@ -967,6 +1002,7 @@ We stay ahead by:
 | **Y3** | 45 | 1,400,000 | 116,667 | 133% |
 
 **Key Assumptions**:
+
 - Strong product-market fit signals
 - 70% pilot conversion
 - Successful expansion via referrals
@@ -986,6 +1022,7 @@ We stay ahead by:
 | **Y3** | 10 | 280,000 | 23,333 | 45,000 |
 
 **Downside Scenario Assumptions**:
+
 - Only 40% pilot conversion rate
 - 8-10 month average sales cycle (market downturn)
 - Only 1 paying customer in Y1 (vs 3 base)
@@ -1013,6 +1050,7 @@ We stay ahead by:
 | **Total potential savings** | **EUR 154K/year** | — |
 
 **Reduced Burn Scenario**:
+
 - Minimum viable burn: **EUR 25,000/month** (EUR 300K/year)
 - With EUR 500K seed: **20-month runway** (vs 14 months at full burn)
 - Break-even possible at **EUR 300K ARR** (vs EUR 550K at full burn)
@@ -1136,6 +1174,7 @@ Allowable Sales & Marketing spend per customer: EUR 10,000-12,000
 #### 8.8.3 Risk Acknowledgment for Visa Committees
 
 We acknowledge that achieving projections depends on multiple factors:
+
 - Successfully validating product-market fit with pilot customers
 - Hiring effective sales talent (critical post-Y1)
 - Favorable market conditions (no prolonged downturn)
@@ -1240,6 +1279,7 @@ Series A Prep                                 ████████
 | **Founder/CTO** | Quantitative development, ML/RL research | Architecture, execution models, ML |
 
 **Demonstrated Capabilities**:
+
 - Extensive automated testing and CI validation
 - Multi-asset architecture (MVP support begins equities-first)
 - Research-backed models implemented from peer-reviewed literature
@@ -1280,16 +1320,16 @@ This hiring plan is **milestone-based** and aligned with `docs/HIRING_PLAN_START
 ### 10.4 Organization Chart (Month 12)
 
 ```
-	                    ┌─────────────┐
-	                    │   Founder   │
-	                    │   CEO/CTO   │
-	                    └──────┬──────┘
-	           ┌───────────────┼───────────────┐
-	           │               │               │
-	    ┌──────┴──────┐ ┌──────┴──────┐ ┌──────┴──────┐
-	    │  Founder-led│ │ Engineering │ │  Solutions  │
-	    │  GTM (pilot)│ │   (2 FTE)   │ │ (0-1 FTE)*  │
-	    └─────────────┘ └─────────────┘ └─────────────┘
+                     ┌─────────────┐
+                     │   Founder   │
+                     │   CEO/CTO   │
+                     └──────┬──────┘
+            ┌───────────────┼───────────────┐
+            │               │               │
+     ┌──────┴──────┐ ┌──────┴──────┐ ┌──────┴──────┐
+     │  Founder-led│ │ Engineering │ │  Solutions  │
+     │  GTM (pilot)│ │   (2 FTE)   │ │ (0-1 FTE)*  │
+     └─────────────┘ └─────────────┘ └─────────────┘
 ```
 
 *Solutions hire is triggered by concurrent pilots and onboarding load.
@@ -1297,11 +1337,13 @@ This hiring plan is **milestone-based** and aligned with `docs/HIRING_PLAN_START
 ### 10.5 Governance
 
 **Board Structure** (Post-Funding):
+
 - 1 Founder seat
 - 1-2 Investor seats
 - 1 Independent seat (advisory)
 
 **Reporting**:
+
 - Monthly investor updates
 - Quarterly board meetings
 - Annual strategy reviews
@@ -1406,12 +1448,14 @@ We present a conservative “base case” for the first 24 months (the visa/comm
 This section describes *how* we frame our eligibility in a visa/committee context. It is intentionally **non-legal**: visa/entrepreneur pathways differ by jurisdiction and case specifics.
 
 Most European startup/entrepreneur evaluation frameworks emphasize:
+
 1. **Innovation** (novelty and technical defensibility)
 2. **Business viability** (realistic market entry + revenue model)
 3. **Founder capability** (relevant experience and execution plan)
 4. **Economic contribution** (high-skilled job creation + ecosystem participation)
 
 **How CustodiaCloud aligns**:
+
 - **Innovation**: risk-first ML (CVaR constraints) + CCEA separation (Cloud research/monitoring vs client-controlled execution).
 - **Viability**: equities-first beachhead + structured pilot program + B2B subscription model.
 - **Founder capability**: technical platform already built; focus now on customer validation and repeatable onboarding.
@@ -1424,6 +1468,7 @@ We will select a primary host country (e.g., Estonia/Netherlands/France/Germany)
 #### 12.1.3 Broader Economic Contribution (Qualitative)
 
 Beyond direct hiring, CustodiaCloud’s EU presence is expected to contribute through:
+
 - **Local supply chain spend**: legal/accounting, cloud and security vendors, recruiting, events, and workspace (country-dependent).
 - **Skills development**: training, mentorship, and knowledge transfer through internships and university collaboration (see Section 12.1.6).
 - **Ecosystem participation**: conferences, meetups, and partnerships that strengthen the host country’s fintech/AI community (see Section 12.1.7).
@@ -1575,12 +1620,14 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 | **Geographic** | EU | Global | Multi-region deployment |
 
 **Technical Scalability**:
+
 - Cloud-native architecture (Docker, Kubernetes)
 - Stateless design for horizontal scaling
 - Multi-tenant infrastructure
 - API-first design
 
 **Business Scalability**:
+
 - SaaS model with recurring revenue
 - Low marginal cost per customer
 - Self-service onboarding (planned)
@@ -1600,17 +1647,20 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 ### 12.3 Facilitator/Incubator Alignment (Primary Host: Estonia)
 
 **Estonia shortlist (subject to eligibility and availability)**:
+
 - Startup Estonia network (startup ecosystem coordination)
 - Local incubators/accelerators and co-working hubs in Tallinn (to be finalized during application)
 - University-linked entrepreneurship programs (to be finalized based on fit)
 
 **Support Required**:
+
 - Market introduction
 - Regulatory guidance
 - Network access
 - Investor connections
 
 **Alternative host (Netherlands) shortlist (subject to eligibility and availability)**:
+
 - Startupbootcamp FinTech (Amsterdam)
 - B. Amsterdam
 - High Tech Campus Eindhoven
@@ -1619,11 +1669,13 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 ### 12.4 French Tech Visa Alignment (Alternative)
 
 **Incubator/Accelerator Targets**:
+
 - Station F (Paris) - Fintech Program
 - Le Swave (Paris) - Fintech focus
 - Fintech House (Paris)
 
 **Alignment rationale (to be validated per program guidance)**:
+
 - Innovative technology (not a standard consulting service)
 - Scalable business model
 - High-growth potential
@@ -1725,6 +1777,7 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 #### G.1 Amsterdam Proprietary Trading Hub
 
 **Why Amsterdam is Strategic**:
+
 - 22+ member firms in APT (Amsterdam Proprietary Trading) association
 - Favorable tax environment for trading operations
 - English-speaking, international workforce
@@ -1741,6 +1794,7 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 | **Tier 4 (<10)** | Emerging firms, spinoffs | <10 | Self-service tier |
 
 **Addressable Market Calculation (Amsterdam)**:
+
 - Tier 2-3 firms: ~15-20 firms
 - Average target size: 25 traders
 - Platform subscription (illustrative): EUR 3,000–5,000/month per firm
@@ -1749,18 +1803,21 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 #### G.2 Secondary European Hubs
 
 **London (Post-Brexit Dynamics)**:
+
 - Many firms establishing EU entities
 - Need for EU-aligned infrastructure
 - Traditional prop trading expertise
 - Target: EU-regulated subsidiaries seeking MiFID II compliance
 
 **Frankfurt (Deutsche Börse Ecosystem)**:
+
 - Growing algo trading presence
 - Strong institutional finance culture
 - Eurex derivatives access
 - Target: Firms trading European derivatives
 
 **Paris (Emerging Fintech Hub)**:
+
 - Station F accelerator network
 - Strong quant finance talent (École Polytechnique, ENSAE)
 - French Tech Visa alignment
@@ -1780,6 +1837,7 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 | Audit trail | Full audit trail with export tooling | Supports record-keeping needs |
 
 **ESMA Regulatory Trends (2024-2025)**:
+
 - Increased scrutiny on algorithmic trading controls, governance, and auditability
 - Focus on AI/ML governance in trading
 - Transaction cost reporting requirements
@@ -1813,18 +1871,21 @@ Industry commentary highlights that proprietary trading firms face high costs fo
 #### G.6 Target Customer Personas (European Focus)
 
 **Persona 1: Amsterdam Mid-Tier Prop Firm CTO**
+
 - **Profile**: 15-40 traders, EUR 20-80M proprietary capital
 - **Current Stack**: Python + pandas + proprietary execution
 - **Pain Points**: Scaling algo development, TCA accuracy, MiFID II compliance burden
 - **Our Value**: Institutional TCA, pre-built risk controls, 80% faster strategy deployment
 
 **Persona 2: London EU-Entity Quant Lead**
+
 - **Profile**: 10-30 traders, recently established EU entity
 - **Current Stack**: Legacy UK systems, need EU-aligned replacement
 - **Pain Points**: MiFID II compliance, multi-asset platform needs
 - **Our Value**: MiFID II native, 5 asset classes unified, EU entity-friendly pricing
 
 **Persona 3: Frankfurt Equities + Derivatives Crossover Team**
+
 - **Profile**: 8-25 traders, equities + listed derivatives strategies
 - **Current Stack**: Separate systems for each asset class
 - **Pain Points**: Unified risk view, correlation management, execution quality
@@ -1833,16 +1894,19 @@ Industry commentary highlights that proprietary trading firms face high costs fo
 #### G.7 Competitive Win Scenarios
 
 **Scenario 1: QuantConnect User Outgrowing Platform**
+
 - **Trigger**: Team needs more realistic execution-cost modeling and stronger governance/evidence exports
 - **Our Message**: "Graduate to institutional-grade execution modeling"
 - **Proof Point**: Multi-factor TCA + sim-to-live parity instrumentation and monitoring hooks
 
 **Scenario 2: In-House Build Decision Point**
+
 - **Trigger**: Firm considering 12-month platform build
 - **Our Message**: "Why spend EUR 500K-1.5M building core infrastructure when you can deploy in weeks on a predictable subscription?"
 - **Proof Point**: Production architecture + governance boundary + extensive automated tests and documentation (available under NDA)
 
 **Scenario 3: Bloomberg Budget Rejection**
+
 - **Trigger**: CFO rejects EUR 250K+ Bloomberg AIM proposal
 - **Our Message**: "Institutional-grade research and deployment capabilities at a fraction of enterprise pricing" *(illustrative positioning; actual value depends on customer use case)*
 - **Proof Point**: Client-controlled execution boundary + risk-first ML + deployment and evidence workflows

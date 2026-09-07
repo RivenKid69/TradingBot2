@@ -29,9 +29,9 @@ vec_env.close()
 Параметр `base_seed` задаёт зерно для первого воркера. Для воркера с индексом
 `i` вычисляется `seed = base_seed + i`. Внутри процесса устанавливаются:
 
-* `np.random.seed(seed)` -- глобальный генератор `NumPy`;
-* `env._rng = np.random.default_rng(seed)`;
-* `env.reset(seed=seed)` при первом запуске.
+- `np.random.seed(seed)` -- глобальный генератор `NumPy`;
+- `env._rng = np.random.default_rng(seed)`;
+- `env.reset(seed=seed)` при первом запуске.
 
 Таким образом каждый воркер получает независимую последовательность случайных
 чисел, а повторный запуск с тем же `base_seed` воспроизводим. Для полной

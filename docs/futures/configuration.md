@@ -456,12 +456,14 @@ python train_model_multi_patch.py \
 See `docs/agent/INSTALLATION.md` for setup. The commands below are for development/testing only.
 
 **Production (via Agent daemon):**
+
 ```bash
 # See docs/agent/INSTALLATION.md for full Agent setup
 python -m packages.agent.daemon.agentd --config configs/agent_futures.yaml
 ```
 
 **Development/Testing Only:**
+
 ```bash
 # Basic live trading (paper) - DEVELOPMENT ONLY
 python script_live.py \

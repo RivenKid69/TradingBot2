@@ -355,6 +355,7 @@ All TRADING_IMPACTING commands require local approval:
 | EU data residency | By design for EU customers; drift checks designed to fail closed (verify via residency dashboard and CI tests) |
 
 **CCEA Privacy Design Commitments** *(verify via architecture review and CI tests)*:
+
 - Cloud is **designed not to** store or receive broker credentials or API keys (secrets designed to stay in customer-controlled Agent)
 - Cloud is **designed not to** receive order-like payloads in commands (protocol-level design prohibition)
 - Telemetry redaction is **on by default** (designed as mandatory; verify via CI guardrails); raw order events require explicit opt-in

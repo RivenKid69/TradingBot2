@@ -141,7 +141,7 @@ def _trip() -> None:
     - НО гарантирует атомарность counter + state
     - Для production с высокой частотой ошибок можно добавить async writer
 
-    Reference: CLAUDE.md → "НЕ БАГИ" → #23
+    Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #23
     ═══════════════════════════════════════════════════════════════════════════
     """
     global _tripped

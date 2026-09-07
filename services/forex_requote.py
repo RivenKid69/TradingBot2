@@ -46,7 +46,7 @@ References:
 - King, Osler, Rime (2012): "Foreign Exchange Market Structure"
 - BIS (2019): "FX Execution Algorithms and Market Functioning"
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

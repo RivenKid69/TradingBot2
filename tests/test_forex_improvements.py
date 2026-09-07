@@ -10,7 +10,7 @@ Tests for:
 4. ForexEnvWrapper new parameters
 5. ForexLeverageWrapper stop-out level
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

@@ -152,7 +152,7 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
         # - This eliminates the semantic conflict
         #
         # References:
-        # - CLAUDE.md: DATA_LEAKAGE_FIX_REPORT_2025_11_23.md
+        # - docs/PLATFORM_REFERENCE.md: DATA_LEAKAGE_FIX_REPORT_2025_11_23.md
         # - tests/test_data_leakage_prevention.py
         # - tests/test_close_orig_semantic_fix.py (NEW)
         # =========================================================================

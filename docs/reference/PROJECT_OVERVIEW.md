@@ -9,6 +9,7 @@ This repository (`AI-Powered-Quantitative-Research-Platform`) contains the codeb
 ## Product posture (CCEA)
 
 CustodiaCloud uses the `CCEA` architecture (Cloud/Agent separation):
+
 - **Cloud**: research/simulation/monitoring + artifact building/registry + lifecycle control plane (non-orders)
 - **Agent**: runs in the customer environment; holds secrets locally; enforces risk controls; performs any live execution via the customer’s own broker accounts
 
@@ -35,4 +36,3 @@ Use the canonical phrasing:
 ## Licensing
 
 This repository is proprietary (see `LICENSE`). Any future open-core or repo-split strategy (Agent/SDK) must be published as separate repositories with explicit licensing/trademark terms.
-

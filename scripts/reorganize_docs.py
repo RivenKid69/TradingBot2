@@ -163,8 +163,8 @@ CATEGORIZATION = {
 # Files that should stay in root
 KEEP_IN_ROOT = {
     'README.md',
-    'CLAUDE.md',
-    'claude.md',  # lowercase version
+    'docs/PLATFORM_REFERENCE.md',
+    'docs/PLATFORM_REFERENCE.md',  # lowercase version
     'ARCHITECTURE.md',
     'ARCHITECTURE_DIAGRAM.md',
     'CONTRIBUTING.md',
@@ -476,7 +476,7 @@ def main():
     print("\nDone!")
     print("\nNext steps:")
     print("1. Review the moved files")
-    print("2. Update CLAUDE.md with new documentation structure")
+    print("2. Update docs/PLATFORM_REFERENCE.md with new documentation structure")
     print("3. Update any hardcoded paths in scripts")
     print("4. Commit the changes")
 

@@ -103,6 +103,7 @@ For SHORT position:
 ```
 
 **Example:**
+
 - Entry: $50,000
 - Leverage: 10x
 - MMR: 0.4%

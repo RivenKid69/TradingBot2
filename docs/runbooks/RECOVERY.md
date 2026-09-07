@@ -11,6 +11,7 @@ This runbook covers recovery procedures for various failure scenarios.
 ## Scenario 1: Agent Crash Recovery
 
 ### Symptoms
+
 - Agent process not running
 - No heartbeats to Cloud
 - Positions/orders in unknown state
@@ -18,6 +19,7 @@ This runbook covers recovery procedures for various failure scenarios.
 ### Procedure
 
 1. **Check Agent Status**
+
 ```bash
 # Check if running
 ccea-agent status
@@ -26,6 +28,7 @@ ps aux | grep ccea-agent
 ```
 
 2. **Review Crash Logs**
+
 ```bash
 # View recent logs
 ccea-agent logs --tail 100 --level ERROR
@@ -35,6 +38,7 @@ journalctl -u ccea-agent --since "1 hour ago"
 ```
 
 3. **Restart Agent**
+
 ```bash
 # Restart with automatic reconciliation
 ccea-agent start --reconcile
@@ -47,6 +51,7 @@ ccea-agent start --reconcile
 ```
 
 4. **Verify Recovery**
+
 ```bash
 # Check reconciliation
 ccea-agent reconcile verify
@@ -63,6 +68,7 @@ ccea-agent orders list
 ## Scenario 2: Database Corruption Recovery
 
 ### Symptoms
+
 - Agent fails to start
 - SQLite errors in logs
 - Telemetry buffer errors
@@ -70,17 +76,20 @@ ccea-agent orders list
 ### Procedure
 
 1. **Stop Agent**
+
 ```bash
 ccea-agent stop
 ```
 
 2. **Backup Corrupted Files**
+
 ```bash
 cp ~/.ccea/telemetry.db ~/.ccea/telemetry.db.corrupted
 cp ~/.ccea/journal/*.db ~/.ccea/journal_backup/
 ```
 
 3. **Attempt Repair**
+
 ```bash
 # SQLite repair
 sqlite3 ~/.ccea/telemetry.db "PRAGMA integrity_check;"
@@ -88,6 +97,7 @@ sqlite3 ~/.ccea/telemetry.db ".recover" | sqlite3 ~/.ccea/telemetry_recovered.db
 ```
 
 4. **Reset If Needed**
+
 ```bash
 # Reset telemetry buffer (data loss)
 ccea-agent telemetry reset-buffer --confirm
@@ -97,6 +107,7 @@ ccea-agent journal reset --confirm
 ```
 
 5. **Restart with Full Reconciliation**
+
 ```bash
 ccea-agent start --full-reconcile
 ```
@@ -106,6 +117,7 @@ ccea-agent start --full-reconcile
 ## Scenario 3: Vault Recovery
 
 ### Symptoms
+
 - Cannot unlock vault
 - Credential errors
 - Broker connection failures
@@ -113,11 +125,13 @@ ccea-agent start --full-reconcile
 ### Procedure
 
 1. **Check Vault Status**
+
 ```bash
 ccea-agent vault status
 ```
 
 2. **Verify Encryption Key**
+
 ```bash
 # Check if key is set
 echo $CCEA_VAULT_KEY | wc -c
@@ -125,6 +139,7 @@ echo $CCEA_VAULT_KEY | wc -c
 ```
 
 3. **If Key Lost - Re-add Credentials**
+
 ```bash
 # Reset vault (credentials will be lost)
 ccea-agent vault reset --confirm
@@ -134,6 +149,7 @@ ccea-agent vault add-broker --broker binance
 ```
 
 4. **If Vault Corrupted**
+
 ```bash
 # Backup
 cp ~/.ccea/vault.enc ~/.ccea/vault.enc.corrupted
@@ -148,6 +164,7 @@ ccea-agent vault add-broker --broker binance
 ## Scenario 4: Cloud Connection Recovery
 
 ### Symptoms
+
 - Heartbeat failures
 - Command poll timeouts
 - "Cloud unreachable" warnings
@@ -155,6 +172,7 @@ ccea-agent vault add-broker --broker binance
 ### Procedure
 
 1. **Check Network**
+
 ```bash
 # Test Cloud connectivity
 curl -v https://api.ccea.cloud/health
@@ -164,22 +182,26 @@ nslookup api.ccea.cloud
 ```
 
 2. **Verify Agent Config**
+
 ```bash
 ccea-agent config show cloud
 # Check endpoint is correct
 ```
 
 3. **Check TLS Certificates**
+
 ```bash
 openssl s_client -connect api.ccea.cloud:443 -servername api.ccea.cloud
 ```
 
 4. **Force Reconnect**
+
 ```bash
 ccea-agent cloud reconnect
 ```
 
 5. **If Enrollment Lost**
+
 ```bash
 # Get new enrollment token from Cloud UI
 ccea-agent enroll --token <new_token>
@@ -190,6 +212,7 @@ ccea-agent enroll --token <new_token>
 ## Scenario 5: State Divergence Recovery
 
 ### Symptoms
+
 - Position mismatch alerts
 - Unknown orders detected
 - Kill switch triggered by divergence
@@ -197,11 +220,13 @@ ccea-agent enroll --token <new_token>
 ### Procedure
 
 1. **Stop Trading**
+
 ```bash
 ccea-agent stop
 ```
 
 2. **Compare States**
+
 ```bash
 # Get local state
 ccea-agent positions list --source local
@@ -213,12 +238,14 @@ ccea-agent orders list --source broker
 ```
 
 3. **Identify Differences**
+
 ```bash
 # Detailed comparison
 ccea-agent reconcile diff --verbose
 ```
 
 4. **Resolve Manually**
+
 ```bash
 # Option A: Trust broker state
 ccea-agent reconcile resolve --trust broker
@@ -232,11 +259,13 @@ ccea-agent reconcile resolve --trust local
 ```
 
 5. **Verify Resolution**
+
 ```bash
 ccea-agent reconcile verify
 ```
 
 6. **Resume**
+
 ```bash
 ccea-agent start
 ```
@@ -246,6 +275,7 @@ ccea-agent start
 ## Scenario 6: Time Sync Recovery
 
 ### Symptoms
+
 - Time drift alerts
 - Timestamp validation failures
 - Kill switch triggered by time
@@ -253,12 +283,14 @@ ccea-agent start
 ### Procedure
 
 1. **Check System Time**
+
 ```bash
 date
 timedatectl status
 ```
 
 2. **Force NTP Sync**
+
 ```bash
 # Linux
 sudo systemctl restart systemd-timesyncd
@@ -270,11 +302,13 @@ sudo sntp -sS time.apple.com
 ```
 
 3. **Verify Agent Time Sync**
+
 ```bash
 ccea-agent doctor --check time
 ```
 
 4. **Resume**
+
 ```bash
 ccea-agent kill-switch acknowledge
 ccea-agent start

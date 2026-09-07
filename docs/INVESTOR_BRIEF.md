@@ -5,6 +5,7 @@
 *Last Updated: 2025-12-21 | Pre-Seed Stage*
 
 **Changelog:**
+
 - 2025-12-21: **Due diligence corrections**: Replaced "✅ Complete" status markers with "Foundation implemented" and "Defined" per Canon §4.5 (avoid absolute claims). Affected: Technical Foundation and Customer Validation tables.
 - 2025-12-19: **Internal due diligence review corrections**: Changed "Now Testing with Customers" to "Entering Customer Validation Phase" to avoid implying active pilots; added explicit disclaimer to validation milestones clarifying targets are planned/aspirational and no customers/pilots/LOIs currently signed
 - 2025-12-18: Updated regulatory posture, asset coverage
@@ -75,6 +76,7 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 | **Multiple Revenue Streams** | B2B SaaS + Enterprise deployments (on-prem/VPC) |
 
 **Legal positioning (design intent):**
+
 - B2B software/ICT product; **not** investment advice, portfolio management, or trade recommendations
 - **Not** an execution service: Cloud is designed not to execute orders and not to send live trading instructions (orders/targets/signals); execution is designed to remain customer-controlled via the Agent (verify via architecture review and CI tests)
 - Designed for a software/ICT provider posture: Cloud has **no secrets** and **no live trading instructions** (orders/targets/signals)
@@ -289,12 +291,14 @@ Beachhead (Equities)         Adjacent Segments
 | **Success criteria** | conversion willingness at target price range; repeatable onboarding (illustrative) |
 
 **Why Europe first:**
+
 - MiFID II regulatory clarity
 - Lower competition vs US
 - Startup visa pathway for team expansion
 - Strong prop trading ecosystem (Amsterdam, Frankfurt, Dublin)
 
 **Target firm profile:**
+
 - 5-50 traders
 - Systematic equities focus (listed markets)
 - Building or evaluating new infrastructure
@@ -459,6 +463,7 @@ Internal QA includes paper-trading, parity instrumentation (backtest vs. live), 
 | **Founder/CTO** | Quantitative development, ML/RL research | Platform architecture, execution models |
 
 **Technical capabilities demonstrated:**
+
 - Extensive automated testing and CI validation
 - 5 asset class integrations (designed for production use)
 - Academic research implementation (7+ peer-reviewed papers)
@@ -476,6 +481,7 @@ Internal QA includes paper-trading, parity instrumentation (backtest vs. live), 
 ### Advisory Board (Seeking)
 
 Actively seeking advisors with:
+
 - Prop trading firm operational experience
 - Enterprise B2B sales in fintech
 - Regulatory/compliance expertise (MiFID II, SEC)
@@ -588,6 +594,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 **Serviceable Market**: ~60 firms (5-50 traders, tech-forward, budget available)
 
 **Funnel Assumptions** (industry-benchmarked):
+
 | Stage | Our Rate | Industry Range | Source |
 |-------|----------|----------------|--------|
 | Outreach→Meeting | 10% | 5-15% | [Gradient Works](https://www.gradient.works/blog/2024-b2b-sales-benchmarks) |
@@ -728,6 +735,7 @@ For more information or to schedule a demo, please contact:
 **Our position: Software vendor, not regulated financial entity**
 
 We provide technology tools to trading firms who are themselves regulated. We do not:
+
 - Provide execution-as-a-service or discretionary execution on behalf of clients
 - Manage client assets
 - Provide investment advice or recommendations
@@ -743,11 +751,13 @@ We provide technology tools to trading firms who are themselves regulated. We do
 | **Singapore** | Technology vendor | Client handles MAS requirements |
 
 **Key distinctions:**
+
 - We are similar to Bloomberg Terminal, Refinitiv Eikon, or QuantConnect in regulatory positioning
 - Clients use our tools to implement *their* strategies with *their* regulatory obligations
 - We do not recommend specific trades or strategies
 
 **Compliance tooling (for enterprise clients):**
+
 - Vendor due diligence documentation (designed to support client procurement reviews)
 - GDPR data handling documentation (available now)
 - Audit logs + export tooling to support client record-keeping and best-execution analysis (where applicable)

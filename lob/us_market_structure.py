@@ -21,7 +21,7 @@ References:
     - NYSE Pillar Gateway Spec: Tick size and lot classifications
 
 FIX (2025-11-28): Added as part of Issue #7 "L3 LOB: US Market Structure" fix.
-Reference: CLAUDE.md → "L3 LOB: US Market Structure"
+Reference: docs/PLATFORM_REFERENCE.md → "L3 LOB: US Market Structure"
 """
 
 from __future__ import annotations

@@ -31,7 +31,7 @@ References:
 - Menkhoff et al. (2012): "Currency Momentum Strategies"
 - Della Corte et al. (2016): "Volatility Risk Premia and Exchange Rate Predictability"
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 Version: 1.0.0
 """

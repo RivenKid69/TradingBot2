@@ -11,6 +11,7 @@ The kill switch immediately halts all trading activity when triggered. This runb
 ## Trigger Conditions
 
 Use the kill switch when:
+
 - [ ] Unexpected trading behavior observed
 - [ ] Excessive losses detected
 - [ ] System malfunction suspected
@@ -33,6 +34,7 @@ Use the kill switch when:
 ### 1. Trigger Kill Switch
 
 **Option A: CLI (Recommended)**
+
 ```bash
 # Trigger kill switch
 ccea-agent kill-switch trigger --reason "Manual trigger: <description>"
@@ -42,11 +44,13 @@ ccea-agent kill-switch trigger --reason "..." --flatten
 ```
 
 **Option B: Agent GUI**
+
 1. Open agent dashboard
 2. Click "Emergency Stop" button
 3. Confirm action
 
 **Option C: API**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kill-switch/trigger \
   -H "Authorization: Bearer $AGENT_TOKEN" \
@@ -101,6 +105,7 @@ ccea-agent kill-switch export-incident \
 ### 1. Investigate Root Cause
 
 Before recovering, investigate:
+
 - [ ] What triggered the kill switch?
 - [ ] Is the root cause resolved?
 - [ ] Are broker APIs functioning?
@@ -169,6 +174,7 @@ ccea-agent start
 ## Verification Checklist
 
 After recovery:
+
 - [ ] Kill switch status cleared
 - [ ] Agent state is IDLE or RUNNING
 - [ ] No orphan orders
@@ -181,6 +187,7 @@ After recovery:
 ## Escalation
 
 If kill switch cannot be cleared:
+
 1. Contact platform support
 2. Provide incident export
 3. Await guidance before manual override

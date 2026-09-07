@@ -253,6 +253,7 @@ You must comply with:
 | Telemetry | Anomaly detection | Abuse detection |
 
 **We do NOT monitor:**
+
 - Your Agent's local activities
 - Your broker connections (we have no access)
 - Your trading performance (only redacted telemetry)
@@ -343,21 +344,27 @@ Material changes will be communicated:
 ## APPENDIX A: MARKET MANIPULATION DEFINITIONS
 
 ### Spoofing
+
 Placing large orders with intent to cancel before execution to create false impression of market interest.
 
 ### Layering
+
 Placing multiple orders at different price levels to create illusion of supply/demand, then cancelling.
 
 ### Wash Trading
+
 Executing trades where the buyer and seller are the same party, creating artificial volume.
 
 ### Pump and Dump
+
 Artificially inflating an asset's price through coordinated buying or misleading statements, then selling.
 
 ### Front-Running
+
 Trading ahead of a known pending order to profit from the expected price movement.
 
 ### Quote Stuffing
+
 Rapidly entering and withdrawing large numbers of orders to slow down other market participants.
 
 ---

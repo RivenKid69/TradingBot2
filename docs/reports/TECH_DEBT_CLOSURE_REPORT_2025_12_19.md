@@ -69,6 +69,7 @@ All items have been addressed through code fixes, documentation updates, or prop
 ### Security Changes
 
 **1. agentd.py - KeyManager Integration**
+
 ```python
 # Before: TODO: Load trusted keys from config/keychain
 # After: Full KeyManager integration with fallback to strict mode
@@ -79,12 +80,14 @@ if trusted_keys_path.exists():
 ```
 
 **2. enterprise_posture.py - Signature Verification**
+
 - Implemented `ccea.crypto.signing.verify_signature` integration
 - Looks for `evidence_pack.sig` in evidence pack
 - Verifies signature over `manifest.json`
 - Returns detailed verification result
 
 **3. convert_legacy_models.py - Threat Model Reference**
+
 ```python
 # SECURITY: This unsafe loading is ONLY used for one-time conversion
 # See: docs/security/THREAT_MODEL_MODEL_LOADING.md for controls
@@ -93,19 +96,23 @@ if trusted_keys_path.exists():
 ### Architecture Changes
 
 **14. research_jobs Router - ENABLED**
+
 ```python
 # Before: # research_jobs,  # TODO: Fix dependency issues
 # After:  research_jobs,
 ```
+
 Import verification: `python3 -c "from packages.cloud.control_plane.routers import *"` - OK
 
 ### Documentation Changes
 
 **15. BUILD_INSTRUCTIONS.md**
+
 - Added explicit links to workflow files
 - Clarified SBOM generation is in security-sast.yml
 
 **16. SYSTEM_REQUIREMENTS.md**
+
 - Added explicit link to secrets-scan job in security-sast.yml
 
 ---
@@ -171,6 +178,7 @@ make build && make verify-hash
 ## Conclusion
 
 All 16 technical debt items have been closed with:
+
 - Code fixes where applicable (5 items)
 - Documentation updates per Canon (8 items)
 - Confirmation that claims are accurate (3 items - Docs/Drift were not drift)

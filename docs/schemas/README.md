@@ -38,6 +38,7 @@ Result: Use version 1.2.0 (highest mutual)
 ```
 
 **Negotiation Flow:**
+
 ```json
 // Agent enrollment
 {
@@ -232,6 +233,7 @@ These fields are **NEVER** allowed in any Cloud→Agent payload:
 ### Example Messages
 
 **REQUEST_START_RUN:**
+
 ```json
 {
   "message_type": "REQUEST_START_RUN",
@@ -249,6 +251,7 @@ These fields are **NEVER** allowed in any Cloud→Agent payload:
 ```
 
 **HEARTBEAT:**
+
 ```json
 {
   "message_type": "HEARTBEAT",
@@ -347,6 +350,7 @@ When adding a new optional field:
 4. Both old and new agents work
 
 **Example:**
+
 ```json
 // v1.0.0
 {
@@ -372,6 +376,7 @@ When making breaking changes:
 4. Deprecation warning before removal
 
 **Example:**
+
 ```json
 // v1.x - old field name
 {
@@ -491,6 +496,7 @@ python -m pytest tests/ccea/test_schema_compatibility.py -v
 ---
 
 **Related Documentation:**
+
 - [CCEA Overview](../CCEA_OVERVIEW.md)
 - [Artifact Builder](../cloud/ARTIFACT_BUILDER.md)
 - [Control Plane API](../cloud/CONTROL_PLANE_API.md)

@@ -55,6 +55,7 @@ class EncryptionConfig:
 ```
 
 **Encryption Requirements**:
+
 - All data at rest: AES-256-GCM encryption
 - All data in transit: TLS 1.3 minimum
 - Key rotation: Every 90 days (configurable)
@@ -70,6 +71,7 @@ class KeyManagementPolicy(str, Enum):
 ```
 
 **Key Management Requirements**:
+
 - Master keys managed in HSM or cloud KMS
 - Data encryption keys (DEK) wrapped by master keys
 - Key rotation audit trail
@@ -87,6 +89,7 @@ class MFARequirement(str, Enum):
 ```
 
 **MFA Policy**:
+
 - Required for: Break-glass access, admin operations, DSAR processing
 - Methods: TOTP, WebAuthn/FIDO2, SMS (deprecated), Hardware tokens
 - Session timeout: 8 hours standard, 1 hour for elevated access
@@ -104,6 +107,7 @@ class SecretPolicy:
 ```
 
 **Secrets Requirements**:
+
 - No secrets in code, config files, or logs (CCEA constraint)
 - Secrets stored in dedicated vault (HashiCorp Vault, AWS Secrets Manager)
 - Automatic rotation support
@@ -126,6 +130,7 @@ class SignedArtifact:
 ```
 
 **Signing Requirements**:
+
 - All artifacts must be signed before deployment
 - Unsigned artifacts are rejected (fail closed)
 - Signature verification at deploy time
@@ -145,6 +150,7 @@ class DigestPin:
 ```
 
 **Pinning Policy**:
+
 - All artifact references by digest ONLY (no "latest", no tags)
 - Digest verification at pull/deploy time
 - Pin expiration with mandatory review
@@ -162,6 +168,7 @@ class RegistryAllowlist:
 ```
 
 **Registry Policy**:
+
 - Only allowlisted registries permitted
 - Default deny for unknown registries
 - EU-only registry locations enforced
@@ -183,6 +190,7 @@ class SBOM:
 ```
 
 **SBOM Requirements**:
+
 - SBOM required for all deployable artifacts
 - Stored with artifact digest reference
 - Exportable for evidence pack
@@ -208,6 +216,7 @@ class AgentUpdate:
 ```
 
 **Update Signing Requirements**:
+
 - All agent updates cryptographically signed
 - Agents reject unsigned updates
 - Signature verification before installation
@@ -238,6 +247,7 @@ class RolloutPlan:
 ```
 
 **Staged Rollout Policy**:
+
 - Default stages: canary (1%) → early (10%) → general (100%)
 - Automatic pause on error rate threshold
 - Manual approval option between stages
@@ -259,6 +269,7 @@ class RollbackRequest:
 ```
 
 **Rollback Requirements**:
+
 - Previous version retained for rollback
 - Rollback can be triggered manually or automatically
 - Rollback audit trail
@@ -288,6 +299,7 @@ class ChangeWindow:
 ```
 
 **Enterprise Controls**:
+
 - Version pinning by workspace
 - Change windows for update application
 - Pin expiration with mandatory review
@@ -317,6 +329,7 @@ class SandboxConfig:
 ```
 
 **Isolation Requirements**:
+
 - Research jobs run in isolated sandbox
 - No access to host filesystem (except designated mounts)
 - No network access to internal services
@@ -339,6 +352,7 @@ class ResourceQuota:
 ```
 
 **Quota Policy**:
+
 - Per-workspace quota limits
 - Per-job resource allocation
 - Automatic termination on limit breach
@@ -359,6 +373,7 @@ class EgressPolicy:
 ```
 
 **Egress Control**:
+
 - Default deny for all outbound connections
 - Allowlist for approved data sources
 - Connection logging for audit
@@ -391,6 +406,7 @@ class AbuseEvent:
 ```
 
 **Detection Mechanisms**:
+
 - CPU pattern analysis (crypto mining signatures)
 - Network behavior analysis (scanning, C2 communication)
 - Resource consumption anomalies
@@ -515,6 +531,7 @@ class BreachTimeline:
 ```
 
 **Required Timeline Events**:
+
 1. `DETECTED` - Breach first detected
 2. `AWARENESS` - Became aware of breach (starts 72h clock)
 3. `ASSESSMENT_STARTED` - Risk assessment begun
@@ -547,6 +564,7 @@ class TabletopExercise:
 ```
 
 **Tabletop Requirements**:
+
 - Quarterly tabletop exercises
 - Simulate various breach scenarios
 - Document gaps and improvements
@@ -617,36 +635,42 @@ class EvidenceManifest:
 ### 8.3 Export Contents
 
 **Artifact Inventory Export**:
+
 - All deployed artifact versions
 - Digest references
 - Signatures and certificates
 - Deployment timestamps
 
 **SBOM Export**:
+
 - Component lists per artifact
 - Vulnerability assessments
 - License information
 - Dependency trees
 
 **Change Journal Export**:
+
 - All deploy/upgrade/rollback events
 - Approval records
 - Config blob digests
 - Who requested/approved
 
 **Rollout Records Export**:
+
 - Staged rollout plans
 - Stage progression history
 - Error rates and metrics
 - Rollback events
 
 **Sandbox Policy Export**:
+
 - Egress allowlists
 - Resource quotas
 - Isolation configurations
 - Policy change history
 
 **Sandbox Violations Export**:
+
 - Abuse detection events
 - Actions taken
 - Evidence of violations
@@ -682,6 +706,7 @@ AccessAuditService (from Phase 6)
 ### 9.2 Callback Integration
 
 All Phase 7 services integrate with:
+
 - `AccessAuditService` for audit logging
 - `RBACService` for authorization
 - Alert systems for notifications

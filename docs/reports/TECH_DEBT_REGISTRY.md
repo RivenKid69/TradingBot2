@@ -17,6 +17,7 @@ Each item follows the Documentation Canon requirement for honest disclosure with
 ## Registry Format
 
 Each entry contains:
+
 - **ID**: Unique identifier for reference
 - **Category**: Architecture, Data/ML, Testing/Quality, Reliability/Operations, Security, Docs/Drift, Other
 - **Severity**: High, Medium, Low
@@ -58,7 +59,7 @@ Each entry contains:
 |-------|-------|
 | **Location** | `ccea/agent/*`, `ccea/control_plane/*` |
 | **Severity** | Medium |
-| **Description** | Deprecated modules in ccea/* - must use packages/* instead |
+| **Description** | Deprecated modules in ccea/*- must use packages/* instead |
 | **Status** | Closed |
 | **Control Artifact** | `importlinter.ini` contracts: deprecated-ccea-agent, deprecated-ccea-control-plane |
 | **Closure Date** | 2025-12-21 |
@@ -113,7 +114,7 @@ Each entry contains:
 | **Status** | Closed |
 | **Control Artifact** | README.md adapter table shows "Stub (Phase 0)" status; module docstrings document planned implementation |
 | **Closure Date** | 2025-12-21 |
-| **Note** | Per CCEA Design Doc Section 4.2: Broker Connectors are AGENT ZONE ONLY. Stubs are fail-safe (empty exports, explicit Phase 0 status). Implementation planned for Phase 2+ per forex roadmap. | |
+| **Note** | Per CCEA Design Doc Section 4.2: Broker Connectors are AGENT ZONE ONLY. Stubs are fail-safe (empty exports, explicit Phase 0 status). Implementation planned for Phase 2+ per forex roadmap. |
 
 ### arch-defensive-exception-sandbox {#arch-defensive-exception-sandbox}
 
@@ -722,7 +723,7 @@ Each entry contains:
 | **Status** | Closed |
 | **Control Artifact** | (1) Docstring documents "Hash Truncation Policy" with use cases, (2) to_audit_dict() method added for full hash in security contexts |
 | **Closure Date** | 2025-12-25 |
-| **Note** | Truncation is intentional for UI/API display (visual identification). For incident response and forensic analysis, use to_audit_dict() which returns full key_hash with _audit_context flag. Full hash also available in CMKService audit trail. Per Documentation Canon: limitation documented with control artifact. |
+| **Note** | Truncation is intentional for UI/API display (visual identification). For incident response and forensic analysis, use to_audit_dict() which returns full key_hash with_audit_context flag. Full hash also available in CMKService audit trail. Per Documentation Canon: limitation documented with control artifact. |
 
 ---
 
@@ -1331,6 +1332,7 @@ Each entry contains:
 | **TOTAL** | **17** | **45** | **33** | **95** | **28** | **67** |
 
 **Status Summary**:
+
 - 28 items Controlled (with active monitoring/artifacts)
 - 67 items Closed (resolved)
 - 2 items Reviewed - Not Debt (standard patterns)

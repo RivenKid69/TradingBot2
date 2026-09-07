@@ -18,7 +18,7 @@ Algorithm:
        normalized = (u - global_min) / (global_max - global_min + eps)
        scaled_utility = sigmoid(2 * (normalized - 0.5))
        (Dividing by global_max INVERTS protection under negative utilities —
-        see CLAUDE.md "НЕ БАГИ" #5/#19/#28. The code uses min-max; do not "simplify".)
+        see docs/PLATFORM_REFERENCE.md "НЕ БАГИ" #5/#19/#28. The code uses min-max; do not "simplify".)
     6. Update: param -= lr * (m / (sqrt(v) + eps) + noise) * (1 - scaled_utility)
        High utility → scaled_utility→1 → small update (protect); low → large update.
 
@@ -284,7 +284,7 @@ class AdaptiveUPGD(torch.optim.Optimizer):
                 # This gives full [0,1] range but has sharp boundaries and can cause
                 # instability with fully frozen or fully exposed weights.
                 #
-                # Reference: CLAUDE.md → "НЕ БАГИ" → #51
+                # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #51
                 # Reference: Dohare et al. (2023) "Maintaining Plasticity in Deep Continual Learning"
                 # ═══════════════════════════════════════════════════════════════════════════
                 scaled_utility = torch.sigmoid(2.0 * (normalized_utility - 0.5))

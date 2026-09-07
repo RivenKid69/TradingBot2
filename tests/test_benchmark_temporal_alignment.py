@@ -17,7 +17,7 @@ The fix uses merge_asof with direction="backward" to ensure:
 
 References:
 - López de Prado (2018) "Advances in Financial ML" Ch.4 - Temporal alignment
-- CLAUDE.md Issue #4 documentation
+- docs/PLATFORM_REFERENCE.md Issue #4 documentation
 """
 
 import numpy as np

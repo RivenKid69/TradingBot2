@@ -44,6 +44,7 @@ make dist-cloud
 ```
 
 **Cloud artifact contains:**
+
 - `packages/cloud/` - Control plane, builder, governance, research
 - `packages/shared/` - Shared contracts and models
 - `ccea/artifact/` - Artifact utilities
@@ -54,6 +55,7 @@ make dist-cloud
 - `ccea/telemetry/` - Telemetry schemas (no agent-side code)
 
 **Cloud artifact is designed not to contain (verify via `make artifact-check-cloud`):**
+
 - `packages/agent/` - Agent daemon, execution, vault
 - `ccea/agent/` - Legacy agent shim (deprecated)
 - `ccea/control_plane/` - Legacy control plane shim (deprecated)
@@ -69,6 +71,7 @@ make artifact-check-cloud
 ```
 
 This runs `ccea.guardrails.build_artifact_check` which scans for:
+
 - Prohibited imports (broker clients, execution modules)
 - Prohibited code patterns (order submission, position management)
 - Prohibited modules in wheel content
@@ -91,6 +94,7 @@ docker-compose logs -f control-plane
 ```
 
 **docker-compose.yml** services:
+
 - `control-plane` - FastAPI application
 - `postgres` - PostgreSQL database
 - `redis` - Cache and pub/sub (optional)
@@ -110,6 +114,7 @@ helm upgrade --install ccea-cloud . \
 ```
 
 **Helm Chart Components:**
+
 - `Deployment`: Control plane pods
 - `Service`: Load-balanced endpoint
 - `Ingress`: TLS termination
@@ -178,23 +183,30 @@ alembic -c packages/cloud/control_plane/alembic.ini current
 ## Health Checks
 
 ### Liveness Probe
+
 ```
 GET /health/live
 ```
+
 Returns `200 OK` if application is running.
 
 ### Readiness Probe
+
 ```
 GET /health/ready
 ```
+
 Returns `200 OK` if:
+
 - Database connection is healthy
 - Required services are available
 
 ### Startup Probe
+
 ```
 GET /health/startup
 ```
+
 Returns `200 OK` after initialization completes.
 
 ## Security Configuration
@@ -245,6 +257,7 @@ GET /metrics
 ```
 
 Key metrics:
+
 - `ccea_commands_total` - Commands issued by type
 - `ccea_agents_connected` - Connected agents gauge
 - `ccea_telemetry_events` - Telemetry events received
@@ -253,6 +266,7 @@ Key metrics:
 ### Grafana Dashboards
 
 Import dashboards from `deploy/grafana/`:
+
 - `ccea-overview.json` - System overview
 - `ccea-agents.json` - Agent health and status
 - `ccea-commands.json` - Command flow and latency
@@ -262,16 +276,19 @@ Import dashboards from `deploy/grafana/`:
 ### Common Issues
 
 **Agent cannot connect:**
+
 - Verify agent enrollment token is valid
 - Check network connectivity (agent initiates outbound)
 - Verify TLS certificates
 
 **Commands stuck in PENDING:**
+
 - Check agent is polling (heartbeat received)
 - Verify agent version compatibility
 - Check command approval status
 
 **Database connection errors:**
+
 - Verify `CCEA_DATABASE_URL` is set and correct (format: `postgresql+asyncpg://user:pass@host:5432/db`)
 - Check PostgreSQL is accessible
 - Run migrations: `alembic -c packages/cloud/control_plane/alembic.ini upgrade head`
@@ -293,6 +310,7 @@ journalctl -u ccea-control-plane -f
 ## Prohibited Configurations
 
 **NEVER DO:**
+
 - Install `packages/agent` on Cloud servers
 - Configure broker API keys in Cloud environment
 - Enable trading-related imports in Cloud build

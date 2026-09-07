@@ -245,6 +245,7 @@ funding:
 **Concept:** Long spot + Short perpetual to earn positive funding
 
 **Requirements:**
+
 - Positive funding rate
 - Low transaction costs
 - Access to both spot and futures
@@ -272,6 +273,7 @@ def adjust_position_for_funding(base_position, funding_rate, threshold=0.0003):
 **Concept:** Go against extreme funding
 
 **Signal:**
+
 - Extreme positive funding → Short bias (longs overextended)
 - Extreme negative funding → Long bias (shorts overextended)
 

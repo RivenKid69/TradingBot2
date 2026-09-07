@@ -30,15 +30,18 @@ This document outlines the strategy for collecting historical futures data for d
 ### 2.1 Symbols
 
 **Tier 1 (Primary)**:
+
 - `BTCUSDT` - Bitcoin perpetual
 - `ETHUSDT` - Ethereum perpetual
 
 **Tier 2 (Secondary)**:
+
 - `BNBUSDT` - BNB perpetual
 - `SOLUSDT` - Solana perpetual
 - `XRPUSDT` - XRP perpetual
 
 **Tier 3 (Validation)**:
+
 - `AVAXUSDT`, `DOGEUSDT`, `MATICUSDT`
 
 ### 2.2 Data Types & Endpoints
@@ -53,6 +56,7 @@ This document outlines the strategy for collecting historical futures data for d
 ### 2.3 Collection Scripts
 
 **Existing Script**: `ingest_funding_mark.py`
+
 - Already implements funding rate and mark price collection
 - Handles pagination and rate limiting
 - Output: Parquet files
@@ -79,6 +83,7 @@ Output:
 ### 2.4 Data Schema
 
 **OHLCV DataFrame**:
+
 ```python
 columns = [
     "timestamp",      # datetime64[ns, UTC]
@@ -95,6 +100,7 @@ columns = [
 ```
 
 **Funding Rate DataFrame**:
+
 ```python
 columns = [
     "timestamp",      # datetime64[ns, UTC] (funding time)
@@ -104,6 +110,7 @@ columns = [
 ```
 
 **Mark Price DataFrame**:
+
 ```python
 columns = [
     "timestamp",      # datetime64[ns, UTC]
@@ -115,6 +122,7 @@ columns = [
 ```
 
 **Open Interest DataFrame**:
+
 ```python
 columns = [
     "timestamp",      # datetime64[ns, UTC]
@@ -158,6 +166,7 @@ data/
 ### 3.1 Symbols
 
 **Equity Index Futures**:
+
 | Symbol | Name | Exchange | Multiplier |
 |--------|------|----------|------------|
 | ES | E-mini S&P 500 | CME | $50 |
@@ -166,6 +175,7 @@ data/
 | RTY | E-mini Russell 2000 | CME | $50 |
 
 **Commodity Futures**:
+
 | Symbol | Name | Exchange | Multiplier |
 |--------|------|----------|------------|
 | GC | Gold | COMEX | 100 oz |
@@ -174,6 +184,7 @@ data/
 | NG | Natural Gas | NYMEX | 10000 MMBtu |
 
 **Currency Futures**:
+
 | Symbol | Name | Exchange | Multiplier |
 |--------|------|----------|------------|
 | 6E | Euro FX | CME | 125000 EUR |
@@ -183,16 +194,19 @@ data/
 ### 3.2 Data Sources
 
 **Primary Source**: Interactive Brokers TWS API
+
 - Requires IB account
 - Access via `ib_insync` library
 - 1 year historical data (more with subscription)
 
 **Secondary Source**: Polygon.io
+
 - Requires API key (paid subscription for futures)
 - Extensive historical coverage
 - REST API access
 
 **Tertiary Source**: Public Archives
+
 - CME DataMine (expensive)
 - Quandl/Nasdaq Data Link
 - Yahoo Finance (limited futures support)
@@ -214,6 +228,7 @@ data/
 **Methods**:
 
 1. **Ratio Adjustment** (Recommended for returns-based analysis)
+
 ```python
 # On rollover day
 adjustment_ratio = new_contract_price / old_contract_price
@@ -221,6 +236,7 @@ adjusted_prices = old_prices * adjustment_ratio
 ```
 
 2. **Difference Adjustment** (For price-level analysis)
+
 ```python
 # On rollover day
 adjustment_diff = new_contract_price - old_contract_price
@@ -228,12 +244,14 @@ adjusted_prices = old_prices + adjustment_diff
 ```
 
 3. **Unadjusted** (Raw contract prices with gaps)
+
 ```python
 # Simply concatenate contracts
 # Warning: gaps at rollover dates
 ```
 
 **Rollover Detection**:
+
 ```python
 def detect_rollover_date(front_volume, back_volume):
     """
@@ -410,6 +428,7 @@ data/raw_futures/
 ### 7.2 Data to Collect
 
 **Phase 0 (Immediate)**:
+
 - [ ] BTCUSDT OHLCV 1h (2020-present)
 - [ ] BTCUSDT funding rate (2020-present)
 - [ ] ETHUSDT OHLCV 1h (2020-present)
@@ -417,11 +436,13 @@ data/raw_futures/
 - [ ] Unit test fixtures
 
 **Phase 1 (Before Integration)**:
+
 - [ ] All Tier 1/2 crypto perpetuals
 - [ ] Open interest data
 - [ ] Mark price klines
 
 **Phase 2 (CME Integration)**:
+
 - [ ] ES continuous contract
 - [ ] NQ continuous contract
 - [ ] GC continuous contract

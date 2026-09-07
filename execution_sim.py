@@ -3632,7 +3632,7 @@ class ExecutionSimulator:
             #   - Slippage: разница между expected и actual price (market impact)
             #   - Fee: процент от actual fill price (биржевая комиссия)
             #
-            # Reference: CLAUDE.md → "НЕ БАГИ" → #17
+            # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #17
             # ═══════════════════════════════════════════════════════════════════════
             fee = self._compute_trade_fee(
                 side=state.side,
@@ -11766,7 +11766,7 @@ class ExecutionSimulator:
                             #   - Если bar_low = 100.5 → filled = False (цена не достигла)
                             #
                             # Это КОРРЕКТНАЯ симуляция maker orders. Не путать с taker fills!
-                            # Reference: CLAUDE.md → "НЕ БАГИ" → #16
+                            # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #16
                             # ═══════════════════════════════════════════════════════════════
                             filled_price = float(price_q)
                             liquidity_role = "maker"

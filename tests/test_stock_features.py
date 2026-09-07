@@ -15,7 +15,7 @@ Test categories:
 - Backward compatibility tests for crypto data
 - Edge case handling (NaN, Inf, missing data)
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-27
 """
 

@@ -9,7 +9,7 @@ Tests that repeated calls to transform_df() don't cause:
 
 References:
 - User request: "проверь есть ли эти проблемы на самом деле"
-- CLAUDE.md: Critical fixes section on look-ahead bias
+- docs/PLATFORM_REFERENCE.md: Critical fixes section on look-ahead bias
 """
 
 import pytest

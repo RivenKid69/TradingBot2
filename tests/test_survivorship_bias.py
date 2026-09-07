@@ -4,7 +4,7 @@ tests/test_survivorship_bias.py
 Tests for survivorship bias protection module.
 
 FIX (2025-11-28): Tests for Issue #6 "Survivorship Bias"
-Reference: CLAUDE.md → Issue #6
+Reference: docs/PLATFORM_REFERENCE.md → Issue #6
 
 These tests verify:
 1. DelistingTracker functionality

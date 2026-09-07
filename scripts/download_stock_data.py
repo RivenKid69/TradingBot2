@@ -47,7 +47,7 @@ Output:
     data/raw_stocks/AAPL.parquet
     data/raw_stocks/DX-Y_NYB.parquet  # DX-Y.NYB sanitized
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

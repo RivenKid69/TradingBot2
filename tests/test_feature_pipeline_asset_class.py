@@ -4,7 +4,7 @@ tests/test_feature_pipeline_asset_class.py
 Tests for FeaturePipeline asset_class awareness fix.
 
 FIX (2025-11-28): Tests for Issue #5 "FeaturePipeline не asset_class aware"
-Reference: CLAUDE.md → Issue #5
+Reference: docs/PLATFORM_REFERENCE.md → Issue #5
 
 These tests verify:
 1. FeaturePipeline accepts asset_class parameter

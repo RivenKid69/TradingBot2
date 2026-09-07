@@ -684,6 +684,7 @@ docker exec ccea-control-plane python -m ccea.cli support-bundle \
 ```
 
 **Note**: Support bundles are automatically redacted to remove:
+
 - Credentials and API keys
 - PII (email addresses, user names)
 - Broker account details

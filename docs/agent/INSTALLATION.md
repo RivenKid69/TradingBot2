@@ -86,6 +86,7 @@ ccea-agent setup
 ```
 
 This interactive wizard will:
+
 1. Create configuration directory (`~/.ccea/`)
 2. Generate encryption key for vault
 3. Configure Cloud endpoint
@@ -106,6 +107,7 @@ ccea-agent vault add-broker \
 ```
 
 **Supported Brokers:**
+
 - Binance (Spot, Futures)
 - Alpaca (US Equities)
 - OANDA (Forex)
@@ -141,6 +143,7 @@ ccea-agent preflight
 ```
 
 This validates:
+
 - Time synchronization
 - Broker connectivity
 - Credential validity
@@ -559,6 +562,7 @@ docker rmi ghcr.io/ccea/agent:latest
 ---
 
 **Related Documentation:**
+
 - [Local Vault](./LOCAL_VAULT.md)
 - [Risk Controls](./RISK_CONTROLS.md)
 - [Runbooks](../runbooks/)

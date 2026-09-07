@@ -11,7 +11,7 @@ Tests cover:
 - Features pipeline forex integration
 - End-to-end integration tests
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

@@ -41,6 +41,7 @@ POST /enrollment/token
 ```
 
 **Request Body:**
+
 ```json
 {
   "workspace_id": "ws_abc123",
@@ -50,6 +51,7 @@ POST /enrollment/token
 ```
 
 **Response:**
+
 ```json
 {
   "token": "enroll_xxxx",
@@ -67,6 +69,7 @@ POST /agents/enroll
 ```
 
 **Request Body:**
+
 ```json
 {
   "token": "enroll_xxxx",
@@ -78,6 +81,7 @@ POST /agents/enroll
 ```
 
 **Response:**
+
 ```json
 {
   "agent_id": "agent_xyz",
@@ -99,6 +103,7 @@ GET /agents
 ```
 
 **Query Parameters:**
+
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `workspace_id` | string | Filter by workspace |
@@ -107,6 +112,7 @@ GET /agents
 | `offset` | int | Pagination offset |
 
 **Response:**
+
 ```json
 {
   "agents": [
@@ -140,6 +146,7 @@ POST /agents/{agent_id}/revoke
 ```
 
 **Request Body:**
+
 ```json
 {
   "reason": "security_incident",
@@ -156,6 +163,7 @@ POST /agents/{agent_id}/heartbeat
 ```
 
 **Request Body:**
+
 ```json
 {
   "timestamp": "2025-12-14T12:00:00Z",
@@ -170,6 +178,7 @@ POST /agents/{agent_id}/heartbeat
 ```
 
 **Response:**
+
 ```json
 {
   "ack": true,
@@ -191,12 +200,14 @@ GET /agents/{agent_id}/commands
 ```
 
 **Query Parameters:**
+
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `timeout` | int | Long-poll timeout (seconds, max: 30) |
 | `last_seen` | string | Last command ID received |
 
 **Response:**
+
 ```json
 {
   "commands": [
@@ -220,6 +231,7 @@ POST /agents/{agent_id}/commands/{command_id}/ack
 ```
 
 **Request Body:**
+
 ```json
 {
   "status": "RECEIVED",
@@ -235,6 +247,7 @@ POST /agents/{agent_id}/commands/{command_id}/result
 ```
 
 **Request Body:**
+
 ```json
 {
   "status": "COMPLETED",
@@ -254,6 +267,7 @@ POST /agents/{agent_id}/commands/{command_id}/approval
 ```
 
 **Request Body:**
+
 ```json
 {
   "approved": true,
@@ -275,6 +289,7 @@ POST /strategies
 ```
 
 **Request Body:**
+
 ```json
 {
   "workspace_id": "ws_abc123",
@@ -297,6 +312,7 @@ POST /strategies/{strategy_id}/versions
 ```
 
 **Request Body:**
+
 ```json
 {
   "source_ref": "git://repo#sha256:abc",
@@ -318,6 +334,7 @@ POST /deployments
 ```
 
 **Request Body:**
+
 ```json
 {
   "workspace_id": "ws_abc123",
@@ -337,6 +354,7 @@ GET /deployments/{deployment_id}
 ```
 
 **Response:**
+
 ```json
 {
   "deployment_id": "dep_abc",
@@ -357,6 +375,7 @@ POST /deployments/{deployment_id}/request-start
 ```
 
 **Request Body:**
+
 ```json
 {
   "artifact_digest": "sha256:artifact123",
@@ -374,6 +393,7 @@ POST /deployments/{deployment_id}/request-stop
 ```
 
 **Request Body:**
+
 ```json
 {
   "reason": "user_requested"
@@ -399,6 +419,7 @@ POST /telemetry
 ```
 
 **Request Body:**
+
 ```json
 {
   "agent_id": "agent_xyz",
@@ -428,6 +449,7 @@ GET /telemetry
 ```
 
 **Query Parameters:**
+
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `run_id` | string | Filter by run |
@@ -446,6 +468,7 @@ GET /artifacts/{digest}
 ```
 
 **Response Headers:**
+
 ```
 Content-Type: application/octet-stream
 X-Artifact-Signature: cosign:xxx
@@ -459,6 +482,7 @@ GET /artifacts/{digest}/manifest
 ```
 
 **Response:**
+
 ```json
 {
   "schema_version": "1.0.0",
@@ -528,6 +552,7 @@ POST /webhooks
 ```
 
 **Request Body:**
+
 ```json
 {
   "url": "https://your-server.com/webhook",

@@ -13,6 +13,7 @@
 ## Architecture Innovation: CCEA (Cloud-Controlled Execution Architecture)
 
 > **Foundational Innovation**: Beyond algorithmic innovations, our platform implements an **architectural pattern (CCEA)** that separates research/monitoring (Cloud) from execution (Agent), enabling:
+>
 > - **Regulatory clarity**: Clear "Software Provider" positioning (not execution service)
 > - **Security**: Secrets designed to stay in customer environment (by architecture)
 > - **Governance**: evidence exports designed to support client procurement and operational reviews
@@ -53,6 +54,7 @@
 **Innovation**: Implementation of risk-constrained reinforcement learning patterns designed for systematic trading research and deployment.
 
 **Academic Foundation**:
+
 - Dabney et al. (2018), "Distributional Reinforcement Learning with Quantile Regression", AAAI
 - Chow et al. (2015), "Risk-Constrained Reinforcement Learning with Percentile Risk Criteria", JMLR
 - Bellemare et al. (2017), "A Distributional Perspective on Reinforcement Learning", ICML
@@ -65,6 +67,7 @@ Our Approach:   Optimize π* = argmax E[V] subject to CVaR₀.₀₅[V] ≥ thre
 ```
 
 **Why this matters for trading**:
+
 - Financial markets have fat-tailed distributions (Mandelbrot, 1963; Cont, 2001)
 - Optimizing average return ignores catastrophic tail risks
 - CVaR explicitly penalizes the worst 5% of outcomes
@@ -88,6 +91,7 @@ Our Approach:   Optimize π* = argmax E[V] subject to CVaR₀.₀₅[V] ≥ thre
 **Innovation**: Dual independent value networks with pessimistic aggregation, adapted from actor-critic methods to distributional PPO.
 
 **Academic Foundation**:
+
 - Fujimoto et al. (2018), "Addressing Function Approximation Error in Actor-Critic Methods", ICML (TD3)
 - Haarnoja et al. (2018), "Soft Actor-Critic: Off-Policy Maximum Entropy Deep RL", ICML (SAC)
 
@@ -101,6 +105,7 @@ Target = min(Value_1, Value_2)  # Conservative (pessimistic) estimate
 ```
 
 **Why this matters**:
+
 - Single critic networks systematically overestimate value (maximization bias)
 - Overestimation → overconfident trading decisions → larger drawdowns
 - Twin critics with min-aggregation provide conservative estimates
@@ -108,6 +113,7 @@ Target = min(Value_1, Value_2)  # Conservative (pessimistic) estimate
 
 **Novel Combination**:
 While Twin Critics exist in TD3/SAC, combining them with:
+
 1. Distributional value heads (quantile regression)
 2. CVaR risk constraints
 3. LSTM recurrent policy (for temporal patterns)
@@ -121,6 +127,7 @@ While Twin Critics exist in TD3/SAC, combining them with:
 **Innovation**: To our knowledge, among early applications of continual learning techniques to financial reinforcement learning.
 
 **Academic Foundation**:
+
 - Kirkpatrick et al. (2017), "Overcoming Catastrophic Forgetting in Neural Networks" (EWC)
 - Zenke et al. (2017), "Continual Learning Through Synaptic Intelligence"
 - Novel extension: First-order utility approximation (avoiding Hessian computation)
@@ -139,6 +146,7 @@ utility(θ) = -∇L · θ  # Loss reduction per unit parameter change
 ```
 
 **Why this matters for trading**:
+
 - Financial markets have regime changes (bull/bear/sideways)
 - Traditional RL "forgets" how to trade in previous regimes
 - UPGD preserves knowledge while adapting to new conditions
@@ -161,6 +169,7 @@ utility(θ) = -∇L · θ  # Loss reduction per unit parameter change
 **Innovation**: Per-parameter gradient variance tracking with adaptive scaling.
 
 **Problem Solved**:
+
 - Different neural network layers have vastly different gradient magnitudes
 - Manual tuning of per-layer learning rates is impractical
 - Global gradient clipping is suboptimal (one-size-fits-all)
@@ -180,11 +189,13 @@ gᵢ_scaled = gᵢ / (1 + α × Var[gᵢ])
 ```
 
 **Novel Aspects**:
+
 1. **Per-parameter tracking** (not global): 10,000+ individual variance estimates
 2. **Anti-blocking protection** (v3.2): `min_scaling_factor=0.1` prevents learning halt
 3. **VGS-UPGD coupling**: Noise scaling adapts to gradient variance
 
 **Why this matters**:
+
 - Training stability in volatile financial data
 - Automatic adaptation to different market regimes
 - No manual hyperparameter tuning for gradient scaling
@@ -198,6 +209,7 @@ gᵢ_scaled = gᵢ / (1 + α × Var[gᵢ])
 **Innovation**: To our knowledge, among early applications of conformal prediction to algorithmic trading risk management.
 
 **Academic Foundation**:
+
 - Romano et al. (2019), "Conformalized Quantile Regression", NeurIPS
 - Gibbs & Candes (2021), "Adaptive Conformal Inference Under Distribution Shift"
 - Xu & Xie (2021), "Conformal Prediction Interval for Dynamic Time-Series", ICML
@@ -205,6 +217,7 @@ gᵢ_scaled = gᵢ / (1 + α × Var[gᵢ])
 **Why conformal prediction is revolutionary**:
 
 Traditional ML uncertainty:
+
 ```
 Assumption: Data is i.i.d. from known distribution
 Reality: Financial data has regime changes, fat tails, non-stationarity
@@ -212,6 +225,7 @@ Result: Uncertainty estimates are systematically wrong
 ```
 
 Conformal prediction:
+
 ```
 Assumption: Data is exchangeable (very weak)
 Guarantee: P(Y ∈ prediction_interval) ≥ 1-α (finite sample, no asymptotics!)
@@ -227,6 +241,7 @@ Result: Valid uncertainty even when model is completely wrong
 | Risk alerts | Arbitrary thresholds | Statistically valid escalation |
 
 **Proprietary Integration**:
+
 - CVaR bounds from conformal intervals (worst-case risk estimation)
 - Automatic position scaling based on uncertainty width
 - Multi-method ensemble (CQR + EnbPI + ACI)
@@ -240,6 +255,7 @@ Result: Valid uncertainty even when model is completely wrong
 **Innovation**: Multi-factor dynamic slippage models that adapt to market conditions.
 
 **Academic Foundation**:
+
 - Almgren & Chriss (2001), "Optimal Execution of Portfolio Transactions", J. Risk
 - Kyle (1985), "Continuous Auctions and Insider Trading", Econometrica
 - Cont, Kukanov, Stoikov (2014), "The Price Impact of Order Book Events"
@@ -295,6 +311,7 @@ Session-based liquidity, interest rate differentials, news events, DXY correlati
 **Innovation**: Full market microstructure simulation including queue position, fill probability, and market impact.
 
 **Academic Foundation**:
+
 - Huang, Lehalle, Rosenbaum (2015), "Simulating and Analyzing Order Book Data"
 - Moallemi & Yuan (2017), "The Value of Queue Position", Operations Research
 - Gatheral (2010), "No-Dynamic-Arbitrage and Market Impact"
@@ -339,12 +356,14 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 **Innovation**: Realistic latency distributions for strategy testing.
 
 **Implementation**:
+
 - Distribution types: Log-normal, Pareto (heavy tails), Gamma
 - Separate latencies: Feed (market data), Order, Exchange, Fill
 - Profiles: Co-located (10-50μs), Proximity (100-500μs), Internet / non-colocated (1-10ms)
 - Time-of-day seasonality adjustments
 
 **Why this matters**:
+
 - HFT strategies are latency-sensitive
 - Testing with unrealistic latency gives false confidence
 - Our simulation reveals execution timing edge cases
@@ -369,6 +388,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 *Forex is OTC (dealer network), L3 LOB not applicable.
 
 **Architectural Benefits**:
+
 1. **Strategy portability**: Same strategy code works across asset classes
 2. **Risk aggregation**: Cross-asset portfolio risk management
 3. **Data normalization**: Unified candle/tick format
@@ -390,16 +410,19 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 **Innovations**:
 
 #### 3.2.1 Atomic Kill Switch
+
 - Crash-safe persistent state (dual-write: flag file + JSON)
 - Survives process crashes, disk failures
 - Zero-latency emergency halt
 
 #### 3.2.2 Unified Futures Risk Guard
+
 - Automatic asset-type detection from symbol
 - Separate crypto/CME risk rules
 - Portfolio-level correlation tracking
 
 #### 3.2.3 Session-Aware Routing
+
 - Extended hours spread adjustment (2-3×)
 - Forex session overlap detection
 - CME ETH/RTH differentiation
@@ -478,6 +501,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 Market sizing varies materially by source and definition; any numeric TAM figures should be treated as illustrative and are not the basis of committee claims.
 
 **Expansion vectors**:
+
 1. **Geographic**: EU/UK‑focused (Estonia‑first establishment) → additional EU countries → other jurisdictions (case‑by‑case, with legal review)
 2. **Client type**: systematic prop firms → small funds → larger institutional teams (B2B only)
 3. **Asset class**: expand beyond equities‑first based on validated customer demand (digital assets are optional)
@@ -515,16 +539,19 @@ Market sizing varies materially by source and definition; any numeric TAM figure
 ### 6.2 Why We Are Not a Clone
 
 **QuantConnect**:
+
 - **Their focus**: Community + education + broker integration
 - **Our focus**: Institutional-grade ML + execution fidelity
 - **Key difference**: They optimize E[R], we optimize CVaR-constrained E[R]
 
 **Alpaca**:
+
 - **Their product**: Broker API (commission-free trading)
 - **Our product**: End-to-end research + execution platform
 - **Key difference**: They provide pipes, we provide intelligence
 
 **Stable-Baselines3**:
+
 - **Their product**: Generic RL algorithms
 - **Our product**: Finance-specific RL with market microstructure
 - **Key difference**: They provide hammers, we build trading-specific tools

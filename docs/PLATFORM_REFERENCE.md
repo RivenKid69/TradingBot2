@@ -1,9 +1,10 @@
 # Platform Reference (Multi-Asset Capabilities)
 
-> **Extracted from `CLAUDE.md`** to keep the AI-assistant context file under its size limit.
-> This is detailed reference material — NOT loaded into context every session. Read it when working on a specific subsystem.
+> Consolidated platform reference: architecture, APIs and pipeline behaviour.
+> Detailed reference material. Read the section for the subsystem you are working on.
 >
 > **Authoritative per-domain docs** (prefer these where they exist):
+>
 > - Futures: `docs/futures/` + `docs/FUTURES_INTEGRATION_PLAN.md`
 > - Options: `docs/options/` + `docs/OPTIONS_INTEGRATION_PLAN.md`
 > - L3 LOB: `docs/l3_simulator/` + `docs/L3_MIGRATION_GUIDE.md`
@@ -105,6 +106,7 @@ adapter = config.create_market_data_adapter()
 ### Конфигурация
 
 **configs/exchange.yaml** -- главный файл конфигурации биржи:
+
 ```yaml
 vendor: "alpaca"  # или "binance"
 market_type: "EQUITY"  # или "CRYPTO_SPOT"
@@ -190,12 +192,15 @@ Phase 3 добавляет полную поддержку акций в trainin
 ### Поддерживаемые символы
 
 **Tech Stocks:**
+
 - AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA
 
 **Index ETFs:**
+
 - SPY (S&P 500), QQQ (Nasdaq 100), IWM (Russell 2000)
 
 **Precious Metals ETFs:**
+
 - GLD (SPDR Gold Trust, $60B AUM)
 - IAU (iShares Gold Trust)
 - SGOL (Aberdeen Physical Gold)
@@ -451,6 +456,7 @@ slippage_bps = half_spread + k * sqrt(participation) * vol_scale * 10000
 ```
 
 Где:
+
 - `half_spread` -- половина спреда из MarketState
 - `k` -- impact coefficient (0.1 для crypto, 0.05 для equity)
 - `participation` -- order_notional / ADV
@@ -518,7 +524,7 @@ slippage = half_spread
 | **√Participation** | `k × √(Q/ADV)` | Almgren-Chriss (2001) |
 | **Volatility Regime** | Percentile-based LOW/NORMAL/HIGH | Cont (2001) |
 | **Order Book Imbalance** | `(bid - ask) / (bid + ask)` | Cont et al. (2014) |
-| **Funding Rate Stress** | `1 + |funding| × sensitivity` | Empirical (Binance) |
+| **Funding Rate Stress** | `1 + \|funding\| × sensitivity` | Empirical (Binance) |
 | **Time-of-Day** | 24-hour liquidity curve (Asia/EU/US) | Binance research |
 | **BTC Correlation Decay** | `1 + (1 - corr) × decay_factor` | Empirical (altcoins) |
 
@@ -679,7 +685,7 @@ slippage = half_spread
 | **Market Cap Tier** | mega=0.7, large=1.0, mid=1.3, small=1.8, micro=2.5 | Kissell (2013) |
 | **Intraday U-Curve** | open=1.5 → midday=1.0 → close=1.3 | ITG (2012) |
 | **Auction Proximity** | `1 + 0.3 × exp(-minutes/10)` | NYSE/NASDAQ mechanics |
-| **Beta Stress** | `1 + |β-1| × SPY_move × 0.1` | Systematic risk |
+| **Beta Stress** | `1 + \|β-1\| × SPY_move × 0.1` | Systematic risk |
 | **Short Interest** | `log1p(ratio/threshold) × max_penalty` | GME-style squeeze |
 | **Events** | Earnings=2.5×, News=1.5× | Event-driven volatility |
 | **Sector Rotation** | Penalty when sector ETF down >1% | Cross-asset signal |
@@ -861,6 +867,7 @@ pytest tests/test_equity_parametric_tca.py::TestL2Integration -v
 Phase 5 добавляет stock-специфичные features и risk guards, параллельно crypto Fear & Greed индексу.
 
 **Файлы**:
+
 - `stock_features.py` -- VIX integration, market regime, relative strength
 - `services/stock_risk_guards.py` -- Margin, short sale, corporate actions guards
 - `services/universe_stocks.py` -- Stock universe management with TTL caching
@@ -878,6 +885,7 @@ Phase 5 добавляет stock-специфичные features и risk guards,
 | **Sector Momentum** | Sector rotation signal | XLK, XLF, XLV ETF returns |
 
 **Использование**:
+
 ```python
 from stock_features import (
     StockFeatures,
@@ -917,17 +925,20 @@ rs_20d = calculate_relative_strength(
 | **CorporateActionsHandler** | SEC | Dividends, splits, ex-dates |
 
 **Margin Call Types**:
+
 - `FEDERAL` -- Below Reg T initial margin (new positions)
 - `MAINTENANCE` -- Below 25% maintenance margin
 - `HOUSE` -- Broker's stricter requirements
 
 **Short Sale Restrictions**:
+
 - `UPTICK_RULE` -- Rule 201 (short only on uptick)
 - `HTB` -- Hard-to-borrow (may not be available)
 - `RESTRICTED` -- Exchange restricted
 - `NOT_SHORTABLE` -- Cannot be shorted
 
 **Использование**:
+
 ```python
 from services.stock_risk_guards import (
     MarginGuard,
@@ -1734,11 +1745,13 @@ SEC Reg NMS rules implementation for realistic equity simulation:
 | **Rule 611** | `NBBOProtector` | Order Protection Rule (trade-through prevention) |
 
 **Lot Types**:
+
 - `ODD_LOT` -- < 100 shares (different execution properties)
 - `ROUND_LOT` -- Exactly 100 shares or multiples
 - `MIXED_LOT` -- Round lots + odd lot remainder
 
 **Trade-Through Protection**:
+
 - `BID_THROUGH` -- Sell below protected bid (violation)
 - `ASK_THROUGH` -- Buy above protected ask (violation)
 
@@ -1887,6 +1900,7 @@ Phase 11 добавляет полную поддержку Forex (OTC) чере
 **Статус**: ✅ Tested and operational | **Тесты**: 18 test files (735+ tests planned)
 
 **Ключевое архитектурное решение**: Forex -- это OTC (Over-The-Counter) рынок с дилерскими котировками, а НЕ биржевой рынок. Поэтому:
+
 - Используется **L2+ Parametric TCA** (как для crypto/equity), НЕ L3 LOB simulation
 - **OTC Dealer Simulation** -- отдельный модуль в `services/`, НЕ в `lob/`
 
@@ -1980,6 +1994,7 @@ OANDA_PRACTICE=true  # or false for live
 **Статус**: ✅ Tested and operational | **Документация**: `docs/FUTURES_INTEGRATION_PLAN.md`
 
 **Completed Phases**:
+
 - Phase 3B: ✅ IB/CME Adapters
 - Phase 4A: ✅ Crypto L2 Execution
 - Phase 4B: ✅ CME SPAN Margin
@@ -2027,21 +2042,26 @@ Phase 3B добавляет полную поддержку CME Group futures ч
 ### Поддерживаемые контракты (30+)
 
 **Equity Index (CME):**
+
 - **E-mini**: ES (S&P 500), NQ (NASDAQ 100), RTY (Russell 2000), YM (Dow)
 - **Micro E-mini**: MES, MNQ, M2K, MYM
 
 **Metals (COMEX):**
+
 - **Standard**: GC (Gold), SI (Silver), HG (Copper)
 - **Micro**: MGC (Micro Gold), SIL (Micro Silver)
 
 **Energy (NYMEX):**
+
 - **Standard**: CL (Crude Oil), NG (Natural Gas), RB (Gasoline), HO (Heating Oil)
 - **Micro**: MCL (Micro Crude Oil)
 
 **Currencies (CME):**
+
 - 6E (Euro), 6J (Yen), 6B (Pound), 6A (Aussie), 6C (CAD), 6S (CHF)
 
 **Bonds (CBOT):**
+
 - ZN (10-Year Note), ZB (30-Year Bond), ZT (2-Year Note), ZF (5-Year Note)
 
 ### IB TWS API Rate Limiting
@@ -2057,6 +2077,7 @@ Phase 3B добавляет полную поддержку CME Group futures ч
 | Concurrent market data | 100 lines | 100 lines | None (hard limit) |
 
 **Connection Management** (`IBConnectionManager`):
+
 - Heartbeat every 30sec (IB requires 60sec)
 - Exponential backoff reconnection: [1, 2, 5, 10, 30, 60, 120] seconds
 - Paper/Live routing via port:
@@ -2095,6 +2116,7 @@ variation = engine.calculate_variation_margin(
 ```
 
 **Formula**: `VM = ΔP × qty × multiplier`
+
 - LONG position: profit if price ↑, loss if price ↓
 - SHORT position: profit if price ↓, loss if price ↑
 
@@ -2111,12 +2133,14 @@ variation = engine.calculate_variation_margin(
 | Bonds (ZN, ZB) | 7 business days before first delivery | ~7 days before month end |
 
 **Contract Month Codes**:
+
 ```
 F = Jan, G = Feb, H = Mar, J = Apr, K = May, M = Jun
 N = Jul, Q = Aug, U = Sep, V = Oct, X = Nov, Z = Dec
 ```
 
 **Contract Cycles**:
+
 - **Quarterly** (H, M, U, Z): Equity Index, Currencies, Bonds
 - **Monthly** (All months): Energy
 - **Bi-Monthly**: Metals, Grains
@@ -2124,11 +2148,13 @@ N = Jul, Q = Aug, U = Sep, V = Oct, X = Nov, Z = Dec
 ### CME Trading Calendar
 
 **CME Globex Hours** (Eastern Time):
+
 - **Regular**: Sunday 18:00 ET → Friday 17:00 ET
 - **Daily Maintenance**: Monday-Friday 16:15-16:30 ET (15 minutes)
 - **Weekend**: Closed Saturday
 
 **US Market Holidays** (2024-2026):
+
 ```python
 from services.cme_calendar import CMETradingCalendar
 
@@ -2145,11 +2171,13 @@ next_open = calendar.get_next_open(datetime.now())
 ```
 
 **Holiday List** (2024-2026):
+
 - New Year's Day, MLK Day, Presidents Day, Good Friday
 - Memorial Day, Juneteenth, Independence Day
 - Labor Day, Thanksgiving, Christmas
 
 **Early Close Days**:
+
 - Day before Thanksgiving: 13:15 ET
 - Christmas Eve: 13:15 ET
 - New Year's Eve: 13:15 ET
@@ -2269,6 +2297,7 @@ is_holiday = calendar.is_holiday(date.today())
 ### Конфигурация
 
 **IB Connection Config**:
+
 ```yaml
 # configs/ib_connection.yaml
 host: "127.0.0.1"
@@ -2280,6 +2309,7 @@ account: null  # For multi-account setups
 ```
 
 **Environment Variables**:
+
 ```bash
 # Not required for IB (uses TWS/Gateway local connection)
 # But recommended for logging
@@ -2331,6 +2361,7 @@ pip install ib_insync  # IB TWS API wrapper (required)
 ```
 
 **TWS/Gateway Setup**:
+
 1. Download IB TWS or Gateway from Interactive Brokers
 2. Enable API connections (Edit → Global Configuration → API → Enable ActiveX and Socket Clients)
 3. Set Socket Port: 7497 (paper) or 7496 (live)
@@ -2349,6 +2380,7 @@ ExchangeVendor.IB_COMEX     # COMEX futures
 ```
 
 **Factory Functions**:
+
 ```python
 from adapters.registry import create_market_data_adapter, create_order_execution_adapter
 
@@ -2369,6 +2401,7 @@ exec_adapter = create_order_execution_adapter("ib", {"port": 7497})
 ### Roadmap (Phase 4+)
 
 **Next Steps**:
+
 - ✅ Phase 3A: Funding Rate Mechanics (Binance perpetuals) -- DONE
 - ✅ Phase 3B: IB Adapters & CME Settlement -- DONE
 - ✅ Phase 4A: L2 Execution Provider (Crypto Futures Slippage) -- DONE
@@ -2399,12 +2432,14 @@ Phase 4A extends the crypto parametric TCA model with futures-specific factors f
 ### Futures-Specific Factors
 
 #### 1. Funding Rate Stress
+
 - **Formula**: `funding_stress = 1.0 + abs(funding_rate) × sensitivity`
 - **Default sensitivity**: 5.0
 - **Example**: 0.01% funding → 0.05% slippage increase
 - **Direction**: Only applies when trading in same direction as funding (crowded position)
 
 #### 2. Liquidation Cascade
+
 - **Formula**: `cascade_factor = min(max_factor, 1.0 + (liquidations/ADV) × sensitivity)`
 - **Default sensitivity**: 5.0
 - **Max cap**: 3.0x (200% increase)
@@ -2412,6 +2447,7 @@ Phase 4A extends the crypto parametric TCA model with futures-specific factors f
 - **Example**: 2% liquidations → 10% slippage increase (capped at 200%)
 
 #### 3. Open Interest Penalty
+
 - **Formula**: `oi_penalty = min(max_penalty, 1.0 + (OI/ADV - 1.0) × factor)`
 - **Default factor**: 0.1
 - **Max cap**: 2.0x (100% increase)
@@ -2428,6 +2464,7 @@ total_slippage = base_slippage
 ```
 
 **Realistic Example**:
+
 - Base slippage: 8 bps (from crypto model)
 - Funding: 0.01% × 5.0 = 0.05% increase → × 1.0005
 - Liquidations: 2% × 5.0 = 10% increase → × 1.10
@@ -2450,6 +2487,7 @@ total_slippage = base_slippage
 - **Negative funding**: Shorts pay longs
 
 **Example**:
+
 ```python
 # Long 1 BTC at $50,000, funding = +0.01%
 payment = 50,000 × 1.0 × 0.0001 = $5.00 (paid by long)
@@ -2548,11 +2586,13 @@ pytest tests/test_futures_execution_providers.py -v
 ### Limitations & Future Work
 
 **Current Scope**:
+
 - ✅ Crypto perpetuals (USDT-M)
 - ✅ L2 statistical slippage
 - ✅ Mark price execution
 
 **Future Phases**:
+
 - 📋 Quarterly futures expiration handling (Phase 4B)
 - 📋 Binance Futures adapters (Phase 5)
 - 📋 L3 LOB simulation for futures (Phase 6)
@@ -2589,6 +2629,7 @@ Phase 4B implements CME-specific margin calculation (SPAN methodology) and slipp
 **SPAN (Standard Portfolio Analysis of Risk)** -- CME's risk-based margin methodology.
 
 **Key Concepts**:
+
 - **Scanning Risk**: Maximum expected loss under 16 stress scenarios
 - **Inter-Commodity Credit**: Margin offset for correlated products
 - **Intra-Commodity Credit**: Calendar spread credits
@@ -2695,6 +2736,7 @@ call_status = calc.check_margin_call(
 | ZN | 0.25 bps | 0.02 |
 
 **Slippage Profiles**:
+
 - `default`: Balanced settings
 - `conservative`: Wider spreads, higher impacts
 - `aggressive`: Tighter estimates
@@ -2902,12 +2944,14 @@ Phase 5A integrates L3 Limit Order Book simulation with crypto perpetual futures
 Based on Kyle (1985) λ-model: `ΔP = λ × sign(x) × |x|`
 
 **Cascade Mechanics**:
+
 - **Wave Decay**: Each subsequent liquidation wave is dampened by `cascade_decay` factor (default: 0.7)
 - **Price Impact**: Cumulative impact follows `impact_coef × √(liquidation_volume / ADV)`
 - **Max Waves**: Configurable limit (default: 5) to prevent infinite cascade loops
 - **Phases**: INITIAL → PROPAGATING → DAMPENING → ENDED
 
 **Usage**:
+
 ```python
 from lob.futures_extensions import (
     LiquidationCascadeSimulator,
@@ -2936,11 +2980,13 @@ print(f"Final price impact: {result.total_price_impact_bps:.2f} bps")
 #### 2. Insurance Fund Dynamics
 
 **Fund Flow**:
+
 - **Profit liquidation** → Contribution to fund (bankruptcy - fill > 0)
 - **Loss liquidation** → Payout from fund (fill - bankruptcy > 0)
 - **Fund depletion** → Triggers ADL mechanism
 
 **Usage**:
+
 ```python
 from lob.futures_extensions import (
     InsuranceFundManager,
@@ -2968,6 +3014,7 @@ print(f"Fund balance: ${fund.get_state().current_balance:,.0f}")
 Higher score = higher priority for deleveraging.
 
 **Usage**:
+
 ```python
 from lob.futures_extensions import (
     ADLQueueManager,
@@ -2993,11 +3040,13 @@ candidates = adl_manager.get_adl_candidates(
 #### 4. Funding Period Dynamics
 
 **Queue Behavior Near Funding**:
+
 - Spread widens (arbitrageurs exit)
 - Liquidity decreases (position rebalancing)
 - Volatility increases
 
 **Usage**:
+
 ```python
 from lob.futures_extensions import (
     FundingPeriodDynamics,
@@ -3060,6 +3109,7 @@ config = FuturesL3Config(
 | `stress_test` | 0.5 | 10 | 1.0 | Extreme market conditions |
 
 **Usage**:
+
 ```python
 from execution_providers_futures_l3 import (
     FuturesL3ExecutionProvider,
@@ -3186,6 +3236,7 @@ SELL orders sorted: price ASC, time ASC (best price first, oldest first)
 ```
 
 **Usage**:
+
 ```python
 from lob.cme_matching import GlobexMatchingEngine, StopOrder
 from lob.data_structures import LimitOrder, Side, OrderType
@@ -3231,11 +3282,13 @@ CME uses implicit price limits on market orders to prevent runaway fills:
 | CL | 100 | 0.01 | 1.0 point |
 
 **MWP Behavior**:
+
 - BUY MWP: Limit at best_ask + (protection_points × tick_size)
 - SELL MWP: Limit at best_bid - (protection_points × tick_size)
 - Unfilled portion is cancelled (not rested)
 
 **Usage**:
+
 ```python
 result = engine.match_with_protection(
     order=market_order,
@@ -3257,10 +3310,12 @@ Stop orders trigger when price crosses the stop price, with CME velocity logic p
 | CL | 100 | 2 seconds |
 
 **Stop Order Types**:
+
 - **Stop-Market**: Converts to MWP when triggered
 - **Stop-Limit**: Converts to limit order when triggered
 
 **Usage**:
+
 ```python
 stop = StopOrder(
     order_id="stop_1",
@@ -3294,6 +3349,7 @@ RTH (Regular Trading Hours) vs ETH (Electronic Trading Hours):
 | Maintenance | 16:15 - 16:30 | N/A (closed) |
 
 **Usage**:
+
 ```python
 from execution_providers_cme_l3 import (
     detect_cme_session,
@@ -3334,11 +3390,13 @@ CME futures settle daily with variation margin:
 | 6E, 6J, 6B | 15:00 ET | Currencies |
 
 **Variation Margin Formula**:
+
 ```
 VM = (Settlement_t - Settlement_t-1) × Qty × Multiplier
 ```
 
 **Usage**:
+
 ```python
 from execution_providers_cme_l3 import DailySettlementSimulator
 from decimal import Decimal
@@ -3484,6 +3542,7 @@ Higher notional positions get lower max leverage:
 | > $20M | 5x | 5x | 3x |
 
 **Usage**:
+
 ```python
 from services.futures_risk_guards import FuturesLeverageGuard, LeverageCheckResult
 
@@ -3515,6 +3574,7 @@ if not result.is_valid:
 | **LIQUIDATION** | ≤ 1.0 (100%) | Immediate liquidation risk |
 
 **Usage**:
+
 ```python
 from services.futures_risk_guards import (
     FuturesMarginGuard,
@@ -3578,6 +3638,7 @@ Monitors exposure to funding payments (every 8 hours):
 | **EXTREME** | > 50% APR | Reduce immediately |
 
 **Usage**:
+
 ```python
 from services.futures_risk_guards import FundingExposureGuard
 
@@ -3631,6 +3692,7 @@ Auto-Deleveraging queue risk based on PnL × Leverage ranking:
 | **CRITICAL** | > 90% | High ADL risk |
 
 **Usage**:
+
 ```python
 from services.futures_risk_guards import ADLRiskGuard
 
@@ -4922,7 +4984,7 @@ Standard format: `SYMBOL(6) + YYMMDD + C/P + STRIKE(8)` (21 chars total)
 
 | Component | Format | Example |
 |-----------|--------|---------|
-| Symbol | 6 chars, right-padded | `AAPL  ` |
+| Symbol | 6 chars, right-padded | `AAPL` |
 | Expiry | YYMMDD | `241220` |
 | Type | C or P | `C` |
 | Strike | 8 digits (strike × 1000) | `00200000` ($200) |
@@ -4969,6 +5031,7 @@ polygon = occ_to_polygon_ticker("AAPL  241220C00200000")
 | Concurrent subscriptions | 100 lines | Tracked by manager |
 
 **Request Priorities** (lower = higher priority):
+
 - 0: Order execution (highest)
 - 1: Risk/margin queries
 - 2: Front-month quotes
@@ -5429,4 +5492,3 @@ pytest tests/test_deribit_options.py::TestThetaDataAdapter -v
 - Theta Data: "Historical Options Pricing"
 
 ---
-

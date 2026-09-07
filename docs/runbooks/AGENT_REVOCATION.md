@@ -31,17 +31,20 @@ This runbook covers procedures for revoking agent trust and rotating credentials
 ### 1. Revoke Agent Trust (Cloud)
 
 **Via Cloud UI:**
+
 1. Navigate to Agents
 2. Select agent
 3. Click "Revoke Trust"
 4. Confirm action
 
 **Via CLI:**
+
 ```bash
 ccea-admin agents revoke --agent-id agent_xyz --reason "security_incident"
 ```
 
 **Via API:**
+
 ```bash
 curl -X POST https://api.ccea.cloud/v1/agents/agent_xyz/revoke \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
@@ -53,11 +56,13 @@ curl -X POST https://api.ccea.cloud/v1/agents/agent_xyz/revoke \
 **CRITICAL: Do this at the broker, not just in the agent**
 
 **Binance:**
+
 1. Log in to Binance
 2. API Management → Delete API key
 3. Create new API key
 
 **Alpaca:**
+
 1. Log in to Alpaca dashboard
 2. API Keys → Regenerate
 
@@ -147,6 +152,7 @@ After revocation, to re-enroll agent:
 ### 1. Generate New Enrollment Token
 
 **Via Cloud UI:**
+
 1. Navigate to Agents → Add Agent
 2. Generate enrollment token
 3. Copy token
@@ -183,6 +189,7 @@ ccea-agent preflight
 ### 5. Request New Deployment
 
 Via Cloud UI:
+
 1. Navigate to Deployments
 2. Create new deployment for new agent
 3. Agent will receive approval request
@@ -192,6 +199,7 @@ Via Cloud UI:
 ## Verification Checklist
 
 After revocation:
+
 - [ ] Agent trust state is REVOKED in Cloud
 - [ ] Old broker API keys are deleted at broker
 - [ ] Agent cannot connect to Cloud
@@ -199,6 +207,7 @@ After revocation:
 - [ ] Positions are documented
 
 After re-enrollment:
+
 - [ ] New agent ID assigned
 - [ ] New session keys active
 - [ ] New broker API keys configured

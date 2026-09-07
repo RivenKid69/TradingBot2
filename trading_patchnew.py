@@ -1133,7 +1133,7 @@ class TradingEnv(gym.Env):
         #
         # Не пытайтесь добавить "виртуальное банкротство" - это усложнит
         # семантику без реальной пользы.
-        # Reference: CLAUDE.md → FAQ → "signal_only terminated всегда False?"
+        # Reference: docs/PLATFORM_REFERENCE.md → FAQ → "signal_only terminated всегда False?"
         # ═══════════════════════════════════════════════════════════════════════
         terminated = bool(getattr(state, "is_bankrupt", False))
         return obs, 0.0, terminated, truncated, info
@@ -2176,7 +2176,7 @@ class TradingEnv(gym.Env):
         #
         # Это НЕ temporal mismatch — это корректная MDP семантика!
         # Reference: https://gymnasium.farama.org/api/env/#gymnasium.Env.step
-        # Reference: CLAUDE.md → "НЕ БАГИ" → #26
+        # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #26
         # ═══════════════════════════════════════════════════════════════════════════
         reward_price_prev = (
             self._last_reward_price
@@ -2217,7 +2217,7 @@ class TradingEnv(gym.Env):
                 # - Второй шаг: позиция = HOLD(0.0) из reset() → reward за 0% = 0
                 #
                 # Это НЕ баг - это физика delayed execution. Не пытайтесь "исправить"!
-                # Reference: CLAUDE.md → FAQ → "Первые 2 steps в CLOSE_TO_OPEN reward=0?"
+                # Reference: docs/PLATFORM_REFERENCE.md → FAQ → "Первые 2 steps в CLOSE_TO_OPEN reward=0?"
                 # ═══════════════════════════════════════════════════════════════
                 reward_raw_fraction = math.log(ratio_clipped) * prev_signal_pos
 

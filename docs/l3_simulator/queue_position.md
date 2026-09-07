@@ -5,6 +5,7 @@
 Queue position tracking estimates where an order sits in the execution queue at a price level. This is critical for realistic limit order fill simulation, as queue position determines fill probability.
 
 **Files**:
+
 - `lob/queue_tracker.py` (~766 lines)
 - `lob/order_manager.py` (~1,013 lines)
 

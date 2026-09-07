@@ -29,7 +29,7 @@ References:
 - Lustig et al. (2011): "Common Risk Factors in Currency Markets"
 - BIS (2022): Triennial Survey - FX Swap Market
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

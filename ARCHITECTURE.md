@@ -12,6 +12,7 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 ```
 
 **Cloud (по архитектуре CCEA):**
+
 - Не хранит broker API keys (ключи хранятся только в Agent)
 - Не генерирует и не передаёт live trading instructions (orders/targets/signals)
 - Не имеет доступа к trading endpoints бирж (доступ только в Agent)
@@ -234,15 +235,15 @@ lock_path: state/state.lock
 last_processed_per_symbol: false
 ```
 
-* `enabled` -- включить сохранение состояния.
-* `backend` -- тип хранилища (`json` или `sqlite`).
-* `dir` -- каталог, в котором будут храниться файлы состояния (создаётся автоматически).
-* `path` -- путь к основному файлу с состоянием.
-* `snapshot_interval_s` / `snapshot_interval_ms` -- периодичность автосохранения.
-* `flush_on_event` -- писать состояние при принудительном сбросе.
-* `backup_keep` -- количество резервных копий.
-* `lock_path` -- путь к файлу блокировки.
-* `last_processed_per_symbol` -- сохранять прогресс по каждому инструменту, если доступно.
+- `enabled` -- включить сохранение состояния.
+- `backend` -- тип хранилища (`json` или `sqlite`).
+- `dir` -- каталог, в котором будут храниться файлы состояния (создаётся автоматически).
+- `path` -- путь к основному файлу с состоянием.
+- `snapshot_interval_s` / `snapshot_interval_ms` -- периодичность автосохранения.
+- `flush_on_event` -- писать состояние при принудительном сбросе.
+- `backup_keep` -- количество резервных копий.
+- `lock_path` -- путь к файлу блокировки.
+- `last_processed_per_symbol` -- сохранять прогресс по каждому инструменту, если доступно.
 
 ### Профили исполнения
 
@@ -355,6 +356,7 @@ trainer = ...
 cfg = TrainConfig(input_path="data/train.parquet")
 from_config(cfg_run, trainer=trainer, train_cfg=cfg)
 ```
+
 ## Логи и отчёты
 
 Сервисы автоматически пишут журналы сделок и отчёты по эквити через
@@ -411,7 +413,7 @@ from_config(cfg_run, trainer=trainer, train_cfg=cfg)
 `scripts/validate_seasonality.py` и `scripts/plot_seasonality.py`. Все
 временные метки должны быть в UTC во избежание ошибок индексации по
 часам недели.
-=======
+
 ## Проверка паритета фич
 
 Для валидации соответствия оффлайн и онлайнового расчёта признаков используйте скрипт `check_feature_parity.py`.
@@ -477,7 +479,7 @@ python script_live.py --config configs/config_live_alpaca.yaml --paper
 python script_live.py --config configs/config_live_alpaca.yaml --extended-hours
 ```
 
-Подробная документация: см. [claude.md](claude.md) (Phase 2-4, 9).
+Подробная документация: см. [docs/PLATFORM_REFERENCE.md](docs/PLATFORM_REFERENCE.md) (Phase 2-4, 9).
 
 ## Regulatory Compliance Layer
 
@@ -550,6 +552,7 @@ services/compliance/
 ### Запрещённые payload поля
 
 JSON payload в командах **НЕ ДОЛЖЕН** содержать:
+
 - `side` (BUY/SELL)
 - `quantity`
 - `price`

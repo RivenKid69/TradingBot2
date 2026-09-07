@@ -45,7 +45,7 @@ Columns:
     - previous: Previous period value
     - source: Data source
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

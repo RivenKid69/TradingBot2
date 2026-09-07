@@ -4,7 +4,7 @@ tests/test_us_market_structure.py
 Tests for US market structure rules (L3 LOB).
 
 FIX (2025-11-28): Tests for Issue #7 "L3 LOB: US Market Structure"
-Reference: CLAUDE.md → Issue #7
+Reference: docs/PLATFORM_REFERENCE.md → Issue #7
 
 These tests verify:
 1. Tick size enforcement (Rule 612)

@@ -161,6 +161,7 @@ These items were already tracked in the Tech Debt Registry with proper control a
 ### Documentation Canon Compliance
 
 All changes follow `docs/DOCUMENTATION_CANON_DESIGN.md`:
+
 - Section 4.3: No performance promises (mitigations documented, not guarantees)
 - Section 4.5: Avoiding absolute claims (using "may differ", "intended to")
 - Section 3.3: CCEA Architecture respected (simulation is Cloud-side research tool)
@@ -168,6 +169,7 @@ All changes follow `docs/DOCUMENTATION_CANON_DESIGN.md`:
 ### CCEA Design Doc Compliance
 
 All items align with `archive/root_files/Design Doc CCEA Cloud.txt`:
+
 - Section 5.1: "Live Intent is created only on Agent" - simulation limitations are acceptable for research tools
 - Section 4.1: Backtest & Sim Service is Cloud component - stubs are controlled per design
 
@@ -196,6 +198,7 @@ All 7 tech debt items from this batch are now properly tracked and controlled:
 - **1 item** Closed with direct code fix
 
 The Tech Debt Registry has been updated to version 3.0 with:
+
 - 73 total items tracked
 - 25 items Controlled (active monitoring)
 - 48 items Closed (resolved)

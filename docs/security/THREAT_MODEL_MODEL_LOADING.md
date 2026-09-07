@@ -19,6 +19,7 @@ This threat model covers the security risks associated with loading machine lear
 ### Architecture Context (CCEA)
 
 Per CCEA architecture:
+
 - Models are built and signed in **Cloud** (Artifact Builder)
 - Models are deployed to **Agent** with signature verification
 - Model loading occurs in both Cloud (backtest/sim) and Agent (live inference)
@@ -33,11 +34,13 @@ Per CCEA architecture:
 **Description**: PyTorch's `torch.load()` and joblib's `joblib.load()` use Python's pickle module by default. Malicious pickle payloads can execute arbitrary code during deserialization.
 
 **Attack Vector**:
+
 1. Attacker creates malicious model file with embedded code
 2. Model is loaded via `torch.load(path, weights_only=False)`
 3. Pickle deserializes the payload, executing attacker's code
 
 **Impact**:
+
 - **Confidentiality**: Exfiltration of secrets, API keys, trading data
 - **Integrity**: Modification of trading logic, strategy parameters
 - **Availability**: System compromise, denial of service
@@ -51,11 +54,13 @@ Per CCEA architecture:
 **Description**: Attacker replaces legitimate model with malicious or degraded model.
 
 **Attack Vector**:
+
 1. Attacker gains write access to models directory or artifact registry
 2. Replaces legitimate model with attacker-controlled model
 3. System loads substituted model, producing incorrect predictions
 
 **Impact**:
+
 - Trading decisions based on attacker-controlled model
 - Financial losses from degraded model performance
 
@@ -68,6 +73,7 @@ Per CCEA architecture:
 **Description**: Over time, legacy models in insecure format accumulate, creating ongoing risk.
 
 **Attack Vector**:
+
 1. Organization retains legacy models for reproducibility
 2. Legacy models require `weights_only=False` to load
 3. Relaxed security controls persist indefinitely
@@ -83,6 +89,7 @@ Per CCEA architecture:
 **Control Artifact**: `docs/security/LEGACY_MODEL_REGISTRY.md` (legacy model registry with monthly audit)
 
 **Metrics Tracked**:
+
 - Legacy model count (current: 0)
 - Monthly conversion rate
 - `ALLOW_UNSAFE_MODEL_LOAD` production usage (current: 0)
@@ -98,6 +105,7 @@ Per CCEA architecture:
 **Control**: `infer_signals.py` and `adversarial/pbt_scheduler.py` are designed to reject models that cannot be loaded with `weights_only=True` by default. Verify implementation status via tests and code review.
 
 **Implementation**:
+
 ```python
 try:
     model = torch.load(path, map_location="cpu", weights_only=True)
@@ -126,6 +134,7 @@ except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
 **Control**: `tools/convert_legacy_models.py` converts legacy models to secure format.
 
 **Implementation**:
+
 - Loads legacy model (controlled context)
 - Extracts state_dict
 - Re-saves in secure format
@@ -140,6 +149,7 @@ except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
 **Control**: Model artifacts are designed to be signed by Cloud and verified by Agent before loading (verify via `tests/phase3/test_phase3_supply_chain.py`).
 
 **Implementation**:
+
 - Artifact Builder signs artifacts with platform key
 - Agent verifies signature and digest before accepting artifact
 - Allowlist of trusted registries
@@ -153,6 +163,7 @@ except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
 **Control**: Security SAST scans detect unsafe pickle/torch.load usage.
 
 **Implementation**:
+
 - Bandit security scanner (MEDIUM+ severity enforcement)
 - Semgrep with custom rules
 - CI fails on new unsafe patterns

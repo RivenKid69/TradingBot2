@@ -22,12 +22,15 @@ This batch closes 4 tech debt items across Docs/Drift, Reliability/Operations, T
 ## Item 1: Docs/Drift - DATABASE_URL vs CCEA_DATABASE_URL
 
 ### Finding
+
 Documentation in `docs/cloud/CLOUD_DEPLOYMENT.md` (line 130) instructed users to set `DATABASE_URL`, while the code in `packages/cloud/control_plane/database.py` (line 41) reads `CCEA_DATABASE_URL`. Following the documentation would cause silent fallback to SQLite default.
 
 ### Potential Effect
+
 Production could start on SQLite by default, risking data loss and missing Row Level Security (RLS) isolation.
 
 ### Resolution
+
 - Updated `docs/cloud/CLOUD_DEPLOYMENT.md`:
   - Changed `DATABASE_URL` to `CCEA_DATABASE_URL` in deployment examples (line 131)
   - Updated environment variables table (line 149) with correct variable name and format
@@ -35,6 +38,7 @@ Production could start on SQLite by default, risking data loss and missing Row L
   - Added explicit warning about SQLite fallback in production
 
 ### Control Artifact
+
 - **File**: [docs/cloud/CLOUD_DEPLOYMENT.md](../../docs/cloud/CLOUD_DEPLOYMENT.md)
 - **Verification**: Documentation now matches code behavior in `packages/cloud/control_plane/database.py:41`
 - **Deployment check**: Application logs migration status including database type on startup
@@ -44,12 +48,15 @@ Production could start on SQLite by default, risking data loss and missing Row L
 ## Item 2: Reliability/Operations - init_db() without migration check
 
 ### Finding
+
 `packages/cloud/control_plane/app.py` (line 149) calls `init_db()` on startup with only a comment warning to use migrations in production. No actual verification that migrations are applied.
 
 ### Potential Effect
+
 Schema drift and missing RLS policies in production if migrations are not applied.
 
 ### Resolution
+
 - Added `check_migration_status()` function to `packages/cloud/control_plane/database.py`
 - Updated `lifespan()` in `packages/cloud/control_plane/app.py` to:
   - Check migration status on startup
@@ -59,12 +66,16 @@ Schema drift and missing RLS policies in production if migrations are not applie
     - No Alembic migrations detected (alembic_version table missing)
 
 ### Control Artifact
+
 - **File**: [packages/cloud/control_plane/app.py](../../packages/cloud/control_plane/app.py)
 - **Verification**: Application logs migration status on every startup:
+
   ```
   Migration status: revision=<revision>, postgresql=True/False, has_alembic_table=True/False
   ```
+
 - **Production warning example**:
+
   ```
   PRODUCTION WARNING: No Alembic migrations detected. Run 'alembic upgrade head' to apply migrations and enable RLS.
   ```
@@ -74,18 +85,22 @@ Schema drift and missing RLS policies in production if migrations are not applie
 ## Item 3: Testing/Quality - False CI coverage validation claim
 
 ### Finding
+
 `tests/COMPREHENSIVE_TEST_REPORT.md` (line 14) claimed "Coverage metrics validated via pytest-cov during CI runs", but CI workflow (`build-and-test.yml`) runs `make test` which does not include `--cov` flags.
 
 ### Potential Effect
+
 Coverage regressions could go unnoticed; report could become outdated.
 
 ### Resolution
+
 - Updated `tests/COMPREHENSIVE_TEST_REPORT.md`:
   - Changed "CI Reference" to "Local Coverage Command" with explicit pytest-cov invocation
   - Changed "Verification" to accurately state coverage is validated manually via local runs
   - Added note about how to add CI coverage validation in the future
 
 ### Control Artifact
+
 - **File**: [tests/COMPREHENSIVE_TEST_REPORT.md](../../tests/COMPREHENSIVE_TEST_REPORT.md)
 - **Verification**: Documentation now accurately reflects actual verification method
 - **Future work**: Adding pytest-cov to CI tracked in TECH_DEBT_REGISTRY.md
@@ -95,18 +110,22 @@ Coverage regressions could go unnoticed; report could become outdated.
 ## Item 4: Reproducibility/Build - Dev dependencies with version ranges
 
 ### Finding
+
 `requirements-dev.txt` (line 22+) specifies dev/test dependencies with version ranges (e.g., `pytest>=7.4.0,<9.0.0`), allowing dependency drift and non-reproducible test results.
 
 ### Potential Effect
+
 Non-reproducible test/lint results and "random" regressions from tool updates.
 
 ### Resolution
+
 - Created `requirements-dev.lock.txt` with pinned versions
 - Updated `.github/workflows/build-and-test.yml`:
   - Changed `requirements-dev.txt` to `requirements-dev.lock.txt` in install step (line 40)
   - Added `requirements-dev.lock.txt` to lockfile freshness check (line 311)
 
 ### Control Artifact
+
 - **File**: [requirements-dev.lock.txt](../../requirements-dev.lock.txt)
 - **CI Verification**: Lockfile freshness check now includes dev lockfile
 - **Regeneration**: `pip-compile requirements-dev.txt -o requirements-dev.lock.txt`
@@ -145,6 +164,7 @@ Non-reproducible test/lint results and "random" regressions from tool updates.
 ## Design Doc Compliance
 
 All changes comply with `archive/root_files/Design Doc CCEA Cloud.txt`:
+
 - Cloud zone only modifications
 - No trading-related code changes
 - Database configuration supports RLS for tenant isolation
@@ -154,6 +174,7 @@ All changes comply with `archive/root_files/Design Doc CCEA Cloud.txt`:
 ## Documentation Canon Compliance
 
 Changes follow `docs/DOCUMENTATION_CANON_DESIGN.md`:
+
 - No absolute claims (used "designed to", "intended to")
 - B2B focus maintained
 - No performance promises added
@@ -164,6 +185,7 @@ Changes follow `docs/DOCUMENTATION_CANON_DESIGN.md`:
 ## Remaining Work (Out of Scope)
 
 The following items were identified but are out of scope for this batch:
+
 1. **CI coverage artifacts**: Adding pytest-cov to CI workflow (tracked separately)
 2. **Migration enforcement**: Option to fail startup if migrations not applied (requires product decision)
 

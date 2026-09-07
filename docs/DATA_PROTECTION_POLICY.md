@@ -95,6 +95,7 @@ Telemetry sent from Agent to Cloud is designed to pass through mandatory redacti
 ## 2. Scope
 
 This policy applies to:
+
 - All employees, contractors, and third parties processing personal data on our behalf
 - All personal data processed by the organization, regardless of format or location
 - All processing activities, whether automated or manual
@@ -106,31 +107,38 @@ This policy applies to:
 This policy is designed to support the following principles (GDPR Article 5):
 
 ### 3.1 Lawfulness, Fairness, and Transparency
+
 - Process personal data only with a valid legal basis
 - Be transparent about how we use personal data
 - Provide clear privacy notices to data subjects
 
 ### 3.2 Purpose Limitation
+
 - Collect personal data only for specified, explicit, and legitimate purposes
 - Do not process data in ways incompatible with original purposes
 
 ### 3.3 Data Minimization
+
 - Collect only the minimum personal data necessary for each purpose
 - Regularly review data holdings and delete unnecessary data
 
 ### 3.4 Accuracy
+
 - Keep personal data accurate and up to date
 - Correct or delete inaccurate data without delay
 
 ### 3.5 Storage Limitation
+
 - Retain personal data only as long as necessary for its purpose
 - Follow our data retention schedule for deletion
 
 ### 3.6 Integrity and Confidentiality
+
 - Protect personal data with appropriate technical and organizational measures
 - Prevent unauthorized access, loss, destruction, or damage
 
 ### 3.7 Accountability
+
 - Demonstrate compliance with GDPR requirements
 - Maintain records of processing activities
 
@@ -139,6 +147,7 @@ This policy is designed to support the following principles (GDPR Article 5):
 ## 4. Roles and Responsibilities
 
 ### 4.1 Data Protection Officer (DPO)
+
 - Advise on data protection obligations
 - Monitor compliance with GDPR
 - Serve as contact point for supervisory authorities
@@ -147,17 +156,20 @@ This policy is designed to support the following principles (GDPR Article 5):
 **Contact**: privacy@[company].com (DPO contact when designated)
 
 ### 4.2 Management
+
 - Ensure adequate resources for data protection
 - Promote a culture of data protection
 - Review and approve data protection policies
 
 ### 4.3 All Employees
+
 - Follow this policy and related procedures
 - Report data protection concerns or incidents
 - Complete required training
 - Handle personal data securely
 
 ### 4.4 IT/Security Team
+
 - Implement technical security measures
 - Monitor for security incidents
 - Support data protection by design
@@ -182,24 +194,31 @@ We process personal data only when we have a valid legal basis:
 We respect and facilitate the following rights:
 
 ### 6.1 Right of Access (Art. 15)
+
 Data subjects can request a copy of their personal data.
 
 ### 6.2 Right to Rectification (Art. 16)
+
 Data subjects can request correction of inaccurate data.
 
 ### 6.3 Right to Erasure (Art. 17)
+
 Data subjects can request deletion of their data in certain circumstances.
 
 ### 6.4 Right to Restriction (Art. 18)
+
 Data subjects can request limited processing in certain circumstances.
 
 ### 6.5 Right to Data Portability (Art. 20)
+
 Data subjects can request their data in a portable format.
 
 ### 6.6 Right to Object (Art. 21)
+
 Data subjects can object to processing based on legitimate interests or for direct marketing.
 
 ### 6.7 Rights Related to Automated Decisions (Art. 22)
+
 Data subjects can request human review of automated decisions.
 
 **Request Handling**: All requests must be forwarded to dpo@[company].com and handled within GDPR-specified timeframes (target: 30 days; actual terms per executed agreements and operational capacity).
@@ -209,18 +228,21 @@ Data subjects can request human review of automated decisions.
 ## 7. Data Security
 
 ### 7.1 Technical Measures
+
 - Encryption at rest and in transit (target: AES-256 / TLS 1.3; verify actual configuration via infrastructure audit)
 - Access controls and authentication
 - Network security (firewalls, segmentation)
 - Regular security assessments
 
 ### 7.2 Organizational Measures
+
 - Employee training and awareness
 - Access limited to need-to-know basis
 - Confidentiality agreements
 - Regular policy reviews
 
 ### 7.3 Physical Measures
+
 - Cloud infrastructure in data centers with relevant security certifications (provider-dependent)
 - Access controls to office premises
 - Secure disposal of physical media
@@ -230,14 +252,18 @@ Data subjects can request human review of automated decisions.
 ## 8. Data Breach Procedures
 
 ### 8.1 Definition
+
 A personal data breach is any security incident leading to accidental or unlawful destruction, loss, alteration, unauthorized disclosure of, or access to personal data.
 
 ### 8.2 Reporting
+
 All suspected breaches must be reported immediately to:
+
 - Security team: security@[company].com
 - DPO: dpo@[company].com
 
 ### 8.3 Response Timeline
+
 | Action | Timeline |
 |--------|----------|
 | Internal assessment | Within 24 hours |
@@ -250,12 +276,15 @@ All suspected breaches must be reported immediately to:
 ## 9. International Data Transfers
 
 ### 9.1 Transfer Mechanisms
+
 Personal data transferred outside the EU/EEA will only be transferred using approved mechanisms:
+
 - Adequacy decisions
 - Standard Contractual Clauses (SCCs)
 - Binding Corporate Rules (where applicable)
 
 ### 9.2 Third Countries
+
 Before transferring data to third countries, we assess the data protection laws and implement supplementary measures if needed.
 
 ---
@@ -263,13 +292,17 @@ Before transferring data to third countries, we assess the data protection laws 
 ## 10. Third-Party Processing
 
 ### 10.1 Due Diligence
+
 Before engaging processors:
+
 - Assess their data protection capabilities
 - Verify appropriate security measures
 - Review certifications (SOC 2, ISO 27001)
 
 ### 10.2 Data Processing Agreements
+
 All processors must sign a DPA covering:
+
 - Processing instructions
 - Security obligations
 - Sub-processor management
@@ -281,6 +314,7 @@ All processors must sign a DPA covering:
 ## 11. Data Retention
 
 ### 11.1 Retention Principles
+
 - Retain data only as long as necessary
 - Follow legal retention requirements
 - Securely delete data when no longer needed
@@ -300,6 +334,7 @@ All processors must sign a DPA covering:
 ## 12. Privacy by Design
 
 We integrate data protection into all processing activities:
+
 - Consider privacy from project inception
 - Default to privacy-protective settings
 - Minimize data collection
@@ -311,12 +346,15 @@ We integrate data protection into all processing activities:
 ## 13. Training and Awareness
 
 ### 13.1 Mandatory Training
+
 All employees must complete:
+
 - GDPR awareness training (onboarding)
 - Annual refresher training
 - Role-specific training (where applicable)
 
 ### 13.2 Awareness Activities
+
 - Regular communications on data protection topics
 - Phishing simulation exercises
 - Policy updates and reminders
@@ -326,13 +364,16 @@ All employees must complete:
 ## 14. Compliance Monitoring
 
 ### 14.1 Regular Activities
+
 - Quarterly compliance reviews
 - Annual policy review
 - Periodic audits
 - Processing activity inventory updates
 
 ### 14.2 Documentation
+
 We maintain:
+
 - Records of Processing Activities (ROPA)
 - Data Protection Impact Assessments
 - Consent records
@@ -344,6 +385,7 @@ We maintain:
 ## 15. Policy Violations
 
 Violations of this policy may result in:
+
 - Disciplinary action up to termination
 - Legal action for serious breaches
 - Reporting to supervisory authorities
@@ -366,6 +408,7 @@ Email: security@[company].com
 ## 17. Policy Review
 
 This policy is reviewed annually and updated as needed to reflect:
+
 - Regulatory changes
 - Business changes
 - Lessons learned from incidents

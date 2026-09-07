@@ -5,6 +5,7 @@
 ## Overview
 
 Cloud Governance provides multi-tenant data management with:
+
 - Role-Based Access Control (RBAC)
 - Data retention policies
 - EU data residency
@@ -267,6 +268,7 @@ ccea-admin audit export \
 ### 5.1 What is Break-Glass?
 
 Emergency access to bypass normal RBAC controls when:
+
 - Critical incident requires immediate action
 - Normal access paths unavailable
 - Time-sensitive compliance requirement
@@ -482,6 +484,7 @@ compliance:
 ---
 
 **Related Documentation:**
+
 - [Privacy Policy](../legal/PRIVACY_POLICY.md)
 - [Terms of Service](../legal/TERMS_OF_SERVICE.md)
 - [DORA Compliance](../compliance/DORA_INTEGRATION_PLAN.md)

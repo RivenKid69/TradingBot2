@@ -38,7 +38,7 @@ References:
     - Earnings Momentum - Chan, Jegadeesh, Lakonishok (1996)
     - Implied Volatility Crush - options market behavior
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

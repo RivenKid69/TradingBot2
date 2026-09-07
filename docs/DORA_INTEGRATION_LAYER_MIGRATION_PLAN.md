@@ -116,6 +116,7 @@ configs/dora/                      # ACTIVE - ICT Provider configs
 ## 2. Migration Phases
 
 ### Phase 0: Preparation (Pre-requisites)
+
 **Duration:** 1-2 days
 **Risk:** Low
 
@@ -129,6 +130,7 @@ configs/dora/                      # ACTIVE - ICT Provider configs
 | 0.6 | Create migration branch | `git checkout -b refactor/dora-integration-layer` |
 
 **Commands:**
+
 ```bash
 mkdir -p services/dora_integration/{due_diligence,incident_interface,third_party,contracts,reporting,sharing}
 mkdir -p services/archive/dora_financial_entity/configs
@@ -139,6 +141,7 @@ git tag -a pre-integration-refactor -m "Before DORA integration layer refactor"
 ---
 
 ### Phase 1: Due Diligence & Audit Layer
+
 **Duration:** 2-3 days
 **Risk:** Medium
 **Dependencies:** None
@@ -217,6 +220,7 @@ __all__ = [
 #### 1.3 Update Import Paths
 
 Create compatibility shim in `services/dora/__init__.py`:
+
 ```python
 # Deprecation shims for Phase 1 modules
 import warnings
@@ -251,6 +255,7 @@ pytest tests/dora_integration/test_due_diligence.py -v
 ---
 
 ### Phase 2: Incident Interface Layer
+
 **Duration:** 3-4 days
 **Risk:** High (affects real-time notifications)
 **Dependencies:** Phase 1 complete
@@ -321,6 +326,7 @@ class DORAIncidentReporter:
 ```
 
 **Связь с `client_incident_notification.py`:**
+
 ```python
 # Flow: Detection → Classification → Client Notification → Data Export
 #
@@ -444,6 +450,7 @@ notification:
 ---
 
 ### Phase 3: Third-Party Risk Interface
+
 **Duration:** 2-3 days
 **Risk:** Medium
 **Dependencies:** Phase 1 complete
@@ -497,6 +504,7 @@ mv config/dora/third_party_management.yaml config/dora_integration/third_party_m
 ---
 
 ### Phase 4: Contracts & SLA Layer
+
 **Duration:** 2 days
 **Risk:** Low
 **Dependencies:** None (can run parallel with Phase 2-3)
@@ -528,6 +536,7 @@ These modules help structure contracts that meet DORA requirements.
 ---
 
 ### Phase 5: Unified Reporting Layer
+
 **Duration:** 2-3 days
 **Risk:** Medium
 **Dependencies:** Phase 2 (incident interface)
@@ -581,6 +590,7 @@ class ROIDataGenerator:
 ---
 
 ### Phase 6: Information Sharing Layer
+
 **Duration:** 1 day
 **Risk:** Low
 **Dependencies:** None
@@ -601,6 +611,7 @@ mv config/dora/digital_resilience_strategy.yaml config/dora_integration/digital_
 ---
 
 ### Phase 7: Archive Financial Entity Modules
+
 **Duration:** 1 day
 **Risk:** Low
 **Dependencies:** All phases complete
@@ -733,6 +744,7 @@ To restore any module:
 git log --oneline -- services/dora/<module>.py  # Find last commit
 git checkout <commit>^ -- services/dora/<module>.py
 ```
+
 ```
 
 ---
@@ -893,6 +905,7 @@ pytest tests/core/ -v
 ---
 
 ### Phase 9: Test Strategy & Validation
+
 **Duration:** 2-3 days (parallel with Phase 8)
 **Risk:** Medium
 **Dependencies:** Phases 1-7 complete
@@ -1063,11 +1076,13 @@ git revert <commit-hash>
 ## 5. Success Criteria
 
 ### Phase Success ✅ ACHIEVED
+
 - [x] All tests pass after each phase
 - [x] No breaking changes to public API during grace period
 - [x] Documentation updated
 
 ### Final Success ✅ ACHIEVED
+
 - [x] Clean separation: core (14) vs integration (21) vs archive (23)
 - [x] All 21 integration modules organized in 6 subpackages
 - [x] All 23 FE modules archived with README
@@ -1076,6 +1091,7 @@ git revert <commit-hash>
 - [x] Full backward compatibility maintained via facade re-exports
 
 ### Final Statistics
+
 | Metric | Value |
 |--------|-------|
 | Integration Layer Modules | 21 |
@@ -1091,6 +1107,7 @@ git revert <commit-hash>
 ## 6. Migration Checklist
 
 ### Phase 0 (Preparation) ✅ COMPLETE
+
 - [x] Directory structure created (`services/dora_integration/`, `services/archive/`)
 - [x] Config directory created (`config/dora_integration/`)
 - [x] Git tag `pre-integration-refactor` created
@@ -1098,39 +1115,47 @@ git revert <commit-hash>
 - [x] Migration branch created
 
 ### Phase 1 (Due Diligence) ✅ COMPLETE
+
 - [x] 4 modules moved
 - [x] `__init__.py` created
 - [x] Tests pass (833 tests)
 
 ### Phase 2 (Incident Interface) ✅ COMPLETE
+
 - [x] 5 modules moved
 - [x] Refactored to export-only pattern
 - [x] Client notification tested
 
 ### Phase 3 (Third-Party) ✅ COMPLETE
+
 - [x] 5 modules moved
 - [x] Linked with `services/core/subcontractor_monitoring`
 - [x] Config moved
 
 ### Phase 4 (Contracts) ✅ COMPLETE
+
 - [x] 3 modules moved
 - [x] Tests pass
 
 ### Phase 5 (Reporting) ✅ COMPLETE
+
 - [x] 3 modules moved
 - [x] ROI refactored to generator pattern
 - [x] Templates validated
 
 ### Phase 6 (Sharing) ✅ COMPLETE
+
 - [x] 1 module moved
 - [x] Config moved
 
 ### Phase 7 (Archive) ✅ COMPLETE
+
 - [x] 23 modules archived to `services/archive/dora_financial_entity/`
 - [x] 2 configs archived to `services/archive/dora_financial_entity/configs/`
 - [x] README created with module list and recovery instructions
 
 ### Phase 8 (Finalize) ✅ COMPLETE
+
 - [x] Main `services/dora_integration/__init__.py` updated with real class names
 - [x] `services/dora/__init__.py` converted to thin facade
 - [x] All imports updated via migration script
@@ -1138,6 +1163,7 @@ git revert <commit-hash>
 - [x] Version updated to 2.0.0
 
 ### Phase 9 (Test & Validate) ✅ COMPLETE
+
 - [x] `tests/dora_integration/` directory created with test files
 - [x] Import validation tests pass (106 tests)
 - [x] Facade backward compatibility tests pass (332 tests)

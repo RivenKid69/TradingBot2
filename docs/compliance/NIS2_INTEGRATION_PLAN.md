@@ -1,5 +1,7 @@
 # NIS2 Integration Plan
+
 # Directive (EU) 2022/2555 on measures for a high common level of cybersecurity
+
 # План интеграции NIS2 в CustodiaCloud
 
 **Версия документа**: 1.0.0  
@@ -51,6 +53,7 @@
 **Цель**: формально подтвердить применимость NIS2, выбрать статус (essential vs important), определить NCA/CSIRT и получить полную gap-матрицу по Article 20/21/23.
 
 **Шаги**:
+
 - Классификация по Annex I/II: проверить, подпадает ли SaaS-провайдер под **digital provider / managed service provider** → предварительно принять **important entity**; оформить обоснование (маркет, оборот, размер, количество клиентов в ЕС).  
 - Определить **country of establishment** и соответствующий **NCA + CSIRT** (по месту основного офиса/сервисного хаба).  
 - Завести **Scope Register** (entity type, sector, jurisdiction, exemptions) в `docs/compliance/technical_documentation/` с ссылками на клиентские контракты и сервисные описания.  
@@ -59,6 +62,7 @@
 - Зафиксировать **assumptions/constraints** (например, SaaS-only, no asset holding, no retail users).  
 
 **Тесты (100% покрытия фазы)**:
+
 - Unit: классификация entity по Annex I/II (positive/negative cases).  
 - Unit: парсер gap-матрицы сверяет наличие артефактов для каждого подпункта Article 21.  
 - Integration: выбор NCA/CSIRT на основе страны → проверка обязательности уведомлений и каналов.  
@@ -71,6 +75,7 @@
 **Цель**: закрепить ответственность management body, обновить политики и RACI, встроить надзор за киберрисками.
 
 **Шаги**:
+
 - Назначить accountable executive (CISO / Head of Security) и описать **RACI** для инцидентов, уязвимостей, BCP/DR, поставщиков.  
 - Обновить набор политик (Information Security, Access Control, Crypto, Vendor Mgmt, Secure SDLC, Incident Response, BCP/DR) с явными ссылками на Article 21(a–j).  
 - Добавить обязательное **board-level одобрение и ежегодное обучение** по NIS2 для management body (лог аудита).  
@@ -79,6 +84,7 @@
 - Подготовить **audit pack**: политика, RACI, протокол обучения, контакт NCA/CSIRT, список артефактов.  
 
 **Тесты (100% покрытия фазы)**:
+
 - Unit: lint/consistency чеков политики (версии, владельцы, ссылки на статьи).  
 - Unit: RACI completeness (каждая функция инцидент/BCP/vendor имеет owner/delegate).  
 - Integration: CI job, который падает при истекшем сроке ревизии политики.  
@@ -91,6 +97,7 @@
 **Цель**: внедрить/закрепить базовые киберконтроли и их проверяемость на уровне кода/инфры.
 
 **Шаги**:
+
 - **Risk & control framework**: `services/nis2/risk_management.py` с маппингом Article 21(a–j) → контрольные пункты + связка с NIST CSF разделами из `CYBERSECURITY_FRAMEWORK`.  
 - **IAM & Access**: enforce MFA для всех админов/CI, запрет shared accounts, rotation secrets; RBAC для сервисов (`core_`/`service_` контракты) + inventory сервисных аккаунтов.  
 - **Crypto policy**: каталог алгоритмов/ключевых длин, требования к TLS (min v1.2/1.3), storage encryption, HSM/KMS использование; фиксировать в `config/security/crypto_policy.yaml`.  
@@ -100,6 +107,7 @@
 - **Secure comms**: требования к защищенным каналам (TLS, VPN, SSH hardening), запрет незашифрованного трафика для prod.  
 
 **Тесты (100% покрытия фазы)**:
+
 - Unit: контрольные точки risk registry → все Article 21 пункты имеют owner/evidence.  
 - Unit: IAM policy tests (нет wildcard, MFA=ON, key age < threshold).  
 - Integration: шифрование в транзите/на диске проверяется автоматическими probes в CI.  
@@ -113,6 +121,7 @@
 **Цель**: единый процесс обработки инцидентов и уведомлений в NCA/CSIRT с синхронизацией DORA/AI Act/GDPR.
 
 **Шаги**:
+
 - Создать модуль `services/nis2/incident_reporting.py` с таймерами 24h/72h/30d и обязательными полями (initial assessment, impact, mitigation, root cause).  
 - Расширить `services/dora/cross_regulation.py` для двунаправленного маппинга NIS2 ↔ DORA ↔ AI Act ↔ GDPR (приоритет ближайшего дедлайна).  
 - Обновить `docs/OPERATIONS_RUNBOOK.md` и `docs/RECOVERY_PROCEDURES.md` с формами уведомлений, контактами CSIRT, каналами (портал/шлюз/email/телефон) и критериями **significant incident** по NIS2.  
@@ -121,6 +130,7 @@
 - Увязать GDPR breach (72h) и AI Act serious incident (24h) через единый классификатор инцидентов.  
 
 **Тесты (100% покрытия фазы)**:
+
 - Unit: корректный расчет дедлайнов 24h/72h/30d при разных временах обнаружения/классификации.  
 - Integration: dry-run отправка уведомлений (mock CSIRT API/формы), валидация обязательных полей.  
 - Integration: alert → incident → уведомление pipeline с контрольными SLA.  
@@ -133,6 +143,7 @@
 **Цель**: обеспечить непрерывность услуг и восстановление с заданными RTO/RPO, подтвердить резервирование и план кризисного управления.
 
 **Шаги**:
+
 - Обновить **BCP/DR** (каталоги критичных функций, RTO/RPO, владельцы) в `docs/RECOVERY_PROCEDURES.md`.  
 - Настроить **backup & restore** для критичных данных (маркет-дата, модели, конфиги, журналы) с геораспределением и регулярной проверкой восстановлений.  
 - Реализовать **failover playbooks** для основных сервисов (market data ingest, execution, risk guard, storage).  
@@ -141,6 +152,7 @@
 - Встроить метрики RTO/RPO в мониторинг и ежемесячные отчеты compliance.  
 
 **Тесты (100% покрытия фазы)**:
+
 - Integration: восстановление из резервной копии (периодичность ≥ еженедельно) с проверкой целостности.  
 - Chaos: имитация отказа основного провайдера данных/биржи → автоматический failover.  
 - Tabletop: кризисное упражнение с коммуникационным планом.  
@@ -153,6 +165,7 @@
 **Цель**: контролировать риски поставщиков/зависимостей, обеспечить secure SDLC, управление уязвимостями и CVD.
 
 **Шаги**:
+
 - Создать **Vendor & Dependency Register** (облако, биржи, брокеры, дата-провайдеры, email/alerting, CI/CD, библиотеки) с оценкой критичности и контрактных мер безопасности.  
 - Добавить `services/nis2/vendor_registry.py` + интеграцию с SBOM (CycloneDX) и мониторингом CVE.  
 - Ввести **SAST/DAST/SCA/SBOM** пайплайны в CI для Python/Cython/C++ компонентов; блокировать релизы при CVSS ≥ 7 без исключений.  
@@ -161,6 +174,7 @@
 - Внедрить **secure SDLC** чек-листы (threat modeling для новых сервисов, обязательные код-ревью с безопасностью, секреты вне кода).  
 
 **Тесты (100% покрытия фазы)**:
+
 - Unit: валидация реестра поставщиков (обязательные поля, уровни критичности, сроки ревизии).  
 - Integration: SBOM генерация на билд-артефакт, сравнение diff, оповещение при новых CVE.  
 - Integration: SAST/DAST/SCA гейты в CI (fail on critical).  
@@ -174,6 +188,7 @@
 **Цель**: обучить персонал, внедрить постоянный мониторинг метрик и подготовить материалы для проверок NCA.
 
 **Шаги**:
+
 - Запустить **training program**: onboarding + ежегодное обучение по NIS2, фишинг-симуляции, secure coding для инженеров.  
 - Определить **KPI/OKR**: coverage Article 21 controls, среднее время реакции на инцидент, процент закрытых уязвимостей в SLA, MFA coverage.  
 - Построить **compliance dashboard** (автоэкспорт из CI/SIEM/SBOM) и хранить снапшоты для аудита.  
@@ -182,6 +197,7 @@
 - Планировать **ежеквартальные внутренние аудиты** + **годовую внешнюю проверку**.  
 
 **Тесты (100% покрытия фазы)**:
+
 - Unit: метрики собираются и корректно считаются (например, % MFA-enabled).  
 - Integration: дашборд обновляется из источников (CI, SIEM, SBOM) без ручных шагов.  
 - Evidence: training completion records required (target: all personnel; verify via LMS/HR records); phishing simulation results and retest records required.  

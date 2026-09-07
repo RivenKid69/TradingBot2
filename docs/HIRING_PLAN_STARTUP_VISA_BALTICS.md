@@ -95,17 +95,20 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 ### 4.1 Фаза 0 — Подготовка (до/в момент релокации, 0–6 недель)
 
 **Цели**
+
 - Подготовить job scorecards и процессы найма.
 - Собрать sourcing‑пулы по трём рынкам (LV/LT/EE) и EU‑remote.
 - Выстроить минимальные HR/ops: бухгалтер, payroll provider, шаблоны контрактов, политика ИБ/доступов.
 
 **Выходы (deliverables)**
+
 - 2 готовых JD: Platform/DevOps, Full‑Stack Product.
 - Система интервью: 45‑мин скрининг → 90‑мин тех‑интервью → оплачиваемое тест‑задание 4–6 часов → reference check.
 - План компенсаций (зарплата + опцион/phantom, если применимо) и probation период.
 - Готовый пакет “security + IP + privacy” для найма: NDA/конфиденциальность, IP assignment (в договоре/контракте), базовая политика доступов, минимизация доступа к prod‑секретам.
 
 **Go/No‑Go гейт перед Hire #1 / #2**
+
 - Есть легальный способ оформлять людей в host‑country (или на переходный период — contractor‑формат, если допустимо локально) и выбран payroll provider.
 - Есть подтверждённый runway на **9+ месяцев** на “base burn” (зарплаты + налоги работодателя + провайдеры).
 - Есть пилот‑пайплайн с конкретными next steps (например, 1 подписанный пилот/LOI или 2+ активных переговорных пилота с согласованными датами/шагами).
@@ -113,48 +116,58 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 ### 4.2 Фаза 1 — “Pilot‑ready platform” (0–3 месяца)
 
 **Веха продукта**
+
 - Pilot‑ready MVP (только то, что нужно для пилота): Cloud control plane в production‑like окружении + Dashboard MVP (runs, artifacts, telemetry redaction, audit events).
 - Коммерческая готовность: стандартизированный pilot‑agreement/SOW, baseline security ответы для due diligence (в пределах “software provider posture”).
 - Спрос: **минимум 1 подписанный пилот (paid или LOI)** *или* 2 LOI/письма намерений с согласованной датой старта.
 
 **Найм**
+
 - **Hire #1 (Platform/DevOps, local core)** — старт после прохождения go/no‑go гейта (ориентир: неделя 4–6).
 - **Hire #2 (Full‑Stack Product, local core)** — старт после Hire #1 и подтверждения пилот‑пайплайна (ориентир: неделя 8–10).
 
 **KPI для найма**
+
 - Time‑to‑deploy (Cloud) ≤ 1 день (repeatable)
 - Time‑to‑first‑pilot‑run ≤ 2 недели после старта пилота (через customer‑controlled Agent)
 
 ### 4.3 Фаза 2 — “Pilot → First Revenue” (3–6 месяцев)
 
 **Веха продукта**
+
 - 1–2 paid pilots, первые invoice’ы.
 - Документированные onboarding runbooks + support SLA (lightweight).
 
 **Найм (по триггерам)**
+
 - Если ≥2 пилота активны параллельно → **Hire #3 (Solutions Engineer)**.
 - Если нагрузка на CI/CD/infra становится узким местом → расширение DevOps роли (part‑time contractor или второй инженер позже).
 
 **Стоп‑триггеры (чтобы burn не “убежал”)**
+
 - Если пилоты не стартуют/застревают >8–10 недель → freeze новых FTE и фокус на founder‑led пилот/онбординг.
 - Если runway < 6 месяцев при текущем burn → freeze найма, пересборка scope и переговоры по funding/выручке.
 
 ### 4.4 Фаза 3 — “Repeatable onboarding” (6–12 месяцев)
 
 **Веха продукта**
+
 - 2+ клиентов продлили пилот/перешли на подписку (ранний PMF‑сигнал).
 - Стабильность и наблюдаемость: incident response runbooks, uptime target (internal), security baseline.
 
 **Найм**
+
 - **Hire #4 (Backend/Cloud Engineer)** — если multi‑tenant и биллинг/энтitlements начинают тормозить roadmap.
 - **Security/Compliance Ops (part‑time)** — если появляется enterprise due diligence (вместо полного FTE на ранней стадии).
 
 ### 4.5 Фаза 4 — Scale (12–24 месяца)
 
 **Триггер для Sales Lead**
+
 - Есть repeatable ICP + конверсия пилота в paid (например, ≥30–40% в cohort, или ≥€10k MRR — *illustrative*).
 
 **Найм**
+
 - **Hire #5 (Sales Lead)**: founder‑led sales → процесс → расширение pipeline.
 - Далее (по росту): AE/SDR, Customer Success Manager, Data/ML роли (по потребностям клиентов).
 
@@ -184,11 +197,13 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 ### 5.3 Пример годового фонда оплаты труда (illustrative)
 
 **Year 1 (после релокации):**
+
 - 2 инженера (средний уровень): €90k–€140k
 - contractors (UI/UX + ops): €10k–€30k
 - итого payroll/contractors: **€100k–€170k** (+ налоги работодателя / overhead по стране)
 
 **Year 2:**
+
 - 4–6 FTE + variable sales: **€220k–€420k** (+ overhead)
 
 > Для визовых комитетов важна связка “финансирование → план найма → вехи”. В `docs/BUSINESS_PLAN_EU_VISA.md` funding ask заложен как €500k–€750k (illustrative) с runway 18–24 месяца; этот headcount соответствует такому порядку.
@@ -207,6 +222,7 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 6) **Offer + probation (3–6 месяцев по стране/контракту)**.
 
 **Безопасность, IP и privacy в найме (минимальный стандарт)**
+
 - Take‑home всегда **оплачиваемый**, с синтетическими данными/изолированным заданием; результат не переносится в production без отдельного рефакторинга/код‑ревью.
 - Кандидатам не выдаётся доступ к prod‑секретам/аккаунтам; техническая оценка опирается на публичные/обезличенные материалы.
 - Договор/контракт включает: конфиденциальность, IP assignment (в пределах применимого права), запрет на вынесение клиентских данных, и правила использования Open Source.
@@ -214,6 +230,7 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 ### 6.2 Scorecard (единый стандарт)
 
 Для каждой роли фиксируются:
+
 - Must‑have skills (3–5 пунктов)
 - Nice‑to‑have (3–5 пунктов)
 - 90‑day outcomes (измеримые)
@@ -234,25 +251,30 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 ### 7.1 Эстония (Startup Estonia)
 
 **Founder eligibility (официальный гайд Startup Estonia):**
+
 - Startup должен быть **technology‑based, innovative and scalable** с глобальным потенциалом роста.
 - Нужен **approval / startup code** от **Startup Committee**; решение заявлено “within 10 working days”.
 - Требование по средствам: **минимум €800 на каждый месяц пребывания** (proof of funds).
 - Для подачи: страхование с покрытием **≥ €30,000** (Schengen) и государственная пошлина **€100** (D‑visa). В материалах Startup Estonia также встречается пошлина **€160** для TRP — подтверждать по типу заявления.
 
 **Hiring‑релевантное (для эстонских компаний, “qualified startup”):**
+
 - Для найма non‑EU сотрудников у стартапов описаны льготы: **нет иммиграционной квоты**, **нет минимального salary requirement**, упрощённая регистрация занятости (формулировки и детали зависят от статуса компании и процесса).
 
 **Как отражаем в плане найма**
+
 - Базовый план: первые 2 FTE нанимаются локально (EE) в первые 3 месяца (platform + product).
 - Параллельно допускаем EU‑remote contractors, но core ownership остаётся в EE.
 
 **Sources**:
+
 - https://startupestonia.ee/startup-visa/foreign-founder  
 - https://startupestonia.ee/startup
 
 ### 7.2 Литва (Startup Visa Lithuania)
 
 **TRP и средства (официальный Startup Visa Lithuania Guidebook):**
+
 - Подача на TRP: через **https://www.migracija.lt/** по пути “I am a start‑up”.
 - Proof of subsistence: минимально **€1038/мес (2025)** ⇒ **€12,456 за 12 месяцев** (как минимум на 1 год).
 - Health insurance: покрытие **≥ €30,000**, на **≥ 12 месяцев**, действует в ЕС и покрывает repatriation.
@@ -260,19 +282,23 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 - После получения TRP: **120 дней на регистрацию компании** и уведомление Startup Lithuania.
 
 **Hiring‑релевантное (из guidebook):**
+
 - Найм локального сотрудника: трудовой договор + уведомление SoDra.
 - Для third‑country высококвалифицированных сотрудников описан упрощающий путь **Startup Employee Visa** (детали — по актуальным источникам Startup Lithuania).
 
 **Как отражаем в плане найма**
+
 - Если host‑country = LT: первые 2 FTE планируются как литовские трудовые договоры (после регистрации компании), а до этого — contractor/consulting.
 - Тайминг найма привязывается к 120‑дневному сроку регистрации компании.
 
 **Sources**:
+
 - https://startupvisalithuania.com/  
 - https://startupvisalithuania.com/wp-content/uploads/2025/08/Startup-Visa-Lithuania-guidebook-2025.08.pdf  
 - https://www.migracija.lt/
 
 **Important note (nationality restrictions)**:
+
 - На сайте программы есть уведомление: приём заявлений на визы для граждан РФ/РБ за рубежом **приостановлен** (есть исключения через посредничество МИД Литвы) — проверять применимость к вашему кейсу и актуальность: https://startupvisalithuania.com/
 
 ### 7.3 Латвия (LIAA / Startup Visa)
@@ -280,6 +306,7 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 **Startup Visa = Temporary Residence Permit (TRP)** (по LIAA Startup Guide).
 
 Критичные для планирования найма пункты из официального гайда:
+
 - До **5 non‑EU founders** могут получить Startup Visa под одну идею.
 - Срок до **3 лет**, но TRP‑карта продлевается ежегодно.
 - Proof of subsistence в гайде фигурирует как **€5,160** (годовой объём средств для основного заявителя; в гайде также приведён пример для ребёнка). Конкретный способ подтверждения и актуальность суммы нужно перепроверять на момент подачи.
@@ -288,10 +315,12 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 - В гайде также указано ограничение: стартап — единственное место занятости и нельзя быть board member в других компаниях (для держателя Startup Visa).
 
 **Как отражаем в плане найма**
+
 - Если host‑country = LV: план найма делается “3‑летним” по форме, потому что это прямо запрашивается в латвийских материалах (planned activities, investments, cost structure).
 - На 12‑м месяце планируется checkpoint: подготовка progress report и/или привлечение qualifying investment (это влияет на устойчивость найма во 2‑й год).
 
 **Sources**:
+
 - https://startuplatvia.eu/startup-visa/  
 - https://investinlatvia.org/assets/upload/liaa-belarus/1101/LIAA_Startup_Guide-c_re_compressed.pdf
 
@@ -304,11 +333,13 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 **Mission**: сделать деплой Cloud‑компонентов repeatable, secure, observable.
 
 **90‑day outcomes**
+
 - CI/CD для cloud packages + infra‑as‑code baseline
 - Monitoring/alerting/runbooks (минимальный набор)
 - “Time‑to‑deploy” ≤ 1 день (repeatable)
 
 **Must‑have**
+
 - Kubernetes/Docker, CI/CD (GitHub Actions и аналоги)
 - Observability (logs/metrics/tracing)
 - Security hygiene (least privilege, secrets management, supply chain)
@@ -318,10 +349,12 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 **Mission**: собрать pilot‑dashboard, чтобы пилоты проходили onboarding без ручной боли.
 
 **90‑day outcomes**
+
 - Dashboard MVP: runs/artifacts/telemetry (redacted)/audit events
 - UX “happy path” для 3–5 пилотных компаний
 
 **Must‑have**
+
 - Web app development (frontend + backend integration)
 - Product thinking: ship small, iterate fast
 
@@ -330,10 +363,12 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 **Mission**: ускорить onboarding клиентов и превратить feedback в roadmap.
 
 **90‑day outcomes**
+
 - 2–3 клиента onboarded with documented runbooks
 - Библиотека конфигов/шаблонов и “golden path”
 
 **Must‑have**
+
 - Сильный Python + умение читать сложный код
 - Customer‑facing коммуникация (B2B)
 
@@ -342,10 +377,12 @@ CustodiaCloud — **B2B** risk‑first quantitative **research & deployment** п
 **Mission**: превратить founder‑led продажи в повторяемый процесс.
 
 **90‑day outcomes**
+
 - ICP + messaging + pipeline в CRM
 - 10–20 квалифицированных встреч/месяц (illustrative)
 
 **Must‑have**
+
 - B2B enterprise/SMB sales (fintech/infra желательно)
 - Умение продавать “compliance/procurement friendly” value, не “доходность”
 

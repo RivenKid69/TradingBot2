@@ -12,7 +12,7 @@ Covers:
 
 Total: ~90 tests
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

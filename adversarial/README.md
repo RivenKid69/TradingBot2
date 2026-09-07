@@ -5,15 +5,18 @@
 ## Компоненты
 
 ### 1. State Perturbation (`state_perturbation.py`)
+
 Генерирует adversarial perturbations на state observations.
 
 **Функции:**
+
 - FGSM (Fast Gradient Sign Method) attack
 - PGD (Projected Gradient Descent) attack
 - Support L-inf and L2 norms
 - State clipping для ограничений
 
 **Пример использования:**
+
 ```python
 from adversarial import PerturbationConfig, StatePerturbation
 
@@ -33,15 +36,18 @@ adversarial_state = state + delta
 ```
 
 ### 2. State-Adversarial PPO (`sa_ppo.py`)
+
 Расширяет PPO с adversarial training для robustness.
 
 **Функции:**
+
 - Mixed clean/adversarial training
 - Robust KL regularization
 - Adaptive epsilon scheduling
 - Attack на policy и value losses
 
 **Пример использования:**
+
 ```python
 from adversarial import SAPPOConfig, StateAdversarialPPO
 
@@ -64,9 +70,11 @@ loss, info = sa_ppo.compute_adversarial_loss(
 ```
 
 ### 3. Population-Based Training (`pbt_scheduler.py`)
+
 Управляет популяцией parallel training runs с periodic exploitation и exploration.
 
 **Функции:**
+
 - Population management
 - Exploitation strategies (truncation, binary tournament)
 - Exploration strategies (perturb, resample, both)
@@ -74,6 +82,7 @@ loss, info = sa_ppo.compute_adversarial_loss(
 - Checkpoint management
 
 **Пример использования:**
+
 ```python
 from adversarial import PBTConfig, HyperparamConfig, PBTScheduler
 
@@ -148,10 +157,12 @@ adversarial:
 ## Исследования и References
 
 **Population-Based Training:**
+
 - [Population Based Training of Neural Networks](https://arxiv.org/abs/1711.09846) (DeepMind 2017)
 - [Ray Tune PBT Guide](https://docs.ray.io/en/latest/tune/examples/pbt_guide.html)
 
 **Adversarial Training for RL:**
+
 - [Robust Deep RL against Adversarial Perturbations](https://arxiv.org/abs/2003.08938) (NeurIPS 2020)
 - [State-Adversarial PPO](https://github.com/huanzhang12/SA_PPO)
 

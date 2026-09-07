@@ -24,7 +24,7 @@ Usage:
 Dependencies:
     pip install yfinance>=0.2.0
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

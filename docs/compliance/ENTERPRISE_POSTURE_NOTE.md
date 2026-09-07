@@ -25,6 +25,7 @@ Reference: docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L968-L972
 ### 1.3 Scope
 
 This document applies to:
+
 - Enterprise on-premises deployments
 - VPC (Virtual Private Cloud) deployments
 - Hybrid configurations (Cloud + local components)
@@ -47,18 +48,21 @@ This document applies to:
 ### 2.2 Mode Descriptions
 
 #### 2.2.1 SaaS (Default)
+
 - Standard cloud-hosted deployment
 - Telemetry: AGGREGATED by default, DETAILED_NON_SENSITIVE opt-in
 - All data processing in EU regions
 - Evidence pack via Cloud API
 
 #### 2.2.2 Enterprise Cloud
+
 - Cloud-hosted with enterprise features
 - Telemetry: RAW_ORDER_EVENTS available with explicit opt-in
 - Customer-managed encryption keys (CMK) supported
 - Enhanced SLAs and support
 
 #### 2.2.3 On-Prem Full
+
 - Complete on-premises deployment
 - Designed so data remains within customer infrastructure (verify via deployment configuration and network egress controls)
 - Telemetry stays local by default
@@ -66,12 +70,14 @@ This document applies to:
 - Customer manages all infrastructure
 
 #### 2.2.4 VPC Managed
+
 - Customer controls infrastructure in their VPC
 - Choice of telemetry destination (local or Cloud)
 - Registry mirror for artifact distribution
 - Hybrid evidence export (local + API)
 
 #### 2.2.5 Air-Gapped
+
 - No external network connectivity
 - Pre-populated artifact registry
 - Offline signature verification
@@ -139,6 +145,7 @@ For enterprise deployments, "Telemetry Stays Local" mode is designed to provide:
 5. **Evidence Pack**: Telemetry can be included in local evidence exports
 
 **Configuration:**
+
 ```yaml
 # Helm values (on-prem/VPC)
 telemetry:
@@ -168,6 +175,7 @@ When RAW_ORDER_EVENTS is enabled (enterprise only):
 | Audit Trail | Full audit of RAW data access |
 
 **Options for RAW telemetry:**
+
 1. **Cloud RAW (Enterprise Cloud/VPC)**: RAW sent to Cloud with explicit opt-in
 2. **Local RAW (On-Prem/Air-Gapped)**: RAW stays local, customer-controlled
 
@@ -199,8 +207,8 @@ The following claims are NOT accurate and must NOT be used:
 | "Zero data collection" | FALSE - We collect redacted telemetry in SaaS |
 | "Completely offline" | FALSE - SaaS/Enterprise Cloud require connectivity |
 | "No personal data processed" | FALSE - Metadata may include personal data |
-| "SOC 2 Type II certified" | FALSE* - *Unless certification obtained |
-| "ISO 27001 certified" | FALSE* - *Unless certification obtained |
+| "SOC 2 Type II certified" | FALSE*-*Unless certification obtained |
+| "ISO 27001 certified" | FALSE*-*Unless certification obtained |
 
 ### 5.3 Conditional Claims
 

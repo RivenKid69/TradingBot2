@@ -11,7 +11,7 @@ Tests cover:
 - Module-level convenience functions
 - Crypto backward compatibility
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

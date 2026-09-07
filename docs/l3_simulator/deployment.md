@@ -130,6 +130,7 @@ class ShadowL3Provider:
 ```
 
 **Validation Metrics:**
+
 - L3 vs L2 slippage correlation
 - L3 vs L2 fill rate comparison
 - L3 latency overhead
@@ -151,6 +152,7 @@ rollout:
 ```
 
 **Validation:**
+
 - Compare metrics between L2 and L3 symbols
 - Monitor for anomalies
 - User feedback collection
@@ -305,6 +307,7 @@ def emergency_rollback():
 ### Rollback Triggers
 
 Automatic rollback if:
+
 - Error rate > 1% for 5 minutes
 - Slippage p95 > 10 bps for 10 minutes
 - Latency p95 > 10ms for 5 minutes

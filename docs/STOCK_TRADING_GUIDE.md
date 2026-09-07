@@ -404,6 +404,7 @@ Analogous to crypto Fear & Greed index:
 #### 2. Market Regime Indicator
 
 Bull/Bear/Sideways classification based on:
+
 - SPY SMA crossovers (20/50 day)
 - VIX levels
 - Price momentum
@@ -411,6 +412,7 @@ Bull/Bear/Sideways classification based on:
 #### 3. Relative Strength
 
 RS vs benchmark (SPY/QQQ) for momentum strategies:
+
 - 20-day RS (short-term)
 - 50-day RS (medium-term)
 

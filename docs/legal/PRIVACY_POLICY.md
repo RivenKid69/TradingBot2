@@ -18,6 +18,7 @@
 The data controller responsible for your personal data is:
 
 **[Company Name]** *(template; finalize upon entity formation)*
+
 - **Registered Address:** [Address]
 - **Registration Number:** [Number]
 - **Country:** [Final jurisdiction TBD upon entity formation]
@@ -33,6 +34,7 @@ For privacy-related inquiries:
 ### 1.3 EU Representative
 
 For Users outside the EU, our EU representative is:
+
 - [Representative details if applicable]
 
 ---
@@ -63,6 +65,7 @@ Data processed in our Cloud infrastructure:
 | Audit logs | Cloud (EU region by design) | 5 years (target) |
 
 **Cloud is designed not to receive or process (design goal enforced via CCEA architecture; verify via architecture review and CI guardrails):**
+
 - Broker API keys or secrets (secrets designed to stay in customer-controlled Agent)
 - Trading credentials of any kind
 - Order details (side, quantity, price)
@@ -80,6 +83,7 @@ Data processed by the optional local Agent (if you deploy one):
 | Local approval records | Your hardware | Designed: no access |
 
 **Agent-zone data is designed to remain under your control:**
+
 1. By design, Agent-zone data is intended to stay on your hardware (verify via CCEA architecture documentation)
 2. Encryption is designed to use keys derived locally, which we do not possess by design (verify via technical documentation)
 3. The Agent is designed to operate autonomously on your infrastructure
@@ -150,6 +154,7 @@ When you deploy a local Agent for live execution:
 | Passphrase | Agent local vault | AES-256-GCM | **Designed: no access** |
 
 **How the Agent Vault Works (by design):**
+
 1. Credentials are designed to be encrypted on YOUR hardware with keys derived from YOUR passphrase
 2. Master key is designed to remain within your Agent's local environment
 3. Credentials are designed to be decrypted only in-memory inside the Agent when executing orders
@@ -158,6 +163,7 @@ When you deploy a local Agent for live execution:
 #### 2.3.2 What We DO NOT Store
 
 Our Cloud infrastructure is designed to not store or process:
+
 - Broker API keys
 - Broker API secrets
 - Exchange credentials
@@ -270,6 +276,7 @@ When you delete data or your account:
 | Account status | Your local Agent | API credentials | **NONE** |
 
 **Data flow for broker connections:**
+
 ```
 Your Agent (local) → Broker API (direct connection)
      ↓
@@ -277,6 +284,7 @@ Cloud is designed to receive redacted/aggregated telemetry only (order details a
 ```
 
 Our architecture is designed so that Cloud does NOT:
+
 - Store your broker credentials (designed to remain in local Agent vault only)
 - Transmit orders on your behalf (execution designed to occur only via customer-controlled Agent)
 - Have direct connection to your broker accounts (Agent connects to brokers locally)
@@ -299,6 +307,7 @@ Our architecture is designed so that Cloud does NOT:
 | Sentry | Error monitoring (redacted, no PII) | EU (Germany) | Template available | Standard Sentry DPA |
 
 **Sub-processor change notification:**
+
 - **Notification period:** 30 days prior to new sub-processor engagement
 - **Method:** Email to billing contact + in-app notification
 - **Objection process:** Customer may object within 30 days; if unresolved, termination right applies
@@ -321,6 +330,7 @@ When you operate a local Agent, it may send telemetry to Cloud for monitoring:
 #### 5.4.2 What Telemetry Is Designed Not to Contain
 
 These fields are **designed to be blocked at the protocol level** (per CCEA architecture):
+
 - Order side (buy/sell)
 - Order quantity
 - Order price
@@ -348,6 +358,7 @@ The Platform implements three distinct telemetry sensitivity levels as defined i
 | `RAW_ORDER_EVENTS` | Allowed (masked) | Masked only | 7 days (max 30) | Workspace admins + break-glass |
 
 **RAW_ORDER_EVENTS requirements:**
+
 - Available **only** to enterprise tier customers
 - Requires **explicit per-workspace opt-in** (audited)
 - Consent record must exist with: who, what, when, scope, expiry
@@ -356,6 +367,7 @@ The Platform implements three distinct telemetry sensitivity levels as defined i
 - Alternative: "telemetry stays local" mode (no Cloud transmission)
 
 **What RAW_ORDER_EVENTS is designed to exclude** (even at enterprise level):
+
 - API keys, secrets, or credentials (blocked by mandatory redaction)
 - Unmasked account identifiers (masked by design)
 - Environment variables (forbidden in telemetry schema)
@@ -369,6 +381,7 @@ The Platform implements three distinct telemetry sensitivity levels as defined i
 | `RAW_ORDER_EVENTS` | 7 days | 30 days | Auto-purged + audit event |
 
 All telemetry is subject to:
+
 - **Tenant-specific retention policies** (can reduce but not exceed maximums)
 - **Auto-purge with auditable records** (purge job logs counts, timestamps)
 - **Legal hold capability** (suspends deletion when active)
@@ -491,6 +504,7 @@ You have the right to lodge a complaint with your local data protection supervis
 **Important:** Due to the CCEA architecture, DSAR (Data Subject Access Request) scope is limited to Cloud-controlled data:
 
 **IN SCOPE (Cloud-controlled, we can export/delete):**
+
 - User account data (email, display_name, preferences)
 - Organization membership records
 - Workspace membership and roles
@@ -501,6 +515,7 @@ You have the right to lodge a complaint with your local data protection supervis
 - Support interaction records
 
 **OUT OF SCOPE (Agent-controlled, customer responsibility):**
+
 - Broker credentials (designed to stay in customer-controlled Agent; protocol and CI guardrails enforce this boundary)
 - Local execution logs (unless exported via REQUEST_EXPORT_LOGS)
 - Order/fill data (unless RAW_ORDER_EVENTS enabled and transmitted)
@@ -573,6 +588,7 @@ This section provides an explicit checklist of privacy design commitments for th
 Support staff access to customer data is designed to require **explicit consent** with auditable records (verify via consent record audit and access logs).
 
 **Consent requirements:**
+
 - **Who:** Identity of the user granting consent
 - **What:** Specific data or scope of access
 - **When:** Timestamp of consent grant
@@ -608,6 +624,7 @@ You can revoke support consent at any time:
 ### 7B.4 Auditable Evidence
 
 Support access is designed to be logged in the governance audit trail (verify via audit log exports):
+
 - Every data access during support session
 - Every export generated
 - Support session start/end timestamps

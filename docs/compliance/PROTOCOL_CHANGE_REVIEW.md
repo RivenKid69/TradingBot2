@@ -4,6 +4,7 @@
 **Effective Date**: 2025-12-16
 **Classification**: INTERNAL / SECURITY
 **Related Documents**:
+
 - `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 - `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt`
 - `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md`

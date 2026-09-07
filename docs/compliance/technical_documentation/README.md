@@ -9,6 +9,7 @@ This directory contains references to the technical documentation required by An
 Per Annex IV requirements, technical documentation is generated dynamically using the `TechnicalDocumentationGenerator` class and maintained across the following source files:
 
 ### Section 1: General Description
+
 - **Source**: Configuration files and metadata
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:
@@ -17,15 +18,17 @@ Per Annex IV requirements, technical documentation is generated dynamically usin
   - [README.md](../../../README.md)
 
 ### Section 2: Algorithm and Data
+
 - **Source**: Core algorithm implementations
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:
-  - [claude.md](../../../claude.md) - Complete technical reference
+  - [../../PLATFORM_REFERENCE.md](../../PLATFORM_REFERENCE.md) - Complete technical reference
   - [docs/twin_critics.md](../../twin_critics.md) - Twin critics architecture
   - [docs/UPGD_INTEGRATION.md](../../UPGD_INTEGRATION.md) - UPGD optimizer
   - [docs/pipeline.md](../../pipeline.md) - Decision pipeline
 
 ### Section 3: Monitoring and Control
+
 - **Source**: Service implementations
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:
@@ -34,6 +37,7 @@ Per Annex IV requirements, technical documentation is generated dynamically usin
   - Human oversight: `services/ai_act/human_oversight.py`
 
 ### Section 4: Performance Metrics
+
 - **Source**: Accuracy and evaluation modules
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:
@@ -42,6 +46,7 @@ Per Annex IV requirements, technical documentation is generated dynamically usin
   - Robustness testing: `services/ai_act/robustness_testing.py`
 
 ### Section 5: Risk Management
+
 - **Source**: Risk management system
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:
@@ -50,6 +55,7 @@ Per Annex IV requirements, technical documentation is generated dynamically usin
   - [EU_AI_ACT_PHASE1_COMPLETION_REPORT.md](../EU_AI_ACT_PHASE1_COMPLETION_REPORT.md)
 
 ### Section 6: Change Log
+
 - **Source**: Git history and version control
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:

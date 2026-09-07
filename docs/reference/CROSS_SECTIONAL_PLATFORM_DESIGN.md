@@ -13,14 +13,17 @@
 ## 0. Сдвиг парадигмы: было → стало
 
 ### Было (single-instrument)
+
 ```
 features_pipeline (per-symbol) → RL agent.decide() → ActionProto.volume_frac (target pos per symbol)
                                → Order(s) → execution → risk_guard (post-hoc)
 ```
+
 Каждый инструмент торгуется своим агентом изолированно. Нет понятия «портфель как объект оптимизации»,
 нет совместной риск-модели, нет cross-sectional нормализации сигналов.
 
 ### Стало (cross-sectional)
+
 ```
                 ┌────────────────────────────────────────────────────────────────────┐
    PIT Universe │  на каждую дату ребаланса t:                                          │
@@ -121,18 +124,23 @@ class CrossSectionalStrategy(Protocol):
 ## 3. Слой данных: Panel + Point-in-Time
 
 ### 3.1 Panel API
+
 Новый модуль `impl_panel.py` (`impl_`):
+
 - Сборка `Panel` (MultiIndex `(ts_ms, symbol)`) из `data_loader_multi_asset.py`.
 - Выравнивание по календарю (trading sessions из `services/*calendar*`).
 - As-of join фундаментальных данных (PIT) и корпдействий.
 - **Гарантия PIT:** для каждой строки доступны только данные с `publish_ts <= ts`. Лаг публикаций фундаментала (например, отчётность +1–3 дня) — обязателен.
 
 ### 3.2 Survivorship-free universe
+
 Обёртка `impl_universe.py` над `services/survivorship.py::UniverseSnapshot`:
+
 - `constituents(asof)` отдаёт состав индекса **на дату**, включая делистнутые тогда-активные тикеры.
 - Бэктест итерируется по историческому составу, а не по сегодняшнему.
 
 ### 3.3 Corporate actions / total return
+
 - Использовать `services/corporate_actions.py`; цены → total-return серии (reinvest dividends, split-adjust).
 - Для фьючерсов — back-adjusted continuous contracts (новый `impl_continuous_futures.py`, переиспользуя `impl_cme_rollover.py`).
 
@@ -143,7 +151,9 @@ class CrossSectionalStrategy(Protocol):
 ## 4. Signal / Alpha layer
 
 ### 4.1 SignalLibrary (`service_signals.py`)
+
 Каталог cross-sectional сигналов, каждый реализует `Signal`:
+
 - **Momentum**: 12-1m, 6-1m, residual momentum.
 - **Value** (equity): E/P, B/P, FCF yield (из PIT-fundamentals).
 - **Quality**: ROE, accruals, gross profitability.
@@ -153,14 +163,18 @@ class CrossSectionalStrategy(Protocol):
 - **RL-signal** (см. 4.3).
 
 ### 4.2 Cross-sectional transforms (`impl_cross_sectional.py`)
+
 На каждую дату t по всему юниверсу:
+
 - `rank` / `zscore` / `winsorize`.
 - **Neutralization**: регрессия сигнала на (sector, beta, size) → остаток (нейтрализованный сигнал).
 - `decay`/half-life сглаживание.
 Это устраняет «случайные» экспозиции и делает сигналы сопоставимыми — то, чего сейчас нет.
 
 ### 4.3 RL как сигнал (рефактор без выбрасывания)
+
 `distributional_ppo` сейчас выдаёт `volume_frac` (target pos). Рефактор:
+
 - Обернуть выход политики в `RLAlphaSignal.compute(panel,t) -> pd.Series`:
   - значение сигнала = ожидаемый ретёрн/полезность позиции (можно из value-head/quantiles),
   - **conformal uncertainty** (`service_conformal.py`) → вес/шринк сигнала.
@@ -168,7 +182,9 @@ class CrossSectionalStrategy(Protocol):
 - Это сохраняет всю вашу RL-инвестицию и делает её транспарентной (один сигнал среди многих, с измеримым IC).
 
 ### 4.4 AlphaModel — комбинация в μ (`service_alpha.py`)
+
 Методы (выбираемые в конфиге):
+
 - **IC-weighted**: вес сигнала ∝ его rolling Information Coefficient.
 - **Ridge/Elastic-net** регрессия сигналов на forward returns (с регуляризацией — анти-оверфит).
 - **ML meta-model** (gradient boosting) — опционально.
@@ -180,6 +196,7 @@ class CrossSectionalStrategy(Protocol):
 ## 5. Risk model — Σ (`service_risk_model.py`)
 
 Факторная модель ковариации (то, чего критически нет):
+
 - **Exposures B**: переиспользовать `FactorTiltValidator.set_factor_loadings`; добавить статистические факторы (PCA) + фундаментальные (sector/size/style) + (для crypto) BTC-beta.
 - **Factor covariance F**: EWMA или Ledoit-Wolf shrinkage.
 - **Specific risk D**: дисперсия остатков по активу.
@@ -206,6 +223,7 @@ subject to:
 ```
 
 Режимы (config): `mean_variance`, `max_sharpe`, `risk_parity`, `min_variance`, `black_litterman`, `equal_weight` (baseline).
+
 - `tcost(·)` — из ваших L2/L3 impact-моделей (Almgren-Chriss) → оптимизатор учитывает реальные косты.
 - Связь с `RebalanceEngine`: optimizer ПРОИЗВОДИТ target, `RebalanceEngine.rebalance_to_target` + `_enforce_limits` доводит до исполнимого набора.
 
@@ -216,6 +234,7 @@ subject to:
 ## 7. Cross-sectional backtest engine (`service_xs_backtest.py`)
 
 Новый бэктест поверх Panel (НЕ per-instrument env):
+
 1. Для каждой даты ребаланса t (из walk-forward splits):
    - `universe = UniverseProvider.constituents(t)` (PIT)
    - `signals = SignalLibrary.compute(panel, t)` → transforms
@@ -263,10 +282,12 @@ subject to:
 ## 11. UI (Lite & Pro)
 
 **Lite (MVP, push-button):**
+
 - В «ИИ-пайплайн» добавить ветку **«Cross-sectional портфель»**: выбрать юниверс (индекс/список), набор сигналов (чекбоксы пресетов), режим оптимизатора, лимиты (gross/net/turnover) — одна кнопка → бэктест с Trust-Report.
 - Telemetry: добавить gross/net exposure, factor exposures, turnover.
 
 **Pro (раскрыть существующие вкладки):**
+
 - `pro-research` → Signal Lab (IC, decay, quantile spreads по каждому сигналу).
 - `pro-model-lab` → Alpha Model (комбинация, веса сигналов) + Risk Model (факторы, Σ heatmap).
 - новый под-раздел **Portfolio Constructor** (optimizer settings, constraints, efficient frontier).
@@ -324,35 +345,42 @@ backtest:
 > Принцип: каждая фаза — самостоятельно ценный и тестируемый инкремент. Single-instrument режим не ломается (обратная совместимость).
 
 ### Phase 0 — Фундамент данных (2–3 нед)
+
 - `core_portfolio.py` контракты; `impl_panel.py` Panel API; `impl_universe.py` поверх survivorship.
 - PIT-fundamentals store + as-of join; total-return/back-adjusted серии.
 - **Deliverable:** Panel по SP500 с PIT-гарантией; leakage-probe тест зелёный.
 - **Acceptance:** `pytest tests/test_panel_pit.py` (новый), нет look-ahead.
 
 ### Phase 1 — Signals + cross-sectional transforms (2 нед)
+
 - `service_signals.py` (5–8 базовых сигналов), `impl_cross_sectional.py` (rank/zscore/neutralize).
 - IC/decay диагностика на каждый сигнал.
 - **Deliverable:** Signal Lab данные; отчёт IC по сигналам.
 
 ### Phase 2 — Risk model Σ (2 нед)
+
 - `service_risk_model.py`: factor exposures (reuse FactorTiltValidator), F, D, Σ = BFBᵀ+D, Ledoit-Wolf.
 - **Acceptance:** Σ положительно определена; экспозиции согласованы с `portfolio_constraints`.
 
 ### Phase 3 — Optimizer w* (2–3 нед)
+
 - `service_optimizer.py` (cvxpy): MVO + constraints из `portfolio_constraints` + tcost.
 - Связка с `RebalanceEngine`.
 - **Acceptance:** аналитические тест-кейсы воспроизводятся; constraints не нарушаются.
 
 ### Phase 4 — Cross-sectional backtest + Trust Report (3 нед)
+
 - `service_xs_backtest.py` + `service_backtest_validation.py` (Deflated Sharpe, PBO, purged CV) + capacity report.
 - **Deliverable:** end-to-end бэктест cross-sectional equity long-short с Trust-Report.
 - **Это веха «доверия профи».**
 
 ### Phase 5 — AlphaModel + RL-as-signal (2–3 нед)
+
 - `service_alpha.py` (IC-weighted/ridge); рефактор `distributional_ppo` выхода в `RLAlphaSignal`.
 - **Acceptance:** RL-сигнал имеет измеримый IC, входит в μ; legacy RL-режим сохранён.
 
 ### Phase 6 — Live execution + Attribution + UI (3–4 нед)
+
 - `w*` → Intents → CCEA Agent rebalance; portfolio-level guards; `service_attribution.py`.
 - UI: Signal Lab, Portfolio Constructor, Trust Report, Attribution; Lite cross-sectional ветка.
 - **Deliverable:** живой ребаланс market-neutral портфеля через Agent + attribution для LP.
@@ -400,6 +428,7 @@ backtest:
 | **Options** | — | **vol-risk-premium, skew, dispersion, term-structure** | **vol-факторы** | ⚠️ **НЕ та же машинерия.** Портфель = экспозиции по **греческим**, не directional веса. Нужен отдельный вариант optimizer'а (vega/gamma/delta-neutral structures). Делать **последним и отдельно.** |
 
 **Важное различие, которое надо зафиксировать:**
+
 - **(A) 5 отдельных cross-sectional стратегий** (каждая внутри своего класса) — то, что описано выше. Переиспользует одно ядро. **Достижимо.**
 - **(B) ОДИН кросс-asset портфель** (equity+futures+FX+crypto в одном оптимизаторе, единый risk-parity) — это **отдельная, более сложная** возможность: нужен унифицированный кросс-asset risk-model, нормализация валют, общий vol-target. **Это отдельная Phase 7+, не «бесплатно».**
 
@@ -415,6 +444,7 @@ Crypto первым — данные доступны без фундамент�
 Реальный блокер — **данные, а не архитектура.** Options требует отдельного варианта оптимизатора.
 
 ### Ложится хорошо (низкое трение)
+
 - **Слоистая архитектура** (`core_/impl_/service_/strategies/script_`): новые модули — это новые файлы на правильных слоях, без переписывания. План уже размечен по слоям.
 - **CCEA Intent = target weights.** Идеальный fit: вектор весов — это набор Intent'ов. Архитектура не нарушается.
 - **~50% компонентов готовы** (проверено в коде): `survivorship.UniverseSnapshot` (PIT-юниверс), `portfolio_constraints.{FactorTiltValidator, RebalanceEngine, PortfolioConstraintManager}`, `execution_providers*` (tcost/impact), `unified_futures_risk.PortfolioRiskManager`, `conformal` (вес сигнала).
@@ -422,6 +452,7 @@ Crypto первым — данные доступны без фундамент�
 - **Адаптеры на 5 классов уже есть** — плумбинг данных по классам существует.
 
 ### Трение (честные точки сопротивления)
+
 1. **Per-symbol предположение глубоко зашито.** `features_pipeline`, RL-env (`TradingEnv`), `mediator`, `SignalPolicy.decide(features, ctx)` (ctx = ОДИН символ) — всё single-symbol. Cross-sectional — это **параллельный новый путь** (`mode: cross_sectional`), не модификация. Цена — поддержка **двух парадигм** одновременно (не переписывание, но +сложность).
 2. **Слой данных — главный реальный пробел.** Сейчас данные — per-symbol OHLCV parquet. Нужны: выровненный panel, **PIT-fundamentals** (equity), **история index-membership** (equity), **back-adjusted continuous** (futures). `survivorship.py` даёт МОДЕЛЬ юниверса, но не сами ДАННЫЕ (membership/fundamentals). Это data-acquisition, не код — и это длинный шест.
 3. **Нет солвера (cvxpy/osqp).** Новая зависимость + нужен аналитический fallback. Минорно.
@@ -430,6 +461,7 @@ Crypto первым — данные доступны без фундамент�
 6. **Options** не ложится на тот же optimizer — нужен отдельный greeks-based вариант.
 
 ### Что это значит практически
+
 - Архитектурно «всё на 5 классах» — **да**, потому что ядро общее. Но это значит **×5 на данные и ×5 на валидацию** — поэтому строим ядро один раз, классы зажигаем по очереди.
 - Самый дешёвый и быстрый первый контур — **crypto cross-sectional** (нет фундаментала, данные есть).
 - Single-instrument режим **не ломается** — это отдельный `mode`.

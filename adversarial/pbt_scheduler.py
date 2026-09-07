@@ -276,7 +276,7 @@ class PBTScheduler:
         This ensures gradient variance statistics are transferred along with model weights,
         maintaining VGS consistency after PBT exploitation.
 
-        Reference: CLAUDE.md → "НЕ БАГИ" → #52
+        Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #52
         ═══════════════════════════════════════════════════════════════════════════════
 
         Args:

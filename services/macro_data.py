@@ -41,7 +41,7 @@ References:
     - Bloomberg macro data handling
     - Fed FRED economic data standards
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 

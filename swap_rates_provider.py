@@ -23,7 +23,7 @@ References:
 - OANDA Financing Documentation
 - "Currency Carry Trade" - Burnside et al. (2011)
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 Version: 1.0.0
 """

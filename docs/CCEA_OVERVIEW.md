@@ -23,18 +23,21 @@ CCEA (Cloud-Controlled Execution Architecture) defines a strict security boundar
 ### 1.1 Context
 
 We build a SaaS platform for:
+
 - Strategy development (including AI/RL)
 - Backtesting and realistic execution simulation
 - Strategy/model version management
 - Live run monitoring
 
 **Key Point**: Live order execution does NOT happen in Cloud. It happens in user's environment:
+
 - Local Agent on user's machine / user's VPS (BYO host)
 - Or on-prem / customer VPC (enterprise)
 
 ### 1.2 Goals
 
 Architecture that:
+
 1. **Technically** supports automated execution workflows without Cloud becoming an execution service
 2. **Legally/commercially** positions as "software provider", reducing RTO/execution/advice qualification risks
 3. **Designed for enterprise adoption**: auditability, change control, data governance, vendor pack
@@ -159,6 +162,7 @@ Cloud does not (by design):
 ```
 
 **Key Characteristics:**
+
 - Cloud provides research/simulation/monitoring only
 - Agent is optional, only needed for live execution
 - All secrets stay with the customer
@@ -185,6 +189,7 @@ Cloud:                          Agent (User's Machine):
 ```
 
 **Key Characteristics:**
+
 - Execution runs locally in the customer-controlled environment
 - Cloud provides observability and lifecycle requests only
 - Agent enforces hard caps locally (Cloud cannot override)
@@ -218,6 +223,7 @@ Cloud:                          Agent (User's Machine):
 ```
 
 **Key Characteristics:**
+
 - Everything runs in customer infrastructure
 - Air-gapped deployment supported
 - Customer-Managed Keys (CMK) for data encryption
@@ -241,6 +247,7 @@ Cloud:                          Agent (User's Machine):
 ### 5.3 Who Can Change Trading Behavior
 
 Any **TRADING_IMPACTING** changes:
+
 - Strategy/model/artifact version
 - Instrument universe
 - Execution parameters (order types, aggressiveness)
@@ -263,6 +270,7 @@ Any **TRADING_IMPACTING** changes:
 ### 6.1 What We Are
 
 **Software Provider / ICT Provider** providing:
+
 - Algorithmic trading research tools
 - Strategy development and backtesting platform
 - Infrastructure for users to run their own trading systems
@@ -329,17 +337,20 @@ THE PLATFORM IS A SOFTWARE TOOL, NOT INVESTMENT ADVICE.
 ### 7.2 Key Entity Fields
 
 **Agent:**
+
 - `agent_id` (UUID), `workspace_id`, `public_key` (device key)
 - `agent_version`, `last_seen_at`, `status`: ONLINE/OFFLINE
 - `capabilities` (cpu/gpu/os, sandbox types), `trust_state` (ENROLLED/REVOKED)
 
 **Build:**
+
 - `build_id`, `strategy_version_id`, `artifact_digest` (sha256:...)
 - `signature_ref`, `sbom_ref`, `created_by`, `created_at`
 - `change_class`: TRADING_IMPACTING/NON
 - `provenance`: {git_sha, dataset_refs, training_run_id, params_hash}
 
 **Deployment:**
+
 - `deployment_id`, `workspace_id`, `agent_id`, `build_id`
 - `mode`: PAPER/LIVE, `desired_state`: REQUEST_START / REQUEST_STOP / ...
 - `config_ref` (immutable config blob digest)
@@ -347,6 +358,7 @@ THE PLATFORM IS A SOFTWARE TOOL, NOT INVESTMENT ADVICE.
 - `current_state` (from agent reports)
 
 **Command:**
+
 - `command_id` (UUID), `deployment_id / agent_id`, `type` (enum)
 - `payload_ref` (immutable blob digest), `change_class`
 - `requires_approval` (bool), `issued_by` (user/system), `issued_at`
@@ -381,6 +393,7 @@ THE PLATFORM IS A SOFTWARE TOOL, NOT INVESTMENT ADVICE.
 ### 8.3 Policy Firewall (Local Hard Caps)
 
 Agent stores local policy that:
+
 - Sets absolute upper risk limits
 - Prohibits some instruments/order types
 - Prohibits auto-approve for some changes
@@ -482,6 +495,7 @@ These fields are **blocked at schema level** and **validated by CI guardrails**.
 | **Signed JWT** | Default | Ed25519 device key signs all messages |
 
 All messages include:
+
 - `idempotency_key` for deduplication
 - `timestamp` for replay protection
 - `signature` for authenticity
@@ -642,6 +656,7 @@ max_position_pct: 10%
 ### 13.3 GDPR Rights
 
 Users have full GDPR rights:
+
 - **Access** (Article 15): Export all personal data
 - **Rectification** (Article 16): Correct inaccurate data
 - **Erasure** (Article 17): Delete account and data
@@ -772,6 +787,7 @@ For detailed traceability, see [CCEA_TRACEABILITY_MATRIX.md](design/CCEA_CLOUD/C
 ---
 
 **Document Control:**
+
 - Author: CCEA Architecture Team
 - Reviewers: Security, Compliance, Engineering, Legal
 - Approval: Architecture Review Board

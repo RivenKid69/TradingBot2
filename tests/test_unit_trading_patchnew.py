@@ -23,7 +23,7 @@ Test Categories:
 16. _SimpleMarketSim tests
 
 References:
-- CLAUDE.md critical bugs section
+- docs/PLATFORM_REFERENCE.md critical bugs section
 - Best practices from existing test files
 """
 

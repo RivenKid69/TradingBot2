@@ -96,6 +96,7 @@ The platform operates in two strictly separated zones with different data handli
 ### 2.1 Role Determination Framework
 
 Under GDPR Article 4:
+
 - **Controller** (Art. 4(7)): Determines purposes and means of processing
 - **Processor** (Art. 4(8)): Processes personal data on behalf of the controller
 
@@ -176,6 +177,7 @@ For **Agent Zone data**, the customer is the sole Controller:
 - Risk policy configuration
 
 **The platform provider has NO processing role for Agent Zone data** unless:
+
 1. Telemetry is explicitly enabled for Cloud transmission (AGGREGATED by default)
 2. RAW_ORDER_EVENTS is explicitly opted-in (enterprise-only)
 3. Log export is requested via `REQUEST_EXPORT_LOGS` command
@@ -613,6 +615,7 @@ For **Agent Zone data**, the customer is the sole Controller:
 ### 7.2 DPIA Requirement Assessment
 
 Per GDPR Article 35, a DPIA may be required if processing involves:
+
 - Systematic monitoring of individuals (✓ telemetry monitoring)
 - Processing on a large scale (depends on customer count)
 - Sensitive data (financial trading data is commercially sensitive)
@@ -664,12 +667,14 @@ Per GDPR Article 35, a DPIA may be required if processing involves:
 ## 9. References
 
 ### 9.1 Internal Documents
+
 - `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` — Primary design source
 - `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md` — Implementation roadmap
 - `docs/legal/PRIVACY_POLICY.md` — Public privacy policy
 - `docs/legal/DPA_TEMPLATE.md` — Data Processing Agreement template
 
 ### 9.2 External References
+
 - **GDPR Regulation (EU) 2016/679** — Articles 4, 5, 6, 7, 12-23, 25, 28, 30, 32, 33-34, 44+
 - **EDPB Guidelines** — Transparency, data subject rights, breach notification
 - **ISO/IEC 27001:2022** — Information security controls

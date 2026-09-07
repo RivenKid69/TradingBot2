@@ -41,16 +41,19 @@ Cloud provides research and simulation tools; live execution validation is a cli
 **Status**: Stub implementation using spread-based estimate
 
 **Current Behavior**:
+
 - Returns `spread_bps / 2` regardless of order size
 - Does not walk through order book levels
 - Does not model depth consumption
 
 **Impact**:
+
 - May underestimate slippage for large orders relative to available liquidity
 - May not reflect actual market impact for aggressive orders
 - Better for small orders; less accurate for institutional-size orders
 
 **Mitigation**:
+
 1. Use `StatisticalSlippageProvider` with historically calibrated parameters
 2. Apply conservative slippage multipliers (e.g., 1.5x-2x) in live deployment
 3. Monitor actual vs simulated slippage in production
@@ -77,16 +80,19 @@ Operators deploying live strategies must complete these validation steps before 
 **Status**: Stub implementation
 
 **Current Behavior**:
+
 - Uses `OHLCVFillProvider` as fallback
 - Does not model queue position
 - Does not simulate partial fills at multiple price levels
 
 **Impact**:
+
 - Fill timing may be optimistic
 - Does not reflect adverse selection for passive orders
 - May underestimate time-to-fill for limit orders
 
 **Mitigation**:
+
 1. Use `OHLCVFillProvider` with conservative fill assumptions
 2. Assume worst-case fill prices for limit orders
 3. Test with various fill delay assumptions
@@ -101,6 +107,7 @@ Operators deploying live strategies must complete these validation steps before 
 **Status**: Implemented in `lob/market_impact.py`
 
 **Implemented Models**:
+
 - **KyleLambdaModel**: Kyle (1985) linear price impact with configurable permanent/temporary split
 - **AlmgrenChrissModel**: Almgren-Chriss (2001) square-root model with permanent/temporary decomposition
 - **GatheralModel**: Gatheral (2010) transient impact with power-law decay
@@ -108,16 +115,19 @@ Operators deploying live strategies must complete these validation steps before 
 - **ImpactTracker**: Cumulative impact state tracking with decay
 
 **Available Features**:
+
 - Permanent vs temporary impact decomposition (compute_temporary_impact, compute_permanent_impact)
 - Impact decay modeling (exponential, power-law, linear decay types)
 - Configurable parameters per asset class (ImpactParameters.for_equity(), for_crypto())
 - Optimal execution time computation (AlmgrenChrissModel.compute_optimal_execution_time)
 
 **Integration Status**:
+
 - Models available for L3 providers via `create_impact_model()` factory
 - Per-client calibration required before production use
 
 **Remaining Gaps**:
+
 - Cross-asset impact correlation (not yet implemented)
 - Live calibration workflow documentation
 
@@ -140,16 +150,19 @@ Operators deploying live strategies must complete these validation steps before 
 **Status**: IOC (Immediate-Or-Cancel) behaves as GTC
 
 **Current Behavior**:
+
 - POST_ONLY: Implemented correctly (rejects crossing orders)
 - GTC (Good-Till-Cancel): Implemented correctly
 - IOC: Falls through to GTC behavior (orders remain on book)
 
 **Impact**:
+
 - Strategies using IOC orders will see unrealistic fill behavior
 - Unfilled IOC portions remain on book instead of being cancelled
 - May overestimate fill rates for IOC orders
 
 **Mitigation**:
+
 1. Avoid IOC order types in simulation until implemented
 2. Use GTC with manual cancel logic as approximation
 3. Document IOC usage assumptions in strategy backtests

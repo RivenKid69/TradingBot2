@@ -75,7 +75,7 @@ Guidance:
   - Prefer modifying extracted helpers over core loop when possible
   - Document any new extractions in this header
 
-See CLAUDE.md "KRITИЧЕСКИЕ ISPRAVLENIYA" section for implementation details.
+See docs/PLATFORM_REFERENCE.md "KRITИЧЕСКИЕ ISPRAVLENIYA" section for implementation details.
 """
 import copy
 import dataclasses
@@ -897,7 +897,7 @@ class PopArtHoldoutEvaluation:
 #   3. Backward compatibility with old checkpoints
 #
 # IMPORTANT: Enabling PopArt requires careful testing and migration.
-# See CLAUDE.md line 633 for status and migration notes.
+# See docs/PLATFORM_REFERENCE.md line 633 for status and migration notes.
 # ==============================================================================
 
 class PopArtController:
@@ -3892,7 +3892,7 @@ class DistributionalPPO(RecurrentPPO):
             4. For risk-critical applications: increase `num_quantiles` to 51+
             5. For standard RL use: N=21 provides reasonable speed/accuracy balance
 
-            Reference: CLAUDE.md → "НЕ БАГИ" → #48
+            Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #48
             Reference: Dabney et al. (2018) "IQN", quantile regression theory
             ═══════════════════════════════════════════════════════════════════
         """
@@ -3944,7 +3944,7 @@ class DistributionalPPO(RecurrentPPO):
             #
             # alpha is smaller than the first quantile center (tau_0 = 0.5/N)
             # Use linear extrapolation from first two quantiles
-            # Reference: CLAUDE.md → "НЕ БАГИ" → #21
+            # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #21
             if num_quantiles >= 2:
                 q0 = predicted_quantiles[:, 0]  # Value at tau_0 = 0.5/N
                 q1 = predicted_quantiles[:, 1]  # Value at tau_1 = 1.5/N
@@ -3994,7 +3994,7 @@ class DistributionalPPO(RecurrentPPO):
             #   tail_mass = max(0.95, 0.05 * 19) = max(0.95, 0.95) = 0.95 ✓
             #
             # Для α=0.99, N=20: tail_mass = max(0.99, 0.05 * 19.8) = 0.99 ✓
-            # Reference: CLAUDE.md → "НЕ БАГИ" → #20
+            # Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #20
             # ═══════════════════════════════════════════════════════════════════════
             tail_mass = max(alpha, mass * (full_mass + frac))
             # CRITICAL FIX #3: Protect against division by very small tail_mass
@@ -13134,7 +13134,7 @@ class DistributionalPPO(RecurrentPPO):
         This ensures gradient statistics are consistent with model weights after exploit.
         If you need to reset VGS statistics: call model._variance_gradient_scaler.reset_statistics()
 
-        Reference: CLAUDE.md → "НЕ БАГИ" → #52
+        Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #52
         ═══════════════════════════════════════════════════════════════════════════════
 
         Args:
@@ -13179,7 +13179,7 @@ class DistributionalPPO(RecurrentPPO):
         - param_grad_sq_ema: Per-parameter gradient squared EMA (for variance)
         - Configuration (beta, alpha, warmup_steps)
 
-        Reference: CLAUDE.md → "НЕ БАГИ" → #52
+        Reference: docs/NOT_BUGS_AND_FAQ.md → "НЕ БАГИ" → #52
         ═══════════════════════════════════════════════════════════════════════════════
 
         Args:

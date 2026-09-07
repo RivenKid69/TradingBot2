@@ -69,12 +69,14 @@ That's it! The native extensions are now compiled and ready to use.
      - Windows 10 SDK (latest)
 
 2. **Verify installation**:
+
    ```cmd
    cl.exe
    # Should output MSVC version
    ```
 
 3. **Build**:
+
    ```cmd
    pip install -r requirements-build.txt
    make build
@@ -83,24 +85,28 @@ That's it! The native extensions are now compiled and ready to use.
 ### Linux (GCC)
 
 1. **Install build tools** (Ubuntu/Debian):
+
    ```bash
    sudo apt-get update
    sudo apt-get install build-essential python3-dev
    ```
 
    Or (Fedora/RHEL):
+
    ```bash
    sudo dnf groupinstall "Development Tools"
    sudo dnf install python3-devel
    ```
 
 2. **Verify GCC**:
+
    ```bash
    gcc --version
    # Should be >= 11.0
    ```
 
 3. **Build**:
+
    ```bash
    pip install -r requirements-build.txt
    make build
@@ -109,17 +115,20 @@ That's it! The native extensions are now compiled and ready to use.
 ### macOS (Clang)
 
 1. **Install Xcode Command Line Tools**:
+
    ```bash
    xcode-select --install
    ```
 
 2. **Verify Clang**:
+
    ```bash
    clang --version
    # Should be >= 14.0
    ```
 
 3. **Build**:
+
    ```bash
    pip install -r requirements-build.txt
    make build
@@ -186,6 +195,7 @@ Hash report: build_hash_report.json
 ```
 
 **Generated files**:
+
 - `*.pyd` (Windows) or `*.so` (Linux/macOS) - compiled extensions
 - `*.c` - generated C code from Cython (can be deleted)
 - `build_hash_report.json` - SHA256 hashes for reproducibility
@@ -203,6 +213,7 @@ make verify-hash
 ```
 
 **Example output**:
+
 ```json
 {
   "build_info": {
@@ -223,6 +234,7 @@ make verify-hash
 ```
 
 **Use cases**:
+
 - **Reproducible builds**: Compare hashes across machines
 - **Deployment**: Verify compiled extensions match expected builds
 - **Debugging**: Detect accidental recompilation
@@ -257,6 +269,7 @@ pytest tests/ -v
 #### 1. "Cython is required to build extensions"
 
 **Solution**: Install build dependencies first:
+
 ```bash
 pip install -r requirements-build.txt
 ```
@@ -266,6 +279,7 @@ pip install -r requirements-build.txt
 **Problem**: Visual Studio not installed or not in PATH.
 
 **Solution**:
+
 - Install Visual Studio 2022 with "Desktop development with C++" workload
 - Or use Visual Studio Build Tools (minimal installation)
 
@@ -274,6 +288,7 @@ pip install -r requirements-build.txt
 **Problem**: numpy not installed or headers missing.
 
 **Solution**:
+
 ```bash
 pip install numpy==1.26.4
 # Or on Linux:
@@ -283,6 +298,7 @@ sudo apt-get install python3-numpy
 #### 4. Warnings about version mismatches
 
 **Example**:
+
 ```
 WARNING: numpy 1.26.3 != 1.26.4 (pinned)
 WARNING: Cython 3.0.9 != 3.0.10 (pinned)
@@ -294,6 +310,7 @@ WARNING: Cython 3.0.9 != 3.0.10 (pinned)
 making it harder to audit and verify builds. For production deployments, use exact pinned versions.
 
 **Solution**: Install exact pinned versions from lockfiles:
+
 ```bash
 # For CPU-only builds
 pip install -r requirements-cpu.lock.txt
@@ -348,12 +365,14 @@ The build system includes automated verification:
 ### Hash Report
 
 After building, check the hash report:
+
 ```bash
 make verify-hash
 # Outputs: build_hash_report.json with SHA-256 hashes of all compiled artifacts
 ```
 
 The hash report contains:
+
 - SHA-256 hash of each `.so`/`.pyd` compiled extension
 - Build timestamp and environment info
 - Dependency versions used
@@ -365,11 +384,13 @@ For audit/compliance, this report provides evidence of deterministic builds.
 For debugging extension crashes:
 
 **Windows**:
+
 ```bash
 python setup.py build_ext --inplace --debug
 ```
 
 **Linux/macOS**:
+
 ```bash
 CFLAGS="-O0 -g" python setup.py build_ext --inplace
 ```
@@ -392,12 +413,14 @@ make build
 Compiler flags are platform-specific and optimized for performance:
 
 **Windows (MSVC)**:
+
 - `/O2` - Maximum optimization
 - `/GL` - Whole program optimization
 - `/LTCG` - Link-time code generation
 - `/std:c++17` - C++17 standard
 
 **Linux/macOS (GCC/Clang)**:
+
 - `-O3` - Maximum optimization
 - `-march=native` - CPU-specific optimizations
 - `-ffast-math` - Fast floating-point math
@@ -417,11 +440,13 @@ python setup.py build_ext --inplace --parallel 8
 For advanced users deploying to different architectures:
 
 **Linux → Linux ARM**:
+
 ```bash
 CC=aarch64-linux-gnu-gcc python setup.py build_ext
 ```
 
 **macOS Universal Binary** (x86_64 + arm64):
+
 ```bash
 ARCHFLAGS="-arch x86_64 -arch arm64" python setup.py build_ext
 ```
@@ -446,6 +471,7 @@ AI-Powered-Quantitative-Research-Platform/
 ```
 
 **Important**:
+
 - `.pyd`/`.so` files are **platform-specific** - don't commit to git
 - `.c` files are **generated** from `.pyx` - don't commit to git
 - `.cpp` files are **hand-written** - commit to git

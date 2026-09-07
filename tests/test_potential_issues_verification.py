@@ -1,5 +1,5 @@
 """
-Comprehensive tests to verify three potential issues reported in CLAUDE.md:
+Comprehensive tests to verify three potential issues reported in docs/PLATFORM_REFERENCE.md:
 
 1. Quantile loss asymmetry inversion (VERIFIED: Fix enabled by default)
 2. Double trading cost penalty (VERIFIED: Intentional design)

@@ -11,6 +11,7 @@
 
 This registry tracks all legacy model artifacts that require `weights_only=False` for loading.
 Per Threat Model T3 (Legacy Model Accumulation), this registry enables:
+
 - Visibility into remaining insecure-format models
 - Prioritized conversion planning
 - Audit trail for compliance
@@ -66,6 +67,7 @@ Per Threat Model T3 (Legacy Model Accumulation), this registry enables:
 ### Monthly Audit (target cadence; verify via audit logs)
 
 Target cadence: monthly audits by the security team:
+
 1. Query model storage for pickle-format files
 2. Verify all models load with `weights_only=True`
 3. Update this registry with any new legacy models
@@ -87,6 +89,7 @@ Target cadence: monthly audits by the security team:
 ## Compliance Notes
 
 Per Documentation Canon:
+
 - This registry provides visibility, not guarantee of zero legacy models
 - New models entering the pipeline should be created in secure format by default
 - Legacy model usage requires documented business justification

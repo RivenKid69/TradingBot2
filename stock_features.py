@@ -22,7 +22,7 @@ Research references:
 - Moskowitz, T.J. et al. (2012): "Time series momentum" (relative strength)
 - Levy, R. (1967): "Relative Strength as a Criterion for Investment Selection"
 
-Author: AI Trading Bot Team
+Author: Sultan Suyunbayev
 Date: 2025-11-27
 Version: 1.0.0
 """

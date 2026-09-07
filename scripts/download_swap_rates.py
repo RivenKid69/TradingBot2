@@ -49,7 +49,7 @@ Note: OANDA provides current financing rates but not historical.
 For historical rates, this script uses interest rate differentials
 from FRED to estimate historical swap rates.
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-30
 """
 

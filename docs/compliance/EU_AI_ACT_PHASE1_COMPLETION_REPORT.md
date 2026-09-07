@@ -26,10 +26,12 @@ Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaClo
 ### 1. Risk Management Framework (Article 9)
 
 **Files:**
+
 - `services/ai_act/risk_management.py` - Core risk management system
 - `services/ai_act/risk_registry.py` - Risk registry and tracking
 
 **Features:**
+
 - Risk identification and categorization (12 risk categories)
 - Risk assessment with severity/likelihood matrix
 - Risk mitigation tracking with effectiveness measurement
@@ -38,6 +40,7 @@ Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaClo
 - Thread-safe implementation for production use
 
 **Risk Categories:**
+
 - SAFETY, FUNDAMENTAL_RIGHTS, MARKET_STABILITY
 - DATA_QUALITY, MODEL_ROBUSTNESS, CYBERSECURITY
 - HUMAN_OVERSIGHT_FAILURE, BIAS_DISCRIMINATION
@@ -49,6 +52,7 @@ Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaClo
 **File:** `services/ai_act/human_oversight.py`
 
 **Features:**
+
 - Four oversight levels (Full Control, Human-in-the-Loop, Human-on-the-Loop, Supervised Autonomy)
 - Emergency stop capability with full audit trail
 - Manual override controller for trading-impacting actions
@@ -58,6 +62,7 @@ Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaClo
 - Complete audit trail to support governance and due diligence
 
 **Oversight Levels:**
+
 1. `FULL_HUMAN_CONTROL` - All decisions require human approval
 2. `HUMAN_IN_THE_LOOP` - Significant decisions require approval
 3. `HUMAN_ON_THE_LOOP` - Human monitors with intervention capability
@@ -68,6 +73,7 @@ Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaClo
 **File:** `services/ai_act/accuracy_metrics.py`
 
 **Features:**
+
 - Metrics framework intended to support accuracy/robustness monitoring (customer- and deployment-dependent; thresholds must be defined per use case)
 - Continuous monitoring with real-time alerts
 - Statistical analysis (mean, std, trend detection)
@@ -79,6 +85,7 @@ Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaClo
 **File:** `services/ai_act/robustness_testing.py`
 
 **Features:**
+
 - Three testing categories:
   - **Adversarial Testing** - Tests resilience to input perturbations
   - **Distribution Shift Testing** - Tests performance under data drift
@@ -93,6 +100,7 @@ Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaClo
 **File:** `services/ai_act/explainability.py`
 
 **Features:**
+
 - Feature attribution for trading decisions
 - Counterfactual explanations ("what would change the decision")
 - Confidence and uncertainty reporting
@@ -151,12 +159,14 @@ config/ai_act/
 ## Implementation Notes (Tooling)
 
 ### Article 9 Tooling Notes
+
 - Continuous risk identification and assessment
 - Risk mitigation with effectiveness tracking
 - Audit trail and exports to support governance and due diligence
 - Integration with existing risk_guard.py
 
 ### Article 14 Tooling Notes
+
 - Multiple oversight levels as required
 - Emergency stop capability (per Article 14(4)(d))
 - Override and intervention capabilities
@@ -164,12 +174,14 @@ config/ai_act/
 - Audit logging for all human interactions
 
 ### Article 15 Tooling Notes
+
 - Declared accuracy levels with measurement methodology
 - Continuous accuracy monitoring
 - Robustness testing framework
 - Cybersecurity considerations in configuration
 
 ### Article 13 Tooling Notes
+
 - Decision explainability for AI outputs and trading-impacting configuration changes
 - Human-readable explanations
 - Feature contribution analysis
@@ -180,6 +192,7 @@ config/ai_act/
 ## Next Steps (Phase 2)
 
 Phase 2 will focus on:
+
 1. **Article 11** - Technical Documentation
 2. **Article 12** - Enhanced Record-Keeping (Logging)
 3. **Article 10** - Data Governance improvements

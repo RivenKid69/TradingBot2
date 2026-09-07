@@ -676,7 +676,7 @@ class OrderBook:
                 or invalid tick size (when enforce_tick_size=True and auto_round=False)
 
         FIX (2025-11-28): Added tick size and lot size validation for US market structure.
-        Reference: CLAUDE.md → Issue #7 "L3 LOB: US Market Structure"
+        Reference: docs/PLATFORM_REFERENCE.md → Issue #7 "L3 LOB: US Market Structure"
         """
         # Validate order quantity
         if order.remaining_qty <= 0:

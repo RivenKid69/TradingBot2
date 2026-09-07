@@ -7,7 +7,7 @@ Tests for stock integration improvements (Phase 2 completion):
 2. Download stock data script (VIX pipeline, auto-detection)
 3. Alpaca streaming async wrappers
 
-Author: AI-Powered Quantitative Research Platform Team
+Author: Sultan Suyunbayev
 Date: 2025-11-28
 """
 
